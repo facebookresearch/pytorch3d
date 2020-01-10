@@ -1,0 +1,55 @@
+version: 2.1
+
+#examples:
+#https://github.com/facebookresearch/ParlAI/blob/master/.circleci/config.yml
+#https://github.com/facebookresearch/hydra/blob/master/.circleci/config.yml
+#https://github.com/facebookresearch/habitat-api/blob/master/.circleci/config.yml
+
+#drive tests with nox or tox or pytest?
+
+# -------------------------------------------------------------------------------------
+# environments where we run our jobs
+# -------------------------------------------------------------------------------------
+
+
+setupcuda: &setupcuda
+  run:
+    name: Setup CUDA
+    working_directory: ~/
+    command: |
+      # download and install nvidia drivers, cuda, etc
+      wget --no-progress --no-clobber -P ~/nvidia-downloads 'https://s3.amazonaws.com/ossci-linux/nvidia_driver/NVIDIA-Linux-x86_64-430.40.run'
+      wget --no-progress --no-clobber -P ~/nvidia-downloads http://developer.download.nvidia.com/compute/cuda/10.2/Prod/local_installers/cuda_10.2.89_440.33.01_linux.run
+      sudo /bin/bash ~/nvidia-downloads/NVIDIA-Linux-x86_64-430.40.run --no-drm -q --ui=none
+      sudo sh ~/nvidia-downloads/cuda_10.2.89_440.33.01_linux.run --silent
+      echo "Done installing CUDA."
+      pyenv versions
+      nvidia-smi
+      pyenv global 3.7.0
+
+gpu: &gpu
+  environment:
+    CUDA_VERSION: "10.2"
+  machine:
+    image: default
+  resource_class: gpu.medium # tesla m60
+
+jobs:
+  main:
+    <<: *gpu
+    machine:
+      image: ubuntu-1604:201903-01
+    steps:
+      - checkout
+      - <<: *setupcuda
+      - run: pip3 install --progress-bar off torch torchvision wheel
+      - run: pip3 install --progress-bar off 'git+https://github.com/facebookresearch/fvcore'
+      - run: LD_LIBRARY_PATH=$LD_LIBARY_PATH:/usr/local/cuda-10.2/lib64 python3 setup.py build_ext --inplace
+      - run: LD_LIBRARY_PATH=$LD_LIBARY_PATH:/usr/local/cuda-10.2/lib64 python -m unittest discover -v -s tests
+      - run: python3 setup.py bdist_wheel
+
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - main
