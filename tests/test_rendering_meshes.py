@@ -237,11 +237,12 @@ class TestRenderingMeshes(unittest.TestCase):
         obj_filename = DATA_DIR / "textured_obj/spot_triangulated.obj"
 
         # Load mesh + texture
-        verts, faces, normals, texture_uvs, materials, tex_maps = load_obj(
-            obj_filename
-        )
+        verts, faces, aux = load_obj(obj_filename)
         faces_idx = faces.verts_idx.to(device)
         verts = verts.to(device)
+        texture_uvs = aux.verts_uvs
+        materials = aux.material_colors
+        tex_maps = aux.texture_images
 
         # tex_maps is a dictionary of material names as keys and texture images
         # as values. Only need the images for this example.

@@ -26,9 +26,12 @@ class TestMeshObjIO(unittest.TestCase):
             ]
         )
         obj_file = StringIO(obj_file)
-        verts, faces, normals, textures, materials, tex_maps = load_obj(
-            obj_file
-        )
+        verts, faces, aux = load_obj(obj_file)
+        normals = aux.normals
+        textures = aux.verts_uvs
+        materials = aux.material_colors
+        tex_maps = aux.texture_images
+
         expected_verts = torch.tensor(
             [
                 [0.1, 0.2, 0.3],
@@ -54,6 +57,8 @@ class TestMeshObjIO(unittest.TestCase):
         self.assertTrue(
             torch.all(faces.materials_idx == -torch.ones(len(expected_faces)))
         )
+        self.assertTrue(normals is None)
+        self.assertTrue(textures is None)
         self.assertTrue(materials is None)
         self.assertTrue(tex_maps is None)
 
@@ -79,7 +84,12 @@ class TestMeshObjIO(unittest.TestCase):
             ]
         )
         obj_file = StringIO(obj_file)
-        verts, faces, normals, textures, _, _ = load_obj(obj_file)
+        verts, faces, aux = load_obj(obj_file)
+        normals = aux.normals
+        textures = aux.verts_uvs
+        materials = aux.material_colors
+        tex_maps = aux.texture_images
+
         expected_verts = torch.tensor(
             [
                 [0.1, 0.2, 0.3],
@@ -130,6 +140,8 @@ class TestMeshObjIO(unittest.TestCase):
         self.assertTrue(
             torch.allclose(faces.textures_idx, expected_faces_textures_idx)
         )
+        self.assertTrue(materials is None)
+        self.assertTrue(tex_maps is None)
 
     def test_load_obj_normals_only(self):
         obj_file = "\n".join(
@@ -163,14 +175,20 @@ class TestMeshObjIO(unittest.TestCase):
             ],
             dtype=torch.float32,
         )
-        verts, faces, normals, textures, _, _ = load_obj(obj_file)
+        verts, faces, aux = load_obj(obj_file)
+        normals = aux.normals
+        textures = aux.verts_uvs
+        materials = aux.material_colors
+        tex_maps = aux.texture_images
         self.assertTrue(
             torch.allclose(faces.normals_idx, expected_faces_normals_idx)
         )
         self.assertTrue(torch.allclose(normals, expected_normals))
         self.assertTrue(torch.allclose(verts, expected_verts))
         self.assertTrue(faces.textures_idx == [])
-        self.assertTrue(len(textures) == 0)
+        self.assertTrue(textures is None)
+        self.assertTrue(materials is None)
+        self.assertTrue(tex_maps is None)
 
     def test_load_obj_textures_only(self):
         obj_file = "\n".join(
@@ -200,7 +218,11 @@ class TestMeshObjIO(unittest.TestCase):
             ],
             dtype=torch.float32,
         )
-        verts, faces, normals, textures, _, _ = load_obj(obj_file)
+        verts, faces, aux = load_obj(obj_file)
+        normals = aux.normals
+        textures = aux.verts_uvs
+        materials = aux.material_colors
+        tex_maps = aux.texture_images
 
         self.assertTrue(
             torch.allclose(faces.textures_idx, expected_faces_textures_idx)
@@ -208,7 +230,9 @@ class TestMeshObjIO(unittest.TestCase):
         self.assertTrue(torch.allclose(expected_textures, textures))
         self.assertTrue(torch.allclose(expected_verts, verts))
         self.assertTrue(faces.normals_idx == [])
-        self.assertTrue(len(normals) == 0)
+        self.assertTrue(normals is None)
+        self.assertTrue(materials is None)
+        self.assertTrue(tex_maps is None)
 
     def test_load_obj_error_textures(self):
         obj_file = "\n".join(["vt 0.1"])
@@ -334,9 +358,10 @@ class TestMeshObjIO(unittest.TestCase):
         DATA_DIR = Path(__file__).resolve().parent / "data"
         obj_filename = "textured_obj/spot_triangulated.obj"
         filename = os.path.join(DATA_DIR, obj_filename)
-        verts, faces, normals, verts_uvs, materials, tex_maps = load_obj(
-            filename
-        )
+        verts, faces, aux = load_obj(filename)
+        materials = aux.material_colors
+        tex_maps = aux.texture_images
+
         dtype = torch.float32
         expected_materials = {
             "material_1": {
@@ -379,8 +404,25 @@ class TestMeshObjIO(unittest.TestCase):
             ]
         )
         obj_file = StringIO(obj_file)
-        with self.assertRaisesRegex(ValueError, "No mtl file found"):
-            load_obj(obj_file)
+        with self.assertWarnsRegex(Warning, "No mtl file found"):
+            verts, faces, aux = load_obj(obj_file)
+
+        expected_verts = torch.tensor(
+            [
+                [0.1, 0.2, 0.3],
+                [0.2, 0.3, 0.4],
+                [0.3, 0.4, 0.5],
+                [0.4, 0.5, 0.6],
+            ],
+            dtype=torch.float32,
+        )
+        expected_faces = torch.tensor([[0, 1, 2], [0, 1, 3]], dtype=torch.int64)
+        self.assertTrue(torch.allclose(verts, expected_verts))
+        self.assertTrue(torch.allclose(faces.verts_idx, expected_faces))
+        self.assertTrue(aux.material_colors is None)
+        self.assertTrue(aux.texture_images is None)
+        self.assertTrue(aux.normals is None)
+        self.assertTrue(aux.verts_uvs is None)
 
     @staticmethod
     def save_obj_with_init(V: int, F: int):
@@ -399,6 +441,6 @@ class TestMeshObjIO(unittest.TestCase):
 
         def load_mesh():
             obj_file = StringIO(obj)
-            verts, faces, normals, textures, _, _ = load_obj(obj_file)
+            verts, faces, aux = load_obj(obj_file)
 
         return load_mesh

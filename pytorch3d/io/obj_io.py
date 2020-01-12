@@ -8,6 +8,7 @@
 import numpy as np
 import os
 import pathlib
+import warnings
 from collections import namedtuple
 from typing import List
 import torch
@@ -38,8 +39,11 @@ def _read_image(file_name: str, format=None):
         return image
 
 
-# Faces type returned from load_obj function.
+# Faces & Aux type returned from load_obj function.
 _Faces = namedtuple("Faces", "verts_idx normals_idx textures_idx materials_idx")
+_Aux = namedtuple(
+    "Properties", "normals verts_uvs material_colors texture_images"
+)
 
 
 def _format_faces_indices(faces_indices, max_index):
@@ -162,36 +166,37 @@ def load_obj(f_obj):
               converted to tensors or Materials/Textures data
               structures - see textures.py and materials.py for
               more info.
-        - **normals**: FloatTensor of shape (N, 3).
-        - **verts_uvs**: FloatTensor of shape (T, 2), giving the uv coordinate per
+        - **aux**: NamedTuple with fields:
+            - normals: FloatTensor of shape (N, 3)
+            - verts_uvs: FloatTensor of shape (T, 2), giving the uv coordinate per
               vertex. If a vertex is shared between two faces, it can have
               a different uv value for each instance. Therefore it is
               possible that the number of verts_uvs is greater than
               num verts i.e. T > V.
               vertex.
-        - **material_colors**: dict of material names and associated properties.
-            If a material does not have any properties it will have an
-            empty dict.
+            - material_colors: dict of material names and associated properties.
+              If a material does not have any properties it will have an
+              empty dict.
 
-            .. code-block:: python
+              .. code-block:: python
 
-                {
-                    material_name_1:  {
-                        "ambient_color": tensor of shape (1, 3),
-                        "diffuse_color": tensor of shape (1, 3),
-                        "specular_color": tensor of shape (1, 3),
-                        "shininess": tensor of shape (1)
-                    },
-                    material_name_2: {},
-                    ...
-                }
-        - **texture_images** : dict of material names and texture images.
-            .. code-block:: python
+                  {
+                      material_name_1:  {
+                          "ambient_color": tensor of shape (1, 3),
+                          "diffuse_color": tensor of shape (1, 3),
+                          "specular_color": tensor of shape (1, 3),
+                          "shininess": tensor of shape (1)
+                      },
+                      material_name_2: {},
+                      ...
+                  }
+            - texture_images: dict of material names and texture images.
+              .. code-block:: python
 
-                {
-                    material_name_1: (H, W, 3) image,
-                    ...
-                }
+                  {
+                      material_name_1: (H, W, 3) image,
+                      ...
+                  }
     """
     data_dir = "./"
     if isinstance(f_obj, (str, bytes, os.PathLike)):
@@ -358,13 +363,13 @@ def _load(f_obj, data_dir):
         )
 
     # Load materials
-    if len(material_names) > 0:
-        if f_mtl is None:
-            raise ValueError("No mtl file found.")
+    if (len(material_names) > 0) and (f_mtl is not None):
         material_colors, texture_images = load_mtl(
             f_mtl, material_names, data_dir
         )
     else:
+        if f_mtl is None:
+            warnings.warn("No mtl file found")
         material_colors, texture_images = None, None
 
     faces = _Faces(
@@ -373,7 +378,14 @@ def _load(f_obj, data_dir):
         textures_idx=faces_textures_idx,
         materials_idx=faces_materials_idx,
     )
-    return verts, faces, normals, verts_uvs, material_colors, texture_images
+
+    aux = _Aux(
+        normals=normals if len(normals) > 0 else None,
+        verts_uvs=verts_uvs if len(verts_uvs) > 0 else None,
+        material_colors=material_colors,
+        texture_images=texture_images,
+    )
+    return verts, faces, aux
 
 
 def load_mtl(f_mtl, material_names: List, data_dir: str):
