@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
+
+
 import torch
 
 from pytorch3d.ops.subdivide_meshes import SubdivideMeshes

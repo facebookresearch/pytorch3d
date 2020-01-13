@@ -1,3 +1,5 @@
+# Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
+
 from .so3 import (
     so3_exponential_map,
     so3_log_map,

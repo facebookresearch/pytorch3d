@@ -1,3 +1,5 @@
+# Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
+
 from .meshes import Meshes
 from .textures import Textures
 from .utils import (

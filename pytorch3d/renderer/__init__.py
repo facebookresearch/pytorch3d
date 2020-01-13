@@ -1,6 +1,5 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
-# This source code is licensed under the license found in the
-# LICENSE file in the root directory of this source tree.
+
 from .blending import hard_rgb_blend, sigmoid_alpha_blend, softmax_rgb_blend
 from .cameras import (
     OpenGLOrthographicCameras,
