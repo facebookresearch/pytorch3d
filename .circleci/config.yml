@@ -42,7 +42,8 @@ jobs:
     steps:
       - checkout
       - <<: *setupcuda
-      - run: pip3 install --progress-bar off torch torchvision wheel
+      - run: pip3 install --progress-bar off wheel matplotlib 'pillow<7'
+      - run: pip3 install --progress-bar off torch torchvision
       - run: pip3 install --progress-bar off 'git+https://github.com/facebookresearch/fvcore'
       - run: LD_LIBRARY_PATH=$LD_LIBARY_PATH:/usr/local/cuda-10.2/lib64 python3 setup.py build_ext --inplace
       - run: LD_LIBRARY_PATH=$LD_LIBARY_PATH:/usr/local/cuda-10.2/lib64 python -m unittest discover -v -s tests
