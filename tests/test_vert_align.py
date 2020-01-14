@@ -12,7 +12,12 @@ from pytorch3d.structures.meshes import Meshes
 
 class TestVertAlign(unittest.TestCase):
     @staticmethod
-    def vert_align_naive(feats, verts_or_meshes, return_packed: bool = False):
+    def vert_align_naive(
+        feats,
+        verts_or_meshes,
+        return_packed: bool = False,
+        align_corners: bool = True,
+    ):
         """
         Naive implementation of vert_align.
         """
@@ -35,7 +40,11 @@ class TestVertAlign(unittest.TestCase):
                 else:
                     raise ValueError("verts_or_meshes is invalid")
                 feat_sampled_i = F.grid_sample(
-                    feats_i, grid, mode="bilinear", padding_mode="zeros"
+                    feats_i,
+                    grid,
+                    mode="bilinear",
+                    padding_mode="zeros",
+                    align_corners=align_corners,
                 )  # (1, C, 1, V)
                 feat_sampled_i = feat_sampled_i.squeeze(2).squeeze(0)  # (C, V)
                 feat_sampled_i = feat_sampled_i.transpose(1, 0)  # (V, C)
@@ -130,6 +139,15 @@ class TestVertAlign(unittest.TestCase):
             feats[0], verts, return_packed=True
         )
         self.assertTrue(torch.allclose(out, naive_out))
+
+        out2 = vert_align(
+            feats[0], verts, return_packed=True, align_corners=False
+        )
+        naive_out2 = TestVertAlign.vert_align_naive(
+            feats[0], verts, return_packed=True, align_corners=False
+        )
+        self.assertFalse(torch.allclose(out, out2))
+        self.assertTrue(torch.allclose(out2, naive_out2))
 
     @staticmethod
     def vert_align_with_init(

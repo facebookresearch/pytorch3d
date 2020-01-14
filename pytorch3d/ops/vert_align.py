@@ -12,6 +12,7 @@ def vert_align(
     return_packed: bool = False,
     interp_mode: str = "bilinear",
     padding_mode: str = "zeros",
+    align_corners: bool = True,
 ) -> torch.Tensor:
     """
     Sample vertex features from a feature map. This operation is called
@@ -35,6 +36,13 @@ def vert_align(
             ('bilinear' or 'nearest')
         padding_mode: (str) Specifies how to handle vertices outside of the
             [-1, 1] range. ('zeros', 'reflection', or 'border')
+        align_corners (bool): Geometrically, we consider the pixels of the
+            input  as squares rather than points.
+            If set to ``True``, the extrema (``-1`` and ``1``) are considered as
+            referring to the center points of the input's corner pixels. If set
+            to ``False``, they are instead considered as referring to the corner
+            points of the input's corner pixels, making the sampling more
+            resolution agnostic. Default: ``True``
 
     Returns:
         feats_sampled: FloatTensor of shape (N, V, C) giving sampled features for
@@ -69,7 +77,11 @@ def vert_align(
     feats_sampled = []
     for feat in feats:
         feat_sampled = F.grid_sample(
-            feat, grid, mode=interp_mode, padding_mode=padding_mode
+            feat,
+            grid,
+            mode=interp_mode,
+            padding_mode=padding_mode,
+            align_corners=align_corners,
         )  # (N, C, 1, V)
         feat_sampled = feat_sampled.squeeze(dim=2).transpose(1, 2)  # (N, V, C)
         feats_sampled.append(feat_sampled)
