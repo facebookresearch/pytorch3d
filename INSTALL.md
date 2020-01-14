@@ -53,7 +53,7 @@ conda install pytorch3d
 
 ### 2. Install from GitHub
 ```
-pip install 'git+https://github.com/facebookresearch/detectron2.git'
+pip install 'git+https://github.com/facebookresearch/pytorch3d.git'
 # (add --user if you don't have permission)
 ```
 

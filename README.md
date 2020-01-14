@@ -1,4 +1,4 @@
-# PyTorch3d
+<img src=".github/pytorch3dlogo.png" width="300">
 
 PyTorch3d provides reusable components for use in 3D Computer Vision research.
 This library is based on Python 3+ and [PyTorch](https://pytorch.org) with components
@@ -10,7 +10,7 @@ See [INSTALL.md](INSTALL.md).
 
 ## License
 
-PyTorch3d is released under the [Creative Commons license](LICENSE).
+PyTorch3d is released under the [BSD-3-Clause License](LICENSE).
 
 ## Development
 
