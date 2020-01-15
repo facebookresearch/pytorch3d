@@ -1,4 +1,4 @@
-<img src=".github/pytorch3dlogo.png" width="300">
+<img src=".github/pytorch3dlogo.png" width="900">
 
 PyTorch3d provides reusable components for use in 3D Computer Vision research.
 This library is based on Python 3+ and [PyTorch](https://pytorch.org) with components
