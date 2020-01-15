@@ -423,10 +423,22 @@ class Meshes(object):
         else:
             raise ValueError("(verts, faces) not defined correctly")
 
-    def isempty(self):
+    def isempty(self) -> bool:
+        """
+        Checks whether any mesh is valid.
+
+        Returns:
+            bool indicating whether there is any data.
+        """
         return self._N == 0 or self.valid.eq(False).all()
 
     def verts_list(self):
+        """
+        Get the list representation of the vertices.
+
+        Returns:
+            list of tensors of vertices of shape (V_n, 3).
+        """
         if self._verts_list is None:
             assert (
                 self._verts_padded is not None
@@ -437,6 +449,12 @@ class Meshes(object):
         return self._verts_list
 
     def faces_list(self):
+        """
+        Get the list representation of the faces.
+
+        Returns:
+            list of tensors of faces of shape (F_n, 3).
+        """
         if self._faces_list is None:
             assert (
                 self._faces_padded is not None
@@ -448,62 +466,174 @@ class Meshes(object):
         return self._faces_list
 
     def verts_packed(self):
+        """
+        Get the packed representation of the vertices.
+
+        Returns:
+            tensor of vertices of shape (sum(V_n), 3).
+        """
         self._compute_packed()
         return self._verts_packed
 
     def verts_packed_to_mesh_idx(self):
+        """
+        Return a 1D tensor with the same first dimension as verts_packed.
+        verts_packed_to_mesh_idx[i] gives the index of the mesh which contains
+        verts_packed[i].
+
+        Returns:
+            1D tensor of indices.
+        """
         self._compute_packed()
         return self._verts_packed_to_mesh_idx
 
     def mesh_to_verts_packed_first_idx(self):
+        """
+        Return a 1D tensor x with length equal to the number of meshes such that
+        the first vertex of the ith mesh is verts_packed[x[i]].
+
+        Returns:
+            1D tensor of indices of first items.
+        """
         self._compute_packed()
         return self._mesh_to_verts_packed_first_idx
 
     def num_verts_per_mesh(self):
+        """
+        Return a 1D tensor x with length equal to the number of meshes giving
+        the number of vertices in each mesh.
+
+        Returns:
+            1D tensor of sizes.
+        """
         self._compute_packed()
         return self._num_verts_per_mesh
 
     def faces_packed(self):
+        """
+        Get the packed representation of the faces.
+        Faces are given by the indices of the three vertices in verts_packed.
+
+        Returns:
+            tensor of faces of shape (sum(F_n), 3).
+        """
         self._compute_packed()
         return self._faces_packed
 
     def faces_packed_to_mesh_idx(self):
+        """
+        Return a 1D tensor with the same first dimension as faces_packed.
+        faces_packed_to_mesh_idx[i] gives the index of the mesh which contains
+        faces_packed[i].
+
+        Returns:
+            1D tensor of indices.
+        """
         self._compute_packed()
         return self._faces_packed_to_mesh_idx
 
     def mesh_to_faces_packed_first_idx(self):
+        """
+        Return a 1D tensor x with length equal to the number of meshes such that
+        the first face of the ith mesh is faces_packed[x[i]].
+
+        Returns:
+            1D tensor of indices of first items.
+        """
         self._compute_packed()
         return self._mesh_to_faces_packed_first_idx
 
     def verts_padded(self):
+        """
+        Get the padded representation of the vertices.
+
+        Returns:
+            tensor of vertices of shape (N, max(V_n), 3).
+        """
         self._compute_padded()
         return self._verts_padded
 
     def faces_padded(self):
+        """
+        Get the padded representation of the faces.
+
+        Returns:
+            tensor of faces of shape (N, max(F_n), 3).
+        """
         self._compute_padded()
         return self._faces_padded
 
     def num_faces_per_mesh(self):
+        """
+        Return a 1D tensor x with length equal to the number of meshes giving
+        the number of faces in each mesh.
+
+        Returns:
+            1D tensor of sizes.
+        """
         self._compute_packed()
         return self._num_faces_per_mesh
 
     def edges_packed(self):
+        """
+        Get the packed representation of the edges.
+
+        Returns:
+            tensor of edges of shape (sum(E_n), 2).
+        """
         self._compute_edges_packed()
         return self._edges_packed
 
     def edges_packed_to_mesh_idx(self):
+        """
+        Return a 1D tensor with the same first dimension as edges_packed.
+        edges_packed_to_mesh_idx[i] gives the index of the mesh which contains
+        edges_packed[i].
+
+        Returns:
+            1D tensor of indices.
+        """
         self._compute_edges_packed()
         return self._edges_packed_to_mesh_idx
 
     def faces_packed_to_edges_packed(self):
+        """
+        Get the packed representation of the faces in terms of edges.
+        Faces are given by the indices of the three edges in
+        the packed representation of the edges.
+
+        Returns:
+            tensor of faces of shape (sum(F_n), 3).
+        """
         self._compute_edges_packed()
         return self._faces_packed_to_edges_packed
 
     def num_edges_per_mesh(self):
+        """
+        Return a 1D tensor x with length equal to the number of meshes giving
+        the number of edges in each mesh.
+
+        Returns:
+            1D tensor of sizes.
+        """
         self._compute_edges_packed()
         return self._num_edges_per_mesh
 
     def verts_padded_to_packed_idx(self):
+        """
+        Return a 1D tensor x with length equal to the total number of vertices
+        such that verts_packed()[i] is element x[i] of the flattened padded
+        representation.
+        The packed representation can be calculated as follows.
+
+        .. code-block:: python
+
+            p = verts_padded().reshape(-1, 3)
+            verts_packed = p[x]
+
+        Returns:
+            1D tensor of indices.
+        """
         self._compute_packed()
         if self._verts_padded_to_packed_idx is not None:
             return self._verts_padded_to_packed_idx
@@ -519,10 +649,22 @@ class Meshes(object):
         return self._verts_padded_to_packed_idx
 
     def verts_normals_packed(self):
+        """
+        Get the packed representation of the vertex normals.
+
+        Returns:
+            tensor of normals of shape (sum(V_n), 3).
+        """
         self._compute_vertex_normals()
         return self._verts_normals_packed
 
     def verts_normals_list(self):
+        """
+        Get the list representation of the vertex normals.
+
+        Returns:
+            list of tensors of normals of shape (V_n, 3).
+        """
         if self.isempty():
             return [
                 torch.empty((0, 3), dtype=torch.float32, device=self.device)
@@ -532,6 +674,12 @@ class Meshes(object):
         return struct_utils.packed_to_list(verts_normals_packed, split_size)
 
     def verts_normals_padded(self):
+        """
+        Get the padded representation of the vertex normals.
+
+        Returns:
+            tensor of normals of shape (N, max(V_n), 3).
+        """
         if self.isempty():
             return torch.zeros(
                 (self._N, 0, 3), dtype=torch.float32, device=self.device
@@ -545,10 +693,22 @@ class Meshes(object):
         )
 
     def faces_normals_packed(self):
+        """
+        Get the packed representation of the face normals.
+
+        Returns:
+            tensor of normals of shape (sum(F_n), 3).
+        """
         self._compute_face_areas_normals()
         return self._faces_normals_packed
 
     def faces_normals_list(self):
+        """
+        Get the list representation of the face normals.
+
+        Returns:
+            list of tensors of normals of shape (F_n, 3).
+        """
         if self.isempty():
             return [
                 torch.empty((0, 3), dtype=torch.float32, device=self.device)
@@ -558,6 +718,12 @@ class Meshes(object):
         return struct_utils.packed_to_list(faces_normals_packed, split_size)
 
     def faces_normals_padded(self):
+        """
+        Get the padded representation of the face normals.
+
+        Returns:
+            tensor of normals of shape (N, max(F_n), 3).
+        """
         if self.isempty():
             return torch.zeros(
                 (self._N, 0, 3), dtype=torch.float32, device=self.device
@@ -571,6 +737,12 @@ class Meshes(object):
         )
 
     def faces_areas_packed(self):
+        """
+        Get the packed representation of the face areas.
+
+        Returns:
+            tensor of areas of shape (sum(F_n),).
+        """
         self._compute_face_areas_normals()
         return self._faces_areas_packed
 
