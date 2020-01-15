@@ -8,9 +8,8 @@ Sanity checks for output images from the renderer.
 import numpy as np
 import unittest
 from pathlib import Path
-import matplotlib.pyplot as plt
 import torch
-from skimage.io import imread
+from PIL import Image
 
 from pytorch3d.io import load_obj
 from pytorch3d.renderer.cameras import (
@@ -43,7 +42,8 @@ DATA_DIR = Path(__file__).resolve().parent / "data"
 
 def load_rgb_image(filename, data_dir=DATA_DIR):
     filepath = data_dir / filename
-    image = torch.from_numpy(imread(filepath) / 255.0)
+    with Image.open(filepath) as raw_image:
+        image = torch.from_numpy(np.array(raw_image) / 255.0)
     image = image.to(dtype=torch.float32)
     return image[..., :3]
 
@@ -90,7 +90,9 @@ class TestRenderingMeshes(unittest.TestCase):
         images = renderer(sphere_mesh)
         rgb = images[0, ..., :3].squeeze().cpu()
         if DEBUG:
-            plt.imsave("DEBUG_simple_sphere_light.png", rgb.numpy())
+            Image.fromarray((rgb.numpy() * 255).astype(np.uint8)).save(
+                DATA_DIR / "DEBUG_simple_sphere_light.png"
+            )
 
         # Load reference image
         image_ref_phong = load_rgb_image("test_simple_sphere_illuminated.png")
@@ -105,7 +107,9 @@ class TestRenderingMeshes(unittest.TestCase):
         images = renderer(sphere_mesh, lights=lights)
         rgb = images[0, ..., :3].squeeze().cpu()
         if DEBUG:
-            plt.imsave("DEBUG_simple_sphere_dark.png", rgb.numpy())
+            Image.fromarray((rgb.numpy() * 255).astype(np.uint8)).save(
+                DATA_DIR / "DEBUG_simple_sphere_dark.png"
+            )
         self.assertTrue(torch.allclose(rgb, image_ref_phong_dark, atol=0.05))
 
         ######################################
@@ -122,7 +126,10 @@ class TestRenderingMeshes(unittest.TestCase):
         images = renderer(sphere_mesh)
         rgb = images[0, ..., :3].squeeze().cpu()
         if DEBUG:
-            plt.imsave("DEBUG_simple_sphere_light_gourad.png", rgb.numpy())
+            Image.fromarray((rgb.numpy() * 255).astype(np.uint8)).save(
+                DATA_DIR / "DEBUG_simple_sphere_light_gourad.png"
+            )
+
         self.assertTrue(torch.allclose(rgb, image_ref_gourad, atol=0.005))
         self.assertFalse(torch.allclose(rgb, image_ref_phong, atol=0.005))
 
@@ -175,7 +182,9 @@ class TestRenderingMeshes(unittest.TestCase):
         for i in range(batch_size):
             rgb = images[i, ..., :3].squeeze().cpu()
             if DEBUG:
-                plt.imsave("DEBUG_simple_sphere_%d.png" % i, rgb.numpy())
+                Image.fromarray((rgb.numpy() * 255).astype(np.uint8)).save(
+                    DATA_DIR / f"DEBUG_simple_sphere_{i}.png"
+                )
             self.assertTrue(torch.allclose(rgb, image_ref, atol=0.05))
 
     def test_silhouette_with_grad(self):
@@ -211,15 +220,14 @@ class TestRenderingMeshes(unittest.TestCase):
         images = renderer(sphere_mesh)
         alpha = images[0, ..., 3].squeeze().cpu()
         if DEBUG:
-            plt.imsave("DEBUG_silhouette_grad.png", alpha.numpy())
+            Image.fromarray((alpha.numpy() * 255).astype(np.uint8)).save(
+                DATA_DIR / "DEBUG_silhouette_grad.png"
+            )
 
-        # Rescale image_ref to the 0-1 range
-        image_ref = torch.from_numpy(imread(image_ref_filename, as_grey=True))
-        min = image_ref.min()
-        max = image_ref.max()
-        image_ref_norm = (image_ref - min) / (max - min)
-        image_ref_norm = image_ref_norm.to(dtype=torch.float32)
-        self.assertTrue(torch.allclose(alpha, image_ref_norm, atol=0.055))
+        with Image.open(image_ref_filename) as raw_image_ref:
+            image_ref = torch.from_numpy(np.array(raw_image_ref))
+        image_ref = image_ref.to(dtype=torch.float32) / 255.0
+        self.assertTrue(torch.allclose(alpha, image_ref, atol=0.055))
 
         # Check grad exist
         verts.requires_grad = True
@@ -283,7 +291,9 @@ class TestRenderingMeshes(unittest.TestCase):
         image_ref = load_rgb_image("test_texture_map.png")
 
         if DEBUG:
-            plt.imsave("DEBUG_texture_map.png", rgb.numpy())
+            Image.fromarray((rgb.numpy() * 255).astype(np.uint8)).save(
+                DATA_DIR / "DEBUG_texture_map.png"
+            )
 
         self.assertTrue(torch.allclose(rgb, image_ref, atol=0.05))
 

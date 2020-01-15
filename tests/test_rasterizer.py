@@ -2,11 +2,11 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
 
+import numpy as np
 import unittest
 from pathlib import Path
-import matplotlib.pyplot as plt
 import torch
-from skimage.io import imread
+from PIL import Image
 
 from pytorch3d.renderer.cameras import (
     OpenGLPerspectiveCameras,
@@ -23,7 +23,8 @@ DEBUG = False  # Set DEBUG to true to save outputs from the tests.
 
 
 def convert_image_to_binary_mask(filename):
-    image = torch.from_numpy(imread(filename, as_grey=True))
+    with Image.open(filename) as raw_image:
+        image = torch.from_numpy(np.array(raw_image))
     min = image.min()
     max = image.max()
     image_norm = (image - min) / (max - min)
@@ -67,7 +68,10 @@ class TestMeshRasterizer(unittest.TestCase):
         image[image < 0] = 0.0
 
         if DEBUG:
-            plt.imsave("DEBUG_simple_sphere_rasterized.png", image.numpy())
+            Image.fromarray((image.numpy() * 255).astype(np.uint8)).save(
+                DATA_DIR / "DEBUG_test_rasterized_sphere.png"
+            )
+
         self.assertTrue(torch.allclose(image, image_ref))
 
         ##################################
@@ -99,5 +103,7 @@ class TestMeshRasterizer(unittest.TestCase):
         image_ref = convert_image_to_binary_mask(image_ref_filename)
 
         if DEBUG:
-            plt.imsave("DEBUG_simple_sphere_rasterized_zoom.png", image.numpy())
+            Image.fromarray((image.numpy() * 255).astype(np.uint8)).save(
+                DATA_DIR / "DEBUG_test_rasterized_sphere_zoom.png"
+            )
         self.assertTrue(torch.allclose(image, image_ref))
