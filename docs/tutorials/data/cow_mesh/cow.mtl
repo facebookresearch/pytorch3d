@@ -1,5 +1,5 @@
 newmtl material_1
-map_Kd spot_texture.png
+map_Kd cow_texture.png
 
 # Test colors
 

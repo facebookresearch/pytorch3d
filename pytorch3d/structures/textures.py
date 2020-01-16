@@ -195,9 +195,7 @@ class Textures(object):
             new_faces_uvs = _extend_tensor(self._faces_uvs_padded, N)
             new_maps = _extend_tensor(self._maps_padded, N)
             return Textures(
-                verts_uvs=new_verts_uvs,
-                faces_uvs=new_faces_uvs,
-                maps=new_maps,
+                verts_uvs=new_verts_uvs, faces_uvs=new_faces_uvs, maps=new_maps
             )
         elif self._verts_rgb_padded is not None:
             new_verts_rgb = _extend_tensor(self._verts_rgb_padded, N)

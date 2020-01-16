@@ -241,7 +241,10 @@ class TestRenderingMeshes(unittest.TestCase):
         Test a mesh with a texture map is loaded and rendered correctly
         """
         device = torch.device("cuda:0")
-        obj_filename = DATA_DIR / "textured_obj/spot_triangulated.obj"
+        DATA_DIR = (
+            Path(__file__).resolve().parent.parent / "docs/tutorials/data"
+        )
+        obj_filename = DATA_DIR / "cow_mesh/cow.obj"
 
         # Load mesh + texture
         verts, faces, aux = load_obj(obj_filename)

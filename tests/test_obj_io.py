@@ -353,8 +353,10 @@ class TestMeshObjIO(unittest.TestCase):
         self.assertEqual(actual_file, expected_file)
 
     def test_load_mtl(self):
-        DATA_DIR = Path(__file__).resolve().parent / "data"
-        obj_filename = "textured_obj/spot_triangulated.obj"
+        DATA_DIR = (
+            Path(__file__).resolve().parent.parent / "docs/tutorials/data"
+        )
+        obj_filename = "cow_mesh/cow.obj"
         filename = os.path.join(DATA_DIR, obj_filename)
         verts, faces, aux = load_obj(filename)
         materials = aux.material_colors
