@@ -361,14 +361,16 @@ def _load(f_obj, data_dir):
         )
 
     # Load materials
+    material_colors, texture_images = None, None
     if (len(material_names) > 0) and (f_mtl is not None):
-        material_colors, texture_images = load_mtl(
-            f_mtl, material_names, data_dir
-        )
-    else:
-        if f_mtl is None:
-            warnings.warn("No mtl file found")
-        material_colors, texture_images = None, None
+        if os.path.isfile(f_mtl):
+            material_colors, texture_images = load_mtl(
+                f_mtl, material_names, data_dir
+            )
+        else:
+            warnings.warn(f"Mtl file does not exist: {f_mtl}")
+    elif len(material_names) > 0:
+        warnings.warn("No mtl file provided")
 
     faces = _Faces(
         verts_idx=faces_verts_idx,
@@ -461,9 +463,13 @@ def load_mtl(f_mtl, material_names: List, data_dir: str):
             # Load the texture image.
             filename = texture_files[name]
             filename_texture = os.path.join(data_dir, filename)
-            image = _read_image(filename_texture, format="RGB") / 255.0
-            image = torch.from_numpy(image)
-            texture_images[name] = image
+            if os.path.isfile(filename_texture):
+                image = _read_image(filename_texture, format="RGB") / 255.0
+                image = torch.from_numpy(image)
+                texture_images[name] = image
+            else:
+                msg = f"Texture file does not exist: {filename_texture}"
+                warnings.warn(msg)
 
         if name in material_colors:
             material_properties[name] = material_colors[name]

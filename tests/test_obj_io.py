@@ -404,7 +404,7 @@ class TestMeshObjIO(unittest.TestCase):
             ]
         )
         obj_file = StringIO(obj_file)
-        with self.assertWarnsRegex(Warning, "No mtl file found"):
+        with self.assertWarnsRegex(Warning, "No mtl file provided"):
             verts, faces, aux = load_obj(obj_file)
 
         expected_verts = torch.tensor(
@@ -423,6 +423,46 @@ class TestMeshObjIO(unittest.TestCase):
         self.assertTrue(aux.texture_images is None)
         self.assertTrue(aux.normals is None)
         self.assertTrue(aux.verts_uvs is None)
+
+    def test_load_obj_missing_texture(self):
+        DATA_DIR = Path(__file__).resolve().parent / "data"
+        obj_filename = "missing_files_obj/model.obj"
+        filename = os.path.join(DATA_DIR, obj_filename)
+        with self.assertWarnsRegex(Warning, "Texture file does not exist"):
+            verts, faces, aux = load_obj(filename)
+
+        expected_verts = torch.tensor(
+            [
+                [0.1, 0.2, 0.3],
+                [0.2, 0.3, 0.4],
+                [0.3, 0.4, 0.5],
+                [0.4, 0.5, 0.6],
+            ],
+            dtype=torch.float32,
+        )
+        expected_faces = torch.tensor([[0, 1, 2], [0, 1, 3]], dtype=torch.int64)
+        self.assertTrue(torch.allclose(verts, expected_verts))
+        self.assertTrue(torch.allclose(faces.verts_idx, expected_faces))
+
+    def test_load_obj_missing_mtl(self):
+        DATA_DIR = Path(__file__).resolve().parent / "data"
+        obj_filename = "missing_files_obj/model2.obj"
+        filename = os.path.join(DATA_DIR, obj_filename)
+        with self.assertWarnsRegex(Warning, "Mtl file does not exist"):
+            verts, faces, aux = load_obj(filename)
+
+        expected_verts = torch.tensor(
+            [
+                [0.1, 0.2, 0.3],
+                [0.2, 0.3, 0.4],
+                [0.3, 0.4, 0.5],
+                [0.4, 0.5, 0.6],
+            ],
+            dtype=torch.float32,
+        )
+        expected_faces = torch.tensor([[0, 1, 2], [0, 1, 3]], dtype=torch.int64)
+        self.assertTrue(torch.allclose(verts, expected_verts))
+        self.assertTrue(torch.allclose(faces.verts_idx, expected_faces))
 
     @staticmethod
     def save_obj_with_init(V: int, F: int):
