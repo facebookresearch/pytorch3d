@@ -4,7 +4,7 @@
 ### Install dependencies
 
 ```
-pip install -U recommonmark sphinx sphinx_rtd_theme
+pip install -U recommonmark mock sphinx sphinx_rtd_theme sphinx_markdown_tables
 ```
 
 
