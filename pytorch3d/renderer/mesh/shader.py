@@ -32,12 +32,18 @@ class PhongShader(nn.Module):
     and normals for each pixel.
     """
 
-    def __init__(self, cameras=None, lights=None, materials=None):
+    def __init__(self, device="cpu", cameras=None, lights=None, materials=None):
         super().__init__()
-        self.lights = lights if lights is not None else PointLights()
-        self.materials = materials if materials is not None else Materials()
+        self.lights = (
+            lights if lights is not None else PointLights(device=device)
+        )
+        self.materials = (
+            materials if materials is not None else Materials(device=device)
+        )
         self.cameras = (
-            cameras if cameras is not None else OpenGLPerspectiveCameras()
+            cameras
+            if cameras is not None
+            else OpenGLPerspectiveCameras(device=device)
         )
 
     def forward(self, fragments, meshes, **kwargs) -> torch.Tensor:
@@ -63,12 +69,18 @@ class GouradShader(nn.Module):
     interpolate using the barycentric coordinates to get colors for each pixel.
     """
 
-    def __init__(self, cameras=None, lights=None, materials=None):
+    def __init__(self, device="cpu", cameras=None, lights=None, materials=None):
         super().__init__()
-        self.lights = lights if lights is not None else PointLights()
-        self.materials = materials if materials is not None else Materials()
+        self.lights = (
+            lights if lights is not None else PointLights(device=device)
+        )
+        self.materials = (
+            materials if materials is not None else Materials(device=device)
+        )
         self.cameras = (
-            cameras if cameras is not None else OpenGLPerspectiveCameras()
+            cameras
+            if cameras is not None
+            else OpenGLPerspectiveCameras(device=device)
         )
 
     def forward(self, fragments, meshes, **kwargs) -> torch.Tensor:
@@ -88,13 +100,24 @@ class GouradShader(nn.Module):
 
 class TexturedPhongShader(nn.Module):
     def __init__(
-        self, cameras=None, lights=None, materials=None, blend_params=None
+        self,
+        device="cpu",
+        cameras=None,
+        lights=None,
+        materials=None,
+        blend_params=None,
     ):
         super().__init__()
-        self.lights = lights if lights is not None else PointLights()
-        self.materials = materials if materials is not None else Materials()
+        self.lights = (
+            lights if lights is not None else PointLights(device=device)
+        )
+        self.materials = (
+            materials if materials is not None else Materials(device=device)
+        )
         self.cameras = (
-            cameras if cameras is not None else OpenGLPerspectiveCameras()
+            cameras
+            if cameras is not None
+            else OpenGLPerspectiveCameras(device=device)
         )
         self.blend_params = (
             blend_params if blend_params is not None else BlendParams()
@@ -119,13 +142,24 @@ class TexturedPhongShader(nn.Module):
 
 class SilhouetteShader(nn.Module):
     def __init__(
-        self, cameras=None, lights=None, materials=None, blend_params=None
+        self,
+        device="cpu",
+        cameras=None,
+        lights=None,
+        materials=None,
+        blend_params=None,
     ):
         super().__init__()
-        self.lights = lights if lights is not None else PointLights()
-        self.materials = materials if materials is not None else Materials()
+        self.lights = (
+            lights if lights is not None else PointLights(device=device)
+        )
+        self.materials = (
+            materials if materials is not None else Materials(device=device)
+        )
         self.cameras = (
-            cameras if cameras is not None else OpenGLPerspectiveCameras()
+            cameras
+            if cameras is not None
+            else OpenGLPerspectiveCameras(device=device)
         )
         self.blend_params = (
             blend_params if blend_params is None else BlendParams()

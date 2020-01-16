@@ -16,6 +16,7 @@ from pytorch3d.renderer.mesh.texturing import (
 from pytorch3d.structures import Meshes, Textures
 
 from common_testing import TestCaseMixin
+from test_meshes import TestMeshes
 
 
 class TestTexturing(TestCaseMixin, unittest.TestCase):
@@ -175,6 +176,50 @@ class TestTexturing(TestCaseMixin, unittest.TestCase):
         self.assertTrue(tex._faces_uvs_padded.device == device)
         self.assertTrue(tex._verts_uvs_padded.device == device)
         self.assertTrue(tex._maps_padded.device == device)
+
+    def test_extend(self):
+        B = 10
+        mesh = TestMeshes.init_mesh(B, 30, 50)
+        V = mesh._V
+        F = mesh._F
+        tex = Textures(
+            maps=torch.randn((B, 16, 16, 3)),
+            faces_uvs=torch.randint(size=(B, F, 3), low=0, high=V),
+            verts_uvs=torch.randn((B, V, 2)),
+        )
+        tex_mesh = Meshes(
+            verts=mesh.verts_padded(), faces=mesh.faces_padded(), textures=tex
+        )
+        N = 20
+        new_mesh = tex_mesh.extend(N)
+
+        self.assertEqual(len(tex_mesh) * N, len(new_mesh))
+
+        tex_init = tex_mesh.textures
+        new_tex = new_mesh.textures
+
+        for i in range(len(tex_mesh)):
+            for n in range(N):
+                self.assertClose(
+                    tex_init.faces_uvs_list()[i],
+                    new_tex.faces_uvs_list()[i * N + n],
+                )
+                self.assertClose(
+                    tex_init.verts_uvs_list()[i],
+                    new_tex.verts_uvs_list()[i * N + n],
+                )
+        self.assertAllSeparate(
+            [
+                tex_init.faces_uvs_padded(),
+                new_tex.faces_uvs_padded(),
+                tex_init.verts_uvs_padded(),
+                new_tex.verts_uvs_padded(),
+                tex_init.maps_padded(),
+                new_tex.maps_padded(),
+            ]
+        )
+        with self.assertRaises(ValueError):
+            tex_mesh.extend(N=-1)
 
     def test_clip_barycentric_coords(self):
         barycentric_coords = torch.tensor(

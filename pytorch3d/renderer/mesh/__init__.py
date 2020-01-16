@@ -1,8 +1,7 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
-
 from .rasterize_meshes import rasterize_meshes
-from .rasterizer import MeshRasterizer
+from .rasterizer import MeshRasterizer, RasterizationSettings
 from .renderer import MeshRenderer
 from .shader import (
     GouradShader,

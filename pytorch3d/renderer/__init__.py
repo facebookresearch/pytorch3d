@@ -1,6 +1,11 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
-from .blending import hard_rgb_blend, sigmoid_alpha_blend, softmax_rgb_blend
+from .blending import (
+    BlendParams,
+    hard_rgb_blend,
+    sigmoid_alpha_blend,
+    softmax_rgb_blend,
+)
 from .cameras import (
     OpenGLOrthographicCameras,
     OpenGLPerspectiveCameras,
@@ -16,6 +21,7 @@ from .mesh import (
     MeshRasterizer,
     MeshRenderer,
     PhongShader,
+    RasterizationSettings,
     SilhouetteShader,
     TexturedPhongShader,
     gourad_shading,

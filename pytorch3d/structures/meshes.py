@@ -1361,4 +1361,7 @@ class Meshes(object):
             new_verts_list.extend(verts.clone() for _ in range(N))
             new_faces_list.extend(faces.clone() for _ in range(N))
 
-        return Meshes(verts=new_verts_list, faces=new_faces_list)
+        tex = None
+        if self.textures is not None:
+            tex = self.textures.extend(N)
+        return Meshes(verts=new_verts_list, faces=new_faces_list, textures=tex)

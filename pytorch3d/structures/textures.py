@@ -48,6 +48,36 @@ def _pad_texture_maps(images: List[torch.Tensor]) -> torch.Tensor:
     return tex_maps
 
 
+def _extend_tensor(input_tensor: torch.Tensor, N: int) -> torch.Tensor:
+    """
+    Extend a tensor `input_tensor` with ndim > 2, `N` times along the batch
+    dimension. This is done in the following sequence of steps (where `B` is
+    the batch dimension):
+
+    .. code-block:: python
+
+        input_tensor (B, ...)
+        -> add leading empty dimension (1, B, ...)
+        -> expand (N, B, ...)
+        -> reshape (N * B, ...)
+
+    Args:
+        input_tensor: torch.Tensor with ndim > 2 representing a batched input.
+        N: number of times to extend each element of the batch.
+    """
+    if input_tensor.ndim < 2:
+        raise ValueError("Input tensor must have ndimensions >= 2.")
+    B = input_tensor.shape[0]
+    non_batch_dims = tuple(input_tensor.shape[1:])
+    constant_dims = (-1,) * input_tensor.ndim  # these dims are not expanded.
+    return (
+        input_tensor.clone()[None, ...]
+        .expand(N, *constant_dims)
+        .transpose(0, 1)
+        .reshape(N * B, *non_batch_dims)
+    )
+
+
 class Textures(object):
     def __init__(
         self,
@@ -137,3 +167,41 @@ class Textures(object):
     # Currently only the padded maps are used.
     def maps_padded(self) -> torch.Tensor:
         return self._maps_padded
+
+    def extend(self, N: int) -> "Textures":
+        """
+        Create new Textures class which contains each input texture N times
+
+        Args:
+            N: number of new copies of each texture.
+
+        Returns:
+            new Textures object.
+        """
+        if not isinstance(N, int):
+            raise ValueError("N must be an integer.")
+        if N <= 0:
+            raise ValueError("N must be > 0.")
+
+        if all(
+            v is not None
+            for v in [
+                self._faces_uvs_padded,
+                self._verts_uvs_padded,
+                self._maps_padded,
+            ]
+        ):
+            new_verts_uvs = _extend_tensor(self._verts_uvs_padded, N)
+            new_faces_uvs = _extend_tensor(self._faces_uvs_padded, N)
+            new_maps = _extend_tensor(self._maps_padded, N)
+            return Textures(
+                verts_uvs=new_verts_uvs,
+                faces_uvs=new_faces_uvs,
+                maps=new_maps,
+            )
+        elif self._verts_rgb_padded is not None:
+            new_verts_rgb = _extend_tensor(self._verts_rgb_padded, N)
+            return Textures(verts_rgb=new_verts_rgb)
+        else:
+            msg = "Either vertex colors or texture maps are required."
+            raise ValueError(msg)
