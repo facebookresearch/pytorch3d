@@ -161,6 +161,51 @@ class OpenGLPerspectiveCameras(TensorProperties):
         other = OpenGLPerspectiveCameras(device=self.device)
         return super().clone(other)
 
+    def get_camera_center(self, **kwargs):
+        """
+        Return the 3D location of the camera optical center
+        in the world coordinates.
+
+        Args:
+            **kwargs: parameters for the camera extrinsics can be passed in
+                as keyword arguments to override the default values
+                set in __init__.
+
+        Setting T here will update the values set in init as this
+        value may be needed later on in the rendering pipeline e.g. for
+        lighting calculations.
+
+        Returns:
+            C: a batch of 3D locations of shape (N, 3) denoting
+            the locations of the center of each camera in the batch.
+        """
+        self.T = kwargs.get("T", self.T)  # pyre-ignore[16]
+        return -self.T
+
+    def get_world_to_view_transform(self, **kwargs) -> Transform3d:
+        """
+        Return the world-to-view transform.
+
+        Args:
+            **kwargs: parameters for the camera extrinsics can be passed in
+                as keyword arguments to override the default values
+                set in __init__.
+
+        Setting R and T here will update the values set in init as these
+        values may be needed later on in the rendering pipeline e.g. for
+        lighting calculations.
+
+        Returns:
+            T: a Transform3d object which represents a batch of transforms
+            of shape (N, 3, 3)
+        """
+        self.R = kwargs.get("R", self.R)  # pyre-ignore[16]
+        self.T = kwargs.get("T", self.T)  # pyre-ignore[16]
+        world_to_view_transform = get_world_to_view_transform(
+            R=self.R, T=self.T
+        )
+        return world_to_view_transform
+
     def get_full_projection_transform(self, **kwargs) -> Transform3d:
         """
         Return the full world-to-screen transform composing the
@@ -320,6 +365,52 @@ class OpenGLOrthographicCameras(TensorProperties):
         other = OpenGLOrthographicCameras(device=self.device)
         return super().clone(other)
 
+    def get_camera_center(self, **kwargs):
+        """
+        Return the 3D location of the camera optical center
+        in the world coordinates.
+
+        Args:
+            **kwargs: parameters for the camera extrinsics can be passed in
+                as keyword arguments to override the default values
+                set in __init__.
+
+        Setting T here will update the values set in init as this
+        value may be needed later on in the rendering pipeline e.g. for
+        lighting calculations.
+
+
+        Returns:
+            C: a batch of 3D locations of shape (N, 3) denoting
+            the locations of the center of each camera in the batch.
+        """
+        self.T = kwargs.get("T", self.T)  # pyre-ignore[16]
+        return -self.T
+
+    def get_world_to_view_transform(self, **kwargs) -> Transform3d:
+        """
+        Return the world-to-view transform.
+
+        Args:
+            **kwargs: parameters for the camera extrinsics can be passed in
+                as keyword arguments to override the default values
+                set in __init__.
+
+        Setting R and T here will update the values set in init as these
+        values may be needed later on in the rendering pipeline e.g. for
+        lighting calculations.
+
+        Returns:
+            T: a Transform3d object which represents a batch of transforms
+            of shape (N, 3, 3)
+        """
+        self.R = kwargs.get("R", self.R)  # pyre-ignore[16]
+        self.T = kwargs.get("T", self.T)  # pyre-ignore[16]
+        world_to_view_transform = get_world_to_view_transform(
+            R=self.R, T=self.T
+        )
+        return world_to_view_transform
+
     def get_full_projection_transform(self, **kwargs) -> Transform3d:
         """
         Return the full world-to-screen transform composing the
@@ -444,6 +535,51 @@ class SfMPerspectiveCameras(TensorProperties):
         other = SfMPerspectiveCameras(device=self.device)
         return super().clone(other)
 
+    def get_camera_center(self, **kwargs):
+        """
+        Return the 3D location of the camera optical center
+        in the world coordinates.
+
+        Args:
+            **kwargs: parameters for the camera extrinsics can be passed in
+                as keyword arguments to override the default values
+                set in __init__.
+
+        Setting T here will update the values set in init as this
+        value may be needed later on in the rendering pipeline e.g. for
+        lighting calculations.
+
+        Returns:
+            C: a batch of 3D locations of shape (N, 3) denoting
+            the locations of the center of each camera in the batch.
+        """
+        self.T = kwargs.get("T", self.T)  # pyre-ignore[16]
+        return -self.T
+
+    def get_world_to_view_transform(self, **kwargs) -> Transform3d:
+        """
+        Return the world-to-view transform.
+
+        Args:
+            **kwargs: parameters for the camera extrinsics can be passed in
+                as keyword arguments to override the default values
+                set in __init__.
+
+        Setting R and T here will update the values set in init as these
+        values may be needed later on in the rendering pipeline e.g. for
+        lighting calculations.
+
+        Returns:
+            T: a Transform3d object which represents a batch of transforms
+            of shape (N, 3, 3)
+        """
+        self.R = kwargs.get("R", self.R)  # pyre-ignore[16]
+        self.T = kwargs.get("T", self.T)  # pyre-ignore[16]
+        world_to_view_transform = get_world_to_view_transform(
+            R=self.R, T=self.T
+        )
+        return world_to_view_transform
+
     def get_full_projection_transform(self, **kwargs) -> Transform3d:
         """
         Return the full world-to-screen transform composing the
@@ -563,6 +699,51 @@ class SfMOrthographicCameras(TensorProperties):
     def clone(self):
         other = SfMOrthographicCameras(device=self.device)
         return super().clone(other)
+
+    def get_camera_center(self, **kwargs):
+        """
+        Return the 3D location of the camera optical center
+        in the world coordinates.
+
+        Args:
+            **kwargs: parameters for the camera extrinsics can be passed in
+                as keyword arguments to override the default values
+                set in __init__.
+
+        Setting T here will update the values set in init as this
+        value may be needed later on in the rendering pipeline e.g. for
+        lighting calculations.
+
+        Returns:
+            C: a batch of 3D locations of shape (N, 3) denoting
+            the locations of the center of each camera in the batch.
+        """
+        self.T = kwargs.get("T", self.T)  # pyre-ignore[16]
+        return -self.T
+
+    def get_world_to_view_transform(self, **kwargs) -> Transform3d:
+        """
+        Return the world-to-view transform.
+
+        Args:
+            **kwargs: parameters for the camera extrinsics can be passed in
+                as keyword arguments to override the default values
+                set in __init__.
+
+        Setting R and T here will update the values set in init as these
+        values may be needed later on in the rendering pipeline e.g. for
+        lighting calculations.
+
+        Returns:
+            T: a Transform3d object which represents a batch of transforms
+            of shape (N, 3, 3)
+        """
+        self.R = kwargs.get("R", self.R)  # pyre-ignore[16]
+        self.T = kwargs.get("T", self.T)  # pyre-ignore[16]
+        world_to_view_transform = get_world_to_view_transform(
+            R=self.R, T=self.T
+        )
+        return world_to_view_transform
 
     def get_full_projection_transform(self, **kwargs) -> Transform3d:
         """

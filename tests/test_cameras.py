@@ -321,6 +321,38 @@ class TestCameraHelpers(unittest.TestCase):
         RT = get_world_to_view_transform(R=R, T=T)
         self.assertTrue(isinstance(RT, Transform3d))
 
+    def test_view_transform_class_method(self):
+        T = torch.tensor([0.0, 0.0, -1.0], requires_grad=True).view(1, -1)
+        R = look_at_rotation(T)
+        RT = get_world_to_view_transform(R=R, T=T)
+        for cam_type in (
+            OpenGLPerspectiveCameras,
+            # TODO: eenable once RT fixed in this camera class
+            # OpenGLOrthographicCameras,
+            SfMOrthographicCameras,
+            SfMPerspectiveCameras
+        ):
+            cam = cam_type(R=R, T=T)
+            RT_class = cam.get_world_to_view_transform()
+            self.assertTrue(
+                torch.allclose(RT.get_matrix(), RT_class.get_matrix())
+            )
+
+        self.assertTrue(isinstance(RT, Transform3d))
+
+    def test_get_camera_center(self):
+        T = torch.tensor([0.3, 2.0, -1.0], requires_grad=True).view(1, -1)
+        for cam_type in (
+            OpenGLPerspectiveCameras,
+            # TODO: eenable once RT fixed in this camera class
+            # OpenGLOrthographicCameras,
+            SfMOrthographicCameras,
+            SfMPerspectiveCameras,
+        ):
+            cam = cam_type(T=T)
+            C = cam.get_camera_center()
+            self.assertTrue(torch.allclose(C, -T))
+
 
 class TestPerspectiveProjection(TestCaseMixin, unittest.TestCase):
     def test_perspective(self):
