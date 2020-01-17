@@ -65,6 +65,5 @@ setup(
     packages=find_packages(exclude=("configs", "tests")),
     install_requires=["torchvision>=0.4", "fvcore"],
     ext_modules=get_extensions(),
-    test_suite="pytorch3d.tests",
     cmdclass={"build_ext": torch.utils.cpp_extension.BuildExtension},
 )
