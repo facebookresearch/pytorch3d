@@ -165,6 +165,18 @@ class TestSO3(unittest.TestCase):
         # TODO: fix this test??
         self.assertTrue(np.allclose(float(max_angle), 0.0, atol=0.1))
 
+    def test_so3_cos_angle(self, batch_size: int = 100):
+        """
+        Check that `so3_relative_angle(R1, R2, cos_angle=False).cos()`
+        is the same as `so3_relative_angle(R1, R2, cos_angle=True)`
+        batches of randomly generated rotation matrices `R1` and `R2`.
+        """
+        rot1 = TestSO3.init_rot(batch_size=batch_size)
+        rot2 = TestSO3.init_rot(batch_size=batch_size)
+        angles = so3_relative_angle(rot1, rot2, cos_angle=False).cos()
+        angles_ = so3_relative_angle(rot1, rot2, cos_angle=True)
+        self.assertTrue(torch.allclose(angles, angles_))
+
     @staticmethod
     def so3_expmap(batch_size: int = 10):
         log_rot = TestSO3.init_log_rot(batch_size=batch_size)

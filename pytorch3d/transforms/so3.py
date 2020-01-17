@@ -7,10 +7,10 @@ import torch
 HAT_INV_SKEW_SYMMETRIC_TOL = 1e-5
 
 
-def so3_relative_angle(R1, R2):
+def so3_relative_angle(R1, R2, cos_angle: bool = False):
     """
     Calculates the relative angle (in radians) between pairs of
-    rotation matrices `R1` and `R2` with `angle = 0.5 * acos(Trace(R1 R2^T)-1)`
+    rotation matrices `R1` and `R2` with `angle = acos(0.5 * Trace(R1 R2^T)-1)`
 
     .. note::
         This corresponds to a geodesic distance on the 3D manifold of rotation
@@ -19,22 +19,26 @@ def so3_relative_angle(R1, R2):
     Args:
         R1: Batch of rotation matrices of shape `(minibatch, 3, 3)`.
         R2: Batch of rotation matrices of shape `(minibatch, 3, 3)`.
+        cos_angle: If==True return cosine of the relative angle rather than
+                   the angle itself. This can avoid the unstable
+                   calculation of `acos`.
 
     Returns:
         Corresponding rotation angles of shape `(minibatch,)`.
+        If `cos_angle==True`, returns the cosine of the angles.
 
     Raises:
         ValueError if `R1` or `R2` is of incorrect shape.
         ValueError if `R1` or `R2` has an unexpected trace.
     """
     R12 = torch.bmm(R1, R2.permute(0, 2, 1))
-    return so3_rotation_angle(R12)
+    return so3_rotation_angle(R12, cos_angle=cos_angle)
 
 
-def so3_rotation_angle(R, eps: float = 1e-4):
+def so3_rotation_angle(R, eps: float = 1e-4, cos_angle: bool = False):
     """
     Calculates angles (in radians) of a batch of rotation matrices `R` with
-    `angle = 0.5 * acos(Trace(R)-1)`. The trace of the
+    `angle = acos(0.5 * (Trace(R)-1))`. The trace of the
     input matrices is checked to be in the valid range `[-1-eps,3+eps]`.
     The `eps` argument is a small constant that allows for small errors
     caused by limited machine precision.
@@ -42,9 +46,13 @@ def so3_rotation_angle(R, eps: float = 1e-4):
     Args:
         R: Batch of rotation matrices of shape `(minibatch, 3, 3)`.
         eps: Tolerance for the valid trace check.
+        cos_angle: If==True return cosine of the rotation angles rather than
+                   the angle itself. This can avoid the unstable
+                   calculation of `acos`.
 
     Returns:
         Corresponding rotation angles of shape `(minibatch,)`.
+        If `cos_angle==True`, returns the cosine of the angles.
 
     Raises:
         ValueError if `R` is of incorrect shape.
@@ -66,9 +74,12 @@ def so3_rotation_angle(R, eps: float = 1e-4):
     rot_trace = torch.clamp(rot_trace, -1.0, 3.0)
 
     # phi ... rotation angle
-    phi = (0.5 * (rot_trace - 1.0)).acos()
+    phi = 0.5 * (rot_trace - 1.0)
 
-    return phi
+    if cos_angle:
+        return phi
+    else:
+        return phi.acos()
 
 
 def so3_exponential_map(log_rot, eps: float = 0.0001):
