@@ -888,7 +888,7 @@ def get_world_to_view_transform(R=r, T=t) -> Transform3d:
     I.e., for camera extrinsic parameters R (rotation) and T (translation),
     we map a 3D point `X_world` in world coordinates to
     a point `X_cam` in camera coordinates with:
-    `X_world = X_cam R + T`
+    `X_cam = X_world R + T`
 
     Args:
         R: (N, 3, 3) matrix representing the rotation.
