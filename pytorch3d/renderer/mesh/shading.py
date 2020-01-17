@@ -27,7 +27,7 @@ def _apply_lighting(
     light_specular = lights.specular(
         normals=normals,
         points=points,
-        camera_position=-cameras.T,
+        camera_position=cameras.get_camera_center(),
         shininess=materials.shininess,
     )
     ambient_color = materials.ambient_color * lights.ambient_color

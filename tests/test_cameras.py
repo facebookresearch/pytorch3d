@@ -41,6 +41,7 @@ from pytorch3d.renderer.cameras import (
     look_at_rotation,
 )
 from pytorch3d.transforms import Transform3d
+from pytorch3d.transforms.so3 import so3_exponential_map
 
 from common_testing import TestCaseMixin
 
@@ -327,8 +328,7 @@ class TestCameraHelpers(unittest.TestCase):
         RT = get_world_to_view_transform(R=R, T=T)
         for cam_type in (
             OpenGLPerspectiveCameras,
-            # TODO: eenable once RT fixed in this camera class
-            # OpenGLOrthographicCameras,
+            OpenGLOrthographicCameras,
             SfMOrthographicCameras,
             SfMPerspectiveCameras
         ):
@@ -340,18 +340,19 @@ class TestCameraHelpers(unittest.TestCase):
 
         self.assertTrue(isinstance(RT, Transform3d))
 
-    def test_get_camera_center(self):
-        T = torch.tensor([0.3, 2.0, -1.0], requires_grad=True).view(1, -1)
+    def test_get_camera_center(self, batch_size=10):
+        T = torch.randn(batch_size, 3)
+        R = so3_exponential_map(torch.randn(batch_size, 3) * 3.)
         for cam_type in (
             OpenGLPerspectiveCameras,
-            # TODO: eenable once RT fixed in this camera class
-            # OpenGLOrthographicCameras,
+            OpenGLOrthographicCameras,
             SfMOrthographicCameras,
             SfMPerspectiveCameras,
         ):
-            cam = cam_type(T=T)
+            cam = cam_type(R=R, T=T)
             C = cam.get_camera_center()
-            self.assertTrue(torch.allclose(C, -T))
+            C_ = -torch.bmm(R, T[:, :, None])[:, :, 0]
+            self.assertTrue(torch.allclose(C, C_))
 
 
 class TestPerspectiveProjection(TestCaseMixin, unittest.TestCase):

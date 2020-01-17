@@ -179,8 +179,13 @@ class OpenGLPerspectiveCameras(TensorProperties):
             C: a batch of 3D locations of shape (N, 3) denoting
             the locations of the center of each camera in the batch.
         """
-        self.T = kwargs.get("T", self.T)  # pyre-ignore[16]
-        return -self.T
+        w2v_trans = self.get_world_to_view_transform(**kwargs)
+        P = w2v_trans.inverse().get_matrix()
+        # the camera center is the translation component (the first 3 elements
+        # of the last row) of the inverted world-to-view
+        # transform (4x4 RT matrix)
+        C = P[:, 3, :3]
+        return C
 
     def get_world_to_view_transform(self, **kwargs) -> Transform3d:
         """
@@ -226,7 +231,7 @@ class OpenGLPerspectiveCameras(TensorProperties):
         """
         self.R = kwargs.get("R", self.R)  # pyre-ignore[16]
         self.T = kwargs.get("T", self.T)  # pyre-ignore[16]
-        world_to_view_transform = get_world_to_view_transform(
+        world_to_view_transform = self.get_world_to_view_transform(
             R=self.R, T=self.T
         )
         view_to_screen_transform = self.get_projection_transform(**kwargs)
@@ -294,6 +299,8 @@ class OpenGLOrthographicCameras(TensorProperties):
             left=left,
             right=right,
             scale_xyz=scale_xyz,
+            R=R,
+            T=T,
         )
 
     def get_projection_transform(self, **kwargs) -> Transform3d:
@@ -384,8 +391,13 @@ class OpenGLOrthographicCameras(TensorProperties):
             C: a batch of 3D locations of shape (N, 3) denoting
             the locations of the center of each camera in the batch.
         """
-        self.T = kwargs.get("T", self.T)  # pyre-ignore[16]
-        return -self.T
+        w2v_trans = self.get_world_to_view_transform(**kwargs)
+        P = w2v_trans.inverse().get_matrix()
+        # the camera center is the translation component (the first 3 elements
+        # of the last row) of the inverted world-to-view
+        # transform (4x4 RT matrix)
+        C = P[:, 3, :3]
+        return C
 
     def get_world_to_view_transform(self, **kwargs) -> Transform3d:
         """
@@ -431,7 +443,7 @@ class OpenGLOrthographicCameras(TensorProperties):
         """
         self.R = kwargs.get("R", self.R)  # pyre-ignore[16]
         self.T = kwargs.get("T", self.T)  # pyre-ignore[16]
-        world_to_view_transform = get_world_to_view_transform(
+        world_to_view_transform = self.get_world_to_view_transform(
             R=self.R, T=self.T
         )
         view_to_screen_transform = self.get_projection_transform(**kwargs)
@@ -553,8 +565,13 @@ class SfMPerspectiveCameras(TensorProperties):
             C: a batch of 3D locations of shape (N, 3) denoting
             the locations of the center of each camera in the batch.
         """
-        self.T = kwargs.get("T", self.T)  # pyre-ignore[16]
-        return -self.T
+        w2v_trans = self.get_world_to_view_transform(**kwargs)
+        P = w2v_trans.inverse().get_matrix()
+        # the camera center is the translation component (the first 3 elements
+        # of the last row) of the inverted world-to-view
+        # transform (4x4 RT matrix)
+        C = P[:, 3, :3]
+        return C
 
     def get_world_to_view_transform(self, **kwargs) -> Transform3d:
         """
@@ -596,7 +613,7 @@ class SfMPerspectiveCameras(TensorProperties):
         """
         self.R = kwargs.get("R", self.R)  # pyre-ignore[16]
         self.T = kwargs.get("T", self.T)  # pyre-ignore[16]
-        world_to_view_transform = get_world_to_view_transform(
+        world_to_view_transform = self.get_world_to_view_transform(
             R=self.R, T=self.T
         )
         view_to_screen_transform = self.get_projection_transform(**kwargs)
@@ -718,8 +735,13 @@ class SfMOrthographicCameras(TensorProperties):
             C: a batch of 3D locations of shape (N, 3) denoting
             the locations of the center of each camera in the batch.
         """
-        self.T = kwargs.get("T", self.T)  # pyre-ignore[16]
-        return -self.T
+        w2v_trans = self.get_world_to_view_transform(**kwargs)
+        P = w2v_trans.inverse().get_matrix()
+        # the camera center is the translation component (the first 3 elements
+        # of the last row) of the inverted world-to-view
+        # transform (4x4 RT matrix)
+        C = P[:, 3, :3]
+        return C
 
     def get_world_to_view_transform(self, **kwargs) -> Transform3d:
         """
@@ -761,7 +783,7 @@ class SfMOrthographicCameras(TensorProperties):
         """
         self.R = kwargs.get("R", self.R)  # pyre-ignore[16]
         self.T = kwargs.get("T", self.T)  # pyre-ignore[16]
-        world_to_view_transform = get_world_to_view_transform(
+        world_to_view_transform = self.get_world_to_view_transform(
             R=self.R, T=self.T
         )
         view_to_screen_transform = self.get_projection_transform(**kwargs)
@@ -862,6 +884,12 @@ def get_world_to_view_transform(R=r, T=t) -> Transform3d:
     matrix to go from world space to view space by applying a rotation and
     a translation.
 
+    Pytorch3d uses the same convention as Hartley & Zisserman.
+    I.e., for camera extrinsic parameters R (rotation) and T (translation),
+    we map a 3D point `X_world` in world coordinates to
+    a point `X_cam` in camera coordinates with:
+    `X_world = X_cam R + T`
+
     Args:
         R: (N, 3, 3) matrix representing the rotation.
         T: (N, 3) matrix representing the translation.
@@ -886,7 +914,7 @@ def get_world_to_view_transform(R=r, T=t) -> Transform3d:
     # Create a Transform3d object
     T = Translate(T, device=T.device)
     R = Rotate(R, device=R.device)
-    return T.compose(R)
+    return R.compose(T)
 
 
 def camera_position_from_spherical_angles(
@@ -983,8 +1011,8 @@ def look_at_view_transform(
     device="cpu",
 ) -> Tuple[torch.Tensor, torch.Tensor]:
     """
-    This function returns a Transform3d object to apply the 'Look At'
-    transformation from world -> view coordinates [0].
+    This function returns a rotation and translation matrix
+    to apply the 'Look At' transformation from world -> view coordinates [0].
 
     Args:
         dist: distance of the camera from the object
@@ -1005,7 +1033,7 @@ def look_at_view_transform(
         2-element tuple containing
 
         - **R**: the rotation to apply to the points to align with the camera.
-        - **-T**: the translation to apply to the points to align with the camera.
+        - **T**: the translation to apply to the points to align with the camera.
 
     References:
     [0] https://www.scratchapixel.com
@@ -1014,6 +1042,7 @@ def look_at_view_transform(
         dist, elev, azim, at, up, device=device
     )
     dist, elev, azim, at, up = broadcasted_args
-    T = camera_position_from_spherical_angles(dist, elev, azim, device=device)
-    R = look_at_rotation(T, at, up, device=device)
-    return R, -T
+    C = camera_position_from_spherical_angles(dist, elev, azim, device=device)
+    R = look_at_rotation(C, at, up, device=device)
+    T = -torch.bmm(R.transpose(1, 2), C[:, :, None])[:, :, 0]
+    return R, T

@@ -49,10 +49,14 @@ def load_rgb_image(filename, data_dir=DATA_DIR):
 
 
 class TestRenderingMeshes(unittest.TestCase):
-    def test_simple_sphere(self):
+    def test_simple_sphere(self, elevated_camera=False):
         """
         Test output of phong and gourad shading matches a reference image using
         the default values for the light sources.
+
+        Args:
+            elevated_camera: Defines whether the camera observing the scene should
+                           have an elevation of 45 degrees.
         """
         device = torch.device("cuda:0")
 
@@ -66,7 +70,12 @@ class TestRenderingMeshes(unittest.TestCase):
         )
 
         # Init rasterizer settings
-        R, T = look_at_view_transform(2.7, 0, 0)
+        if elevated_camera:
+            R, T = look_at_view_transform(2.7, 45., 0.)
+            postfix = '_elevated_camera'
+        else:
+            R, T = look_at_view_transform(2.7, 0., 0.)
+            postfix = ''
         cameras = OpenGLPerspectiveCameras(device=device, R=R, T=T)
         raster_settings = RasterizationSettings(
             image_size=512, blur_radius=0.0, faces_per_pixel=1, bin_size=0
@@ -91,11 +100,12 @@ class TestRenderingMeshes(unittest.TestCase):
         rgb = images[0, ..., :3].squeeze().cpu()
         if DEBUG:
             Image.fromarray((rgb.numpy() * 255).astype(np.uint8)).save(
-                DATA_DIR / "DEBUG_simple_sphere_light.png"
+                DATA_DIR / "DEBUG_simple_sphere_light%s.png" % postfix
             )
 
         # Load reference image
-        image_ref_phong = load_rgb_image("test_simple_sphere_illuminated.png")
+        image_ref_phong = load_rgb_image(
+            "test_simple_sphere_illuminated%s.png" % postfix)
         self.assertTrue(torch.allclose(rgb, image_ref_phong, atol=0.05))
 
         ###################################
@@ -103,13 +113,16 @@ class TestRenderingMeshes(unittest.TestCase):
         ###################################
         # Check the image is dark
         lights.location[..., 2] = +2.0
-        image_ref_phong_dark = load_rgb_image("test_simple_sphere_dark.png")
         images = renderer(sphere_mesh, lights=lights)
         rgb = images[0, ..., :3].squeeze().cpu()
         if DEBUG:
             Image.fromarray((rgb.numpy() * 255).astype(np.uint8)).save(
-                DATA_DIR / "DEBUG_simple_sphere_dark.png"
+                DATA_DIR / "DEBUG_simple_sphere_dark%s.png" % postfix
             )
+
+        # Load reference image
+        image_ref_phong_dark = load_rgb_image(
+            "test_simple_sphere_dark%s.png" % postfix)
         self.assertTrue(torch.allclose(rgb, image_ref_phong_dark, atol=0.05))
 
         ######################################
@@ -122,16 +135,27 @@ class TestRenderingMeshes(unittest.TestCase):
                 lights=lights, cameras=cameras, materials=materials
             ),
         )
-        image_ref_gourad = load_rgb_image("test_simple_sphere_light_gourad.png")
         images = renderer(sphere_mesh)
         rgb = images[0, ..., :3].squeeze().cpu()
         if DEBUG:
             Image.fromarray((rgb.numpy() * 255).astype(np.uint8)).save(
-                DATA_DIR / "DEBUG_simple_sphere_light_gourad.png"
+                DATA_DIR / "DEBUG_simple_sphere_light_gourad%s.png" % postfix
             )
 
+        # Load reference image
+        image_ref_gourad = load_rgb_image(
+            "test_simple_sphere_light_gourad%s.png" % postfix)
         self.assertTrue(torch.allclose(rgb, image_ref_gourad, atol=0.005))
         self.assertFalse(torch.allclose(rgb, image_ref_phong, atol=0.005))
+
+    def test_simple_sphere_elevated_camera(self):
+        """
+        Test output of phong and gourad shading matches a reference image using
+        the default values for the light sources.
+
+        The rendering is performed with a camera that has non-zero elevation.
+        """
+        self.test_simple_sphere(elevated_camera=True)
 
     def test_simple_sphere_batched(self):
         """
