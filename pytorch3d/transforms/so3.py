@@ -208,11 +208,9 @@ def hat(v):
     Returns:
         Batch of skew-symmetric matrices of shape
         `(minibatch, 3 , 3)` where each matrix is of the form:
-        :math:`(\begin{bmatrix}
-                    0   & -v_z &  v_y \\
-                    v_z &    0 & -v_x \\
-                   -v_y &  v_x &    0 \\
-                \\end{bmatrix}).
+            `[    0  -v_z   v_y ]
+             [  v_z     0  -v_x ]
+             [ -v_y   v_x     0 ]`
 
     Raises:
         ValueError if `v` is of incorrect shape.
