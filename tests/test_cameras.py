@@ -335,7 +335,7 @@ class TestCameraHelpers(unittest.TestCase):
             OpenGLPerspectiveCameras,
             OpenGLOrthographicCameras,
             SfMOrthographicCameras,
-            SfMPerspectiveCameras
+            SfMPerspectiveCameras,
         ):
             cam = cam_type(R=R, T=T)
             RT_class = cam.get_world_to_view_transform()
@@ -347,7 +347,7 @@ class TestCameraHelpers(unittest.TestCase):
 
     def test_get_camera_center(self, batch_size=10):
         T = torch.randn(batch_size, 3)
-        R = so3_exponential_map(torch.randn(batch_size, 3) * 3.)
+        R = so3_exponential_map(torch.randn(batch_size, 3) * 3.0)
         for cam_type in (
             OpenGLPerspectiveCameras,
             OpenGLOrthographicCameras,

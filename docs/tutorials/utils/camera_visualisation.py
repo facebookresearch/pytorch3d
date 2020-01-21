@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
-# This source code is licensed under the license found in the
-# LICENSE file in the root directory of this source tree.
 
+import matplotlib.pyplot as plt
 import torch
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
-import matplotlib.pyplot as plt
 
 
 def get_camera_wireframe(scale: float = 0.3):
@@ -19,12 +17,11 @@ def get_camera_wireframe(scale: float = 0.3):
     C = torch.zeros(3)
     F = torch.tensor([0, 0, 3])
     camera_points = [a, b, d, c, a, C, b, d, C, c, C, F]
-    lines = torch.stack(
-        [x.float() for x in camera_points]) * scale
+    lines = torch.stack([x.float() for x in camera_points]) * scale
     return lines
 
 
-def plot_cameras(ax, cameras, color: str = 'blue'):
+def plot_cameras(ax, cameras, color: str = "blue"):
     """
     Plots a set of `cameras` objects into the maplotlib axis `ax` with
     color `color`.
@@ -48,21 +45,21 @@ def plot_camera_scene(cameras, cameras_gt, status: str):
     a string passed inside the `status` argument.
     """
     fig = plt.figure()
-    ax = fig.gca(projection='3d')
+    ax = fig.gca(projection="3d")
     ax.clear()
     ax.set_title(status)
-    handle_cam = plot_cameras(ax, cameras, color='blue')
-    handle_cam_gt = plot_cameras(ax, cameras_gt, color='green')
+    handle_cam = plot_cameras(ax, cameras, color="blue")
+    handle_cam_gt = plot_cameras(ax, cameras_gt, color="green")
     plot_radius = 3
     ax.set_xlim3d([-plot_radius, plot_radius])
     ax.set_ylim3d([3 - plot_radius, 3 + plot_radius])
     ax.set_zlim3d([-plot_radius, plot_radius])
-    ax.set_xlabel('x')
-    ax.set_ylabel('z')
-    ax.set_zlabel('y')
+    ax.set_xlabel("x")
+    ax.set_ylabel("z")
+    ax.set_zlabel("y")
     labels_handles = {
-        'Estimated cameras': handle_cam[0],
-        'GT cameras': handle_cam_gt[0],
+        "Estimated cameras": handle_cam[0],
+        "GT cameras": handle_cam_gt[0],
     }
     ax.legend(
         labels_handles.values(),

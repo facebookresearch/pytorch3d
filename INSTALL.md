@@ -21,21 +21,29 @@ conda activate pytorch3d
 conda install -c pytorch pytorch torchvision cudatoolkit=10.0
 ```
 
-### Tests/Demos/Linting
+### Tests/Linting and Demos
 
 For developing on top of PyTorch3d or contributing, you will need to run the linter and tests. If you want to run any of the notebook tutorials as `docs/tutorials` you will also need matplotlib.
 - [fvcore](https://github.com/facebookresearch/fvcore)
 - Pillow
+- scikit-image
 - Matplotlib
+- tdqm
+- ipywidgets
 - black
 - isort
 - flake8
 
 These can be installed by running:
 ```
+# Demos
+conda install -c conda-forge ipywidgets
+pip install scikit-image matplotlib
+
+# Tests/Linting
 conda install 'pillow<7'
 pip install 'git+https://github.com/facebookresearch/fvcore'
-pip install scikit-image black isort flake8
+pip install black isort flake8
 ```
 
 ## Build/Install Pytorch3d

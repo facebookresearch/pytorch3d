@@ -71,11 +71,11 @@ class TestRenderingMeshes(unittest.TestCase):
 
         # Init rasterizer settings
         if elevated_camera:
-            R, T = look_at_view_transform(2.7, 45., 0.)
-            postfix = '_elevated_camera'
+            R, T = look_at_view_transform(2.7, 45.0, 0.0)
+            postfix = "_elevated_camera"
         else:
-            R, T = look_at_view_transform(2.7, 0., 0.)
-            postfix = ''
+            R, T = look_at_view_transform(2.7, 0.0, 0.0)
+            postfix = ""
         cameras = OpenGLPerspectiveCameras(device=device, R=R, T=T)
         raster_settings = RasterizationSettings(
             image_size=512, blur_radius=0.0, faces_per_pixel=1, bin_size=0
@@ -105,7 +105,8 @@ class TestRenderingMeshes(unittest.TestCase):
 
         # Load reference image
         image_ref_phong = load_rgb_image(
-            "test_simple_sphere_illuminated%s.png" % postfix)
+            "test_simple_sphere_illuminated%s.png" % postfix
+        )
         self.assertTrue(torch.allclose(rgb, image_ref_phong, atol=0.05))
 
         ###################################
@@ -122,7 +123,8 @@ class TestRenderingMeshes(unittest.TestCase):
 
         # Load reference image
         image_ref_phong_dark = load_rgb_image(
-            "test_simple_sphere_dark%s.png" % postfix)
+            "test_simple_sphere_dark%s.png" % postfix
+        )
         self.assertTrue(torch.allclose(rgb, image_ref_phong_dark, atol=0.05))
 
         ######################################
@@ -144,7 +146,8 @@ class TestRenderingMeshes(unittest.TestCase):
 
         # Load reference image
         image_ref_gourad = load_rgb_image(
-            "test_simple_sphere_light_gourad%s.png" % postfix)
+            "test_simple_sphere_light_gourad%s.png" % postfix
+        )
         self.assertTrue(torch.allclose(rgb, image_ref_gourad, atol=0.005))
         self.assertFalse(torch.allclose(rgb, image_ref_phong, atol=0.005))
 
