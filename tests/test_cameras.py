@@ -112,6 +112,11 @@ def orthographic_project_naive(points, scale_xyz=(1.0, 1.0, 1.0)):
 
 
 class TestCameraHelpers(unittest.TestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        torch.manual_seed(42)
+        np.random.seed(42)
+
     def test_camera_position_from_angles_python_scalar(self):
         dist = 2.7
         elev = 90.0
@@ -352,7 +357,7 @@ class TestCameraHelpers(unittest.TestCase):
             cam = cam_type(R=R, T=T)
             C = cam.get_camera_center()
             C_ = -torch.bmm(R, T[:, :, None])[:, :, 0]
-            self.assertTrue(torch.allclose(C, C_))
+            self.assertTrue(torch.allclose(C, C_, atol=1e-05))
 
 
 class TestPerspectiveProjection(TestCaseMixin, unittest.TestCase):
