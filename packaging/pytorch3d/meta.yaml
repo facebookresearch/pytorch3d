@@ -20,7 +20,7 @@ requirements:
     - python
     - numpy >=1.11
     - six
-    - torchvision
+    - torchvision >=0.5
     - fvcore
     {{ environ.get('CONDA_PYTORCH_CONSTRAINT') }}
     {{ environ.get('CONDA_CUDATOOLKIT_CONSTRAINT') }}
@@ -40,6 +40,7 @@ test:
     - pytorch3d
   source_files:
     - tests
+    - docs
   requires:
     - pytest
     - scipy

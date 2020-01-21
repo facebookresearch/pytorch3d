@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # A set of useful bash functions for common functionality we need to do in
 # many build scripts
 
@@ -155,6 +156,7 @@ setup_wheel_python() {
       3.5) python_abi=cp35-cp35m ;;
       3.6) python_abi=cp36-cp36m ;;
       3.7) python_abi=cp37-cp37m ;;
+      3.8) python_abi=cp38-cp38 ;;
       *)
         echo "Unrecognized PYTHON_VERSION=$PYTHON_VERSION"
         exit 1
@@ -255,6 +257,7 @@ setup_visual_studio_constraint() {
   if [[ "$OSTYPE" == "msys" ]]; then
       export VSTOOLCHAIN_PACKAGE=vs2019
       export VSDEVCMD_ARGS=''
+      # shellcheck disable=SC2086
       conda build $CONDA_CHANNEL_FLAGS --no-anaconda-upload packaging/$VSTOOLCHAIN_PACKAGE
       cp packaging/$VSTOOLCHAIN_PACKAGE/conda_build_config.yaml packaging/torchvision/conda_build_config.yaml
   fi
