@@ -28,13 +28,13 @@ PyTorch3d is released under the [BSD-3-Clause License](LICENSE).
 
 Get started with PyTorch3d by trying one of the tutorial notebooks:
 
-| <img src=".github/dolphin_deform.gif" width="300"/> | <img src=".github/bundle_adjust.gif" width="300"/> |
+| <img src=".github/dolphin_deform.gif" width="310"/> | <img src=".github/bundle_adjust.gif" width="310"/> |
 |:---:|:---:|
-| [Deform sphere mesh to dolphin](https://github.com/fairinternal/pytorch3d/blob/master/docs/tutorials/deform_source_mesh_to_target_mesh.ipynb)| [Bundle adjustment]((https://github.com/fairinternal/pytorch3d/blob/master/docs/tutorials/bundle_adjustment.ipynb)) |
+| [Deform a sphere mesh to dolphin](https://github.com/fairinternal/pytorch3d/blob/master/docs/tutorials/deform_source_mesh_to_target_mesh.ipynb)| [Bundle adjustment](https://github.com/fairinternal/pytorch3d/blob/master/docs/tutorials/bundle_adjustment.ipynb) |
 
-| <img src=".github/render_textured_mesh.gif" width="300"/> | <img src=".github/camera_position_teapot.gif" width="300"/>
+| <img src=".github/render_textured_mesh.gif" width="310"/> | <img src=".github/camera_position_teapot.gif" width="310" height="310"/>
 |:---:|:---:|
-| [Render a textured mesh](https://github.com/fairinternal/pytorch3d/blob/master/docs/tutorials/render_textured_meshes.ipynb)| [Camera position optimization with differentiable rendering]((https://github.com/fairinternal/pytorch3d/blob/master/docs/tutorials/camera_position_optimization_with_differentiable_rendering.ipynb))|
+| [Render textured meshes](https://github.com/fairinternal/pytorch3d/blob/master/docs/tutorials/render_textured_meshes.ipynb)| [Camera position optimization](https://github.com/fairinternal/pytorch3d/blob/master/docs/tutorials/camera_position_optimization_with_differentiable_rendering.ipynb)|
 
 ## Documentation
 
