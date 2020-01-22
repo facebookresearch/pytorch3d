@@ -58,15 +58,9 @@ We tested with a range of increasingly large bin sizes.
 
 <img src="../figs/fullset_batch_size_16.png" width="700"/>
 
-**Fig 3(a):** This shows that for large meshes and large bin width (i.e. more variation in mesh size in the batch) the heterogeneous batching approach in PyTorch3d is faster than either of the workarounds with SoftRasterizer.
+This shows that for large meshes and large bin width (i.e. more variation in mesh size in the batch) the heterogeneous batching approach in PyTorch3d is faster than either of the workarounds with SoftRasterizer.
 
 (settings: batch size = 16, mesh sizes in bins ranging from 500-350k faces, image size = 64, faces per pixel = 100)
-
-<img src="../figs/subset_batch_size_128.png" width="700"/>
-
-**Fig 3(b):** For larger batch sizes with smaller mesh sizes and bin sizes, PyTorch3d is still comparably fast with improved performance again in the cases of larger meshes and larger bin width.
-
-(settings: batch size = 128, mesh sizes in bins ranging from 500-10k faces, image size = 128, faces per pixel = 100)
 
 
 ---
