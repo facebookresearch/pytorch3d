@@ -26,7 +26,7 @@ PyTorch3d is released under the [BSD-3-Clause License](LICENSE).
 
 ## Tutorials
 
-Get started with PyTorch3d by trying one of the tutorial notebooks:
+Get started with PyTorch3d by trying one of the tutorial notebooks.
 
 | <img src=".github/dolphin_deform.gif" width="310"/> | <img src=".github/bundle_adjust.gif" width="310"/> |
 |:---:|:---:|
@@ -39,6 +39,12 @@ Get started with PyTorch3d by trying one of the tutorial notebooks:
 ## Documentation
 
 Learn more about the API by reading the PyTorch3d [documentation](https://pytorch3d.readthedocs.org/).
+
+We also have deep dive notes on several API components:
+
+- [Heterogeneous Batching](https://github.com/facebookresearch/pytorch3d/tree/master/docs/notes/batching.md)
+- [Mesh IO](https://github.com/facebookresearch/pytorch3d/tree/master/docs/notes/meshes_io.md)
+- [Differentiable Rendering](https://github.com/facebookresearch/pytorch3d/tree/master/docs/notes/renderer_getting_started.md)
 
 ## Development
 
