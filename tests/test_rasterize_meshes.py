@@ -22,24 +22,28 @@ class TestRasterizeMeshes(unittest.TestCase):
         )  # don't set binsize
         self._simple_blurry_raster(rasterize_meshes_python, device, bin_size=-1)
         self._test_behind_camera(rasterize_meshes_python, device, bin_size=-1)
+        self._test_perspective_correct(rasterize_meshes_python, device, bin_size=-1)
 
     def test_simple_cpu_naive(self):
         device = torch.device("cpu")
         self._simple_triangle_raster(rasterize_meshes, device)
         self._simple_blurry_raster(rasterize_meshes, device)
         self._test_behind_camera(rasterize_meshes, device)
+        self._test_perspective_correct(rasterize_meshes, device)
 
     def test_simple_cuda_naive(self):
         device = torch.device("cuda:0")
         self._simple_triangle_raster(rasterize_meshes, device, bin_size=0)
         self._simple_blurry_raster(rasterize_meshes, device, bin_size=0)
         self._test_behind_camera(rasterize_meshes, device, bin_size=0)
+        self._test_perspective_correct(rasterize_meshes, device, bin_size=0)
 
     def test_simple_cuda_binned(self):
         device = torch.device("cuda:0")
         self._simple_triangle_raster(rasterize_meshes, device, bin_size=5)
         self._simple_blurry_raster(rasterize_meshes, device, bin_size=5)
         self._test_behind_camera(rasterize_meshes, device, bin_size=5)
+        self._test_perspective_correct(rasterize_meshes, device, bin_size=5)
 
     def test_python_vs_cpu_vs_cuda(self):
         torch.manual_seed(231)
@@ -328,6 +332,56 @@ class TestRasterizeMeshes(unittest.TestCase):
                     idxs_cuda[:K] = sorted(idxs_cuda[:K])
                     self.assertEqual(idxs_cpu, idxs_cuda)
 
+    def test_python_vs_cpp_perspective_correct(self):
+        torch.manual_seed(232)
+        N = 2
+        V = 10
+        F = 5
+        verts1 = torch.randn(N, V, 3, requires_grad=True)
+        verts2 = verts1.detach().clone().requires_grad_(True)
+        faces = torch.randint(V, size=(N, F, 3))
+        meshes1 = Meshes(verts1, faces)
+        meshes2 = Meshes(verts2, faces)
+
+        kwargs = {
+            'image_size': 24,
+            'perspective_correct': True,
+        }
+        fn1 = lambda: rasterize_meshes(meshes1, **kwargs)         # noqa: E731
+        fn2 = lambda: rasterize_meshes_python(meshes2, **kwargs)  # noqa: E731
+        args = ()
+        self._compare_impls(fn1, fn2, args, args, verts1, verts2, compare_grads=True)
+
+    def test_cpp_vs_cuda_perspective_correct(self):
+        meshes = ico_sphere(2, device=torch.device('cpu'))
+        verts1, faces1 = meshes.get_mesh_verts_faces(0)
+        verts1.requires_grad = True
+        meshes1 = Meshes(verts=[verts1], faces=[faces1])
+        verts2 = verts1.detach().cuda().requires_grad_(True)
+        faces2 = faces1.detach().clone().cuda()
+        meshes2 = Meshes(verts=[verts2], faces=[faces2])
+
+        kwargs = {'image_size': 64, 'perspective_correct': True}
+        fn1 = lambda: rasterize_meshes(meshes1, **kwargs)  # noqa: E731
+        fn2 = lambda: rasterize_meshes(meshes2, bin_size=0, **kwargs)  # noqa: E731
+        args = ()
+        self._compare_impls(fn1, fn2, args, args, verts1, verts2, compare_grads=True)
+
+    def test_cuda_naive_vs_binned_perspective_correct(self):
+        meshes = ico_sphere(2, device=torch.device('cuda'))
+        verts1, faces1 = meshes.get_mesh_verts_faces(0)
+        verts1.requires_grad = True
+        meshes1 = Meshes(verts=[verts1], faces=[faces1])
+        verts2 = verts1.detach().clone().requires_grad_(True)
+        faces2 = faces1.detach().clone()
+        meshes2 = Meshes(verts=[verts2], faces=[faces2])
+
+        kwargs = {'image_size': 64, 'perspective_correct': True}
+        fn1 = lambda: rasterize_meshes(meshes1, bin_size=0, **kwargs)  # noqa: E731
+        fn2 = lambda: rasterize_meshes(meshes2, bin_size=8, **kwargs)  # noqa: E731
+        args = ()
+        self._compare_impls(fn1, fn2, args, args, verts1, verts2, compare_grads=True)
+
     def _compare_impls(
         self,
         fn1,
@@ -372,6 +426,110 @@ class TestRasterizeMeshes(unittest.TestCase):
         loss2.backward()
         grad_verts2 = grad_var2.grad.data.clone().cpu()
         self.assertTrue(torch.allclose(grad_verts1, grad_verts2, rtol=1e-3))
+
+    def _test_perspective_correct(self, rasterize_meshes_fn, device, bin_size=None):
+        verts = torch.tensor([
+                [-0.4, -0.4, 10],  # noqa: E241, E201
+                [ 0.4, -0.4, 10],  # noqa: E241, E201
+                [ 0.0,  0.4, 20],  # noqa: E241, E201
+        ], dtype=torch.float32, device=device)
+        faces = torch.tensor([[0, 1, 2]], device=device)
+        meshes = Meshes(verts=[verts], faces=[faces])
+        kwargs = {
+            'meshes': meshes,
+            'image_size': 11,
+            'faces_per_pixel': 1,
+            'blur_radius': 0.2,
+            'perspective_correct': False,
+        }
+        if bin_size != -1:
+            kwargs['bin_size'] = bin_size
+
+        # Run with and without perspective correction
+        idx_f, zbuf_f, bary_f, dists_f = rasterize_meshes_fn(**kwargs)
+        kwargs['perspective_correct'] = True
+        idx_t, zbuf_t, bary_t, dists_t = rasterize_meshes_fn(**kwargs)
+
+        # idx and dists should be the same with or without perspecitve correction
+        idx_expected = torch.tensor([
+            [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],  # noqa: E241, E201
+            [-1, -1,  0,  0,  0,  0,  0,  0,  0, -1, -1],  # noqa: E241, E201
+            [-1,  0,  0,  0,  0,  0,  0,  0,  0,  0, -1],  # noqa: E241, E201
+            [-1,  0,  0,  0,  0,  0,  0,  0,  0,  0, -1],  # noqa: E241, E201
+            [-1,  0,  0,  0,  0,  0,  0,  0,  0,  0, -1],  # noqa: E241, E201
+            [-1, -1,  0,  0,  0,  0,  0,  0,  0, -1, -1],  # noqa: E241, E201
+            [-1, -1,  0,  0,  0,  0,  0,  0,  0, -1, -1],  # noqa: E241, E201
+            [-1, -1, -1,  0,  0,  0,  0,  0, -1, -1, -1],  # noqa: E241, E201
+            [-1, -1, -1,  0,  0,  0,  0,  0, -1, -1, -1],  # noqa: E241, E201
+            [-1, -1, -1, -1,  0,  0,  0, -1, -1, -1, -1],  # noqa: E241, E201
+            [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],  # noqa: E241, E201
+        ], dtype=torch.int64, device=device).view(1, 11, 11, 1)
+        dists_expected = torch.tensor([
+            [-1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000],  # noqa: E241, E201
+            [-1.0000, -1.0000,  0.1283,  0.1071,  0.1071,  0.1071,  0.1071,  0.1071,  0.1283, -1.0000, -1.0000],  # noqa: E241, E201
+            [-1.0000,  0.1283,  0.0423,  0.0212,  0.0212,  0.0212,  0.0212,  0.0212,  0.0423,  0.1283, -1.0000],  # noqa: E241, E201
+            [-1.0000,  0.1084,  0.0225, -0.0003, -0.0013, -0.0013, -0.0013, -0.0003,  0.0225,  0.1084, -1.0000],  # noqa: E241, E201
+            [-1.0000,  0.1523,  0.0518,  0.0042, -0.0095, -0.0476, -0.0095,  0.0042,  0.0518,  0.1523, -1.0000],  # noqa: E241, E201
+            [-1.0000, -1.0000,  0.0955,  0.0214, -0.0003, -0.0320, -0.0003,  0.0214,  0.0955, -1.0000, -1.0000],  # noqa: E241, E201
+            [-1.0000, -1.0000,  0.1523,  0.0518,  0.0042, -0.0095,  0.0042,  0.0518,  0.1523, -1.0000, -1.0000],  # noqa: E241, E201
+            [-1.0000, -1.0000, -1.0000,  0.0955,  0.0214, -0.0003,  0.0214,  0.0955, -1.0000, -1.0000, -1.0000],  # noqa: E241, E201
+            [-1.0000, -1.0000, -1.0000,  0.1523,  0.0542,  0.0212,  0.0542,  0.1523, -1.0000, -1.0000, -1.0000],  # noqa: E241, E201
+            [-1.0000, -1.0000, -1.0000, -1.0000,  0.1402,  0.1071,  0.1402, -1.0000, -1.0000, -1.0000, -1.0000],  # noqa: E241, E201
+            [-1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000],  # noqa: E241, E201
+        ], dtype=torch.float32, device=device).view(1, 11, 11, 1)
+
+        # zbuf and barycentric will be different with perspective correction
+        zbuf_f_expected = torch.tensor([
+            [-1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000],  # noqa: E241, E201
+            [-1.0000, -1.0000,  5.9091,  5.9091,  5.9091,  5.9091,  5.9091,  5.9091,  5.9091, -1.0000, -1.0000],  # noqa: E241, E201
+            [-1.0000,  8.1818,  8.1818,  8.1818,  8.1818,  8.1818,  8.1818,  8.1818,  8.1818,  8.1818, -1.0000],  # noqa: E241, E201
+            [-1.0000, 10.4545, 10.4545, 10.4545, 10.4545, 10.4545, 10.4545, 10.4545, 10.4545, 10.4545, -1.0000],  # noqa: E241, E201
+            [-1.0000, 12.7273, 12.7273, 12.7273, 12.7273, 12.7273, 12.7273, 12.7273, 12.7273, 12.7273, -1.0000],  # noqa: E241, E201
+            [-1.0000, -1.0000, 15.0000, 15.0000, 15.0000, 15.0000, 15.0000, 15.0000, 15.0000, -1.0000, -1.0000],  # noqa: E241, E201
+            [-1.0000, -1.0000, 17.2727, 17.2727, 17.2727, 17.2727, 17.2727, 17.2727, 17.2727, -1.0000, -1.0000],  # noqa: E241, E201
+            [-1.0000, -1.0000, -1.0000, 19.5455, 19.5455, 19.5455, 19.5455, 19.5455, -1.0000, -1.0000, -1.0000],  # noqa: E241, E201
+            [-1.0000, -1.0000, -1.0000, 21.8182, 21.8182, 21.8182, 21.8182, 21.8182, -1.0000, -1.0000, -1.0000],  # noqa: E241, E201
+            [-1.0000, -1.0000, -1.0000, -1.0000, 24.0909, 24.0909, 24.0909, -1.0000, -1.0000, -1.0000, -1.0000],  # noqa: E241, E201
+            [-1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000],  # noqa: E241, E201
+        ], dtype=torch.float32, device=device).view(1, 11, 11, 1)
+        zbuf_t_expected = torch.tensor([
+            [-1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000],  # noqa: E241, E201
+            [-1.0000, -1.0000,  8.3019,  8.3019,  8.3019,  8.3019,  8.3019,  8.3019,  8.3019, -1.0000, -1.0000],  # noqa: E241, E201
+            [-1.0000,  9.1667,  9.1667,  9.1667,  9.1667,  9.1667,  9.1667,  9.1667,  9.1667,  9.1667, -1.0000],  # noqa: E241, E201
+            [-1.0000, 10.2326, 10.2326, 10.2326, 10.2326, 10.2326, 10.2326, 10.2326, 10.2326, 10.2326, -1.0000],  # noqa: E241, E201
+            [-1.0000, 11.5789, 11.5789, 11.5789, 11.5789, 11.5789, 11.5789, 11.5789, 11.5789, 11.5789, -1.0000],  # noqa: E241, E201
+            [-1.0000, -1.0000, 13.3333, 13.3333, 13.3333, 13.3333, 13.3333, 13.3333, 13.3333, -1.0000, -1.0000],  # noqa: E241, E201
+            [-1.0000, -1.0000, 15.7143, 15.7143, 15.7143, 15.7143, 15.7143, 15.7143, 15.7143, -1.0000, -1.0000],  # noqa: E241, E201
+            [-1.0000, -1.0000, -1.0000, 19.1304, 19.1304, 19.1304, 19.1304, 19.1304, -1.0000, -1.0000, -1.0000],  # noqa: E241, E201
+            [-1.0000, -1.0000, -1.0000, 24.4444, 24.4444, 24.4444, 24.4444, 24.4444, -1.0000, -1.0000, -1.0000],  # noqa: E241, E201
+            [-1.0000, -1.0000, -1.0000, -1.0000, 33.8462, 33.8462, 33.8461, -1.0000, -1.0000, -1.0000, -1.0000],  # noqa: E241, E201
+            [-1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000],  # noqa: E241, E201
+        ], dtype=torch.float32, device=device).view(1, 11, 11, 1)
+
+        self.assertTrue(torch.all(idx_f == idx_expected).item())
+        self.assertTrue(torch.all(idx_t == idx_expected).item())
+        dists_t_max_diff = (dists_t - dists_expected).abs().max().item()
+        dists_f_max_diff = (dists_f - dists_expected).abs().max().item()
+        self.assertLess(dists_t_max_diff, 1e-4)
+        self.assertLess(dists_f_max_diff, 1e-4)
+        zbuf_f_max_diff = (zbuf_f - zbuf_f_expected).abs().max().item()
+        zbuf_t_max_diff = (zbuf_t - zbuf_t_expected).abs().max().item()
+        self.assertLess(zbuf_f_max_diff, 1e-4)
+        self.assertLess(zbuf_t_max_diff, 1e-4)
+
+        # Check barycentrics by using them to re-compute zbuf
+        z0 = verts[0, 2]
+        z1 = verts[1, 2]
+        z2 = verts[2, 2]
+        w0_f, w1_f, w2_f = bary_f.unbind(dim=4)
+        w0_t, w1_t, w2_t = bary_t.unbind(dim=4)
+        zbuf_f_bary = w0_f * z0 + w1_f * z1 + w2_f * z2
+        zbuf_t_bary = w0_t * z0 + w1_t * z1 + w2_t * z2
+        mask = (idx_expected != -1)
+        zbuf_f_bary_diff = (zbuf_f_bary[mask] - zbuf_f_expected[mask]).abs().max()
+        zbuf_t_bary_diff = (zbuf_t_bary[mask] - zbuf_t_expected[mask]).abs().max()
+        self.assertLess(zbuf_f_bary_diff, 1e-4)
+        self.assertLess(zbuf_t_bary_diff, 1e-4)
 
     def _test_behind_camera(self, rasterize_meshes_fn, device, bin_size=None):
         """

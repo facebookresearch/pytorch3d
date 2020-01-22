@@ -147,6 +147,75 @@ BarycentricCoordsBackward(
   return thrust::make_tuple(dbary_p, dbary_dv0, dbary_dv1, dbary_dv2);
 }
 
+
+// Forward pass for applying perspective correction to barycentric coordinates.
+//
+// Args:
+//     bary: Screen-space barycentric coordinates for a point
+//     z0, z1, z2: Camera-space z-coordinates of the triangle vertices
+//
+// Returns
+//     World-space barycentric coordinates
+//
+__device__ inline float3 BarycentricPerspectiveCorrectionForward(
+    const float3& bary,
+    const float z0,
+    const float z1,
+    const float z2) {
+  const float w0_top = bary.x * z1 * z2;
+  const float w1_top = z0 * bary.y * z2;
+  const float w2_top = z0 * z1 * bary.z;
+  const float denom = w0_top + w1_top + w2_top;
+  const float w0 = w0_top / denom;
+  const float w1 = w1_top / denom;
+  const float w2 = w2_top / denom;
+  return make_float3(w0, w1, w2);
+}
+
+
+// Backward pass for applying perspective correction to barycentric coordinates.
+//
+// Args:
+//     bary: Screen-space barycentric coordinates for a point
+//     z0, z1, z2: Camera-space z-coordinates of the triangle vertices
+//     grad_out: Upstream gradient of the loss with respect to the corrected
+//               barycentric coordinates.
+//
+// Returns a tuple of:
+//      grad_bary: Downstream gradient of the loss with respect to the the
+//                 uncorrected barycentric coordinates.
+//      grad_z0, grad_z1, grad_z2: Downstream gradient of the loss with respect
+//                                 to the z-coordinates of the triangle verts
+__device__ inline thrust::tuple<float3, float, float, float>
+BarycentricPerspectiveCorrectionBackward(
+    const float3& bary,
+    const float z0,
+    const float z1,
+    const float z2,
+    const float3& grad_out) {
+  // Recompute forward pass
+  const float w0_top = bary.x * z1 * z2;
+  const float w1_top = z0 * bary.y * z2;
+  const float w2_top = z0 * z1 * bary.z;
+  const float denom = w0_top + w1_top + w2_top;
+
+  // Now do backward pass
+  const float grad_denom_top = -w0_top * grad_out.x - w1_top * grad_out.y - w2_top * grad_out.z;
+  const float grad_denom = grad_denom_top / (denom * denom);
+  const float grad_w0_top = grad_denom + grad_out.x / denom;
+  const float grad_w1_top = grad_denom + grad_out.y / denom;
+  const float grad_w2_top = grad_denom + grad_out.z / denom;
+  const float grad_bary_x = grad_w0_top * z1 * z2;
+  const float grad_bary_y = grad_w1_top * z0 * z2;
+  const float grad_bary_z = grad_w2_top * z0 * z1;
+  const float3 grad_bary = make_float3(grad_bary_x, grad_bary_y, grad_bary_z);
+  const float grad_z0 = grad_w1_top * bary.y * z2 + grad_w2_top * bary.z * z1;
+  const float grad_z1 = grad_w0_top * bary.x * z2 + grad_w2_top * bary.z * z0;
+  const float grad_z2 = grad_w0_top * bary.x * z1 + grad_w1_top * bary.y * z0;
+  return thrust::make_tuple(grad_bary, grad_z0, grad_z1, grad_z2);
+}
+
+
 // Return minimum distance between line segment (v1 - v0) and point p.
 //
 // Args:

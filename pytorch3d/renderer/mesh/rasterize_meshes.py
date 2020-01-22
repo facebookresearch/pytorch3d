@@ -19,6 +19,7 @@ def rasterize_meshes(
     faces_per_pixel: int = 8,
     bin_size: Optional[int] = None,
     max_faces_per_bin: Optional[int] = None,
+    perspective_correct: bool = False,
 ):
     """
     Rasterize a batch of meshes given the shape of the desired output image.
@@ -44,6 +45,8 @@ def rasterize_meshes(
             bin. If more than this many faces actually fall into a bin, an error
             will be raised. This should not affect the output values, but can affect
             the memory usage in the forward pass.
+        perspective_correct: Whether to apply perspective correction when computing
+            barycentric coordinates for pixels.
 
     Returns:
         4-element tuple containing
@@ -113,6 +116,7 @@ def rasterize_meshes(
         faces_per_pixel,
         bin_size,
         max_faces_per_bin,
+        perspective_correct,
     )
 
 
@@ -133,6 +137,7 @@ class _RasterizeFaceVerts(torch.autograd.Function):
         num_faces_per_mesh: LongTensor of shape (N) giving the number of faces
             for each mesh in the batch.
         image_size, blur_radius, faces_per_pixel: same as rasterize_meshes.
+        perspective_correct: same as rasterize_meshes.
 
     Returns:
         same as rasterize_meshes function.
@@ -149,6 +154,7 @@ class _RasterizeFaceVerts(torch.autograd.Function):
         faces_per_pixel: int = 0,
         bin_size: int = 0,
         max_faces_per_bin: int = 0,
+        perspective_correct: bool = False,
     ):
         pix_to_face, zbuf, barycentric_coords, dists = _C.rasterize_meshes(
             face_verts,
@@ -159,8 +165,10 @@ class _RasterizeFaceVerts(torch.autograd.Function):
             faces_per_pixel,
             bin_size,
             max_faces_per_bin,
+            perspective_correct,
         )
         ctx.save_for_backward(face_verts, pix_to_face)
+        ctx.perspective_correct = perspective_correct
         return pix_to_face, zbuf, barycentric_coords, dists
 
     @staticmethod
@@ -175,6 +183,7 @@ class _RasterizeFaceVerts(torch.autograd.Function):
         grad_faces_per_pixel = None
         grad_bin_size = None
         grad_max_faces_per_bin = None
+        grad_perspective_correct = None
         face_verts, pix_to_face = ctx.saved_tensors
         grad_face_verts = _C.rasterize_meshes_backward(
             face_verts,
@@ -182,6 +191,7 @@ class _RasterizeFaceVerts(torch.autograd.Function):
             grad_zbuf,
             grad_barycentric_coords,
             grad_dists,
+            ctx.perspective_correct,
         )
         grads = (
             grad_face_verts,
@@ -192,6 +202,7 @@ class _RasterizeFaceVerts(torch.autograd.Function):
             grad_faces_per_pixel,
             grad_bin_size,
             grad_max_faces_per_bin,
+            grad_perspective_correct,
         )
         return grads
 
@@ -201,6 +212,7 @@ def rasterize_meshes_python(
     image_size: int = 256,
     blur_radius: float = 0.0,
     faces_per_pixel: int = 8,
+    perspective_correct: bool = False
 ):
     """
     Naive PyTorch implementation of mesh rasterization with the same inputs and
@@ -294,6 +306,14 @@ def rasterize_meshes_python(
                     )
 
                     bary = barycentric_coordinates(pxy, v0[:2], v1[:2], v2[:2])
+                    if perspective_correct:
+                        z0, z1, z2 = v0[2], v1[2], v2[2]
+                        l0, l1, l2 = bary[0], bary[1], bary[2]
+                        top0 = l0 * z1 * z2
+                        top1 = z0 * l1 * z2
+                        top2 = z0 * z1 * l2
+                        bot = top0 + top1 + top2
+                        bary = torch.stack([top0 / bot, top1 / bot, top2 / bot])
                     pz = bary[0] * v0[2] + bary[1] * v1[2] + bary[2] * v2[2]
 
                     # Check if point is behind the image.

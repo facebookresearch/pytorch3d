@@ -162,7 +162,7 @@ class SilhouetteShader(nn.Module):
             else OpenGLPerspectiveCameras(device=device)
         )
         self.blend_params = (
-            blend_params if blend_params is None else BlendParams()
+            blend_params if blend_params is not None else BlendParams()
         )
         # In the rasterizer set:
         #   blur_radius = np.log(1 / blur - 1.) * blend_params.sigma

@@ -16,7 +16,8 @@ RasterizeMeshesNaiveCpu(
     const torch::Tensor& num_faces_per_mesh,
     int image_size,
     float blur_radius,
-    int faces_per_pixel);
+    int faces_per_pixel,
+    bool perspective_correct);
 
 std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor>
 RasterizeMeshesNaiveCuda(
@@ -25,7 +26,8 @@ RasterizeMeshesNaiveCuda(
     const at::Tensor& num_faces_per_mesh,
     int image_size,
     float blur_radius,
-    int num_closest);
+    int num_closest,
+    bool perspective_correct);
 
 // Forward pass for rasterizing a batch of meshes.
 //
@@ -46,6 +48,12 @@ RasterizeMeshesNaiveCuda(
 //                 bounding boxes for the rasterization. Set to 0.0 if no blur
 //                 is required.
 //    faces_per_pixel: the number of closeset faces to rasterize per pixel.
+//    perspective_correct: Whether to apply perspective correction when
+//                         computing barycentric coordinates. If this is True,
+//                         then this function returns world-space barycentric
+//                         coordinates for each pixel; if this is False then
+//                         this function instead returns screen-space
+//                         barycentric coordinates for each pixel.
 //
 // Returns:
 //    A 4 element tuple of:
@@ -70,7 +78,8 @@ RasterizeMeshesNaive(
     const torch::Tensor& num_faces_per_mesh,
     int image_size,
     float blur_radius,
-    int faces_per_pixel) {
+    int faces_per_pixel,
+    bool perspective_correct) {
   // TODO: Better type checking.
   if (face_verts.type().is_cuda()) {
     return RasterizeMeshesNaiveCuda(
@@ -79,7 +88,8 @@ RasterizeMeshesNaive(
         num_faces_per_mesh,
         image_size,
         blur_radius,
-        faces_per_pixel);
+        faces_per_pixel,
+        perspective_correct);
   } else {
     return RasterizeMeshesNaiveCpu(
         face_verts,
@@ -87,7 +97,8 @@ RasterizeMeshesNaive(
         num_faces_per_mesh,
         image_size,
         blur_radius,
-        faces_per_pixel);
+        faces_per_pixel,
+        perspective_correct);
   }
 }
 
@@ -100,14 +111,16 @@ torch::Tensor RasterizeMeshesBackwardCpu(
     const torch::Tensor& pix_to_face,
     const torch::Tensor& grad_bary,
     const torch::Tensor& grad_zbuf,
-    const torch::Tensor& grad_dists);
+    const torch::Tensor& grad_dists,
+    bool perspective_correct);
 
 torch::Tensor RasterizeMeshesBackwardCuda(
     const torch::Tensor& face_verts,
     const torch::Tensor& pix_to_face,
     const torch::Tensor& grad_bary,
     const torch::Tensor& grad_zbuf,
-    const torch::Tensor& grad_dists);
+    const torch::Tensor& grad_dists,
+    bool perspective_correct);
 
 // Args:
 //    face_verts: float32 Tensor of shape (F, 3, 3) (from forward pass) giving
@@ -123,6 +136,12 @@ torch::Tensor RasterizeMeshesBackwardCuda(
 //               the forward pass.
 //    grad_dists: Tensor of shape (N, H, W, K) giving upstream gradients
 //                d(loss)/d(dists) of the dists tensor from the forward pass.
+//    perspective_correct: Whether to apply perspective correction when
+//                         computing barycentric coordinates. If this is True,
+//                         then this function returns world-space barycentric
+//                         coordinates for each pixel; if this is False then
+//                         this function instead returns screen-space
+//                         barycentric coordinates for each pixel.
 //
 // Returns:
 //    grad_face_verts: float32 Tensor of shape (F, 3, 3) giving downstream
@@ -132,13 +151,16 @@ torch::Tensor RasterizeMeshesBackward(
     const torch::Tensor& pix_to_face,
     const torch::Tensor& grad_zbuf,
     const torch::Tensor& grad_bary,
-    const torch::Tensor& grad_dists) {
+    const torch::Tensor& grad_dists,
+    bool perspective_correct) {
   if (face_verts.type().is_cuda()) {
     return RasterizeMeshesBackwardCuda(
-        face_verts, pix_to_face, grad_zbuf, grad_bary, grad_dists);
+        face_verts, pix_to_face, grad_zbuf, grad_bary, grad_dists,
+        perspective_correct);
   } else {
     return RasterizeMeshesBackwardCpu(
-        face_verts, pix_to_face, grad_zbuf, grad_bary, grad_dists);
+        face_verts, pix_to_face, grad_zbuf, grad_bary, grad_dists,
+        perspective_correct);
   }
 }
 
@@ -226,7 +248,8 @@ RasterizeMeshesFineCuda(
     int image_size,
     float blur_radius,
     int bin_size,
-    int faces_per_pixel);
+    int faces_per_pixel,
+    bool perspective_correct);
 
 // Args:
 //    face_verts: Tensor of shape (F, 3, 3) giving (packed) vertex positions for
@@ -242,6 +265,12 @@ RasterizeMeshesFineCuda(
 //                 is required.
 //    bin_size: Size of each bin within the image (in pixels)
 //    faces_per_pixel: the number of closeset faces to rasterize per pixel.
+//    perspective_correct: Whether to apply perspective correction when
+//                         computing barycentric coordinates. If this is True,
+//                         then this function returns world-space barycentric
+//                         coordinates for each pixel; if this is False then
+//                         this function instead returns screen-space
+//                         barycentric coordinates for each pixel.
 //
 // Returns (same as rasterize_meshes):
 //    A 4 element tuple of:
@@ -266,7 +295,8 @@ RasterizeMeshesFine(
     int image_size,
     float blur_radius,
     int bin_size,
-    int faces_per_pixel) {
+    int faces_per_pixel,
+    bool perspective_correct) {
   if (face_verts.type().is_cuda()) {
     return RasterizeMeshesFineCuda(
         face_verts,
@@ -274,7 +304,8 @@ RasterizeMeshesFine(
         image_size,
         blur_radius,
         bin_size,
-        faces_per_pixel);
+        faces_per_pixel,
+        perspective_correct);
   } else {
     AT_ERROR("NOT IMPLEMENTED");
   }
@@ -306,6 +337,12 @@ RasterizeMeshesFine(
 //              bin_size=0 uses naive rasterization instead.
 //    max_faces_per_bin: The maximum number of faces allowed to fall into each
 //                      bin when using coarse-to-fine rasterization.
+//    perspective_correct: Whether to apply perspective correction when
+//                         computing barycentric coordinates. If this is True,
+//                         then this function returns world-space barycentric
+//                         coordinates for each pixel; if this is False then
+//                         this function instead returns screen-space
+//                         barycentric coordinates for each pixel.
 //
 // Returns:
 //    A 4 element tuple of:
@@ -332,7 +369,8 @@ RasterizeMeshes(
     float blur_radius,
     int faces_per_pixel,
     int bin_size,
-    int max_faces_per_bin) {
+    int max_faces_per_bin,
+    bool perspective_correct) {
   if (bin_size > 0 && max_faces_per_bin > 0) {
     // Use coarse-to-fine rasterization
     auto bin_faces = RasterizeMeshesCoarse(
@@ -349,7 +387,8 @@ RasterizeMeshes(
         image_size,
         blur_radius,
         bin_size,
-        faces_per_pixel);
+        faces_per_pixel,
+        perspective_correct);
   } else {
     // Use the naive per-pixel implementation
     return RasterizeMeshesNaive(
@@ -358,6 +397,7 @@ RasterizeMeshes(
         num_faces_per_mesh,
         image_size,
         blur_radius,
-        faces_per_pixel);
+        faces_per_pixel,
+        perspective_correct);
   }
 }

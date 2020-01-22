@@ -110,7 +110,8 @@ __device__ void CheckPixelInsideFace(
     FaceQ& q,
     float blur_radius,
     float2 pxy, // Coordinates of the pixel
-    int K) {
+    int K,
+    bool perspective_correct) {
   const auto v012 = GetSingleFaceVerts(face_verts, face_idx);
   const float3 v0 = thrust::get<0>(v012);
   const float3 v1 = thrust::get<1>(v012);
@@ -137,7 +138,9 @@ __device__ void CheckPixelInsideFace(
   }
 
   // Calculate barycentric coords and euclidean dist to triangle.
-  const float3 p_bary = BarycentricCoordsForward(pxy, v0xy, v1xy, v2xy);
+  const float3 p_bary0 = BarycentricCoordsForward(pxy, v0xy, v1xy, v2xy);
+  const float3 p_bary = !perspective_correct ? p_bary0
+      : BarycentricPerspectiveCorrectionForward(p_bary0, v0.z, v1.z, v2.z);
 
   const float pz = p_bary.x * v0.z + p_bary.y * v1.z + p_bary.z * v2.z;
   if (pz < 0) {
@@ -186,6 +189,7 @@ __global__ void RasterizeMeshesNaiveCudaKernel(
     const int64_t* mesh_to_face_first_idx,
     const int64_t* num_faces_per_mesh,
     float blur_radius,
+    bool perspective_correct,
     int N,
     int H,
     int W,
@@ -235,7 +239,8 @@ __global__ void RasterizeMeshesNaiveCudaKernel(
       // Check if the pixel pxy is inside the face bounding box and if it is,
       // update q, q_size, q_max_z and q_max_idx in place.
       CheckPixelInsideFace(
-          face_verts, f, q_size, q_max_z, q_max_idx, q, blur_radius, pxy, K);
+          face_verts, f, q_size, q_max_z, q_max_idx, q, blur_radius, pxy, K,
+          perspective_correct);
     }
 
     // TODO: make sorting an option as only top k is needed, not sorted values.
@@ -259,7 +264,8 @@ RasterizeMeshesNaiveCuda(
     const torch::Tensor& num_faces_per_mesh,
     const int image_size,
     const float blur_radius,
-    const int num_closest) {
+    const int num_closest,
+    bool perspective_correct) {
   if (face_verts.ndimension() != 3 || face_verts.size(1) != 3 ||
       face_verts.size(2) != 3) {
     AT_ERROR("face_verts must have dimensions (num_faces, 3, 3)");
@@ -296,6 +302,7 @@ RasterizeMeshesNaiveCuda(
       mesh_to_faces_packed_first_idx.contiguous().data<int64_t>(),
       num_faces_per_mesh.contiguous().data<int64_t>(),
       blur_radius,
+      perspective_correct,
       N,
       H,
       W,
@@ -315,6 +322,7 @@ RasterizeMeshesNaiveCuda(
 __global__ void RasterizeMeshesBackwardCudaKernel(
     const float* face_verts, // (F, 3, 3)
     const int64_t* pix_to_face, // (N, H, W, K)
+    bool perspective_correct,
     int N,
     int F,
     int H,
@@ -364,8 +372,10 @@ __global__ void RasterizeMeshesBackwardCudaKernel(
     const float3 grad_bary_upstream = make_float3(
         grad_bary_upstream_w0, grad_bary_upstream_w1, grad_bary_upstream_w2);
 
-    const float3 b_w = BarycentricCoordsForward(pxy, v0xy, v1xy, v2xy);
-    const bool inside = b_w.x > 0.0f && b_w.y > 0.0f && b_w.z > 0.0f;
+    const float3 bary0 = BarycentricCoordsForward(pxy, v0xy, v1xy, v2xy);
+    const float3 bary = !perspective_correct ? bary0
+        : BarycentricPerspectiveCorrectionForward(bary0, v0.z, v1.z, v2.z);
+    const bool inside = bary.x > 0.0f && bary.y > 0.0f && bary.z > 0.0f;
     const float sign = inside ? -1.0f : 1.0f;
 
     // TODO(T52813608) Add support for non-square images.
@@ -387,21 +397,32 @@ __global__ void RasterizeMeshesBackwardCudaKernel(
     // external upstream gradients and contribution from zbuf.
     const float3 grad_bary_f_sum =
         (grad_bary_upstream + grad_zbuf_upstream * d_zbuf_d_bary);
+    float3 grad_bary0 = grad_bary_f_sum;
+    float dz0_persp = 0.0f, dz1_persp = 0.0f, dz2_persp = 0.0f;
+    if (perspective_correct) {
+      auto perspective_grads =
+        BarycentricPerspectiveCorrectionBackward(bary0, v0.z, v1.z, v2.z,
+                                                 grad_bary_f_sum);
+      grad_bary0 = thrust::get<0>(perspective_grads);
+      dz0_persp = thrust::get<1>(perspective_grads);
+      dz1_persp = thrust::get<2>(perspective_grads);
+      dz2_persp = thrust::get<3>(perspective_grads);
+    }
     auto grad_bary_f =
-        BarycentricCoordsBackward(pxy, v0xy, v1xy, v2xy, grad_bary_f_sum);
+        BarycentricCoordsBackward(pxy, v0xy, v1xy, v2xy, grad_bary0);
     const float2 dbary_d_v0 = thrust::get<1>(grad_bary_f);
     const float2 dbary_d_v1 = thrust::get<2>(grad_bary_f);
     const float2 dbary_d_v2 = thrust::get<3>(grad_bary_f);
 
     atomicAdd(grad_face_verts + f * 9 + 0, dbary_d_v0.x + ddist_d_v0.x);
     atomicAdd(grad_face_verts + f * 9 + 1, dbary_d_v0.y + ddist_d_v0.y);
-    atomicAdd(grad_face_verts + f * 9 + 2, grad_zbuf_upstream * b_w.x);
+    atomicAdd(grad_face_verts + f * 9 + 2, grad_zbuf_upstream * bary.x + dz0_persp);
     atomicAdd(grad_face_verts + f * 9 + 3, dbary_d_v1.x + ddist_d_v1.x);
     atomicAdd(grad_face_verts + f * 9 + 4, dbary_d_v1.y + ddist_d_v1.y);
-    atomicAdd(grad_face_verts + f * 9 + 5, grad_zbuf_upstream * b_w.y);
+    atomicAdd(grad_face_verts + f * 9 + 5, grad_zbuf_upstream * bary.y + dz1_persp);
     atomicAdd(grad_face_verts + f * 9 + 6, dbary_d_v2.x + ddist_d_v2.x);
     atomicAdd(grad_face_verts + f * 9 + 7, dbary_d_v2.y + ddist_d_v2.y);
-    atomicAdd(grad_face_verts + f * 9 + 8, grad_zbuf_upstream * b_w.z);
+    atomicAdd(grad_face_verts + f * 9 + 8, grad_zbuf_upstream * bary.z + dz2_persp);
   }
 }
 
@@ -410,7 +431,8 @@ torch::Tensor RasterizeMeshesBackwardCuda(
     const torch::Tensor& pix_to_face, // (N, H, W, K)
     const torch::Tensor& grad_zbuf, // (N, H, W, K)
     const torch::Tensor& grad_bary, // (N, H, W, K, 3)
-    const torch::Tensor& grad_dists // (N, H, W, K)
+    const torch::Tensor& grad_dists, // (N, H, W, K)
+    bool perspective_correct
 ) {
   const int F = face_verts.size(0);
   const int N = pix_to_face.size(0);
@@ -425,6 +447,7 @@ torch::Tensor RasterizeMeshesBackwardCuda(
   RasterizeMeshesBackwardCudaKernel<<<blocks, threads>>>(
       face_verts.contiguous().data<float>(),
       pix_to_face.contiguous().data<int64_t>(),
+      perspective_correct,
       N,
       F,
       H,
@@ -619,6 +642,7 @@ __global__ void RasterizeMeshesFineCudaKernel(
     const int32_t* bin_faces, // (N, B, B, T)
     const float blur_radius,
     const int bin_size,
+    const bool perspective_correct,
     const int N,
     const int F,
     const int B,
@@ -673,7 +697,8 @@ __global__ void RasterizeMeshesFineCudaKernel(
       // Check if the pixel pxy is inside the face bounding box and if it is,
       // update q, q_size, q_max_z and q_max_idx in place.
       CheckPixelInsideFace(
-          face_verts, f, q_size, q_max_z, q_max_idx, q, blur_radius, pxy, K);
+          face_verts, f, q_size, q_max_z, q_max_idx, q, blur_radius, pxy, K,
+          perspective_correct);
     }
 
     // Now we've looked at all the faces for this bin, so we can write
@@ -699,7 +724,8 @@ RasterizeMeshesFineCuda(
     const int image_size,
     const float blur_radius,
     const int bin_size,
-    const int faces_per_pixel) {
+    const int faces_per_pixel,
+    bool perspective_correct) {
   if (face_verts.ndimension() != 3 || face_verts.size(1) != 3 ||
       face_verts.size(2) != 3) {
     AT_ERROR("face_verts must have dimensions (num_faces, 3, 3)");
@@ -734,6 +760,7 @@ RasterizeMeshesFineCuda(
       bin_faces.contiguous().data<int32_t>(),
       blur_radius,
       bin_size,
+      perspective_correct,
       N,
       F,
       B,

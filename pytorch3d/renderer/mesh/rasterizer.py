@@ -25,6 +25,7 @@ class RasterizationSettings(NamedTuple):
     faces_per_pixel: int = 1
     bin_size: Optional[int] = 0
     max_faces_per_bin: Optional[int] = 100
+    perspective_correct: bool = False
 
 
 class MeshRasterizer(nn.Module):
@@ -98,6 +99,8 @@ class MeshRasterizer(nn.Module):
         """
         meshes_screen = self.transform(meshes_world, **kwargs)
         raster_settings = kwargs.get("raster_settings", self.raster_settings)
+        # TODO(jcjohns): Should we try to set perspective_correct automatically
+        # based on the type of the camera?
         pix_to_face, zbuf, bary_coords, dists = rasterize_meshes(
             meshes_screen,
             image_size=raster_settings.image_size,
@@ -105,6 +108,7 @@ class MeshRasterizer(nn.Module):
             faces_per_pixel=raster_settings.faces_per_pixel,
             bin_size=raster_settings.bin_size,
             max_faces_per_bin=raster_settings.max_faces_per_bin,
+            perspective_correct=raster_settings.perspective_correct,
         )
         return Fragments(
             pix_to_face=pix_to_face,
