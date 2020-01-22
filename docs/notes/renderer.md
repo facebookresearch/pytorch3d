@@ -1,6 +1,6 @@
 # Differentiable Rendering
 
-Differentiable rendering is an exciting research area but it is not yet clear what the best practices are. We extensively researched existing codebases and found that:
+Differentiable rendering is an exciting research area in Computer Vision. We extensively researched existing codebases for this task and found that:
 - the rendering pipeline is complex with more than 7 separate components which need to interoperate and be differentiable
 - popular existing approaches [[1](#1), [2](#2)] are based on the same core implementation which bundles many of the key components into large CUDA kernels which require significant expertise to understand and has limited scope for extensions  
 - existing methods either do not support batching or assume that meshes in a batch have the same number of vertices and faces
@@ -15,11 +15,11 @@ Our implementation decouples the rasterization and shading steps of rendering. T
 To learn about more the implementation and start using the renderer refer to [renderer_getting_started.md](renderer_getting_started.md), which also contains the [architecture overview](../figs/architecture_overview.png) and [coordinate transformation conventions](../figs/transformations_overview.png).
 
 
-##<u>Key features</u>
+## <u>Key features</u>
 
 ### 1. CUDA support for fast rasterization of large meshes
 
-We implemented modular CUDA kernels for the forward and backward pass of rasterization, adaptating a traditional graphics approach known as "coarse to fine" rasterization.
+We implemented modular CUDA kernels for the forward and backward pass of rasterization, adaptating a traditional graphics approach known as "coarse-to-fine" rasterization.
 
 First, the image is divided into a coarse grid and mesh faces are allocated to the grid cell in which they occur. This is followed by a refinement step which does pixel wise rasterization of the reduced subset of faces per grid cell. The grid size is a parameter which can be varied.
 
@@ -29,16 +29,19 @@ We compared with the SoftRasterizer, to measure the effect of both these design 
 
 **Fig 1: PyTorch3d Naive vs Coarse-to-fine**
 
-This figure shows how the coarse to fine strategy for rasterization results in significant speed up compared to naive rasterization. This is especially clear in large images.
+This figure shows how the coarse-to-fine strategy for rasterization results in significant speed up compared to naive rasterization for large images and large mesh sizes. 
 
 <img src="../figs/p3d_naive_vs_coarse.png" width="1000">
 
 
+For small mesh and image sizes, the naive approach is slightly faster. We advise that you understand the data you are using and choose the rasterization setting which suits your performance requirements. It is easy to switch between the naive and coarse to fine rasteriztation by adjusting the "bin_size" value when initializating the [rasterization settings](https://github.com/facebookresearch/pytorch3d/blob/master/pytorch3d/renderer/mesh/rasterizer.py#L26). 
+
 **Fig 2: PyTorch3d Coarse-to-fine vs SoftRasterizer**
 
-This figure shows the speed up in the full forward and backward pass enabled by the combination of coarse-to-fine approach and caching the faces rasterized per pixel returned from the forward pass. In the SoftRasterizer implementation, in both the forward and backward pass, there is a loop over every single face in the mesh for every pixel in the image. Therefore, the time for the full forward plus backward pass is ~2x the time for the forward pass.  
+This figure shows the effect of combination of coarse-to-fine rasterization and caching the faces rasterized per pixel returned from the forward pass. For large meshes and image sizes, we again observe that the PyTorch3d rasterizer is significantly faster. In the SoftRasterizer implementation, in both the forward and backward pass, there is a loop over every single face in the mesh for every pixel in the image. Therefore, the time for the full forward plus backward pass is ~2x the time for the forward pass. For small mesh and image sizes, the SoftRasterizer approach is slightly faster.
 
 <img src="../figs/p3d_vs_softras.png" width="1000">
+
 
 
 ### 2. Support for Heterogeneous Batches
@@ -56,12 +59,14 @@ We tested with a range of increasingly large bin sizes.
 <img src="../figs/fullset_batch_size_16.png" width="700"/>
 
 **Fig 3(a):** This shows that for large meshes and large bin width (i.e. more variation in mesh size in the batch) the heterogeneous batching approach in PyTorch3d is faster than either of the workarounds with SoftRasterizer.
-(settings: batch size = 16, mesh sizes in bins ranging from 500-350k faces, image size = 64)
+
+(settings: batch size = 16, mesh sizes in bins ranging from 500-350k faces, image size = 64, faces per pixel = 100)
 
 <img src="../figs/subset_batch_size_128.png" width="700"/>
 
 **Fig 3(b):** For larger batch sizes with smaller mesh sizes and bin sizes, PyTorch3d is still comparably fast with improved performance again in the cases of larger meshes and larger bin width.
-(settings: batch size in [64, 128] for mesh sizes in bins from 500-10k faces, image size = 128)
+
+(settings: batch size = 128, mesh sizes in bins ranging from 500-10k faces, image size = 128, faces per pixel = 100)
 
 
 ---
@@ -69,17 +74,13 @@ We tested with a range of increasingly large bin sizes.
 **NOTE: CUDA Memory usage**
 
 The SoftRasterizer forward CUDA kernel only outputs one (N, H, W, 4) FloatTensor compared with the PyTorch3d rasterizer forward CUDA kernel which outputs 4 tensors:
-    - `pix_to_face`, LongTensor `(N, H, W, K)`  
-    - `zbuf`, FloatTensor `(N, H, W, K)`
-    - `dist`, FloatTensor `(N, H, W, K)`
-    - `bary_coords`, FloatTensor `(N, H, W, K, 3)`
 
-The PyTorch3d backward pass returns gradients for:
-    - `zbuf`, FloatTensor `(N, H, W, K)`
-    - `dist`, FloatTensor `(N, H, W, K)`
-    - `bary_coords`, FloatTensor `(N, H, W, K, 3)`
+  - `pix_to_face`, LongTensor `(N, H, W, K)`  
+  - `zbuf`, FloatTensor `(N, H, W, K)`
+  - `dist`, FloatTensor `(N, H, W, K)`
+  - `bary_coords`, FloatTensor `(N, H, W, K, 3)`
 
-where **N** = batch size, **H/W** are image height/width, **K** is the faces per pixel.
+where **N** = batch size, **H/W** are image height/width, **K** is the faces per pixel. The PyTorch3d backward pass returns gradients for `zbuf`, `dist` and `bary_coords`. 
 
 Returning intermediate variables from rasterization has an associated memory cost. We can calculate the theoretical lower bound on the memory usage for the forward and backward pass as follows:
 
