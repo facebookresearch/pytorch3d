@@ -48,8 +48,8 @@ def plot_camera_scene(cameras, cameras_gt, status: str):
     ax = fig.gca(projection="3d")
     ax.clear()
     ax.set_title(status)
-    handle_cam = plot_cameras(ax, cameras, color="blue")
-    handle_cam_gt = plot_cameras(ax, cameras_gt, color="green")
+    handle_cam = plot_cameras(ax, cameras, color='#FF7D1E')
+    handle_cam_gt = plot_cameras(ax, cameras_gt, color='#812CE5')
     plot_radius = 3
     ax.set_xlim3d([-plot_radius, plot_radius])
     ax.set_ylim3d([3 - plot_radius, 3 + plot_radius])
@@ -68,3 +68,4 @@ def plot_camera_scene(cameras, cameras_gt, status: str):
         bbox_to_anchor=(0.5, 0),
     )
     plt.show()
+    return fig
