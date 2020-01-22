@@ -639,17 +639,13 @@ def load_ply(f):
     Args:
         f:  A binary or text file-like object (with methods read, readline,
             tell and seek), a pathlib path or a string containing a file name.
-            If the ply file is binary, a text stream is not supported.
-            It is recommended to use a binary stream.
+            If the ply file is in the binary ply format rather than the text
+            ply format, then a text stream is not supported.
+            It is easiest to use a binary stream in all cases.
 
     Returns:
         verts: FloatTensor of shape (V, 3).
         faces: LongTensor of vertex indices, shape (F, 3).
-
-        A dictionary of element names to values. If an element is regular, in
-        the sense of having no lists or being one uniformly-sized list, then the
-        value will be a 2D numpy array. If not, it is a list of the relevant
-        property values.
     """
     header, elements = _load_ply_raw(f)
 
