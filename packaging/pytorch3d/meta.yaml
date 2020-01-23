@@ -1,0 +1,60 @@
+package:
+  name: pytorch3d
+  version: "{{ environ.get('BUILD_VERSION') }}"
+
+source:
+ path: "{{ environ.get('SOURCE_ROOT_DIR') }}"
+
+requirements:
+  build:
+    - {{ compiler('c') }} # [win]
+
+  host:
+    - python
+    - setuptools
+    {{ environ.get('CONDA_PYTORCH_BUILD_CONSTRAINT') }}
+    {{ environ.get('CONDA_CUDATOOLKIT_CONSTRAINT') }}
+    {{ environ.get('CONDA_CPUONLY_FEATURE') }}
+
+  run:
+    - python
+    - numpy >=1.11
+    - six
+    - torchvision >=0.5
+    - fvcore
+    {{ environ.get('CONDA_PYTORCH_CONSTRAINT') }}
+    {{ environ.get('CONDA_CUDATOOLKIT_CONSTRAINT') }}
+
+build:
+  string: py{{py}}_{{ environ['CU_VERSION'] }}
+  script: python setup.py install --single-version-externally-managed --record=record.txt # [not win]
+  script_env:
+    - CUDA_HOME
+    - FORCE_CUDA
+    - NVCC_FLAGS
+  features:
+    {{ environ.get('CONDA_CPUONLY_FEATURE') }}
+
+test:
+  imports:
+    - pytorch3d
+  source_files:
+    - tests
+    - docs
+  requires:
+    - pytest
+    - scipy
+    - mock
+    - av
+    - ca-certificates
+    - typing
+  commands:
+    #pytest .
+    python -m unittest discover -v -s tests
+
+
+about:
+  home: https://github.com/facebookresearch/pytorch3d
+  license: BSD
+  license_file: LICENSE
+  summary: '3d Geometry for pytorch'

@@ -1,0 +1,7 @@
+source
+_build
+_static
+_template
+*-checkpoint.ipynb
+.ipynb_checkpoints
+.ipynb_checkpoints/**
