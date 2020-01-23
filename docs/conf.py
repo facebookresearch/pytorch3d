@@ -16,8 +16,6 @@
 import os
 import sys
 
-import pytorch3d  # isort: skip
-
 import mock
 from recommonmark.parser import CommonMarkParser
 from recommonmark.states import DummyStateMachine
@@ -55,11 +53,6 @@ DEPLOY = os.environ.get("READTHEDOCS") == "True"
 needs_sphinx = "1.7"
 
 
-# The short X.Y version
-version = pytorch3d.__version__
-# The full version, including alpha/beta/rc tags
-release = version
-
 try:
     import torch  # noqa
 except ImportError:
@@ -86,6 +79,9 @@ for m in ["cv2", "scipy", "numpy", "pytorch3d._C", "np.eye", "np.zeros"]:
 project = "PyTorch3D"
 copyright = "2019, facebookresearch"
 author = "facebookresearch"
+
+# The short X.Y version
+version = "v0.1"
 
 # The full version, including alpha/beta/rc tags
 release = "v0.1"
