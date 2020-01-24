@@ -5,7 +5,7 @@
 template <typename scalar_t>
 __global__ void packed_to_padded_tensor_kernel(
     const scalar_t* __restrict__ inputs,
-    const long* __restrict__ first_idxs,
+    const int64_t* __restrict__ first_idxs,
     scalar_t* __restrict__ inputs_padded,
     const size_t batch_size,
     const size_t max_size,
@@ -17,8 +17,8 @@ __global__ void packed_to_padded_tensor_kernel(
   const size_t tid = threadIdx.x;
   const size_t batch_idx = blockIdx.x;
 
-  const long start = first_idxs[batch_idx];
-  const long end =
+  const int64_t start = first_idxs[batch_idx];
+  const int64_t end =
       batch_idx + 1 < batch_size ? first_idxs[batch_idx + 1] : num_inputs;
   const int num_faces = end - start;
   for (size_t f = tid; f < num_faces; f += blockDim.x) {
@@ -29,7 +29,7 @@ __global__ void packed_to_padded_tensor_kernel(
 at::Tensor packed_to_padded_tensor_cuda(
     at::Tensor inputs,
     at::Tensor first_idxs,
-    const long max_size) {
+    const int64_t max_size) {
   const auto num_inputs = inputs.size(0);
   const auto batch_size = first_idxs.size(0);
   at::Tensor inputs_padded =
@@ -41,7 +41,7 @@ at::Tensor packed_to_padded_tensor_cuda(
       inputs.type(), "packed_to_padded_tensor_kernel", ([&] {
         packed_to_padded_tensor_kernel<scalar_t><<<blocks, threads>>>(
             inputs.data_ptr<scalar_t>(),
-            first_idxs.data_ptr<long>(),
+            first_idxs.data_ptr<int64_t>(),
             inputs_padded.data_ptr<scalar_t>(),
             batch_size,
             max_size,

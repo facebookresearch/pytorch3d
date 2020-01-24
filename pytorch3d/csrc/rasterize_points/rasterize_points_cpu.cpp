@@ -7,10 +7,14 @@
 // Given a pixel coordinate 0 <= i < S, convert it to a normalized device
 // coordinate in the range [-1, 1]. The NDC range is divided into S evenly-sized
 // pixels, and assume that each pixel falls in the *center* of its range.
+#ifdef _MSC_VER
+#define PixToNdc(i, S) (-1 + (2 * i + 1.0f) / S)
+#else
 inline float PixToNdc(const int i, const int S) {
   // NDC x-offset + (i * pixel_width + half_pixel_width)
   return -1 + (2 * i + 1.0f) / S;
 }
+#endif
 
 std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> RasterizePointsNaiveCpu(
     const torch::Tensor& points,
@@ -74,7 +78,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> RasterizePointsNaiveCpu(
   return std::make_tuple(point_idxs, zbuf, pix_dists);
 }
 
-std::tuple<torch::Tensor, torch::Tensor> RasterizePointsCoarseCpu(
+torch::Tensor RasterizePointsCoarseCpu(
     const torch::Tensor& points,
     const int image_size,
     const float radius,
@@ -140,7 +144,7 @@ std::tuple<torch::Tensor, torch::Tensor> RasterizePointsCoarseCpu(
       bin_y_max = bin_y_min + bin_width;
     }
   }
-  return std::make_tuple(points_per_bin, bin_points);
+  return bin_points;
 }
 
 torch::Tensor RasterizePointsBackwardCpu(

@@ -6,7 +6,7 @@
 template <typename scalar_t>
 __global__ void face_areas_kernel(
     const scalar_t* __restrict__ verts,
-    const long* __restrict__ faces,
+    const int64_t* __restrict__ faces,
     scalar_t* __restrict__ face_areas,
     scalar_t* __restrict__ face_normals,
     const size_t V,
@@ -18,9 +18,9 @@ __global__ void face_areas_kernel(
   // Each thread computes the area & normal of its respective faces and adds it
   // to the global face_areas tensor.
   for (size_t f = tid; f < F; f += stride) {
-    const long i0 = faces[3 * f + 0];
-    const long i1 = faces[3 * f + 1];
-    const long i2 = faces[3 * f + 2];
+    const int64_t i0 = faces[3 * f + 0];
+    const int64_t i1 = faces[3 * f + 1];
+    const int64_t i2 = faces[3 * f + 2];
 
     const scalar_t v0_x = verts[3 * i0 + 0];
     const scalar_t v0_y = verts[3 * i0 + 1];
@@ -69,7 +69,7 @@ std::tuple<at::Tensor, at::Tensor> face_areas_cuda(
   AT_DISPATCH_FLOATING_TYPES(verts.type(), "face_areas_kernel", ([&] {
                                face_areas_kernel<scalar_t><<<blocks, threads>>>(
                                    verts.data_ptr<scalar_t>(),
-                                   faces.data_ptr<long>(),
+                                   faces.data_ptr<int64_t>(),
                                    areas.data_ptr<scalar_t>(),
                                    normals.data_ptr<scalar_t>(),
                                    V,
