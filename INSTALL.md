@@ -52,7 +52,7 @@ After installing the above dependencies, run one of the following commands:
 
 ```
 # Anaconda Cloud
-conda install pytorch3d
+conda install pytorch3d -c pytorch3d
 ```
 
 ### 2. Install from GitHub
