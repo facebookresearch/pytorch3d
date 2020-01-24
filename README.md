@@ -1,4 +1,4 @@
-<img src="https://github.com/facebookresearch/pytorch3d/blob/master/.github/pytorch3dlogo.png" width="900"/>
+<img src="https://raw.githubusercontent.com/facebookresearch/pytorch3d/master/.github/pytorch3dlogo.png" width="900"/>
 
 [![CircleCI](https://circleci.com/gh/facebookresearch/pytorch3d.svg?style=svg)](https://circleci.com/gh/facebookresearch/pytorch3d)
 [![Anaconda-Server Badge](https://anaconda.org/pytorch3d/pytorch3d/badges/version.svg)](https://anaconda.org/pytorch3d/pytorch3d)
@@ -35,11 +35,11 @@ PyTorch3d is released under the [BSD-3-Clause License](LICENSE).
 
 Get started with PyTorch3d by trying one of the tutorial notebooks.
 
-|<img src="https://github.com/facebookresearch/pytorch3d/blob/master/.github/dolphin_deform.gif" width="310"/>|<img src="https://github.com/facebookresearch/pytorch3d/blob/master/.github/bundle_adjust.gif" width="310"/>|
+|<img src="https://raw.githubusercontent.com/facebookresearch/pytorch3d/master/.github/dolphin_deform.gif" width="310"/>|<img src="https://raw.githubusercontent.com/facebookresearch/pytorch3d/master/.github/bundle_adjust.gif" width="310"/>|
 |:-----------------------------------------------------------------------------------------------------------:|:--------------------------------------------------:|
 | [Deform a sphere mesh to dolphin](https://github.com/fairinternal/pytorch3d/blob/master/docs/tutorials/deform_source_mesh_to_target_mesh.ipynb)| [Bundle adjustment](https://github.com/fairinternal/pytorch3d/blob/master/docs/tutorials/bundle_adjustment.ipynb) |
 
-| <img src="https://github.com/facebookresearch/pytorch3d/blob/master/.github/render_textured_mesh.gif" width="310"/> | <img src="https://github.com/facebookresearch/pytorch3d/blob/master/.github/camera_position_teapot.gif" width="310" height="310"/>
+| <img src="https://raw.githubusercontent.com/facebookresearch/pytorch3d/master/.github/render_textured_mesh.gif" width="310"/> | <img src="https://raw.githubusercontent.com/facebookresearch/pytorch3d/master/.github/camera_position_teapot.gif" width="310" height="310"/>
 |:------------------------------------------------------------:|:--------------------------------------------------:|
 | [Render textured meshes](https://github.com/fairinternal/pytorch3d/blob/master/docs/tutorials/render_textured_meshes.ipynb)| [Camera position optimization](https://github.com/fairinternal/pytorch3d/blob/master/docs/tutorials/camera_position_optimization_with_differentiable_rendering.ipynb)|
 
