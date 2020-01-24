@@ -219,7 +219,7 @@ at::Tensor nn_points_idx_cuda(at::Tensor p1, at::Tensor p2) {
   const auto D = p1.size(2);
 
   AT_ASSERTM(p2.size(2) == D, "Point sets must have same last dimension.");
-  auto idx = at::empty({N, P1}, p1.options().dtype(at::kint64_t));
+  auto idx = at::empty({N, P1}, p1.options().dtype(at::kLong));
 
   // On P100 with pointclouds of size (16, 5000, 3), 128 threads per block
   // gives best results.
