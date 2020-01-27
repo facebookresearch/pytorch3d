@@ -26,13 +26,13 @@
 at::Tensor packed_to_padded_tensor_cuda(
     at::Tensor inputs,
     at::Tensor first_idxs,
-    const long max_size);
+    const int64_t max_size);
 
 // Implementation which is exposed.
 at::Tensor packed_to_padded_tensor(
     at::Tensor inputs,
     at::Tensor first_idxs,
-    const long max_size) {
+    const int64_t max_size) {
   if (inputs.type().is_cuda()) {
 #ifdef WITH_CUDA
     return packed_to_padded_tensor_cuda(inputs, first_idxs, max_size);
