@@ -21,11 +21,7 @@ class TestNearestNeighborPoints(unittest.TestCase):
         idx = dists2.argmin(2)
         return idx
 
-    def test_nn_cuda(self):
-        """
-        Test cuda output vs naive python implementation.
-        """
-        device = torch.device("cuda:0")
+    def _test_nn_helper(self, device):
         for D in [3, 4]:
             for N in [1, 4]:
                 for P1 in [1, 8, 64, 128]:
@@ -43,16 +39,32 @@ class TestNearestNeighborPoints(unittest.TestCase):
                         self.assertTrue(idx1.size(1) == P1)
                         self.assertTrue(torch.all(idx1 == idx2))
 
-    def test_nn_cuda_error(self):
+    def test_nn_cuda(self):
         """
-        Check that nn_points_idx throws an error if cpu tensors
-        are given as input.
+        Test cuda output vs naive python implementation.
         """
-        x = torch.randn(1, 1, 3)
-        y = torch.randn(1, 1, 3)
-        with self.assertRaises(Exception) as err:
-            _C.nn_points_idx(x, y)
-        self.assertTrue("Not implemented on the CPU" in str(err.exception))
+        device = torch.device('cuda:0')
+        self._test_nn_helper(device)
+
+    def test_nn_cpu(self):
+        """
+        Test cpu output vs naive python implementation
+        """
+        device = torch.device('cpu')
+        self._test_nn_helper(device)
+
+    @staticmethod
+    def bm_nn_points_cpu_with_init(
+        N: int = 4, D: int = 4, P1: int = 128, P2: int = 128
+    ):
+        device = torch.device('cpu')
+        x = torch.randn(N, P1, D, device=device)
+        y = torch.randn(N, P2, D, device=device)
+
+        def nn_cpu():
+            _C.nn_points_idx(x.contiguous(), y.contiguous())
+
+        return nn_cpu
 
     @staticmethod
     def bm_nn_points_cuda_with_init(
