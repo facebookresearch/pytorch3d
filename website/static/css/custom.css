@@ -63,14 +63,13 @@ html body {
     rgba(129, 44, 229, 1) 0%,
     rgba(255, 175, 0, 1) 100%
   );
-  padding: 30px 0px;
+  padding: 25px 0px;
 }
 
 .splashLogo {
   display: block;
   margin: 0 auto;
-  height: 200px;
-  width: 800px;
+  width: 65%;
 }
 
 .projectTitle {
@@ -128,7 +127,10 @@ div.productShowcaseSection {
 }
 
 .productShowcaseSection div.container {
-  padding: 40px 0px;
+  padding-bottom: 40px;
+  padding-top: 10px;
+  padding-left: 0px;
+  padding-right: 0px;
 }
 
 .productShowcaseSection img {
@@ -289,13 +291,44 @@ p a:hover {
   max-width: 1400px;
 }
 
-@media only screen and (min-device-width: 360px) and (max-device-width: 736px) {
-}
 
-@media only screen and (min-width: 1024px) {
+@media only screen and (min-device-width: 360px) and (max-device-width: 736px) {
+  .fixedHeaderContainer header a:nth-child(2) {
+    position: absolute;
+    right: 150px;
+  }
+  .promoSection .button {
+    font-size: 12px;
+    margin: 3px;
+  }
+  .inner h2 {
+   margin-top: 0px;
+  }
+  .splashLogo {
+    width: 90%;
+  }
+  .headerTitleWithLogo {
+    display: block !important;
+  }
+  .blockContent > div span p {
+    margin-bottom: 30px
+  }
+  .productShowcaseSection div.container {
+    padding-top: 0px;
+  }
+  .productShowcaseSection > h2 {
+    padding-bottom: 20px;
+  }
 }
 
 @media only screen and (max-width: 1023px) {
+  .fixedHeaderContainer header a:nth-child(2) {
+    position: absolute;
+    right: 200px;
+  }
+}
+
+@media only screen and (min-width: 1024px) {
 }
 
 @media only screen and (min-width: 1400px) {
