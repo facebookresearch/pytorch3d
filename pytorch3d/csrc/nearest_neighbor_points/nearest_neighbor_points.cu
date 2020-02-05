@@ -231,7 +231,7 @@ at::Tensor nn_points_idx_cuda(at::Tensor p1, at::Tensor p2) {
     AT_DISPATCH_FLOATING_TYPES(p1.type(), "nearest_neighbor_v3_cuda", ([&] {
                                  size_t shared_size = threads * sizeof(size_t) +
                                      threads * sizeof(int64_t);
-                                 nearest_neighbor_kernel_D3<scalar_t>
+                                 NearestNeighborKernelD3<scalar_t>
                                      <<<blocks, threads, shared_size>>>(
                                          p1.data_ptr<scalar_t>(),
                                          p2.data_ptr<scalar_t>(),
@@ -249,7 +249,7 @@ at::Tensor nn_points_idx_cuda(at::Tensor p1, at::Tensor p2) {
           size_t D_2 = D + (D % 2);
           size_t shared_size = (D_2 + threads) * sizeof(size_t);
           shared_size += threads * sizeof(int64_t);
-          nearest_neighbor_kernel<scalar_t><<<blocks, threads, shared_size>>>(
+          NearestNeighborKernel<scalar_t><<<blocks, threads, shared_size>>>(
               p1.data_ptr<scalar_t>(),
               p2.data_ptr<scalar_t>(),
               idx.data_ptr<int64_t>(),
