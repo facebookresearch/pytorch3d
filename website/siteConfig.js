@@ -21,7 +21,7 @@ const users = [
 const baseUrl = '/'
 
 const siteConfig = {
-  title: 'PyTorch3d', // Title for your website.
+  title: 'PyTorch3D', // Title for your website.
   tagline: 'A library for deep learning with 3D data',
   url: 'https://pytorch3d.org', // Your website URL
   baseUrl: baseUrl, // Base URL for your project */
@@ -50,7 +50,7 @@ const siteConfig = {
   },
 
   // This copyright info is used in /core/Footer.js and blog RSS/Atom feeds.
-  copyright: `Copyright "\u00A9" ${new Date().getFullYear()} Facebook Inc`,
+  copyright: `Copyright \u{00A9} ${new Date().getFullYear()} Facebook Inc`,
 
   highlight: {
     // Highlight.js theme to use for syntax highlighting in code blocks.

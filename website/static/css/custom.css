@@ -59,12 +59,9 @@ html body {
 }
 
 .homeContainer {
-  background: rgb(2, 0, 36);
   background: linear-gradient(
-    0deg,
-    rgba(2, 0, 36, 1),
-    rgba(255, 175, 0, 1) 0%,
-    rgba(129, 44, 229, 1) 100%
+    rgba(129, 44, 229, 1) 0%,
+    rgba(255, 175, 0, 1) 100%
   );
   padding: 30px 0px;
 }
