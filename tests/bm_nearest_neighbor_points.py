@@ -27,6 +27,13 @@ def bm_nn_points() -> None:
         warmup_iters=1,
     )
 
+    benchmark(
+        TestNearestNeighborPoints.bm_nn_points_cpu_with_init,
+        "NN_CPU",
+        kwargs_list,
+        warmup_iters=1,
+    )
+
     if torch.cuda.is_available():
         benchmark(
             TestNearestNeighborPoints.bm_nn_points_cuda_with_init,

@@ -12,4 +12,4 @@ setup_conda_pytorch_constraint
 setup_conda_cudatoolkit_constraint
 setup_visual_studio_constraint
 # shellcheck disable=SC2086
-conda build $CONDA_CHANNEL_FLAGS ${TEST_FLAG:-} -c defaults -c conda-forge --no-anaconda-upload -c takatosp1 --python "$PYTHON_VERSION" packaging/pytorch3d
+conda build $CONDA_CHANNEL_FLAGS ${TEST_FLAG:-} -c defaults -c conda-forge --no-anaconda-upload -c fvcore --python "$PYTHON_VERSION" packaging/pytorch3d

@@ -19,19 +19,22 @@
 //                     to p1[n, i] in the cloud p2[n] is p2[n, j].
 //
 
+// CPU implementation.
+at::Tensor NearestNeighborIdxCpu(at::Tensor p1, at::Tensor p2);
+
 // Cuda implementation.
-at::Tensor nn_points_idx_cuda(at::Tensor p1, at::Tensor p2);
+at::Tensor NearestNeighborIdxCuda(at::Tensor p1, at::Tensor p2);
 
 // Implementation which is exposed.
-at::Tensor nn_points_idx(at::Tensor p1, at::Tensor p2) {
+at::Tensor NearestNeighborIdx(at::Tensor p1, at::Tensor p2) {
   if (p1.type().is_cuda() && p2.type().is_cuda()) {
 #ifdef WITH_CUDA
     CHECK_CONTIGUOUS_CUDA(p1);
     CHECK_CONTIGUOUS_CUDA(p2);
-    return nn_points_idx_cuda(p1, p2);
+    return NearestNeighborIdxCuda(p1, p2);
 #else
     AT_ERROR("Not compiled with GPU support.");
 #endif
   }
-  AT_ERROR("Not implemented on the CPU.");
+  return NearestNeighborIdxCpu(p1, p2);
 };

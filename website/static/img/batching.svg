@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="110px" height="100px" viewBox="0 0 110 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 58 (84663) - https://sketch.com -->
+    <title>Group 3</title>
+    <desc>Created with Sketch.</desc>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Artboard" transform="translate(-190.000000, -85.000000)">
+            <g id="Group-3" transform="translate(190.000000, 85.000000)">
+                <rect id="Rectangle" fill="#FF7D1E" x="60" y="3" width="44" height="44"></rect>
+                <ellipse id="Oval" fill="#000000" cx="84.5108694" cy="75.9893615" rx="24.5108694" ry="23.9893615"></ellipse>
+                <polygon id="Triangle" fill="#FFAF00" points="28.5 53 57 98 0 98"></polygon>
+                <polygon id="Polygon" fill="#812CE5" points="26.5099999 0 51.7225081 17.9587837 42.0921869 47.0167063 10.9278129 47.0167063 1.29749175 17.9587837"></polygon>
+            </g>
+        </g>
+    </g>
+</svg>

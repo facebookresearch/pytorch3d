@@ -88,7 +88,7 @@ def _open_file(f):
     return f, new_f
 
 
-def load_obj(f_obj):
+def load_obj(f_obj, load_textures=True):
     """
     Load a mesh and textures from a .obj and .mtl file.
     Currently this handles verts, faces, vertex texture uv coordinates, normals,
@@ -146,6 +146,7 @@ def load_obj(f_obj):
     Args:
         f: A file-like object (with methods read, readline, tell, and seek),
            a pathlib path or a string containing a file name.
+        load_textures: Boolean indicating whether material files are loaded
 
     Returns:
         6-element tuple containing
@@ -201,7 +202,7 @@ def load_obj(f_obj):
         data_dir = os.path.dirname(f_obj)
     f_obj, new_f = _open_file(f_obj)
     try:
-        return _load(f_obj, data_dir)
+        return _load(f_obj, data_dir, load_textures=load_textures)
     finally:
         if new_f:
             f_obj.close()
@@ -273,7 +274,7 @@ def _parse_face(
         faces_materials_idx.append(material_idx)
 
 
-def _load(f_obj, data_dir):
+def _load(f_obj, data_dir, load_textures=True):
     """
     Load a mesh from a file-like object. See load_obj function more details.
     Any material files associated with the obj are expected to be in the
@@ -362,15 +363,16 @@ def _load(f_obj, data_dir):
 
     # Load materials
     material_colors, texture_images = None, None
-    if (len(material_names) > 0) and (f_mtl is not None):
-        if os.path.isfile(f_mtl):
-            material_colors, texture_images = load_mtl(
-                f_mtl, material_names, data_dir
-            )
-        else:
-            warnings.warn(f"Mtl file does not exist: {f_mtl}")
-    elif len(material_names) > 0:
-        warnings.warn("No mtl file provided")
+    if load_textures:
+        if (len(material_names) > 0) and (f_mtl is not None):
+            if os.path.isfile(f_mtl):
+                material_colors, texture_images = load_mtl(
+                    f_mtl, material_names, data_dir
+                )
+            else:
+                warnings.warn(f"Mtl file does not exist: {f_mtl}")
+        elif len(material_names) > 0:
+            warnings.warn("No mtl file provided")
 
     faces = _Faces(
         verts_idx=faces_verts_idx,

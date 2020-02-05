@@ -390,6 +390,17 @@ class TestMeshObjIO(unittest.TestCase):
                     )
                 )
 
+    def test_load_mtl_noload(self):
+        DATA_DIR = (
+            Path(__file__).resolve().parent.parent / "docs/tutorials/data"
+        )
+        obj_filename = "cow_mesh/cow.obj"
+        filename = os.path.join(DATA_DIR, obj_filename)
+        verts, faces, aux = load_obj(filename, load_textures=False)
+
+        self.assertTrue(aux.material_colors is None)
+        self.assertTrue(aux.texture_images is None)
+
     def test_load_mtl_fail(self):
         # Faces have a material
         obj_file = "\n".join(
@@ -444,6 +455,27 @@ class TestMeshObjIO(unittest.TestCase):
         self.assertTrue(torch.allclose(verts, expected_verts))
         self.assertTrue(torch.allclose(faces.verts_idx, expected_faces))
 
+    def test_load_obj_missing_texture_noload(self):
+        DATA_DIR = Path(__file__).resolve().parent / "data"
+        obj_filename = "missing_files_obj/model.obj"
+        filename = os.path.join(DATA_DIR, obj_filename)
+        verts, faces, aux = load_obj(filename, load_textures=False)
+
+        expected_verts = torch.tensor(
+            [
+                [0.1, 0.2, 0.3],
+                [0.2, 0.3, 0.4],
+                [0.3, 0.4, 0.5],
+                [0.4, 0.5, 0.6],
+            ],
+            dtype=torch.float32,
+        )
+        expected_faces = torch.tensor([[0, 1, 2], [0, 1, 3]], dtype=torch.int64)
+        self.assertTrue(torch.allclose(verts, expected_verts))
+        self.assertTrue(torch.allclose(faces.verts_idx, expected_faces))
+        self.assertTrue(aux.material_colors is None)
+        self.assertTrue(aux.texture_images is None)
+
     def test_load_obj_missing_mtl(self):
         DATA_DIR = Path(__file__).resolve().parent / "data"
         obj_filename = "missing_files_obj/model2.obj"
@@ -463,6 +495,27 @@ class TestMeshObjIO(unittest.TestCase):
         expected_faces = torch.tensor([[0, 1, 2], [0, 1, 3]], dtype=torch.int64)
         self.assertTrue(torch.allclose(verts, expected_verts))
         self.assertTrue(torch.allclose(faces.verts_idx, expected_faces))
+
+    def test_load_obj_missing_mtl_noload(self):
+        DATA_DIR = Path(__file__).resolve().parent / "data"
+        obj_filename = "missing_files_obj/model2.obj"
+        filename = os.path.join(DATA_DIR, obj_filename)
+        verts, faces, aux = load_obj(filename, load_textures=False)
+
+        expected_verts = torch.tensor(
+            [
+                [0.1, 0.2, 0.3],
+                [0.2, 0.3, 0.4],
+                [0.3, 0.4, 0.5],
+                [0.4, 0.5, 0.6],
+            ],
+            dtype=torch.float32,
+        )
+        expected_faces = torch.tensor([[0, 1, 2], [0, 1, 3]], dtype=torch.int64)
+        self.assertTrue(torch.allclose(verts, expected_verts))
+        self.assertTrue(torch.allclose(faces.verts_idx, expected_faces))
+        self.assertTrue(aux.material_colors is None)
+        self.assertTrue(aux.texture_images is None)
 
     @staticmethod
     def save_obj_with_init(V: int, F: int):

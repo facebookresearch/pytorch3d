@@ -4,7 +4,7 @@
 #include <float.h>
 
 template <typename scalar_t>
-__device__ void warp_reduce(
+__device__ void WarpReduce(
     volatile scalar_t* min_dists,
     volatile int64_t* min_idxs,
     const size_t tid) {
@@ -54,7 +54,7 @@ __device__ void warp_reduce(
 //         is aligned.
 //
 template <typename scalar_t>
-__global__ void nearest_neighbor_kernel(
+__global__ void NearestNeighborKernel(
     const scalar_t* __restrict__ points1,
     const scalar_t* __restrict__ points2,
     int64_t* __restrict__ idx,
@@ -123,7 +123,7 @@ __global__ void nearest_neighbor_kernel(
   // Unroll the last 6 iterations of the loop since they will happen
   // synchronized within a single warp.
   if (tid < 32)
-    warp_reduce<scalar_t>(min_dists, min_idxs, tid);
+    WarpReduce<scalar_t>(min_dists, min_idxs, tid);
 
   // Finally thread 0 writes the result to the output buffer.
   if (tid == 0) {
@@ -144,7 +144,7 @@ __global__ void nearest_neighbor_kernel(
 //    P2: Number of points in points2.
 //
 template <typename scalar_t>
-__global__ void nearest_neighbor_kernel_D3(
+__global__ void NearestNeighborKernelD3(
     const scalar_t* __restrict__ points1,
     const scalar_t* __restrict__ points2,
     int64_t* __restrict__ idx,
@@ -204,7 +204,7 @@ __global__ void nearest_neighbor_kernel_D3(
   // Unroll the last 6 iterations of the loop since they will happen
   // synchronized within a single warp.
   if (tid < 32)
-    warp_reduce<scalar_t>(min_dists, min_idxs, tid);
+    WarpReduce<scalar_t>(min_dists, min_idxs, tid);
 
   // Finally thread 0 writes the result to the output buffer.
   if (tid == 0) {
@@ -212,7 +212,7 @@ __global__ void nearest_neighbor_kernel_D3(
   }
 }
 
-at::Tensor nn_points_idx_cuda(at::Tensor p1, at::Tensor p2) {
+at::Tensor NearestNeighborIdxCuda(at::Tensor p1, at::Tensor p2) {
   const auto N = p1.size(0);
   const auto P1 = p1.size(1);
   const auto P2 = p2.size(1);

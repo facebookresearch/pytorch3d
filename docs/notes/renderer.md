@@ -1,4 +1,9 @@
-# Differentiable Rendering
+---
+hide_title: true
+sidebar_label:  Overview
+---
+
+# Rendering Overview
 
 Differentiable rendering is a relatively new and exciting research area in computer vision, bridging the gap between 2D and 3D by allowing 2D image pixels to be related back to 3D properties of a scene.
 
@@ -18,7 +23,7 @@ Our implementation decouples the rasterization and shading steps of rendering. T
 
 ## <u>Get started</u>
 
-To learn about more the implementation and start using the renderer refer to [renderer_getting_started.md](renderer_getting_started.md), which also contains the [architecture overview](../figs/architecture_overview.png) and [coordinate transformation conventions](../figs/transformations_overview.png).
+To learn about more the implementation and start using the renderer refer to [renderer_getting_started.md](renderer_getting_started.md), which also contains the [architecture overview](assets/architecture_overview.png) and [coordinate transformation conventions](assets/transformations_overview.png).
 
 
 ## <u>Key features</u>
@@ -37,7 +42,7 @@ We compared PyTorch3d with SoftRasterizer to measure the effect of both these de
 
 This figure shows how the coarse-to-fine strategy for rasterization results in significant speed up compared to naive rasterization for large image size and large mesh sizes.
 
-<img src="../figs/p3d_naive_vs_coarse.png" width="1000">
+<img src="assets/p3d_naive_vs_coarse.png" width="1000">
 
 
 For small mesh and image sizes, the naive approach is slightly faster. We advise that you understand the data you are using and choose the rasterization setting which suits your performance requirements. It is easy to switch between the naive and coarse-to-fine options by adjusting the `bin_size` value when initializing the [rasterization settings](https://github.com/facebookresearch/pytorch3d/blob/master/pytorch3d/renderer/mesh/rasterizer.py#L26).
@@ -50,7 +55,7 @@ This figure shows the effect of the _combination_ of coarse-to-fine rasterizatio
 
 In the SoftRasterizer implementation, in both the forward and backward pass, there is a loop over every single face in the mesh for every pixel in the image. Therefore, the time for the full forward plus backward pass is ~2x the time for the forward pass. For small mesh and image sizes, the SoftRasterizer approach is slightly faster.
 
-<img src="../figs/p3d_vs_softras.png" width="1000">
+<img src="assets/p3d_vs_softras.png" width="1000">
 
 
 
@@ -66,7 +71,7 @@ We tested with a range of increasingly large meshes and bin sizes.
 
 **Fig 3: PyTorch3d heterogeneous batching compared with SoftRasterizer**
 
-<img src="../figs/fullset_batch_size_16.png" width="700"/>
+<img src="assets/fullset_batch_size_16.png" width="700"/>
 
 This shows that for large meshes and large bin width (i.e. more variation in mesh size in the batch) the heterogeneous batching approach in PyTorch3d is faster than either of the workarounds with SoftRasterizer.
 

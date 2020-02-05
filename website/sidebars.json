@@ -1,0 +1,7 @@
+{
+  "docs": {
+    "Introduction": ["why_pytorch3d"],
+    "Meshes": ["batching", "meshes_io"],
+    "Differentiable Renderer": ["renderer", "renderer_getting_started"]
+  }
+}

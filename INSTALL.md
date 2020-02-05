@@ -20,7 +20,7 @@ These can be installed by running:
 conda create -n pytorch3d python=3.6
 conda activate pytorch3d
 conda install -c pytorch pytorch torchvision cudatoolkit=10.0
-conda install -c conda-forge -c takatosp1 fvcore
+conda install -c conda-forge -c fvcore fvcore
 ```
 
 ### Tests/Linting and Demos
