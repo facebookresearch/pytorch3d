@@ -1,0 +1,122 @@
+<!DOCTYPE html><html lang="en"><head><meta charSet="utf-8"/><meta http-equiv="X-UA-Compatible" content="IE=edge"/><title>renderer_getting_started · PyTorch3d</title><meta name="viewport" content="width=device-width"/><meta name="generator" content="Docusaurus"/><meta name="description" content="# Renderer Getting Started"/><meta name="docsearch:language" content="en"/><meta property="og:title" content="renderer_getting_started · PyTorch3d"/><meta property="og:type" content="website"/><meta property="og:url" content="https://pytorch3d.org/"/><meta property="og:description" content="# Renderer Getting Started"/><meta property="og:image" content="https://pytorch3d.org/img/pytorch3dlogoicon.svg"/><meta name="twitter:card" content="summary"/><meta name="twitter:image" content="https://pytorch3d.org/img/pytorch3dlogoicon.svg"/><link rel="shortcut icon" href="/img/pytorch3dfavicon.png"/><link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css"/><script>
+              (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+              (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+              m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+              })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+              ga('create', 'UA-157376881-1', 'auto');
+              ga('send', 'pageview');
+            </script><script type="text/javascript" src="https://buttons.github.io/buttons.js"></script><script src="/js/scrollSpy.js"></script><link rel="stylesheet" href="/css/main.css"/><script src="/js/codetabs.js"></script></head><body class="sideNavVisible separateOnPageNav"><div class="fixedHeaderContainer"><div class="headerWrapper wrapper"><header><a href="/"><img class="logo" src="/img/pytorch3dfavicon.png" alt="PyTorch3d"/><h2 class="headerTitleWithLogo">PyTorch3d</h2></a><div class="navigationWrapper navigationSlider"><nav class="slidingNav"><ul class="nav-site nav-site-internal"><li class="siteNavGroupActive"><a href="/docs/why_pytorch3d" target="_self">Docs</a></li><li class=""><a href="/tutorials" target="_self">Tutorials</a></li><li class=""><a href="https://pytorch3d.readthedocs.io/" target="_self">API</a></li><li class=""><a href="https://github.com/facebookresearch/pytorch3d" target="_self">GitHub</a></li></ul></nav></div></header></div></div><div class="navPusher"><div class="docMainWrapper wrapper"><div class="docsNavContainer" id="docsNav"><nav class="toc"><div class="toggleNav"><section class="navWrapper wrapper"><div class="navBreadcrumb wrapper"><div class="navToggle" id="navToggler"><div class="hamburger-menu"><div class="line1"></div><div class="line2"></div><div class="line3"></div></div></div><h2><i>›</i><span>Differentiable Renderer</span></h2><div class="tocToggler" id="tocToggler"><i class="icon-toc"></i></div></div><div class="navGroups"><div class="navGroup"><h3 class="navGroupCategoryTitle">Introduction</h3><ul class=""><li class="navListItem"><a class="navItem" href="/docs/why_pytorch3d">Why PyTorch3d</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Meshes</h3><ul class=""><li class="navListItem"><a class="navItem" href="/docs/batching">Batching</a></li><li class="navListItem"><a class="navItem" href="/docs/meshes_io">Loading from file</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Differentiable Renderer</h3><ul class=""><li class="navListItem"><a class="navItem" href="/docs/renderer">Overview</a></li><li class="navListItem navListItemActive"><a class="navItem" href="/docs/renderer_getting_started">Getting Started</a></li></ul></div></div></section></div><script>
+            var coll = document.getElementsByClassName('collapsible');
+            var checkActiveCategory = true;
+            for (var i = 0; i < coll.length; i++) {
+              var links = coll[i].nextElementSibling.getElementsByTagName('*');
+              if (checkActiveCategory){
+                for (var j = 0; j < links.length; j++) {
+                  if (links[j].classList.contains('navListItemActive')){
+                    coll[i].nextElementSibling.classList.toggle('hide');
+                    coll[i].childNodes[1].classList.toggle('rotate');
+                    checkActiveCategory = false;
+                    break;
+                  }
+                }
+              }
+
+              coll[i].addEventListener('click', function() {
+                var arrow = this.childNodes[1];
+                arrow.classList.toggle('rotate');
+                var content = this.nextElementSibling;
+                content.classList.toggle('hide');
+              });
+            }
+
+            document.addEventListener('DOMContentLoaded', function() {
+              createToggler('#navToggler', '#docsNav', 'docsSliderActive');
+              createToggler('#tocToggler', 'body', 'tocActive');
+
+              var headings = document.querySelector('.toc-headings');
+              headings && headings.addEventListener('click', function(event) {
+                var el = event.target;
+                while(el !== headings){
+                  if (el.tagName === 'A') {
+                    document.body.classList.remove('tocActive');
+                    break;
+                  } else{
+                    el = el.parentNode;
+                  }
+                }
+              }, false);
+
+              function createToggler(togglerSelector, targetSelector, className) {
+                var toggler = document.querySelector(togglerSelector);
+                var target = document.querySelector(targetSelector);
+
+                if (!toggler) {
+                  return;
+                }
+
+                toggler.onclick = function(event) {
+                  event.preventDefault();
+
+                  target.classList.toggle(className);
+                };
+              }
+            });
+        </script></nav></div><div class="container mainContainer docsContainer"><div class="wrapper"><div class="post"><header class="postHeader"></header><article><div><span><h1><a class="anchor" aria-hidden="true" id="renderer-getting-started"></a><a href="#renderer-getting-started" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Renderer Getting Started</h1>
+<h3><a class="anchor" aria-hidden="true" id="architecture-overview"></a><a href="#architecture-overview" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Architecture Overview</h3>
+<p>The renderer is designed to be modular, extensible and support batching and gradients for all inputs. The following figure describes all the components of the rendering pipeline.</p>
+<p><img src="assets/architecture_overview.png" width="1000"></p>
+<h5><a class="anchor" aria-hidden="true" id="fragments"></a><a href="#fragments" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Fragments</h5>
+<p>The <strong>rasterizer</strong> returns 4 output tensors in a named tuple.</p>
+<ul>
+<li><strong><code>pix_to_face</code></strong>: LongTensor of shape <code>(N, image_size, image_size, faces_per_pixel)</code> specifying the indices of the faces (in the packed faces) which overlap each pixel in the image.</li>
+<li><strong><code>zbuf</code></strong>: FloatTensor of shape <code>(N, image_size, image_size, faces_per_pixel)</code> giving the z-coordinates of the nearest faces at each pixel in world coordinates, sorted in ascending z-order.</li>
+<li><strong><code>bary_coords</code></strong>: FloatTensor of shape <code>(N, image_size, image_size, faces_per_pixel, 3)</code>
+giving the barycentric coordinates in NDC units of the nearest faces at each pixel, sorted in ascending z-order.</li>
+<li><strong><code>pix_dists</code></strong>: FloatTensor of shape <code>(N, image_size, image_size, faces_per_pixel)</code> giving the signed Euclidean distance (in NDC units) in the x/y plane of each point closest to the pixel.</li>
+</ul>
+<p>See the renderer API reference for more details about each component in the pipeline.</p>
+<hr>
+<p><strong>NOTE:</strong></p>
+<p>The differentiable renderer API is experimental and subject to change!.</p>
+<hr>
+<h3><a class="anchor" aria-hidden="true" id="coordinate-transformation-conventions"></a><a href="#coordinate-transformation-conventions" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Coordinate transformation conventions</h3>
+<p>Rendering requires transformations between several different coordinate frames: world space, view/camera space, NDC space and screen space. At each step it is important to know where the camera is located, how the x,y,z axes are aligned and the possible range of values. The following figure outlines the conventions used PyTorch3d.</p>
+<p><img src="assets/transformations_overview.png" width="1000"></p>
+<hr>
+<p><strong>NOTE: PyTorch3d vs OpenGL</strong></p>
+<p>While we tried to emulate several aspects of OpenGL, the NDC coordinate system in PyTorch3d is <strong>right-handed</strong> compared with a <strong>left-handed</strong> NDC coordinate system in OpenGL (the projection matrix switches the handedness).</p>
+<p>In OpenGL, the camera at the origin is looking along <code>-z</code> axis in camera space, but it is looking along the <code>+z</code> axis in NDC space.</p>
+<p><img align="center" src="assets/opengl_coordframes.png" width="300"></p>
+<hr>
+<h3><a class="anchor" aria-hidden="true" id="a-simple-renderer"></a><a href="#a-simple-renderer" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>A simple renderer</h3>
+<p>A renderer in PyTorch3d is composed of a <strong>rasterizer</strong> and a <strong>shader</strong>. Create a renderer in a few simple steps:</p>
+<pre><code class="hljs"><span class="hljs-comment"># Imports</span>
+<span class="hljs-keyword">from</span> pytorch3d.renderer import (
+    OpenGLPerspectiveCameras, look_at_view_transform,
+    RasterizationSettings, BlendParams,
+    MeshRenderer, MeshRasterizer, PhongShader
+)
+
+<span class="hljs-comment"># Initialize an OpenGL perspective camera.</span>
+R, T = look_at_view_transform(2.7, 10, 20)
+cameras = OpenGLPerspectiveCameras(<span class="hljs-attribute">device</span>=device, <span class="hljs-attribute">R</span>=R, <span class="hljs-attribute">T</span>=T)
+
+<span class="hljs-comment"># Define the settings for rasterization and shading. Here we set the output image to be of size</span>
+<span class="hljs-comment"># 512x512. As we are rendering images for visualization purposes only we will set faces_per_pixel=1</span>
+<span class="hljs-comment"># and blur_radius=0.0. Refer to rasterize_meshes.py for explanations of these parameters.</span>
+raster_settings = RasterizationSettings(
+    <span class="hljs-attribute">image_size</span>=512,
+    <span class="hljs-attribute">blur_radius</span>=0.0,
+    <span class="hljs-attribute">faces_per_pixel</span>=1,
+    <span class="hljs-attribute">bin_size</span>=0
+)
+
+<span class="hljs-comment"># Create a phong renderer by composing a rasterizer and a shader. Here we can use a predefined</span>
+<span class="hljs-comment"># PhongShader, passing in the device on which to initialize the default parameters</span>
+renderer = MeshRenderer(
+    <span class="hljs-attribute">rasterizer</span>=MeshRasterizer(cameras=cameras, <span class="hljs-attribute">raster_settings</span>=raster_settings),
+    <span class="hljs-attribute">shader</span>=PhongShader(device=device, <span class="hljs-attribute">cameras</span>=cameras)
+)
+</code></pre>
+</span></div></article></div><div class="docLastUpdate"><em>Last updated by Nikhila Ravi</em></div><div class="docs-prevnext"><a class="docs-prev button" href="/docs/renderer"><span class="arrow-prev">← </span><span>Overview</span></a></div></div></div><nav class="onPageNav"></nav></div><footer class="nav-footer" id="footer"><section class="sitemap"><div class="footerSection"><div class="social"><a class="github-button" href="https://github.com/facebookresearch/pytorch3d" data-count-href="https://github.com/facebookresearch/pytorch3d/stargazers" data-show-count="true" data-count-aria-label="# stargazers on GitHub" aria-label="Star PyTorch3d on GitHub">pytorch3d</a></div></div></section><a href="https://opensource.facebook.com/" target="_blank" rel="noreferrer noopener" class="fbOpenSource"><img src="/img/oss_logo.png" alt="Facebook Open Source" width="170" height="45"/></a><section class="copyright">Copyright &quot;©&quot; 2020 Facebook Inc</section></footer></div></body></html>
