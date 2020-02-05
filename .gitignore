@@ -2,3 +2,16 @@ build/
 dist/
 *.egg-info/
 **/__pycache__/
+
+# Docusaurus site
+website/yarn.lock
+website/build/
+website/i18n/
+website/node_modules/*
+website/npm-debug.log
+
+## Generated for tutorials
+website/_tutorials/
+website/static/files/
+website/pages/tutorials/*
+!website/pages/tutorials/index.js

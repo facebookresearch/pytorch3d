@@ -1,0 +1,20 @@
+{
+  "3D operators": [
+     {
+      "id": "deform_source_mesh_to_target_mesh",
+      "title": "Fit Mesh"
+     },{
+      "id": "bundle_adjustment",
+      "title": "Bundle Adjustment"
+     }
+  ],
+  "Rendering": [
+     {
+      "id": "render_textured_meshes",
+      "title": "Render Textured Meshes"
+     }, {
+      "id": "camera_position_optimization_with_differentiable_rendering",
+      "title": "Camera Position Optimization"         
+     }
+  ]
+}

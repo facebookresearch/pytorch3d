@@ -1,0 +1,308 @@
+/**
+ * Copyright (c) 2017-present, Facebook, Inc.
+ *
+**/
+
+html body {
+  font-family: 'Montserrat', sans-serif;
+  overflow-x: hidden;
+}
+
+.fixedHeaderContainer {
+  background-color: #222222;
+}
+
+
+.fixedHeaderContainer header .headerTitleWithLogo {
+  display: block;
+  color: #ffffff;
+}
+
+.fixedHeaderContainer header .logo {
+  height: 50px;
+}
+
+.fixedHeaderContainer header a:nth-child(2) {
+  position: absolute;
+  right: 0px;
+}
+
+.fixedHeaderContainer header a:nth-child(2) h3 {
+  font-size: 14px;
+}
+
+.fixedHeaderContainer header a:nth-child(2) h3::before {
+  content: 'v: ';
+}
+
+.navigationSlider {
+  margin-right: 80px;
+}
+
+.navigationSlider .slidingNav ul {
+  background: #222222;
+}
+
+.navigationSlider .slidingNav ul li a {
+  color: #c7d4fd;
+}
+
+.navigationSlider .slidingNav ul li a:hover,
+.navigationSlider .slidingNav ul li a:focus {
+  color: #ffffff;
+  background-color: inherit;
+}
+
+.navigationSlider .slidingNav ul li.siteNavItemActive > a,
+.navigationSlider .slidingNav ul li.siteNavGroupActive > a {
+  background-color: inherit;
+}
+
+.homeContainer {
+  background: rgb(2, 0, 36);
+  background: linear-gradient(
+    0deg,
+    rgba(2, 0, 36, 1),
+    rgba(255, 175, 0, 1) 0%,
+    rgba(129, 44, 229, 1) 100%
+  );
+  padding: 30px 0px;
+}
+
+.splashLogo {
+  display: block;
+  margin: 0 auto;
+  height: 200px;
+  width: 800px;
+}
+
+.projectTitle {
+  color: #ffffff;
+  font-variant: small-caps;
+  font-weight: 300;
+}
+
+.promoSection .button {
+  border: 2px solid #fff;
+  color: #ffffff;
+  font-size: 19px;
+  margin: 10px;
+}
+
+.promoSection .button:hover {
+  background: inherit;
+  border: 2px solid #ffffff;
+  color: #ffffff;
+}
+
+.landingPage {
+  padding: 0px;
+}
+
+
+.productShowcaseSection {
+   padding: 45px 20px 30px 20px;
+}
+
+div.productShowcaseSection {
+  color: #6c6c6c;
+  padding-top: 40px;
+}
+
+#quickstart {
+  padding-top: 80px;
+}
+
+.productShowcaseSection > h2 {
+  font-variant: small-caps;
+  font-weight: 360;
+  margin: 0px;
+  padding: 0px;
+  color: #5b1861;
+}
+
+.productShowcaseSection p {
+  font-weight: 360;
+}
+
+# Subtitles for key features
+.productShowcaseSection .blockContent > div span p {
+  font-size: 18px;
+}
+
+.productShowcaseSection div.container {
+  padding: 40px 0px;
+}
+
+.productShowcaseSection img {
+  height: 100px;
+}
+
+.gridBlock .fourByGridBlock img {
+    max-width: 200%;
+}
+
+.productShowcaseSection li {
+  padding: 10px 0;
+}
+
+.productShowcaseSection pre {
+  margin: 10px 0;
+}
+
+.productShowcaseSection code {
+  background: #fff;
+}
+
+.container .wrapper .alignCenter h2 {
+  color: #222222;
+}
+
+div#quickstart {
+  background: #efefef;
+}
+
+div#quickstart ol {
+  margin-bottom: 0px;
+}
+
+.nav-footer {
+  background-color: #222222;
+}
+
+.nav-footer .sitemap a {
+  color: #c7d4fd;
+}
+
+.nav-footer .sitemap a:hover {
+  color: #ffffff;
+}
+
+.social {
+ text-align: center
+}
+
+a,
+p a {
+  color: #4872f9;
+}
+
+a:hover,
+p a:hover {
+  color: #4872f9;
+}
+
+.imageAlignTop .blockImage {
+    margin-bottom: 20px;
+    max-width: 200px;
+}
+
+/* Style tutorials */
+.tutorialBody {
+  margin-top: -20px;
+  color: #6c6c6c;
+}
+
+.tutorialBody h1 {
+  margin: 0px;
+}
+
+.tutorialBody h1,
+.tutorialBody h2,
+.tutorialBody h3 {
+  color: #222222;
+}
+
+.tutorialBody pre {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 14px;
+  margin: 0px;
+}
+
+.tutorialBody .input_prompt,
+.tutorialBody .output_prompt {
+  color: darkred;
+  font-size: 12px;
+}
+
+.tutorialBody .highlight {
+  background: #f3f4f7;
+  padding: 10px 20px;
+  border: lightgray 1px solid;
+  border-radius: 3px;
+}
+
+.tutorialBody .cell {
+  margin: 20px;
+}
+
+.tutorialBody .output_stderr {
+  background-color: #fdede9;
+}
+
+.tutorialBody .anchor-link {
+  color: lightgray;
+}
+
+.tutorialBody iframe {
+  width: 100%;
+  height: 100vh;
+}
+
+.tutorialButtonWrapper,
+.tutorialRuntime {
+  margin: 20px;
+}
+
+.tutorialButtonWrapper {
+  float: left;
+  margin: 5px;
+}
+
+.colabButtonWrapper {
+  float: left;
+  margin: 5px;
+}
+
+.colabButtonWrapper img {
+ padding-right: 0.25em;
+}
+
+.tutorialButtonsWrapper {
+ display: flex;
+ align-items: center;
+}
+
+/* .tutorialButton {
+  color: #4872f9;
+  border: 1px solid #4872f9;
+}
+ */
+.tutorialButton svg {
+  height: 15px;
+  margin-right: 5px;
+}
+
+.tutorialButton:hover {
+  color: #4872f9;
+  background-color: inherit;
+}
+
+.wrapper {
+  max-width: 1400px;
+}
+
+@media only screen and (min-device-width: 360px) and (max-device-width: 736px) {
+}
+
+@media only screen and (min-width: 1024px) {
+}
+
+@media only screen and (max-width: 1023px) {
+}
+
+@media only screen and (min-width: 1400px) {
+}
+
+@media only screen and (min-width: 1500px) {
+}

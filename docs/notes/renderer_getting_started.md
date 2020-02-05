@@ -1,10 +1,15 @@
+---
+hide_title: true
+sidebar_label: Getting Started
+---
+
 # Renderer Getting Started
 
 ### Architecture Overview
 
 The renderer is designed to be modular, extensible and support batching and gradients for all inputs. The following figure describes all the components of the rendering pipeline.
 
-<img src="../figs/architecture_overview.png" width="1000">
+<img src="assets/architecture_overview.png" width="1000">
 
 ##### Fragments
 
@@ -31,7 +36,7 @@ The differentiable renderer API is experimental and subject to change!.
 
 Rendering requires transformations between several different coordinate frames: world space, view/camera space, NDC space and screen space. At each step it is important to know where the camera is located, how the x,y,z axes are aligned and the possible range of values. The following figure outlines the conventions used PyTorch3d.
 
-<img src="../figs/transformations_overview.png" width="1000">
+<img src="assets/transformations_overview.png" width="1000">
 
 
 
@@ -43,7 +48,7 @@ While we tried to emulate several aspects of OpenGL, the NDC coordinate system i
 
 In OpenGL, the camera at the origin is looking along `-z` axis in camera space, but it is looking along the `+z` axis in NDC space.
 
-<img align="center" src="../figs/opengl_coordframes.png" width="300">
+<img align="center" src="assets/opengl_coordframes.png" width="300">
 
 ---
 ### A simple renderer

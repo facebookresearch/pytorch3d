@@ -1,3 +1,8 @@
+---
+sidebar_label: Loading from file
+hide_title: true
+---
+
 # Meshes and IO
 
 The Meshes object represents a batch of triangulated meshes, and is central to
