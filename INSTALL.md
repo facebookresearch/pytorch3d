@@ -66,7 +66,7 @@ pip install 'git+https://github.com/facebookresearch/pytorch3d.git'
 git clone https://github.com/facebookresearch/pytorch3d.git
 cd pytorch3d && pip install -e .
 ```
-To rebuild after installing from a local clone run, `rm -rf build/ **/*.so` then `pip install -e` .. You often need to rebuild pytorch3d after reinstalling PyTorch.
+To rebuild after installing from a local clone run, `rm -rf build/ **/*.so` then `pip install -e .`. You often need to rebuild pytorch3d after reinstalling PyTorch.
 
 **Install from local clone on macOS:**
 ```
