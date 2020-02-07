@@ -36,7 +36,7 @@ class TutorialHome extends React.Component {
            <p> You can modify the code and experiment with varying different settings.
         Remember to install pytorch, torchvision, fvcore and pytorch3d in the first cell of the colab notebook by running: </p>
             <MarkdownBlock>{bash`!pip install torch torchvision
-!pip install 'git+https://github.com/facebookresearch/pytorch3d.git`}</MarkdownBlock>
+!pip install 'git+https://github.com/facebookresearch/pytorch3d.git'`}</MarkdownBlock>
            <h3> Run locally </h3>
            <p> There is also a button to download the notebook and source code to run it locally. </p>
           </div>
