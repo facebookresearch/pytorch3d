@@ -19,6 +19,7 @@ RasterizeMeshesNaiveCpu(
     int faces_per_pixel,
     bool perspective_correct);
 
+#ifdef WITH_CUDA
 std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor>
 RasterizeMeshesNaiveCuda(
     const at::Tensor& face_verts,
@@ -28,7 +29,7 @@ RasterizeMeshesNaiveCuda(
     float blur_radius,
     int num_closest,
     bool perspective_correct);
-
+#endif
 // Forward pass for rasterizing a batch of meshes.
 //
 // Args:
@@ -82,6 +83,7 @@ RasterizeMeshesNaive(
     bool perspective_correct) {
   // TODO: Better type checking.
   if (face_verts.type().is_cuda()) {
+#ifdef WITH_CUDA
     return RasterizeMeshesNaiveCuda(
         face_verts,
         mesh_to_face_first_idx,
@@ -90,6 +92,9 @@ RasterizeMeshesNaive(
         blur_radius,
         faces_per_pixel,
         perspective_correct);
+#else
+    AT_ERROR("Not compiled with GPU support");
+#endif
   } else {
     return RasterizeMeshesNaiveCpu(
         face_verts,
@@ -114,6 +119,7 @@ torch::Tensor RasterizeMeshesBackwardCpu(
     const torch::Tensor& grad_dists,
     bool perspective_correct);
 
+#ifdef WITH_CUDA
 torch::Tensor RasterizeMeshesBackwardCuda(
     const torch::Tensor& face_verts,
     const torch::Tensor& pix_to_face,
@@ -121,6 +127,7 @@ torch::Tensor RasterizeMeshesBackwardCuda(
     const torch::Tensor& grad_zbuf,
     const torch::Tensor& grad_dists,
     bool perspective_correct);
+#endif
 
 // Args:
 //    face_verts: float32 Tensor of shape (F, 3, 3) (from forward pass) giving
@@ -154,6 +161,7 @@ torch::Tensor RasterizeMeshesBackward(
     const torch::Tensor& grad_dists,
     bool perspective_correct) {
   if (face_verts.type().is_cuda()) {
+#ifdef WITH_CUDA
     return RasterizeMeshesBackwardCuda(
         face_verts,
         pix_to_face,
@@ -161,6 +169,9 @@ torch::Tensor RasterizeMeshesBackward(
         grad_bary,
         grad_dists,
         perspective_correct);
+#else
+    AT_ERROR("Not compiled with GPU support");
+#endif
   } else {
     return RasterizeMeshesBackwardCpu(
         face_verts,
@@ -185,6 +196,7 @@ torch::Tensor RasterizeMeshesCoarseCpu(
     int bin_size,
     int max_faces_per_bin);
 
+#ifdef WITH_CUDA
 torch::Tensor RasterizeMeshesCoarseCuda(
     const torch::Tensor& face_verts,
     const torch::Tensor& mesh_to_face_first_idx,
@@ -193,7 +205,7 @@ torch::Tensor RasterizeMeshesCoarseCuda(
     float blur_radius,
     int bin_size,
     int max_faces_per_bin);
-
+#endif
 // Args:
 //    face_verts: Tensor of shape (F, 3, 3) giving (packed) vertex positions for
 //                faces in all the meshes in the batch. Concretely,
@@ -225,6 +237,7 @@ torch::Tensor RasterizeMeshesCoarse(
     int bin_size,
     int max_faces_per_bin) {
   if (face_verts.type().is_cuda()) {
+#ifdef WITH_CUDA
     return RasterizeMeshesCoarseCuda(
         face_verts,
         mesh_to_face_first_idx,
@@ -233,6 +246,9 @@ torch::Tensor RasterizeMeshesCoarse(
         blur_radius,
         bin_size,
         max_faces_per_bin);
+#else
+    AT_ERROR("Not compiled with GPU support");
+#endif
   } else {
     return RasterizeMeshesCoarseCpu(
         face_verts,
@@ -249,6 +265,7 @@ torch::Tensor RasterizeMeshesCoarse(
 // *                            FINE RASTERIZATION                            *
 // ****************************************************************************
 
+#ifdef WITH_CUDA
 std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>
 RasterizeMeshesFineCuda(
     const torch::Tensor& face_verts,
@@ -258,7 +275,7 @@ RasterizeMeshesFineCuda(
     int bin_size,
     int faces_per_pixel,
     bool perspective_correct);
-
+#endif
 // Args:
 //    face_verts: Tensor of shape (F, 3, 3) giving (packed) vertex positions for
 //                faces in all the meshes in the batch. Concretely,
@@ -306,6 +323,7 @@ RasterizeMeshesFine(
     int faces_per_pixel,
     bool perspective_correct) {
   if (face_verts.type().is_cuda()) {
+#ifdef WITH_CUDA
     return RasterizeMeshesFineCuda(
         face_verts,
         bin_faces,
@@ -314,6 +332,9 @@ RasterizeMeshesFine(
         bin_size,
         faces_per_pixel,
         perspective_correct);
+#else
+    AT_ERROR("Not compiled with GPU support");
+#endif
   } else {
     AT_ERROR("NOT IMPLEMENTED");
   }
