@@ -58,6 +58,9 @@ class PhongShader(nn.Module):
         cameras = kwargs.get("cameras", self.cameras)
         lights = kwargs.get("lights", self.lights)
         materials = kwargs.get("materials", self.materials)
+        diffuse_type = kwargs.get("diffuse_type", "lambert")
+        specular_type = kwargs.get("specular_type", "phong")
+
         colors = phong_shading(
             meshes=meshes,
             fragments=fragments,
@@ -65,6 +68,8 @@ class PhongShader(nn.Module):
             lights=lights,
             cameras=cameras,
             materials=materials,
+            diffuse_type=diffuse_type,
+            specular_type=specular_type
         )
         images = hard_rgb_blend(colors, fragments)
         return images
@@ -101,12 +106,17 @@ class GouradShader(nn.Module):
         cameras = kwargs.get("cameras", self.cameras)
         lights = kwargs.get("lights", self.lights)
         materials = kwargs.get("materials", self.materials)
+        diffuse_type = kwargs.get("diffuse_type", "lambert")
+        specular_type = kwargs.get("specular_type", "phong")
+
         pixel_colors = gourad_shading(
             meshes=meshes,
             fragments=fragments,
             lights=lights,
             cameras=cameras,
             materials=materials,
+            diffuse_type=diffuse_type,
+            specular_type=specular_type
         )
         images = hard_rgb_blend(pixel_colors, fragments)
         return images
@@ -155,6 +165,9 @@ class TexturedPhongShader(nn.Module):
         cameras = kwargs.get("cameras", self.cameras)
         lights = kwargs.get("lights", self.lights)
         materials = kwargs.get("materials", self.materials)
+        diffuse_type = kwargs.get("diffuse_type", "lambert")
+        specular_type = kwargs.get("specular_type", "phong")
+
         colors = phong_shading(
             meshes=meshes,
             fragments=fragments,
@@ -162,6 +175,8 @@ class TexturedPhongShader(nn.Module):
             lights=lights,
             cameras=cameras,
             materials=materials,
+            diffuse_type=diffuse_type,
+            specular_type=specular_type
         )
         images = softmax_rgb_blend(colors, fragments, self.blend_params)
         return images

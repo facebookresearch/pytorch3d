@@ -8,10 +8,12 @@ import torch.nn.functional as F
 from .utils import TensorProperties, convert_to_tensors_and_broadcast
 
 
-def diffuse(normals, color, direction) -> torch.Tensor:
+def diffuse(normals, color, direction, render_type='lambert', alpha=0.5, beta=0.5) -> torch.Tensor:
     """
-    Calculate the diffuse component of light reflection using Lambert's
-    cosine law.
+    Calculate the diffuse component of light reflection:
+
+    1) render_type = 'lambert' (default): Lambert's cosine law.
+    2) render_type = 'half_lambert':      Half-Lambert's law.
 
     Args:
         normals: (N, ..., 3) xyz normal vectors. Normals and points are
@@ -61,18 +63,27 @@ def diffuse(normals, color, direction) -> torch.Tensor:
     if color.shape != normals.shape:
         color = color.view(expand_dims)
 
-    # Renormalize the normals in case they have been interpolated.
-    normals = F.normalize(normals, p=2, dim=-1, eps=1e-6)
-    direction = F.normalize(direction, p=2, dim=-1, eps=1e-6)
-    angle = F.relu(torch.sum(normals * direction, dim=-1))
-    return color * angle[..., None]
+    if render_type == 'lambert':
+        # Renormalize the normals in case they have been interpolated.
+        normals = F.normalize(normals, p=2, dim=-1, eps=1e-6)
+        direction = F.normalize(direction, p=2, dim=-1, eps=1e-6)
+        angle = F.relu(torch.sum(normals * direction, dim=-1))
+        return color * angle[..., None]
+    elif render_type == 'half_lambert':
+        normals = F.normalize(normals, p=2, dim=-1, eps=1e-6)
+        direction = F.normalize(direction, p=2, dim=-1, eps=1e-6)
+        angle = alpha * torch.sum(normals * direction, dim=-1) + beta
+        return color * angle[..., None]
 
 
 def specular(
-    points, normals, direction, color, camera_position, shininess
+        points, normals, direction, color, camera_position, shininess, render_type='phong'
 ) -> torch.Tensor:
     """
-    Calculate the specular component of light reflection.
+    Calculate the specular component of light reflection:
+
+    1) render_type = 'phong' (default):   Phong's specular law.
+    2) render_type = 'blinn_phong':       Blinn-Phong's specular law.
 
     Args:
         points: (N, ..., 3) xyz coordinates of the points.
@@ -137,31 +148,49 @@ def specular(
     if shininess.shape != normals.shape:
         shininess = shininess.view(expand_dims)
 
-    # Renormalize the normals in case they have been interpolated.
-    normals = F.normalize(normals, p=2, dim=-1, eps=1e-6)
-    direction = F.normalize(direction, p=2, dim=-1, eps=1e-6)
-    cos_angle = torch.sum(normals * direction, dim=-1)
-    # No specular highlights if angle is less than 0.
-    mask = (cos_angle > 0).to(torch.float32)
+    if render_type == 'phong':
+        # Renormalize the normals in case they have been interpolated.
+        normals = F.normalize(normals, p=2, dim=-1, eps=1e-6)
+        direction = F.normalize(direction, p=2, dim=-1, eps=1e-6)
+        cos_angle = torch.sum(normals * direction, dim=-1)
+        # No specular highlights if angle is less than 0.
+        mask = (cos_angle > 0).to(torch.float32)
 
-    # Calculate the specular reflection.
-    view_direction = camera_position - points
-    view_direction = F.normalize(view_direction, p=2, dim=-1, eps=1e-6)
-    reflect_direction = -direction + 2 * (cos_angle[..., None] * normals)
+        # Calculate the specular reflection.
+        view_direction = camera_position - points
+        view_direction = F.normalize(view_direction, p=2, dim=-1, eps=1e-6)
+        reflect_direction = -direction + 2 * (cos_angle[..., None] * normals)
 
-    # Cosine of the angle between the reflected light ray and the viewer
-    alpha = F.relu(torch.sum(view_direction * reflect_direction, dim=-1)) * mask
-    return color * torch.pow(alpha, shininess)[..., None]
+        # Cosine of the angle between the reflected light ray and the viewer
+        alpha = F.relu(torch.sum(view_direction * reflect_direction, dim=-1)) * mask
+        return color * torch.pow(alpha, shininess)[..., None]
+    elif render_type == 'blinn_phong':
+        # The most commonly used specular render type in real world.
+        # Renormalize the normals in case they have been interpolated.
+        normals = F.normalize(normals, p=2, dim=-1, eps=1e-6)
+        direction = F.normalize(direction, p=2, dim=-1, eps=1e-6)
+        cos_angle = torch.sum(normals * direction, dim=-1)
+        # No specular highlights if angle is less than 0.
+        mask = (cos_angle > 0).to(torch.float32)
+
+        # Calculate the specular reflection.
+        view_direction = camera_position - points
+        view_direction = F.normalize(view_direction, p=2, dim=-1, eps=1e-6)
+        half_direction = F.normalize(direction + view_direction)
+
+        # Cosine of the angle between the reflected light ray and the viewer
+        alpha = F.relu(torch.sum(normals * half_direction, dim=-1)) * mask
+        return color * torch.pow(alpha, shininess)[..., None]
 
 
 class DirectionalLights(TensorProperties):
     def __init__(
-        self,
-        ambient_color=((0.5, 0.5, 0.5),),
-        diffuse_color=((0.3, 0.3, 0.3),),
-        specular_color=((0.2, 0.2, 0.2),),
-        direction=((0, 1, 0),),
-        device: str = "cpu",
+            self,
+            ambient_color=((0.5, 0.5, 0.5),),
+            diffuse_color=((0.3, 0.3, 0.3),),
+            specular_color=((0.2, 0.2, 0.2),),
+            direction=((0, 1, 0),),
+            device: str = "cpu",
     ):
         """
         Args:
@@ -194,17 +223,23 @@ class DirectionalLights(TensorProperties):
         other = DirectionalLights(device=self.device)
         return super().clone(other)
 
-    def diffuse(self, normals, points=None) -> torch.Tensor:
+    def diffuse(self, normals, points=None, render_type='lambert') -> torch.Tensor:
         # NOTE: Points is not used but is kept in the args so that the API is
         # the same for directional and point lights. The call sites should not
         # need to know the light type.
+
+        # NOTE: Add new field `render_type` to specify render type (add half_lambert on top of current lambert.)
         return diffuse(
-            normals=normals, color=self.diffuse_color, direction=self.direction
+            normals=normals,
+            color=self.diffuse_color,
+            direction=self.direction,
+            render_type=render_type
         )
 
     def specular(
-        self, normals, points, camera_position, shininess
+            self, normals, points, camera_position, shininess, render_type='phong'
     ) -> torch.Tensor:
+        # NOTE: Add new field `render_type` to specify render type (add blinn_phong on top of current phong.)
         return specular(
             points=points,
             normals=normals,
@@ -212,17 +247,18 @@ class DirectionalLights(TensorProperties):
             direction=self.direction,
             camera_position=camera_position,
             shininess=shininess,
+            render_type=render_type
         )
 
 
 class PointLights(TensorProperties):
     def __init__(
-        self,
-        ambient_color=((0.5, 0.5, 0.5),),
-        diffuse_color=((0.3, 0.3, 0.3),),
-        specular_color=((0.2, 0.2, 0.2),),
-        location=((0, 1, 0),),
-        device: str = "cpu",
+            self,
+            ambient_color=((0.5, 0.5, 0.5),),
+            diffuse_color=((0.3, 0.3, 0.3),),
+            specular_color=((0.2, 0.2, 0.2),),
+            location=((0, 1, 0),),
+            device: str = "cpu",
     ):
         """
         Args:
@@ -255,15 +291,19 @@ class PointLights(TensorProperties):
         other = PointLights(device=self.device)
         return super().clone(other)
 
-    def diffuse(self, normals, points) -> torch.Tensor:
+    def diffuse(self, normals, points, render_type='lambert') -> torch.Tensor:
         direction = self.location - points
         return diffuse(
-            normals=normals, color=self.diffuse_color, direction=direction
+            normals=normals,
+            color=self.diffuse_color,
+            direction=direction,
+            render_type=render_type
         )
 
     def specular(
-        self, normals, points, camera_position, shininess
+            self, normals, points, camera_position, shininess, render_type='phong'
     ) -> torch.Tensor:
+        # NOTE: Add new field `render_type` to specify render type (add blinn_phong on top of current phong.)
         direction = self.location - points
         return specular(
             points=points,
@@ -272,6 +312,7 @@ class PointLights(TensorProperties):
             direction=direction,
             camera_position=camera_position,
             shininess=shininess,
+            render_type=render_type
         )
 
 

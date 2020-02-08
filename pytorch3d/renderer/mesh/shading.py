@@ -9,7 +9,7 @@ from .texturing import interpolate_face_attributes
 
 
 def _apply_lighting(
-    points, normals, lights, cameras, materials
+        points, normals, lights, cameras, materials, diffuse_type='lambert', specular_type='phong'
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     """
     Args:
@@ -24,12 +24,13 @@ def _apply_lighting(
         diffuse_color: same shape as the input points
         specular_color: same shape as the input points
     """
-    light_diffuse = lights.diffuse(normals=normals, points=points)
+    light_diffuse = lights.diffuse(normals=normals, points=points, render_type=diffuse_type)
     light_specular = lights.specular(
         normals=normals,
         points=points,
         camera_position=cameras.get_camera_center(),
         shininess=materials.shininess,
+        render_type=specular_type
     )
     ambient_color = materials.ambient_color * lights.ambient_color
     diffuse_color = materials.diffuse_color * light_diffuse
@@ -45,7 +46,7 @@ def _apply_lighting(
 
 
 def phong_shading(
-    meshes, fragments, lights, cameras, materials, texels
+        meshes, fragments, lights, cameras, materials, texels, diffuse_type='lambert', specular_type='phong'
 ) -> torch.Tensor:
     """
     Apply per pixel shading. First interpolate the vertex normals and
@@ -61,6 +62,8 @@ def phong_shading(
         cameras: Cameras class containing a batch of cameras
         materials: Materials class containing a batch of material properties
         texels: texture per pixel of shape (N, H, W, K, 3)
+        diffuse_type: diffuse render type ('lambert', 'half_lambert')
+        specular_type: specular render type ('phong', 'blinn_phong')
 
     Returns:
         colors: (N, H, W, K, 3)
@@ -73,14 +76,14 @@ def phong_shading(
     pixel_coords = interpolate_face_attributes(fragments, faces_verts)
     pixel_normals = interpolate_face_attributes(fragments, faces_normals)
     ambient, diffuse, specular = _apply_lighting(
-        pixel_coords, pixel_normals, lights, cameras, materials
+        pixel_coords, pixel_normals, lights, cameras, materials, diffuse_type, specular_type
     )
     colors = (ambient + diffuse) * texels + specular
     return colors
 
 
 def gourad_shading(
-    meshes, fragments, lights, cameras, materials
+        meshes, fragments, lights, cameras, materials, diffuse_type='lambert', specular_type='phong'
 ) -> torch.Tensor:
     """
     Apply per vertex shading. First compute the vertex illumination by applying
@@ -96,6 +99,8 @@ def gourad_shading(
         lights: Lights class containing a batch of lights parameters
         cameras: Cameras class containing a batch of cameras parameters
         materials: Materials class containing a batch of material properties
+        diffuse_type: diffuse render type ('lambert', 'half_lambert')
+        specular_type: specular render type ('phong', 'blinn_phong')
 
     Returns:
         colors: (N, H, W, K, 3)
@@ -118,7 +123,7 @@ def gourad_shading(
 
     # Calculate the illumination at each vertex
     ambient, diffuse, specular = _apply_lighting(
-        verts, vertex_normals, lights, cameras, materials
+        verts, vertex_normals, lights, cameras, materials, diffuse_type, specular_type
     )
     verts_colors_shaded = vertex_colors * (ambient + diffuse) + specular
     face_colors = verts_colors_shaded[faces]
