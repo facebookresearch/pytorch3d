@@ -3,6 +3,7 @@
 
 import math
 import torch
+import warnings
 
 
 class Transform3d:
@@ -672,6 +673,5 @@ def _check_valid_rotation_matrix(R, tol: float = 1e-7):
     det_R = torch.det(R)
     no_distortion = torch.allclose(det_R, torch.ones_like(det_R))
     if not (orthogonal and no_distortion):
-        msg = "R is not a valid rotation matrix"
-        print(msg)
+        warnings.warn('R is not valid rotation matrix', RuntimeWarning)
     return
