@@ -3,6 +3,7 @@
 
 
 import numpy as np
+import warnings
 from typing import Any, Union
 import torch
 
@@ -111,7 +112,7 @@ class TensorProperties(object):
                     args_to_broadcast[k] = v
                 else:
                     msg = "Arg %s with type %r is not broadcastable"
-                    print(msg % (k, type(v)))
+                    warnings.warn(msg % (k, type(v)))
 
             names = args_to_broadcast.keys()
             # convert from type dict.values to tuple
