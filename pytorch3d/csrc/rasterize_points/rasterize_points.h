@@ -15,13 +15,14 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> RasterizePointsNaiveCpu(
     const float radius,
     const int points_per_pixel);
 
+#ifdef WITH_CUDA
 std::tuple<torch::Tensor, torch::Tensor, torch::Tensor>
 RasterizePointsNaiveCuda(
     const torch::Tensor& points,
     const int image_size,
     const float radius,
     const int points_per_pixel);
-
+#endif
 // Naive (forward) pointcloud rasterization: For each pixel, for each point,
 // check whether that point hits the pixel.
 //
@@ -47,8 +48,12 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> RasterizePointsNaive(
     const float radius,
     const int points_per_pixel) {
   if (points.type().is_cuda()) {
+#ifdef WITH_CUDA
     return RasterizePointsNaiveCuda(
         points, image_size, radius, points_per_pixel);
+#else
+    AT_ERROR("Not compiled with GPU support");
+#endif
   } else {
     return RasterizePointsNaiveCpu(
         points, image_size, radius, points_per_pixel);
@@ -66,13 +71,14 @@ torch::Tensor RasterizePointsCoarseCpu(
     const int bin_size,
     const int max_points_per_bin);
 
+#ifdef WITH_CUDA
 torch::Tensor RasterizePointsCoarseCuda(
     const torch::Tensor& points,
     const int image_size,
     const float radius,
     const int bin_size,
     const int max_points_per_bin);
-
+#endif
 // Args:
 //  points: Tensor of shape (N, P, 3)
 //  radius: Radius of points to rasterize (in NDC units)
@@ -91,8 +97,12 @@ torch::Tensor RasterizePointsCoarse(
     const int bin_size,
     const int max_points_per_bin) {
   if (points.type().is_cuda()) {
+#ifdef WITH_CUDA
     return RasterizePointsCoarseCuda(
         points, image_size, radius, bin_size, max_points_per_bin);
+#else
+    AT_ERROR("Not compiled with GPU support");
+#endif
   } else {
     return RasterizePointsCoarseCpu(
         points, image_size, radius, bin_size, max_points_per_bin);
@@ -103,6 +113,7 @@ torch::Tensor RasterizePointsCoarse(
 // *                            FINE RASTERIZATION                            *
 // ****************************************************************************
 
+#ifdef WITH_CUDA
 std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> RasterizePointsFineCuda(
     const torch::Tensor& points,
     const torch::Tensor& bin_points,
@@ -110,7 +121,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> RasterizePointsFineCuda(
     const float radius,
     const int bin_size,
     const int points_per_pixel);
-
+#endif
 // Args:
 //  points: float32 Tensor of shape (N, P, 3)
 //  bin_points: int32 Tensor of shape (N, B, B, M) giving the indices of points
@@ -137,8 +148,12 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> RasterizePointsFine(
     const int bin_size,
     const int points_per_pixel) {
   if (points.type().is_cuda()) {
+#ifdef WITH_CUDA
     return RasterizePointsFineCuda(
         points, bin_points, image_size, radius, bin_size, points_per_pixel);
+#else
+    AT_ERROR("Not compiled with GPU support");
+#endif
   } else {
     AT_ERROR("NOT IMPLEMENTED");
   }
@@ -154,12 +169,13 @@ torch::Tensor RasterizePointsBackwardCpu(
     const torch::Tensor& grad_zbuf,
     const torch::Tensor& grad_dists);
 
+#ifdef WITH_CUDA
 torch::Tensor RasterizePointsBackwardCuda(
     const torch::Tensor& points,
     const torch::Tensor& idxs,
     const torch::Tensor& grad_zbuf,
     const torch::Tensor& grad_dists);
-
+#endif
 // Args:
 //  points: float32 Tensor of shape (N, P, 3)
 //  idxs: int32 Tensor of shape (N, H, W, K) (from forward pass)
@@ -178,7 +194,11 @@ torch::Tensor RasterizePointsBackward(
     const torch::Tensor& grad_zbuf,
     const torch::Tensor& grad_dists) {
   if (points.type().is_cuda()) {
+#ifdef WITH_CUDA
     return RasterizePointsBackwardCuda(points, idxs, grad_zbuf, grad_dists);
+#else
+    AT_ERROR("Not compiled with GPU support");
+#endif
   } else {
     return RasterizePointsBackwardCpu(points, idxs, grad_zbuf, grad_dists);
   }
