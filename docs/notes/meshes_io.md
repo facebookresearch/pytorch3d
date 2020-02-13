@@ -55,6 +55,9 @@ tex = Textures(verts_uvs=verts_uvs, faces_uvs=faces_uvs, maps=texture_image)
 # Initialise the mesh with textures
 meshes = Meshes(verts=[verts], faces=[faces.verts_idx], textures=tex)
 ```
+
+The `load_objs_as_meshes` function provides this procedure.
+
 ## PLY
 
 Ply files are flexible in the way they store additional information, pytorch3d

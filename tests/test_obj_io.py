@@ -7,10 +7,13 @@ from io import StringIO
 from pathlib import Path
 import torch
 
-from pytorch3d.io import load_obj, save_obj
+from pytorch3d.io import load_obj, load_objs_as_meshes, save_obj
+from pytorch3d.structures import Meshes, Textures, join_meshes
+
+from common_testing import TestCaseMixin
 
 
-class TestMeshObjIO(unittest.TestCase):
+class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
     def test_load_obj_simple(self):
         obj_file = "\n".join(
             [
@@ -516,6 +519,88 @@ class TestMeshObjIO(unittest.TestCase):
         self.assertTrue(torch.allclose(faces.verts_idx, expected_faces))
         self.assertTrue(aux.material_colors is None)
         self.assertTrue(aux.texture_images is None)
+
+    def test_join_meshes(self):
+        """
+        Test that join_meshes and load_objs_as_meshes are consistent with single
+        meshes.
+        """
+
+        def check_triple(mesh, mesh3):
+            """
+            Verify that mesh3 is three copies of mesh.
+            """
+
+            def check_item(x, y):
+                self.assertEqual(x is None, y is None)
+                if x is not None:
+                    self.assertClose(torch.cat([x, x, x]), y)
+
+            check_item(mesh.verts_padded(), mesh3.verts_padded())
+            check_item(mesh.faces_padded(), mesh3.faces_padded())
+            if mesh.textures is not None:
+                check_item(
+                    mesh.textures.maps_padded(), mesh3.textures.maps_padded()
+                )
+                check_item(
+                    mesh.textures.faces_uvs_padded(),
+                    mesh3.textures.faces_uvs_padded(),
+                )
+                check_item(
+                    mesh.textures.verts_uvs_padded(),
+                    mesh3.textures.verts_uvs_padded(),
+                )
+                check_item(
+                    mesh.textures.verts_rgb_padded(),
+                    mesh3.textures.verts_rgb_padded(),
+                )
+
+        DATA_DIR = (
+            Path(__file__).resolve().parent.parent / "docs/tutorials/data"
+        )
+        obj_filename = DATA_DIR / "cow_mesh/cow.obj"
+
+        mesh = load_objs_as_meshes([obj_filename])
+        mesh3 = load_objs_as_meshes([obj_filename, obj_filename, obj_filename])
+        check_triple(mesh, mesh3)
+        self.assertTupleEqual(
+            mesh.textures.maps_padded().shape, (1, 1024, 1024, 3)
+        )
+
+        mesh_notex = load_objs_as_meshes([obj_filename], load_textures=False)
+        mesh3_notex = load_objs_as_meshes(
+            [obj_filename, obj_filename, obj_filename], load_textures=False
+        )
+        check_triple(mesh_notex, mesh3_notex)
+        self.assertIsNone(mesh_notex.textures)
+
+        verts = torch.randn((4, 3), dtype=torch.float32)
+        faces = torch.tensor([[2, 1, 0], [3, 1, 0]], dtype=torch.int64)
+        vert_tex = torch.tensor(
+            [[0, 1, 0], [0, 1, 1], [1, 1, 0], [1, 1, 1]], dtype=torch.float32
+        )
+        tex = Textures(verts_rgb=vert_tex[None, :])
+        mesh_rgb = Meshes(verts=[verts], faces=[faces], textures=tex)
+        mesh_rgb3 = join_meshes([mesh_rgb, mesh_rgb, mesh_rgb])
+        check_triple(mesh_rgb, mesh_rgb3)
+
+        teapot_obj = DATA_DIR / "teapot.obj"
+        mesh_teapot = load_objs_as_meshes([teapot_obj])
+        teapot_verts, teapot_faces = mesh_teapot.get_mesh_verts_faces(0)
+        mix_mesh = load_objs_as_meshes(
+            [obj_filename, teapot_obj], load_textures=False
+        )
+        self.assertEqual(len(mix_mesh), 2)
+        self.assertClose(mix_mesh.verts_list()[0], mesh.verts_list()[0])
+        self.assertClose(mix_mesh.faces_list()[0], mesh.faces_list()[0])
+        self.assertClose(mix_mesh.verts_list()[1], teapot_verts)
+        self.assertClose(mix_mesh.faces_list()[1], teapot_faces)
+
+        cow3_tea = join_meshes([mesh3, mesh_teapot], include_textures=False)
+        self.assertEqual(len(cow3_tea), 4)
+        check_triple(mesh_notex, cow3_tea[:3])
+        self.assertClose(cow3_tea.verts_list()[3], mesh_teapot.verts_list()[0])
+        self.assertClose(cow3_tea.faces_list()[3], mesh_teapot.faces_list()[0])
 
     @staticmethod
     def save_obj_with_init(V: int, F: int):

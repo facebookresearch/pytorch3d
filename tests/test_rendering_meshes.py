@@ -11,7 +11,7 @@ from pathlib import Path
 import torch
 from PIL import Image
 
-from pytorch3d.io import load_obj
+from pytorch3d.io import load_objs_as_meshes
 from pytorch3d.renderer.cameras import (
     OpenGLPerspectiveCameras,
     look_at_view_transform,
@@ -274,21 +274,7 @@ class TestRenderingMeshes(unittest.TestCase):
         obj_filename = DATA_DIR / "cow_mesh/cow.obj"
 
         # Load mesh + texture
-        verts, faces, aux = load_obj(obj_filename)
-        faces_idx = faces.verts_idx.to(device)
-        verts = verts.to(device)
-        texture_uvs = aux.verts_uvs
-        materials = aux.material_colors
-        tex_maps = aux.texture_images
-
-        # tex_maps is a dictionary of material names as keys and texture images
-        # as values. Only need the images for this example.
-        textures = Textures(
-            maps=list(tex_maps.values()),
-            faces_uvs=faces.textures_idx.to(torch.int64).to(device)[None, :],
-            verts_uvs=texture_uvs.to(torch.float32).to(device)[None, :],
-        )
-        mesh = Meshes(verts=[verts], faces=[faces_idx], textures=textures)
+        mesh = load_objs_as_meshes([obj_filename], device=device)
 
         # Init rasterizer settings
         R, T = look_at_view_transform(2.7, 10, 20)
@@ -333,9 +319,11 @@ class TestRenderingMeshes(unittest.TestCase):
         self.assertTrue(torch.allclose(rgb, image_ref, atol=0.05))
 
         # Check grad exists
-        verts = verts.clone()
+        [verts] = mesh.verts_list()
         verts.requires_grad = True
-        mesh = Meshes(verts=[verts], faces=[faces_idx], textures=textures)
-        images = renderer(mesh)
+        mesh2 = Meshes(
+            verts=[verts], faces=mesh.faces_list(), textures=mesh.textures
+        )
+        images = renderer(mesh2)
         images[0, ...].sum().backward()
         self.assertIsNotNone(verts.grad)

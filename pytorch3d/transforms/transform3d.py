@@ -2,6 +2,7 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
 import math
+import warnings
 import torch
 
 
@@ -663,7 +664,7 @@ def _check_valid_rotation_matrix(R, tol: float = 1e-7):
     Returns:
         None
 
-    Prints an warning if R is an invalid rotation matrix. Else return.
+    Emits a warning if R is an invalid rotation matrix.
     """
     N = R.shape[0]
     eye = torch.eye(3, dtype=R.dtype, device=R.device)
@@ -673,5 +674,5 @@ def _check_valid_rotation_matrix(R, tol: float = 1e-7):
     no_distortion = torch.allclose(det_R, torch.ones_like(det_R))
     if not (orthogonal and no_distortion):
         msg = "R is not a valid rotation matrix"
-        print(msg)
+        warnings.warn(msg)
     return
