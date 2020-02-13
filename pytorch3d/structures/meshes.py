@@ -771,21 +771,9 @@ class Meshes(object):
             return
         faces_packed = self.faces_packed()
         verts_packed = self.verts_packed()
-        if verts_packed.is_cuda and faces_packed.is_cuda:
-            face_areas, face_normals = _C.face_areas_normals(
-                verts_packed, faces_packed
-            )
-        else:
-            vertices_faces = verts_packed[faces_packed]  # (F, 3, 3)
-            # vector pointing from v0 to v1
-            v01 = vertices_faces[:, 1] - vertices_faces[:, 0]
-            # vector pointing from v0 to v2
-            v02 = vertices_faces[:, 2] - vertices_faces[:, 0]
-            normals = torch.cross(v01, v02, dim=1)  # (F, 3)
-            face_areas = normals.norm(dim=-1) / 2
-            face_normals = torch.nn.functional.normalize(
-                normals, p=2, dim=1, eps=1e-6
-            )
+        face_areas, face_normals = _C.face_areas_normals(
+            verts_packed, faces_packed
+        )
         self._faces_areas_packed = face_areas
         self._faces_normals_packed = face_normals
 

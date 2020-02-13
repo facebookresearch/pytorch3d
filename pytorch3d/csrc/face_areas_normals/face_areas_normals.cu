@@ -4,7 +4,7 @@
 #include <tuple>
 
 template <typename scalar_t>
-__global__ void face_areas_kernel(
+__global__ void FaceAreasNormalsKernel(
     const scalar_t* __restrict__ verts,
     const long* __restrict__ faces,
     scalar_t* __restrict__ face_areas,
@@ -55,7 +55,7 @@ __global__ void face_areas_kernel(
   }
 }
 
-std::tuple<at::Tensor, at::Tensor> face_areas_cuda(
+std::tuple<at::Tensor, at::Tensor> FaceAreasNormalsCuda(
     at::Tensor verts,
     at::Tensor faces) {
   const auto V = verts.size(0);
@@ -66,14 +66,15 @@ std::tuple<at::Tensor, at::Tensor> face_areas_cuda(
 
   const int blocks = 64;
   const int threads = 512;
-  AT_DISPATCH_FLOATING_TYPES(verts.type(), "face_areas_kernel", ([&] {
-                               face_areas_kernel<scalar_t><<<blocks, threads>>>(
-                                   verts.data_ptr<scalar_t>(),
-                                   faces.data_ptr<long>(),
-                                   areas.data_ptr<scalar_t>(),
-                                   normals.data_ptr<scalar_t>(),
-                                   V,
-                                   F);
+  AT_DISPATCH_FLOATING_TYPES(verts.type(), "face_areas_normals_cuda", ([&] {
+                               FaceAreasNormalsKernel<scalar_t>
+                                   <<<blocks, threads>>>(
+                                       verts.data_ptr<scalar_t>(),
+                                       faces.data_ptr<long>(),
+                                       areas.data_ptr<scalar_t>(),
+                                       normals.data_ptr<scalar_t>(),
+                                       V,
+                                       F);
                              }));
 
   return std::make_tuple(areas, normals);
