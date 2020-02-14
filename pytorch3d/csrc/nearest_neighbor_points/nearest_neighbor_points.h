@@ -20,13 +20,15 @@
 //
 
 // CPU implementation.
-at::Tensor NearestNeighborIdxCpu(at::Tensor p1, at::Tensor p2);
+at::Tensor NearestNeighborIdxCpu(const at::Tensor& p1, const at::Tensor& p2);
 
 // Cuda implementation.
-at::Tensor NearestNeighborIdxCuda(at::Tensor p1, at::Tensor p2);
+#ifdef WITH_CUDA
+at::Tensor NearestNeighborIdxCuda(const at::Tensor& p1, const at::Tensor& p2);
+#endif
 
 // Implementation which is exposed.
-at::Tensor NearestNeighborIdx(at::Tensor p1, at::Tensor p2) {
+at::Tensor NearestNeighborIdx(const at::Tensor& p1, const at::Tensor& p2) {
   if (p1.type().is_cuda() && p2.type().is_cuda()) {
 #ifdef WITH_CUDA
     CHECK_CONTIGUOUS_CUDA(p1);

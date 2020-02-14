@@ -212,7 +212,7 @@ __global__ void NearestNeighborKernelD3(
   }
 }
 
-at::Tensor NearestNeighborIdxCuda(at::Tensor p1, at::Tensor p2) {
+at::Tensor NearestNeighborIdxCuda(const at::Tensor& p1, const at::Tensor& p2) {
   const auto N = p1.size(0);
   const auto P1 = p1.size(1);
   const auto P2 = p2.size(1);
