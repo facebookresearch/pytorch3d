@@ -16,21 +16,26 @@
 //    faces[f]
 //
 
+// Cpu implementation.
+std::tuple<at::Tensor, at::Tensor> FaceAreasNormalsCpu(
+    at::Tensor verts,
+    at::Tensor faces);
+
 // Cuda implementation.
-std::tuple<at::Tensor, at::Tensor> face_areas_cuda(
+std::tuple<at::Tensor, at::Tensor> FaceAreasNormalsCuda(
     at::Tensor verts,
     at::Tensor faces);
 
 // Implementation which is exposed.
-std::tuple<at::Tensor, at::Tensor> face_areas_normals(
+std::tuple<at::Tensor, at::Tensor> FaceAreasNormals(
     at::Tensor verts,
     at::Tensor faces) {
   if (verts.type().is_cuda() && faces.type().is_cuda()) {
 #ifdef WITH_CUDA
-    return face_areas_cuda(verts, faces);
+    return FaceAreasNormalsCuda(verts, faces);
 #else
     AT_ERROR("Not compiled with GPU support.");
 #endif
   }
-  AT_ERROR("Not implemented on the CPU.");
+  return FaceAreasNormalsCpu(verts, faces);
 }

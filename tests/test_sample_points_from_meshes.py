@@ -295,58 +295,6 @@ class TestSamplePoints(unittest.TestCase):
         return True
 
     @staticmethod
-    def face_areas(verts, faces):
-        """
-        Vectorized PyTorch implementation of triangle face area function.
-        """
-        verts_faces = verts[faces]
-        v0x = verts_faces[:, 0::3, 0]
-        v0y = verts_faces[:, 0::3, 1]
-        v0z = verts_faces[:, 0::3, 2]
-
-        v1x = verts_faces[:, 1::3, 0]
-        v1y = verts_faces[:, 1::3, 1]
-        v1z = verts_faces[:, 1::3, 2]
-
-        v2x = verts_faces[:, 2::3, 0]
-        v2y = verts_faces[:, 2::3, 1]
-        v2z = verts_faces[:, 2::3, 2]
-
-        ax = v0x - v2x
-        ay = v0y - v2y
-        az = v0z - v2z
-
-        bx = v1x - v2x
-        by = v1y - v2y
-        bz = v1z - v2z
-
-        cx = ay * bz - az * by
-        cy = az * bx - ax * bz
-        cz = ax * by - ay * bx
-
-        # this gives the area of the parallelogram with sides a and b
-        area_sqr = cx * cx + cy * cy + cz * cz
-        # the area of the triangle is half
-        return torch.sqrt(area_sqr) / 2.0
-
-    def test_face_areas(self):
-        """
-        Check the results from face_areas cuda and PyTorch implementions are
-        the same. Check that face_areas throws an error if cpu tensors are
-        given as input.
-        """
-        meshes = self.init_meshes(10, 1000, 3000, device="cuda:0")
-        verts = meshes.verts_packed()
-        faces = meshes.faces_packed()
-
-        areas_torch = self.face_areas(verts, faces).squeeze()
-        areas_cuda, _ = _C.face_areas_normals(verts, faces)
-        self.assertTrue(torch.allclose(areas_torch, areas_cuda, atol=5e-8))
-        with self.assertRaises(Exception) as err:
-            _C.face_areas_normals(verts.cpu(), faces.cpu())
-        self.assertTrue("Not implemented on the CPU" in str(err.exception))
-
-    @staticmethod
     def packed_to_padded_tensor(inputs, first_idxs, max_size):
         """
         PyTorch implementation of cuda packed_to_padded_tensor function.
@@ -420,27 +368,6 @@ class TestSamplePoints(unittest.TestCase):
         return sample_points
 
     @staticmethod
-    def face_areas_with_init(
-        num_meshes: int, num_verts: int, num_faces: int, cuda: str = True
-    ):
-        device = "cuda" if cuda else "cpu"
-        meshes = TestSamplePoints.init_meshes(
-            num_meshes, num_verts, num_faces, device
-        )
-        verts = meshes.verts_packed()
-        faces = meshes.faces_packed()
-        torch.cuda.synchronize()
-
-        def face_areas():
-            if cuda:
-                _C.face_areas_normals(verts, faces)
-            else:
-                TestSamplePoints.face_areas(verts, faces)
-            torch.cuda.synchronize()
-
-        return face_areas
-
-    @staticmethod
     def packed_to_padded_with_init(
         num_meshes: int, num_verts: int, num_faces: int, cuda: str = True
     ):
@@ -453,10 +380,7 @@ class TestSamplePoints(unittest.TestCase):
         mesh_to_faces_packed_first_idx = meshes.mesh_to_faces_packed_first_idx()
         max_faces = meshes.num_faces_per_mesh().max().item()
 
-        if cuda:
-            areas, _ = _C.face_areas_normals(verts, faces)
-        else:
-            areas = TestSamplePoints.face_areas(verts, faces)
+        areas, _ = _C.face_areas_normals(verts, faces)
         torch.cuda.synchronize()
 
         def packed_to_padded():

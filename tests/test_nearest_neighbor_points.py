@@ -43,21 +43,21 @@ class TestNearestNeighborPoints(unittest.TestCase):
         """
         Test cuda output vs naive python implementation.
         """
-        device = torch.device('cuda:0')
+        device = torch.device("cuda:0")
         self._test_nn_helper(device)
 
     def test_nn_cpu(self):
         """
         Test cpu output vs naive python implementation
         """
-        device = torch.device('cpu')
+        device = torch.device("cpu")
         self._test_nn_helper(device)
 
     @staticmethod
     def bm_nn_points_cpu_with_init(
         N: int = 4, D: int = 4, P1: int = 128, P2: int = 128
     ):
-        device = torch.device('cpu')
+        device = torch.device("cpu")
         x = torch.randn(N, P1, D, device=device)
         y = torch.randn(N, P2, D, device=device)
 
