@@ -13,6 +13,7 @@ from .cameras import (
     get_world_to_view_transform,
     look_at_rotation,
     look_at_view_transform,
+    look_at_from_eye_view_transform,
 )
 from .lighting import DirectionalLights, PointLights, diffuse, specular
 from .materials import Materials
