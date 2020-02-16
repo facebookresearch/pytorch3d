@@ -216,11 +216,8 @@ def _parse_face(
     faces_textures_idx,
     faces_materials_idx,
 ):
-    face = line.split(" ")[1:]
+    face = line.split()[1:]
     face_list = [f.split("/") for f in face]
-    # ShapeNetCore v2 fix: remove second blank after face identifier
-    if face_list[0] == ['']:
-        face_list = face_list[1:]
     face_verts = []
     face_normals = []
     face_textures = []
