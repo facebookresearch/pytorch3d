@@ -3,7 +3,7 @@
 
 import math
 import numpy as np
-from typing import Tuple
+from typing import Tuple, Sequence
 import torch
 import torch.nn.functional as F
 
@@ -1000,6 +1000,40 @@ def look_at_rotation(
         (x_axis[:, None, :], y_axis[:, None, :], z_axis[:, None, :]), dim=1
     )
     return R.transpose(1, 2)
+
+
+def look_at_from_eye_view_transform(
+    eye: Sequence,
+    at=((0, 0, 0),),  # (1, 3)
+    up=((0, 1, 0),),  # (1, 3)
+    device="cpu",
+) -> Tuple[torch.Tensor, torch.Tensor]:
+    """
+    This function returns a rotation and translation matrix
+    to apply the 'Look At' transformation from world -> view coordinates [0].
+
+    Args:
+        eye: the position of the camera(s) in world coordinates.
+        up: the direction of the x axis in the world coordinate system.
+        at: the position of the object(s) in world coordinates.
+        eye up and at can be of shape (1, 3) or (N, 3).
+
+    Returns:
+        2-element tuple containing
+
+        - **R**: the rotation to apply to the points to align with the camera.
+        - **T**: the translation to apply to the points to align with the camera.
+
+    References:
+    [0] https://www.scratchapixel.com
+    """
+    broadcasted_args = convert_to_tensors_and_broadcast(
+        eye, at, up, device=device
+    )
+    eye, at, up = broadcasted_args
+    R = look_at_rotation(eye, at, up, device=device)
+    T = -torch.bmm(R.transpose(1, 2), eye[:, :, None])[:, :, 0]
+    return R, T
 
 
 def look_at_view_transform(
