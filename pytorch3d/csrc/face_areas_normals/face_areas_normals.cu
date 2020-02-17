@@ -67,13 +67,15 @@ std::tuple<at::Tensor, at::Tensor> FaceAreasNormalsCuda(
   const int blocks = 64;
   const int threads = 512;
   AT_DISPATCH_FLOATING_TYPES(verts.type(), "face_areas_normals_cuda", ([&] {
-                               face_areas_kernel<scalar_t><<<blocks, threads>>>(
-                                   verts.data_ptr<scalar_t>(),
-                                   faces.data_ptr<int64_t>(),
-                                   areas.data_ptr<scalar_t>(),
-                                   normals.data_ptr<scalar_t>(),
-                                   V,
-                                   F);
-
+                               FaceAreasNormalsKernel<scalar_t>
+                                   <<<blocks, threads>>>(
+                                       verts.data_ptr<scalar_t>(),
+                                       faces.data_ptr<int64_t>(),
+                                       areas.data_ptr<scalar_t>(),
+                                       normals.data_ptr<scalar_t>(),
+                                       V,
+                                       F);
+                             }));
+  
   return std::make_tuple(areas, normals);
 }
