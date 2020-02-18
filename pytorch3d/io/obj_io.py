@@ -256,7 +256,7 @@ def _parse_face(
     faces_textures_idx,
     faces_materials_idx,
 ):
-    face = line.split(" ")[1:]
+    face = line.split()[1:]
     face_list = [f.split("/") for f in face]
     face_verts = []
     face_normals = []
