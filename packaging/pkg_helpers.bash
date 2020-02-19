@@ -113,7 +113,7 @@ setup_build_version() {
 # Set some useful variables for OS X, if applicable
 setup_macos() {
   if [[ "$(uname)" == Darwin ]]; then
-    export MACOSX_DEPLOYMENT_TARGET=10.9 CC=clang CXX=clang++
+    export MACOSX_DEPLOYMENT_TARGET=10.14 CC=clang CXX=clang++
   fi
 }
 

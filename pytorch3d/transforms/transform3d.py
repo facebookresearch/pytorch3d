@@ -5,6 +5,8 @@ import math
 import warnings
 import torch
 
+from .rotation_conversions import _axis_angle_rotation
+
 
 class Transform3d:
     """
@@ -103,12 +105,35 @@ class Transform3d:
             s1_params -= lr * s1_params.grad
             t_params -= lr * t_params.grad
             s2_params -= lr * s2_params.grad
+
+    CONVENTIONS
+    We adopt a right-hand coordinate system, meaning that rotation about an axis
+    with a positive angle results in a counter clockwise rotation.
+
+    This class assumes that transformations are applied on inputs which
+    are row vectors. The internal representation of the Nx4x4 transformation
+    matrix is of the form:
+
+    .. code-block:: python
+
+        M = [
+                [Rxx, Ryx, Rzx, 0],
+                [Rxy, Ryy, Rzy, 0],
+                [Rxz, Ryz, Rzz, 0],
+                [Tx,  Ty,  Tz,  1],
+            ]
+
+    To apply the transformation to points which are row vectors, the M matrix
+    can be pre multiplied by the points:
+
+    .. code-block:: python
+
+        points = [[0, 1, 2]]  # (1 x 3) xyz coordinates of a point
+        transformed_points = points * M
+
     """
 
     def __init__(self, dtype=torch.float32, device="cpu"):
-        """
-        This class assumes a row major ordering for all matrices.
-        """
         self._matrix = torch.eye(4, dtype=dtype, device=device).view(1, 4, 4)
         self._transforms = []  # store transforms to compose
         self._lu = None
@@ -493,9 +518,12 @@ class RotateAxisAngle(Rotate):
         Create a new Transform3d representing 3D rotation about an axis
         by an angle.
 
+        Assuming a right-hand coordinate system, positive rotation angles result
+        in a counter clockwise rotation.
+
         Args:
             angle:
-                - A torch tensor of shape (N, 1)
+                - A torch tensor of shape (N,)
                 - A python scalar
                 - A torch scalar
             axis:
@@ -509,21 +537,11 @@ class RotateAxisAngle(Rotate):
             raise ValueError(msg % axis)
         angle = _handle_angle_input(angle, dtype, device, "RotateAxisAngle")
         angle = (angle / 180.0 * math.pi) if degrees else angle
-        N = angle.shape[0]
-
-        cos = torch.cos(angle)
-        sin = torch.sin(angle)
-        one = torch.ones_like(angle)
-        zero = torch.zeros_like(angle)
-
-        if axis == "X":
-            R_flat = (one, zero, zero, zero, cos, -sin, zero, sin, cos)
-        if axis == "Y":
-            R_flat = (cos, zero, sin, zero, one, zero, -sin, zero, cos)
-        if axis == "Z":
-            R_flat = (cos, -sin, zero, sin, cos, zero, zero, zero, one)
-
-        R = torch.stack(R_flat, -1).reshape((N, 3, 3))
+        # We assume the points on which this transformation will be applied
+        # are row vectors. The rotation matrix returned from _axis_angle_rotation
+        # is for transforming column vectors. Therefore we transpose this matrix.
+        # R will always be of shape (N, 3, 3)
+        R = _axis_angle_rotation(axis, angle).transpose(1, 2)
         super().__init__(device=device, R=R)
 
 
@@ -606,19 +624,16 @@ def _handle_input(
 def _handle_angle_input(x, dtype, device: str, name: str):
     """
     Helper function for building a rotation function using angles.
-    The output is always of shape (N, 1).
+    The output is always of shape (N,).
 
     The input can be one of:
-        - Torch tensor (N, 1) or (N)
+        - Torch tensor of shape (N,)
         - Python scalar
         - Torch scalar
     """
-    # If x is actually a tensor of shape (N, 1) then just return it
-    if torch.is_tensor(x) and x.dim() == 2:
-        if x.shape[1] != 1:
-            msg = "Expected tensor of shape (N, 1); got %r (in %s)"
-            raise ValueError(msg % (x.shape, name))
-        return x
+    if torch.is_tensor(x) and x.dim() > 1:
+        msg = "Expected tensor of shape (N,); got %r (in %s)"
+        raise ValueError(msg % (x.shape, name))
     else:
         return _handle_coord(x, dtype, device)
 

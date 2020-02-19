@@ -12,6 +12,8 @@ import torch
 
 from pytorch3d import _C
 
+from .packed_to_padded import packed_to_padded
+
 
 def sample_points_from_meshes(
     meshes, num_samples: int = 10000, return_normals: bool = False
@@ -55,7 +57,7 @@ def sample_points_from_meshes(
             verts, faces
         )  # Face areas can be zero.
         max_faces = meshes.num_faces_per_mesh().max().item()
-        areas_padded = _C.packed_to_padded_tensor(
+        areas_padded = packed_to_padded(
             areas, mesh_to_face[meshes.valid], max_faces
         )  # (N, F)
 

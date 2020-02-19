@@ -8,6 +8,7 @@ import unittest
 import torch
 
 from pytorch3d.transforms.rotation_conversions import (
+    _axis_angle_rotation,
     euler_angles_to_matrix,
     matrix_to_euler_angles,
     matrix_to_quaternion,
@@ -118,7 +119,6 @@ class TestRotationConversion(unittest.TestCase):
     def test_to_euler(self):
         """mtx -> euler -> mtx"""
         data = random_rotations(13, dtype=torch.float64)
-
         for convention in self._all_euler_angle_conventions():
             euler_angles = matrix_to_euler_angles(data, convention)
             mdata = euler_angles_to_matrix(euler_angles, convention)

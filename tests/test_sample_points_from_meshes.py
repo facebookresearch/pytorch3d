@@ -295,48 +295,6 @@ class TestSamplePoints(unittest.TestCase):
         return True
 
     @staticmethod
-    def packed_to_padded_tensor(inputs, first_idxs, max_size):
-        """
-        PyTorch implementation of cuda packed_to_padded_tensor function.
-        """
-        num_meshes = first_idxs.size(0)
-        inputs_padded = torch.zeros((num_meshes, max_size))
-        for m in range(num_meshes):
-            s = first_idxs[m]
-            if m == num_meshes - 1:
-                f = inputs.size(0)
-            else:
-                f = first_idxs[m + 1]
-            inputs_padded[m, :f] = inputs[s:f]
-
-        return inputs_padded
-
-    def test_packed_to_padded_tensor(self):
-        """
-        Check the results from packed_to_padded cuda and PyTorch implementions
-        are the same.
-        """
-        meshes = self.init_meshes(1, 3, 5, device="cuda:0")
-        verts = meshes.verts_packed()
-        faces = meshes.faces_packed()
-        mesh_to_faces_packed_first_idx = meshes.mesh_to_faces_packed_first_idx()
-        max_faces = meshes.num_faces_per_mesh().max().item()
-
-        areas, _ = _C.face_areas_normals(verts, faces)
-        areas_padded = _C.packed_to_padded_tensor(
-            areas, mesh_to_faces_packed_first_idx, max_faces
-        ).cpu()
-        areas_padded_cpu = TestSamplePoints.packed_to_padded_tensor(
-            areas, mesh_to_faces_packed_first_idx, max_faces
-        )
-        self.assertTrue(torch.allclose(areas_padded, areas_padded_cpu))
-        with self.assertRaises(Exception) as err:
-            _C.packed_to_padded_tensor(
-                areas.cpu(), mesh_to_faces_packed_first_idx, max_faces
-            )
-        self.assertTrue("Not implemented on the CPU" in str(err.exception))
-
-    @staticmethod
     def sample_points_with_init(
         num_meshes: int,
         num_verts: int,
@@ -344,7 +302,6 @@ class TestSamplePoints(unittest.TestCase):
         num_samples: int,
         device: str = "cpu",
     ):
-        device = torch.device(device)
         verts_list = []
         faces_list = []
         for _ in range(num_meshes):
@@ -366,32 +323,3 @@ class TestSamplePoints(unittest.TestCase):
             torch.cuda.synchronize()
 
         return sample_points
-
-    @staticmethod
-    def packed_to_padded_with_init(
-        num_meshes: int, num_verts: int, num_faces: int, cuda: str = True
-    ):
-        device = "cuda" if cuda else "cpu"
-        meshes = TestSamplePoints.init_meshes(
-            num_meshes, num_verts, num_faces, device
-        )
-        verts = meshes.verts_packed()
-        faces = meshes.faces_packed()
-        mesh_to_faces_packed_first_idx = meshes.mesh_to_faces_packed_first_idx()
-        max_faces = meshes.num_faces_per_mesh().max().item()
-
-        areas, _ = _C.face_areas_normals(verts, faces)
-        torch.cuda.synchronize()
-
-        def packed_to_padded():
-            if cuda:
-                _C.packed_to_padded_tensor(
-                    areas, mesh_to_faces_packed_first_idx, max_faces
-                )
-            else:
-                TestSamplePoints.packed_to_padded_tensor(
-                    areas, mesh_to_faces_packed_first_idx, max_faces
-                )
-            torch.cuda.synchronize()
-
-        return packed_to_padded

@@ -22,8 +22,10 @@
 // CPU implementation.
 at::Tensor NearestNeighborIdxCpu(at::Tensor p1, at::Tensor p2);
 
+#ifdef WITH_CUDA
 // Cuda implementation.
 at::Tensor NearestNeighborIdxCuda(at::Tensor p1, at::Tensor p2);
+#endif
 
 // Implementation which is exposed.
 at::Tensor NearestNeighborIdx(at::Tensor p1, at::Tensor p2) {

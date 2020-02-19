@@ -10,7 +10,8 @@
 
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
   m.def("face_areas_normals", &FaceAreasNormals);
-  m.def("packed_to_padded_tensor", &packed_to_padded_tensor);
+  m.def("packed_to_padded", &PackedToPadded);
+  m.def("padded_to_packed", &PaddedToPacked);
   m.def("nn_points_idx", &NearestNeighborIdx);
   m.def("gather_scatter", &gather_scatter);
   m.def("rasterize_points", &RasterizePoints);
