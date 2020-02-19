@@ -39,6 +39,7 @@ from pytorch3d.renderer.cameras import (
     camera_position_from_spherical_angles,
     get_world_to_view_transform,
     look_at_rotation,
+    look_at_view_transform,
 )
 from pytorch3d.transforms import Transform3d
 from pytorch3d.transforms.so3 import so3_exponential_map
@@ -116,6 +117,18 @@ class TestCameraHelpers(unittest.TestCase):
         super().setUp()
         torch.manual_seed(42)
         np.random.seed(42)
+
+    def test_look_at_view_transform_from_eye_point_tuple(self):
+        dist = math.sqrt(2)
+        elev = math.pi / 4
+        azim = 0.0
+        eye = ((0.0, 1.0, -1.0), )
+        R, t = look_at_view_transform(dist, elev, azim, degrees=False)
+        # using other values for dist, elev, azim
+        R_eye, t_eye = look_at_view_transform(
+            dist=3, elev=2, azim=1, eye=eye)
+        self.assertTrue(torch.allclose(R, R_eye, atol=2e-7))
+        self.assertTrue(torch.allclose(t, t_eye, atol=2e-7))
 
     def test_camera_position_from_angles_python_scalar(self):
         dist = 2.7
@@ -671,3 +684,7 @@ class TestSfMPerspectiveProjection(TestCaseMixin, unittest.TestCase):
             vertices, fx=2.0, fy=2.0, p0x=2.5, p0y=3.5
         )
         self.assertTrue(torch.allclose(v1, v2))
+
+
+if __name__ == "__main__":
+    unittest.main()
