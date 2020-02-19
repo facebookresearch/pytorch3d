@@ -120,7 +120,7 @@ class TestTransform(unittest.TestCase):
         self.assertTrue(torch.allclose(normals_out, normals_out_expected))
 
     def test_rotate_axis_angle(self):
-        t = Transform3d().rotate_axis_angle(-90.0, axis="Z")
+        t = Transform3d().rotate_axis_angle(90.0, axis="Z")
         points = torch.tensor(
             [[0.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 1.0, 1.0]]
         ).view(1, 3, 3)
@@ -737,15 +737,23 @@ class TestRotateAxisAngle(unittest.TestCase):
         matrix = torch.tensor(
             [
                 [
-                    [1.0, 0.0,  0.0, 0.0],  # noqa: E241, E201
-                    [0.0, 0.0, -1.0, 0.0],  # noqa: E241, E201
-                    [0.0, 1.0,  0.0, 0.0],  # noqa: E241, E201
-                    [0.0, 0.0,  0.0, 1.0],  # noqa: E241, E201
+                    [1.0,  0.0, 0.0, 0.0],  # noqa: E241, E201
+                    [0.0,  0.0, 1.0, 0.0],  # noqa: E241, E201
+                    [0.0, -1.0, 0.0, 0.0],  # noqa: E241, E201
+                    [0.0,  0.0, 0.0, 1.0],  # noqa: E241, E201
                 ]
             ],
             dtype=torch.float32,
         )
         # fmt: on
+        points = torch.tensor([0.0, 1.0, 0.0])[None, None, :]  # (1, 1, 3)
+        transformed_points = t.transform_points(points)
+        expected_points = torch.tensor([0.0, 0.0, 1.0])
+        self.assertTrue(
+            torch.allclose(
+                transformed_points.squeeze(), expected_points, atol=1e-7
+            )
+        )
         self.assertTrue(torch.allclose(t._matrix, matrix))
 
     def test_rotate_x_torch_scalar(self):
@@ -755,15 +763,23 @@ class TestRotateAxisAngle(unittest.TestCase):
         matrix = torch.tensor(
             [
                 [
-                    [1.0, 0.0,  0.0, 0.0],  # noqa: E241, E201
-                    [0.0, 0.0, -1.0, 0.0],  # noqa: E241, E201
-                    [0.0, 1.0,  0.0, 0.0],  # noqa: E241, E201
-                    [0.0, 0.0,  0.0, 1.0],  # noqa: E241, E201
+                    [1.0,  0.0, 0.0, 0.0],  # noqa: E241, E201
+                    [0.0,  0.0, 1.0, 0.0],  # noqa: E241, E201
+                    [0.0, -1.0, 0.0, 0.0],  # noqa: E241, E201
+                    [0.0,  0.0, 0.0, 1.0],  # noqa: E241, E201
                 ]
             ],
             dtype=torch.float32,
         )
         # fmt: on
+        points = torch.tensor([0.0, 1.0, 0.0])[None, None, :]  # (1, 1, 3)
+        transformed_points = t.transform_points(points)
+        expected_points = torch.tensor([0.0, 0.0, 1.0])
+        self.assertTrue(
+            torch.allclose(
+                transformed_points.squeeze(), expected_points, atol=1e-7
+            )
+        )
         self.assertTrue(torch.allclose(t._matrix, matrix, atol=1e-7))
 
     def test_rotate_x_torch_tensor(self):
@@ -781,23 +797,23 @@ class TestRotateAxisAngle(unittest.TestCase):
                     [0.0, 0.0, 0.0, 1.0],
                 ],
                 [
-                    [1.0,  0.0,   0.0, 0.0],  # noqa: E241, E201
-                    [0.0, r2_2, -r2_i, 0.0],  # noqa: E241, E201
-                    [0.0, r2_i,  r2_2, 0.0],  # noqa: E241, E201
-                    [0.0,  0.0,   0.0, 1.0],  # noqa: E241, E201
+                    [1.0,   0.0,  0.0, 0.0],  # noqa: E241, E201
+                    [0.0,  r2_2, r2_i, 0.0],  # noqa: E241, E201
+                    [0.0, -r2_i, r2_2, 0.0],  # noqa: E241, E201
+                    [0.0,   0.0,  0.0, 1.0],  # noqa: E241, E201
                 ],
                 [
-                    [1.0, 0.0,  0.0,  0.0],   # noqa: E241, E201
-                    [0.0, 0.0, -1.0,  0.0],   # noqa: E241, E201
-                    [0.0, 1.0,  0.0,  0.0],   # noqa: E241, E201
-                    [0.0, 0.0,  0.0,  1.0],   # noqa: E241, E201
+                    [1.0,  0.0, 0.0,  0.0],   # noqa: E241, E201
+                    [0.0,  0.0, 1.0,  0.0],   # noqa: E241, E201
+                    [0.0, -1.0, 0.0,  0.0],   # noqa: E241, E201
+                    [0.0,  0.0, 0.0,  1.0],   # noqa: E241, E201
                 ]
             ],
             dtype=torch.float32,
         )
         # fmt: on
         self.assertTrue(torch.allclose(t._matrix, matrix, atol=1e-7))
-        angle = angle[..., None]  # (N, 1)
+        angle = angle
         t = RotateAxisAngle(angle=angle, axis="X")
         self.assertTrue(torch.allclose(t._matrix, matrix, atol=1e-7))
 
@@ -807,33 +823,54 @@ class TestRotateAxisAngle(unittest.TestCase):
         matrix = torch.tensor(
             [
                 [
-                    [ 0.0, 0.0, 1.0, 0.0],  # noqa: E241, E201
-                    [ 0.0, 1.0, 0.0, 0.0],  # noqa: E241, E201
-                    [-1.0, 0.0, 0.0, 0.0],  # noqa: E241, E201
-                    [ 0.0, 0.0, 0.0, 1.0],  # noqa: E241, E201
+                    [0.0, 0.0, -1.0, 0.0],  # noqa: E241, E201
+                    [0.0, 1.0,  0.0, 0.0],  # noqa: E241, E201
+                    [1.0, 0.0,  0.0, 0.0],  # noqa: E241, E201
+                    [0.0, 0.0,  0.0, 1.0],  # noqa: E241, E201
                 ]
             ],
             dtype=torch.float32,
         )
         # fmt: on
+        points = torch.tensor([1.0, 0.0, 0.0])[None, None, :]  # (1, 1, 3)
+        transformed_points = t.transform_points(points)
+        expected_points = torch.tensor([0.0, 0.0, -1.0])
+        self.assertTrue(
+            torch.allclose(
+                transformed_points.squeeze(), expected_points, atol=1e-7
+            )
+        )
         self.assertTrue(torch.allclose(t._matrix, matrix, atol=1e-7))
 
     def test_rotate_y_torch_scalar(self):
+        """
+        Test rotation about Y axis. With a right hand coordinate system this
+        should result in a vector pointing along the x-axis being rotated to
+        point along the negative z axis.
+        """
         angle = torch.tensor(90.0)
         t = RotateAxisAngle(angle=angle, axis="Y")
         # fmt: off
         matrix = torch.tensor(
             [
                 [
-                    [ 0.0, 0.0, 1.0, 0.0],  # noqa: E241, E201
-                    [ 0.0, 1.0, 0.0, 0.0],  # noqa: E241, E201
-                    [-1.0, 0.0, 0.0, 0.0],  # noqa: E241, E201
-                    [ 0.0, 0.0, 0.0, 1.0],  # noqa: E241, E201
+                    [0.0, 0.0, -1.0, 0.0],  # noqa: E241, E201
+                    [0.0, 1.0,  0.0, 0.0],  # noqa: E241, E201
+                    [1.0, 0.0,  0.0, 0.0],  # noqa: E241, E201
+                    [0.0, 0.0,  0.0, 1.0],  # noqa: E241, E201
                 ]
             ],
             dtype=torch.float32,
         )
         # fmt: on
+        points = torch.tensor([1.0, 0.0, 0.0])[None, None, :]  # (1, 1, 3)
+        transformed_points = t.transform_points(points)
+        expected_points = torch.tensor([0.0, 0.0, -1.0])
+        self.assertTrue(
+            torch.allclose(
+                transformed_points.squeeze(), expected_points, atol=1e-7
+            )
+        )
         self.assertTrue(torch.allclose(t._matrix, matrix, atol=1e-7))
 
     def test_rotate_y_torch_tensor(self):
@@ -851,16 +888,16 @@ class TestRotateAxisAngle(unittest.TestCase):
                     [0.0, 0.0, 0.0, 1.0],
                 ],
                 [
-                    [ r2_2,  0.0,  r2_i, 0.0],  # noqa: E241, E201
-                    [  0.0,  1.0,   0.0, 0.0],  # noqa: E241, E201
-                    [-r2_i,  0.0,  r2_2, 0.0],  # noqa: E241, E201
-                    [  0.0,  0.0,   0.0, 1.0],  # noqa: E241, E201
+                    [r2_2,  0.0, -r2_i, 0.0],  # noqa: E241, E201
+                    [ 0.0,  1.0,   0.0, 0.0],  # noqa: E241, E201
+                    [r2_i,  0.0,  r2_2, 0.0],  # noqa: E241, E201
+                    [ 0.0,  0.0,   0.0, 1.0],  # noqa: E241, E201
                 ],
                 [
-                    [ 0.0, 0.0, 1.0, 0.0],  # noqa: E241, E201
-                    [ 0.0, 1.0, 0.0, 0.0],  # noqa: E241, E201
-                    [-1.0, 0.0, 0.0, 0.0],  # noqa: E241, E201
-                    [ 0.0, 0.0, 0.0, 1.0],  # noqa: E241, E201
+                    [0.0,  0.0, -1.0, 0.0],  # noqa: E241, E201
+                    [0.0,  1.0,  0.0, 0.0],  # noqa: E241, E201
+                    [1.0,  0.0,  0.0, 0.0],  # noqa: E241, E201
+                    [0.0,  0.0,  0.0, 1.0],  # noqa: E241, E201
                 ]
             ],
             dtype=torch.float32,
@@ -874,15 +911,23 @@ class TestRotateAxisAngle(unittest.TestCase):
         matrix = torch.tensor(
             [
                 [
-                    [0.0, -1.0, 0.0, 0.0],  # noqa: E241, E201
-                    [1.0,  0.0, 0.0, 0.0],  # noqa: E241, E201
-                    [0.0,  0.0, 1.0, 0.0],  # noqa: E241, E201
-                    [0.0,  0.0, 0.0, 1.0],  # noqa: E241, E201
+                    [ 0.0, 1.0, 0.0, 0.0],  # noqa: E241, E201
+                    [-1.0, 0.0, 0.0, 0.0],  # noqa: E241, E201
+                    [ 0.0, 0.0, 1.0, 0.0],  # noqa: E241, E201
+                    [ 0.0, 0.0, 0.0, 1.0],  # noqa: E241, E201
                 ]
             ],
             dtype=torch.float32,
         )
         # fmt: on
+        points = torch.tensor([1.0, 0.0, 0.0])[None, None, :]  # (1, 1, 3)
+        transformed_points = t.transform_points(points)
+        expected_points = torch.tensor([0.0, 1.0, 0.0])
+        self.assertTrue(
+            torch.allclose(
+                transformed_points.squeeze(), expected_points, atol=1e-7
+            )
+        )
         self.assertTrue(torch.allclose(t._matrix, matrix, atol=1e-7))
 
     def test_rotate_z_torch_scalar(self):
@@ -892,15 +937,23 @@ class TestRotateAxisAngle(unittest.TestCase):
         matrix = torch.tensor(
             [
                 [
-                    [0.0, -1.0, 0.0, 0.0],  # noqa: E241, E201
-                    [1.0,  0.0, 0.0, 0.0],  # noqa: E241, E201
-                    [0.0,  0.0, 1.0, 0.0],  # noqa: E241, E201
-                    [0.0,  0.0, 0.0, 1.0],  # noqa: E241, E201
+                    [ 0.0, 1.0, 0.0, 0.0],  # noqa: E241, E201
+                    [-1.0, 0.0, 0.0, 0.0],  # noqa: E241, E201
+                    [ 0.0, 0.0, 1.0, 0.0],  # noqa: E241, E201
+                    [ 0.0, 0.0, 0.0, 1.0],  # noqa: E241, E201
                 ]
             ],
             dtype=torch.float32,
         )
         # fmt: on
+        points = torch.tensor([1.0, 0.0, 0.0])[None, None, :]  # (1, 1, 3)
+        transformed_points = t.transform_points(points)
+        expected_points = torch.tensor([0.0, 1.0, 0.0])
+        self.assertTrue(
+            torch.allclose(
+                transformed_points.squeeze(), expected_points, atol=1e-7
+            )
+        )
         self.assertTrue(torch.allclose(t._matrix, matrix, atol=1e-7))
 
     def test_rotate_z_torch_tensor(self):
@@ -918,16 +971,16 @@ class TestRotateAxisAngle(unittest.TestCase):
                     [0.0, 0.0, 0.0, 1.0],
                 ],
                 [
-                    [r2_2,  -r2_i,  0.0, 0.0],  # noqa: E241, E201
-                    [r2_i,   r2_2,  0.0, 0.0],  # noqa: E241, E201
-                    [ 0.0,    0.0,  1.0, 0.0],  # noqa: E241, E201
-                    [ 0.0,    0.0,  0.0, 1.0],  # noqa: E241, E201
+                    [ r2_2,   r2_i,  0.0, 0.0],  # noqa: E241, E201
+                    [-r2_i,   r2_2,  0.0, 0.0],  # noqa: E241, E201
+                    [  0.0,    0.0,  1.0, 0.0],  # noqa: E241, E201
+                    [  0.0,    0.0,  0.0, 1.0],  # noqa: E241, E201
                 ],
                 [
-                    [0.0, -1.0, 0.0, 0.0],  # noqa: E241, E201
-                    [1.0,  0.0, 0.0, 0.0],  # noqa: E241, E201
-                    [0.0,  0.0, 1.0, 0.0],  # noqa: E241, E201
-                    [0.0,  0.0, 0.0, 1.0],  # noqa: E241, E201
+                    [ 0.0,  1.0, 0.0, 0.0],  # noqa: E241, E201
+                    [-1.0,  0.0, 0.0, 0.0],  # noqa: E241, E201
+                    [ 0.0,  0.0, 1.0, 0.0],  # noqa: E241, E201
+                    [ 0.0,  0.0, 0.0, 1.0],  # noqa: E241, E201
                 ]
             ],
             dtype=torch.float32,
@@ -945,10 +998,10 @@ class TestRotateAxisAngle(unittest.TestCase):
         matrix1 = torch.tensor(
             [
                 [
-                    [1.0, 0.0,  0.0, 0.0],  # noqa: E241, E201
-                    [0.0, 0.0, -1.0, 0.0],  # noqa: E241, E201
-                    [0.0, 1.0,  0.0, 0.0],  # noqa: E241, E201
-                    [0.0, 0.0,  0.0, 1.0],  # noqa: E241, E201
+                    [1.0,  0.0, 0.0, 0.0],  # noqa: E241, E201
+                    [0.0,  0.0, 1.0, 0.0],  # noqa: E241, E201
+                    [0.0, -1.0, 0.0, 0.0],  # noqa: E241, E201
+                    [0.0,  0.0, 0.0, 1.0],  # noqa: E241, E201
                 ]
             ],
             dtype=torch.float32,
@@ -956,10 +1009,10 @@ class TestRotateAxisAngle(unittest.TestCase):
         matrix2 = torch.tensor(
             [
                 [
-                    [ 0.0, 0.0, 1.0, 0.0],  # noqa: E241, E201
-                    [ 0.0, 1.0, 0.0, 0.0],  # noqa: E241, E201
-                    [-1.0, 0.0, 0.0, 0.0],  # noqa: E241, E201
-                    [ 0.0, 0.0, 0.0, 1.0],  # noqa: E241, E201
+                    [0.0, 0.0, -1.0, 0.0],  # noqa: E241, E201
+                    [0.0, 1.0,  0.0, 0.0],  # noqa: E241, E201
+                    [1.0, 0.0,  0.0, 0.0],  # noqa: E241, E201
+                    [0.0, 0.0,  0.0, 1.0],  # noqa: E241, E201
                 ]
             ],
             dtype=torch.float32,
@@ -967,10 +1020,10 @@ class TestRotateAxisAngle(unittest.TestCase):
         matrix3 = torch.tensor(
             [
                 [
-                    [0.0, -1.0, 0.0, 0.0],  # noqa: E241, E201
-                    [1.0,  0.0, 0.0, 0.0],  # noqa: E241, E201
-                    [0.0,  0.0, 1.0, 0.0],  # noqa: E241, E201
-                    [0.0,  0.0, 0.0, 1.0],  # noqa: E241, E201
+                    [ 0.0, 1.0, 0.0, 0.0],  # noqa: E241, E201
+                    [-1.0, 0.0, 0.0, 0.0],  # noqa: E241, E201
+                    [ 0.0, 0.0, 1.0, 0.0],  # noqa: E241, E201
+                    [ 0.0, 0.0, 0.0, 1.0],  # noqa: E241, E201
                 ]
             ],
             dtype=torch.float32,
@@ -987,10 +1040,10 @@ class TestRotateAxisAngle(unittest.TestCase):
         matrix = torch.tensor(
             [
                 [
-                    [0.0, -1.0, 0.0, 0.0],  # noqa: E241, E201
-                    [1.0,  0.0, 0.0, 0.0],  # noqa: E241, E201
-                    [0.0,  0.0, 1.0, 0.0],  # noqa: E241, E201
-                    [0.0,  0.0, 0.0, 1.0],  # noqa: E241, E201
+                    [ 0.0, 1.0, 0.0, 0.0],  # noqa: E241, E201
+                    [-1.0, 0.0, 0.0, 0.0],  # noqa: E241, E201
+                    [ 0.0, 0.0, 1.0, 0.0],  # noqa: E241, E201
+                    [ 0.0, 0.0, 0.0, 1.0],  # noqa: E241, E201
                 ]
             ],
             dtype=torch.float32,
@@ -1004,10 +1057,10 @@ class TestRotateAxisAngle(unittest.TestCase):
         matrix = torch.tensor(
             [
                 [
-                    [0.0, -1.0, 0.0, 0.0],  # noqa: E241, E201
-                    [1.0,  0.0, 0.0, 0.0],  # noqa: E241, E201
-                    [0.0,  0.0, 1.0, 0.0],  # noqa: E241, E201
-                    [0.0,  0.0, 0.0, 1.0],  # noqa: E241, E201
+                    [ 0.0, 1.0, 0.0, 0.0],  # noqa: E241, E201
+                    [-1.0, 0.0, 0.0, 0.0],  # noqa: E241, E201
+                    [ 0.0, 0.0, 1.0, 0.0],  # noqa: E241, E201
+                    [ 0.0, 0.0, 0.0, 1.0],  # noqa: E241, E201
                 ]
             ],
             dtype=torch.float32,
