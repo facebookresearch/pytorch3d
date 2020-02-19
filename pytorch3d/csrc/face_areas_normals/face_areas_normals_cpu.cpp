@@ -6,7 +6,6 @@
 std::tuple<at::Tensor, at::Tensor> FaceAreasNormalsCpu(
     at::Tensor verts,
     at::Tensor faces) {
-  const int V = verts.size(0);
   const int F = faces.size(0);
 
   at::Tensor areas = at::empty({F}, verts.options());

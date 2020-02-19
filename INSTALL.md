@@ -70,5 +70,5 @@ To rebuild after installing from a local clone run, `rm -rf build/ **/*.so` then
 
 **Install from local clone on macOS:**
 ```
-MACOSX_DEPLOYMENT_TARGET=10.9 CC=clang CXX=clang++ pip install -e .
+MACOSX_DEPLOYMENT_TARGET=10.14 CC=clang CXX=clang++ pip install -e .
 ```
