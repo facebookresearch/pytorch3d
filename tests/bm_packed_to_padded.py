@@ -6,34 +6,42 @@ from itertools import product
 import torch
 from fvcore.common.benchmark import benchmark
 
-from test_sample_points_from_meshes import TestSamplePoints
+from test_packed_to_padded import TestPackedToPadded
 
 
-def bm_sample_points() -> None:
-
+def bm_packed_to_padded() -> None:
+    kwargs_list = []
     backend = ["cpu"]
     if torch.cuda.is_available():
         backend.append("cuda:0")
-    kwargs_list = []
+
     num_meshes = [2, 10, 32]
     num_verts = [100, 1000]
     num_faces = [300, 3000]
-    num_samples = [5000, 10000]
-    test_cases = product(num_meshes, num_verts, num_faces, num_samples, backend)
+    num_ds = [0, 1, 16]
+
+    test_cases = product(num_meshes, num_verts, num_faces, num_ds, backend)
     for case in test_cases:
-        n, v, f, s, b = case
+        n, v, f, d, b = case
         kwargs_list.append(
             {
                 "num_meshes": n,
                 "num_verts": v,
                 "num_faces": f,
-                "num_samples": s,
+                "num_d": d,
                 "device": b,
             }
         )
     benchmark(
-        TestSamplePoints.sample_points_with_init,
-        "SAMPLE_MESH",
+        TestPackedToPadded.packed_to_padded_with_init,
+        "PACKED_TO_PADDED",
+        kwargs_list,
+        warmup_iters=1,
+    )
+
+    benchmark(
+        TestPackedToPadded.packed_to_padded_with_init_torch,
+        "PACKED_TO_PADDED_TORCH",
         kwargs_list,
         warmup_iters=1,
     )

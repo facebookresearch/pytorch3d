@@ -21,10 +21,12 @@ std::tuple<at::Tensor, at::Tensor> FaceAreasNormalsCpu(
     at::Tensor verts,
     at::Tensor faces);
 
+#ifdef WITH_CUDA
 // Cuda implementation.
 std::tuple<at::Tensor, at::Tensor> FaceAreasNormalsCuda(
     at::Tensor verts,
     at::Tensor faces);
+#endif
 
 // Implementation which is exposed.
 std::tuple<at::Tensor, at::Tensor> FaceAreasNormals(

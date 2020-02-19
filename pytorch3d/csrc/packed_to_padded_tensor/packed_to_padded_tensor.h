@@ -3,42 +3,96 @@
 #pragma once
 #include <torch/extension.h>
 
+// PackedToPadded
 // Converts a packed tensor into a padded tensor, restoring the batch dimension.
 // Refer to pytorch3d/structures/meshes.py for details on packed/padded tensors.
 //
 // Inputs:
-//    inputs: FloatTensor of shape (F,), representing the packed batch tensor.
-//           e.g. areas for faces in a batch of meshes.
+//    inputs_packed: FloatTensor of shape (F, D), representing the packed batch
+//                      tensor, e.g. areas for faces in a batch of meshes.
 //    first_idxs: LongTensor of shape (N,) where N is the number of
-//                       elements in the batch and `packed_first_idxs[i] = f`
+//                       elements in the batch and `first_idxs[i] = f`
 //                       means that the inputs for batch element i begin at
 //                       `inputs[f]`.
-//   max_size: Max length of an element in the batch.
+//    max_size: Max length of an element in the batch.
 // Returns:
-//   inputs_padded: FloatTensor of shape (N, max_size) where max_size is max
+//   inputs_padded: FloatTensor of shape (N, max_size, D) where max_size is max
 //                 of `sizes`. The values for batch element i which start at
-//                 `inputs[packed_first_idxs[i]]` will be copied to
-//                 `inputs_padded[i, :]``, with zeros padding out the extra
+//                 `inputs_packed[first_idxs[i]]` will be copied to
+//                 `inputs_padded[i, :]`, with zeros padding out the extra
 //                  inputs.
 //
 
+// PaddedToPacked
+// Converts a padded tensor into a packed tensor.
+// Refer to pytorch3d/structures/meshes.py for details on packed/padded tensors.
+//
+// Inputs:
+//    inputs_padded: FloatTensor of shape (N, max_size, D), representing the
+//                padded tensor, e.g. areas for faces in a batch of meshes.
+//    first_idxs: LongTensor of shape (N,) where N is the number of
+//                       elements in the batch and `first_idxs[i] = f`
+//                       means that the inputs for batch element i begin at
+//                       `inputs_packed[f]`.
+//    num_inputs: Number of packed entries (= F)
+// Returns:
+//   inputs_packed: FloatTensor of shape (F, D), where
+//                      `inputs_packed[first_idx[i]:] = inputs_padded[i, :]`.
+//
+//
+
+// Cpu implementation.
+at::Tensor PackedToPaddedCpu(
+    const at::Tensor inputs_packed,
+    const at::Tensor first_idxs,
+    const int64_t max_size);
+
+// Cpu implementation.
+at::Tensor PaddedToPackedCpu(
+    const at::Tensor inputs_padded,
+    const at::Tensor first_idxs,
+    const int64_t num_inputs);
+
+#ifdef WITH_CUDA
 // Cuda implementation.
-at::Tensor packed_to_padded_tensor_cuda(
-    at::Tensor inputs,
-    at::Tensor first_idxs,
-    const long max_size);
+at::Tensor PackedToPaddedCuda(
+    const at::Tensor inputs_packed,
+    const at::Tensor first_idxs,
+    const int64_t max_size);
+
+// Cuda implementation.
+at::Tensor PaddedToPackedCuda(
+    const at::Tensor inputs_padded,
+    const at::Tensor first_idxs,
+    const int64_t num_inputs);
+#endif
 
 // Implementation which is exposed.
-at::Tensor packed_to_padded_tensor(
-    at::Tensor inputs,
-    at::Tensor first_idxs,
-    const long max_size) {
-  if (inputs.type().is_cuda()) {
+at::Tensor PackedToPadded(
+    const at::Tensor inputs_packed,
+    const at::Tensor first_idxs,
+    const int64_t max_size) {
+  if (inputs_packed.type().is_cuda()) {
 #ifdef WITH_CUDA
-    return packed_to_padded_tensor_cuda(inputs, first_idxs, max_size);
+    return PackedToPaddedCuda(inputs_packed, first_idxs, max_size);
 #else
     AT_ERROR("Not compiled with GPU support.");
 #endif
   }
-  AT_ERROR("Not implemented on the CPU.");
+  return PackedToPaddedCpu(inputs_packed, first_idxs, max_size);
+}
+
+// Implementation which is exposed.
+at::Tensor PaddedToPacked(
+    const at::Tensor inputs_padded,
+    const at::Tensor first_idxs,
+    const int64_t num_inputs) {
+  if (inputs_padded.type().is_cuda()) {
+#ifdef WITH_CUDA
+    return PaddedToPackedCuda(inputs_padded, first_idxs, num_inputs);
+#else
+    AT_ERROR("Not compiled with GPU support.");
+#endif
+  }
+  return PaddedToPackedCpu(inputs_padded, first_idxs, num_inputs);
 }
