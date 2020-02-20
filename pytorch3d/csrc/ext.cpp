@@ -9,7 +9,8 @@
 #include "rasterize_points/rasterize_points.h"
 
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
-  m.def("face_areas_normals", &FaceAreasNormals);
+  m.def("face_areas_normals_forward", &FaceAreasNormalsForward);
+  m.def("face_areas_normals_backward", &FaceAreasNormalsBackward);
   m.def("packed_to_padded", &PackedToPadded);
   m.def("padded_to_packed", &PaddedToPacked);
   m.def("nn_points_idx", &NearestNeighborIdx);

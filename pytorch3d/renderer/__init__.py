@@ -17,14 +17,17 @@ from .cameras import (
 from .lighting import DirectionalLights, PointLights, diffuse, specular
 from .materials import Materials
 from .mesh import (
-    GouradShader,
+    HardFlatShader,
+    HardGouraudShader,
+    HardPhongShader,
     MeshRasterizer,
     MeshRenderer,
-    PhongShader,
     RasterizationSettings,
-    SilhouetteShader,
-    TexturedPhongShader,
-    gourad_shading,
+    SoftGouraudShader,
+    SoftPhongShader,
+    SoftSilhouetteShader,
+    TexturedSoftPhongShader,
+    gouraud_shading,
     interpolate_face_attributes,
     interpolate_texture_map,
     interpolate_vertex_colors,

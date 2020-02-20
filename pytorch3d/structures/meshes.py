@@ -4,8 +4,6 @@
 from typing import List
 import torch
 
-from pytorch3d import _C
-
 from . import utils as struct_utils
 from .textures import Textures
 
@@ -761,6 +759,8 @@ class Meshes(object):
             refresh: Set to True to force recomputation of face areas.
                      Default: False.
         """
+        from ..ops.mesh_face_areas_normals import mesh_face_areas_normals
+
         if not (
             refresh
             or any(
@@ -771,7 +771,7 @@ class Meshes(object):
             return
         faces_packed = self.faces_packed()
         verts_packed = self.verts_packed()
-        face_areas, face_normals = _C.face_areas_normals(
+        face_areas, face_normals = mesh_face_areas_normals(
             verts_packed, faces_packed
         )
         self._faces_areas_packed = face_areas
