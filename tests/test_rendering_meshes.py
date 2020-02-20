@@ -25,10 +25,10 @@ from pytorch3d.renderer.mesh.rasterizer import (
 from pytorch3d.renderer.mesh.renderer import MeshRenderer
 from pytorch3d.renderer.mesh.shader import (
     BlendParams,
-    GouradShader,
-    PhongShader,
-    SilhouetteShader,
-    TexturedPhongShader,
+    HardGouradShader,
+    HardPhongShader,
+    SoftSilhouetteShader,
+    TexturedSoftPhongShader,
 )
 from pytorch3d.renderer.mesh.texturing import Textures
 from pytorch3d.structures.meshes import Meshes
@@ -92,7 +92,7 @@ class TestRenderingMeshes(unittest.TestCase):
         )
         renderer = MeshRenderer(
             rasterizer=rasterizer,
-            shader=PhongShader(
+            shader=HardPhongShader(
                 lights=lights, cameras=cameras, materials=materials
             ),
         )
@@ -133,7 +133,7 @@ class TestRenderingMeshes(unittest.TestCase):
         lights.location = torch.tensor([0.0, 0.0, -2.0], device=device)[None]
         renderer = MeshRenderer(
             rasterizer=rasterizer,
-            shader=GouradShader(
+            shader=HardGouradShader(
                 lights=lights, cameras=cameras, materials=materials
             ),
         )
@@ -197,7 +197,7 @@ class TestRenderingMeshes(unittest.TestCase):
             rasterizer=MeshRasterizer(
                 cameras=cameras, raster_settings=raster_settings
             ),
-            shader=PhongShader(
+            shader=HardPhongShader(
                 lights=lights, cameras=cameras, materials=materials
             ),
         )
@@ -242,7 +242,7 @@ class TestRenderingMeshes(unittest.TestCase):
             rasterizer=MeshRasterizer(
                 cameras=cameras, raster_settings=raster_settings
             ),
-            shader=SilhouetteShader(blend_params=blend_params),
+            shader=SoftSilhouetteShader(blend_params=blend_params),
         )
         images = renderer(sphere_mesh)
         alpha = images[0, ..., 3].squeeze().cpu()
@@ -296,7 +296,7 @@ class TestRenderingMeshes(unittest.TestCase):
             rasterizer=MeshRasterizer(
                 cameras=cameras, raster_settings=raster_settings
             ),
-            shader=TexturedPhongShader(
+            shader=TexturedSoftPhongShader(
                 lights=lights, cameras=cameras, materials=materials
             ),
         )

@@ -84,3 +84,25 @@ renderer = MeshRenderer(
     shader=PhongShader(device=device, cameras=cameras)
 )
 ```
+
+### A custom shader
+
+Shaders are the most flexible part of the PyTorch3D rendering API. We have created some examples of shaders in `shaders.py` but this is a non exhaustive set.
+
+A shader can incorporate several steps:
+- **texturing** (e.g interpolation of vertex RGB colors or interpolation of vertex UV coordinates followed by sampling from a texture map (interpolation uses barycentric coordinates output from rasterization))
+- **lighting/shading** (e.g. ambient, diffuse, specular lighting, Phong, Gourad, Flat)
+- **blending** (e.g. hard blending using only the closest face for each pixel, or soft blending using a weighted sum of the top K faces per pixel)
+
+ We have examples of several combinations of these functions based on the texturing/shading/blending support we have currently. These are summarised in this table below. Many other combinations are possible and we plan to expand the options available for texturing, shading and blending.
+
+
+|Example Shaders  | Vertex Textures| Texture Map| Flat Shading| Gourad Shading| Phong Shading | Hard blending | Soft Blending |
+| ------------- |:-------------:  | :--------------:| :--------------:| :--------------:| :--------------:|:--------------:|:--------------:|
+| HardPhongShader |  :heavy_check_mark: ||||  :heavy_check_mark: |  :heavy_check_mark:||
+| SoftPhongShader |  :heavy_check_mark: ||||  :heavy_check_mark: | | :heavy_check_mark:|
+| HardGouradShader |  :heavy_check_mark: |||  :heavy_check_mark: ||  :heavy_check_mark:||
+| SoftGouradShader |  :heavy_check_mark: |||  :heavy_check_mark: |||  :heavy_check_mark:|
+| TexturedSoftPhongShader ||  :heavy_check_mark: |||  :heavy_check_mark: ||  :heavy_check_mark:|
+| HardFlatShader |  :heavy_check_mark: ||  :heavy_check_mark: |||  :heavy_check_mark:||
+| SoftSilhouetteShader |||||||  :heavy_check_mark:|

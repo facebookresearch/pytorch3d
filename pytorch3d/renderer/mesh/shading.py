@@ -124,3 +124,39 @@ def gourad_shading(
     face_colors = verts_colors_shaded[faces]
     colors = interpolate_face_attributes(fragments, face_colors)
     return colors
+
+
+def flat_shading(
+    meshes, fragments, lights, cameras, materials, texels
+) -> torch.Tensor:
+    """
+    Apply per face shading. Use the average face position and the face normals
+    to compute the ambient, diffuse and specular lighting. Apply the ambient
+    and diffuse color to the pixel color and add the specular component to
+    determine the final pixel color.
+
+    Args:
+        meshes: Batch of meshes
+        fragments: Fragments named tuple with the outputs of rasterization
+        lights: Lights class containing a batch of lights parameters
+        cameras: Cameras class containing a batch of cameras parameters
+        materials: Materials class containing a batch of material properties
+        texels: texture per pixel of shape (N, H, W, K, 3)
+
+    Returns:
+        colors: (N, H, W, K, 3)
+    """
+    verts = meshes.verts_packed()  # (V, 3)
+    faces = meshes.faces_packed()  # (F, 3)
+    face_normals = meshes.faces_normals_packed()  # (V, 3)
+    faces_verts = verts[faces]
+    face_coords = faces_verts.mean(dim=-2)  # (F, 3, XYZ) mean xyz across verts
+    pixel_coords = face_coords[fragments.pix_to_face]
+    pixel_normals = face_normals[fragments.pix_to_face]
+
+    # Calculate the illumination at each face
+    ambient, diffuse, specular = _apply_lighting(
+        pixel_coords, pixel_normals, lights, cameras, materials
+    )
+    colors = (ambient + diffuse) * texels + specular
+    return colors
