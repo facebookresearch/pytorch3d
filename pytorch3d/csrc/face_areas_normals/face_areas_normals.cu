@@ -228,7 +228,7 @@ std::tuple<at::Tensor, at::Tensor> FaceAreasNormalsForwardCuda(
             V,
             F);
       }));
-  
+
   return std::make_tuple(areas, normals);
 }
 
