@@ -25,7 +25,7 @@ from pytorch3d.renderer.mesh.rasterizer import (
 from pytorch3d.renderer.mesh.renderer import MeshRenderer
 from pytorch3d.renderer.mesh.shader import (
     BlendParams,
-    HardGouradShader,
+    HardGouraudShader,
     HardPhongShader,
     SoftSilhouetteShader,
     TexturedSoftPhongShader,
@@ -51,7 +51,7 @@ def load_rgb_image(filename, data_dir=DATA_DIR):
 class TestRenderingMeshes(unittest.TestCase):
     def test_simple_sphere(self, elevated_camera=False):
         """
-        Test output of phong and gourad shading matches a reference image using
+        Test output of phong and gouraud shading matches a reference image using
         the default values for the light sources.
 
         Args:
@@ -128,12 +128,12 @@ class TestRenderingMeshes(unittest.TestCase):
         self.assertTrue(torch.allclose(rgb, image_ref_phong_dark, atol=0.05))
 
         ######################################
-        # Change the shader to a GouradShader
+        # Change the shader to a GouraudShader
         ######################################
         lights.location = torch.tensor([0.0, 0.0, -2.0], device=device)[None]
         renderer = MeshRenderer(
             rasterizer=rasterizer,
-            shader=HardGouradShader(
+            shader=HardGouraudShader(
                 lights=lights, cameras=cameras, materials=materials
             ),
         )
@@ -141,19 +141,19 @@ class TestRenderingMeshes(unittest.TestCase):
         rgb = images[0, ..., :3].squeeze().cpu()
         if DEBUG:
             Image.fromarray((rgb.numpy() * 255).astype(np.uint8)).save(
-                DATA_DIR / "DEBUG_simple_sphere_light_gourad%s.png" % postfix
+                DATA_DIR / "DEBUG_simple_sphere_light_gouraud%s.png" % postfix
             )
 
         # Load reference image
-        image_ref_gourad = load_rgb_image(
-            "test_simple_sphere_light_gourad%s.png" % postfix
+        image_ref_gouraud = load_rgb_image(
+            "test_simple_sphere_light_gouraud%s.png" % postfix
         )
-        self.assertTrue(torch.allclose(rgb, image_ref_gourad, atol=0.005))
+        self.assertTrue(torch.allclose(rgb, image_ref_gouraud, atol=0.005))
         self.assertFalse(torch.allclose(rgb, image_ref_phong, atol=0.005))
 
     def test_simple_sphere_elevated_camera(self):
         """
-        Test output of phong and gourad shading matches a reference image using
+        Test output of phong and gouraud shading matches a reference image using
         the default values for the light sources.
 
         The rendering is performed with a camera that has non-zero elevation.

@@ -5,14 +5,14 @@ from .rasterizer import MeshRasterizer, RasterizationSettings
 from .renderer import MeshRenderer
 from .shader import (
     HardFlatShader,
-    HardGouradShader,
+    HardGouraudShader,
     HardPhongShader,
-    SoftGouradShader,
+    SoftGouraudShader,
     SoftPhongShader,
     SoftSilhouetteShader,
     TexturedSoftPhongShader,
 )
-from .shading import gourad_shading, phong_shading
+from .shading import gouraud_shading, phong_shading
 from .texturing import (  # isort: skip
     interpolate_face_attributes,
     interpolate_texture_map,

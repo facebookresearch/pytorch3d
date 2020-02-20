@@ -14,7 +14,7 @@ from ..blending import (
 from ..cameras import OpenGLPerspectiveCameras
 from ..lighting import PointLights
 from ..materials import Materials
-from .shading import flat_shading, gourad_shading, phong_shading
+from .shading import flat_shading, gouraud_shading, phong_shading
 from .texturing import interpolate_texture_map, interpolate_vertex_colors
 
 # A Shader should take as input fragments from the output of rasterization
@@ -126,7 +126,7 @@ class SoftPhongShader(nn.Module):
         return images
 
 
-class HardGouradShader(nn.Module):
+class HardGouraudShader(nn.Module):
     """
     Per vertex lighting - the lighting model is applied to the vertex colors and
     the colors are then interpolated using the barycentric coordinates to
@@ -138,7 +138,7 @@ class HardGouradShader(nn.Module):
 
     .. code-block::
 
-        shader = HardGouradShader(device=torch.device("cuda:0"))
+        shader = HardGouraudShader(device=torch.device("cuda:0"))
     """
 
     def __init__(self, device="cpu", cameras=None, lights=None, materials=None):
@@ -159,7 +159,7 @@ class HardGouradShader(nn.Module):
         cameras = kwargs.get("cameras", self.cameras)
         lights = kwargs.get("lights", self.lights)
         materials = kwargs.get("materials", self.materials)
-        pixel_colors = gourad_shading(
+        pixel_colors = gouraud_shading(
             meshes=meshes,
             fragments=fragments,
             lights=lights,
@@ -170,7 +170,7 @@ class HardGouradShader(nn.Module):
         return images
 
 
-class SoftGouradShader(nn.Module):
+class SoftGouraudShader(nn.Module):
     """
     Per vertex lighting - the lighting model is applied to the vertex colors and
     the colors are then interpolated using the barycentric coordinates to
@@ -182,7 +182,7 @@ class SoftGouradShader(nn.Module):
 
     .. code-block::
 
-        shader = SoftGouradShader(device=torch.device("cuda:0"))
+        shader = SoftGouraudShader(device=torch.device("cuda:0"))
     """
 
     def __init__(
@@ -213,7 +213,7 @@ class SoftGouradShader(nn.Module):
         cameras = kwargs.get("cameras", self.cameras)
         lights = kwargs.get("lights", self.lights)
         materials = kwargs.get("materials", self.materials)
-        pixel_colors = gourad_shading(
+        pixel_colors = gouraud_shading(
             meshes=meshes,
             fragments=fragments,
             lights=lights,

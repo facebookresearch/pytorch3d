@@ -79,7 +79,7 @@ def phong_shading(
     return colors
 
 
-def gourad_shading(
+def gouraud_shading(
     meshes, fragments, lights, cameras, materials
 ) -> torch.Tensor:
     """
