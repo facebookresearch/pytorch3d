@@ -75,7 +75,7 @@ MACOSX_DEPLOYMENT_TARGET=10.14 CC=clang CXX=clang++ pip install -e .
 
 **Install from local clone on Windows:**
 
-If you are using pre-compiled pytorch 1.4 and torchvision 0.5. You should make the following revisions to the pytorch source codes also to successfully compile with visual studio 2019 (MSVC 19.16.27034) and CUDA 10.1.
+If you are using pre-compiled pytorch 1.4 and torchvision 0.5, you should make the following changes to the pytorch source code to successfully compile with Visual Studio 2019 (MSVC 19.16.27034) and CUDA 10.1.
 
 Change python/Lib/site-packages/torch/include/csrc/jit/script/module.h
 
