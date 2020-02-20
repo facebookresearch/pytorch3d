@@ -99,15 +99,14 @@ L1449
 -explicit operator type&() { return *(this->value); }
 +explicit operator type& () { return *((type*)(this->value)); }
 ```
-If you are using CUDA 10.2 with pre-compiled pytorch 1.4 and torchvision 0.5, you need to check
-[Pytorch Issue 33203](https://github.com/pytorch/pytorch/issues/33203) for patching the pytorch source code in addition.
+If you are using pre-compiled pytorch 1.4 and torchvision 0.5. You should make the following revisions to the pytorch source codes to successfully compile with visual studio 2019 (MSVC 19.16.27034) and CUDA 10.1.
 
 After patching, you can go to "x64 Native Tools Command Prompt for VS 2019" to compile and install
 ```
 cd pytorch3d
 python3 setup.py install
 ```
-After installing, varify whether all unit tests passed
+After installing, verify whether all unit tests have passed
 ```
 cd tests
 python3 -m unittest discover -p *.py
