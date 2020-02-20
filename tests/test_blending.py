@@ -241,6 +241,3 @@ class TestBlending(unittest.TestCase):
         """
         bp1, bp2 = BlendParams(), BlendParams(background_color=(1.0, 1.0, 1.0))
         self.assertAlmostEqual(bp1.background_color, bp2.background_color)
-
-        background_color = torch.tensor((0.5, 0.5, 0.5))
-        bp3 = BlendParams(background_color=background_color)
