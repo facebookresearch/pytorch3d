@@ -238,37 +238,9 @@ class TestBlending(unittest.TestCase):
     def test_blend_params(self):
         """Test colour parameter of BlendParams().
         Assert default value is equal to same passed value (1.0, 1.0, 1.0).
-        Assert colour setting propagates through the renderer to output image
-        by comparing output pixel at 0, 0 with background colour.
         """
         bp1, bp2 = BlendParams(), BlendParams(background_color=(1.0, 1.0, 1.0))
         self.assertAlmostEqual(bp1.background_color, bp2.background_color)
 
         background_color = torch.tensor((0.5, 0.5, 0.5))
         bp3 = BlendParams(background_color=background_color)
-
-        # Create dummy outputs of rasterization simulating a cube in the centre
-        # of the image with surrounding padded values.
-
-        N, S, K = 1, 8, 2
-        pix_to_face = -torch.ones((N, S, S, K), dtype=torch.int64)
-        h = int(S / 2)
-        pix_to_face_full = torch.randint(size=(N, h, h, K), low=0, high=100)
-        s = int(S / 4)
-        e = int(0.75 * S)
-        pix_to_face[:, s:e, s:e, :] = pix_to_face_full
-        bary_coords = torch.ones((N, S, S, K, 3))
-        colors = torch.randn_like(bary_coords)
-
-        dists1 = torch.randn(size=(N, S, S, K))
-        zbuf1 = torch.randn(size=(N, S, S, K))
-        fragments = Fragments(
-            pix_to_face=pix_to_face,
-            bary_coords=bary_coords,  # dummy
-            zbuf=zbuf1,
-            dists=dists1,
-        )
-
-        images = softmax_rgb_blend(colors, fragments, bp3)
-        self.assertTrue(
-            torch.allclose(images[0, 0, 0, :3], background_color))
