@@ -6,8 +6,7 @@ import unittest
 from pathlib import Path
 import torch
 
-from pytorch3d import _C
-from pytorch3d.ops.sample_points_from_meshes import sample_points_from_meshes
+from pytorch3d.ops import sample_points_from_meshes
 from pytorch3d.structures.meshes import Meshes
 from pytorch3d.utils.ico_sphere import ico_sphere
 
