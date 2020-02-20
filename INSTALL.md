@@ -7,7 +7,7 @@
 
 The core library is written in PyTorch. Several components have underlying implementation in CUDA for improved performance. A subset of these components have CPU implementations in C++/Pytorch. It is advised to use PyTorch3d with GPU support in order to use all the features.
 
-- Linux or macOS
+- Linux or macOS or Windows
 - Python ≥ 3.6
 - PyTorch 1.4
 - torchvision that matches the PyTorch installation. You can install them together at pytorch.org to make sure of this.
@@ -71,4 +71,44 @@ To rebuild after installing from a local clone run, `rm -rf build/ **/*.so` then
 **Install from local clone on macOS:**
 ```
 MACOSX_DEPLOYMENT_TARGET=10.14 CC=clang CXX=clang++ pip install -e .
+```
+
+**Install from local clone on Windows:**
+
+If you are using pre-compiled pytorch 1.4 and torchvision 0.5. You should make the following revisions to the pytorch source codes also to successfully compile with visual studio 2019 (MSVC 19.16.27034) and CUDA 10.1.
+
+Change python/Lib/site-packages/torch/include/csrc/jit/script/module.h
+
+L466, 476, 493, 506, 536
+```
+-static constexpr *
++static const *
+```
+Change python/Lib/site-packages/torch/include/csrc/jit/argument_spec.h
+
+L190
+```
+-static constexpr size_t DEPTH_LIMIT = 128;
++static const size_t DEPTH_LIMIT = 128;
+```
+
+Change python/Lib/site-packages/torch/include/pybind11/cast.h
+
+L1449
+```
+-explicit operator type&() { return *(this->value); }
++explicit operator type& () { return *((type*)(this->value)); }
+```
+If you are using CUDA 10.2 with pre-compiled pytorch 1.4 and torchvision 0.5, you need to check
+[Pytorch Issue 33203](https://github.com/pytorch/pytorch/issues/33203) for patching the pytorch source code in addition.
+
+After patching, you can go to "x64 Native Tools Command Prompt for VS 2019" to compile and install
+```
+cd pytorch3d
+python3 setup.py install
+```
+After installing, varify whether all unit tests passed
+```
+cd tests
+python3 -m unittest discover -p *.py
 ```
