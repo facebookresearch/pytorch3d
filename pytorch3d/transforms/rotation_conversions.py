@@ -2,6 +2,7 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
 import functools
+from typing import Optional
 import torch
 
 
@@ -246,7 +247,10 @@ def matrix_to_euler_angles(matrix, convention: str):
 
 
 def random_quaternions(
-    n: int, dtype: torch.dtype = None, device=None, requires_grad=False
+    n: int,
+    dtype: Optional[torch.dtype] = None,
+    device=None,
+    requires_grad=False,
 ):
     """
     Generate random quaternions representing rotations,
@@ -272,7 +276,10 @@ def random_quaternions(
 
 
 def random_rotations(
-    n: int, dtype: torch.dtype = None, device=None, requires_grad=False
+    n: int,
+    dtype: Optional[torch.dtype] = None,
+    device=None,
+    requires_grad=False,
 ):
     """
     Generate random rotations as 3x3 rotation matrices.
@@ -295,7 +302,7 @@ def random_rotations(
 
 
 def random_rotation(
-    dtype: torch.dtype = None, device=None, requires_grad=False
+    dtype: Optional[torch.dtype] = None, device=None, requires_grad=False
 ):
     """
     Generate a single random 3x3 rotation matrix.

@@ -3,6 +3,7 @@
 
 import math
 import warnings
+from typing import Optional
 import torch
 
 from .rotation_conversions import _axis_angle_rotation
@@ -250,7 +251,7 @@ class Transform3d:
         out._matrix = matrix
         return out
 
-    def transform_points(self, points, eps: float = None):
+    def transform_points(self, points, eps: Optional[float] = None):
         """
         Use this transform to transform a set of 3D points. Assumes row major
         ordering of the input points.

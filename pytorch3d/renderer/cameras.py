@@ -103,9 +103,8 @@ class OpenGLPerspectiveCameras(TensorProperties):
         znear = kwargs.get("znear", self.znear)  # pyre-ignore[16]
         zfar = kwargs.get("zfar", self.zfar)  # pyre-ignore[16]
         fov = kwargs.get("fov", self.fov)  # pyre-ignore[16]
-        aspect_ratio = kwargs.get(
-            "aspect_ratio", self.aspect_ratio
-        )  # pyre-ignore[16]
+        # pyre-ignore[16]
+        aspect_ratio = kwargs.get("aspect_ratio", self.aspect_ratio)
         degrees = kwargs.get("degrees", self.degrees)
 
         P = torch.zeros(
@@ -529,12 +528,10 @@ class SfMPerspectiveCameras(TensorProperties):
                     [0,    0,    1,   0],
             ]
         """
-        principal_point = kwargs.get(
-            "principal_point", self.principal_point
-        )  # pyre-ignore[16]
-        focal_length = kwargs.get(
-            "focal_length", self.focal_length
-        )  # pyre-ignore[16]
+        # pyre-ignore[16]
+        principal_point = kwargs.get("principal_point", self.principal_point)
+        # pyre-ignore[16]
+        focal_length = kwargs.get("focal_length", self.focal_length)
 
         P = _get_sfm_calibration_matrix(
             self._N, self.device, focal_length, principal_point, False
@@ -699,12 +696,10 @@ class SfMOrthographicCameras(TensorProperties):
                     [0,    0,    0,   1],
             ]
         """
-        principal_point = kwargs.get(
-            "principal_point", self.principal_point
-        )  # pyre-ignore[16]
-        focal_length = kwargs.get(
-            "focal_length", self.focal_length
-        )  # pyre-ignore[16]
+        # pyre-ignore[16]
+        principal_point = kwargs.get("principal_point", self.principal_point)
+        # pyre-ignore[16]
+        focal_length = kwargs.get("focal_length", self.focal_length)
 
         P = _get_sfm_calibration_matrix(
             self._N, self.device, focal_length, principal_point, True

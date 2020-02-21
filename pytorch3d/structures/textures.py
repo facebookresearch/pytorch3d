@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
-from typing import List, Union
+from typing import List, Optional, Union
 import torch
 import torchvision.transforms as T
 
@@ -81,10 +81,10 @@ def _extend_tensor(input_tensor: torch.Tensor, N: int) -> torch.Tensor:
 class Textures(object):
     def __init__(
         self,
-        maps: Union[List, torch.Tensor] = None,
-        faces_uvs: torch.Tensor = None,
-        verts_uvs: torch.Tensor = None,
-        verts_rgb: torch.Tensor = None,
+        maps: Union[List, torch.Tensor, None] = None,
+        faces_uvs: Optional[torch.Tensor] = None,
+        verts_uvs: Optional[torch.Tensor] = None,
+        verts_rgb: Optional[torch.Tensor] = None,
     ):
         """
         Args:
@@ -105,7 +105,7 @@ class Textures(object):
             msg = "Expected verts_rgb to be of shape (N, V, 3); got %r"
             raise ValueError(msg % verts_rgb.shape)
         if maps is not None:
-            if torch.is_tensor(map) and map.ndim != 4:
+            if torch.is_tensor(maps) and maps.ndim != 4:
                 msg = "Expected maps to be of shape (N, H, W, 3); got %r"
                 raise ValueError(msg % repr(maps.shape))
             elif isinstance(maps, list):

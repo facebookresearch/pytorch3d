@@ -63,21 +63,22 @@ def packed_to_padded(inputs, first_idxs, max_size):
     Torch wrapper that handles allowed input shapes. See description below.
 
     Args:
-        inputs: FloatTensor of shape (F,) or (F, D), representing the packed batch tensor.
-            e.g. areas for faces in a batch of meshes.
+        inputs: FloatTensor of shape (F,) or (F, D), representing the packed
+            batch tensor, e.g. areas for faces in a batch of meshes.
         first_idxs: LongTensor of shape (N,) where N is the number of
             elements in the batch and `first_idxs[i] = f`
             means that the inputs for batch element i begin at `inputs[f]`.
         max_size: Max length of an element in the batch.
 
     Returns:
-        inputs_padded: FloatTensor of shape (N, max_size) or (N, max_size, D) where max_size is 
-            max of `sizes`. The values for batch element i which start at
-            `inputs[first_idxs[i]]` will be copied to `inputs_padded[i, :]`,
-            with zeros padding out the extra inputs.
-   
-    To handle the allowed input shapes, we convert the inputs tensor of shape (F,) to (F, 1).
-    We reshape the output back to (N, max_size) from (N, max_size, 1).
+        inputs_padded: FloatTensor of shape (N, max_size) or (N, max_size, D)
+            where max_size is  max of `sizes`. The values for batch element i
+            which start at `inputs[first_idxs[i]]` will be copied to
+            `inputs_padded[i, :]`, with zeros padding out the extra inputs.
+
+    To handle the allowed input shapes, we convert the inputs tensor of shape
+    (F,) to (F, 1). We reshape the output back to (N, max_size) from
+    (N, max_size, 1).
     """
     # if inputs is of shape (F,), reshape into (F, 1)
     flat = False
@@ -101,8 +102,8 @@ class _PaddedToPacked(Function):
         """
         Args:
             ctx: Context object used to calculate gradients.
-            inputs: FloatTensor of shape (N, max_size, D), representing the padded tensor.
-                e.g. areas for faces in a batch of meshes.
+            inputs: FloatTensor of shape (N, max_size, D), representing
+            the padded tensor, e.g. areas for faces in a batch of meshes.
             first_idxs: LongTensor of shape (N,) where N is the number of
                 elements in the batch and `first_idxs[i] = f`
                 means that the inputs for batch element i begin at `inputs_packed[f]`.
@@ -141,11 +142,12 @@ class _PaddedToPacked(Function):
 
 def padded_to_packed(inputs, first_idxs, num_inputs):
     """
-    Torch wrapper that handles allowed input shapes. See description below. 
+    Torch wrapper that handles allowed input shapes. See description below.
 
     Args:
-        inputs: FloatTensor of shape (N, max_size) or (N, max_size, D), representing the 
-            padded tensor. e.g. areas for faces in a batch of meshes.
+        inputs: FloatTensor of shape (N, max_size) or (N, max_size, D),
+            representing the padded tensor, e.g. areas for faces in a batch of
+            meshes.
         first_idxs: LongTensor of shape (N,) where N is the number of
             elements in the batch and `first_idxs[i] = f`
             means that the inputs for batch element i begin at `inputs_packed[f]`.
@@ -155,8 +157,9 @@ def padded_to_packed(inputs, first_idxs, num_inputs):
         inputs_packed: FloatTensor of shape (F,) or (F, D) where
             `inputs_packed[first_idx[i]:] = inputs[i, :]`.
 
-    To handle the allowed input shapes, we convert the inputs tensor of shape (N, max_size) 
-    to (N, max_size, 1). We reshape the output back to (F,) from (F, 1).
+    To handle the allowed input shapes, we convert the inputs tensor of shape
+    (N, max_size)  to (N, max_size, 1). We reshape the output back to (F,) from
+    (F, 1).
     """
     # if inputs is of shape (N, max_size), reshape into (N, max_size, 1))
     flat = False

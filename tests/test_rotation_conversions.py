@@ -8,7 +8,6 @@ import unittest
 import torch
 
 from pytorch3d.transforms.rotation_conversions import (
-    _axis_angle_rotation,
     euler_angles_to_matrix,
     matrix_to_euler_angles,
     matrix_to_quaternion,

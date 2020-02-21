@@ -42,7 +42,7 @@ conda install jupyter
 pip install scikit-image matplotlib imageio
 
 # Tests/Linting
-pip install black isort flake8
+pip install black isort flake8 flake8-bugbear flake8-comprehensions
 ```
 
 ## Build/Install Pytorch3d
