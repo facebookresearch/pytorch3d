@@ -5,7 +5,7 @@
 // TODO(T47953967) to make this cuda kernel support all datatypes.
 __global__ void gather_scatter_kernel(
     const float* __restrict__ input,
-    const long* __restrict__ edges,
+    const int64_t* __restrict__ edges,
     float* __restrict__ output,
     bool directed,
     bool backward,
@@ -21,8 +21,8 @@ __global__ void gather_scatter_kernel(
   // Edges are split evenly across the blocks.
   for (int e = blockIdx.x; e < E; e += gridDim.x) {
     // Get indices of vertices which form the edge.
-    const long v0 = edges[2 * e + v0_idx];
-    const long v1 = edges[2 * e + v1_idx];
+    const int64_t v0 = edges[2 * e + v0_idx];
+    const int64_t v1 = edges[2 * e + v1_idx];
 
     // Split vertex features evenly across threads.
     // This implementation will be quite wasteful when D<128 since there will be
@@ -57,7 +57,7 @@ at::Tensor gather_scatter_cuda(
 
   gather_scatter_kernel<<<blocks, threads>>>(
       input.data_ptr<float>(),
-      edges.data_ptr<long>(),
+      edges.data_ptr<int64_t>(),
       output.data_ptr<float>(),
       directed,
       backward,

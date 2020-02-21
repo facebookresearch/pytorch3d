@@ -7,7 +7,11 @@
 #include "float_math.cuh"
 
 // Set epsilon for preventing floating point errors and division by 0.
+#ifdef _MSC_VER
+#define kEpsilon 1e-30f
+#else
 const auto kEpsilon = 1e-30;
+#endif
 
 // Determines whether a point p is on the right side of a 2D line segment
 // given by the end points v0, v1.
@@ -93,7 +97,7 @@ BarycentricCoordsBackward(
     const float2& v2,
     const float3& grad_bary_upstream) {
   const float area = EdgeFunctionForward(v2, v0, v1) + kEpsilon;
-  const float area2 = pow(area, 2.0);
+  const float area2 = pow(area, 2.0f);
   const float e0 = EdgeFunctionForward(p, v1, v2);
   const float e1 = EdgeFunctionForward(p, v2, v0);
   const float e2 = EdgeFunctionForward(p, v0, v1);

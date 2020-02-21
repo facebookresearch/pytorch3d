@@ -6,7 +6,7 @@
 template <typename scalar_t>
 __device__ void WarpReduce(
     volatile scalar_t* min_dists,
-    volatile long* min_idxs,
+    volatile int64_t* min_idxs,
     const size_t tid) {
   // s = 32
   if (min_dists[tid] > min_dists[tid + 32]) {
@@ -57,7 +57,7 @@ template <typename scalar_t>
 __global__ void NearestNeighborKernel(
     const scalar_t* __restrict__ points1,
     const scalar_t* __restrict__ points2,
-    long* __restrict__ idx,
+    int64_t* __restrict__ idx,
     const size_t N,
     const size_t P1,
     const size_t P2,
@@ -74,7 +74,7 @@ __global__ void NearestNeighborKernel(
   extern __shared__ char shared_buf[];
   scalar_t* x = (scalar_t*)shared_buf; // scalar_t[DD]
   scalar_t* min_dists = &x[D_2]; // scalar_t[NUM_THREADS]
-  long* min_idxs = (long*)&min_dists[blockDim.x]; // long[NUM_THREADS]
+  int64_t* min_idxs = (int64_t*)&min_dists[blockDim.x]; // int64_t[NUM_THREADS]
 
   const size_t n = blockIdx.y; // index of batch element.
   const size_t i = blockIdx.x; // index of point within batch element.
@@ -147,14 +147,14 @@ template <typename scalar_t>
 __global__ void NearestNeighborKernelD3(
     const scalar_t* __restrict__ points1,
     const scalar_t* __restrict__ points2,
-    long* __restrict__ idx,
+    int64_t* __restrict__ idx,
     const size_t N,
     const size_t P1,
     const size_t P2) {
   // Single shared memory buffer which is split and cast to different types.
   extern __shared__ char shared_buf[];
   scalar_t* min_dists = (scalar_t*)shared_buf; // scalar_t[NUM_THREADS]
-  long* min_idxs = (long*)&min_dists[blockDim.x]; // long[NUM_THREADS]
+  int64_t* min_idxs = (int64_t*)&min_dists[blockDim.x]; // int64_t[NUM_THREADS]
 
   const size_t D = 3;
   const size_t n = blockIdx.y; // index of batch element.
@@ -230,12 +230,12 @@ at::Tensor NearestNeighborIdxCuda(at::Tensor p1, at::Tensor p2) {
     // Use the specialized kernel for D=3.
     AT_DISPATCH_FLOATING_TYPES(p1.type(), "nearest_neighbor_v3_cuda", ([&] {
                                  size_t shared_size = threads * sizeof(size_t) +
-                                     threads * sizeof(long);
+                                     threads * sizeof(int64_t);
                                  NearestNeighborKernelD3<scalar_t>
                                      <<<blocks, threads, shared_size>>>(
                                          p1.data_ptr<scalar_t>(),
                                          p2.data_ptr<scalar_t>(),
-                                         idx.data_ptr<long>(),
+                                         idx.data_ptr<int64_t>(),
                                          N,
                                          P1,
                                          P2);
@@ -248,11 +248,11 @@ at::Tensor NearestNeighborIdxCuda(at::Tensor p1, at::Tensor p2) {
           // need to be rounded to the next even size.
           size_t D_2 = D + (D % 2);
           size_t shared_size = (D_2 + threads) * sizeof(size_t);
-          shared_size += threads * sizeof(long);
+          shared_size += threads * sizeof(int64_t);
           NearestNeighborKernel<scalar_t><<<blocks, threads, shared_size>>>(
               p1.data_ptr<scalar_t>(),
               p2.data_ptr<scalar_t>(),
-              idx.data_ptr<long>(),
+              idx.data_ptr<int64_t>(),
               N,
               P1,
               P2,
