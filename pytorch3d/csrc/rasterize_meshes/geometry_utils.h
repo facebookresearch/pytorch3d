@@ -271,7 +271,7 @@ T PointLineDistanceForward(
   const vec2<T> v1v0 = v1 - v0;
   const T l2 = dot(v1v0, v1v0);
   if (l2 <= kEpsilon) {
-    return sqrt(dot(p - v1, p - v1));
+    return dot(p - v1, p - v1);
   }
 
   const T t = dot(v1v0, p - v0) / l2;
