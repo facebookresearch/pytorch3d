@@ -234,3 +234,12 @@ class TestBlending(unittest.TestCase):
 
         self.assertTrue(torch.allclose(dists1.grad, dists2.grad, atol=2e-5))
         self.assertTrue(torch.allclose(zbuf1.grad, zbuf2.grad, atol=2e-5))
+
+    def test_blend_params(self):
+        """Test colour parameter of BlendParams().
+        Assert passed value overrides default value.
+        """
+        bp_default = BlendParams()
+        bp_new = BlendParams(background_color=(0.5, 0.5, 0.5))
+        self.assertEqual(bp_new.background_color, (0.5, 0.5, 0.5))
+        self.assertEqual(bp_default.background_color, (1.0, 1.0, 1.0))

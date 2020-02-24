@@ -3,7 +3,7 @@
 
 
 import numpy as np
-from typing import NamedTuple
+from typing import NamedTuple, Sequence
 import torch
 
 # Example functions for blending the top K colors per pixel using the outputs
@@ -15,7 +15,7 @@ import torch
 class BlendParams(NamedTuple):
     sigma: float = 1e-4
     gamma: float = 1e-4
-    background_color = (1.0, 1.0, 1.0)
+    background_color: Sequence = (1.0, 1.0, 1.0)
 
 
 def hard_rgb_blend(colors, fragments) -> torch.Tensor:
