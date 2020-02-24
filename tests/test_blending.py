@@ -237,7 +237,9 @@ class TestBlending(unittest.TestCase):
 
     def test_blend_params(self):
         """Test colour parameter of BlendParams().
-        Assert default value is equal to same passed value (1.0, 1.0, 1.0).
+        Assert passed value overrides default value.
         """
-        bp1, bp2 = BlendParams(), BlendParams(background_color=(1.0, 1.0, 1.0))
-        self.assertAlmostEqual(bp1.background_color, bp2.background_color)
+        bp_default = BlendParams()
+        bp_new = BlendParams(background_color=(0.5, 0.5, 0.5))
+        self.assertEqual(bp_new.background_color, (0.5, 0.5, 0.5))
+        self.assertEqual(bp_default.background_color, (1.0, 1.0, 1.0))
