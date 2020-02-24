@@ -119,16 +119,21 @@ class TestCameraHelpers(unittest.TestCase):
         np.random.seed(42)
 
     def test_look_at_view_transform_from_eye_point_tuple(self):
+        """Test passing eye tuple with and without dist, elev, angle."""
         dist = math.sqrt(2)
         elev = math.pi / 4
         azim = 0.0
         eye = ((0.0, 1.0, -1.0), )
+        # using passed values for dist, elev, azim
         R, t = look_at_view_transform(dist, elev, azim, degrees=False)
-        # using other values for dist, elev, azim
-        R_eye, t_eye = look_at_view_transform(
-            dist=3, elev=2, azim=1, eye=eye)
+        # using other values for dist, elev, azim - eye overrides
+        R_eye, t_eye = look_at_view_transform(dist=3, elev=2, azim=1, eye=eye)
+        # using only eye value
+        R_eye_only, t_eye_only = look_at_view_transform(eye=eye)
         self.assertTrue(torch.allclose(R, R_eye, atol=2e-7))
         self.assertTrue(torch.allclose(t, t_eye, atol=2e-7))
+        self.assertTrue(torch.allclose(R, R_eye_only, atol=2e-7))
+        self.assertTrue(torch.allclose(t, t_eye_only, atol=2e-7))
 
     def test_camera_position_from_angles_python_scalar(self):
         dist = 2.7
