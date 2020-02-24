@@ -55,6 +55,12 @@ After installing the above dependencies, run one of the following commands:
 conda install pytorch3d -c pytorch3d
 ```
 
+Or, to install a nightly (non-official, alpha) build:
+```
+# Anaconda Cloud
+conda install pytorch3d -c pytorch3d-nightly
+```
+
 ### 2. Install from GitHub
 ```
 pip install 'git+https://github.com/facebookresearch/pytorch3d.git'

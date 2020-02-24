@@ -72,9 +72,6 @@ if [[ ! -d "$pytorch3d_rootdir" ]]; then
     rm -rf "$pytorch3d_rootdir"
     git clone SOURCE_DIR/../.. "$pytorch3d_rootdir"
 
-    # pushd "$vision_rootdir"
-    # git checkout $PYTORCH_BRANCH
-    # popd
 fi
 
 cd "$SOURCE_DIR"
@@ -94,7 +91,6 @@ ANACONDA_USER=pytorch-nightly
 conda config --set anaconda_upload no
 
 
-export TORCHVISION_PACKAGE_SUFFIX=""
 if [[ "$desired_cuda" == 'cpu' ]]; then
     export CONDA_CUDATOOLKIT_CONSTRAINT=""
     export CONDA_CPUONLY_FEATURE="- cpuonly # [not osx]"
@@ -164,7 +160,7 @@ for py_ver in "${DESIRED_PYTHON[@]}"; do
                     --output-folder "$output_folder" \
                     ../$VSTOOLCHAIN_PACKAGE
 
-    cp ../$VSTOOLCHAIN_PACKAGE/conda_build_config.yaml ../torchvision/conda_build_config.yaml
+    cp ../$VSTOOLCHAIN_PACKAGE/conda_build_config.yaml ../pytorch3d/conda_build_config.yaml
 
     conda config --set anaconda_upload no
     echo "Calling conda-build at $(date)"
@@ -182,7 +178,7 @@ for py_ver in "${DESIRED_PYTHON[@]}"; do
                         --output-folder "$output_folder" \
                         --no-verify \
                         --no-test \
-                        ../torchvision
+                        ../pytorch3d
     else
         time CMAKE_ARGS=${CMAKE_ARGS[@]} \
             BUILD_VERSION="$PYTORCH3D_BUILD_VERSION" \
@@ -196,13 +192,13 @@ for py_ver in "${DESIRED_PYTHON[@]}"; do
                         --output-folder "$output_folder" \
                         --no-verify \
                         --no-test \
-                        ../torchvision
+                        ../pytorch3d
     fi
     echo "Finished conda-build at $(date)"
 
     # Extract the package for testing
     ls -lah "$output_folder"
-    built_package="$(find $output_folder/ -name '*torchvision*.tar.bz2')"
+    built_package="$(find $output_folder/ -name '*pytorch3d*.tar.bz2')"
 
     # Copy the built package to the host machine for persistence before testing
     if [[ -n "$PYTORCH_FINAL_PACKAGE_DIR" ]]; then

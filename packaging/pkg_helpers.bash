@@ -260,6 +260,6 @@ setup_visual_studio_constraint() {
       export VSDEVCMD_ARGS=''
       # shellcheck disable=SC2086
       conda build $CONDA_CHANNEL_FLAGS --no-anaconda-upload packaging/$VSTOOLCHAIN_PACKAGE
-      cp packaging/$VSTOOLCHAIN_PACKAGE/conda_build_config.yaml packaging/torchvision/conda_build_config.yaml
+      cp packaging/$VSTOOLCHAIN_PACKAGE/conda_build_config.yaml packaging/pytorch3d/conda_build_config.yaml
   fi
 }
