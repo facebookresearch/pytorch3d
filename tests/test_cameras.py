@@ -119,7 +119,6 @@ class TestCameraHelpers(unittest.TestCase):
         np.random.seed(42)
 
     def test_look_at_view_transform_from_eye_point_tuple(self):
-        """Test passing eye tuple with and without dist, elev, angle."""
         dist = math.sqrt(2)
         elev = math.pi / 4
         azim = 0.0
