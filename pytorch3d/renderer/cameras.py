@@ -1003,9 +1003,9 @@ def look_at_rotation(
 
 
 def look_at_view_transform(
-    dist,
-    elev,
-    azim,
+    dist=1.0,
+    elev=0.0,
+    azim=0.0,
     degrees: bool = True,
     eye: Sequence = None,
     at=((0, 0, 0),),  # (1, 3)
