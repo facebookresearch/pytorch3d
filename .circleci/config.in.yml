@@ -182,6 +182,24 @@ jobs:
 
           docker run --gpus all  --ipc=host -v $(pwd):/remote -w /remote ${VARS_TO_PASS} ${DOCKER_IMAGE} ./packaging/build_conda.sh
 
+  binary_macos_wheel:
+    <<: *binary_common
+    macos:
+      xcode: "9.0"
+    steps:
+      - checkout
+      - run:
+          # Cannot easily deduplicate this as source'ing activate
+          # will set environment variables which we need to propagate
+          # to build_wheel.sh
+          command: |
+            curl -o conda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh
+            sh conda.sh -b
+            source $HOME/miniconda3/bin/activate
+            packaging/build_wheel.sh
+      - store_artifacts:
+          path: dist
+
 workflows:
   version: 2
   build_and_test:
@@ -193,3 +211,21 @@ workflows:
           python_version: "3.7"
           pytorch_version: "1.4"
           cu_version: "cu100"
+      - binary_macos_wheel:
+          build_version: 0.1.0
+          cu_version: cpu
+          name: binary_linux_wheel_py3.6_cpu
+          python_version: '3.6'
+          pytorch_version: '1.4'
+      - binary_macos_wheel:
+          build_version: 0.1.0
+          cu_version: cpu
+          name: binary_linux_wheel_py3.7_cpu
+          python_version: '3.7'
+          pytorch_version: '1.4'
+      - binary_macos_wheel:
+          build_version: 0.1.0
+          cu_version: cpu
+          name: binary_linux_wheel_py3.8_cpu
+          python_version: '3.8'
+          pytorch_version: '1.4'
