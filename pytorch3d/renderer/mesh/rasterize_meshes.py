@@ -445,8 +445,8 @@ def point_line_distance(p, v0, v1):
 
     v1v0 = v1 - v0
     l2 = v1v0.dot(v1v0)  # |v1 - v0|^2
-    if l2 == 0.0:
-        return torch.sqrt((p - v1).dot(p - v1))  # v0 == v1
+    if l2 <= kEpsilon:
+        return (p - v1).dot(p - v1)  # v0 == v1
 
     t = (v1v0).dot(p - v0) / l2
     t = torch.clamp(t, min=0.0, max=1.0)
