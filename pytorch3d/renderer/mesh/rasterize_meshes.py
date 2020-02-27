@@ -97,12 +97,11 @@ def rasterize_meshes(
             # TODO better heuristics for bin size.
             if image_size <= 64:
                 bin_size = 8
-            elif image_size <= 256:
-                bin_size = 16
-            elif image_size <= 512:
-                bin_size = 32
-            elif image_size <= 1024:
-                bin_size = 64
+            else:
+                bin_size = int(2 ** max(np.ceil(np.log2(image_size)) - 4, 4))
+
+    if bin_size != 0:
+        assert 1 + (image_size - 1) // bin_size < 22
 
     if max_faces_per_bin is None:
         max_faces_per_bin = int(max(10000, verts_packed.shape[0] / 5))
