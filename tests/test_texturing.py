@@ -8,7 +8,6 @@ import torch.nn.functional as F
 
 from pytorch3d.renderer.mesh.rasterizer import Fragments
 from pytorch3d.renderer.mesh.texturing import (
-    _clip_barycentric_coordinates,
     interpolate_face_attributes,
     interpolate_texture_map,
     interpolate_vertex_colors,
@@ -94,7 +93,9 @@ class TestTexturing(TestCaseMixin, unittest.TestCase):
             dists=pix_to_face,
         )
         with self.assertRaises(ValueError):
-            interpolate_face_attributes(fragments, face_attributes)
+            interpolate_face_attributes(
+                fragments.pix_to_face, fragments.bary_coords, face_attributes
+            )
 
         # 2. pix_to_face must have shape (N, H, W, K)
         pix_to_face = torch.ones((1, 1, 1, 1, 3))
@@ -105,7 +106,9 @@ class TestTexturing(TestCaseMixin, unittest.TestCase):
             dists=pix_to_face,
         )
         with self.assertRaises(ValueError):
-            interpolate_face_attributes(fragments, face_attributes)
+            interpolate_face_attributes(
+                fragments.pix_to_face, fragments.bary_coords, face_attributes
+            )
 
     def test_interpolate_texture_map(self):
         barycentric_coords = torch.tensor(
@@ -220,13 +223,3 @@ class TestTexturing(TestCaseMixin, unittest.TestCase):
         )
         with self.assertRaises(ValueError):
             tex_mesh.extend(N=-1)
-
-    def test_clip_barycentric_coords(self):
-        barycentric_coords = torch.tensor(
-            [[1.5, -0.3, -0.2], [1.2, 0.3, -0.5]], dtype=torch.float32
-        )
-        expected_out = torch.tensor(
-            [[1.0, 0.0, 0.0], [1.0 / 1.3, 0.3 / 1.3, 0.0]], dtype=torch.float32
-        )
-        clipped = _clip_barycentric_coordinates(barycentric_coords)
-        self.assertTrue(torch.allclose(clipped, expected_out))

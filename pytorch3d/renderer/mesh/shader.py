@@ -270,6 +270,7 @@ class TexturedSoftPhongShader(nn.Module):
         cameras = kwargs.get("cameras", self.cameras)
         lights = kwargs.get("lights", self.lights)
         materials = kwargs.get("materials", self.materials)
+        blend_params = kwargs.get("blend_params", self.blend_params)
         colors = phong_shading(
             meshes=meshes,
             fragments=fragments,
@@ -278,7 +279,7 @@ class TexturedSoftPhongShader(nn.Module):
             cameras=cameras,
             materials=materials,
         )
-        images = softmax_rgb_blend(colors, fragments, self.blend_params)
+        images = softmax_rgb_blend(colors, fragments, blend_params)
         return images
 
 

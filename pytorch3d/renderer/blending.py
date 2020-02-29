@@ -90,7 +90,9 @@ def sigmoid_alpha_blend(colors, fragments, blend_params) -> torch.Tensor:
     return torch.flip(pixel_colors, [1])
 
 
-def softmax_rgb_blend(colors, fragments, blend_params) -> torch.Tensor:
+def softmax_rgb_blend(
+    colors, fragments, blend_params, znear: float = 1.0, zfar: float = 100
+) -> torch.Tensor:
     """
     RGB and alpha channel blending to return an RGBA image based on the method
     proposed in [0]
@@ -118,6 +120,8 @@ def softmax_rgb_blend(colors, fragments, blend_params) -> torch.Tensor:
               exponential function used to control the opacity of the color.
             - background_color: (3) element list/tuple/torch.Tensor specifying
               the RGB values for the background color.
+        znear: float, near clipping plane in the z direction
+        zfar: float, far clipping plane in the z direction
 
     Returns:
         RGBA pixel_colors: (N, H, W, 4)
@@ -125,6 +129,7 @@ def softmax_rgb_blend(colors, fragments, blend_params) -> torch.Tensor:
     [0] Shichen Liu et al, 'Soft Rasterizer: A Differentiable Renderer for
     Image-based 3D Reasoning'
     """
+
     N, H, W, K = fragments.pix_to_face.shape
     device = fragments.pix_to_face.device
     pix_colors = torch.ones(
@@ -139,11 +144,6 @@ def softmax_rgb_blend(colors, fragments, blend_params) -> torch.Tensor:
     # Background color
     delta = np.exp(1e-10 / blend_params.gamma) * 1e-10
     delta = torch.tensor(delta, device=device)
-
-    # Near and far clipping planes.
-    # TODO: add zfar/znear as input params.
-    zfar = 100.0
-    znear = 1.0
 
     # Mask for padded pixels.
     mask = fragments.pix_to_face >= 0
@@ -164,6 +164,7 @@ def softmax_rgb_blend(colors, fragments, blend_params) -> torch.Tensor:
     # Weights for each face. Adjust the exponential by the max z to prevent
     # overflow. zbuf shape (N, H, W, K), find max over K.
     # TODO: there may still be some instability in the exponent calculation.
+
     z_inv = (zfar - fragments.zbuf) / (zfar - znear) * mask
     z_inv_max = torch.max(z_inv, dim=-1).values[..., None]
     weights_num = prob_map * torch.exp((z_inv - z_inv_max) / blend_params.gamma)

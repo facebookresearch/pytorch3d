@@ -25,6 +25,7 @@ from pytorch3d.renderer.mesh.rasterizer import (
 from pytorch3d.renderer.mesh.renderer import MeshRenderer
 from pytorch3d.renderer.mesh.shader import (
     BlendParams,
+    HardFlatShader,
     HardGouraudShader,
     HardPhongShader,
     SoftSilhouetteShader,
@@ -99,8 +100,9 @@ class TestRenderingMeshes(unittest.TestCase):
         images = renderer(sphere_mesh)
         rgb = images[0, ..., :3].squeeze().cpu()
         if DEBUG:
+            filename = "DEBUG_simple_sphere_light%s.png" % postfix
             Image.fromarray((rgb.numpy() * 255).astype(np.uint8)).save(
-                DATA_DIR / "DEBUG_simple_sphere_light%s.png" % postfix
+                DATA_DIR / filename
             )
 
         # Load reference image
@@ -117,8 +119,9 @@ class TestRenderingMeshes(unittest.TestCase):
         images = renderer(sphere_mesh, lights=lights)
         rgb = images[0, ..., :3].squeeze().cpu()
         if DEBUG:
+            filename = "DEBUG_simple_sphere_dark%s.png" % postfix
             Image.fromarray((rgb.numpy() * 255).astype(np.uint8)).save(
-                DATA_DIR / "DEBUG_simple_sphere_dark%s.png" % postfix
+                DATA_DIR / filename
             )
 
         # Load reference image
@@ -140,8 +143,9 @@ class TestRenderingMeshes(unittest.TestCase):
         images = renderer(sphere_mesh)
         rgb = images[0, ..., :3].squeeze().cpu()
         if DEBUG:
+            filename = "DEBUG_simple_sphere_light_gourad%s.png" % postfix
             Image.fromarray((rgb.numpy() * 255).astype(np.uint8)).save(
-                DATA_DIR / "DEBUG_simple_sphere_light_gouraud%s.png" % postfix
+                DATA_DIR / filename
             )
 
         # Load reference image
@@ -149,7 +153,30 @@ class TestRenderingMeshes(unittest.TestCase):
             "test_simple_sphere_light_gouraud%s.png" % postfix
         )
         self.assertTrue(torch.allclose(rgb, image_ref_gouraud, atol=0.005))
-        self.assertFalse(torch.allclose(rgb, image_ref_phong, atol=0.005))
+
+        ######################################
+        # Change the shader to a HardFlatShader
+        ######################################
+        lights.location = torch.tensor([0.0, 0.0, -2.0], device=device)[None]
+        renderer = MeshRenderer(
+            rasterizer=rasterizer,
+            shader=HardFlatShader(
+                lights=lights, cameras=cameras, materials=materials
+            ),
+        )
+        images = renderer(sphere_mesh)
+        rgb = images[0, ..., :3].squeeze().cpu()
+        if DEBUG:
+            filename = "DEBUG_simple_sphere_light_flat%s.png" % postfix
+            Image.fromarray((rgb.numpy() * 255).astype(np.uint8)).save(
+                DATA_DIR / filename
+            )
+
+        # Load reference image
+        image_ref_flat = load_rgb_image(
+            "test_simple_sphere_light_flat%s.png" % postfix
+        )
+        self.assertTrue(torch.allclose(rgb, image_ref_flat, atol=0.005))
 
     def test_simple_sphere_elevated_camera(self):
         """
@@ -287,9 +314,6 @@ class TestRenderingMeshes(unittest.TestCase):
         materials = Materials(device=device)
         lights = PointLights(device=device)
         lights.location = torch.tensor([0.0, 0.0, -2.0], device=device)[None]
-        raster_settings = RasterizationSettings(
-            image_size=512, blur_radius=0.0, faces_per_pixel=1, bin_size=0
-        )
 
         # Init renderer
         renderer = MeshRenderer(
@@ -327,3 +351,32 @@ class TestRenderingMeshes(unittest.TestCase):
         images = renderer(mesh2)
         images[0, ...].sum().backward()
         self.assertIsNotNone(verts.grad)
+
+        #################################
+        # Add blurring to rasterization
+        #################################
+
+        blend_params = BlendParams(sigma=5e-4, gamma=1e-4)
+        raster_settings = RasterizationSettings(
+            image_size=512,
+            blur_radius=np.log(1.0 / 1e-4 - 1.0) * blend_params.sigma,
+            faces_per_pixel=100,
+            bin_size=0,
+        )
+
+        images = renderer(
+            mesh.clone(),
+            raster_settings=raster_settings,
+            blend_params=blend_params,
+        )
+        rgb = images[0, ..., :3].squeeze().cpu()
+
+        # Load reference image
+        image_ref = load_rgb_image("test_blurry_textured_rendering.png")
+
+        if DEBUG:
+            Image.fromarray((rgb.numpy() * 255).astype(np.uint8)).save(
+                DATA_DIR / "DEBUG_blurry_textured_rendering.png"
+            )
+
+        self.assertTrue(torch.allclose(rgb, image_ref, atol=0.05))
