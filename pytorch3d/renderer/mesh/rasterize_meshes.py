@@ -101,7 +101,9 @@ def rasterize_meshes(
                 bin_size = int(2 ** max(np.ceil(np.log2(image_size)) - 4, 4))
 
     if bin_size != 0:
-        assert 1 + (image_size - 1) // bin_size < 22
+        v = 1 + (image_size - 1) // bin_size
+        if v >= 22:
+            raise ValueError("bin size too small, number of faces per pixel must be less than 22")
 
     if max_faces_per_bin is None:
         max_faces_per_bin = int(max(10000, verts_packed.shape[0] / 5))
