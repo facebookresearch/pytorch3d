@@ -100,7 +100,7 @@ class Textures(object):
             raise ValueError(msg % repr(faces_uvs.shape))
         if verts_uvs is not None and verts_uvs.ndim != 3:
             msg = "Expected verts_uvs to be of shape (N, V, 2); got %r"
-            raise ValueError(msg % repr(faces_uvs.shape))
+            raise ValueError(msg % repr(verts_uvs.shape))
         if verts_rgb is not None and verts_rgb.ndim != 3:
             msg = "Expected verts_rgb to be of shape (N, V, 3); got %r"
             raise ValueError(msg % verts_rgb.shape)
