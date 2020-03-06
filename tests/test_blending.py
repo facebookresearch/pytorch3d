@@ -41,7 +41,7 @@ def sigmoid_blend_naive_loop(colors, fragments, blend_params):
                 pixel_colors[n, h, w, :3] = colors[n, h, w, 0, :]
                 pixel_colors[n, h, w, 3] = 1.0 - alpha
 
-    return torch.flip(pixel_colors, [1])
+    return pixel_colors
 
 
 def sigmoid_blend_naive_loop_backward(
@@ -54,8 +54,6 @@ def sigmoid_blend_naive_loop_backward(
     N, H, W, K = pix_to_face.shape
     device = pix_to_face.device
     grad_distances = torch.zeros((N, H, W, K), dtype=dists.dtype, device=device)
-    images = torch.flip(images, [1])
-    grad_images = torch.flip(grad_images, [1])
 
     for n in range(N):
         for h in range(H):
@@ -130,7 +128,7 @@ def softmax_blend_naive(colors, fragments, blend_params):
                 pixel_colors[n, h, w, :3] += (delta / denom) * bk_color
                 pixel_colors[n, h, w, 3] = 1.0 - alpha
 
-    return torch.flip(pixel_colors, [1])
+    return pixel_colors
 
 
 class TestBlending(unittest.TestCase):

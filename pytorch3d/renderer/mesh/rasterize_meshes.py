@@ -208,6 +208,11 @@ class _RasterizeFaceVerts(torch.autograd.Function):
         return grads
 
 
+def pix_to_ndc(i, S):
+    # NDC x-offset + (i * pixel_width + half_pixel_width)
+    return -1 + (2 * i + 1.0) / S
+
+
 def rasterize_meshes_python(
     meshes,
     image_size: int = 256,
@@ -249,10 +254,6 @@ def rasterize_meshes_python(
         (N, H, W, K), fill_value=-1, dtype=torch.float32, device=device
     )
 
-    # NDC is from [-1, 1]. Get pixel size using specified image size.
-    pixel_width = 2.0 / W
-    pixel_height = 2.0 / H
-
     # Calculate all face bounding boxes.
     x_mins = torch.min(faces_verts[:, :, 0], dim=1, keepdim=True).values
     x_maxs = torch.max(faces_verts[:, :, 0], dim=1, keepdim=True).values
@@ -269,14 +270,20 @@ def rasterize_meshes_python(
     for n in range(N):
         face_start_idx = mesh_to_face_first_idx[n]
         face_stop_idx = face_start_idx + num_faces_per_mesh[n]
-        # Y coordinate of the top of the image.
-        yf = -1.0 + 0.5 * pixel_height
+
         # Iterate through the horizontal lines of the image from top to bottom.
         for yi in range(H):
-            # X coordinate of the left of the image.
-            xf = -1.0 + 0.5 * pixel_width
+            # Y coordinate of one end of the image. Reverse the ordering
+            # of yi so that +Y is pointing up in the image.
+            yfix = H - 1 - yi
+            yf = pix_to_ndc(yfix, H)
+
             # Iterate through pixels on this horizontal line, left to right.
             for xi in range(W):
+                # X coordinate of one end of the image. Reverse the ordering
+                # of xi so that +X is pointing to the left in the image.
+                xfix = W - 1 - xi
+                xf = pix_to_ndc(xfix, H)
                 top_k_points = []
 
                 # Check whether each face in the mesh affects this pixel.
@@ -346,12 +353,6 @@ def rasterize_meshes_python(
                     bary_coords[n, yi, xi, k, 1] = bary[1]
                     bary_coords[n, yi, xi, k, 2] = bary[2]
                     pix_dists[n, yi, xi, k] = dist
-
-                # Move to the next horizontal pixel
-                xf += pixel_width
-
-            # Move to the next vertical pixel
-            yf += pixel_height
 
     return face_idxs, zbuf, bary_coords, pix_dists
 

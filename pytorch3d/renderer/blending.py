@@ -38,7 +38,7 @@ def hard_rgb_blend(colors, fragments) -> torch.Tensor:
     device = fragments.pix_to_face.device
     pixel_colors = torch.ones((N, H, W, 4), dtype=colors.dtype, device=device)
     pixel_colors[..., :3] = colors[..., 0, :]
-    return torch.flip(pixel_colors, [1])
+    return pixel_colors
 
 
 def sigmoid_alpha_blend(colors, fragments, blend_params) -> torch.Tensor:
@@ -80,7 +80,7 @@ def sigmoid_alpha_blend(colors, fragments, blend_params) -> torch.Tensor:
     alpha = torch.prod((1.0 - prob), dim=-1)
     pixel_colors[..., :3] = colors[..., 0, :]  # Hard assign for RGB
     pixel_colors[..., 3] = 1.0 - alpha
-    return torch.flip(pixel_colors, [1])
+    return pixel_colors
 
 
 def softmax_rgb_blend(
@@ -125,7 +125,7 @@ def softmax_rgb_blend(
 
     N, H, W, K = fragments.pix_to_face.shape
     device = fragments.pix_to_face.device
-    pix_colors = torch.ones(
+    pixel_colors = torch.ones(
         (N, H, W, 4), dtype=colors.dtype, device=colors.device
     )
     background = blend_params.background_color
@@ -166,7 +166,7 @@ def softmax_rgb_blend(
     # Sum: weights * textures + background color
     weighted_colors = (weights[..., None] * colors).sum(dim=-2)
     weighted_background = (delta / denom) * background
-    pix_colors[..., :3] = weighted_colors + weighted_background
-    pix_colors[..., 3] = 1.0 - alpha
+    pixel_colors[..., :3] = weighted_colors + weighted_background
+    pixel_colors[..., 3] = 1.0 - alpha
 
-    return torch.flip(pix_colors, [1])
+    return pixel_colors

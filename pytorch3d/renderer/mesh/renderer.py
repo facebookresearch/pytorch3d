@@ -53,7 +53,7 @@ class MeshRenderer(nn.Module):
         if raster_settings.blur_radius > 0.0:
             # TODO: potentially move barycentric clipping to the rasterizer
             # if no downstream functions requires unclipped values.
-            # This will avoid unnecssary re-interpolation of the z buffer. 
+            # This will avoid unnecssary re-interpolation of the z buffer.
             clipped_bary_coords = _clip_barycentric_coordinates(
                 fragments.bary_coords
             )
@@ -67,4 +67,5 @@ class MeshRenderer(nn.Module):
                 pix_to_face=fragments.pix_to_face,
             )
         images = self.shader(fragments, meshes_world, **kwargs)
+
         return images

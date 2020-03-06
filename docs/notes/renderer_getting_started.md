@@ -34,19 +34,22 @@ The differentiable renderer API is experimental and subject to change!.
 
 ### Coordinate transformation conventions
 
-Rendering requires transformations between several different coordinate frames: world space, view/camera space, NDC space and screen space. At each step it is important to know where the camera is located, how the x,y,z axes are aligned and the possible range of values. The following figure outlines the conventions used PyTorch3d.
+Rendering requires transformations between several different coordinate frames: world space, view/camera space, NDC space and screen space. At each step it is important to know where the camera is located, how the +X, +Y, +Z axes are aligned and the possible range of values. The following figure outlines the conventions used PyTorch3d.
 
 <img src="assets/transformations_overview.png" width="1000">
 
 
+For example, given a teapot mesh, the world coordinate frame, camera coordiante frame and image are show in the figure below. Note that the world and camera coordinate frames have the +z direction pointing in to the page. 
+
+<img src="assets/world_camera_image.png" width="1000">
 
 ---
 
 **NOTE: PyTorch3d vs OpenGL**
 
-While we tried to emulate several aspects of OpenGL, the NDC coordinate system in PyTorch3d is **right-handed** compared with a **left-handed** NDC coordinate system in OpenGL (the projection matrix switches the handedness).
-
-In OpenGL, the camera at the origin is looking along `-z` axis in camera space, but it is looking along the `+z` axis in NDC space.
+While we tried to emulate several aspects of OpenGL, there are differences in the coordinate frame conventions. 
+- The default world coordinate frame in PyTorch3D has +Z pointing in to the screen whereas in OpenGL, +Z is pointing out of the screen.  Both are right handed. 
+- The NDC coordinate system in PyTorch3d is **right-handed** compared with a **left-handed** NDC coordinate system in OpenGL (the projection matrix switches the handedness).
 
 <img align="center" src="assets/opengl_coordframes.png" width="300">
 
@@ -60,7 +63,7 @@ A renderer in PyTorch3d is composed of a **rasterizer** and a **shader**. Create
 from pytorch3d.renderer import (
     OpenGLPerspectiveCameras, look_at_view_transform,
     RasterizationSettings, BlendParams,
-    MeshRenderer, MeshRasterizer, PhongShader
+    MeshRenderer, MeshRasterizer, HardPhongShader
 )
 
 # Initialize an OpenGL perspective camera.
@@ -81,7 +84,7 @@ raster_settings = RasterizationSettings(
 # PhongShader, passing in the device on which to initialize the default parameters
 renderer = MeshRenderer(
     rasterizer=MeshRasterizer(cameras=cameras, raster_settings=raster_settings),
-    shader=PhongShader(device=device, cameras=cameras)
+    shader=HardPhongShader(device=device, cameras=cameras)
 )
 ```
 

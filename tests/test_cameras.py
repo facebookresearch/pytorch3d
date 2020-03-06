@@ -173,12 +173,12 @@ class TestCameraHelpers(unittest.TestCase):
         grad_dist = (
             torch.cos(elev) * torch.sin(azim)
             + torch.sin(elev)
-            - torch.cos(elev) * torch.cos(azim)
+            + torch.cos(elev) * torch.cos(azim)
         )
         grad_elev = (
             -torch.sin(elev) * torch.sin(azim)
             + torch.cos(elev)
-            + torch.sin(elev) * torch.cos(azim)
+            - torch.sin(elev) * torch.cos(azim)
         )
         grad_elev = dist * (math.pi / 180.0) * grad_elev
         self.assertTrue(torch.allclose(elev_grad, grad_elev))
@@ -232,12 +232,12 @@ class TestCameraHelpers(unittest.TestCase):
         grad_dist = (
             torch.cos(elev) * torch.sin(azim)
             + torch.sin(elev)
-            - torch.cos(elev) * torch.cos(azim)
+            + torch.cos(elev) * torch.cos(azim)
         )
         grad_elev = (
             -torch.sin(elev) * torch.sin(azim)
             + torch.cos(elev)
-            + torch.sin(elev) * torch.cos(azim)
+            - torch.sin(elev) * torch.cos(azim)
         )
         grad_elev = (dist * (math.pi / 180.0) * grad_elev).sum()
         self.assertTrue(torch.allclose(elev_grad, grad_elev))

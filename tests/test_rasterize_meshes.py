@@ -19,7 +19,7 @@ class TestRasterizeMeshes(unittest.TestCase):
         device = torch.device("cpu")
         self._simple_triangle_raster(
             rasterize_meshes_python, device, bin_size=-1
-        )  # don't set binsize
+        )
         self._simple_blurry_raster(rasterize_meshes_python, device, bin_size=-1)
         self._test_behind_camera(rasterize_meshes_python, device, bin_size=-1)
         self._test_perspective_correct(
@@ -28,10 +28,10 @@ class TestRasterizeMeshes(unittest.TestCase):
 
     def test_simple_cpu_naive(self):
         device = torch.device("cpu")
-        self._simple_triangle_raster(rasterize_meshes, device)
-        self._simple_blurry_raster(rasterize_meshes, device)
-        self._test_behind_camera(rasterize_meshes, device)
-        self._test_perspective_correct(rasterize_meshes, device)
+        self._simple_triangle_raster(rasterize_meshes, device, bin_size=0)
+        self._simple_blurry_raster(rasterize_meshes, device, bin_size=0)
+        self._test_behind_camera(rasterize_meshes, device, bin_size=0)
+        self._test_perspective_correct(rasterize_meshes, device, bin_size=0)
 
     def test_simple_cuda_naive(self):
         device = torch.device("cuda:0")
@@ -285,14 +285,15 @@ class TestRasterizeMeshes(unittest.TestCase):
         max_faces_per_bin = 20
 
         device = torch.device("cpu")
-        meshes = ico_sphere(2, device)
 
+        meshes = ico_sphere(2, device)
         faces = meshes.faces_packed()
         verts = meshes.verts_packed()
         faces_verts = verts[faces]
         num_faces_per_mesh = meshes.num_faces_per_mesh()
         mesh_to_face_first_idx = meshes.mesh_to_faces_packed_first_idx()
-        args = (
+
+        bin_faces_cpu = _C._rasterize_meshes_coarse(
             faces_verts,
             mesh_to_face_first_idx,
             num_faces_per_mesh,
@@ -301,17 +302,16 @@ class TestRasterizeMeshes(unittest.TestCase):
             bin_size,
             max_faces_per_bin,
         )
-        bin_faces_cpu = _C._rasterize_meshes_coarse(*args)
-
         device = torch.device("cuda:0")
-        meshes = ico_sphere(2, device)
+        meshes = meshes.clone().to(device)
 
         faces = meshes.faces_packed()
         verts = meshes.verts_packed()
         faces_verts = verts[faces]
         num_faces_per_mesh = meshes.num_faces_per_mesh()
         mesh_to_face_first_idx = meshes.mesh_to_faces_packed_first_idx()
-        args = (
+
+        bin_faces_cuda = _C._rasterize_meshes_coarse(
             faces_verts,
             mesh_to_face_first_idx,
             num_faces_per_mesh,
@@ -320,11 +320,11 @@ class TestRasterizeMeshes(unittest.TestCase):
             bin_size,
             max_faces_per_bin,
         )
-        bin_faces_cuda = _C._rasterize_meshes_coarse(*args)
 
         # Bin faces might not be the same: CUDA version might write them in
         # any order. But if we sort the non-(-1) elements of the CUDA output
         # then they should be the same.
+
         for n in range(N):
             for by in range(bin_faces_cpu.shape[1]):
                 for bx in range(bin_faces_cpu.shape[2]):
@@ -456,64 +456,68 @@ class TestRasterizeMeshes(unittest.TestCase):
 
         # Run with and without perspective correction
         idx_f, zbuf_f, bary_f, dists_f = rasterize_meshes_fn(**kwargs)
+
         kwargs["perspective_correct"] = True
         idx_t, zbuf_t, bary_t, dists_t = rasterize_meshes_fn(**kwargs)
 
+        # Expected output tensors in the format with axes +X left, +Y up, +Z in
         # idx and dists should be the same with or without perspecitve correction
         # fmt: off
         idx_expected = torch.tensor([
             [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],  # noqa: E241, E201
-            [-1, -1,  0,  0,  0,  0,  0,  0,  0, -1, -1],  # noqa: E241, E201
-            [-1,  0,  0,  0,  0,  0,  0,  0,  0,  0, -1],  # noqa: E241, E201
-            [-1,  0,  0,  0,  0,  0,  0,  0,  0,  0, -1],  # noqa: E241, E201
-            [-1,  0,  0,  0,  0,  0,  0,  0,  0,  0, -1],  # noqa: E241, E201
-            [-1, -1,  0,  0,  0,  0,  0,  0,  0, -1, -1],  # noqa: E241, E201
-            [-1, -1,  0,  0,  0,  0,  0,  0,  0, -1, -1],  # noqa: E241, E201
-            [-1, -1, -1,  0,  0,  0,  0,  0, -1, -1, -1],  # noqa: E241, E201
-            [-1, -1, -1,  0,  0,  0,  0,  0, -1, -1, -1],  # noqa: E241, E201
             [-1, -1, -1, -1,  0,  0,  0, -1, -1, -1, -1],  # noqa: E241, E201
-            [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],  # noqa: E241, E201
+            [-1, -1, -1,  0,  0,  0,  0,  0, -1, -1, -1],  # noqa: E241, E201
+            [-1, -1, -1,  0,  0,  0,  0,  0, -1, -1, -1],  # noqa: E241, E201
+            [-1, -1,  0,  0,  0,  0,  0,  0,  0, -1, -1],  # noqa: E241, E201
+            [-1, -1,  0,  0,  0,  0,  0,  0,  0, -1, -1],  # noqa: E241, E201
+            [-1,  0,  0,  0,  0,  0,  0,  0,  0,  0, -1],  # noqa: E241, E201
+            [-1,  0,  0,  0,  0,  0,  0,  0,  0,  0, -1],  # noqa: E241, E201
+            [-1,  0,  0,  0,  0,  0,  0,  0,  0,  0, -1],  # noqa: E241, E201
+            [-1, -1,  0,  0,  0,  0,  0,  0,  0, -1, -1],  # noqa: E241, E201
+            [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]   # noqa: E241, E201
         ], dtype=torch.int64, device=device).view(1, 11, 11, 1)
+
         dists_expected = torch.tensor([
-            [-1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000],  # noqa: E241, E201
-            [-1.0000, -1.0000,  0.1283,  0.1071,  0.1071,  0.1071,  0.1071,  0.1071,  0.1283, -1.0000, -1.0000],  # noqa: E241, E201
-            [-1.0000,  0.1283,  0.0423,  0.0212,  0.0212,  0.0212,  0.0212,  0.0212,  0.0423,  0.1283, -1.0000],  # noqa: E241, E201
-            [-1.0000,  0.1084,  0.0225, -0.0003, -0.0013, -0.0013, -0.0013, -0.0003,  0.0225,  0.1084, -1.0000],  # noqa: E241, E201
-            [-1.0000,  0.1523,  0.0518,  0.0042, -0.0095, -0.0476, -0.0095,  0.0042,  0.0518,  0.1523, -1.0000],  # noqa: E241, E201
-            [-1.0000, -1.0000,  0.0955,  0.0214, -0.0003, -0.0320, -0.0003,  0.0214,  0.0955, -1.0000, -1.0000],  # noqa: E241, E201
-            [-1.0000, -1.0000,  0.1523,  0.0518,  0.0042, -0.0095,  0.0042,  0.0518,  0.1523, -1.0000, -1.0000],  # noqa: E241, E201
-            [-1.0000, -1.0000, -1.0000,  0.0955,  0.0214, -0.0003,  0.0214,  0.0955, -1.0000, -1.0000, -1.0000],  # noqa: E241, E201
-            [-1.0000, -1.0000, -1.0000,  0.1523,  0.0542,  0.0212,  0.0542,  0.1523, -1.0000, -1.0000, -1.0000],  # noqa: E241, E201
-            [-1.0000, -1.0000, -1.0000, -1.0000,  0.1402,  0.1071,  0.1402, -1.0000, -1.0000, -1.0000, -1.0000],  # noqa: E241, E201
-            [-1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000],  # noqa: E241, E201
+            [-1.,     -1.,     -1.,     -1.,    -1.,     -1.,     -1.,     -1.,     -1.,   -1., -1.],  # noqa: E241, E201
+            [-1.,     -1.,     -1.,     -1., 0.1402,  0.1071,  0.1402,     -1.,     -1.,   -1., -1.],  # noqa: E241, E201
+            [-1.,     -1., -    1., 0.1523,  0.0542,  0.0212,  0.0542,  0.1523,     -1.,   -1., -1.],  # noqa: E241, E201
+            [-1.,     -1.,     -1., 0.0955,  0.0214, -0.0003,  0.0214,  0.0955,     -1.,   -1., -1.],  # noqa: E241, E201
+            [-1.,     -1., 0.1523,  0.0518,  0.0042, -0.0095,  0.0042,  0.0518, 0.1523,    -1., -1.],  # noqa: E241, E201
+            [-1.,     -1., 0.0955,  0.0214, -0.0003,  -0.032, -0.0003,  0.0214, 0.0955,    -1., -1.],  # noqa: E241, E201
+            [-1., 0.1523,  0.0518,  0.0042, -0.0095, -0.0476, -0.0095,  0.0042, 0.0518, 0.1523, -1.],  # noqa: E241, E201
+            [-1., 0.1084,  0.0225, -0.0003, -0.0013, -0.0013, -0.0013, -0.0003, 0.0225, 0.1084, -1.],  # noqa: E241, E201
+            [-1., 0.1283,  0.0423,  0.0212,  0.0212,  0.0212,  0.0212,  0.0212, 0.0423, 0.1283, -1.],  # noqa: E241, E201
+            [-1.,     -1., 0.1283,  0.1071,  0.1071,  0.1071,  0.1071,  0.1071, 0.1283,    -1., -1.],  # noqa: E241, E201
+            [-1.,     -1.,     -1.,     -1.,     -1.,     -1.,     -1.,     -1.,    -1.,   -1., -1.]   # noqa: E241, E201
         ], dtype=torch.float32, device=device).view(1, 11, 11, 1)
 
         # zbuf and barycentric will be different with perspective correction
         zbuf_f_expected = torch.tensor([
-            [-1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000],  # noqa: E241, E201
-            [-1.0000, -1.0000,  5.9091,  5.9091,  5.9091,  5.9091,  5.9091,  5.9091,  5.9091, -1.0000, -1.0000],  # noqa: E241, E201
-            [-1.0000,  8.1818,  8.1818,  8.1818,  8.1818,  8.1818,  8.1818,  8.1818,  8.1818,  8.1818, -1.0000],  # noqa: E241, E201
-            [-1.0000, 10.4545, 10.4545, 10.4545, 10.4545, 10.4545, 10.4545, 10.4545, 10.4545, 10.4545, -1.0000],  # noqa: E241, E201
-            [-1.0000, 12.7273, 12.7273, 12.7273, 12.7273, 12.7273, 12.7273, 12.7273, 12.7273, 12.7273, -1.0000],  # noqa: E241, E201
-            [-1.0000, -1.0000, 15.0000, 15.0000, 15.0000, 15.0000, 15.0000, 15.0000, 15.0000, -1.0000, -1.0000],  # noqa: E241, E201
-            [-1.0000, -1.0000, 17.2727, 17.2727, 17.2727, 17.2727, 17.2727, 17.2727, 17.2727, -1.0000, -1.0000],  # noqa: E241, E201
-            [-1.0000, -1.0000, -1.0000, 19.5455, 19.5455, 19.5455, 19.5455, 19.5455, -1.0000, -1.0000, -1.0000],  # noqa: E241, E201
-            [-1.0000, -1.0000, -1.0000, 21.8182, 21.8182, 21.8182, 21.8182, 21.8182, -1.0000, -1.0000, -1.0000],  # noqa: E241, E201
-            [-1.0000, -1.0000, -1.0000, -1.0000, 24.0909, 24.0909, 24.0909, -1.0000, -1.0000, -1.0000, -1.0000],  # noqa: E241, E201
-            [-1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000],  # noqa: E241, E201
+            [-1.,      -1.,     -1.,     -1.,     -1.,     -1.,      -1.,    -1.,     -1.,     -1., -1.],  # noqa: E241, E201
+            [-1.,      -1.,     -1.,     -1., 24.0909, 24.0909, 24.0909,     -1.,     -1.,     -1., -1.],  # noqa: E241, E201
+            [-1.,      -1.,     -1., 21.8182, 21.8182, 21.8182, 21.8182, 21.8182,     -1.,     -1., -1.],  # noqa: E241, E201
+            [-1.,      -1.,     -1., 19.5455, 19.5455, 19.5455, 19.5455, 19.5455,     -1.,     -1., -1.],  # noqa: E241, E201
+            [-1.,      -1., 17.2727, 17.2727, 17.2727, 17.2727, 17.2727, 17.2727, 17.2727,     -1., -1.],  # noqa: E241, E201
+            [-1.,      -1.,      15.,     15.,     15.,     15.,     15.,    15.,     15.,     -1., -1.],  # noqa: E241, E201
+            [-1., 12.7273,  12.7273, 12.7273, 12.7273, 12.7273, 12.7273, 12.7273, 12.7273, 12.7273, -1.],  # noqa: E241, E201
+            [-1., 10.4545,  10.4545, 10.4545, 10.4545, 10.4545, 10.4545, 10.4545, 10.4545, 10.4545, -1.],  # noqa: E241, E201
+            [-1.,  8.1818,   8.1818,  8.1818,  8.1818,  8.1818,  8.1818,  8.1818,  8.1818,  8.1818, -1.],  # noqa: E241, E201
+            [-1.,      -1.,  5.9091,  5.9091,  5.9091,  5.9091,  5.9091,  5.9091,  5.9091,     -1., -1.],  # noqa: E241, E201
+            [-1.,       -1.,     -1.,     -1.,     -1.,     -1.,     -1.,     -1.,     -1.,    -1., -1.],  # noqa: E241, E201
         ], dtype=torch.float32, device=device).view(1, 11, 11, 1)
+
         zbuf_t_expected = torch.tensor([
-            [-1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000],  # noqa: E241, E201
-            [-1.0000, -1.0000,  8.3019,  8.3019,  8.3019,  8.3019,  8.3019,  8.3019,  8.3019, -1.0000, -1.0000],  # noqa: E241, E201
-            [-1.0000,  9.1667,  9.1667,  9.1667,  9.1667,  9.1667,  9.1667,  9.1667,  9.1667,  9.1667, -1.0000],  # noqa: E241, E201
-            [-1.0000, 10.2326, 10.2326, 10.2326, 10.2326, 10.2326, 10.2326, 10.2326, 10.2326, 10.2326, -1.0000],  # noqa: E241, E201
-            [-1.0000, 11.5789, 11.5789, 11.5789, 11.5789, 11.5789, 11.5789, 11.5789, 11.5789, 11.5789, -1.0000],  # noqa: E241, E201
-            [-1.0000, -1.0000, 13.3333, 13.3333, 13.3333, 13.3333, 13.3333, 13.3333, 13.3333, -1.0000, -1.0000],  # noqa: E241, E201
-            [-1.0000, -1.0000, 15.7143, 15.7143, 15.7143, 15.7143, 15.7143, 15.7143, 15.7143, -1.0000, -1.0000],  # noqa: E241, E201
-            [-1.0000, -1.0000, -1.0000, 19.1304, 19.1304, 19.1304, 19.1304, 19.1304, -1.0000, -1.0000, -1.0000],  # noqa: E241, E201
-            [-1.0000, -1.0000, -1.0000, 24.4444, 24.4444, 24.4444, 24.4444, 24.4444, -1.0000, -1.0000, -1.0000],  # noqa: E241, E201
-            [-1.0000, -1.0000, -1.0000, -1.0000, 33.8462, 33.8462, 33.8461, -1.0000, -1.0000, -1.0000, -1.0000],  # noqa: E241, E201
-            [-1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000, -1.0000],  # noqa: E241, E201
+             [-1.,     -1.,     -1.,     -1.,     -1.,     -1.,     -1.,     -1.,     -1.,     -1., -1.],  # noqa: E241, E201
+             [-1.,     -1.,     -1.,     -1., 33.8461, 33.8462, 33.8462,     -1.,     -1.,     -1., -1.],  # noqa: E241, E201
+             [-1.,     -1.,     -1., 24.4444, 24.4444, 24.4444, 24.4444, 24.4444,     -1.,     -1., -1.],  # noqa: E241, E201
+             [-1.,     -1.,     -1., 19.1304, 19.1304, 19.1304, 19.1304, 19.1304,     -1.,     -1., -1.],  # noqa: E241, E201
+             [-1.,     -1., 15.7143, 15.7143, 15.7143, 15.7143, 15.7143, 15.7143, 15.7143,     -1., -1.],  # noqa: E241, E201
+             [-1.,     -1., 13.3333, 13.3333, 13.3333, 13.3333, 13.3333, 13.3333, 13.3333,     -1., -1.],  # noqa: E241, E201
+             [-1., 11.5789, 11.5789, 11.5789, 11.5789, 11.5789, 11.5789, 11.5789, 11.5789, 11.5789, -1.],  # noqa: E241, E201
+             [-1., 10.2326, 10.2326, 10.2326, 10.2326, 10.2326, 10.2326, 10.2326, 10.2326, 10.2326, -1.],  # noqa: E241, E201
+             [-1.,  9.1667,  9.1667,  9.1667,  9.1667,  9.1667,  9.1667,  9.1667,  9.1667,  9.1667, -1.],  # noqa: E241, E201
+             [-1.,      -1., 8.3019,  8.3019,  8.3019,  8.3019,  8.3019,  8.3019,  8.3019,     -1., -1.],  # noqa: E241, E201
+             [-1.,      -1.,     -1.,    -1.,     -1.,     -1.,     -1.,     -1.,     -1.,     -1., -1.]   # noqa: E241, E201
         ], dtype=torch.float32, device=device).view(1, 11, 11, 1)
         # fmt: on
 
@@ -618,9 +622,10 @@ class TestRasterizeMeshes(unittest.TestCase):
     def _simple_triangle_raster(self, raster_fn, device, bin_size=None):
         image_size = 10
 
-        # Mesh with a single face.
+        # Mesh with a single non-symmetrical face - this will help
+        # check that the XY directions are correctly oriented.
         verts0 = torch.tensor(
-            [[-0.7, -0.4, 0.1], [0.0, 0.6, 0.1], [0.7, -0.4, 0.1]],
+            [[-0.3, -0.4, 0.1], [0.0, 0.6, 0.1], [0.9, -0.4, 0.1]],
             dtype=torch.float32,
             device=device,
         )
@@ -630,7 +635,7 @@ class TestRasterizeMeshes(unittest.TestCase):
         # fmt: off
         verts1 = torch.tensor(
             [
-                [-0.7, -0.4, 0.1],  # noqa: E241, E201
+                [-0.9, -0.2, 0.1],  # noqa: E241, E201
                 [ 0.0,  0.6, 0.1],  # noqa: E241, E201
                 [ 0.7, -0.4, 0.1],  # noqa: E241, E201
                 [-0.7,  0.4, 0.5],  # noqa: E241, E201
@@ -645,6 +650,8 @@ class TestRasterizeMeshes(unittest.TestCase):
             [[1, 0, 2], [3, 4, 5]], dtype=torch.int64, device=device
         )
 
+        # Expected output tensors in the format with axes +X left, +Y up, +Z in
+        # k = 0, closest point.
         # fmt off
         expected_p2face_k0 = torch.tensor(
             [
@@ -652,10 +659,10 @@ class TestRasterizeMeshes(unittest.TestCase):
                     [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1],  # noqa: E241, E201
                     [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1],  # noqa: E241, E201
                     [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1],  # noqa: E241, E201
-                    [-1, -1,  0,  0,  0,  0,  0,  0, -1, -1],  # noqa: E241, E201
-                    [-1, -1, -1,  0,  0,  0,  0, -1, -1, -1],  # noqa: E241, E201
-                    [-1, -1, -1,  0,  0,  0,  0, -1, -1, -1],  # noqa: E241, E201
-                    [-1, -1, -1, -1,  0,  0, -1, -1, -1, -1],  # noqa: E241, E201
+                    [-1, -1, -1, -1,  0, -1, -1, -1, -1, -1],  # noqa: E241, E201
+                    [-1, -1, -1,  0,  0,  0, -1, -1, -1, -1],  # noqa: E241, E201
+                    [-1, -1,  0,  0,  0,  0, -1, -1, -1, -1],  # noqa: E241, E201
+                    [-1,  0,  0,  0,  0,  0, -1, -1, -1, -1],  # noqa: E241, E201
                     [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1],  # noqa: E241, E201
                     [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1],  # noqa: E241, E201
                     [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1],  # noqa: E241, E201
@@ -663,11 +670,11 @@ class TestRasterizeMeshes(unittest.TestCase):
                 [
                     [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1],  # noqa: E241, E201
                     [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1],  # noqa: E241, E201
-                    [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1],  # noqa: E241, E201
-                    [-1, -1,  1,  1,  1,  1,  1,  1, -1, -1],  # noqa: E241, E201
-                    [-1, -1, -1,  1,  1,  1,  1, -1, -1, -1],  # noqa: E241, E201
-                    [-1, -1, -1,  1,  1,  1,  1, -1, -1, -1],  # noqa: E241, E201
-                    [-1, -1,  2,  2,  1,  1,  2,  2, -1, -1],  # noqa: E241, E201
+                    [-1, -1, -1, -1, -1,  1, -1, -1, -1, -1],  # noqa: E241, E201
+                    [-1, -1,  2,  2,  1,  1,  1,  2, -1, -1],  # noqa: E241, E201
+                    [-1, -1, -1,  1,  1,  1,  1,  1, -1, -1],  # noqa: E241, E201
+                    [-1, -1, -1,  1,  1,  1,  1,  1,  1, -1],  # noqa: E241, E201
+                    [-1, -1,  1,  1,  1,  2, -1, -1, -1, -1],  # noqa: E241, E201
                     [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1],  # noqa: E241, E201
                     [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1],  # noqa: E241, E201
                     [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1],  # noqa: E241, E201
@@ -677,49 +684,37 @@ class TestRasterizeMeshes(unittest.TestCase):
             device=device,
         )
         expected_zbuf_k0 = torch.tensor(
+        [
             [
-                [
-                    [-1, -1,  -1,  -1,  -1,  -1,  -1,  -1, -1, -1],  # noqa: E241, E201
-                    [-1, -1,  -1,  -1,  -1,  -1,  -1,  -1, -1, -1],  # noqa: E241, E201
-                    [-1, -1,  -1,  -1,  -1,  -1,  -1,  -1, -1, -1],  # noqa: E241, E201
-                    [-1, -1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, -1, -1],  # noqa: E241, E201
-                    [-1, -1,  -1, 0.1, 0.1, 0.1, 0.1,  -1, -1, -1],  # noqa: E241, E201
-                    [-1, -1,  -1, 0.1, 0.1, 0.1, 0.1,  -1, -1, -1],  # noqa: E241, E201
-                    [-1, -1,  -1,  -1, 0.1, 0.1,  -1,  -1, -1, -1],  # noqa: E241, E201
-                    [-1, -1,  -1,  -1,  -1,  -1,  -1,  -1, -1, -1],  # noqa: E241, E201
-                    [-1, -1,  -1,  -1,  -1,  -1,  -1,  -1, -1, -1],  # noqa: E241, E201
-                    [-1, -1,  -1,  -1,  -1,  -1,  -1,  -1, -1, -1],  # noqa: E241, E201
-                ],
-                [
-                    [-1, -1,  -1,  -1,  -1,  -1,  -1,  -1, -1, -1],  # noqa: E241, E201
-                    [-1, -1,  -1,  -1,  -1,  -1,  -1,  -1, -1, -1],  # noqa: E241, E201
-                    [-1, -1,  -1,  -1,  -1,  -1,  -1,  -1, -1, -1],  # noqa: E241, E201
-                    [-1, -1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, -1, -1],  # noqa: E241, E201
-                    [-1, -1,  -1, 0.1, 0.1, 0.1, 0.1,  -1, -1, -1],  # noqa: E241, E201
-                    [-1, -1,  -1, 0.1, 0.1, 0.1, 0.1,  -1, -1, -1],  # noqa: E241, E201
-                    [-1, -1, 0.5, 0.5, 0.1, 0.1, 0.5, 0.5, -1, -1],  # noqa: E241, E201
-                    [-1, -1,  -1,  -1,  -1,  -1,  -1,  -1, -1, -1],  # noqa: E241, E201
-                    [-1, -1,  -1,  -1,  -1,  -1,  -1,  -1, -1, -1],  # noqa: E241, E201
-                    [-1, -1,  -1,  -1,  -1,  -1,  -1,  -1, -1, -1],  # noqa: E241, E201
-                ],
+                [-1,  -1,  -1,  -1,  -1,  -1, -1, -1, -1, -1],  # noqa: E241, E201
+                [-1,  -1,  -1,  -1,  -1,  -1, -1, -1, -1, -1],  # noqa: E241, E201
+                [-1,  -1,  -1,  -1,  -1,  -1, -1, -1, -1, -1],  # noqa: E241, E201
+                [-1,  -1,  -1,  -1, 0.1,  -1, -1, -1, -1, -1],  # noqa: E241, E201
+                [-1,  -1,  -1, 0.1, 0.1, 0.1, -1, -1, -1, -1],  # noqa: E241, E201
+                [-1,  -1, 0.1, 0.1, 0.1, 0.1, -1, -1, -1, -1],  # noqa: E241, E201
+                [-1, 0.1, 0.1, 0.1, 0.1, 0.1, -1, -1, -1, -1],  # noqa: E241, E201
+                [-1,  -1,  -1,  -1,  -1,  -1, -1, -1, -1, -1],  # noqa: E241, E201
+                [-1,  -1,  -1,  -1,  -1,  -1, -1, -1, -1, -1],  # noqa: E241, E201
+                [-1,  -1,  -1,  -1,  -1,  -1, -1, -1, -1, -1]   # noqa: E241, E201
             ],
+            [
+                [-1, -1,  -1,  -1,  -1, -1,   -1,  -1,  -1, -1],  # noqa: E241, E201
+                [-1, -1,  -1,  -1,  -1, -1,   -1,  -1,  -1, -1],  # noqa: E241, E201
+                [-1, -1,  -1,  -1,  -1, 0.1,  -1,  -1,  -1, -1],  # noqa: E241, E201
+                [-1, -1, 0.5, 0.5, 0.1, 0.1, 0.1, 0.5,  -1, -1],  # noqa: E241, E201
+                [-1, -1,  -1, 0.1, 0.1, 0.1, 0.1, 0.1,  -1, -1],  # noqa: E241, E201
+                [-1, -1,  -1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, -1],  # noqa: E241, E201
+                [-1, -1, 0.1, 0.1, 0.1, 0.5,  -1,  -1,  -1, -1],  # noqa: E241, E201
+                [-1, -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1, -1],  # noqa: E241, E201
+                [-1, -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1, -1],  # noqa: E241, E201
+                [-1, -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1, -1]   # noqa: E241, E201
+            ]
+        ],
             device=device,
         )
         # fmt: on
 
         meshes = Meshes(verts=[verts0, verts1], faces=[faces0, faces1])
-        if bin_size == -1:
-            # simple python case with no binning
-            p2face, zbuf, bary, pix_dists = raster_fn(
-                meshes, image_size, 0.0, 2
-            )
-        else:
-            p2face, zbuf, bary, pix_dists = raster_fn(
-                meshes, image_size, 0.0, 2, bin_size
-            )
-        # k = 0, closest point.
-        self.assertTrue(torch.allclose(p2face[..., 0], expected_p2face_k0))
-        self.assertTrue(torch.allclose(zbuf[..., 0], expected_zbuf_k0))
 
         # k = 1, second closest point.
         expected_p2face_k1 = expected_p2face_k0.clone()
@@ -729,18 +724,18 @@ class TestRasterizeMeshes(unittest.TestCase):
 
         # fmt: off
         expected_p2face_k1[1, :] = torch.tensor(
-            [
-                [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1],  # noqa: E241, E201
-                [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1],  # noqa: E241, E201
-                [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1],  # noqa: E241, E201
-                [-1, -1, -1, -1,  2,  2, -1, -1, -1, -1],  # noqa: E241, E201
-                [-1, -1, -1,  2,  2,  2,  2, -1, -1, -1],  # noqa: E241, E201
-                [-1, -1, -1,  2,  2,  2,  2, -1, -1, -1],  # noqa: E241, E201
-                [-1, -1, -1, -1,  2,  2, -1, -1, -1, -1],  # noqa: E241, E201
-                [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1],  # noqa: E241, E201
-                [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1],  # noqa: E241, E201
-                [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1],  # noqa: E241, E201
-            ],
+        [
+            [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1],  # noqa: E241, E201
+            [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1],  # noqa: E241, E201
+            [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1],  # noqa: E241, E201
+            [-1, -1, -1, -1,  2,  2,  2, -1, -1, -1],  # noqa: E241, E201
+            [-1, -1, -1,  2,  2,  2,  2, -1, -1, -1],  # noqa: E241, E201
+            [-1, -1, -1,  2,  2,  2,  2, -1, -1, -1],  # noqa: E241, E201
+            [-1, -1, -1, -1,  2, -1, -1, -1, -1, -1],  # noqa: E241, E201
+            [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1],  # noqa: E241, E201
+            [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1],  # noqa: E241, E201
+            [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1]   # noqa: E241, E201
+        ],
             dtype=torch.int64,
             device=device,
         )
@@ -748,21 +743,35 @@ class TestRasterizeMeshes(unittest.TestCase):
         expected_zbuf_k1[0, :] = torch.ones_like(expected_zbuf_k1[0, :]) * -1
         expected_zbuf_k1[1, :] = torch.tensor(
             [
-                [-1, -1, -1,  -1,  -1,  -1,  -1, -1, -1, -1],  # noqa: E241, E201
-                [-1, -1, -1,  -1,  -1,  -1,  -1, -1, -1, -1],  # noqa: E241, E201
-                [-1, -1, -1,  -1,  -1,  -1,  -1, -1, -1, -1],  # noqa: E241, E201
-                [-1, -1, -1,  -1, 0.5, 0.5,  -1, -1, -1, -1],  # noqa: E241, E201
-                [-1, -1, -1, 0.5, 0.5, 0.5, 0.5, -1, -1, -1],  # noqa: E241, E201
-                [-1, -1, -1, 0.5, 0.5, 0.5, 0.5, -1, -1, -1],  # noqa: E241, E201
-                [-1, -1, -1,  -1, 0.5, 0.5,  -1, -1, -1, -1],  # noqa: E241, E201
-                [-1, -1, -1,  -1,  -1,  -1,  -1, -1, -1, -1],  # noqa: E241, E201
-                [-1, -1, -1,  -1,  -1,  -1,  -1, -1, -1, -1],  # noqa: E241, E201
-                [-1, -1, -1,  -1,  -1,  -1,  -1, -1, -1, -1],  # noqa: E241, E201
+                [-1., -1., -1.,  -1.,  -1.,  -1., -1., -1., -1., -1.],  # noqa: E241, E201
+                [-1., -1., -1.,  -1.,  -1.,  -1., -1., -1., -1., -1.],  # noqa: E241, E201
+                [-1., -1., -1.,  -1.,  -1.,  -1., -1., -1., -1., -1.],  # noqa: E241, E201
+                [-1., -1., -1.,  -1.,  0.5, 0.5,  0.5, -1., -1., -1.],  # noqa: E241, E201
+                [-1., -1., -1.,  0.5,  0.5, 0.5,  0.5, -1., -1., -1.],  # noqa: E241, E201
+                [-1., -1., -1.,  0.5,  0.5, 0.5,  0.5, -1., -1., -1.],  # noqa: E241, E201
+                [-1., -1., -1.,  -1.,  0.5,  -1., -1., -1., -1., -1.],  # noqa: E241, E201
+                [-1., -1., -1.,  -1.,  -1.,  -1., -1., -1., -1., -1.],  # noqa: E241, E201
+                [-1., -1., -1.,  -1.,  -1.,  -1., -1., -1., -1., -1.],  # noqa: E241, E201
+                [-1., -1., -1.,  -1.,  -1.,  -1., -1., -1., -1., -1.]   # noqa: E241, E201
             ],
             dtype=torch.float32,
             device=device,
         )
         # fmt: on
+
+        #  Coordinate conventions +Y up, +Z in, +X left
+        if bin_size == -1:
+            # simple python, no bin_size
+            p2face, zbuf, bary, pix_dists = raster_fn(
+                meshes, image_size, 0.0, 2
+            )
+        else:
+            p2face, zbuf, bary, pix_dists = raster_fn(
+                meshes, image_size, 0.0, 2, bin_size
+            )
+
+        self.assertTrue(torch.allclose(p2face[..., 0], expected_p2face_k0))
+        self.assertTrue(torch.allclose(zbuf[..., 0], expected_zbuf_k0))
         self.assertTrue(torch.allclose(p2face[..., 1], expected_p2face_k1))
         self.assertTrue(torch.allclose(zbuf[..., 1], expected_zbuf_k1))
 
@@ -778,9 +787,9 @@ class TestRasterizeMeshes(unittest.TestCase):
         # fmt: off
         verts = torch.tensor(
             [
-                [ -0.5, 0.0,  0.1],  # noqa: E241, E201
+                [ -0.3, 0.0,  0.1],  # noqa: E241, E201
                 [  0.0, 0.6,  0.1],  # noqa: E241, E201
-                [  0.5, 0.0,  0.1],  # noqa: E241, E201
+                [  0.8, 0.0,  0.1],  # noqa: E241, E201
                 [-0.25, 0.0,  0.9],  # noqa: E241, E201
                 [0.25,  0.5,  0.9],  # noqa: E241, E201
                 [0.75,  0.0,  0.9],  # noqa: E241, E201
@@ -794,6 +803,8 @@ class TestRasterizeMeshes(unittest.TestCase):
             dtype=torch.float32,
             device=device,
         )
+        # Face with index 0 is non symmetric about the X and Y axis to
+        # test that the positive Y and X directions are correct in the output.
         faces_packed = torch.tensor(
             [[1, 0, 2], [4, 3, 5], [7, 6, 8], [10, 9, 11]],
             dtype=torch.int64,
@@ -803,12 +814,12 @@ class TestRasterizeMeshes(unittest.TestCase):
             [
                 [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1],  # noqa: E241, E201
                 [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1],  # noqa: E241, E201
+                [-1,  2,  2,  0,  0,  0, -1, -1, -1, -1],  # noqa: E241, E201
+                [-1,  2,  0,  0,  0,  0, -1, -1, -1, -1],  # noqa: E241, E201
+                [-1,  0,  0,  0,  0,  0,  0, -1, -1, -1],  # noqa: E241, E201
+                [-1,  0,  0,  0,  0,  0,  0, -1, -1, -1],  # noqa: E241, E201
                 [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1],  # noqa: E241, E201
                 [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1],  # noqa: E241, E201
-                [-1, -1,  0,  0,  0,  0,  0,  0,  2, -1],  # noqa: E241, E201
-                [-1, -1,  0,  0,  0,  0,  0,  0,  2, -1],  # noqa: E241, E201
-                [-1, -1, -1,  0,  0,  0,  0,  2,  2, -1],  # noqa: E241, E201
-                [-1, -1, -1, -1,  0,  0,  2,  2,  2, -1],  # noqa: E241, E201
                 [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1],  # noqa: E241, E201
                 [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1],  # noqa: E241, E201
             ],
@@ -817,16 +828,16 @@ class TestRasterizeMeshes(unittest.TestCase):
         )
         expected_zbuf = torch.tensor(
             [
-                [-1, -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1, -1],  # noqa: E241, E201
-                [-1, -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1, -1],  # noqa: E241, E201
-                [-1, -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1, -1],  # noqa: E241, E201
-                [-1, -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1, -1],  # noqa: E241, E201
-                [-1, -1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.5, -1],  # noqa: E241, E201
-                [-1, -1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.5, -1],  # noqa: E241, E201
-                [-1, -1,  -1, 0.1, 0.1, 0.1, 0.1, 0.5, 0.5, -1],  # noqa: E241, E201
-                [-1, -1,  -1,  -1, 0.1, 0.1, 0.5, 0.5, 0.5, -1],  # noqa: E241, E201
-                [-1, -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1, -1],  # noqa: E241, E201
-                [-1, -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1, -1],  # noqa: E241, E201
+                [-1.,   -1.,  -1.,  -1.,  -1.,  -1., -1., -1., -1., -1.],  # noqa: E241, E201
+                [-1.,   -1.,  -1.,  -1.,  -1.,  -1., -1., -1., -1., -1.],  # noqa: E241, E201
+                [-1.,  0.5,  0.5,  0.1,  0.1,  0.1,  -1., -1., -1., -1.],  # noqa: E241, E201
+                [-1.,  0.5,  0.1,  0.1,  0.1,  0.1,  -1., -1., -1., -1.],  # noqa: E241, E201
+                [-1.,  0.1,  0.1,  0.1,  0.1,  0.1,  0.1, -1., -1., -1.],  # noqa: E241, E201
+                [-1.,  0.1,  0.1,  0.1,  0.1,  0.1,  0.1, -1., -1., -1.],  # noqa: E241, E201
+                [-1.,   -1.,  -1.,  -1.,  -1.,  -1., -1., -1., -1., -1.],  # noqa: E241, E201
+                [-1.,   -1.,  -1.,  -1.,  -1.,  -1., -1., -1., -1., -1.],  # noqa: E241, E201
+                [-1.,   -1.,  -1.,  -1.,  -1.,  -1., -1., -1., -1., -1.],  # noqa: E241, E201
+                [-1.,   -1.,  -1.,  -1.,  -1.,  -1., -1., -1., -1., -1.]   # noqa: E241, E201
             ],
             dtype=torch.float32,
             device=device,
@@ -837,7 +848,7 @@ class TestRasterizeMeshes(unittest.TestCase):
             faces = faces_packed[order]  # rearrange order of faces.
             mesh = Meshes(verts=[verts], faces=[faces])
             if bin_size == -1:
-                # simple python case with no binning
+                # simple python, no bin size arg
                 pix_to_face, zbuf, bary_coords, dists = raster_fn(
                     mesh, image_size, blur_radius, faces_per_pixel
                 )
@@ -845,7 +856,6 @@ class TestRasterizeMeshes(unittest.TestCase):
                 pix_to_face, zbuf, bary_coords, dists = raster_fn(
                     mesh, image_size, blur_radius, faces_per_pixel, bin_size
                 )
-
             if i == 0:
                 expected_dists = dists
             p2f = expected_p2f.clone()
@@ -861,33 +871,37 @@ class TestRasterizeMeshes(unittest.TestCase):
 
     def _test_coarse_rasterize(self, device):
         image_size = 16
-        blur_radius = 0.2 ** 2
+        # No blurring. This test checks that the XY directions are
+        # correctly oriented.
+        blur_radius = 0.0
         bin_size = 8
         max_faces_per_bin = 3
 
         # fmt: off
         verts = torch.tensor(
             [
-                [-0.5,  0.0,  0.1],  # noqa: E241, E201
-                [ 0.0,  0.6,  0.1],  # noqa: E241, E201
-                [ 0.5,  0.0,  0.1],  # noqa: E241, E201
-                [-0.3,  0.0,  0.4],  # noqa: E241, E201
-                [ 0.3,  0.5,  0.4],  # noqa: E241, E201
-                [0.75,  0.0,  0.4],  # noqa: E241, E201
-                [-0.4, -0.3,  0.9],  # noqa: E241, E201
-                [ 0.2, -0.7,  0.9],  # noqa: E241, E201
-                [ 0.4, -0.3,  0.9],  # noqa: E241, E201
-                [-0.4,  0.0, -1.5],  # noqa: E241, E201
-                [ 0.6,  0.6, -1.5],  # noqa: E241, E201
-                [ 0.8,  0.0, -1.5],  # noqa: E241, E201
+                [-0.5,   0.1,  0.1],  # noqa: E241, E201
+                [-0.3,   0.6,  0.1],  # noqa: E241, E201
+                [-0.1,   0.1,  0.1],  # noqa: E241, E201
+                [-0.3,  -0.1,  0.4],  # noqa: E241, E201
+                [ 0.3,   0.5,  0.4],  # noqa: E241, E201
+                [0.75,  -0.1,  0.4],  # noqa: E241, E201
+                [ 0.2,  -0.3,  0.9],  # noqa: E241, E201
+                [ 0.3,  -0.7,  0.9],  # noqa: E241, E201
+                [ 0.6,  -0.3,  0.9],  # noqa: E241, E201
+                [-0.4,   0.0, -1.5],  # noqa: E241, E201
+                [ 0.6,   0.6, -1.5],  # noqa: E241, E201
+                [ 0.8,   0.0, -1.5],  # noqa: E241, E201
             ],
             device=device,
         )
+        # Expected faces using axes convention +Y down, + X right, +Z in
+        # Non symmetrical triangles i.e face 0 and 3 are in one bin only
         faces = torch.tensor(
             [
-                [ 1, 0,  2],  # noqa: E241, E201  bin 00 and bin 01
-                [ 4, 3,  5],  # noqa: E241, E201  bin 00 and bin 01
-                [ 7, 6,  8],  # noqa: E241, E201  bin 10 and bin 11
+                [ 1, 0,  2],  # noqa: E241, E201  bin 01 only
+                [ 4, 3,  5],  # noqa: E241, E201  all bins
+                [ 7, 6,  8],  # noqa: E241, E201  bin 10 only
                 [10, 9, 11],  # noqa: E241, E201  negative z, should not appear.
             ],
             dtype=torch.int64,
@@ -900,16 +914,19 @@ class TestRasterizeMeshes(unittest.TestCase):
         num_faces_per_mesh = meshes.num_faces_per_mesh()
         mesh_to_face_first_idx = meshes.mesh_to_faces_packed_first_idx()
 
+        # Expected faces using axes convention +Y down, + X right, + Z in
         bin_faces_expected = (
             torch.ones(
                 (1, 2, 2, max_faces_per_bin), dtype=torch.int32, device=device
             )
             * -1
         )
-        bin_faces_expected[0, 0, 0, 0:2] = torch.tensor([0, 1])
+        bin_faces_expected[0, 0, 0, 0] = torch.tensor([1])
+        bin_faces_expected[0, 1, 0, 0:2] = torch.tensor([1, 2])
         bin_faces_expected[0, 0, 1, 0:2] = torch.tensor([0, 1])
-        bin_faces_expected[0, 1, 0, 0:3] = torch.tensor([0, 1, 2])
-        bin_faces_expected[0, 1, 1, 0:3] = torch.tensor([0, 1, 2])
+        bin_faces_expected[0, 1, 1, 0] = torch.tensor([1])
+
+        # +Y up, +X left, +Z in
         bin_faces = _C._rasterize_meshes_coarse(
             faces_verts,
             mesh_to_face_first_idx,
@@ -919,9 +936,8 @@ class TestRasterizeMeshes(unittest.TestCase):
             bin_size,
             max_faces_per_bin,
         )
-        bin_faces_same = (
-            bin_faces.squeeze().flip(dims=[0]) == bin_faces_expected
-        ).all()
+        # Flip x and y axis of output before comparing to expected
+        bin_faces_same = (bin_faces.squeeze() == bin_faces_expected).all()
         self.assertTrue(bin_faces_same.item() == 1)
 
     @staticmethod

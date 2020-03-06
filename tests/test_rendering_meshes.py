@@ -72,20 +72,25 @@ class TestRenderingMeshes(unittest.TestCase):
 
         # Init rasterizer settings
         if elevated_camera:
-            R, T = look_at_view_transform(2.7, 45.0, 0.0)
+            # Elevated and rotated camera
+            R, T = look_at_view_transform(dist=2.7, elev=45.0, azim=45.0)
             postfix = "_elevated_camera"
+            # If y axis is up, the spot of light should
+            # be on the bottom left of the sphere.
         else:
+            # No elevation or azimuth rotation
             R, T = look_at_view_transform(2.7, 0.0, 0.0)
             postfix = ""
         cameras = OpenGLPerspectiveCameras(device=device, R=R, T=T)
-        raster_settings = RasterizationSettings(
-            image_size=512, blur_radius=0.0, faces_per_pixel=1, bin_size=0
-        )
 
         # Init shader settings
         materials = Materials(device=device)
         lights = PointLights(device=device)
-        lights.location = torch.tensor([0.0, 0.0, -2.0], device=device)[None]
+        lights.location = torch.tensor([0.0, 0.0, +2.0], device=device)[None]
+
+        raster_settings = RasterizationSettings(
+            image_size=512, blur_radius=0.0, faces_per_pixel=1, bin_size=0
+        )
 
         # Init renderer
         rasterizer = MeshRasterizer(
@@ -107,15 +112,16 @@ class TestRenderingMeshes(unittest.TestCase):
 
         # Load reference image
         image_ref_phong = load_rgb_image(
-            "test_simple_sphere_illuminated%s.png" % postfix
+            "test_simple_sphere_light%s.png" % postfix
         )
         self.assertTrue(torch.allclose(rgb, image_ref_phong, atol=0.05))
 
-        ###################################
-        # Move the light behind the object
-        ###################################
-        # Check the image is dark
-        lights.location[..., 2] = +2.0
+        ########################################################
+        # Move the light to the +z axis in world space so it is
+        # behind the sphere. Note that +Z is in, +Y up,
+        # +X left for both world and camera space.
+        ########################################################
+        lights.location[..., 2] = -2.0
         images = renderer(sphere_mesh, lights=lights)
         rgb = images[0, ..., :3].squeeze().cpu()
         if DEBUG:
@@ -133,7 +139,7 @@ class TestRenderingMeshes(unittest.TestCase):
         ######################################
         # Change the shader to a GouraudShader
         ######################################
-        lights.location = torch.tensor([0.0, 0.0, -2.0], device=device)[None]
+        lights.location = torch.tensor([0.0, 0.0, +2.0], device=device)[None]
         renderer = MeshRenderer(
             rasterizer=rasterizer,
             shader=HardGouraudShader(
@@ -143,7 +149,7 @@ class TestRenderingMeshes(unittest.TestCase):
         images = renderer(sphere_mesh)
         rgb = images[0, ..., :3].squeeze().cpu()
         if DEBUG:
-            filename = "DEBUG_simple_sphere_light_gourad%s.png" % postfix
+            filename = "DEBUG_simple_sphere_light_gouraud%s.png" % postfix
             Image.fromarray((rgb.numpy() * 255).astype(np.uint8)).save(
                 DATA_DIR / filename
             )
@@ -157,7 +163,6 @@ class TestRenderingMeshes(unittest.TestCase):
         ######################################
         # Change the shader to a HardFlatShader
         ######################################
-        lights.location = torch.tensor([0.0, 0.0, -2.0], device=device)[None]
         renderer = MeshRenderer(
             rasterizer=rasterizer,
             shader=HardFlatShader(
@@ -217,7 +222,7 @@ class TestRenderingMeshes(unittest.TestCase):
         # Init shader settings
         materials = Materials(device=device)
         lights = PointLights(device=device)
-        lights.location = torch.tensor([0.0, 0.0, -2.0], device=device)[None]
+        lights.location = torch.tensor([0.0, 0.0, +2.0], device=device)[None]
 
         # Init renderer
         renderer = MeshRenderer(
@@ -231,7 +236,7 @@ class TestRenderingMeshes(unittest.TestCase):
         images = renderer(sphere_meshes)
 
         # Load ref image
-        image_ref = load_rgb_image("test_simple_sphere_illuminated.png")
+        image_ref = load_rgb_image("test_simple_sphere_light.png")
 
         for i in range(batch_size):
             rgb = images[i, ..., :3].squeeze().cpu()
@@ -261,7 +266,7 @@ class TestRenderingMeshes(unittest.TestCase):
         )
 
         # Init rasterizer settings
-        R, T = look_at_view_transform(2.7, 10, 20)
+        R, T = look_at_view_transform(2.7, 0, 0)
         cameras = OpenGLPerspectiveCameras(device=device, R=R, T=T)
 
         # Init renderer
@@ -275,7 +280,7 @@ class TestRenderingMeshes(unittest.TestCase):
         alpha = images[0, ..., 3].squeeze().cpu()
         if DEBUG:
             Image.fromarray((alpha.numpy() * 255).astype(np.uint8)).save(
-                DATA_DIR / "DEBUG_silhouette_grad.png"
+                DATA_DIR / "DEBUG_silhouette.png"
             )
 
         with Image.open(image_ref_filename) as raw_image_ref:
@@ -292,7 +297,8 @@ class TestRenderingMeshes(unittest.TestCase):
 
     def test_texture_map(self):
         """
-        Test a mesh with a texture map is loaded and rendered correctly
+        Test a mesh with a texture map is loaded and rendered correctly.
+        The pupils in the eyes of the cow should always be looking to the left.
         """
         device = torch.device("cuda:0")
         DATA_DIR = (
@@ -304,7 +310,7 @@ class TestRenderingMeshes(unittest.TestCase):
         mesh = load_objs_as_meshes([obj_filename], device=device)
 
         # Init rasterizer settings
-        R, T = look_at_view_transform(2.7, 10, 20)
+        R, T = look_at_view_transform(2.7, 0, 0)
         cameras = OpenGLPerspectiveCameras(device=device, R=R, T=T)
         raster_settings = RasterizationSettings(
             image_size=512, blur_radius=0.0, faces_per_pixel=1, bin_size=0
@@ -313,7 +319,10 @@ class TestRenderingMeshes(unittest.TestCase):
         # Init shader settings
         materials = Materials(device=device)
         lights = PointLights(device=device)
-        lights.location = torch.tensor([0.0, 0.0, -2.0], device=device)[None]
+
+        # Place light behind the cow in world space. The front of
+        # the cow is facing the -z direction.
+        lights.location = torch.tensor([0.0, 0.0, 2.0], device=device)[None]
 
         # Init renderer
         renderer = MeshRenderer(
@@ -328,17 +337,12 @@ class TestRenderingMeshes(unittest.TestCase):
         rgb = images[0, ..., :3].squeeze().cpu()
 
         # Load reference image
-        image_ref = load_rgb_image("test_texture_map.png")
+        image_ref = load_rgb_image("test_texture_map_back.png")
 
         if DEBUG:
             Image.fromarray((rgb.numpy() * 255).astype(np.uint8)).save(
-                DATA_DIR / "DEBUG_texture_map.png"
+                DATA_DIR / "DEBUG_texture_map_back.png"
             )
-
-        # There's a calculation instability on the corner of the ear of the cow.
-        # We ignore that pixel.
-        image_ref[137, 166] = 0
-        rgb[137, 166] = 0
 
         self.assertTrue(torch.allclose(rgb, image_ref, atol=0.05))
 
@@ -352,10 +356,31 @@ class TestRenderingMeshes(unittest.TestCase):
         images[0, ...].sum().backward()
         self.assertIsNotNone(verts.grad)
 
+        ##########################################
+        # Check rendering of the front of the cow
+        ##########################################
+
+        R, T = look_at_view_transform(2.7, 0, 180)
+        cameras = OpenGLPerspectiveCameras(device=device, R=R, T=T)
+
+        # Move light to the front of the cow in world space
+        lights.location = torch.tensor([0.0, 0.0, -2.0], device=device)[None]
+        images = renderer(mesh, cameras=cameras, lights=lights)
+        rgb = images[0, ..., :3].squeeze().cpu()
+
+        # Load reference image
+        image_ref = load_rgb_image("test_texture_map_front.png")
+
+        if DEBUG:
+            Image.fromarray((rgb.numpy() * 255).astype(np.uint8)).save(
+                DATA_DIR / "DEBUG_texture_map_front.png"
+            )
+
         #################################
         # Add blurring to rasterization
         #################################
-
+        R, T = look_at_view_transform(2.7, 0, 180)
+        cameras = OpenGLPerspectiveCameras(device=device, R=R, T=T)
         blend_params = BlendParams(sigma=5e-4, gamma=1e-4)
         raster_settings = RasterizationSettings(
             image_size=512,
@@ -366,6 +391,7 @@ class TestRenderingMeshes(unittest.TestCase):
 
         images = renderer(
             mesh.clone(),
+            cameras=cameras,
             raster_settings=raster_settings,
             blend_params=blend_params,
         )
