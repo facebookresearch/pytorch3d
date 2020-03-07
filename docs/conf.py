@@ -84,7 +84,7 @@ author = "facebookresearch"
 version = "0.1"
 
 # The full version, including alpha/beta/rc tags
-release = version
+release = version + ".1"
 
 # -- General configuration ---------------------------------------------------
 

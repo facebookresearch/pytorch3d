@@ -68,7 +68,7 @@ def get_extensions():
 
 setup(
     name="pytorch3d",
-    version="0.1",
+    version="0.1.1",
     author="FAIR",
     url="https://github.com/facebookresearch/pytorch3d",
     description="PyTorch3d is FAIR's library of reusable components "
