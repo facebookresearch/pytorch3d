@@ -118,3 +118,15 @@ We redesigned the rendering pipeline from the ground up to be modular and extens
 <a id="1">[1]</a> Kato et al, 'Neural 3D Mesh Renderer', CVPR 2018
 
 <a id="2">[2]</a> Liu et al, 'Soft Rasterizer: A Differentiable Renderer for Image-based 3D Reasoning', ICCV 2019
+
+<a id="3">[3]</a> Loper et al, 'OpenDR: An Approximate Differentiable Renderer', ECCV 2014
+
+<a id="4">[4]</a> De La Gorce et al, 'Model-based 3D Hand Pose Estimation from Monocular Video', PAMI 2011
+
+<a id="5">[5]</a> Li et al, 'Differentiable Monte Carlo Ray Tracing through Edge Sampling', SIGGRAPH Asia 2018
+
+<a id="6">[6]</a> Yifan et al, 'Differentiable Surface Splatting for Point-based Geometry Processing', SIGGRAPH Asia 2019
+
+<a id="7">[7]</a> Loubet et al, 'Reparameterizing Discontinuous Integrands for Differentiable Rendering', SIGGRAPH Asia 2019
+
+<a id="8">[8]</a> Chen et al, 'Learning to Predict 3D Objects with an Interpolation-based Differentiable Renderer', NeurIPS 2019
