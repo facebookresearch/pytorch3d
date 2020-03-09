@@ -38,13 +38,15 @@ class MeshRenderer(nn.Module):
 
     def forward(self, meshes_world, **kwargs) -> torch.Tensor:
         """
-        Render a batch of images from a batch of meshes by rasterizing and then shading.
+        Render a batch of images from a batch of meshes by rasterizing and then
+        shading.
 
-        NOTE: If the blur radius for rasterization is > 0.0, some pixels can have one or
-        more barycentric coordinates lying outside the range [0, 1]. For a pixel with
-        out of bounds barycentric coordinates with respect to a face f, clipping is required
-        before interpolating the texture uv coordinates and z buffer so that the colors and
-        depths are limited to the range for the corresponding face.
+        NOTE: If the blur radius for rasterization is > 0.0, some pixels can
+        have one or more barycentric coordinates lying outside the range [0, 1].
+        For a pixel with out of bounds barycentric coordinates with respect to a
+        face f, clipping is required before interpolating the texture uv
+        coordinates and z buffer so that the colors and depths are limited to
+        the range for the corresponding face.
         """
         fragments = self.rasterizer(meshes_world, **kwargs)
         raster_settings = kwargs.get(

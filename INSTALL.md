@@ -45,10 +45,10 @@ pip install scikit-image matplotlib imageio
 pip install black isort flake8 flake8-bugbear flake8-comprehensions
 ```
 
-## Build/Install Pytorch3d
+## Installing prebuilt binaries for Pytorch3d
 After installing the above dependencies, run one of the following commands:
 
-### 1. Install from Anaconda Cloud
+### 1. Install with CUDA support from Anaconda Cloud, on Linux only
 
 ```
 # Anaconda Cloud
@@ -60,14 +60,26 @@ Or, to install a nightly (non-official, alpha) build:
 # Anaconda Cloud
 conda install pytorch3d -c pytorch3d-nightly
 ```
+### 2. Install without CUDA support from PyPI, on Linux and Mac
+```
+pip install pytorch3d
+```
 
-### 2. Install from GitHub
+## Building / installing from source.
+CUDA support will be included if CUDA is enabled or if the environment variable
+`FORCE_CUDA` is set to `1`.
+
+### 1. Install from GitHub
 ```
 pip install 'git+https://github.com/facebookresearch/pytorch3d.git'
-# (add --user if you don't have permission)
 ```
 
-### 3. Install from a local clone
+**Install from Github on macOS:**
+```
+MACOSX_DEPLOYMENT_TARGET=10.14 CC=clang CXX=clang++ pip install 'git+https://github.com/facebookresearch/pytorch3d.git'
+```
+
+### 2. Install from a local clone
 ```
 git clone https://github.com/facebookresearch/pytorch3d.git
 cd pytorch3d && pip install -e .
