@@ -212,6 +212,8 @@ def pix_to_ndc(i, S):
     # NDC x-offset + (i * pixel_width + half_pixel_width)
     return -1 + (2 * i + 1.0) / S
 
+def ndc_to_pix(i, S):
+    return ( (i + 1) * S - 1.0 ) / 2.0
 
 def rasterize_meshes_python(
     meshes,

@@ -56,7 +56,7 @@ class MeshRasterizer(nn.Module):
         Args:
             cameras: A cameras object which has a  `transform_points` method
                 which returns the transformed points after applying the
-                world-to-view and view-to-screen
+                world-to-view and view-to-NDC
                 transformations.
             raster_settings: the parameters for rasterization. This should be a
                 named tuple.
@@ -78,7 +78,7 @@ class MeshRasterizer(nn.Module):
                 vertex coordinates in world space.
 
         Returns:
-            meshes_screen: a Meshes object with the vertex positions in screen
+            meshes_ndc: a Meshes object with the vertex positions in NDC
             space
 
         NOTE: keeping this as a separate function for readability but it could
@@ -87,19 +87,19 @@ class MeshRasterizer(nn.Module):
         cameras = kwargs.get("cameras", self.cameras)
         verts_world = meshes_world.verts_padded()
         verts_world_packed = meshes_world.verts_packed()
-        verts_screen = cameras.transform_points(verts_world, **kwargs)
+        verts_ndc = cameras.transform_points(verts_world, **kwargs)
 
         # NOTE: Retaining view space z coordinate for now.
         # TODO: Revisit whether or not to transform z coordinate to [-1, 1] or
         # [0, 1] range.
         view_transform = get_world_to_view_transform(R=cameras.R, T=cameras.T)
         verts_view = view_transform.transform_points(verts_world)
-        verts_screen[..., 2] = verts_view[..., 2]
+        verts_ndc[..., 2] = verts_view[..., 2]
 
         # Offset verts of input mesh to reuse cached padded/packed calculations.
         pad_to_packed_idx = meshes_world.verts_padded_to_packed_idx()
-        verts_screen_packed = verts_screen.view(-1, 3)[pad_to_packed_idx, :]
-        verts_packed_offset = verts_screen_packed - verts_world_packed
+        verts_ndc_packed = verts_ndc.view(-1, 3)[pad_to_packed_idx, :]
+        verts_packed_offset = verts_ndc_packed - verts_world_packed
         return meshes_world.offset_verts(verts_packed_offset)
 
     def forward(self, meshes_world, **kwargs) -> Fragments:
@@ -110,12 +110,12 @@ class MeshRasterizer(nn.Module):
         Returns:
             Fragments: Rasterization outputs as a named tuple.
         """
-        meshes_screen = self.transform(meshes_world, **kwargs)
+        meshes_ndc = self.transform(meshes_world, **kwargs)
         raster_settings = kwargs.get("raster_settings", self.raster_settings)
         # TODO(jcjohns): Should we try to set perspective_correct automatically
         # based on the type of the camera?
         pix_to_face, zbuf, bary_coords, dists = rasterize_meshes(
-            meshes_screen,
+            meshes_ndc,
             image_size=raster_settings.image_size,
             blur_radius=raster_settings.blur_radius,
             faces_per_pixel=raster_settings.faces_per_pixel,

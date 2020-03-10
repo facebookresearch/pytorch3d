@@ -23,9 +23,9 @@ class OpenGLPerspectiveCameras(TensorProperties):
 
     The extrinsics of the camera (R and T matrices) can also be set in the
     initializer or passed in to `get_full_projection_transform` to get
-    the full transformation from world -> screen.
+    the full transformation from world -> NDC.
 
-    The `transform_points` method calculates the full world -> screen transform
+    The `transform_points` method calculates the full world -> NDC transform
     and then applies it to the input points.
 
     The transforms can also be returned separately as Transform3d objects.
@@ -212,8 +212,8 @@ class OpenGLPerspectiveCameras(TensorProperties):
 
     def get_full_projection_transform(self, **kwargs) -> Transform3d:
         """
-        Return the full world-to-screen transform composing the
-        world-to-view and view-to-screen transforms.
+        Return the full world-to-NDC transform composing the
+        world-to-view and view-to-NDC transforms.
 
         Args:
             **kwargs: parameters for the projection transforms can be passed in
@@ -233,12 +233,12 @@ class OpenGLPerspectiveCameras(TensorProperties):
         world_to_view_transform = self.get_world_to_view_transform(
             R=self.R, T=self.T
         )
-        view_to_screen_transform = self.get_projection_transform(**kwargs)
-        return world_to_view_transform.compose(view_to_screen_transform)
+        view_to_ndc_transform = self.get_projection_transform(**kwargs)
+        return world_to_view_transform.compose(view_to_ndc_transform)
 
     def transform_points(self, points, **kwargs) -> torch.Tensor:
         """
-        Transform input points from world to screen space.
+        Transform input points from world to NDC space.
 
         Args:
             points: torch tensor of shape (..., 3).
@@ -246,8 +246,8 @@ class OpenGLPerspectiveCameras(TensorProperties):
         Returns
             new_points: transformed points with the same shape as the input.
         """
-        world_to_screen_transform = self.get_full_projection_transform(**kwargs)
-        return world_to_screen_transform.transform_points(points)
+        world_to_ndc_transform = self.get_full_projection_transform(**kwargs)
+        return world_to_ndc_transform.transform_points(points)
 
 
 class OpenGLOrthographicCameras(TensorProperties):
@@ -425,8 +425,8 @@ class OpenGLOrthographicCameras(TensorProperties):
 
     def get_full_projection_transform(self, **kwargs) -> Transform3d:
         """
-        Return the full world-to-screen transform composing the
-        world-to-view and view-to-screen transforms.
+        Return the full world-to-NDC transform composing the
+        world-to-view and view-to-NDC transforms.
 
         Args:
             **kwargs: parameters for the projection transforms can be passed in
@@ -446,12 +446,12 @@ class OpenGLOrthographicCameras(TensorProperties):
         world_to_view_transform = self.get_world_to_view_transform(
             R=self.R, T=self.T
         )
-        view_to_screen_transform = self.get_projection_transform(**kwargs)
-        return world_to_view_transform.compose(view_to_screen_transform)
+        view_to_ndc_transform = self.get_projection_transform(**kwargs)
+        return world_to_view_transform.compose(view_to_ndc_transform)
 
     def transform_points(self, points, **kwargs) -> torch.Tensor:
         """
-        Transform input points from world to screen space.
+        Transform input points from world to NDC space.
 
         Args:
             points: torch tensor of shape (..., 3).
@@ -459,8 +459,8 @@ class OpenGLOrthographicCameras(TensorProperties):
         Returns
             new_points: transformed points with the same shape as the input.
         """
-        world_to_screen_transform = self.get_full_projection_transform(**kwargs)
-        return world_to_screen_transform.transform_points(points)
+        world_to_ndc_transform = self.get_full_projection_transform(**kwargs)
+        return world_to_ndc_transform.transform_points(points)
 
 
 class SfMPerspectiveCameras(TensorProperties):
@@ -597,8 +597,8 @@ class SfMPerspectiveCameras(TensorProperties):
 
     def get_full_projection_transform(self, **kwargs) -> Transform3d:
         """
-        Return the full world-to-screen transform composing the
-        world-to-view and view-to-screen transforms.
+        Return the full world-to-NDC transform composing the
+        world-to-view and view-to-NDC transforms.
 
         Args:
             **kwargs: parameters for the projection transforms can be passed in
@@ -614,12 +614,12 @@ class SfMPerspectiveCameras(TensorProperties):
         world_to_view_transform = self.get_world_to_view_transform(
             R=self.R, T=self.T
         )
-        view_to_screen_transform = self.get_projection_transform(**kwargs)
-        return world_to_view_transform.compose(view_to_screen_transform)
+        view_to_ndc_transform = self.get_projection_transform(**kwargs)
+        return world_to_view_transform.compose(view_to_ndc_transform)
 
     def transform_points(self, points, **kwargs) -> torch.Tensor:
         """
-        Transform input points from world to screen space.
+        Transform input points from world to NDC space.
 
         Args:
             points: torch tensor of shape (..., 3).
@@ -627,8 +627,8 @@ class SfMPerspectiveCameras(TensorProperties):
         Returns
             new_points: transformed points with the same shape as the input.
         """
-        world_to_screen_transform = self.get_full_projection_transform(**kwargs)
-        return world_to_screen_transform.transform_points(points)
+        world_to_ndc_transform = self.get_full_projection_transform(**kwargs)
+        return world_to_ndc_transform.transform_points(points)
 
 
 class SfMOrthographicCameras(TensorProperties):
@@ -765,8 +765,8 @@ class SfMOrthographicCameras(TensorProperties):
 
     def get_full_projection_transform(self, **kwargs) -> Transform3d:
         """
-        Return the full world-to-screen transform composing the
-        world-to-view and view-to-screen transforms.
+        Return the full world-to-NDC transform composing the
+        world-to-view and view-to-NDC transforms.
 
         Args:
             **kwargs: parameters for the projection transforms can be passed in
@@ -782,12 +782,12 @@ class SfMOrthographicCameras(TensorProperties):
         world_to_view_transform = self.get_world_to_view_transform(
             R=self.R, T=self.T
         )
-        view_to_screen_transform = self.get_projection_transform(**kwargs)
-        return world_to_view_transform.compose(view_to_screen_transform)
+        view_to_ndc_transform = self.get_projection_transform(**kwargs)
+        return world_to_view_transform.compose(view_to_ndc_transform)
 
     def transform_points(self, points, **kwargs) -> torch.Tensor:
         """
-        Transform input points from world to screen space.
+        Transform input points from world to NDC space.
 
         Args:
             points: torch tensor of shape (..., 3).
@@ -795,8 +795,8 @@ class SfMOrthographicCameras(TensorProperties):
         Returns
             new_points: transformed points with the same shape as the input.
         """
-        world_to_screen_transform = self.get_full_projection_transform(**kwargs)
-        return world_to_screen_transform.transform_points(points)
+        world_to_ndc_transform = self.get_full_projection_transform(**kwargs)
+        return world_to_ndc_transform.transform_points(points)
 
 
 # SfMCameras helper
