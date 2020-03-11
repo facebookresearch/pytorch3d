@@ -415,10 +415,12 @@ class Meshes(object):
         else:
             raise IndexError(index)
 
+        textures = None if self.textures is None else self.textures[index]
+
         if torch.is_tensor(verts) and torch.is_tensor(faces):
-            return Meshes(verts=[verts], faces=[faces])
+            return Meshes(verts=[verts], faces=[faces], textures=textures)
         elif isinstance(verts, list) and isinstance(faces, list):
-            return Meshes(verts=verts, faces=faces)
+            return Meshes(verts=verts, faces=faces, textures=textures)
         else:
             raise ValueError("(verts, faces) not defined correctly")
 
