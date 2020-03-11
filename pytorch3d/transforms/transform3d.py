@@ -275,7 +275,7 @@ class Transform3d:
             points_batch = points_batch[None]  # (P, 3) -> (1, P, 3)
         if points_batch.dim() != 3:
             msg = "Expected points to have dim = 2 or dim = 3: got shape %r"
-            raise ValueError(msg % points.shape)
+            raise ValueError(msg % repr(points.shape))
 
         N, P, _3 = points_batch.shape
         ones = torch.ones(N, P, 1, dtype=points.dtype, device=points.device)
@@ -309,7 +309,7 @@ class Transform3d:
         """
         if normals.dim() not in [2, 3]:
             msg = "Expected normals to have dim = 2 or dim = 3: got shape %r"
-            raise ValueError(msg % normals.shape)
+            raise ValueError(msg % (normals.shape,))
         composed_matrix = self.get_matrix()
 
         # TODO: inverse is bad! Solve a linear system instead

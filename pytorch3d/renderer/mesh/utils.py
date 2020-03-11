@@ -19,7 +19,7 @@ def _clip_barycentric_coordinates(bary) -> torch.Tensor:
     """
     if bary.shape[-1] != 3:
         msg = "Expected barycentric coords to have last dim = 3; got %r"
-        raise ValueError(msg % bary.shape)
+        raise ValueError(msg % (bary.shape,))
     clipped = bary.clamp(min=0.0)
     clipped_sum = torch.clamp(clipped.sum(dim=-1, keepdim=True), min=1e-5)
     clipped = clipped / clipped_sum
@@ -57,7 +57,7 @@ def interpolate_face_attributes(
     N, H, W, K, _ = barycentric_coords.shape
     if pix_to_face.shape != (N, H, W, K):
         msg = "pix_to_face must have shape (batch_size, H, W, K); got %r"
-        raise ValueError(msg % pix_to_face.shape)
+        raise ValueError(msg % (pix_to_face.shape,))
 
     # Replace empty pixels in pix_to_face with 0 in order to interpolate.
     mask = pix_to_face == -1

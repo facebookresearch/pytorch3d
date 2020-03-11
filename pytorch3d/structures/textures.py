@@ -103,7 +103,7 @@ class Textures(object):
             raise ValueError(msg % repr(faces_uvs.shape))
         if verts_rgb is not None and verts_rgb.ndim != 3:
             msg = "Expected verts_rgb to be of shape (N, V, 3); got %r"
-            raise ValueError(msg % verts_rgb.shape)
+            raise ValueError(msg % repr(verts_rgb.shape))
         if maps is not None:
             if torch.is_tensor(maps) and maps.ndim != 4:
                 msg = "Expected maps to be of shape (N, H, W, 3); got %r"

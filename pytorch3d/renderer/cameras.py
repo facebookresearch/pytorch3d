@@ -905,7 +905,7 @@ def get_world_to_view_transform(R=r, T=t) -> Transform3d:
         raise ValueError(msg % repr(T.shape))
     if R.dim() != 3 or R.shape[1:] != (3, 3):
         msg = "Expected R to have shape (N, 3, 3); got %r"
-        raise ValueError(msg % R.shape)
+        raise ValueError(msg % repr(R.shape))
 
     # Create a Transform3d object
     T = Translate(T, device=T.device)
