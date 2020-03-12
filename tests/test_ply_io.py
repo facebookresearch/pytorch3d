@@ -410,12 +410,9 @@ class TestMeshPlyIO(TestCaseMixin, unittest.TestCase):
     def bm_save_simple_ply_with_init(V: int, F: int):
         verts_list = torch.tensor(V * [[0.11, 0.22, 0.33]]).view(-1, 3)
         faces_list = torch.tensor(F * [[0, 1, 2]]).view(-1, 3)
-
-        def save_mesh():
-            file = StringIO()
-            save_ply(file, verts_list, faces_list, 2)
-
-        return save_mesh
+        return lambda: save_ply(
+            StringIO(), verts_list, faces_list, decimal_places=2
+        )
 
     @staticmethod
     def bm_load_simple_ply_with_init(V: int, F: int):
@@ -425,9 +422,4 @@ class TestMeshPlyIO(TestCaseMixin, unittest.TestCase):
         save_ply(ply_file, verts=verts, faces=faces)
         ply = ply_file.getvalue()
         # Recreate stream so it's unaffected by how it was created.
-
-        def load_mesh():
-            ply_file = StringIO(ply)
-            verts, faces = load_ply(ply_file)
-
-        return load_mesh
+        return lambda: load_ply(StringIO(ply))

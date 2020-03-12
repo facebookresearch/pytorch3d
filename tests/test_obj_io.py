@@ -605,19 +605,11 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
     def bm_save_simple_obj_with_init(V: int, F: int):
         verts_list = torch.tensor(V * [[0.11, 0.22, 0.33]]).view(-1, 3)
         faces_list = torch.tensor(F * [[1, 2, 3]]).view(-1, 3)
-        obj_file = StringIO()
-
-        def save_mesh():
-            save_obj(obj_file, verts_list, faces_list, decimal_places=2)
-
-        return save_mesh
+        return lambda: save_obj(
+            StringIO(), verts_list, faces_list, decimal_places=2
+        )
 
     @staticmethod
     def bm_load_simple_obj_with_init(V: int, F: int):
         obj = "\n".join(["v 0.1 0.2 0.3"] * V + ["f 1 2 3"] * F)
-
-        def load_mesh():
-            obj_file = StringIO(obj)
-            verts, faces, aux = load_obj(obj_file)
-
-        return load_mesh
+        return lambda: load_obj(StringIO(obj))
