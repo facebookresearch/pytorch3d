@@ -208,7 +208,7 @@ __global__ void RasterizeMeshesNaiveCudaKernel(
     const int n = i / (H * W); // batch index.
     const int pix_idx = i % (H * W);
 
-    // Determine ordering based on axis convention.
+    // Reverse ordering of X and Y axes
     const int yi = H - 1 - pix_idx / W;
     const int xi = W - 1 - pix_idx % W;
 
@@ -353,7 +353,7 @@ __global__ void RasterizeMeshesBackwardCudaKernel(
     const int n = t_i / (H * W); // batch index.
     const int pix_idx = t_i % (H * W);
 
-    // Determine ordering based on axis convention.
+    // Reverse ordering of X and Y axes.
     const int yi = H - 1 - pix_idx / W;
     const int xi = W - 1 - pix_idx % W;
 
@@ -557,8 +557,8 @@ __global__ void RasterizeMeshesCoarseCudaKernel(
         // need to add/subtract a half pixel to get the true extent of the bin.
         // Reverse ordering of Y axis so that +Y is upwards in the image.
         const int yidx = num_bins - by;
-        float bin_y_max = PixToNdc(yidx * bin_size - 1, H) + half_pix;
-        float bin_y_min = PixToNdc((yidx - 1) * bin_size, H) - half_pix;
+        const float bin_y_max = PixToNdc(yidx * bin_size - 1, H) + half_pix;
+        const float bin_y_min = PixToNdc((yidx - 1) * bin_size, H) - half_pix;
 
         const bool y_overlap = (ymin <= bin_y_max) && (bin_y_min < ymax);
 
@@ -566,8 +566,8 @@ __global__ void RasterizeMeshesCoarseCudaKernel(
           // X coordinate of the left and right of the bin.
           // Reverse ordering of x axis so that +X is left.
           const int xidx = num_bins - bx;
-          float bin_x_max = PixToNdc(xidx * bin_size - 1, W) + half_pix;
-          float bin_x_min = PixToNdc((xidx - 1) * bin_size, W) - half_pix;
+          const float bin_x_max = PixToNdc(xidx * bin_size - 1, W) + half_pix;
+          const float bin_x_min = PixToNdc((xidx - 1) * bin_size, W) - half_pix;
 
           const bool x_overlap = (xmin <= bin_x_max) && (bin_x_min < xmax);
           if (y_overlap && x_overlap) {

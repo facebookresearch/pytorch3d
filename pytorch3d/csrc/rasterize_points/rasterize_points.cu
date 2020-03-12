@@ -94,8 +94,10 @@ __global__ void RasterizePointsNaiveCudaKernel(
     // Convert linear index to 3D index
     const int n = i / (S * S); // Batch index
     const int pix_idx = i % (S * S);
-    const int yi = pix_idx / S;
-    const int xi = pix_idx % S;
+
+    // Reverse ordering of X and Y axes.
+    const int yi = S - 1 - pix_idx / S;
+    const int xi = S - 1 - pix_idx % S;
 
     const float xf = PixToNdc(xi, S);
     const float yf = PixToNdc(yi, S);
@@ -126,7 +128,7 @@ __global__ void RasterizePointsNaiveCudaKernel(
           points, p_idx, q_size, q_max_z, q_max_idx, q, radius2, xf, yf, K);
     }
     BubbleSort(q, q_size);
-    int idx = n * S * S * K + yi * S * K + xi * K;
+    int idx = n * S * S * K + pix_idx * K;
     for (int k = 0; k < q_size; ++k) {
       point_idxs[idx + k] = q[k].idx;
       zbuf[idx + k] = q[k].z;
@@ -258,18 +260,23 @@ __global__ void RasterizePointsCoarseCudaKernel(
         // Get y extent for the bin. PixToNdc gives us the location of
         // the center of each pixel, so we need to add/subtract a half
         // pixel to get the true extent of the bin.
-        const float by0 = PixToNdc(by * bin_size, S) - half_pix;
-        const float by1 = PixToNdc((by + 1) * bin_size - 1, S) + half_pix;
-        const bool y_overlap = (py0 <= by1) && (by0 <= py1);
+        // Reverse ordering of Y axis so that +Y is upwards in the image.
+        const int yidx = num_bins - by;
+        const float bin_y_max = PixToNdc(yidx * bin_size - 1, S) + half_pix;
+        const float bin_y_min = PixToNdc((yidx - 1) * bin_size, S) - half_pix;
+
+        const bool y_overlap = (py0 <= bin_y_max) && (bin_y_min <= py1);
         if (!y_overlap) {
           continue;
         }
         for (int bx = 0; bx < num_bins; ++bx) {
           // Get x extent for the bin; again we need to adjust the
           // output of PixToNdc by half a pixel.
-          const float bx0 = PixToNdc(bx * bin_size, S) - half_pix;
-          const float bx1 = PixToNdc((bx + 1) * bin_size - 1, S) + half_pix;
-          const bool x_overlap = (px0 <= bx1) && (bx0 <= px1);
+          // Reverse ordering of x axis so that +X is left.
+          const int xidx = num_bins - bx;
+          const float bin_x_max = PixToNdc(xidx * bin_size - 1, S) + half_pix;
+          const float bin_x_min = PixToNdc((xidx - 1) * bin_size, S) - half_pix;
+          const bool x_overlap = (px0 <= bin_x_max) && (bin_x_min <= px1);
           if (x_overlap) {
             binmask.set(by, bx, p);
           }
@@ -395,8 +402,14 @@ __global__ void RasterizePointsFineCudaKernel(
 
     if (yi >= S || xi >= S)
       continue;
-    const float xf = PixToNdc(xi, S);
-    const float yf = PixToNdc(yi, S);
+
+    // Reverse ordering of the X and Y axis so that
+    // in the image +Y is pointing up and +X is pointing left.
+    const int yidx = S - 1 - yi;
+    const int xidx = S - 1 - xi;
+
+    const float xf = PixToNdc(xidx, S);
+    const float yf = PixToNdc(yidx, S);
 
     // This part looks like the naive rasterization kernel, except we use
     // bin_points to only look at a subset of points already known to fall
@@ -493,8 +506,12 @@ __global__ void RasterizePointsBackwardCudaKernel(
     const int xk = yxk % (W * K);
     const int xi = xk / K;
     // k = xk % K (We don't actually need k, but this would be it.)
-    const float xf = PixToNdc(xi, W);
-    const float yf = PixToNdc(yi, H);
+    // Reverse ordering of X and Y axes.
+    const int yidx = H - 1 - yi;
+    const int xidx = W - 1 - xi;
+
+    const float xf = PixToNdc(xidx, W);
+    const float yf = PixToNdc(yidx, H);
 
     const int p = idxs[i];
     if (p < 0)

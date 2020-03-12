@@ -473,11 +473,11 @@ torch::Tensor RasterizeMeshesCoarseCpu(
           }
         }
 
-        // Shift the bin down for the next loop iteration.
+        // Shift the bin to the left for the next loop iteration.
         bin_x_max = bin_x_min;
         bin_x_min = bin_x_min - bin_width;
       }
-      // Shift the bin left for the next loop iteration.
+      // Shift the bin down for the next loop iteration.
       bin_y_max = bin_y_min;
       bin_y_min = bin_y_min - bin_width;
     }

@@ -47,9 +47,16 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> RasterizePointsNaiveCpu(
         (point_start_idx + num_points_per_cloud[n].item().to<int32_t>());
 
     for (int yi = 0; yi < S; ++yi) {
-      float yf = PixToNdc(yi, S);
+      // Reverse the order of yi so that +Y is pointing upwards in the image.
+      const int yidx = S - 1 - yi;
+      const float yf = PixToNdc(yidx, S);
+
       for (int xi = 0; xi < S; ++xi) {
-        float xf = PixToNdc(xi, S);
+        // Reverse the order of xi so that +X is pointing to the left in the
+        // image.
+        const int xidx = S - 1 - xi;
+        const float xf = PixToNdc(xidx, S);
+
         // Use a priority queue to hold (z, idx, r)
         std::priority_queue<std::tuple<float, int, float>> q;
         for (int p = point_start_idx; p < point_stop_idx; ++p) {
@@ -118,11 +125,15 @@ torch::Tensor RasterizePointsCoarseCpu(
     const int point_stop_idx =
         (point_start_idx + num_points_per_cloud[n].item().to<int32_t>());
 
-    float bin_y_min = -1.0f;
-    float bin_y_max = bin_y_min + bin_width;
+    float bin_y_max = 1.0f;
+    float bin_y_min = bin_y_max - bin_width;
+
+    // Iterate through the horizontal bins from top to bottom.
     for (int by = 0; by < B; by++) {
-      float bin_x_min = -1.0f;
-      float bin_x_max = bin_x_min + bin_width;
+      float bin_x_max = 1.0f;
+      float bin_x_min = bin_x_max - bin_width;
+
+      // Iterate through bins on this horizontal line, left to right.
       for (int bx = 0; bx < B; bx++) {
         int32_t points_hit = 0;
         for (int p = point_start_idx; p < point_stop_idx; ++p) {
@@ -136,6 +147,7 @@ torch::Tensor RasterizePointsCoarseCpu(
           float point_x_max = px + radius;
           float point_y_min = py - radius;
           float point_y_max = py + radius;
+
           // Use a half-open interval so that points exactly on the
           // boundary between bins will fall into exactly one bin.
           bool x_hit = (point_x_min <= bin_x_max) && (bin_x_min <= point_x_max);
@@ -154,13 +166,13 @@ torch::Tensor RasterizePointsCoarseCpu(
         // Record the number of points found in this bin
         points_per_bin_a[n][by][bx] = points_hit;
 
-        // Shift the bin to the right for the next loop iteration
-        bin_x_min = bin_x_max;
-        bin_x_max = bin_x_min + bin_width;
+        // Shift the bin to the left for the next loop iteration.
+        bin_x_max = bin_x_min;
+        bin_x_min = bin_x_min - bin_width;
       }
-      // Shift the bin down for the next loop iteration
-      bin_y_min = bin_y_max;
-      bin_y_max = bin_y_min + bin_width;
+      // Shift the bin down for the next loop iteration.
+      bin_y_max = bin_y_min;
+      bin_y_min = bin_y_min - bin_width;
     }
   }
   return bin_points;
@@ -193,9 +205,18 @@ torch::Tensor RasterizePointsBackwardCpu(
 
   for (int n = 0; n < N; ++n) { // Loop over images in the batch
     for (int y = 0; y < H; ++y) { // Loop over rows in the image
-      const float yf = PixToNdc(y, H);
+      // Reverse the order of yi so that +Y is pointing upwards in the image.
+      const int yidx = H - 1 - y;
+      // Y coordinate of the top of the pixel.
+      const float yf = PixToNdc(yidx, H);
+
+      // Iterate through pixels on this horizontal line, left to right.
       for (int x = 0; x < W; ++x) { // Loop over pixels in the row
-        const float xf = PixToNdc(x, W);
+
+        // Reverse the order of xi so that +X is pointing to the left in the
+        // image.
+        const int xidx = W - 1 - x;
+        const float xf = PixToNdc(xidx, W);
         for (int k = 0; k < K; ++k) { // Loop over points for the pixel
           const int p = idxs_a[n][y][x][k];
           if (p < 0) {

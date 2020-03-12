@@ -283,7 +283,7 @@ def rasterize_meshes_python(
                 # X coordinate of one end of the image. Reverse the ordering
                 # of xi so that +X is pointing to the left in the image.
                 xfix = W - 1 - xi
-                xf = pix_to_ndc(xfix, H)
+                xf = pix_to_ndc(xfix, W)
                 top_k_points = []
 
                 # Check whether each face in the mesh affects this pixel.
