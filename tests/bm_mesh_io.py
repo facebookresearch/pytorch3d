@@ -8,9 +8,9 @@ from test_ply_io import TestMeshPlyIO
 
 def bm_save_load() -> None:
     simple_kwargs_list = [
-        {"V": 100, "F": 300},
-        {"V": 1000, "F": 3000},
-        {"V": 10000, "F": 30000},
+        {"V": 100, "F": 200},
+        {"V": 1000, "F": 2000},
+        {"V": 10000, "F": 20000},
     ]
     benchmark(
         TestMeshObjIO.bm_load_simple_obj_with_init,
