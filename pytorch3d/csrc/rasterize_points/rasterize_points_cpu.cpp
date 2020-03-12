@@ -13,37 +13,49 @@ static float PixToNdc(const int i, const int S) {
 }
 
 std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> RasterizePointsNaiveCpu(
-    const torch::Tensor& points,
+    const torch::Tensor& points, // (P, 3)
+    const torch::Tensor& cloud_to_packed_first_idx, // (N)
+    const torch::Tensor& num_points_per_cloud, // (N)
     const int image_size,
     const float radius,
     const int points_per_pixel) {
-  const int N = points.size(0);
-  const int P = points.size(1);
+  const int32_t N = cloud_to_packed_first_idx.size(0); // batch_size.
+
   const int S = image_size;
   const int K = points_per_pixel;
+
+  // Initialize output tensors.
   auto int_opts = points.options().dtype(torch::kInt32);
   auto float_opts = points.options().dtype(torch::kFloat32);
   torch::Tensor point_idxs = torch::full({N, S, S, K}, -1, int_opts);
   torch::Tensor zbuf = torch::full({N, S, S, K}, -1, float_opts);
   torch::Tensor pix_dists = torch::full({N, S, S, K}, -1, float_opts);
 
-  auto points_a = points.accessor<float, 3>();
+  auto points_a = points.accessor<float, 2>();
   auto point_idxs_a = point_idxs.accessor<int32_t, 4>();
   auto zbuf_a = zbuf.accessor<float, 4>();
   auto pix_dists_a = pix_dists.accessor<float, 4>();
 
   const float radius2 = radius * radius;
   for (int n = 0; n < N; ++n) {
+    // Loop through each pointcloud in the batch.
+    // Get the start index of the points in points_packed and the num points
+    // in the point cloud.
+    const int point_start_idx =
+        cloud_to_packed_first_idx[n].item().to<int32_t>();
+    const int point_stop_idx =
+        (point_start_idx + num_points_per_cloud[n].item().to<int32_t>());
+
     for (int yi = 0; yi < S; ++yi) {
       float yf = PixToNdc(yi, S);
       for (int xi = 0; xi < S; ++xi) {
         float xf = PixToNdc(xi, S);
         // Use a priority queue to hold (z, idx, r)
         std::priority_queue<std::tuple<float, int, float>> q;
-        for (int p = 0; p < P; ++p) {
-          const float px = points_a[n][p][0];
-          const float py = points_a[n][p][1];
-          const float pz = points_a[n][p][2];
+        for (int p = point_start_idx; p < point_stop_idx; ++p) {
+          const float px = points_a[p][0];
+          const float py = points_a[p][1];
+          const float pz = points_a[p][2];
           if (pz < 0) {
             continue;
           }
@@ -75,26 +87,37 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> RasterizePointsNaiveCpu(
 }
 
 torch::Tensor RasterizePointsCoarseCpu(
-    const torch::Tensor& points,
+    const torch::Tensor& points, // (P, 3)
+    const torch::Tensor& cloud_to_packed_first_idx, // (N)
+    const torch::Tensor& num_points_per_cloud, // (N)
     const int image_size,
     const float radius,
     const int bin_size,
     const int max_points_per_bin) {
-  const int N = points.size(0);
-  const int P = points.size(1);
+  const int32_t N = cloud_to_packed_first_idx.size(0); // batch_size.
+
   const int B = 1 + (image_size - 1) / bin_size; // Integer division round up
   const int M = max_points_per_bin;
   auto opts = points.options().dtype(torch::kInt32);
   torch::Tensor points_per_bin = torch::zeros({N, B, B}, opts);
   torch::Tensor bin_points = torch::full({N, B, B, M}, -1, opts);
 
-  auto points_a = points.accessor<float, 3>();
+  auto points_a = points.accessor<float, 2>();
   auto points_per_bin_a = points_per_bin.accessor<int32_t, 3>();
   auto bin_points_a = bin_points.accessor<int32_t, 4>();
 
   const float pixel_width = 2.0f / image_size;
   const float bin_width = pixel_width * bin_size;
+
   for (int n = 0; n < N; ++n) {
+    // Loop through each pointcloud in the batch.
+    // Get the start index of the points in points_packed and the num points
+    // in the point cloud.
+    const int point_start_idx =
+        cloud_to_packed_first_idx[n].item().to<int32_t>();
+    const int point_stop_idx =
+        (point_start_idx + num_points_per_cloud[n].item().to<int32_t>());
+
     float bin_y_min = -1.0f;
     float bin_y_max = bin_y_min + bin_width;
     for (int by = 0; by < B; by++) {
@@ -102,10 +125,10 @@ torch::Tensor RasterizePointsCoarseCpu(
       float bin_x_max = bin_x_min + bin_width;
       for (int bx = 0; bx < B; bx++) {
         int32_t points_hit = 0;
-        for (int32_t p = 0; p < P; p++) {
-          float px = points_a[n][p][0];
-          float py = points_a[n][p][1];
-          float pz = points_a[n][p][2];
+        for (int p = point_start_idx; p < point_stop_idx; ++p) {
+          float px = points_a[p][0];
+          float py = points_a[p][1];
+          float pz = points_a[p][2];
           if (pz < 0) {
             continue;
           }
@@ -144,12 +167,13 @@ torch::Tensor RasterizePointsCoarseCpu(
 }
 
 torch::Tensor RasterizePointsBackwardCpu(
-    const torch::Tensor& points, // (N, P, 3)
+    const torch::Tensor& points, // (P, 3)
     const torch::Tensor& idxs, // (N, H, W, K)
     const torch::Tensor& grad_zbuf, // (N, H, W, K)
     const torch::Tensor& grad_dists) { // (N, H, W, K)
-  const int N = points.size(0);
-  const int P = points.size(1);
+
+  const int N = idxs.size(0);
+  const int P = points.size(0);
   const int H = idxs.size(1);
   const int W = idxs.size(2);
   const int K = idxs.size(3);
@@ -159,13 +183,13 @@ torch::Tensor RasterizePointsBackwardCpu(
   if (H != W) {
     AT_ERROR("RasterizePointsBackwardCpu only supports square images");
   }
-  torch::Tensor grad_points = torch::zeros({N, P, 3}, points.options());
+  torch::Tensor grad_points = torch::zeros({P, 3}, points.options());
 
-  auto points_a = points.accessor<float, 3>();
+  auto points_a = points.accessor<float, 2>();
   auto idxs_a = idxs.accessor<int32_t, 4>();
   auto grad_dists_a = grad_dists.accessor<float, 4>();
   auto grad_zbuf_a = grad_zbuf.accessor<float, 4>();
-  auto grad_points_a = grad_points.accessor<float, 3>();
+  auto grad_points_a = grad_points.accessor<float, 2>();
 
   for (int n = 0; n < N; ++n) { // Loop over images in the batch
     for (int y = 0; y < H; ++y) { // Loop over rows in the image
@@ -178,16 +202,16 @@ torch::Tensor RasterizePointsBackwardCpu(
             break;
           }
           const float grad_dist2 = grad_dists_a[n][y][x][k];
-          const float px = points_a[n][p][0];
-          const float py = points_a[n][p][1];
+          const float px = points_a[p][0];
+          const float py = points_a[p][1];
           const float dx = px - xf;
           const float dy = py - yf;
           // Remember: dists[n][y][x][k] = dx * dx + dy * dy;
           const float grad_px = 2.0f * grad_dist2 * dx;
           const float grad_py = 2.0f * grad_dist2 * dy;
-          grad_points_a[n][p][0] += grad_px;
-          grad_points_a[n][p][1] += grad_py;
-          grad_points_a[n][p][2] += grad_zbuf_a[n][y][x][k];
+          grad_points_a[p][0] += grad_px;
+          grad_points_a[p][1] += grad_py;
+          grad_points_a[p][2] += grad_zbuf_a[n][y][x][k];
         }
       }
     }

@@ -102,16 +102,16 @@ __device__ bool CheckPointOutsideBoundingBox(
 // RasterizeMeshesFineCudaKernel.
 template <typename FaceQ>
 __device__ void CheckPixelInsideFace(
-    const float* face_verts, // (N, P, 3)
-    int face_idx,
+    const float* face_verts, // (F, 3, 3)
+    const int face_idx,
     int& q_size,
     float& q_max_z,
     int& q_max_idx,
     FaceQ& q,
-    float blur_radius,
-    float2 pxy, // Coordinates of the pixel
-    int K,
-    bool perspective_correct) {
+    const float blur_radius,
+    const float2 pxy, // Coordinates of the pixel
+    const int K,
+    const bool perspective_correct) {
   const auto v012 = GetSingleFaceVerts(face_verts, face_idx);
   const float3 v0 = thrust::get<0>(v012);
   const float3 v1 = thrust::get<1>(v012);
@@ -335,7 +335,6 @@ __global__ void RasterizeMeshesBackwardCudaKernel(
     const int64_t* pix_to_face, // (N, H, W, K)
     const bool perspective_correct,
     const int N,
-    const int F,
     const int H,
     const int W,
     const int K,
@@ -472,7 +471,6 @@ torch::Tensor RasterizeMeshesBackwardCuda(
       pix_to_face.contiguous().data<int64_t>(),
       perspective_correct,
       N,
-      F,
       H,
       W,
       K,
@@ -671,7 +669,6 @@ __global__ void RasterizeMeshesFineCudaKernel(
     const int bin_size,
     const bool perspective_correct,
     const int N,
-    const int F,
     const int B,
     const int M,
     const int H,
@@ -774,7 +771,6 @@ RasterizeMeshesFineCuda(
   if (bin_faces.ndimension() != 4) {
     AT_ERROR("bin_faces must have 4 dimensions");
   }
-  const int F = face_verts.size(0);
   const int N = bin_faces.size(0);
   const int B = bin_faces.size(1);
   const int M = bin_faces.size(3);
@@ -803,7 +799,6 @@ RasterizeMeshesFineCuda(
       bin_size,
       perspective_correct,
       N,
-      F,
       B,
       M,
       H,

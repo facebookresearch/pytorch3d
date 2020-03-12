@@ -30,8 +30,8 @@ __device__ inline bool operator<(const Pix& a, const Pix& b) {
 // RasterizePointsFineCudaKernel.
 template <typename PointQ>
 __device__ void CheckPixelInsidePoint(
-    const float* points, // (N, P, 3)
-    const int p,
+    const float* points, // (P, 3)
+    const int p_idx,
     int& q_size,
     float& q_max_z,
     int& q_max_idx,
@@ -39,12 +39,10 @@ __device__ void CheckPixelInsidePoint(
     const float radius2,
     const float xf,
     const float yf,
-    const int n,
-    const int P,
     const int K) {
-  const float px = points[n * P * 3 + p * 3 + 0];
-  const float py = points[n * P * 3 + p * 3 + 1];
-  const float pz = points[n * P * 3 + p * 3 + 2];
+  const float px = points[p_idx * 3 + 0];
+  const float py = points[p_idx * 3 + 1];
+  const float pz = points[p_idx * 3 + 2];
   if (pz < 0)
     return; // Don't render points behind the camera
   const float dx = xf - px;
@@ -53,7 +51,7 @@ __device__ void CheckPixelInsidePoint(
   if (dist2 < radius2) {
     if (q_size < K) {
       // Just insert it
-      q[q_size] = {pz, p, dist2};
+      q[q_size] = {pz, p_idx, dist2};
       if (pz > q_max_z) {
         q_max_z = pz;
         q_max_idx = q_size;
@@ -61,7 +59,7 @@ __device__ void CheckPixelInsidePoint(
       q_size++;
     } else if (pz < q_max_z) {
       // Overwrite the old max, and find the new max
-      q[q_max_idx] = {pz, p, dist2};
+      q[q_max_idx] = {pz, p_idx, dist2};
       q_max_z = pz;
       for (int i = 0; i < K; i++) {
         if (q[i].z > q_max_z) {
@@ -78,10 +76,11 @@ __device__ void CheckPixelInsidePoint(
 // ****************************************************************************
 
 __global__ void RasterizePointsNaiveCudaKernel(
-    const float* points, // (N, P, 3)
+    const float* points, // (P, 3)
+    const int64_t* cloud_to_packed_first_idx, // (N)
+    const int64_t* num_points_per_cloud, // (N)
     const float radius,
     const int N,
-    const int P,
     const int S,
     const int K,
     int32_t* point_idxs, // (N, S, S, K)
@@ -116,9 +115,15 @@ __global__ void RasterizePointsNaiveCudaKernel(
     int q_size = 0;
     float q_max_z = -1000;
     int q_max_idx = -1;
-    for (int p = 0; p < P; ++p) {
+
+    // Using the batch index of the thread get the start and stop
+    // indices for the points.
+    const int64_t point_start_idx = cloud_to_packed_first_idx[n];
+    const int64_t point_stop_idx = point_start_idx + num_points_per_cloud[n];
+
+    for (int p_idx = point_start_idx; p_idx < point_stop_idx; ++p_idx) {
       CheckPixelInsidePoint(
-          points, p, q_size, q_max_z, q_max_idx, q, radius2, xf, yf, n, P, K);
+          points, p_idx, q_size, q_max_z, q_max_idx, q, radius2, xf, yf, K);
     }
     BubbleSort(q, q_size);
     int idx = n * S * S * K + yi * S * K + xi * K;
@@ -132,14 +137,24 @@ __global__ void RasterizePointsNaiveCudaKernel(
 
 std::tuple<torch::Tensor, torch::Tensor, torch::Tensor>
 RasterizePointsNaiveCuda(
-    const torch::Tensor& points,
+    const torch::Tensor& points, // (P. 3)
+    const torch::Tensor& cloud_to_packed_first_idx, // (N)
+    const torch::Tensor& num_points_per_cloud, // (N)
     const int image_size,
     const float radius,
     const int points_per_pixel) {
-  const int N = points.size(0);
-  const int P = points.size(1);
+  if (points.ndimension() != 2 || points.size(1) != 3) {
+    AT_ERROR("points must have dimensions (num_points, 3)");
+  }
+  if (num_points_per_cloud.size(0) != cloud_to_packed_first_idx.size(0)) {
+    AT_ERROR(
+        "num_points_per_cloud must have same size first dimension as cloud_to_packed_first_idx");
+  }
+
+  const int N = num_points_per_cloud.size(0); // batch size.
   const int S = image_size;
   const int K = points_per_pixel;
+
   if (K > kMaxPointsPerPixel) {
     std::stringstream ss;
     ss << "Must have points_per_pixel <= " << kMaxPointsPerPixel;
@@ -156,9 +171,10 @@ RasterizePointsNaiveCuda(
   const size_t threads = 64;
   RasterizePointsNaiveCudaKernel<<<blocks, threads>>>(
       points.contiguous().data<float>(),
+      cloud_to_packed_first_idx.contiguous().data<int64_t>(),
+      num_points_per_cloud.contiguous().data<int64_t>(),
       radius,
       N,
-      P,
       S,
       K,
       point_idxs.contiguous().data<int32_t>(),
@@ -172,7 +188,9 @@ RasterizePointsNaiveCuda(
 // ****************************************************************************
 
 __global__ void RasterizePointsCoarseCudaKernel(
-    const float* points,
+    const float* points, // (P, 3)
+    const int64_t* cloud_to_packed_first_idx, // (N)
+    const int64_t* num_points_per_cloud, // (N)
     const float radius,
     const int N,
     const int P,
@@ -206,16 +224,27 @@ __global__ void RasterizePointsCoarseCudaKernel(
 
     binmask.block_clear();
 
+    // Using the batch index of the thread get the start and stop
+    // indices for the points.
+    const int64_t cloud_point_start_idx = cloud_to_packed_first_idx[batch_idx];
+    const int64_t cloud_point_stop_idx =
+        cloud_point_start_idx + num_points_per_cloud[batch_idx];
+
     // Have each thread handle a different point within the chunk
     for (int p = threadIdx.x; p < chunk_size; p += blockDim.x) {
       const int p_idx = point_start_idx + p;
-      if (p_idx >= P)
-        break;
-      const float px = points[batch_idx * P * 3 + p_idx * 3 + 0];
-      const float py = points[batch_idx * P * 3 + p_idx * 3 + 1];
-      const float pz = points[batch_idx * P * 3 + p_idx * 3 + 2];
+
+      // Check if point index corresponds to the cloud in the batch given by
+      // batch_idx.
+      if (p_idx >= cloud_point_stop_idx || p_idx < cloud_point_start_idx) {
+        continue;
+      }
+
+      const float px = points[p_idx * 3 + 0];
+      const float py = points[p_idx * 3 + 1];
+      const float pz = points[p_idx * 3 + 2];
       if (pz < 0)
-        continue; // Don't render points behind the camera
+        continue; // Don't render points behind the camera.
       const float px0 = px - radius;
       const float px1 = px + radius;
       const float py0 = py - radius;
@@ -283,15 +312,20 @@ __global__ void RasterizePointsCoarseCudaKernel(
 }
 
 torch::Tensor RasterizePointsCoarseCuda(
-    const torch::Tensor& points,
+    const torch::Tensor& points, // (P, 3)
+    const torch::Tensor& cloud_to_packed_first_idx, // (N)
+    const torch::Tensor& num_points_per_cloud, // (N)
     const int image_size,
     const float radius,
     const int bin_size,
     const int max_points_per_bin) {
-  const int N = points.size(0);
-  const int P = points.size(1);
+  const int P = points.size(0);
+  const int N = num_points_per_cloud.size(0);
   const int num_bins = 1 + (image_size - 1) / bin_size; // divide round up
   const int M = max_points_per_bin;
+  if (points.ndimension() != 2 || points.size(1) != 3) {
+    AT_ERROR("points must have dimensions (num_points, 3)");
+  }
   if (num_bins >= 22) {
     // Make sure we do not use too much shared memory.
     std::stringstream ss;
@@ -307,6 +341,8 @@ torch::Tensor RasterizePointsCoarseCuda(
   const size_t threads = 512;
   RasterizePointsCoarseCudaKernel<<<blocks, threads, shared_size>>>(
       points.contiguous().data<float>(),
+      cloud_to_packed_first_idx.contiguous().data<int64_t>(),
+      num_points_per_cloud.contiguous().data<int64_t>(),
       radius,
       N,
       P,
@@ -324,12 +360,11 @@ torch::Tensor RasterizePointsCoarseCuda(
 // ****************************************************************************
 
 __global__ void RasterizePointsFineCudaKernel(
-    const float* points, // (N, P, 3)
+    const float* points, // (P, 3)
     const int32_t* bin_points, // (N, B, B, T)
     const float radius,
     const int bin_size,
     const int N,
-    const int P,
     const int B,
     const int M,
     const int S,
@@ -342,6 +377,7 @@ __global__ void RasterizePointsFineCudaKernel(
   const int num_threads = gridDim.x * blockDim.x;
   const int tid = blockIdx.x * blockDim.x + threadIdx.x;
   const float radius2 = radius * radius;
+
   for (int pid = tid; pid < num_pixels; pid += num_threads) {
     // Convert linear index into bin and pixel indices. We make the within
     // block pixel ids move the fastest, so that adjacent threads will fall
@@ -377,7 +413,7 @@ __global__ void RasterizePointsFineCudaKernel(
         continue;
       }
       CheckPixelInsidePoint(
-          points, p, q_size, q_max_z, q_max_idx, q, radius2, xf, yf, n, P, K);
+          points, p, q_size, q_max_z, q_max_idx, q, radius2, xf, yf, K);
     }
     // Now we've looked at all the points for this bin, so we can write
     // output for the current pixel.
@@ -392,14 +428,13 @@ __global__ void RasterizePointsFineCudaKernel(
 }
 
 std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> RasterizePointsFineCuda(
-    const torch::Tensor& points,
+    const torch::Tensor& points, // (P, 3)
     const torch::Tensor& bin_points,
     const int image_size,
     const float radius,
     const int bin_size,
     const int points_per_pixel) {
-  const int N = points.size(0);
-  const int P = points.size(1);
+  const int N = bin_points.size(0);
   const int B = bin_points.size(1);
   const int M = bin_points.size(3);
   const int S = image_size;
@@ -421,7 +456,6 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> RasterizePointsFineCuda(
       radius,
       bin_size,
       N,
-      P,
       B,
       M,
       S,
@@ -438,7 +472,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> RasterizePointsFineCuda(
 // ****************************************************************************
 // TODO(T55115174) Add more documentation for backward kernel.
 __global__ void RasterizePointsBackwardCudaKernel(
-    const float* points, // (N, P, 3)
+    const float* points, // (P, 3)
     const int32_t* idxs, // (N, H, W, K)
     const int N,
     const int P,
@@ -447,13 +481,13 @@ __global__ void RasterizePointsBackwardCudaKernel(
     const int K,
     const float* grad_zbuf, // (N, H, W, K)
     const float* grad_dists, // (N, H, W, K)
-    float* grad_points) { // (N, P, 3)
+    float* grad_points) { // (P, 3)
   // Parallelized over each of K points per pixel, for each pixel in images of
   // size H * W, for each image in the batch of size N.
   int num_threads = gridDim.x * blockDim.x;
   int tid = blockIdx.x * blockDim.x + threadIdx.x;
   for (int i = tid; i < N * H * W * K; i += num_threads) {
-    const int n = i / (H * W * K);
+    // const int n = i / (H * W * K); // batch index (not needed).
     const int yxk = i % (H * W * K);
     const int yi = yxk / (W * K);
     const int xk = yxk % (W * K);
@@ -466,15 +500,15 @@ __global__ void RasterizePointsBackwardCudaKernel(
     if (p < 0)
       continue;
     const float grad_dist2 = grad_dists[i];
-    const int p_ind = n * P * 3 + p * 3;
-    const float px = points[p_ind];
+    const int p_ind = p * 3; // index into packed points tensor
+    const float px = points[p_ind + 0];
     const float py = points[p_ind + 1];
     const float dx = px - xf;
     const float dy = py - yf;
     const float grad_px = 2.0f * grad_dist2 * dx;
     const float grad_py = 2.0f * grad_dist2 * dy;
     const float grad_pz = grad_zbuf[i];
-    atomicAdd(grad_points + p_ind, grad_px);
+    atomicAdd(grad_points + p_ind + 0, grad_px);
     atomicAdd(grad_points + p_ind + 1, grad_py);
     atomicAdd(grad_points + p_ind + 2, grad_pz);
   }
@@ -485,13 +519,13 @@ torch::Tensor RasterizePointsBackwardCuda(
     const torch::Tensor& idxs, // (N, H, W, K)
     const torch::Tensor& grad_zbuf, // (N, H, W, K)
     const torch::Tensor& grad_dists) { // (N, H, W, K)
-  const int N = points.size(0);
-  const int P = points.size(1);
+  const int P = points.size(0);
+  const int N = idxs.size(0);
   const int H = idxs.size(1);
   const int W = idxs.size(2);
   const int K = idxs.size(3);
 
-  torch::Tensor grad_points = torch::zeros({N, P, 3}, points.options());
+  torch::Tensor grad_points = torch::zeros({P, 3}, points.options());
   const size_t blocks = 1024;
   const size_t threads = 64;
 
