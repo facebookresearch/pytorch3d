@@ -407,7 +407,7 @@ class TestMeshPlyIO(TestCaseMixin, unittest.TestCase):
         load_ply(StringIO("\n".join(lines2)))
 
     @staticmethod
-    def save_ply_bm(V: int, F: int):
+    def bm_save_simple_ply_with_init(V: int, F: int):
         verts_list = torch.tensor(V * [[0.11, 0.22, 0.33]]).view(-1, 3)
         faces_list = torch.tensor(F * [[0, 1, 2]]).view(-1, 3)
 
@@ -418,7 +418,7 @@ class TestMeshPlyIO(TestCaseMixin, unittest.TestCase):
         return save_mesh
 
     @staticmethod
-    def load_ply_bm(V: int, F: int):
+    def bm_load_simple_ply_with_init(V: int, F: int):
         verts = torch.tensor([[0.1, 0.2, 0.3]]).expand(V, 3)
         faces = torch.tensor([[0, 1, 2]], dtype=torch.int64).expand(F, 3)
         ply_file = StringIO()

@@ -602,7 +602,7 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
         self.assertClose(cow3_tea.faces_list()[3], mesh_teapot.faces_list()[0])
 
     @staticmethod
-    def save_obj_with_init(V: int, F: int):
+    def bm_save_simple_obj_with_init(V: int, F: int):
         verts_list = torch.tensor(V * [[0.11, 0.22, 0.33]]).view(-1, 3)
         faces_list = torch.tensor(F * [[1, 2, 3]]).view(-1, 3)
         obj_file = StringIO()
@@ -613,7 +613,7 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
         return save_mesh
 
     @staticmethod
-    def load_obj_with_init(V: int, F: int):
+    def bm_load_simple_obj_with_init(V: int, F: int):
         obj = "\n".join(["v 0.1 0.2 0.3"] * V + ["f 1 2 3"] * F)
 
         def load_mesh():

@@ -7,26 +7,32 @@ from test_ply_io import TestMeshPlyIO
 
 
 def bm_save_load() -> None:
-    kwargs_list = [
+    simple_kwargs_list = [
         {"V": 100, "F": 300},
         {"V": 1000, "F": 3000},
         {"V": 10000, "F": 30000},
     ]
     benchmark(
-        TestMeshObjIO.load_obj_with_init,
-        "LOAD_OBJ",
-        kwargs_list,
+        TestMeshObjIO.bm_load_simple_obj_with_init,
+        "LOAD_SIMPLE_OBJ",
+        simple_kwargs_list,
         warmup_iters=1,
     )
     benchmark(
-        TestMeshObjIO.save_obj_with_init,
-        "SAVE_OBJ",
-        kwargs_list,
+        TestMeshObjIO.bm_save_simple_obj_with_init,
+        "SAVE_SIMPLE_OBJ",
+        simple_kwargs_list,
         warmup_iters=1,
     )
     benchmark(
-        TestMeshPlyIO.load_ply_bm, "LOAD_PLY", kwargs_list, warmup_iters=1
+        TestMeshPlyIO.bm_load_simple_ply_with_init,
+        "LOAD_SIMPLE_PLY",
+        simple_kwargs_list,
+        warmup_iters=1,
     )
     benchmark(
-        TestMeshPlyIO.save_ply_bm, "SAVE_PLY", kwargs_list, warmup_iters=1
+        TestMeshPlyIO.bm_save_simple_ply_with_init,
+        "SAVE_SIMPLE_PLY",
+        simple_kwargs_list,
+        warmup_iters=1,
     )
