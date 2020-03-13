@@ -218,14 +218,15 @@ BarycentricPerspectiveCorrectionBackward(
   return thrust::make_tuple(grad_bary, grad_z0, grad_z1, grad_z2);
 }
 
-// Return minimum distance between line segment (v1 - v0) and point p.
+// Calculate minimum squared distance between a line segment (v1 - v0) and a
+// point p.
 //
 // Args:
 //     p: Coordinates of a point.
 //     v0, v1: Coordinates of the end points of the line segment.
 //
 // Returns:
-//     non-square distance to the boundary of the triangle.
+//     squared distance to the boundary of the triangle.
 //
 __device__ inline float
 PointLineDistanceForward(const float2& p, const float2& a, const float2& b) {
@@ -284,7 +285,7 @@ PointLineDistanceBackward(
 //     v0, v1, v2: Coordinates of the three triangle vertices.
 //
 // Returns:
-//     shortest absolute distance from a point to a triangle.
+//     shortest squared distance from a point to a triangle.
 //
 __device__ inline float PointTriangleDistanceForward(
     const float2& p,

@@ -214,14 +214,15 @@ RasterizeMeshesNaiveCpu(
             continue; // Point is behind the image plane so ignore.
           }
 
-          // Compute absolute distance of the point to the triangle.
-          // If the point is inside the triangle then the distance
-          // is negative.
+          // Compute squared distance of the point to the triangle.
           const float dist = PointTriangleDistanceForward(pxy, v0, v1, v2);
 
           // Use the bary coordinates to determine if the point is
           // inside the face.
           const bool inside = bary.x > 0.0f && bary.y > 0.0f && bary.z > 0.0f;
+
+          // If the point is inside the triangle then signed_dist
+          // is negative.
           const float signed_dist = inside ? -dist : dist;
 
           // Check if pixel is outside blur region

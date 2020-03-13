@@ -241,14 +241,15 @@ inline std::tuple<vec3<T>, T, T, T> BarycentricPerspectiveCorrectionBackward(
   return std::make_tuple(grad_bary, grad_z0, grad_z1, grad_z2);
 }
 
-// Calculate minimum distance between a line segment (v1 - v0) and point p.
+// Calculate minimum squared distance between a line segment (v1 - v0) and a
+// point p.
 //
 // Args:
 //     p: Coordinates of a point.
 //     v0, v1: Coordinates of the end points of the line segment.
 //
 // Returns:
-//     non-square distance of the point to the line.
+//     squared distance of the point to the line.
 //
 // Consider the line extending the segment - this can be parameterized as:
 // v0 + t (v1 - v0).
@@ -322,7 +323,7 @@ inline std::tuple<vec2<T>, vec2<T>, vec2<T>> PointLineDistanceBackward(
 //     v0, v1, v2: Coordinates of the three triangle vertices.
 //
 // Returns:
-//     shortest absolute distance from a point to a triangle.
+//     shortest squared distance from a point to a triangle.
 //
 //
 template <typename T>
