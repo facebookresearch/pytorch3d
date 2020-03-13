@@ -8,6 +8,7 @@ import torch
 
 from pytorch3d.io import load_obj, load_objs_as_meshes, save_obj
 from pytorch3d.structures import Meshes, Textures, join_meshes
+from pytorch3d.utils import torus
 
 from common_testing import TestCaseMixin
 
@@ -602,14 +603,41 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
         self.assertClose(cow3_tea.faces_list()[3], mesh_teapot.faces_list()[0])
 
     @staticmethod
+    def _bm_save_obj(
+        verts: torch.Tensor, faces: torch.Tensor, decimal_places: int
+    ):
+        return lambda: save_obj(StringIO(), verts, faces, decimal_places)
+
+    @staticmethod
+    def _bm_load_obj(
+        verts: torch.Tensor, faces: torch.Tensor, decimal_places: int
+    ):
+        f = StringIO()
+        save_obj(f, verts, faces, decimal_places)
+        s = f.getvalue()
+        # Recreate stream so it's unaffected by how it was created.
+        return lambda: load_obj(StringIO(s))
+
+    @staticmethod
     def bm_save_simple_obj_with_init(V: int, F: int):
-        verts_list = torch.tensor(V * [[0.11, 0.22, 0.33]]).view(-1, 3)
-        faces_list = torch.tensor(F * [[1, 2, 3]]).view(-1, 3)
-        return lambda: save_obj(
-            StringIO(), verts_list, faces_list, decimal_places=2
-        )
+        verts = torch.tensor(V * [[0.11, 0.22, 0.33]]).view(-1, 3)
+        faces = torch.tensor(F * [[1, 2, 3]]).view(-1, 3)
+        return TestMeshObjIO._bm_save_obj(verts, faces, decimal_places=2)
 
     @staticmethod
     def bm_load_simple_obj_with_init(V: int, F: int):
-        obj = "\n".join(["v 0.1 0.2 0.3"] * V + ["f 1 2 3"] * F)
-        return lambda: load_obj(StringIO(obj))
+        verts = torch.tensor(V * [[0.1, 0.2, 0.3]]).view(-1, 3)
+        faces = torch.tensor(F * [[1, 2, 3]]).view(-1, 3)
+        return TestMeshObjIO._bm_load_obj(verts, faces, decimal_places=2)
+
+    @staticmethod
+    def bm_save_complex_obj(N: int):
+        meshes = torus(r=0.25, R=1.0, sides=N, rings=2 * N)
+        [verts], [faces] = meshes.verts_list(), meshes.faces_list()
+        return TestMeshObjIO._bm_save_obj(verts, faces, decimal_places=5)
+
+    @staticmethod
+    def bm_load_complex_obj(N: int):
+        meshes = torus(r=0.25, R=1.0, sides=N, rings=2 * N)
+        [verts], [faces] = meshes.verts_list(), meshes.faces_list()
+        return TestMeshObjIO._bm_load_obj(verts, faces, decimal_places=5)

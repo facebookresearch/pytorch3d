@@ -6,6 +6,7 @@ from io import BytesIO, StringIO
 import torch
 
 from pytorch3d.io.ply_io import _load_ply_raw, load_ply, save_ply
+from pytorch3d.utils import torus
 
 from common_testing import TestCaseMixin
 
@@ -407,19 +408,43 @@ class TestMeshPlyIO(TestCaseMixin, unittest.TestCase):
         load_ply(StringIO("\n".join(lines2)))
 
     @staticmethod
-    def bm_save_simple_ply_with_init(V: int, F: int):
-        verts_list = torch.tensor(V * [[0.11, 0.22, 0.33]]).view(-1, 3)
-        faces_list = torch.tensor(F * [[0, 1, 2]]).view(-1, 3)
+    def _bm_save_ply(
+        verts: torch.Tensor, faces: torch.Tensor, decimal_places: int
+    ):
         return lambda: save_ply(
-            StringIO(), verts_list, faces_list, decimal_places=2
+            StringIO(), verts, faces, decimal_places=decimal_places
         )
+
+    @staticmethod
+    def _bm_load_ply(
+        verts: torch.Tensor, faces: torch.Tensor, decimal_places: int
+    ):
+        f = StringIO()
+        save_ply(f, verts, faces, decimal_places)
+        s = f.getvalue()
+        # Recreate stream so it's unaffected by how it was created.
+        return lambda: load_ply(StringIO(s))
+
+    @staticmethod
+    def bm_save_simple_ply_with_init(V: int, F: int):
+        verts = torch.tensor(V * [[0.11, 0.22, 0.33]]).view(-1, 3)
+        faces = torch.tensor(F * [[0, 1, 2]]).view(-1, 3)
+        return TestMeshPlyIO._bm_save_ply(verts, faces, decimal_places=2)
 
     @staticmethod
     def bm_load_simple_ply_with_init(V: int, F: int):
         verts = torch.tensor([[0.1, 0.2, 0.3]]).expand(V, 3)
         faces = torch.tensor([[0, 1, 2]], dtype=torch.int64).expand(F, 3)
-        ply_file = StringIO()
-        save_ply(ply_file, verts=verts, faces=faces)
-        ply = ply_file.getvalue()
-        # Recreate stream so it's unaffected by how it was created.
-        return lambda: load_ply(StringIO(ply))
+        return TestMeshPlyIO._bm_load_ply(verts, faces, decimal_places=2)
+
+    @staticmethod
+    def bm_save_complex_ply(N: int):
+        meshes = torus(r=0.25, R=1.0, sides=N, rings=2 * N)
+        [verts], [faces] = meshes.verts_list(), meshes.faces_list()
+        return TestMeshPlyIO._bm_save_ply(verts, faces, decimal_places=5)
+
+    @staticmethod
+    def bm_load_complex_ply(N: int):
+        meshes = torus(r=0.25, R=1.0, sides=N, rings=2 * N)
+        [verts], [faces] = meshes.verts_list(), meshes.faces_list()
+        return TestMeshPlyIO._bm_load_ply(verts, faces, decimal_places=5)

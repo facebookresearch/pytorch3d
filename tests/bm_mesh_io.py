@@ -36,3 +36,29 @@ def bm_save_load() -> None:
         simple_kwargs_list,
         warmup_iters=1,
     )
+
+    complex_kwargs_list = [{"N": 8}, {"N": 32}, {"N": 128}]
+    benchmark(
+        TestMeshObjIO.bm_load_complex_obj,
+        "LOAD_COMPLEX_OBJ",
+        complex_kwargs_list,
+        warmup_iters=1,
+    )
+    benchmark(
+        TestMeshObjIO.bm_save_complex_obj,
+        "SAVE_COMPLEX_OBJ",
+        complex_kwargs_list,
+        warmup_iters=1,
+    )
+    benchmark(
+        TestMeshPlyIO.bm_load_complex_ply,
+        "LOAD_COMPLEX_PLY",
+        complex_kwargs_list,
+        warmup_iters=1,
+    )
+    benchmark(
+        TestMeshPlyIO.bm_save_complex_ply,
+        "SAVE_COMPLEX_PLY",
+        complex_kwargs_list,
+        warmup_iters=1,
+    )
