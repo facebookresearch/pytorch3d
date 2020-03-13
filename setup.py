@@ -66,9 +66,14 @@ def get_extensions():
     return ext_modules
 
 
+__version__ = ""
+# Retrieve __version__ from the package.
+with open("pytorch3d/__init__.py", "r") as init:
+    exec(init.read())
+
 setup(
     name="pytorch3d",
-    version="0.1.1",
+    version=__version__,
     author="FAIR",
     url="https://github.com/facebookresearch/pytorch3d",
     description="PyTorch3d is FAIR's library of reusable components "
