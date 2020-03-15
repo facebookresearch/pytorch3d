@@ -66,11 +66,16 @@ def padded_to_list(
 
     Args:
       x: tensor
-      split_size: the shape of the final tensor to be returned (of length N).
+      split_size: list, tuple or int defining the number of items for each tensor
+        in the output list.
+
+    Returns:
+      x_list: a list of tensors
     """
     if x.ndim != 3:
         raise ValueError("Supports only 3-dimensional input tensors")
     x_list = list(x.unbind(0))
+
     if split_size is None:
         return x_list
 
@@ -141,9 +146,81 @@ def packed_to_list(x: torch.Tensor, split_size: Union[list, int]):
 
     Args:
       x: tensor
-      split_size: list or int defining the number of items for each split
+      split_size: list, tuple or int defining the number of items for each tensor
+        in the output list.
 
     Returns:
       x_list: A list of Tensors
     """
     return x.split(split_size, dim=0)
+
+
+def padded_to_packed(
+    x: torch.Tensor,
+    split_size: Union[list, tuple, None] = None,
+    pad_value: Union[float, int, None] = None,
+):
+    r"""
+    Transforms a padded tensor of shape (N, M, K) into a packed tensor
+    of shape:
+     - (sum(Mi), K) where (Mi, K) are the dimensions of
+        each of the tensors in the batch and Mi is specified by split_size(i)
+     - (N*M, K) if split_size is None
+
+    Support only for 3-dimensional input tensor and 1-dimensional split size.
+
+    Args:
+      x: tensor
+      split_size: list, tuple or int defining the number of items for each tensor
+        in the output list.
+      pad_value: optional value to use to filter the padded values in the input
+        tensor.
+
+    Only one of split_size or pad_value should be provided, or both can be None.
+
+    Returns:
+      x_packed: a packed tensor.
+    """
+    if x.ndim != 3:
+        raise ValueError("Supports only 3-dimensional input tensors")
+
+    N, M, D = x.shape
+
+    if split_size is not None and pad_value is not None:
+        raise ValueError(
+            "Only one of split_size or pad_value should be provided."
+        )
+
+    x_packed = x.view(-1, D)  # flatten padded
+
+    if pad_value is None and split_size is None:
+        return x_packed
+
+    # Convert to packed using pad value
+    if pad_value is not None:
+        mask = x_packed.ne(pad_value).any(-1)
+        x_packed = x_packed[mask]
+        return x_packed
+
+    # Convert to packed using split sizes
+    N = len(split_size)
+    if x.shape[0] != N:
+        raise ValueError(
+            "Split size must be of same length as inputs first dimension"
+        )
+
+    if not all(isinstance(i, int) for i in split_size):
+        raise ValueError(
+            "Support only 1-dimensional unbinded tensor. \
+                Split size for more dimensions provided"
+        )
+
+    padded_to_packed_idx = torch.cat(
+        [
+            torch.arange(v, dtype=torch.int64, device=x.device) + i * M
+            for (i, v) in enumerate(split_size)
+        ],
+        dim=0,
+    )
+
+    return x_packed[padded_to_packed_idx]
