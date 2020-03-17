@@ -122,7 +122,7 @@ class TestCameraHelpers(unittest.TestCase):
         dist = math.sqrt(2)
         elev = math.pi / 4
         azim = 0.0
-        eye = ((0.0, 1.0, -1.0), )
+        eye = ((0.0, 1.0, 1.0), )
         # using passed values for dist, elev, azim
         R, t = look_at_view_transform(dist, elev, azim, degrees=False)
         # using other values for dist, elev, azim - eye overrides
