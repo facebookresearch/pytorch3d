@@ -12,6 +12,7 @@ from pytorch3d.renderer.mesh.texturing import (
     interpolate_vertex_colors,
 )
 from pytorch3d.structures import Meshes, Textures
+from pytorch3d.structures.utils import list_to_padded
 
 from common_testing import TestCaseMixin
 from test_meshes import TestMeshes
@@ -154,6 +155,108 @@ class TestTexturing(TestCaseMixin, unittest.TestCase):
             torch.allclose(texels.squeeze(), expected_out.squeeze())
         )
 
+    def test_init_rgb_uv_fail(self):
+        V = 20
+        # Maps has wrong shape
+        with self.assertRaisesRegex(ValueError, "maps"):
+            Textures(
+                maps=torch.ones((5, 16, 16, 3, 4)),
+                faces_uvs=torch.randint(size=(5, 10, 3), low=0, high=V),
+                verts_uvs=torch.ones((5, V, 2)),
+            )
+        # faces_uvs has wrong shape
+        with self.assertRaisesRegex(ValueError, "faces_uvs"):
+            Textures(
+                maps=torch.ones((5, 16, 16, 3)),
+                faces_uvs=torch.randint(size=(5, 10, 3, 3), low=0, high=V),
+                verts_uvs=torch.ones((5, V, 2)),
+            )
+        # verts_uvs has wrong shape
+        with self.assertRaisesRegex(ValueError, "verts_uvs"):
+            Textures(
+                maps=torch.ones((5, 16, 16, 3)),
+                faces_uvs=torch.randint(size=(5, 10, 3), low=0, high=V),
+                verts_uvs=torch.ones((5, V, 2, 3)),
+            )
+        # verts_rgb has wrong shape
+        with self.assertRaisesRegex(ValueError, "verts_rgb"):
+            Textures(verts_rgb=torch.ones((5, 16, 16, 3)))
+
+        # maps provided without verts/faces uvs
+        with self.assertRaisesRegex(
+            ValueError, "faces_uvs and verts_uvs are required"
+        ):
+            Textures(maps=torch.ones((5, 16, 16, 3)))
+
+    def test_padded_to_packed(self):
+        N = 2
+        # Case where each face in the mesh has 3 unique uv vertex indices
+        # - i.e. even if a vertex is shared between multiple faces it will
+        # have a unique uv coordinate for each face.
+        faces_uvs_list = [
+            torch.tensor([[0, 1, 2], [3, 5, 4], [7, 6, 8]]),
+            torch.tensor([[0, 1, 2], [3, 4, 5]]),
+        ]  # (N, 3, 3)
+        verts_uvs_list = [torch.ones(9, 2), torch.ones(6, 2)]
+        faces_uvs_padded = list_to_padded(faces_uvs_list, pad_value=-1)
+        verts_uvs_padded = list_to_padded(verts_uvs_list)
+        tex = Textures(
+            maps=torch.ones((N, 16, 16, 3)),
+            faces_uvs=faces_uvs_padded,
+            verts_uvs=verts_uvs_padded,
+        )
+
+        # This is set inside Meshes when textures is passed as an input.
+        # Here we set _num_faces_per_mesh and _num_verts_per_mesh explicity.
+        tex1 = tex.clone()
+        tex1._num_faces_per_mesh = (
+            faces_uvs_padded.gt(-1).all(-1).sum(-1).tolist()
+        )
+        tex1._num_verts_per_mesh = torch.tensor([5, 4])
+        faces_packed = tex1.faces_uvs_packed()
+        verts_packed = tex1.verts_uvs_packed()
+        faces_list = tex1.faces_uvs_list()
+        verts_list = tex1.verts_uvs_list()
+
+        for f1, f2 in zip(faces_uvs_list, faces_list):
+            self.assertTrue((f1 == f2).all().item())
+
+        for f, v1, v2 in zip(faces_list, verts_list, verts_uvs_list):
+            idx = f.unique()
+            self.assertTrue((v1[idx] == v2).all().item())
+
+        self.assertTrue(faces_packed.shape == (3 + 2, 3))
+
+        # verts_packed is just flattened verts_padded.
+        # split sizes are not used for verts_uvs.
+        self.assertTrue(verts_packed.shape == (9 * 2, 2))
+
+        # Case where num_faces_per_mesh is not set
+        tex2 = tex.clone()
+        faces_packed = tex2.faces_uvs_packed()
+        verts_packed = tex2.verts_uvs_packed()
+        faces_list = tex2.faces_uvs_list()
+        verts_list = tex2.verts_uvs_list()
+
+        # Packed is just flattened padded as num_faces_per_mesh
+        # has not been provided.
+        self.assertTrue(verts_packed.shape == (9 * 2, 2))
+        self.assertTrue(faces_packed.shape == (3 * 2, 3))
+
+        for i in range(N):
+            self.assertTrue(
+                (faces_list[i] == faces_uvs_padded[i, ...].squeeze())
+                .all()
+                .item()
+            )
+
+        for i in range(N):
+            self.assertTrue(
+                (verts_list[i] == verts_uvs_padded[i, ...].squeeze())
+                .all()
+                .item()
+            )
+
     def test_clone(self):
         V = 20
         tex = Textures(
@@ -233,13 +336,17 @@ class TestTexturing(TestCaseMixin, unittest.TestCase):
         mesh = TestMeshes.init_mesh(B, 30, 50)
         V = mesh._V
         F = mesh._F
-        tex = Textures(
+
+        # 1. Texture uvs
+        tex_uv = Textures(
             maps=torch.randn((B, 16, 16, 3)),
             faces_uvs=torch.randint(size=(B, F, 3), low=0, high=V),
             verts_uvs=torch.randn((B, V, 2)),
         )
         tex_mesh = Meshes(
-            verts=mesh.verts_padded(), faces=mesh.faces_padded(), textures=tex
+            verts=mesh.verts_padded(),
+            faces=mesh.faces_padded(),
+            textures=tex_uv,
         )
         N = 20
         new_mesh = tex_mesh.extend(N)
@@ -269,5 +376,43 @@ class TestTexturing(TestCaseMixin, unittest.TestCase):
                 new_tex.maps_padded(),
             ]
         )
+
+        self.assertIsNone(new_tex.verts_rgb_list())
+        self.assertIsNone(new_tex.verts_rgb_padded())
+        self.assertIsNone(new_tex.verts_rgb_packed())
+
+        # 2. Texture vertex RGB
+        tex_rgb = Textures(verts_rgb=torch.randn((B, V, 3)))
+        tex_mesh_rgb = Meshes(
+            verts=mesh.verts_padded(),
+            faces=mesh.faces_padded(),
+            textures=tex_rgb,
+        )
+        N = 20
+        new_mesh_rgb = tex_mesh_rgb.extend(N)
+
+        self.assertEqual(len(tex_mesh_rgb) * N, len(new_mesh_rgb))
+
+        tex_init = tex_mesh_rgb.textures
+        new_tex = new_mesh_rgb.textures
+
+        for i in range(len(tex_mesh_rgb)):
+            for n in range(N):
+                self.assertClose(
+                    tex_init.verts_rgb_list()[i],
+                    new_tex.verts_rgb_list()[i * N + n],
+                )
+        self.assertAllSeparate(
+            [tex_init.verts_rgb_padded(), new_tex.verts_rgb_padded()]
+        )
+
+        self.assertIsNone(new_tex.verts_uvs_padded())
+        self.assertIsNone(new_tex.verts_uvs_list())
+        self.assertIsNone(new_tex.verts_uvs_packed())
+        self.assertIsNone(new_tex.faces_uvs_padded())
+        self.assertIsNone(new_tex.faces_uvs_list())
+        self.assertIsNone(new_tex.faces_uvs_packed())
+
+        # 3. Error
         with self.assertRaises(ValueError):
             tex_mesh.extend(N=-1)

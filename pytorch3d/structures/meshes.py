@@ -324,14 +324,14 @@ class Meshes(object):
             )
             if self._N > 0:
                 self.device = self._verts_list[0].device
-                num_verts_per_mesh = torch.tensor(
+                self._num_verts_per_mesh = torch.tensor(
                     [len(v) for v in self._verts_list], device=self.device
                 )
-                self._V = num_verts_per_mesh.max()
-                num_faces_per_mesh = torch.tensor(
+                self._V = self._num_verts_per_mesh.max()
+                self._num_faces_per_mesh = torch.tensor(
                     [len(f) for f in self._faces_list], device=self.device
                 )
-                self._F = num_faces_per_mesh.max()
+                self._F = self._num_faces_per_mesh.max()
                 self.valid = torch.tensor(
                     [
                         len(v) > 0 and len(f) > 0
@@ -341,8 +341,8 @@ class Meshes(object):
                     device=self.device,
                 )
 
-                if (len(num_verts_per_mesh.unique()) == 1) and (
-                    len(num_faces_per_mesh.unique()) == 1
+                if (len(self._num_verts_per_mesh.unique()) == 1) and (
+                    len(self._num_faces_per_mesh.unique()) == 1
                 ):
                     self.equisized = True
 
@@ -355,6 +355,7 @@ class Meshes(object):
             self._faces_padded = faces.to(torch.int64)
             self._N = self._verts_padded.shape[0]
             self._V = self._verts_padded.shape[1]
+
             self.device = self._verts_padded.device
             self.valid = torch.zeros(
                 (self._N,), dtype=torch.bool, device=self.device
@@ -363,23 +364,47 @@ class Meshes(object):
                 # Check that padded faces - which have value -1 - are at the
                 # end of the tensors
                 faces_not_padded = self._faces_padded.gt(-1).all(2)
-                num_faces = faces_not_padded.sum(1)
+                self._num_faces_per_mesh = faces_not_padded.sum(1)
                 if (faces_not_padded[:, :-1] < faces_not_padded[:, 1:]).any():
                     raise ValueError("Padding of faces must be at the end")
 
                 # NOTE that we don't check for the ordering of padded verts
                 # as long as the faces index correspond to the right vertices.
 
-                self.valid = num_faces > 0
-                self._F = num_faces.max()
-                if len(num_faces.unique()) == 1:
+                self.valid = self._num_faces_per_mesh > 0
+                self._F = self._num_faces_per_mesh.max()
+                if len(self._num_faces_per_mesh.unique()) == 1:
                     self.equisized = True
+
+                self._num_verts_per_mesh = torch.full(
+                    size=(self._N,),
+                    fill_value=self._V,
+                    dtype=torch.int64,
+                    device=self.device,
+                )
 
         else:
             raise ValueError(
                 "Verts and Faces must be either a list or a tensor with \
                     shape (batch_size, N, 3) where N is either the maximum \
                        number of verts or faces respectively."
+            )
+
+        if self.isempty():
+            self._num_verts_per_mesh = torch.zeros(
+                (0,), dtype=torch.int64, device=self.device
+            )
+            self._num_faces_per_mesh = torch.zeros(
+                (0,), dtype=torch.int64, device=self.device
+            )
+
+        # Set the num verts/faces on the textures if present.
+        if self.textures is not None:
+            self.textures._num_faces_per_mesh = (
+                self._num_faces_per_mesh.tolist()
+            )
+            self.textures._num_verts_per_mesh = (
+                self._num_verts_per_mesh.tolist()
             )
 
     def __len__(self):
@@ -893,11 +918,9 @@ class Meshes(object):
                     self._verts_packed,
                     self._verts_packed_to_mesh_idx,
                     self._mesh_to_verts_packed_first_idx,
-                    self._num_verts_per_mesh,
                     self._faces_packed,
                     self._faces_packed_to_mesh_idx,
                     self._mesh_to_faces_packed_first_idx,
-                    self._num_faces_per_mesh,
                 ]
             )
         ):
@@ -920,7 +943,6 @@ class Meshes(object):
             self._num_verts_per_mesh = torch.zeros(
                 (0,), dtype=torch.int64, device=self.device
             )
-
             self._faces_packed = -torch.ones(
                 (0, 3), dtype=torch.int64, device=self.device
             )
@@ -1354,6 +1376,7 @@ class Meshes(object):
         tex = None
         if self.textures is not None:
             tex = self.textures.extend(N)
+
         return Meshes(verts=new_verts_list, faces=new_faces_list, textures=tex)
 
 

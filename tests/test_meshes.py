@@ -135,15 +135,21 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
     def test_simple(self):
         mesh = TestMeshes.init_simple_mesh("cuda:0")
 
+        # Check that faces/verts per mesh are set in init:
+        self.assertClose(
+            mesh._num_faces_per_mesh.cpu(), torch.tensor([1, 2, 7])
+        )
+        self.assertClose(
+            mesh._num_verts_per_mesh.cpu(), torch.tensor([3, 4, 5])
+        )
+
+        # Check computed tensors
         self.assertClose(
             mesh.verts_packed_to_mesh_idx().cpu(),
             torch.tensor([0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2]),
         )
         self.assertClose(
             mesh.mesh_to_verts_packed_first_idx().cpu(), torch.tensor([0, 3, 7])
-        )
-        self.assertClose(
-            mesh.num_verts_per_mesh().cpu(), torch.tensor([3, 4, 5])
         )
         self.assertClose(
             mesh.verts_padded_to_packed_idx().cpu(),
@@ -155,9 +161,6 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
         )
         self.assertClose(
             mesh.mesh_to_faces_packed_first_idx().cpu(), torch.tensor([0, 1, 3])
-        )
-        self.assertClose(
-            mesh.num_faces_per_mesh().cpu(), torch.tensor([1, 2, 7])
         )
         self.assertClose(
             mesh.num_edges_per_mesh().cpu(),
@@ -249,6 +252,8 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
         self.assertEqual(mesh.faces_padded().shape[0], 0)
         self.assertEqual(mesh.verts_packed().shape[0], 0)
         self.assertEqual(mesh.faces_packed().shape[0], 0)
+        self.assertEqual(mesh.num_faces_per_mesh().shape[0], 0)
+        self.assertEqual(mesh.num_verts_per_mesh().shape[0], 0)
 
     def test_empty(self):
         N, V, F = 10, 100, 300
@@ -323,9 +328,11 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
 
         mesh = Meshes(verts=torch.stack(verts), faces=torch.stack(faces))
 
+        # Check verts/faces per mesh are set correctly in init.
         self.assertListEqual(
-            mesh.num_faces_per_mesh().tolist(), num_faces.tolist()
+            mesh._num_faces_per_mesh.tolist(), num_faces.tolist()
         )
+        self.assertListEqual(mesh._num_verts_per_mesh.tolist(), [V] * N)
 
         for n, (vv, ff) in enumerate(zip(mesh.verts_list(), mesh.faces_list())):
             self.assertClose(ff, faces[n][: num_faces[n]])
@@ -364,7 +371,6 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
             mesh._num_verts_per_mesh = torch.randint_like(
                 mesh.num_verts_per_mesh(), high=10
             )
-
             # Check cloned and original Meshes objects do not share tensors.
             self.assertFalse(
                 torch.allclose(new_mesh._verts_list[0], mesh._verts_list[0])

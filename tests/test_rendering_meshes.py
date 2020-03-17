@@ -34,7 +34,7 @@ from pytorch3d.renderer.mesh.texturing import Textures
 from pytorch3d.structures.meshes import Meshes
 from pytorch3d.utils.ico_sphere import ico_sphere
 
-# Save out images generated in the tests for debugging
+# If DEBUG=True, save out images generated in the tests for debugging.
 # All saved images have prefix DEBUG_
 DEBUG = False
 DATA_DIR = Path(__file__).resolve().parent / "data"
@@ -90,30 +90,31 @@ class TestRenderingMeshes(unittest.TestCase):
         raster_settings = RasterizationSettings(
             image_size=512, blur_radius=0.0, faces_per_pixel=1, bin_size=0
         )
-
-        # Init renderer
         rasterizer = MeshRasterizer(
             cameras=cameras, raster_settings=raster_settings
         )
-        renderer = MeshRenderer(
-            rasterizer=rasterizer,
-            shader=HardPhongShader(
-                lights=lights, cameras=cameras, materials=materials
-            ),
-        )
-        images = renderer(sphere_mesh)
-        rgb = images[0, ..., :3].squeeze().cpu()
-        if DEBUG:
-            filename = "DEBUG_simple_sphere_light%s.png" % postfix
-            Image.fromarray((rgb.numpy() * 255).astype(np.uint8)).save(
-                DATA_DIR / filename
-            )
 
-        # Load reference image
-        image_ref_phong = load_rgb_image(
-            "test_simple_sphere_light%s.png" % postfix
-        )
-        self.assertTrue(torch.allclose(rgb, image_ref_phong, atol=0.05))
+        # Test several shaders
+        shaders = {
+            "phong": HardPhongShader,
+            "gouraud": HardGouraudShader,
+            "flat": HardFlatShader,
+        }
+        for (name, shader_init) in shaders.items():
+            shader = shader_init(
+                lights=lights, cameras=cameras, materials=materials
+            )
+            renderer = MeshRenderer(rasterizer=rasterizer, shader=shader)
+            images = renderer(sphere_mesh)
+            filename = "simple_sphere_light_%s%s.png" % (name, postfix)
+            image_ref = load_rgb_image("test_%s" % filename)
+            rgb = images[0, ..., :3].squeeze().cpu()
+            if DEBUG:
+                filename = "DEBUG_" % filename
+                Image.fromarray((rgb.numpy() * 255).astype(np.uint8)).save(
+                    DATA_DIR / filename
+                )
+            self.assertTrue(torch.allclose(rgb, image_ref, atol=0.05))
 
         ########################################################
         # Move the light to the +z axis in world space so it is
@@ -121,7 +122,13 @@ class TestRenderingMeshes(unittest.TestCase):
         # +X left for both world and camera space.
         ########################################################
         lights.location[..., 2] = -2.0
-        images = renderer(sphere_mesh, lights=lights)
+        phong_shader = HardPhongShader(
+            lights=lights, cameras=cameras, materials=materials
+        )
+        phong_renderer = MeshRenderer(
+            rasterizer=rasterizer, shader=phong_shader
+        )
+        images = phong_renderer(sphere_mesh, lights=lights)
         rgb = images[0, ..., :3].squeeze().cpu()
         if DEBUG:
             filename = "DEBUG_simple_sphere_dark%s.png" % postfix
@@ -135,53 +142,6 @@ class TestRenderingMeshes(unittest.TestCase):
         )
         self.assertTrue(torch.allclose(rgb, image_ref_phong_dark, atol=0.05))
 
-        ######################################
-        # Change the shader to a GouraudShader
-        ######################################
-        lights.location = torch.tensor([0.0, 0.0, +2.0], device=device)[None]
-        renderer = MeshRenderer(
-            rasterizer=rasterizer,
-            shader=HardGouraudShader(
-                lights=lights, cameras=cameras, materials=materials
-            ),
-        )
-        images = renderer(sphere_mesh)
-        rgb = images[0, ..., :3].squeeze().cpu()
-        if DEBUG:
-            filename = "DEBUG_simple_sphere_light_gouraud%s.png" % postfix
-            Image.fromarray((rgb.numpy() * 255).astype(np.uint8)).save(
-                DATA_DIR / filename
-            )
-
-        # Load reference image
-        image_ref_gouraud = load_rgb_image(
-            "test_simple_sphere_light_gouraud%s.png" % postfix
-        )
-        self.assertTrue(torch.allclose(rgb, image_ref_gouraud, atol=0.005))
-
-        ######################################
-        # Change the shader to a HardFlatShader
-        ######################################
-        renderer = MeshRenderer(
-            rasterizer=rasterizer,
-            shader=HardFlatShader(
-                lights=lights, cameras=cameras, materials=materials
-            ),
-        )
-        images = renderer(sphere_mesh)
-        rgb = images[0, ..., :3].squeeze().cpu()
-        if DEBUG:
-            filename = "DEBUG_simple_sphere_light_flat%s.png" % postfix
-            Image.fromarray((rgb.numpy() * 255).astype(np.uint8)).save(
-                DATA_DIR / filename
-            )
-
-        # Load reference image
-        image_ref_flat = load_rgb_image(
-            "test_simple_sphere_light_flat%s.png" % postfix
-        )
-        self.assertTrue(torch.allclose(rgb, image_ref_flat, atol=0.005))
-
     def test_simple_sphere_elevated_camera(self):
         """
         Test output of phong and gouraud shading matches a reference image using
@@ -193,13 +153,13 @@ class TestRenderingMeshes(unittest.TestCase):
 
     def test_simple_sphere_batched(self):
         """
-        Test output of phong shading matches a reference image using
-        the default values for the light sources.
+        Test a mesh with vertex textures can be extended to form a batch, and
+        is rendered correctly with Phong, Gouraud and Flat Shaders.
         """
-        batch_size = 5
+        batch_size = 20
         device = torch.device("cuda:0")
 
-        # Init mesh
+        # Init mesh with vertex textures.
         sphere_meshes = ico_sphere(5, device).extend(batch_size)
         verts_padded = sphere_meshes.verts_padded()
         faces_padded = sphere_meshes.faces_padded()
@@ -224,26 +184,24 @@ class TestRenderingMeshes(unittest.TestCase):
         lights.location = torch.tensor([0.0, 0.0, +2.0], device=device)[None]
 
         # Init renderer
-        renderer = MeshRenderer(
-            rasterizer=MeshRasterizer(
-                cameras=cameras, raster_settings=raster_settings
-            ),
-            shader=HardPhongShader(
-                lights=lights, cameras=cameras, materials=materials
-            ),
+        rasterizer = MeshRasterizer(
+            cameras=cameras, raster_settings=raster_settings
         )
-        images = renderer(sphere_meshes)
-
-        # Load ref image
-        image_ref = load_rgb_image("test_simple_sphere_light.png")
-
-        for i in range(batch_size):
-            rgb = images[i, ..., :3].squeeze().cpu()
-            if DEBUG:
-                Image.fromarray((rgb.numpy() * 255).astype(np.uint8)).save(
-                    DATA_DIR / f"DEBUG_simple_sphere_{i}.png"
-                )
-            self.assertTrue(torch.allclose(rgb, image_ref, atol=0.05))
+        shaders = {
+            "phong": HardGouraudShader,
+            "gouraud": HardGouraudShader,
+            "flat": HardFlatShader,
+        }
+        for (name, shader_init) in shaders.items():
+            shader = shader_init(
+                lights=lights, cameras=cameras, materials=materials
+            )
+            renderer = MeshRenderer(rasterizer=rasterizer, shader=shader)
+            images = renderer(sphere_meshes)
+            image_ref = load_rgb_image("test_simple_sphere_light_%s.png" % name)
+            for i in range(batch_size):
+                rgb = images[i, ..., :3].squeeze().cpu()
+                self.assertTrue(torch.allclose(rgb, image_ref, atol=0.05))
 
     def test_silhouette_with_grad(self):
         """

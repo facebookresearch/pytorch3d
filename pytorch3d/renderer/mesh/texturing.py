@@ -107,7 +107,9 @@ def interpolate_vertex_colors(fragments, meshes) -> torch.Tensor:
         There will be one C dimensional value for each element in
         fragments.pix_to_face.
     """
-    vertex_textures = meshes.textures.verts_rgb_padded().view(-1, 3)  # (V, C)
+    vertex_textures = meshes.textures.verts_rgb_padded().reshape(
+        -1, 3
+    )  # (V, C)
     vertex_textures = vertex_textures[meshes.verts_padded_to_packed_idx(), :]
     faces_packed = meshes.faces_packed()
     faces_textures = vertex_textures[faces_packed]  # (F, 3, C)

@@ -4,7 +4,7 @@ from typing import List, Optional, Union
 import torch
 import torchvision.transforms as T
 
-from .utils import list_to_packed, padded_to_list
+from .utils import padded_to_list, padded_to_packed
 
 
 """
@@ -92,14 +92,19 @@ class Textures(object):
             faces_uvs: (N, F, 3) tensor giving the index into verts_uvs for each
                 vertex in the face. Padding value is assumed to be -1.
             verts_uvs: (N, V, 2) tensor giving the uv coordinate per vertex.
-            verts_rgb: (N, V, 3) tensor giving the rgb color per vertex.
+            verts_rgb: (N, V, 3) tensor giving the rgb color per vertex. Padding
+                value is assumed to be -1.
+
+        Note: only the padded representation of the textures is stored
+        and the packed/list representations are computed on the fly and
+        not cached.
         """
         if faces_uvs is not None and faces_uvs.ndim != 3:
             msg = "Expected faces_uvs to be of shape (N, F, 3); got %r"
             raise ValueError(msg % repr(faces_uvs.shape))
         if verts_uvs is not None and verts_uvs.ndim != 3:
             msg = "Expected verts_uvs to be of shape (N, V, 2); got %r"
-            raise ValueError(msg % repr(faces_uvs.shape))
+            raise ValueError(msg % repr(verts_uvs.shape))
         if verts_rgb is not None and verts_rgb.ndim != 3:
             msg = "Expected verts_rgb to be of shape (N, V, 3); got %r"
             raise ValueError(msg % repr(verts_rgb.shape))
@@ -109,20 +114,20 @@ class Textures(object):
                 raise ValueError(msg % repr(maps.shape))
             elif isinstance(maps, list):
                 maps = _pad_texture_maps(maps)
+            if faces_uvs is None or verts_uvs is None:
+                msg = "To use maps, faces_uvs and verts_uvs are required"
+                raise ValueError(msg)
+
         self._faces_uvs_padded = faces_uvs
         self._verts_uvs_padded = verts_uvs
         self._verts_rgb_padded = verts_rgb
         self._maps_padded = maps
-        self._num_faces_per_mesh = None
-        self._set_num_faces_per_mesh()
 
-    def _set_num_faces_per_mesh(self) -> None:
-        """
-        Determines and sets the number of textured faces for each mesh.
-        """
-        if self._faces_uvs_padded is not None:
-            faces_uvs = self._faces_uvs_padded
-            self._num_faces_per_mesh = faces_uvs.gt(-1).all(-1).sum(-1).tolist()
+        # The number of faces/verts for each mesh is
+        # set inside the Meshes object when textures is
+        # passed into the Meshes constructor.
+        self._num_faces_per_mesh = None
+        self._num_verts_per_mesh = None
 
     def clone(self):
         other = Textures()
@@ -148,41 +153,67 @@ class Textures(object):
                     setattr(other, key, value[index][None])
                 else:
                     setattr(other, key, value[index])
-        other._set_num_faces_per_mesh()
         return other
 
     def faces_uvs_padded(self) -> torch.Tensor:
         return self._faces_uvs_padded
 
-    def faces_uvs_list(self) -> List[torch.Tensor]:
-        if self._faces_uvs_padded is not None:
-            return padded_to_list(
-                self._faces_uvs_padded, split_size=self._num_faces_per_mesh
-            )
+    def faces_uvs_list(self) -> Union[List[torch.Tensor], None]:
+        if self._faces_uvs_padded is None:
+            return None
+        return padded_to_list(
+            self._faces_uvs_padded, split_size=self._num_faces_per_mesh
+        )
 
-    def faces_uvs_packed(self) -> torch.Tensor:
-        return list_to_packed(self.faces_uvs_list())[0]
+    def faces_uvs_packed(self) -> Union[torch.Tensor, None]:
+        if self._faces_uvs_padded is None:
+            return None
+        return padded_to_packed(
+            self._faces_uvs_padded, split_size=self._num_faces_per_mesh
+        )
 
-    def verts_uvs_padded(self) -> torch.Tensor:
+    def verts_uvs_padded(self) -> Union[torch.Tensor, None]:
         return self._verts_uvs_padded
 
-    def verts_uvs_list(self) -> List[torch.Tensor]:
+    def verts_uvs_list(self) -> Union[List[torch.Tensor], None]:
+        if self._verts_uvs_padded is None:
+            return None
+        # Vertices shared between multiple faces
+        # may have a different uv coordinate for
+        # each face so the num_verts_uvs_per_mesh
+        # may be different from num_verts_per_mesh.
+        # Therefore don't use any split_size.
         return padded_to_list(self._verts_uvs_padded)
 
-    def verts_uvs_packed(self) -> torch.Tensor:
-        return list_to_packed(self.verts_uvs_list())[0]
+    def verts_uvs_packed(self) -> Union[torch.Tensor, None]:
+        if self._verts_uvs_padded is None:
+            return None
+        # Vertices shared between multiple faces
+        # may have a different uv coordinate for
+        # each face so the num_verts_uvs_per_mesh
+        # may be different from num_verts_per_mesh.
+        # Therefore don't use any split_size.
+        return padded_to_packed(self._verts_uvs_padded)
 
-    def verts_rgb_padded(self) -> torch.Tensor:
+    def verts_rgb_padded(self) -> Union[torch.Tensor, None]:
         return self._verts_rgb_padded
 
-    def verts_rgb_list(self) -> List[torch.Tensor]:
-        return padded_to_list(self._verts_rgb_padded)
+    def verts_rgb_list(self) -> Union[List[torch.Tensor], None]:
+        if self._verts_rgb_padded is None:
+            return None
+        return padded_to_list(
+            self._verts_rgb_padded, split_size=self._num_verts_per_mesh
+        )
 
-    def verts_rgb_packed(self) -> torch.Tensor:
-        return list_to_packed(self.verts_rgb_list())[0]
+    def verts_rgb_packed(self) -> Union[torch.Tensor, None]:
+        if self._verts_rgb_padded is None:
+            return None
+        return padded_to_packed(
+            self._verts_rgb_padded, split_size=self._num_verts_per_mesh
+        )
 
     # Currently only the padded maps are used.
-    def maps_padded(self) -> torch.Tensor:
+    def maps_padded(self) -> Union[torch.Tensor, None]:
         return self._maps_padded
 
     def extend(self, N: int) -> "Textures":
