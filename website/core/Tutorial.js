@@ -45,32 +45,40 @@ class Tutorial extends React.Component {
         <TutorialSidebar currentTutorialID={tutorialID} />
         <Container className="mainContainer">
           <div className="tutorialButtonsWrapper">
-              <div className="colabButtonWrapper">
-                <a
-    href={`https://colab.research.google.com/github/facebookresearch/pytorch3d/blob/master/docs/tutorials/${tutorialID}.ipynb`}>
-                  <img align="left" src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
-                </a>
-              </div>
-              <div className="tutorialButtonWrapper buttonWrapper">
-                <a
-                  className="tutorialButton button"
-                  download
-                  href={`${baseUrl}files/${tutorialID}.ipynb`}
-                  target="_blank">
-                  {renderDownloadIcon()}
-                  {'Download Tutorial Jupyter Notebook'}
-                </a>
-              </div>
-              <div className="tutorialButtonWrapper buttonWrapper">
-                <a
-                  className="tutorialButton button"
-                  download
-                  href={`${baseUrl}files/${tutorialID}.py`}
-                  target="_blank">
-                  {renderDownloadIcon()}
-                  {'Download Tutorial Source Code'}
-                </a>
-              </div>
+            <div className="tutorialButtonWrapper buttonWrapper">
+              <a
+                className="tutorialButton button"
+                download
+                href={`https://colab.research.google.com/github/facebookresearch/pytorch3d/blob/stable/docs/tutorials/${tutorialID}.ipynb`}
+                target="_blank">
+                <img
+                  className="colabButton"
+                  align="left"
+                  src={`${baseUrl}img/colab_icon.png`}
+                />
+                {'Run in Google Colab'}
+              </a>
+            </div>
+            <div className="tutorialButtonWrapper buttonWrapper">
+              <a
+                className="tutorialButton button"
+                download
+                href={`${baseUrl}files/${tutorialID}.ipynb`}
+                target="_blank">
+                {renderDownloadIcon()}
+                {'Download Tutorial Jupyter Notebook'}
+              </a>
+            </div>
+            <div className="tutorialButtonWrapper buttonWrapper">
+              <a
+                className="tutorialButton button"
+                download
+                href={`${baseUrl}files/${tutorialID}.py`}
+                target="_blank">
+                {renderDownloadIcon()}
+                {'Download Tutorial Source Code'}
+              </a>
+            </div>
           </div>
           <div
             className="tutorialBody"

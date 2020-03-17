@@ -267,9 +267,14 @@ p a:hover {
  padding-right: 0.25em;
 }
 
+.colabButton {
+  width: 24px;
+}
+
 .tutorialButtonsWrapper {
  display: flex;
  align-items: center;
+ padding-bottom: 15px;
 }
 
 /* .tutorialButton {
