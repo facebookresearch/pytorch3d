@@ -330,7 +330,7 @@ class HardFlatShader(nn.Module):
 class SoftSilhouetteShader(nn.Module):
     """
     Calculate the silhouette by blending the top K faces for each pixel based
-    on the 2d euclidean distance of the centre of the pixel to the mesh face.
+    on the 2d euclidean distance of the center of the pixel to the mesh face.
 
     Use this shader for generating silhouettes similar to SoftRasterizer [0].
 

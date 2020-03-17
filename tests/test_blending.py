@@ -272,7 +272,7 @@ class TestBlending(unittest.TestCase):
         )
 
     def test_softmax_rgb_blend(self):
-        # Create dummy outputs of rasterization simulating a cube in the centre
+        # Create dummy outputs of rasterization simulating a cube in the center
         # of the image with surrounding padded values.
         N, S, K = 1, 8, 2
         device = torch.device("cuda")
@@ -421,7 +421,7 @@ class TestBlending(unittest.TestCase):
         return fn
 
     def test_blend_params(self):
-        """Test colour parameter of BlendParams().
+        """Test color parameter of BlendParams().
             Assert passed value overrides default value.
             """
         bp_default = BlendParams()
