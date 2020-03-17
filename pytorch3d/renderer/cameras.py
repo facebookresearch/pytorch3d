@@ -342,7 +342,7 @@ class OpenGLOrthographicCameras(TensorProperties):
         )
         ones = torch.ones((self._N), dtype=torch.float32, device=self.device)
         # NOTE: OpenGL flips handedness of coordinate system between camera
-        # space and NDC space so z sign is -ve. In PyTorch3d we maintain a
+        # space and NDC space so z sign is -ve. In PyTorch3D we maintain a
         # right handed coordinate system throughout.
         z_sign = +1.0
 

@@ -8,7 +8,7 @@ We actively welcome your pull requests.
 However, if you're adding any significant features, please make sure to have a corresponding issue to outline your proposal and motivation and allow time for us to give feedback, *before* you send a PR.
 We do not always accept new features, and we take the following factors into consideration:
 
-- Whether the same feature can be achieved without modifying PyTorch3d directly. If any aspect of the API is not extensible, please highlight this in an issue so we can work on making this more extensible.
+- Whether the same feature can be achieved without modifying PyTorch3D directly. If any aspect of the API is not extensible, please highlight this in an issue so we can work on making this more extensible.
 - Whether the feature is potentially useful to a large audience, or only to a small portion of users.
 - Whether the proposed solution has a good design and interface.
 - Whether the proposed solution adds extra mental/practical overhead to users who don't need such feature.

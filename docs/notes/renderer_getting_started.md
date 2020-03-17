@@ -34,7 +34,7 @@ The differentiable renderer API is experimental and subject to change!.
 
 ### Coordinate transformation conventions
 
-Rendering requires transformations between several different coordinate frames: world space, view/camera space, NDC space and screen space. At each step it is important to know where the camera is located, how the +X, +Y, +Z axes are aligned and the possible range of values. The following figure outlines the conventions used PyTorch3d.
+Rendering requires transformations between several different coordinate frames: world space, view/camera space, NDC space and screen space. At each step it is important to know where the camera is located, how the +X, +Y, +Z axes are aligned and the possible range of values. The following figure outlines the conventions used PyTorch3D.
 
 <img src="assets/transformations_overview.png" width="1000">
 
@@ -45,18 +45,18 @@ For example, given a teapot mesh, the world coordinate frame, camera coordiante 
 
 ---
 
-**NOTE: PyTorch3d vs OpenGL**
+**NOTE: PyTorch3D vs OpenGL**
 
 While we tried to emulate several aspects of OpenGL, there are differences in the coordinate frame conventions. 
 - The default world coordinate frame in PyTorch3D has +Z pointing in to the screen whereas in OpenGL, +Z is pointing out of the screen.  Both are right handed. 
-- The NDC coordinate system in PyTorch3d is **right-handed** compared with a **left-handed** NDC coordinate system in OpenGL (the projection matrix switches the handedness).
+- The NDC coordinate system in PyTorch3D is **right-handed** compared with a **left-handed** NDC coordinate system in OpenGL (the projection matrix switches the handedness).
 
 <img align="center" src="assets/opengl_coordframes.png" width="300">
 
 ---
 ### A simple renderer
 
-A renderer in PyTorch3d is composed of a **rasterizer** and a **shader**. Create a renderer in a few simple steps:
+A renderer in PyTorch3D is composed of a **rasterizer** and a **shader**. Create a renderer in a few simple steps:
 
 ```
 # Imports

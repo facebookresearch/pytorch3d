@@ -1,6 +1,6 @@
 ---
 name: "🐛 Bugs / Unexpected behaviors"
-about: Please report unexpected behaviors or bugs in PyTorch3d.
+about: Please report unexpected behaviors or bugs in PyTorch3D.
 
 ---
 

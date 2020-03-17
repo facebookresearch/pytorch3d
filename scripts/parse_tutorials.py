@@ -36,7 +36,7 @@ JS_SCRIPTS = """
 
 
 def gen_tutorials(repo_dir: str) -> None:
-    """Generate HTML tutorials for PyTorch3d Docusaurus site from Jupyter notebooks.
+    """Generate HTML tutorials for PyTorch3D Docusaurus site from Jupyter notebooks.
 
     Also create ipynb and py versions of tutorial in Docusaurus site for
     download.

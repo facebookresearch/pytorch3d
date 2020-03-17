@@ -1,6 +1,6 @@
 ---
 name: "\U0001F680 Feature Request"
-about: Submit a proposal/request for a new PyTorch3d feature
+about: Submit a proposal/request for a new PyTorch3D feature
 
 ---
 

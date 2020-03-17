@@ -31,7 +31,7 @@ done
 
 
 echo "-----------------------------------"
-echo "Building PyTorch3d Docusaurus site"
+echo "Building PyTorch3D Docusaurus site"
 echo "-----------------------------------"
 cd website || exit
 yarn

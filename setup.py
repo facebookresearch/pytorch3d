@@ -76,7 +76,7 @@ setup(
     version=__version__,
     author="FAIR",
     url="https://github.com/facebookresearch/pytorch3d",
-    description="PyTorch3d is FAIR's library of reusable components "
+    description="PyTorch3D is FAIR's library of reusable components "
     "for deep Learning with 3D data.",
     packages=find_packages(exclude=("configs", "tests")),
     install_requires=["torchvision>=0.4", "fvcore"],
