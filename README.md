@@ -55,7 +55,7 @@ We also have deep dive notes on several API components:
 
 ## Development
 
-We welcome new contributions to Pytorch3d and we will be actively maintaining this library! Please refer to [CONTRIBUTING.md](./.github/CONTRIBUTING.md) for full instructions on how to run the code, tests and linter, and submit your pull requests.
+We welcome new contributions to PyTorch3D and we will be actively maintaining this library! Please refer to [CONTRIBUTING.md](./.github/CONTRIBUTING.md) for full instructions on how to run the code, tests and linter, and submit your pull requests.
 
 
 ## Contributors

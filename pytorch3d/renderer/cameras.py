@@ -879,7 +879,7 @@ def get_world_to_view_transform(R=r, T=t) -> Transform3d:
     matrix to go from world space to view space by applying a rotation and
     a translation.
 
-    Pytorch3d uses the same convention as Hartley & Zisserman.
+    PyTorch3D uses the same convention as Hartley & Zisserman.
     I.e., for camera extrinsic parameters R (rotation) and T (translation),
     we map a 3D point `X_world` in world coordinates to
     a point `X_cam` in camera coordinates with:

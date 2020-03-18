@@ -45,7 +45,7 @@ pip install scikit-image matplotlib imageio
 pip install black isort flake8 flake8-bugbear flake8-comprehensions
 ```
 
-## Installing prebuilt binaries for Pytorch3d
+## Installing prebuilt binaries for PyTorch3D
 After installing the above dependencies, run one of the following commands:
 
 ### 1. Install with CUDA support from Anaconda Cloud, on Linux only
