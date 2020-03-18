@@ -38,6 +38,7 @@ from pytorch3d.renderer.cameras import (
     camera_position_from_spherical_angles,
     get_world_to_view_transform,
     look_at_rotation,
+    look_at_view_transform,
 )
 from pytorch3d.transforms import Transform3d
 from pytorch3d.transforms.so3 import so3_exponential_map
@@ -115,6 +116,35 @@ class TestCameraHelpers(unittest.TestCase):
         super().setUp()
         torch.manual_seed(42)
         np.random.seed(42)
+
+    def test_look_at_view_transform_from_eye_point_tuple(self):
+        dist = math.sqrt(2)
+        elev = math.pi / 4
+        azim = 0.0
+        eye = ((0.0, 1.0, 1.0), )
+        # using passed values for dist, elev, azim
+        R, t = look_at_view_transform(dist, elev, azim, degrees=False)
+        # using other values for dist, elev, azim - eye overrides
+        R_eye, t_eye = look_at_view_transform(dist=3, elev=2, azim=1, eye=eye)
+        # using only eye value
+
+        R_eye_only, t_eye_only = look_at_view_transform(eye=eye)
+        self.assertTrue(torch.allclose(R, R_eye, atol=2e-7))
+        self.assertTrue(torch.allclose(t, t_eye, atol=2e-7))
+        self.assertTrue(torch.allclose(R, R_eye_only, atol=2e-7))
+        self.assertTrue(torch.allclose(t, t_eye_only, atol=2e-7))
+
+    def test_look_at_view_transform_default_values(self):
+        dist = 1.0
+        elev = 0.0
+        azim = 0.0
+        # Using passed values for dist, elev, azim
+        R, t = look_at_view_transform(dist, elev, azim)
+        # Using default dist=1.0, elev=0.0, azim=0.0
+        R_default, t_default = look_at_view_transform()
+        # test default = passed = expected
+        self.assertTrue(torch.allclose(R, R_default, atol=2e-7))
+        self.assertTrue(torch.allclose(t, t_default, atol=2e-7))
 
     def test_camera_position_from_angles_python_scalar(self):
         dist = 2.7
