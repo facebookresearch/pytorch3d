@@ -34,6 +34,14 @@ from .mesh import (
     phong_shading,
     rasterize_meshes,
 )
+from .points import (
+    AlphaCompositor,
+    NormWeightedCompositor,
+    PointsRasterizationSettings,
+    PointsRasterizer,
+    PointsRenderer,
+    rasterize_points,
+)
 from .utils import TensorProperties, convert_to_tensors_and_broadcast
 
 __all__ = [k for k in globals().keys() if not k.startswith("_")]

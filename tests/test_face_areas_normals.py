@@ -76,7 +76,10 @@ class TestFaceAreasNormals(TestCaseMixin, unittest.TestCase):
         verts_torch = verts.detach().clone().to(dtype)
         verts_torch.requires_grad = True
         faces_torch = faces.detach().clone()
-        areas_torch, normals_torch = TestFaceAreasNormals.face_areas_normals_python(
+        (
+            areas_torch,
+            normals_torch,
+        ) = TestFaceAreasNormals.face_areas_normals_python(
             verts_torch, faces_torch
         )
         self.assertClose(areas_torch, areas, atol=1e-7)

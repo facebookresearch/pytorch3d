@@ -1,6 +1,7 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
 from .meshes import Meshes, join_meshes
+from .pointclouds import Pointclouds
 from .textures import Textures
 from .utils import (
     list_to_packed,

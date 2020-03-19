@@ -1,6 +1,9 @@
 // Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
 #include <torch/extension.h>
+#include "compositing/alpha_composite.h"
+#include "compositing/norm_weighted_sum.h"
+#include "compositing/weighted_sum.h"
 #include "face_areas_normals/face_areas_normals.h"
 #include "gather_scatter/gather_scatter.h"
 #include "nearest_neighbor_points/nearest_neighbor_points.h"
@@ -19,6 +22,14 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
   m.def("rasterize_points_backward", &RasterizePointsBackward);
   m.def("rasterize_meshes_backward", &RasterizeMeshesBackward);
   m.def("rasterize_meshes", &RasterizeMeshes);
+
+  // Accumulation functions
+  m.def("accum_weightedsumnorm", &weightedSumNormForward);
+  m.def("accum_weightedsum", &weightedSumForward);
+  m.def("accum_alphacomposite", &alphaCompositeForward);
+  m.def("accum_weightedsumnorm_backward", &weightedSumNormBackward);
+  m.def("accum_weightedsum_backward", &weightedSumBackward);
+  m.def("accum_alphacomposite_backward", &alphaCompositeBackward);
 
   // These are only visible for testing; users should not call them directly
   m.def("_rasterize_points_coarse", &RasterizePointsCoarse);
