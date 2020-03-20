@@ -41,6 +41,8 @@ def sample_points_from_meshes(
         raise ValueError("Meshes are empty.")
 
     verts = meshes.verts_packed()
+    if not torch.isfinite(verts).all():
+        raise ValueError("Meshes contain nan or inf.")
     faces = meshes.faces_packed()
     mesh_to_face = meshes.mesh_to_faces_packed_first_idx()
     num_meshes = len(meshes)

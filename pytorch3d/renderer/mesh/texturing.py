@@ -53,7 +53,7 @@ def interpolate_texture_map(fragments, meshes) -> torch.Tensor:
     N, H_in, W_in, C = texture_maps.shape  # 3 for RGB
 
     # pixel_uvs: (N, H, W, K, 2) -> (N, K, H, W, 2) -> (NK, H, W, 2)
-    pixel_uvs = pixel_uvs.permute(0, 3, 1, 2, 4).view(N * K, H_out, W_out, 2)
+    pixel_uvs = pixel_uvs.permute(0, 3, 1, 2, 4).reshape(N * K, H_out, W_out, 2)
 
     # textures.map:
     #   (N, H, W, C) -> (N, C, H, W) -> (1, N, C, H, W)
@@ -81,7 +81,7 @@ def interpolate_texture_map(fragments, meshes) -> torch.Tensor:
     if texture_maps.device != pixel_uvs.device:
         texture_maps = texture_maps.to(pixel_uvs.device)
     texels = F.grid_sample(texture_maps, pixel_uvs, align_corners=False)
-    texels = texels.view(N, K, C, H_out, W_out).permute(0, 3, 4, 1, 2)
+    texels = texels.reshape(N, K, C, H_out, W_out).permute(0, 3, 4, 1, 2)
     return texels
 
 

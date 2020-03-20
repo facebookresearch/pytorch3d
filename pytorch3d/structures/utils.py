@@ -191,7 +191,7 @@ def padded_to_packed(
             "Only one of split_size or pad_value should be provided."
         )
 
-    x_packed = x.view(-1, D)  # flatten padded
+    x_packed = x.reshape(-1, D)  # flatten padded
 
     if pad_value is None and split_size is None:
         return x_packed
