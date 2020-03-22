@@ -1013,11 +1013,11 @@ def look_at_view_transform(
     Args:
         dist: distance of the camera from the object
         elev: angle in degres or radians. This is the angle between the
-            vector from the object to the camera, and the horizonal plane.
+            vector from the object to the camera, and the horizontal plane y = 0 (xz-plane).
         azim: angle in degrees or radians. The vector from the object to
-            the camera is projected onto a horizontal plane y = z = 0.
+            the camera is projected onto a horizontal plane y = 0.
             azim is the angle between the projected vector and a
-            reference vector at (1, 0, 0) on the reference plane.
+            reference vector at (1, 0, 0) on the reference plane (the horizontal plane).
         dist, elem and azim can be of shape (1), (N).
         degrees: boolean flag to indicate if the elevation and azimuth
             angles are specified in degrees or radians.
