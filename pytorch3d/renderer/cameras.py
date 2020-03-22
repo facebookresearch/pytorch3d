@@ -2,7 +2,7 @@
 
 import math
 import numpy as np
-from typing import Tuple, Optional, Sequence
+from typing import Optional, Sequence, Tuple
 import torch
 import torch.nn.functional as F
 
@@ -1039,15 +1039,18 @@ def look_at_view_transform(
 
     if eye is not None:
         broadcasted_args = convert_to_tensors_and_broadcast(
-            eye, at, up, device=device)
+            eye, at, up, device=device
+        )
         eye, at, up = broadcasted_args
         C = eye
     else:
         broadcasted_args = convert_to_tensors_and_broadcast(
-            dist, elev, azim, at, up, device=device)
+            dist, elev, azim, at, up, device=device
+        )
         dist, elev, azim, at, up = broadcasted_args
         C = camera_position_from_spherical_angles(
-            dist, elev, azim, degrees=degrees, device=device)
+            dist, elev, azim, degrees=degrees, device=device
+        )
 
     R = look_at_rotation(C, at, up, device=device)
     T = -torch.bmm(R.transpose(1, 2), C[:, :, None])[:, :, 0]

@@ -291,7 +291,7 @@ class TestSamplePoints(unittest.TestCase):
             if sampled_weights.min() <= 0:
                 return False
         return True
-    
+
     def test_verts_nan(self):
         num_verts = 30
         num_faces = 50
@@ -300,14 +300,19 @@ class TestSamplePoints(unittest.TestCase):
                 verts = torch.rand(
                     (num_verts, 3), dtype=torch.float32, device=device
                 )
-                # randomly assign an invalid type 
+                # randomly assign an invalid type
                 verts[torch.randperm(num_verts)[:10]] = float(invalid)
                 faces = torch.randint(
-                    num_verts, size=(num_faces, 3), dtype=torch.int64, device=device
+                    num_verts,
+                    size=(num_faces, 3),
+                    dtype=torch.int64,
+                    device=device,
                 )
                 meshes = Meshes(verts=[verts], faces=[faces])
 
-                with self.assertRaisesRegex(ValueError, "Meshes contain nan or inf."):
+                with self.assertRaisesRegex(
+                    ValueError, "Meshes contain nan or inf."
+                ):
                     sample_points_from_meshes(
                         meshes, num_samples=100, return_normals=True
                     )

@@ -188,7 +188,7 @@ class TestAccumulatePoints(unittest.TestCase):
     ):
         res1 = fn1(*args1)
         res2 = fn2(*args2)
-           
+
         self.assertTrue(torch.allclose(res1.cpu(), res2.cpu(), atol=1e-6))
 
         if not compare_grads:
