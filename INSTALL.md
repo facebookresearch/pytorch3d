@@ -17,7 +17,7 @@ The core library is written in PyTorch. Several components have underlying imple
 
 These can be installed by running:
 ```
-conda create -n pytorch3d python=3.6
+conda create -n pytorch3d python=3.8
 conda activate pytorch3d
 conda install -c pytorch pytorch torchvision cudatoolkit=10.0
 conda install -c conda-forge -c fvcore fvcore
