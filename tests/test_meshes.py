@@ -898,7 +898,7 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
 
         face_areas = mesh.faces_areas_packed()
         expected_areas = torch.tensor([0.125, 0.2])
-        self.assertTrue(torch.allclose(face_areas, expected_areas))
+        self.assertClose(face_areas, expected_areas)
 
     def test_compute_normals(self):
 
@@ -959,9 +959,9 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
         # Multiple meshes in the batch with equal sized meshes
         meshes_extended = mesh.extend(3)
         for m in meshes_extended.verts_normals_list():
-            self.assertTrue(torch.allclose(m, verts_normals_expected))
+            self.assertClose(m, verts_normals_expected)
         for f in meshes_extended.faces_normals_list():
-            self.assertTrue(torch.allclose(f, faces_normals_expected))
+            self.assertClose(f, faces_normals_expected)
 
         # Multiple meshes in the batch with different sized meshes
         # Check padded and packed normals are the correct sizes.

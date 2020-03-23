@@ -65,7 +65,7 @@ class GraphConv(nn.Module):
             )
         if verts.shape[0] == 0:
             # empty graph.
-            return verts.sum() * 0.0
+            return verts.new_zeros((0, self.output_dim)) * verts.sum()
 
         verts_w0 = self.w0(verts)  # (V, output_dim)
         verts_w1 = self.w1(verts)  # (V, output_dim)

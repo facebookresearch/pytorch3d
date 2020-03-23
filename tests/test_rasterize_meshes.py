@@ -12,8 +12,10 @@ from pytorch3d.renderer.mesh.rasterize_meshes import (
 from pytorch3d.structures import Meshes
 from pytorch3d.utils import ico_sphere
 
+from common_testing import TestCaseMixin
 
-class TestRasterizeMeshes(unittest.TestCase):
+
+class TestRasterizeMeshes(TestCaseMixin, unittest.TestCase):
     def test_simple_python(self):
         device = torch.device("cpu")
         self._simple_triangle_raster(
@@ -266,14 +268,14 @@ class TestRasterizeMeshes(unittest.TestCase):
         # Make sure everything was the same
         self.assertTrue((idx1 == idx2).all().item())
         self.assertTrue((idx1 == idx3).all().item())
-        self.assertTrue(torch.allclose(zbuf1, zbuf2, atol=1e-6))
-        self.assertTrue(torch.allclose(zbuf1, zbuf3, atol=1e-6))
-        self.assertTrue(torch.allclose(dist1, dist2, atol=1e-6))
-        self.assertTrue(torch.allclose(dist1, dist3, atol=1e-6))
+        self.assertClose(zbuf1, zbuf2, atol=1e-6)
+        self.assertClose(zbuf1, zbuf3, atol=1e-6)
+        self.assertClose(dist1, dist2, atol=1e-6)
+        self.assertClose(dist1, dist3, atol=1e-6)
 
-        self.assertTrue(torch.allclose(grad1, grad2, rtol=5e-3))  # flaky test
-        self.assertTrue(torch.allclose(grad1, grad3, rtol=5e-3))
-        self.assertTrue(torch.allclose(grad2, grad3, rtol=5e-3))
+        self.assertClose(grad1, grad2, rtol=5e-3)  # flaky test
+        self.assertClose(grad1, grad3, rtol=5e-3)
+        self.assertClose(grad2, grad3, rtol=5e-3)
 
     def test_compare_coarse_cpu_vs_cuda(self):
         torch.manual_seed(231)
@@ -399,9 +401,9 @@ class TestRasterizeMeshes(unittest.TestCase):
         idx1, zbuf1, bary1, dist1 = fn1(*args1)
         idx2, zbuf2, bary2, dist2 = fn2(*args2)
         self.assertTrue((idx1.cpu() == idx2.cpu()).all().item())
-        self.assertTrue(torch.allclose(zbuf1.cpu(), zbuf2.cpu(), rtol=1e-4))
-        self.assertTrue(torch.allclose(dist1.cpu(), dist2.cpu(), rtol=6e-3))
-        self.assertTrue(torch.allclose(bary1.cpu(), bary2.cpu(), rtol=1e-3))
+        self.assertClose(zbuf1.cpu(), zbuf2.cpu(), rtol=1e-4)
+        self.assertClose(dist1.cpu(), dist2.cpu(), rtol=6e-3)
+        self.assertClose(bary1.cpu(), bary2.cpu(), rtol=1e-3)
         if not compare_grads:
             return
 
@@ -429,7 +431,7 @@ class TestRasterizeMeshes(unittest.TestCase):
         grad_var1.grad.data.zero_()
         loss2.backward()
         grad_verts2 = grad_var2.grad.data.clone().cpu()
-        self.assertTrue(torch.allclose(grad_verts1, grad_verts2, rtol=1e-3))
+        self.assertClose(grad_verts1, grad_verts2, rtol=1e-3)
 
     def _test_perspective_correct(
         self, rasterize_meshes_fn, device, bin_size=None
@@ -615,8 +617,8 @@ class TestRasterizeMeshes(unittest.TestCase):
         zbuf_same = (zbuf == zbuf_expected).all().item()
         self.assertTrue(idx_same)
         self.assertTrue(zbuf_same)
-        self.assertTrue(torch.allclose(bary, bary_expected))
-        self.assertTrue(torch.allclose(dists, dists_expected))
+        self.assertClose(bary, bary_expected)
+        self.assertClose(dists, dists_expected)
 
     def _simple_triangle_raster(self, raster_fn, device, bin_size=None):
         image_size = 10
@@ -769,10 +771,10 @@ class TestRasterizeMeshes(unittest.TestCase):
                 meshes, image_size, 0.0, 2, bin_size
             )
 
-        self.assertTrue(torch.allclose(p2face[..., 0], expected_p2face_k0))
-        self.assertTrue(torch.allclose(zbuf[..., 0], expected_zbuf_k0))
-        self.assertTrue(torch.allclose(p2face[..., 1], expected_p2face_k1))
-        self.assertTrue(torch.allclose(zbuf[..., 1], expected_zbuf_k1))
+        self.assertClose(p2face[..., 0], expected_p2face_k0)
+        self.assertClose(zbuf[..., 0], expected_zbuf_k0)
+        self.assertClose(p2face[..., 1], expected_p2face_k1)
+        self.assertClose(zbuf[..., 1], expected_zbuf_k1)
 
     def _simple_blurry_raster(self, raster_fn, device, bin_size=None):
         """
@@ -861,12 +863,9 @@ class TestRasterizeMeshes(unittest.TestCase):
             p2f[expected_p2f == 0] = order.index(0)
             p2f[expected_p2f == 1] = order.index(1)
             p2f[expected_p2f == 2] = order.index(2)
-
-            self.assertTrue(torch.allclose(pix_to_face.squeeze(), p2f))
-            self.assertTrue(
-                torch.allclose(zbuf.squeeze(), expected_zbuf, rtol=1e-5)
-            )
-            self.assertTrue(torch.allclose(dists, expected_dists))
+            self.assertClose(pix_to_face.squeeze(), p2f)
+            self.assertClose(zbuf.squeeze(), expected_zbuf, rtol=1e-5)
+            self.assertClose(dists, expected_dists)
 
     def _test_coarse_rasterize(self, device):
         image_size = 16

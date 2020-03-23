@@ -133,14 +133,10 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
 
         self.assertTrue(torch.all(verts == expected_verts))
         self.assertTrue(torch.all(faces.verts_idx == expected_faces))
-        self.assertTrue(torch.allclose(normals, expected_normals))
-        self.assertTrue(torch.allclose(textures, expected_textures))
-        self.assertTrue(
-            torch.allclose(faces.normals_idx, expected_faces_normals_idx)
-        )
-        self.assertTrue(
-            torch.allclose(faces.textures_idx, expected_faces_textures_idx)
-        )
+        self.assertClose(normals, expected_normals)
+        self.assertClose(textures, expected_textures)
+        self.assertClose(faces.normals_idx, expected_faces_normals_idx)
+        self.assertClose(faces.textures_idx, expected_faces_textures_idx)
         self.assertTrue(materials is None)
         self.assertTrue(tex_maps is None)
 
@@ -181,11 +177,9 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
         textures = aux.verts_uvs
         materials = aux.material_colors
         tex_maps = aux.texture_images
-        self.assertTrue(
-            torch.allclose(faces.normals_idx, expected_faces_normals_idx)
-        )
-        self.assertTrue(torch.allclose(normals, expected_normals))
-        self.assertTrue(torch.allclose(verts, expected_verts))
+        self.assertClose(faces.normals_idx, expected_faces_normals_idx)
+        self.assertClose(normals, expected_normals)
+        self.assertClose(verts, expected_verts)
         self.assertTrue(faces.textures_idx == [])
         self.assertTrue(textures is None)
         self.assertTrue(materials is None)
@@ -225,11 +219,9 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
         materials = aux.material_colors
         tex_maps = aux.texture_images
 
-        self.assertTrue(
-            torch.allclose(faces.textures_idx, expected_faces_textures_idx)
-        )
-        self.assertTrue(torch.allclose(expected_textures, textures))
-        self.assertTrue(torch.allclose(expected_verts, verts))
+        self.assertClose(faces.textures_idx, expected_faces_textures_idx)
+        self.assertClose(expected_textures, textures)
+        self.assertClose(expected_verts, verts)
         self.assertTrue(faces.normals_idx == [])
         self.assertTrue(normals is None)
         self.assertTrue(materials is None)

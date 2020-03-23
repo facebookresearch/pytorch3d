@@ -224,9 +224,7 @@ class TestRasterizePoints(TestCaseMixin, unittest.TestCase):
         self.assertEqual((zbuf1.cpu() == zbuf2.cpu()).all().item(), 1)
         self.assertClose(dist1.cpu(), dist2.cpu())
         if compare_grads:
-            self.assertTrue(
-                torch.allclose(grad_points1, grad_points2, atol=2e-6)
-            )
+            self.assertClose(grad_points1, grad_points2, atol=2e-6)
 
     def _test_behind_camera(self, rasterize_points_fn, device, bin_size=None):
         # Test case where all points are behind the camera -- nothing should
@@ -261,7 +259,7 @@ class TestRasterizePoints(TestCaseMixin, unittest.TestCase):
 
         self.assertTrue(idx_same)
         self.assertTrue(zbuf_same)
-        self.assertTrue(torch.allclose(dists, dists_expected))
+        self.assertClose(dists, dists_expected)
 
     def _simple_test_case(self, rasterize_points_fn, device, bin_size=0):
         # Create two pointclouds with different numbers of points.
@@ -334,18 +332,18 @@ class TestRasterizePoints(TestCaseMixin, unittest.TestCase):
         ], device=device)
         # fmt: on
 
-        dists1_expected = torch.full(
-            (1, 5, 5, 2), fill_value=0.0, dtype=torch.float32, device=device
+        dists1_expected = torch.zeros(
+            (5, 5, 2), dtype=torch.float32, device=device
         )
         # fmt: off
-        dists1_expected[0, :, :, 0] = torch.tensor([
+        dists1_expected[:, :, 0] = torch.tensor([
             [-1.00, -1.00,  0.16, -1.00, -1.00],  # noqa: E241
             [-1.00,  0.16,  0.16,  0.16, -1.00],  # noqa: E241
             [ 0.16,  0.16,  0.00,  0.16, -1.00],  # noqa: E241 E201
             [-1.00,  0.16,  0.16, -1.00, -1.00],  # noqa: E241
             [-1.00, -1.00, -1.00, -1.00, -1.00],  # noqa: E241
         ], device=device)
-        dists1_expected[0, :, :, 1] = torch.tensor([
+        dists1_expected[:, :, 1] = torch.tensor([
             [-1.00, -1.00, -1.00, -1.00, -1.00],  # noqa: E241
             [-1.00,  0.16,  0.00, -1.00, -1.00],  # noqa: E241
             [-1.00,  0.00,  0.16, -1.00, -1.00],  # noqa: E241
@@ -370,10 +368,9 @@ class TestRasterizePoints(TestCaseMixin, unittest.TestCase):
             print(idx[0, :, :, 0])
             print(idx[0, :, :, 1])
         zbuf_same = (zbuf[0, ...] == zbuf1_expected).all().item() == 1
-        dist_same = torch.allclose(dists[0, ...], dists1_expected)
+        self.assertClose(dists[0, ...], dists1_expected)
         self.assertTrue(idx_same)
         self.assertTrue(zbuf_same)
-        self.assertTrue(dist_same)
 
         # Check second point cloud - the indices in idx refer to points in the
         # pointclouds.points_packed() tensor. In the second point cloud,
@@ -387,7 +384,7 @@ class TestRasterizePoints(TestCaseMixin, unittest.TestCase):
         zbuf_same = (zbuf[1, ...] == zbuf1_expected).all().item() == 1
         self.assertTrue(idx_same)
         self.assertTrue(zbuf_same)
-        self.assertTrue(torch.allclose(dists[1, ...], dists1_expected))
+        self.assertClose(dists[1, ...], dists1_expected)
 
     def test_coarse_cpu(self):
         return self._test_coarse_rasterize(torch.device("cpu"))

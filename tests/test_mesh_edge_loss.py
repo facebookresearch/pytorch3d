@@ -6,10 +6,11 @@ import torch
 from pytorch3d.loss import mesh_edge_loss
 from pytorch3d.structures import Meshes
 
+from common_testing import TestCaseMixin
 from test_sample_points_from_meshes import TestSamplePoints
 
 
-class TestMeshEdgeLoss(unittest.TestCase):
+class TestMeshEdgeLoss(TestCaseMixin, unittest.TestCase):
     def test_empty_meshes(self):
         device = torch.device("cuda:0")
         target_length = 0
@@ -26,10 +27,8 @@ class TestMeshEdgeLoss(unittest.TestCase):
         mesh = Meshes(verts=verts_list, faces=faces_list)
         loss = mesh_edge_loss(mesh, target_length=target_length)
 
-        self.assertTrue(
-            torch.allclose(
-                loss, torch.tensor([0.0], dtype=torch.float32, device=device)
-            )
+        self.assertClose(
+            loss, torch.tensor([0.0], dtype=torch.float32, device=device)
         )
         self.assertTrue(loss.requires_grad)
 
@@ -94,7 +93,7 @@ class TestMeshEdgeLoss(unittest.TestCase):
         loss = mesh_edge_loss(meshes, target_length=target_length)
 
         predloss = TestMeshEdgeLoss.mesh_edge_loss_naive(meshes, target_length)
-        self.assertTrue(torch.allclose(loss, predloss))
+        self.assertClose(loss, predloss)
 
     @staticmethod
     def mesh_edge_loss(

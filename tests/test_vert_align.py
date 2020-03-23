@@ -8,8 +8,10 @@ import torch.nn.functional as F
 from pytorch3d.ops.vert_align import vert_align
 from pytorch3d.structures.meshes import Meshes
 
+from common_testing import TestCaseMixin
 
-class TestVertAlign(unittest.TestCase):
+
+class TestVertAlign(TestCaseMixin, unittest.TestCase):
     @staticmethod
     def vert_align_naive(
         feats,
@@ -103,14 +105,14 @@ class TestVertAlign(unittest.TestCase):
         naive_out = TestVertAlign.vert_align_naive(
             feats, meshes, return_packed=True
         )
-        self.assertTrue(torch.allclose(out, naive_out))
+        self.assertClose(out, naive_out)
 
         # feats as tensor
         out = vert_align(feats[0], meshes, return_packed=True)
         naive_out = TestVertAlign.vert_align_naive(
             feats[0], meshes, return_packed=True
         )
-        self.assertTrue(torch.allclose(out, naive_out))
+        self.assertClose(out, naive_out)
 
     def test_vert_align_with_verts(self):
         """
@@ -130,14 +132,14 @@ class TestVertAlign(unittest.TestCase):
         naive_out = TestVertAlign.vert_align_naive(
             feats, verts, return_packed=True
         )
-        self.assertTrue(torch.allclose(out, naive_out))
+        self.assertClose(out, naive_out)
 
         # feats as tensor
         out = vert_align(feats[0], verts, return_packed=True)
         naive_out = TestVertAlign.vert_align_naive(
             feats[0], verts, return_packed=True
         )
-        self.assertTrue(torch.allclose(out, naive_out))
+        self.assertClose(out, naive_out)
 
         out2 = vert_align(
             feats[0], verts, return_packed=True, align_corners=False
