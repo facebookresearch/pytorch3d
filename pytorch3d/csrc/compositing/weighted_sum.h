@@ -61,11 +61,10 @@ torch::Tensor weightedSumForward(
     CHECK_CONTIGUOUS_CUDA(features);
     CHECK_CONTIGUOUS_CUDA(alphas);
     CHECK_CONTIGUOUS_CUDA(points_idx);
+    return weightedSumCudaForward(features, alphas, points_idx);
 #else
     AT_ERROR("Not compiled with GPU support");
 #endif
-
-    return weightedSumCudaForward(features, alphas, points_idx);
   } else {
     CHECK_CONTIGUOUS(features);
     CHECK_CONTIGUOUS(alphas);
@@ -91,11 +90,11 @@ std::tuple<torch::Tensor, torch::Tensor> weightedSumBackward(
     CHECK_CONTIGUOUS_CUDA(features);
     CHECK_CONTIGUOUS_CUDA(alphas);
     CHECK_CONTIGUOUS_CUDA(points_idx);
+
+    return weightedSumCudaBackward(grad_outputs, features, alphas, points_idx);
 #else
     AT_ERROR("Not compiled with GPU support");
 #endif
-
-    return weightedSumCudaBackward(grad_outputs, features, alphas, points_idx);
   } else {
     CHECK_CONTIGUOUS(grad_outputs);
     CHECK_CONTIGUOUS(features);
