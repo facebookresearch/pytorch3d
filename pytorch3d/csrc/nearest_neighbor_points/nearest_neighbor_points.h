@@ -39,4 +39,4 @@ at::Tensor NearestNeighborIdx(at::Tensor p1, at::Tensor p2) {
 #endif
   }
   return NearestNeighborIdxCpu(p1, p2);
-};
+}
