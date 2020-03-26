@@ -172,16 +172,16 @@ RasterizePointsNaiveCuda(
   const size_t blocks = 1024;
   const size_t threads = 64;
   RasterizePointsNaiveCudaKernel<<<blocks, threads>>>(
-      points.contiguous().data<float>(),
-      cloud_to_packed_first_idx.contiguous().data<int64_t>(),
-      num_points_per_cloud.contiguous().data<int64_t>(),
+      points.contiguous().data_ptr<float>(),
+      cloud_to_packed_first_idx.contiguous().data_ptr<int64_t>(),
+      num_points_per_cloud.contiguous().data_ptr<int64_t>(),
       radius,
       N,
       S,
       K,
-      point_idxs.contiguous().data<int32_t>(),
-      zbuf.contiguous().data<float>(),
-      pix_dists.contiguous().data<float>());
+      point_idxs.contiguous().data_ptr<int32_t>(),
+      zbuf.contiguous().data_ptr<float>(),
+      pix_dists.contiguous().data_ptr<float>());
   return std::make_tuple(point_idxs, zbuf, pix_dists);
 }
 
@@ -347,9 +347,9 @@ torch::Tensor RasterizePointsCoarseCuda(
   const size_t blocks = 64;
   const size_t threads = 512;
   RasterizePointsCoarseCudaKernel<<<blocks, threads, shared_size>>>(
-      points.contiguous().data<float>(),
-      cloud_to_packed_first_idx.contiguous().data<int64_t>(),
-      num_points_per_cloud.contiguous().data<int64_t>(),
+      points.contiguous().data_ptr<float>(),
+      cloud_to_packed_first_idx.contiguous().data_ptr<int64_t>(),
+      num_points_per_cloud.contiguous().data_ptr<int64_t>(),
       radius,
       N,
       P,
@@ -357,8 +357,8 @@ torch::Tensor RasterizePointsCoarseCuda(
       bin_size,
       chunk_size,
       M,
-      points_per_bin.contiguous().data<int32_t>(),
-      bin_points.contiguous().data<int32_t>());
+      points_per_bin.contiguous().data_ptr<int32_t>(),
+      bin_points.contiguous().data_ptr<int32_t>());
   return bin_points;
 }
 
@@ -464,8 +464,8 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> RasterizePointsFineCuda(
   const size_t blocks = 1024;
   const size_t threads = 64;
   RasterizePointsFineCudaKernel<<<blocks, threads>>>(
-      points.contiguous().data<float>(),
-      bin_points.contiguous().data<int32_t>(),
+      points.contiguous().data_ptr<float>(),
+      bin_points.contiguous().data_ptr<int32_t>(),
       radius,
       bin_size,
       N,
@@ -473,9 +473,9 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> RasterizePointsFineCuda(
       M,
       S,
       K,
-      point_idxs.contiguous().data<int32_t>(),
-      zbuf.contiguous().data<float>(),
-      pix_dists.contiguous().data<float>());
+      point_idxs.contiguous().data_ptr<int32_t>(),
+      zbuf.contiguous().data_ptr<float>(),
+      pix_dists.contiguous().data_ptr<float>());
 
   return std::make_tuple(point_idxs, zbuf, pix_dists);
 }
@@ -547,16 +547,16 @@ torch::Tensor RasterizePointsBackwardCuda(
   const size_t threads = 64;
 
   RasterizePointsBackwardCudaKernel<<<blocks, threads>>>(
-      points.contiguous().data<float>(),
-      idxs.contiguous().data<int32_t>(),
+      points.contiguous().data_ptr<float>(),
+      idxs.contiguous().data_ptr<int32_t>(),
       N,
       P,
       H,
       W,
       K,
-      grad_zbuf.contiguous().data<float>(),
-      grad_dists.contiguous().data<float>(),
-      grad_points.contiguous().data<float>());
+      grad_zbuf.contiguous().data_ptr<float>(),
+      grad_dists.contiguous().data_ptr<float>(),
+      grad_points.contiguous().data_ptr<float>());
 
   return grad_points;
 }

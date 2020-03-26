@@ -309,19 +309,19 @@ RasterizeMeshesNaiveCuda(
   const size_t threads = 64;
 
   RasterizeMeshesNaiveCudaKernel<<<blocks, threads>>>(
-      face_verts.contiguous().data<float>(),
-      mesh_to_faces_packed_first_idx.contiguous().data<int64_t>(),
-      num_faces_per_mesh.contiguous().data<int64_t>(),
+      face_verts.contiguous().data_ptr<float>(),
+      mesh_to_faces_packed_first_idx.contiguous().data_ptr<int64_t>(),
+      num_faces_per_mesh.contiguous().data_ptr<int64_t>(),
       blur_radius,
       perspective_correct,
       N,
       H,
       W,
       K,
-      face_idxs.contiguous().data<int64_t>(),
-      zbuf.contiguous().data<float>(),
-      pix_dists.contiguous().data<float>(),
-      bary.contiguous().data<float>());
+      face_idxs.contiguous().data_ptr<int64_t>(),
+      zbuf.contiguous().data_ptr<float>(),
+      pix_dists.contiguous().data_ptr<float>(),
+      bary.contiguous().data_ptr<float>());
 
   return std::make_tuple(face_idxs, zbuf, bary, pix_dists);
 }
@@ -467,17 +467,17 @@ torch::Tensor RasterizeMeshesBackwardCuda(
   const size_t threads = 64;
 
   RasterizeMeshesBackwardCudaKernel<<<blocks, threads>>>(
-      face_verts.contiguous().data<float>(),
-      pix_to_face.contiguous().data<int64_t>(),
+      face_verts.contiguous().data_ptr<float>(),
+      pix_to_face.contiguous().data_ptr<int64_t>(),
       perspective_correct,
       N,
       H,
       W,
       K,
-      grad_zbuf.contiguous().data<float>(),
-      grad_bary.contiguous().data<float>(),
-      grad_dists.contiguous().data<float>(),
-      grad_face_verts.contiguous().data<float>());
+      grad_zbuf.contiguous().data_ptr<float>(),
+      grad_bary.contiguous().data_ptr<float>(),
+      grad_dists.contiguous().data_ptr<float>(),
+      grad_face_verts.contiguous().data_ptr<float>());
 
   return grad_face_verts;
 }
@@ -643,9 +643,9 @@ torch::Tensor RasterizeMeshesCoarseCuda(
   const size_t threads = 512;
 
   RasterizeMeshesCoarseCudaKernel<<<blocks, threads, shared_size>>>(
-      face_verts.contiguous().data<float>(),
-      mesh_to_face_first_idx.contiguous().data<int64_t>(),
-      num_faces_per_mesh.contiguous().data<int64_t>(),
+      face_verts.contiguous().data_ptr<float>(),
+      mesh_to_face_first_idx.contiguous().data_ptr<int64_t>(),
+      num_faces_per_mesh.contiguous().data_ptr<int64_t>(),
       blur_radius,
       N,
       F,
@@ -654,8 +654,8 @@ torch::Tensor RasterizeMeshesCoarseCuda(
       bin_size,
       chunk_size,
       M,
-      faces_per_bin.contiguous().data<int32_t>(),
-      bin_faces.contiguous().data<int32_t>());
+      faces_per_bin.contiguous().data_ptr<int32_t>(),
+      bin_faces.contiguous().data_ptr<int32_t>());
   return bin_faces;
 }
 
@@ -793,8 +793,8 @@ RasterizeMeshesFineCuda(
   const size_t threads = 64;
 
   RasterizeMeshesFineCudaKernel<<<blocks, threads>>>(
-      face_verts.contiguous().data<float>(),
-      bin_faces.contiguous().data<int32_t>(),
+      face_verts.contiguous().data_ptr<float>(),
+      bin_faces.contiguous().data_ptr<int32_t>(),
       blur_radius,
       bin_size,
       perspective_correct,
@@ -804,10 +804,10 @@ RasterizeMeshesFineCuda(
       H,
       W,
       K,
-      face_idxs.contiguous().data<int64_t>(),
-      zbuf.contiguous().data<float>(),
-      pix_dists.contiguous().data<float>(),
-      bary.contiguous().data<float>());
+      face_idxs.contiguous().data_ptr<int64_t>(),
+      zbuf.contiguous().data_ptr<float>(),
+      pix_dists.contiguous().data_ptr<float>(),
+      bary.contiguous().data_ptr<float>());
 
   return std::make_tuple(face_idxs, zbuf, bary, pix_dists);
 }
