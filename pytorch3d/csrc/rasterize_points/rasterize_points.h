@@ -63,8 +63,8 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> RasterizePointsNaive(
     const int image_size,
     const float radius,
     const int points_per_pixel) {
-  if (points.type().is_cuda() && cloud_to_packed_first_idx.type().is_cuda() &&
-      num_points_per_cloud.type().is_cuda()) {
+  if (points.is_cuda() && cloud_to_packed_first_idx.is_cuda() &&
+      num_points_per_cloud.is_cuda()) {
 #ifdef WITH_CUDA
     return RasterizePointsNaiveCuda(
         points,
@@ -137,8 +137,8 @@ torch::Tensor RasterizePointsCoarse(
     const float radius,
     const int bin_size,
     const int max_points_per_bin) {
-  if (points.type().is_cuda() && cloud_to_packed_first_idx.type().is_cuda() &&
-      num_points_per_cloud.type().is_cuda()) {
+  if (points.is_cuda() && cloud_to_packed_first_idx.is_cuda() &&
+      num_points_per_cloud.is_cuda()) {
 #ifdef WITH_CUDA
     return RasterizePointsCoarseCuda(
         points,
@@ -206,7 +206,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> RasterizePointsFine(
     const float radius,
     const int bin_size,
     const int points_per_pixel) {
-  if (points.type().is_cuda()) {
+  if (points.is_cuda()) {
 #ifdef WITH_CUDA
     return RasterizePointsFineCuda(
         points, bin_points, image_size, radius, bin_size, points_per_pixel);
@@ -255,7 +255,7 @@ torch::Tensor RasterizePointsBackward(
     const torch::Tensor& idxs,
     const torch::Tensor& grad_zbuf,
     const torch::Tensor& grad_dists) {
-  if (points.type().is_cuda()) {
+  if (points.is_cuda()) {
 #ifdef WITH_CUDA
     return RasterizePointsBackwardCuda(points, idxs, grad_zbuf, grad_dists);
 #else

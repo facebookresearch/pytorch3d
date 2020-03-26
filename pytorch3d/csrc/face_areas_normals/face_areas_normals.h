@@ -44,7 +44,7 @@ at::Tensor FaceAreasNormalsBackwardCuda(
 std::tuple<at::Tensor, at::Tensor> FaceAreasNormalsForward(
     const at::Tensor verts,
     const at::Tensor faces) {
-  if (verts.type().is_cuda() && faces.type().is_cuda()) {
+  if (verts.is_cuda() && faces.is_cuda()) {
 #ifdef WITH_CUDA
     return FaceAreasNormalsForwardCuda(verts, faces);
 #else
@@ -60,7 +60,7 @@ at::Tensor FaceAreasNormalsBackward(
     const at::Tensor grad_normals,
     const at::Tensor verts,
     const at::Tensor faces) {
-  if (verts.type().is_cuda() && faces.type().is_cuda()) {
+  if (verts.is_cuda() && faces.is_cuda()) {
 #ifdef WITH_CUDA
     return FaceAreasNormalsBackwardCuda(grad_areas, grad_normals, verts, faces);
 #else

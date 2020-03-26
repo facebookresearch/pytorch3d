@@ -219,7 +219,7 @@ std::tuple<at::Tensor, at::Tensor> FaceAreasNormalsForwardCuda(
   const int blocks = 64;
   const int threads = 512;
   AT_DISPATCH_FLOATING_TYPES(
-      verts.type(), "face_areas_normals_forward_cuda", ([&] {
+      verts.scalar_type(), "face_areas_normals_forward_cuda", ([&] {
         FaceAreasNormalsForwardKernel<scalar_t><<<blocks, threads>>>(
             verts.data_ptr<scalar_t>(),
             faces.data_ptr<int64_t>(),

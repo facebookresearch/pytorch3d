@@ -29,7 +29,7 @@ at::Tensor NearestNeighborIdxCuda(at::Tensor p1, at::Tensor p2);
 
 // Implementation which is exposed.
 at::Tensor NearestNeighborIdx(at::Tensor p1, at::Tensor p2) {
-  if (p1.type().is_cuda() && p2.type().is_cuda()) {
+  if (p1.is_cuda() && p2.is_cuda()) {
 #ifdef WITH_CUDA
     CHECK_CONTIGUOUS_CUDA(p1);
     CHECK_CONTIGUOUS_CUDA(p2);

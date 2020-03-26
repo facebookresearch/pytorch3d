@@ -72,7 +72,7 @@ at::Tensor PackedToPadded(
     const at::Tensor inputs_packed,
     const at::Tensor first_idxs,
     const int64_t max_size) {
-  if (inputs_packed.type().is_cuda()) {
+  if (inputs_packed.is_cuda()) {
 #ifdef WITH_CUDA
     return PackedToPaddedCuda(inputs_packed, first_idxs, max_size);
 #else
@@ -87,7 +87,7 @@ at::Tensor PaddedToPacked(
     const at::Tensor inputs_padded,
     const at::Tensor first_idxs,
     const int64_t num_inputs) {
-  if (inputs_padded.type().is_cuda()) {
+  if (inputs_padded.is_cuda()) {
 #ifdef WITH_CUDA
     return PaddedToPackedCuda(inputs_padded, first_idxs, num_inputs);
 #else

@@ -128,7 +128,7 @@ at::Tensor PackedToPaddedCuda(
   const int blocks = batch_size;
   if (D == 1) {
     AT_DISPATCH_FLOATING_TYPES(
-        inputs_packed.type(), "packed_to_padded_d1_kernel", ([&] {
+        inputs_packed.scalar_type(), "packed_to_padded_d1_kernel", ([&] {
           PackedToPaddedKernelD1<scalar_t><<<blocks, threads>>>(
               inputs_packed.data_ptr<scalar_t>(),
               first_idxs.data_ptr<int64_t>(),
@@ -139,7 +139,7 @@ at::Tensor PackedToPaddedCuda(
         }));
   } else {
     AT_DISPATCH_FLOATING_TYPES(
-        inputs_packed.type(), "packed_to_padded_kernel", ([&] {
+        inputs_packed.scalar_type(), "packed_to_padded_kernel", ([&] {
           PackedToPaddedKernel<scalar_t><<<blocks, threads>>>(
               inputs_packed.data_ptr<scalar_t>(),
               first_idxs.data_ptr<int64_t>(),
@@ -175,7 +175,7 @@ at::Tensor PaddedToPackedCuda(
 
   if (D == 1) {
     AT_DISPATCH_FLOATING_TYPES(
-        inputs_padded.type(), "padded_to_packed_d1_kernel", ([&] {
+        inputs_padded.scalar_type(), "padded_to_packed_d1_kernel", ([&] {
           PaddedToPackedKernelD1<scalar_t><<<blocks, threads>>>(
               inputs_padded.data_ptr<scalar_t>(),
               first_idxs.data_ptr<int64_t>(),
@@ -186,7 +186,7 @@ at::Tensor PaddedToPackedCuda(
         }));
   } else {
     AT_DISPATCH_FLOATING_TYPES(
-        inputs_padded.type(), "padded_to_packed_kernel", ([&] {
+        inputs_padded.scalar_type(), "padded_to_packed_kernel", ([&] {
           PaddedToPackedKernel<scalar_t><<<blocks, threads>>>(
               inputs_padded.data_ptr<scalar_t>(),
               first_idxs.data_ptr<int64_t>(),

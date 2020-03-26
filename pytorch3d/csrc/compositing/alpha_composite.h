@@ -58,7 +58,7 @@ torch::Tensor alphaCompositeForward(
   alphas = alphas.contiguous();
   points_idx = points_idx.contiguous();
 
-  if (features.type().is_cuda()) {
+  if (features.is_cuda()) {
 #ifdef WITH_CUDA
     CHECK_CONTIGUOUS_CUDA(features);
     CHECK_CONTIGUOUS_CUDA(alphas);
@@ -86,7 +86,7 @@ std::tuple<torch::Tensor, torch::Tensor> alphaCompositeBackward(
   alphas = alphas.contiguous();
   points_idx = points_idx.contiguous();
 
-  if (grad_outputs.type().is_cuda()) {
+  if (grad_outputs.is_cuda()) {
 #ifdef WITH_CUDA
     CHECK_CONTIGUOUS_CUDA(grad_outputs);
     CHECK_CONTIGUOUS_CUDA(features);

@@ -82,7 +82,7 @@ RasterizeMeshesNaive(
     const int faces_per_pixel,
     const bool perspective_correct) {
   // TODO: Better type checking.
-  if (face_verts.type().is_cuda()) {
+  if (face_verts.is_cuda()) {
 #ifdef WITH_CUDA
     return RasterizeMeshesNaiveCuda(
         face_verts,
@@ -160,7 +160,7 @@ torch::Tensor RasterizeMeshesBackward(
     const torch::Tensor& grad_bary,
     const torch::Tensor& grad_dists,
     const bool perspective_correct) {
-  if (face_verts.type().is_cuda()) {
+  if (face_verts.is_cuda()) {
 #ifdef WITH_CUDA
     return RasterizeMeshesBackwardCuda(
         face_verts,
@@ -236,7 +236,7 @@ torch::Tensor RasterizeMeshesCoarse(
     const float blur_radius,
     const int bin_size,
     const int max_faces_per_bin) {
-  if (face_verts.type().is_cuda()) {
+  if (face_verts.is_cuda()) {
 #ifdef WITH_CUDA
     return RasterizeMeshesCoarseCuda(
         face_verts,
@@ -322,7 +322,7 @@ RasterizeMeshesFine(
     const int bin_size,
     const int faces_per_pixel,
     const bool perspective_correct) {
-  if (face_verts.type().is_cuda()) {
+  if (face_verts.is_cuda()) {
 #ifdef WITH_CUDA
     return RasterizeMeshesFineCuda(
         face_verts,

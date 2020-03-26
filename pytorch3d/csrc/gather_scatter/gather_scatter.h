@@ -32,7 +32,7 @@ at::Tensor gather_scatter(
     const at::Tensor edges,
     bool directed,
     bool backward) {
-  if (input.type().is_cuda() && edges.type().is_cuda()) {
+  if (input.is_cuda() && edges.is_cuda()) {
 #ifdef WITH_CUDA
     return gather_scatter_cuda(input, edges, directed, backward);
 #else
