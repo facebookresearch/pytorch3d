@@ -277,9 +277,8 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
         )
         obj_file = StringIO(obj_file)
 
-        with self.assertRaises(ValueError) as err:
+        with self.assertWarnsRegex(UserWarning, "Faces have invalid indices"):
             load_obj(obj_file)
-        self.assertTrue("Faces have invalid indices." in str(err.exception))
 
     def test_load_obj_error_invalid_normal_indices(self):
         obj_file = "\n".join(
@@ -295,9 +294,8 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
         )
         obj_file = StringIO(obj_file)
 
-        with self.assertRaises(ValueError) as err:
+        with self.assertWarnsRegex(UserWarning, "Faces have invalid indices"):
             load_obj(obj_file)
-        self.assertTrue("Faces have invalid indices." in str(err.exception))
 
     def test_load_obj_error_invalid_texture_indices(self):
         obj_file = "\n".join(
@@ -313,9 +311,87 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
         )
         obj_file = StringIO(obj_file)
 
-        with self.assertRaises(ValueError) as err:
+        with self.assertWarnsRegex(UserWarning, "Faces have invalid indices"):
             load_obj(obj_file)
-        self.assertTrue("Faces have invalid indices." in str(err.exception))
+
+    def test_save_obj_invalid_shapes(self):
+        # Invalid vertices shape
+        with self.assertRaises(ValueError) as error:
+            verts = torch.FloatTensor([[0.1, 0.2, 0.3, 0.4]])  # (V, 4)
+            faces = torch.LongTensor([[0, 1, 2]])
+            save_obj(StringIO(), verts, faces)
+        expected_message = "Argument 'verts' should either be empty or of shape (num_verts, 3)."
+        self.assertTrue(expected_message, error.exception)
+
+        # Invalid faces shape
+        with self.assertRaises(ValueError) as error:
+            verts = torch.FloatTensor([[0.1, 0.2, 0.3]])
+            faces = torch.LongTensor([[0, 1, 2, 3]])  # (F, 4)
+            save_obj(StringIO(), verts, faces)
+        expected_message = "Argument 'faces' should either be empty or of shape (num_faces, 3)."
+        self.assertTrue(expected_message, error.exception)
+
+    def test_save_obj_invalid_indices(self):
+        message_regex = "Faces have invalid indices"
+        verts = torch.FloatTensor([[0.1, 0.2, 0.3]])
+        faces = torch.LongTensor([[0, 1, 2]])
+        with self.assertWarnsRegex(UserWarning, message_regex):
+            save_obj(StringIO(), verts, faces)
+
+        faces = torch.LongTensor([[-1, 0, 1]])
+        with self.assertWarnsRegex(UserWarning, message_regex):
+            save_obj(StringIO(), verts, faces)
+
+    def _test_save_load(self, verts, faces):
+        f = StringIO()
+        save_obj(f, verts, faces)
+        f.seek(0)
+        expected_verts, expected_faces = verts, faces
+        if not len(expected_verts):  # Always compare with a (V, 3) tensor
+            expected_verts = torch.zeros(size=(0, 3), dtype=torch.float32)
+        if not len(expected_faces):  # Always compare with an (F, 3) tensor
+            expected_faces = torch.zeros(size=(0, 3), dtype=torch.int64)
+        actual_verts, actual_faces, _ = load_obj(f)
+        self.assertClose(expected_verts, actual_verts)
+        self.assertClose(expected_faces, actual_faces.verts_idx)
+
+    def test_empty_save_load_obj(self):
+        # Vertices + empty faces
+        verts = torch.FloatTensor([[0.1, 0.2, 0.3]])
+        faces = torch.LongTensor([])
+        self._test_save_load(verts, faces)
+
+        faces = torch.zeros(size=(0, 3), dtype=torch.int64)
+        self._test_save_load(verts, faces)
+
+        # Faces + empty vertices
+        message_regex = "Faces have invalid indices"
+        verts = torch.FloatTensor([])
+        faces = torch.LongTensor([[0, 1, 2]])
+        with self.assertWarnsRegex(UserWarning, message_regex):
+            self._test_save_load(verts, faces)
+
+        verts = torch.zeros(size=(0, 3), dtype=torch.float32)
+        with self.assertWarnsRegex(UserWarning, message_regex):
+            self._test_save_load(verts, faces)
+
+        # Empty vertices + empty faces
+        message_regex = "Empty 'verts' and 'faces' arguments provided"
+        verts0 = torch.FloatTensor([])
+        faces0 = torch.LongTensor([])
+        with self.assertWarnsRegex(UserWarning, message_regex):
+            self._test_save_load(verts0, faces0)
+
+        faces3 = torch.zeros(size=(0, 3), dtype=torch.int64)
+        with self.assertWarnsRegex(UserWarning, message_regex):
+            self._test_save_load(verts0, faces3)
+
+        verts3 = torch.zeros(size=(0, 3), dtype=torch.float32)
+        with self.assertWarnsRegex(UserWarning, message_regex):
+            self._test_save_load(verts3, faces0)
+
+        with self.assertWarnsRegex(UserWarning, message_regex):
+            self._test_save_load(verts3, faces3)
 
     def test_save_obj(self):
         verts = torch.tensor(
@@ -410,7 +486,7 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
             ]
         )
         obj_file = StringIO(obj_file)
-        with self.assertWarnsRegex(Warning, "No mtl file provided"):
+        with self.assertWarnsRegex(UserWarning, "No mtl file provided"):
             verts, faces, aux = load_obj(obj_file)
 
         expected_verts = torch.tensor(
@@ -434,7 +510,7 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
         DATA_DIR = Path(__file__).resolve().parent / "data"
         obj_filename = "missing_files_obj/model.obj"
         filename = os.path.join(DATA_DIR, obj_filename)
-        with self.assertWarnsRegex(Warning, "Texture file does not exist"):
+        with self.assertWarnsRegex(UserWarning, "Texture file does not exist"):
             verts, faces, aux = load_obj(filename)
 
         expected_verts = torch.tensor(
@@ -475,7 +551,7 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
         DATA_DIR = Path(__file__).resolve().parent / "data"
         obj_filename = "missing_files_obj/model2.obj"
         filename = os.path.join(DATA_DIR, obj_filename)
-        with self.assertWarnsRegex(Warning, "Mtl file does not exist"):
+        with self.assertWarnsRegex(UserWarning, "Mtl file does not exist"):
             verts, faces, aux = load_obj(filename)
 
         expected_verts = torch.tensor(
