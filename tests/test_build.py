@@ -3,6 +3,7 @@ import unittest
 from collections import Counter
 from pathlib import Path
 
+
 # This file groups together tests which look at the code without running it.
 
 
@@ -61,6 +62,5 @@ class TestBuild(unittest.TestCase):
                     if firstline.startswith(("# -*-", "#!")):
                         firstline = f.readline()
                     self.assertTrue(
-                        firstline.endswith(expect),
-                        f"{i} missing copyright header.",
+                        firstline.endswith(expect), f"{i} missing copyright header."
                     )

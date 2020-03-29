@@ -3,7 +3,6 @@
 
 import torch
 import torch.nn as nn
-
 from pytorch3d.structures import Meshes
 
 
@@ -193,16 +192,12 @@ class SubdivideMeshes(nn.Module):
         edges = meshes[0].edges_packed()
 
         # The set of faces is the same across the different meshes.
-        new_faces = self._subdivided_faces.view(1, -1, 3).expand(
-            self._N, -1, -1
-        )
+        new_faces = self._subdivided_faces.view(1, -1, 3).expand(self._N, -1, -1)
 
         # Add one new vertex at the midpoint of each edge by taking the average
         # of the vertices that form each edge.
         new_verts = verts[:, edges].mean(dim=2)
-        new_verts = torch.cat(
-            [verts, new_verts], dim=1
-        )  # (sum(V_n)+sum(E_n), 3)
+        new_verts = torch.cat([verts, new_verts], dim=1)  # (sum(V_n)+sum(E_n), 3)
         new_feats = None
 
         # Calculate features for new vertices.
@@ -212,15 +207,11 @@ class SubdivideMeshes(nn.Module):
                 # padded, i.e. (N*V, D) to (N, V, D).
                 feats = feats.view(verts.size(0), verts.size(1), feats.size(1))
             if feats.dim() != 3:
-                raise ValueError(
-                    "features need to be of shape (N, V, D) or (N*V, D)"
-                )
+                raise ValueError("features need to be of shape (N, V, D) or (N*V, D)")
 
             # Take average of the features at the vertices that form each edge.
             new_feats = feats[:, edges].mean(dim=2)
-            new_feats = torch.cat(
-                [feats, new_feats], dim=1
-            )  # (sum(V_n)+sum(E_n), 3)
+            new_feats = torch.cat([feats, new_feats], dim=1)  # (sum(V_n)+sum(E_n), 3)
 
         new_meshes = Meshes(verts=new_verts, faces=new_faces)
 
@@ -270,9 +261,7 @@ class SubdivideMeshes(nn.Module):
             )  # (sum(V_n)+sum(E_n),)
 
             verts_ordered_idx_init = torch.zeros(
-                new_verts_per_mesh.sum(),
-                dtype=torch.int64,
-                device=meshes.device,
+                new_verts_per_mesh.sum(), dtype=torch.int64, device=meshes.device
             )  # (sum(V_n)+sum(E_n),)
 
             # Reassign vertex indices so that existing and new vertices for each
@@ -288,9 +277,7 @@ class SubdivideMeshes(nn.Module):
 
             # Calculate the indices needed to group the existing and new faces
             # for each mesh.
-            face_sort_idx = create_faces_index(
-                num_faces_per_mesh, device=meshes.device
-            )
+            face_sort_idx = create_faces_index(num_faces_per_mesh, device=meshes.device)
 
             # Reorder the faces to sequentially group existing and new faces
             # for each mesh.
@@ -361,9 +348,7 @@ def create_verts_index(verts_per_mesh, edges_per_mesh, device=None):
     E = edges_per_mesh.sum()  # e.g. 21
 
     verts_per_mesh_cumsum = verts_per_mesh.cumsum(dim=0)  # (N,) e.g. (4, 9, 15)
-    edges_per_mesh_cumsum = edges_per_mesh.cumsum(
-        dim=0
-    )  # (N,) e.g. (5, 12, 21)
+    edges_per_mesh_cumsum = edges_per_mesh.cumsum(dim=0)  # (N,) e.g. (5, 12, 21)
 
     v_to_e_idx = verts_per_mesh_cumsum.clone()
 
@@ -373,9 +358,7 @@ def create_verts_index(verts_per_mesh, edges_per_mesh, device=None):
     ]  # e.g. (4, 9, 15) + (0, 5, 12) = (4, 14, 27)
 
     # vertex to edge offset.
-    v_to_e_offset = (
-        V - verts_per_mesh_cumsum
-    )  # e.g. 15 - (4, 9, 15) = (11, 6, 0)
+    v_to_e_offset = V - verts_per_mesh_cumsum  # e.g. 15 - (4, 9, 15) = (11, 6, 0)
     v_to_e_offset[1:] += edges_per_mesh_cumsum[
         :-1
     ]  # e.g. (11, 6, 0) + (0, 5, 12) = (11, 11, 12)

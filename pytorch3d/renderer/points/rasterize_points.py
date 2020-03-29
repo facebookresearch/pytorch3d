@@ -1,8 +1,8 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
 from typing import Optional
-import torch
 
+import torch
 from pytorch3d import _C
 from pytorch3d.renderer.mesh.rasterize_meshes import pix_to_ndc
 
@@ -155,10 +155,7 @@ class _RasterizePoints(torch.autograd.Function):
 
 
 def rasterize_points_python(
-    pointclouds,
-    image_size: int = 256,
-    radius: float = 0.01,
-    points_per_pixel: int = 8,
+    pointclouds, image_size: int = 256, radius: float = 0.01, points_per_pixel: int = 8
 ):
     """
     Naive pure PyTorch implementation of pointcloud rasterization.
@@ -177,9 +174,7 @@ def rasterize_points_python(
     point_idxs = torch.full(
         (N, S, S, K), fill_value=-1, dtype=torch.int32, device=device
     )
-    zbuf = torch.full(
-        (N, S, S, K), fill_value=-1, dtype=torch.float32, device=device
-    )
+    zbuf = torch.full((N, S, S, K), fill_value=-1, dtype=torch.float32, device=device)
     pix_dists = torch.full(
         (N, S, S, K), fill_value=-1, dtype=torch.float32, device=device
     )

@@ -16,6 +16,7 @@ from ..materials import Materials
 from .shading import flat_shading, gouraud_shading, phong_shading
 from .texturing import interpolate_texture_map, interpolate_vertex_colors
 
+
 # A Shader should take as input fragments from the output of rasterization
 # along with scene params and output images. A shader could perform operations
 # such as:
@@ -41,16 +42,12 @@ class HardPhongShader(nn.Module):
 
     def __init__(self, device="cpu", cameras=None, lights=None, materials=None):
         super().__init__()
-        self.lights = (
-            lights if lights is not None else PointLights(device=device)
-        )
+        self.lights = lights if lights is not None else PointLights(device=device)
         self.materials = (
             materials if materials is not None else Materials(device=device)
         )
         self.cameras = (
-            cameras
-            if cameras is not None
-            else OpenGLPerspectiveCameras(device=device)
+            cameras if cameras is not None else OpenGLPerspectiveCameras(device=device)
         )
 
     def forward(self, fragments, meshes, **kwargs) -> torch.Tensor:
@@ -85,28 +82,17 @@ class SoftPhongShader(nn.Module):
     """
 
     def __init__(
-        self,
-        device="cpu",
-        cameras=None,
-        lights=None,
-        materials=None,
-        blend_params=None,
+        self, device="cpu", cameras=None, lights=None, materials=None, blend_params=None
     ):
         super().__init__()
-        self.lights = (
-            lights if lights is not None else PointLights(device=device)
-        )
+        self.lights = lights if lights is not None else PointLights(device=device)
         self.materials = (
             materials if materials is not None else Materials(device=device)
         )
         self.cameras = (
-            cameras
-            if cameras is not None
-            else OpenGLPerspectiveCameras(device=device)
+            cameras if cameras is not None else OpenGLPerspectiveCameras(device=device)
         )
-        self.blend_params = (
-            blend_params if blend_params is not None else BlendParams()
-        )
+        self.blend_params = blend_params if blend_params is not None else BlendParams()
 
     def forward(self, fragments, meshes, **kwargs) -> torch.Tensor:
         texels = interpolate_vertex_colors(fragments, meshes)
@@ -142,16 +128,12 @@ class HardGouraudShader(nn.Module):
 
     def __init__(self, device="cpu", cameras=None, lights=None, materials=None):
         super().__init__()
-        self.lights = (
-            lights if lights is not None else PointLights(device=device)
-        )
+        self.lights = lights if lights is not None else PointLights(device=device)
         self.materials = (
             materials if materials is not None else Materials(device=device)
         )
         self.cameras = (
-            cameras
-            if cameras is not None
-            else OpenGLPerspectiveCameras(device=device)
+            cameras if cameras is not None else OpenGLPerspectiveCameras(device=device)
         )
 
     def forward(self, fragments, meshes, **kwargs) -> torch.Tensor:
@@ -185,28 +167,17 @@ class SoftGouraudShader(nn.Module):
     """
 
     def __init__(
-        self,
-        device="cpu",
-        cameras=None,
-        lights=None,
-        materials=None,
-        blend_params=None,
+        self, device="cpu", cameras=None, lights=None, materials=None, blend_params=None
     ):
         super().__init__()
-        self.lights = (
-            lights if lights is not None else PointLights(device=device)
-        )
+        self.lights = lights if lights is not None else PointLights(device=device)
         self.materials = (
             materials if materials is not None else Materials(device=device)
         )
         self.cameras = (
-            cameras
-            if cameras is not None
-            else OpenGLPerspectiveCameras(device=device)
+            cameras if cameras is not None else OpenGLPerspectiveCameras(device=device)
         )
-        self.blend_params = (
-            blend_params if blend_params is not None else BlendParams()
-        )
+        self.blend_params = blend_params if blend_params is not None else BlendParams()
 
     def forward(self, fragments, meshes, **kwargs) -> torch.Tensor:
         cameras = kwargs.get("cameras", self.cameras)
@@ -241,28 +212,17 @@ class TexturedSoftPhongShader(nn.Module):
     """
 
     def __init__(
-        self,
-        device="cpu",
-        cameras=None,
-        lights=None,
-        materials=None,
-        blend_params=None,
+        self, device="cpu", cameras=None, lights=None, materials=None, blend_params=None
     ):
         super().__init__()
-        self.lights = (
-            lights if lights is not None else PointLights(device=device)
-        )
+        self.lights = lights if lights is not None else PointLights(device=device)
         self.materials = (
             materials if materials is not None else Materials(device=device)
         )
         self.cameras = (
-            cameras
-            if cameras is not None
-            else OpenGLPerspectiveCameras(device=device)
+            cameras if cameras is not None else OpenGLPerspectiveCameras(device=device)
         )
-        self.blend_params = (
-            blend_params if blend_params is not None else BlendParams()
-        )
+        self.blend_params = blend_params if blend_params is not None else BlendParams()
 
     def forward(self, fragments, meshes, **kwargs) -> torch.Tensor:
         texels = interpolate_texture_map(fragments, meshes)
@@ -298,16 +258,12 @@ class HardFlatShader(nn.Module):
 
     def __init__(self, device="cpu", cameras=None, lights=None, materials=None):
         super().__init__()
-        self.lights = (
-            lights if lights is not None else PointLights(device=device)
-        )
+        self.lights = lights if lights is not None else PointLights(device=device)
         self.materials = (
             materials if materials is not None else Materials(device=device)
         )
         self.cameras = (
-            cameras
-            if cameras is not None
-            else OpenGLPerspectiveCameras(device=device)
+            cameras if cameras is not None else OpenGLPerspectiveCameras(device=device)
         )
 
     def forward(self, fragments, meshes, **kwargs) -> torch.Tensor:
@@ -346,9 +302,7 @@ class SoftSilhouetteShader(nn.Module):
 
     def __init__(self, blend_params=None):
         super().__init__()
-        self.blend_params = (
-            blend_params if blend_params is not None else BlendParams()
-        )
+        self.blend_params = blend_params if blend_params is not None else BlendParams()
 
     def forward(self, fragments, meshes, **kwargs) -> torch.Tensor:
         """"

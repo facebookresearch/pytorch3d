@@ -92,8 +92,6 @@ def _interpolate_zbuf(
     verts = meshes.verts_packed()
     faces = meshes.faces_packed()
     faces_verts_z = verts[faces][..., 2][..., None]  # (F, 3, 1)
-    return interpolate_face_attributes(
-        pix_to_face, barycentric_coords, faces_verts_z
-    )[
+    return interpolate_face_attributes(pix_to_face, barycentric_coords, faces_verts_z)[
         ..., 0
     ]  # (1, H, W, K)

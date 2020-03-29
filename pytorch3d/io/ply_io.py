@@ -4,14 +4,16 @@
 
 
 """This module implements utility functions for loading and saving meshes."""
-import numpy as np
 import pathlib
 import struct
 import sys
 import warnings
 from collections import namedtuple
 from typing import Optional, Tuple
+
+import numpy as np
 import torch
+
 
 _PlyTypeData = namedtuple("_PlyTypeData", "size struct_char np_type")
 
@@ -257,11 +259,7 @@ def _try_read_ply_constant_list_ascii(f, definition: _PlyElementType):
                 "ignore", message=".* Empty input file.*", category=UserWarning
             )
             data = np.loadtxt(
-                f,
-                dtype=np_type,
-                comments=None,
-                ndmin=2,
-                max_rows=definition.count,
+                f, dtype=np_type, comments=None, ndmin=2, max_rows=definition.count
             )
     except ValueError:
         f.seek(start_point)
@@ -301,9 +299,7 @@ def _parse_heterogenous_property_ascii(datum, line_iter, property: _Property):
             length = int(value)
         except ValueError:
             raise ValueError("A list length was not a number.")
-        list_value = np.zeros(
-            length, dtype=_PLY_TYPES[property.data_type].np_type
-        )
+        list_value = np.zeros(length, dtype=_PLY_TYPES[property.data_type].np_type)
         for i in range(length):
             inner_value = next(line_iter, None)
             if inner_value is None:
@@ -404,8 +400,7 @@ def _read_ply_element_struct(f, definition: _PlyElementType, endian_str: str):
         values. There is one column for each property.
     """
     format = "".join(
-        _PLY_TYPES[property.data_type].struct_char
-        for property in definition.properties
+        _PLY_TYPES[property.data_type].struct_char for property in definition.properties
     )
     format = endian_str + format
     pattern = struct.Struct(format)
@@ -414,10 +409,7 @@ def _read_ply_element_struct(f, definition: _PlyElementType, endian_str: str):
     bytes_data = f.read(needed_bytes)
     if len(bytes_data) != needed_bytes:
         raise ValueError("Not enough data for %s." % definition.name)
-    data = [
-        pattern.unpack_from(bytes_data, i * size)
-        for i in range(definition.count)
-    ]
+    data = [pattern.unpack_from(bytes_data, i * size) for i in range(definition.count)]
     return data
 
 
@@ -475,9 +467,7 @@ def _try_read_ply_constant_list_binary(
     return output
 
 
-def _read_ply_element_binary(
-    f, definition: _PlyElementType, big_endian: bool
-) -> list:
+def _read_ply_element_binary(f, definition: _PlyElementType, big_endian: bool) -> list:
     """
     Decode all instances of a single element from a binary .ply file.
 
@@ -515,9 +505,7 @@ def _read_ply_element_binary(
     data = []
     for _i in range(definition.count):
         datum = []
-        for property, property_struct in zip(
-            definition.properties, property_structs
-        ):
+        for property, property_struct in zip(definition.properties, property_structs):
             size = property_struct.size
             initial_data = f.read(size)
             if len(initial_data) != size:
@@ -656,28 +644,19 @@ def load_ply(f):
     if face is None:
         raise ValueError("The ply file has no face element.")
 
-    if (
-        not isinstance(vertex, np.ndarray)
-        or vertex.ndim != 2
-        or vertex.shape[1] != 3
-    ):
+    if not isinstance(vertex, np.ndarray) or vertex.ndim != 2 or vertex.shape[1] != 3:
         raise ValueError("Invalid vertices in file.")
     verts = torch.tensor(vertex, dtype=torch.float32)
 
     face_head = next(head for head in header.elements if head.name == "face")
-    if (
-        len(face_head.properties) != 1
-        or face_head.properties[0].list_size_type is None
-    ):
+    if len(face_head.properties) != 1 or face_head.properties[0].list_size_type is None:
         raise ValueError("Unexpected form of faces data.")
     # face_head.properties[0].name is usually "vertex_index" or "vertex_indices"
     # but we don't need to enforce this.
     if isinstance(face, np.ndarray) and face.ndim == 2:
         if face.shape[1] < 3:
             raise ValueError("Faces must have at least 3 vertices.")
-        face_arrays = [
-            face[:, [0, i + 1, i + 2]] for i in range(face.shape[1] - 2)
-        ]
+        face_arrays = [face[:, [0, i + 1, i + 2]] for i in range(face.shape[1] - 2)]
         faces = torch.tensor(np.vstack(face_arrays), dtype=torch.int64)
     else:
         face_list = []
@@ -687,9 +666,7 @@ def load_ply(f):
             if face_item.shape[0] < 3:
                 raise ValueError("Faces must have at least 3 vertices.")
             for i in range(face_item.shape[0] - 2):
-                face_list.append(
-                    [face_item[0], face_item[i + 1], face_item[i + 2]]
-                )
+                face_list.append([face_item[0], face_item[i + 1], face_item[i + 2]])
             faces = torch.tensor(face_list, dtype=torch.int64)
 
     return verts, faces

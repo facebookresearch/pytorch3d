@@ -3,8 +3,8 @@
 from itertools import tee
 from math import cos, pi, sin
 from typing import Iterator, Optional, Tuple
-import torch
 
+import torch
 from pytorch3d.structures.meshes import Meshes
 
 
@@ -16,11 +16,7 @@ def _make_pair_range(N: int) -> Iterator[Tuple[int, int]]:
 
 
 def torus(
-    r: float,
-    R: float,
-    sides: int,
-    rings: int,
-    device: Optional[torch.device] = None,
+    r: float, R: float, sides: int, rings: int, device: Optional[torch.device] = None
 ) -> Meshes:
     """
     Create vertices and faces for a torus.

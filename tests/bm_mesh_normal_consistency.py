@@ -2,9 +2,9 @@
 
 
 from itertools import product
+
 import torch
 from fvcore.common.benchmark import benchmark
-
 from test_mesh_normal_consistency import TestMeshNormalConsistency
 
 

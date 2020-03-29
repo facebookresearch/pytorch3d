@@ -3,6 +3,7 @@
 import math
 import warnings
 from typing import Optional
+
 import torch
 
 from .rotation_conversions import _axis_angle_rotation
@@ -230,9 +231,7 @@ class Transform3d:
                 # the transformations with get_matrix(), this correctly
                 # right-multiplies by the inverse of self._matrix
                 # at the end of the composition.
-                tinv._transforms = [
-                    t.inverse() for t in reversed(self._transforms)
-                ]
+                tinv._transforms = [t.inverse() for t in reversed(self._transforms)]
                 last = Transform3d(device=self.device)
                 last._matrix = i_matrix
                 tinv._transforms.append(last)
@@ -334,9 +333,7 @@ class Transform3d:
         return self.compose(Scale(device=self.device, *args, **kwargs))
 
     def rotate_axis_angle(self, *args, **kwargs):
-        return self.compose(
-            RotateAxisAngle(device=self.device, *args, **kwargs)
-        )
+        return self.compose(RotateAxisAngle(device=self.device, *args, **kwargs))
 
     def clone(self):
         """
@@ -388,9 +385,7 @@ class Transform3d:
 
 
 class Translate(Transform3d):
-    def __init__(
-        self, x, y=None, z=None, dtype=torch.float32, device: str = "cpu"
-    ):
+    def __init__(self, x, y=None, z=None, dtype=torch.float32, device: str = "cpu"):
         """
         Create a new Transform3d representing 3D translations.
 
@@ -424,9 +419,7 @@ class Translate(Transform3d):
 
 
 class Scale(Transform3d):
-    def __init__(
-        self, x, y=None, z=None, dtype=torch.float32, device: str = "cpu"
-    ):
+    def __init__(self, x, y=None, z=None, dtype=torch.float32, device: str = "cpu"):
         """
         A Transform3d representing a scaling operation, with different scale
         factors along each coordinate axis.
@@ -444,9 +437,7 @@ class Scale(Transform3d):
                 - 1D torch tensor
         """
         super().__init__(device=device)
-        xyz = _handle_input(
-            x, y, z, dtype, device, "scale", allow_singleton=True
-        )
+        xyz = _handle_input(x, y, z, dtype, device, "scale", allow_singleton=True)
         N = xyz.shape[0]
 
         # TODO: Can we do this all in one go somehow?
@@ -469,11 +460,7 @@ class Scale(Transform3d):
 
 class Rotate(Transform3d):
     def __init__(
-        self,
-        R,
-        dtype=torch.float32,
-        device: str = "cpu",
-        orthogonal_tol: float = 1e-5,
+        self, R, dtype=torch.float32, device: str = "cpu", orthogonal_tol: float = 1e-5
     ):
         """
         Create a new Transform3d representing 3D rotation using a rotation
@@ -562,9 +549,7 @@ def _handle_coord(c, dtype, device):
     return c
 
 
-def _handle_input(
-    x, y, z, dtype, device, name: str, allow_singleton: bool = False
-):
+def _handle_input(x, y, z, dtype, device, name: str, allow_singleton: bool = False):
     """
     Helper function to handle parsing logic for building transforms. The output
     is always a tensor of shape (N, 3), but there are several types of allowed

@@ -3,10 +3,9 @@
 
 import torch
 import torch.nn as nn
+from pytorch3d import _C
 from torch.autograd import Function
 from torch.autograd.function import once_differentiable
-
-from pytorch3d import _C
 
 
 class GraphConv(nn.Module):
@@ -60,9 +59,7 @@ class GraphConv(nn.Module):
             number of output features per vertex.
         """
         if verts.is_cuda != edges.is_cuda:
-            raise ValueError(
-                "verts and edges tensors must be on the same device."
-            )
+            raise ValueError("verts and edges tensors must be on the same device.")
         if verts.shape[0] == 0:
             # empty graph.
             return verts.new_zeros((0, self.output_dim)) * verts.sum()

@@ -3,6 +3,7 @@
 
 
 from typing import NamedTuple, Optional
+
 import torch
 import torch.nn as nn
 

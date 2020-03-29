@@ -2,6 +2,7 @@
 
 
 from typing import Tuple
+
 import torch
 
 from .texturing import interpolate_face_attributes
@@ -82,9 +83,7 @@ def phong_shading(
     return colors
 
 
-def gouraud_shading(
-    meshes, fragments, lights, cameras, materials
-) -> torch.Tensor:
+def gouraud_shading(meshes, fragments, lights, cameras, materials) -> torch.Tensor:
     """
     Apply per vertex shading. First compute the vertex illumination by applying
     ambient, diffuse and specular lighting. If vertex color is available,
@@ -131,9 +130,7 @@ def gouraud_shading(
     return colors
 
 
-def flat_shading(
-    meshes, fragments, lights, cameras, materials, texels
-) -> torch.Tensor:
+def flat_shading(meshes, fragments, lights, cameras, materials, texels) -> torch.Tensor:
     """
     Apply per face shading. Use the average face position and the face normals
     to compute the ambient, diffuse and specular lighting. Apply the ambient

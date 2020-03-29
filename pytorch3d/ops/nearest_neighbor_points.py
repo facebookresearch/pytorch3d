@@ -2,7 +2,6 @@
 
 
 import torch
-
 from pytorch3d import _C
 
 
@@ -31,9 +30,7 @@ def nn_points_idx(p1, p2, p2_normals=None) -> torch.Tensor:
     """
     N, P1, D = p1.shape
     with torch.no_grad():
-        p1_nn_idx = _C.nn_points_idx(
-            p1.contiguous(), p2.contiguous()
-        )  # (N, P1)
+        p1_nn_idx = _C.nn_points_idx(p1.contiguous(), p2.contiguous())  # (N, P1)
     p1_nn_idx_expanded = p1_nn_idx.view(N, P1, 1).expand(N, P1, D)
     p1_nn_points = p2.gather(1, p1_nn_idx_expanded)
     if p2_normals is None:

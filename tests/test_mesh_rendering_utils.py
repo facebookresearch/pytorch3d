@@ -2,8 +2,8 @@
 
 
 import unittest
-import torch
 
+import torch
 from pytorch3d.renderer.mesh.utils import _clip_barycentric_coordinates
 
 

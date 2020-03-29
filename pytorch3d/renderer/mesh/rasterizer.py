@@ -1,6 +1,7 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
 from typing import NamedTuple, Optional
+
 import torch
 import torch.nn as nn
 
@@ -123,8 +124,5 @@ class MeshRasterizer(nn.Module):
             perspective_correct=raster_settings.perspective_correct,
         )
         return Fragments(
-            pix_to_face=pix_to_face,
-            zbuf=zbuf,
-            bary_coords=bary_coords,
-            dists=dists,
+            pix_to_face=pix_to_face, zbuf=zbuf, bary_coords=bary_coords, dists=dists
         )

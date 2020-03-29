@@ -2,6 +2,7 @@
 
 
 from itertools import islice
+
 import torch
 
 
@@ -76,10 +77,7 @@ def mesh_normal_consistency(meshes):
     with torch.no_grad():
         edge_idx = face_to_edge.reshape(F * 3)  # (3 * F,) indexes into edges
         vert_idx = (
-            faces_packed.view(1, F, 3)
-            .expand(3, F, 3)
-            .transpose(0, 1)
-            .reshape(3 * F, 3)
+            faces_packed.view(1, F, 3).expand(3, F, 3).transpose(0, 1).reshape(3 * F, 3)
         )
         edge_idx, edge_sort_idx = edge_idx.sort()
         vert_idx = vert_idx[edge_sort_idx]
@@ -132,9 +130,7 @@ def mesh_normal_consistency(meshes):
     loss = 1 - torch.cosine_similarity(n0, n1, dim=1)
 
     verts_packed_to_mesh_idx = verts_packed_to_mesh_idx[vert_idx[:, 0]]
-    verts_packed_to_mesh_idx = verts_packed_to_mesh_idx[
-        vert_edge_pair_idx[:, 0]
-    ]
+    verts_packed_to_mesh_idx = verts_packed_to_mesh_idx[vert_edge_pair_idx[:, 0]]
     num_normals = verts_packed_to_mesh_idx.bincount(minlength=N)
     weights = 1.0 / num_normals[verts_packed_to_mesh_idx].float()
 

@@ -1,13 +1,12 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
-import numpy as np
 import unittest
-import torch
 
+import numpy as np
+import torch
+from common_testing import TestCaseMixin
 from pytorch3d.renderer.lighting import DirectionalLights, PointLights
 from pytorch3d.transforms import RotateAxisAngle
-
-from common_testing import TestCaseMixin
 
 
 class TestLights(TestCaseMixin, unittest.TestCase):
@@ -56,9 +55,7 @@ class TestLights(TestCaseMixin, unittest.TestCase):
             self.assertSeparate(new_prop, prop)
 
     def test_lights_accessor(self):
-        d_light = DirectionalLights(
-            ambient_color=((0.0, 0.0, 0.0), (1.0, 1.0, 1.0))
-        )
+        d_light = DirectionalLights(ambient_color=((0.0, 0.0, 0.0), (1.0, 1.0, 1.0)))
         p_light = PointLights(ambient_color=((0.0, 0.0, 0.0), (1.0, 1.0, 1.0)))
         for light in [d_light, p_light]:
             # Update element
@@ -96,14 +93,12 @@ class TestLights(TestCaseMixin, unittest.TestCase):
         """
         with self.assertRaises(ValueError):
             DirectionalLights(
-                ambient_color=torch.randn(10, 3),
-                diffuse_color=torch.randn(15, 3),
+                ambient_color=torch.randn(10, 3), diffuse_color=torch.randn(15, 3)
             )
 
         with self.assertRaises(ValueError):
             PointLights(
-                ambient_color=torch.randn(10, 3),
-                diffuse_color=torch.randn(15, 3),
+                ambient_color=torch.randn(10, 3), diffuse_color=torch.randn(15, 3)
             )
 
     def test_initialize_lights_dimensions_fail(self):
@@ -138,8 +133,7 @@ class TestDiffuseLighting(TestCaseMixin, unittest.TestCase):
         normals = torch.tensor([0, 0, 1], dtype=torch.float32)
         normals = normals[None, None, :]
         expected_output = torch.tensor(
-            [1 / np.sqrt(2), 1 / np.sqrt(2), 1 / np.sqrt(2)],
-            dtype=torch.float32,
+            [1 / np.sqrt(2), 1 / np.sqrt(2), 1 / np.sqrt(2)], dtype=torch.float32
         )
         expected_output = expected_output.view(1, 1, 3).repeat(3, 1, 1)
         light = DirectionalLights(diffuse_color=color, direction=direction)
@@ -169,13 +163,10 @@ class TestDiffuseLighting(TestCaseMixin, unittest.TestCase):
         points = torch.tensor([0, 0, 0], dtype=torch.float32)
         normals = torch.tensor([0, 0, 1], dtype=torch.float32)
         expected_output = torch.tensor(
-            [1 / np.sqrt(2), 1 / np.sqrt(2), 1 / np.sqrt(2)],
-            dtype=torch.float32,
+            [1 / np.sqrt(2), 1 / np.sqrt(2), 1 / np.sqrt(2)], dtype=torch.float32
         )
         expected_output = expected_output.view(-1, 1, 3)
-        light = PointLights(
-            diffuse_color=color[None, :], location=location[None, :]
-        )
+        light = PointLights(diffuse_color=color[None, :], location=location[None, :])
         output_light = light.diffuse(
             points=points[None, None, :], normals=normals[None, None, :]
         )
@@ -184,9 +175,7 @@ class TestDiffuseLighting(TestCaseMixin, unittest.TestCase):
         # Change light direction to be 90 degrees apart from normal direction.
         location = torch.tensor([0, 1, 0], dtype=torch.float32)
         expected_output = torch.zeros_like(expected_output)
-        light = PointLights(
-            diffuse_color=color[None, :], location=location[None, :]
-        )
+        light = PointLights(diffuse_color=color[None, :], location=location[None, :])
         output_light = light.diffuse(
             points=points[None, None, :], normals=normals[None, None, :]
         )
@@ -204,8 +193,7 @@ class TestDiffuseLighting(TestCaseMixin, unittest.TestCase):
         )
         normals = torch.tensor([0, 0, 1], dtype=torch.float32)
         expected_out = torch.tensor(
-            [1 / np.sqrt(2), 1 / np.sqrt(2), 1 / np.sqrt(2)],
-            dtype=torch.float32,
+            [1 / np.sqrt(2), 1 / np.sqrt(2), 1 / np.sqrt(2)], dtype=torch.float32
         )
 
         # Reshape
@@ -231,8 +219,7 @@ class TestDiffuseLighting(TestCaseMixin, unittest.TestCase):
         )
         normals = torch.tensor([0, 0, 1], dtype=torch.float32)
         expected_out = torch.tensor(
-            [1 / np.sqrt(2), 1 / np.sqrt(2), 1 / np.sqrt(2)],
-            dtype=torch.float32,
+            [1 / np.sqrt(2), 1 / np.sqrt(2), 1 / np.sqrt(2)], dtype=torch.float32
         )
 
         # Reshape
@@ -258,9 +245,7 @@ class TestDiffuseLighting(TestCaseMixin, unittest.TestCase):
         device = torch.device("cuda:0")
         color = torch.tensor([1, 1, 1], dtype=torch.float32, device=device)
         direction = torch.tensor(
-            [0, 1 / np.sqrt(2), 1 / np.sqrt(2)],
-            dtype=torch.float32,
-            device=device,
+            [0, 1 / np.sqrt(2), 1 / np.sqrt(2)], dtype=torch.float32, device=device
         )
         normals = torch.tensor([0, 0, 1], dtype=torch.float32, device=device)
         normals = normals.view(1, 1, 1, 1, 3).expand(N, H, W, K, -1)
@@ -373,9 +358,7 @@ class TestSpecularLighting(TestCaseMixin, unittest.TestCase):
         normals = torch.tensor([0, 1, 0], dtype=torch.float32)
         expected_output = torch.tensor([1.0, 0.0, 1.0], dtype=torch.float32)
         expected_output = expected_output.view(-1, 1, 3)
-        lights = PointLights(
-            specular_color=color[None, :], location=location[None, :]
-        )
+        lights = PointLights(specular_color=color[None, :], location=location[None, :])
         output_light = lights.specular(
             points=points[None, None, :],
             normals=normals[None, None, :],
@@ -528,8 +511,7 @@ class TestSpecularLighting(TestCaseMixin, unittest.TestCase):
         mesh_to_vert_idx = torch.tensor(mesh_to_vert_idx, dtype=torch.int64)
         color = torch.tensor([[1, 1, 1], [1, 0, 1]], dtype=torch.float32)
         direction = torch.tensor(
-            [[-1 / np.sqrt(2), 1 / np.sqrt(2), 0], [-1, 1, 0]],
-            dtype=torch.float32,
+            [[-1 / np.sqrt(2), 1 / np.sqrt(2), 0], [-1, 1, 0]], dtype=torch.float32
         )
         camera_position = torch.tensor(
             [

@@ -1,6 +1,7 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
 from typing import List, Union
+
 import torch
 
 
@@ -38,9 +39,7 @@ def list_to_padded(
         pad_dim1 = max(y.shape[1] for y in x if len(y) > 0)
     else:
         if len(pad_size) != 2:
-            raise ValueError(
-                "Pad size must contain target size for 1st and 2nd dim"
-            )
+            raise ValueError("Pad size must contain target size for 1st and 2nd dim")
         pad_dim0, pad_dim1 = pad_size
 
     N = len(x)
@@ -55,9 +54,7 @@ def list_to_padded(
     return x_padded
 
 
-def padded_to_list(
-    x: torch.Tensor, split_size: Union[list, tuple, None] = None
-):
+def padded_to_list(x: torch.Tensor, split_size: Union[list, tuple, None] = None):
     r"""
     Transforms a padded tensor of shape (N, M, K) into a list of N tensors
     of shape (Mi, Ki) where (Mi, Ki) is specified in split_size(i), or of shape
@@ -81,9 +78,7 @@ def padded_to_list(
 
     N = len(split_size)
     if x.shape[0] != N:
-        raise ValueError(
-            "Split size must be of same length as inputs first dimension"
-        )
+        raise ValueError("Split size must be of same length as inputs first dimension")
 
     for i in range(N):
         if isinstance(split_size[i], int):
@@ -119,9 +114,7 @@ def list_to_packed(x: List[torch.Tensor]):
     """
     N = len(x)
     num_items = torch.zeros(N, dtype=torch.int64, device=x[0].device)
-    item_packed_first_idx = torch.zeros(
-        N, dtype=torch.int64, device=x[0].device
-    )
+    item_packed_first_idx = torch.zeros(N, dtype=torch.int64, device=x[0].device)
     item_packed_to_list_idx = []
     cur = 0
     for i, y in enumerate(x):
@@ -187,9 +180,7 @@ def padded_to_packed(
     N, M, D = x.shape
 
     if split_size is not None and pad_value is not None:
-        raise ValueError(
-            "Only one of split_size or pad_value should be provided."
-        )
+        raise ValueError("Only one of split_size or pad_value should be provided.")
 
     x_packed = x.reshape(-1, D)  # flatten padded
 
@@ -205,9 +196,7 @@ def padded_to_packed(
     # Convert to packed using split sizes
     N = len(split_size)
     if x.shape[0] != N:
-        raise ValueError(
-            "Split size must be of same length as inputs first dimension"
-        )
+        raise ValueError("Split size must be of same length as inputs first dimension")
 
     if not all(isinstance(i, int) for i in split_size):
         raise ValueError(

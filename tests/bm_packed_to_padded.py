@@ -2,9 +2,9 @@
 
 
 from itertools import product
+
 import torch
 from fvcore.common.benchmark import benchmark
-
 from test_packed_to_padded import TestPackedToPadded
 
 
@@ -23,13 +23,7 @@ def bm_packed_to_padded() -> None:
     for case in test_cases:
         n, v, f, d, b = case
         kwargs_list.append(
-            {
-                "num_meshes": n,
-                "num_verts": v,
-                "num_faces": f,
-                "num_d": d,
-                "device": b,
-            }
+            {"num_meshes": n, "num_verts": v, "num_faces": f, "num_d": d, "device": b}
         )
     benchmark(
         TestPackedToPadded.packed_to_padded_with_init,

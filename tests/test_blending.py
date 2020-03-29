@@ -1,9 +1,9 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
-import numpy as np
 import unittest
-import torch
 
+import numpy as np
+import torch
 from pytorch3d.renderer.blending import (
     BlendParams,
     hard_rgb_blend,
@@ -43,9 +43,7 @@ def sigmoid_blend_naive_loop(colors, fragments, blend_params):
     return pixel_colors
 
 
-def sigmoid_blend_naive_loop_backward(
-    grad_images, images, fragments, blend_params
-):
+def sigmoid_blend_naive_loop_backward(grad_images, images, fragments, blend_params):
     pix_to_face = fragments.pix_to_face
     dists = fragments.dists
     sigma = blend_params.sigma
@@ -135,14 +133,7 @@ class TestBlending(unittest.TestCase):
         torch.manual_seed(42)
 
     def _compare_impls(
-        self,
-        fn1,
-        fn2,
-        args1,
-        args2,
-        grad_var1=None,
-        grad_var2=None,
-        compare_grads=True,
+        self, fn1, fn2, args1, args2, grad_var1=None, grad_var2=None, compare_grads=True
     ):
 
         out1 = fn1(*args1)
@@ -160,9 +151,7 @@ class TestBlending(unittest.TestCase):
         (out2 * grad_out).sum().backward()
         self.assertTrue(hasattr(grad_var2, "grad"))
         self.assertTrue(
-            torch.allclose(
-                grad_var1.grad.cpu(), grad_var2.grad.cpu(), atol=2e-5
-            )
+            torch.allclose(grad_var1.grad.cpu(), grad_var2.grad.cpu(), atol=2e-5)
         )
 
     def test_hard_rgb_blend(self):
@@ -199,9 +188,7 @@ class TestBlending(unittest.TestCase):
         # # (-) means inside triangle, (+) means outside triangle.
         random_sign_flip = torch.rand((N, S, S, K))
         random_sign_flip[random_sign_flip > 0.5] *= -1.0
-        dists = torch.randn(
-            size=(N, S, S, K), requires_grad=True, device=device
-        )
+        dists = torch.randn(size=(N, S, S, K), requires_grad=True, device=device)
         fragments = Fragments(
             pix_to_face=pix_to_face,
             bary_coords=empty,  # dummy
@@ -238,9 +225,7 @@ class TestBlending(unittest.TestCase):
         # # (-) means inside triangle, (+) means outside triangle.
         random_sign_flip = torch.rand((N, S, S, K))
         random_sign_flip[random_sign_flip > 0.5] *= -1.0
-        dists1 = torch.randn(
-            size=(N, S, S, K), requires_grad=True, device=device
-        )
+        dists1 = torch.randn(size=(N, S, S, K), requires_grad=True, device=device)
         dists2 = dists1.detach().clone()
         dists2.requires_grad = True
 
@@ -276,9 +261,7 @@ class TestBlending(unittest.TestCase):
         # of the image with surrounding padded values.
         N, S, K = 1, 8, 2
         device = torch.device("cuda")
-        pix_to_face = -torch.ones(
-            (N, S, S, K), dtype=torch.int64, device=device
-        )
+        pix_to_face = -torch.ones((N, S, S, K), dtype=torch.int64, device=device)
         h = int(S / 2)
         pix_to_face_full = torch.randint(
             size=(N, h, h, K), low=0, high=100, device=device
@@ -294,9 +277,7 @@ class TestBlending(unittest.TestCase):
 
         # randomly flip the sign of the distance
         # (-) means inside triangle, (+) means outside triangle.
-        dists1 = (
-            torch.randn(size=(N, S, S, K), device=device) * random_sign_flip
-        )
+        dists1 = torch.randn(size=(N, S, S, K), device=device) * random_sign_flip
         dists2 = dists1.clone()
         zbuf2 = zbuf1.clone()
         dists1.requires_grad = True
@@ -353,9 +334,7 @@ class TestBlending(unittest.TestCase):
         # # (-) means inside triangle, (+) means outside triangle.
         random_sign_flip = torch.rand((N, S, S, K), device=device)
         random_sign_flip[random_sign_flip > 0.5] *= -1.0
-        dists1 = torch.randn(
-            size=(N, S, S, K), requires_grad=True, device=device
-        )
+        dists1 = torch.randn(size=(N, S, S, K), requires_grad=True, device=device)
         fragments = Fragments(
             pix_to_face=pix_to_face,
             bary_coords=empty,  # dummy
@@ -398,15 +377,10 @@ class TestBlending(unittest.TestCase):
         # # (-) means inside triangle, (+) means outside triangle.
         random_sign_flip = torch.rand((N, S, S, K), device=device)
         random_sign_flip[random_sign_flip > 0.5] *= -1.0
-        dists1 = torch.randn(
-            size=(N, S, S, K), requires_grad=True, device=device
-        )
+        dists1 = torch.randn(size=(N, S, S, K), requires_grad=True, device=device)
         zbuf = torch.randn(size=(N, S, S, K), requires_grad=True, device=device)
         fragments = Fragments(
-            pix_to_face=pix_to_face,
-            bary_coords=empty,  # dummy
-            zbuf=zbuf,
-            dists=dists1,
+            pix_to_face=pix_to_face, bary_coords=empty, zbuf=zbuf, dists=dists1  # dummy
         )
         blend_params = BlendParams(sigma=1e-3)
 

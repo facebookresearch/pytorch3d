@@ -2,9 +2,9 @@
 
 
 from itertools import product
+
 import torch
 from fvcore.common.benchmark import benchmark
-
 from test_sample_points_from_meshes import TestSamplePoints
 
 

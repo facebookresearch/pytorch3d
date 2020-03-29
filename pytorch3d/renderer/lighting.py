@@ -114,12 +114,7 @@ def specular(
 
     # Ensure all inputs have same batch dimension as points
     matched_tensors = convert_to_tensors_and_broadcast(
-        points,
-        color,
-        direction,
-        camera_position,
-        shininess,
-        device=points.device,
+        points, color, direction, camera_position, shininess, device=points.device
     )
     _, color, direction, camera_position, shininess = matched_tensors
 
@@ -201,9 +196,7 @@ class DirectionalLights(TensorProperties):
             normals=normals, color=self.diffuse_color, direction=self.direction
         )
 
-    def specular(
-        self, normals, points, camera_position, shininess
-    ) -> torch.Tensor:
+    def specular(self, normals, points, camera_position, shininess) -> torch.Tensor:
         return specular(
             points=points,
             normals=normals,
@@ -256,13 +249,9 @@ class PointLights(TensorProperties):
 
     def diffuse(self, normals, points) -> torch.Tensor:
         direction = self.location - points
-        return diffuse(
-            normals=normals, color=self.diffuse_color, direction=direction
-        )
+        return diffuse(normals=normals, color=self.diffuse_color, direction=direction)
 
-    def specular(
-        self, normals, points, camera_position, shininess
-    ) -> torch.Tensor:
+    def specular(self, normals, points, camera_position, shininess) -> torch.Tensor:
         direction = self.location - points
         return specular(
             points=points,

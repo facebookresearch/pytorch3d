@@ -1,10 +1,9 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
 import torch
+from pytorch3d import _C
 from torch.autograd import Function
 from torch.autograd.function import once_differentiable
-
-from pytorch3d import _C
 
 
 class _MeshFaceAreasNormals(Function):

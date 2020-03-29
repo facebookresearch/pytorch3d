@@ -1,9 +1,11 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
 
-import numpy as np
 from typing import NamedTuple, Sequence
+
+import numpy as np
 import torch
+
 
 # Example functions for blending the top K colors per pixel using the outputs
 # from rasterization.
@@ -63,9 +65,7 @@ def sigmoid_alpha_blend(colors, fragments, blend_params) -> torch.Tensor:
         3D Reasoning', ICCV 2019
     """
     N, H, W, K = fragments.pix_to_face.shape
-    pixel_colors = torch.ones(
-        (N, H, W, 4), dtype=colors.dtype, device=colors.device
-    )
+    pixel_colors = torch.ones((N, H, W, 4), dtype=colors.dtype, device=colors.device)
     mask = fragments.pix_to_face >= 0
 
     # The distance is negative if a pixel is inside a face and positive outside
@@ -124,14 +124,10 @@ def softmax_rgb_blend(
 
     N, H, W, K = fragments.pix_to_face.shape
     device = fragments.pix_to_face.device
-    pixel_colors = torch.ones(
-        (N, H, W, 4), dtype=colors.dtype, device=colors.device
-    )
+    pixel_colors = torch.ones((N, H, W, 4), dtype=colors.dtype, device=colors.device)
     background = blend_params.background_color
     if not torch.is_tensor(background):
-        background = torch.tensor(
-            background, dtype=torch.float32, device=device
-        )
+        background = torch.tensor(background, dtype=torch.float32, device=device)
 
     # Background color
     delta = np.exp(1e-10 / blend_params.gamma) * 1e-10

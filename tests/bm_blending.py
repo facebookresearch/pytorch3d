@@ -2,8 +2,8 @@
 
 
 from itertools import product
-from fvcore.common.benchmark import benchmark
 
+from fvcore.common.benchmark import benchmark
 from test_blending import TestBlending
 
 
@@ -18,12 +18,7 @@ def bm_blending() -> None:
     for case in test_cases:
         n, s, k, d = case
         kwargs_list.append(
-            {
-                "num_meshes": n,
-                "image_size": s,
-                "faces_per_pixel": k,
-                "device": d,
-            }
+            {"num_meshes": n, "image_size": s, "faces_per_pixel": k, "device": d}
         )
 
     benchmark(

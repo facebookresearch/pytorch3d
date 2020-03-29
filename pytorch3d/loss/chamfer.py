@@ -2,13 +2,10 @@
 
 import torch
 import torch.nn.functional as F
-
 from pytorch3d.ops.nearest_neighbor_points import nn_points_idx
 
 
-def _validate_chamfer_reduction_inputs(
-    batch_reduction: str, point_reduction: str
-):
+def _validate_chamfer_reduction_inputs(batch_reduction: str, point_reduction: str):
     """Check the requested reductions are valid.
 
     Args:
@@ -18,17 +15,11 @@ def _validate_chamfer_reduction_inputs(
             points, can be one of ["none", "mean", "sum"].
     """
     if batch_reduction not in ["none", "mean", "sum"]:
-        raise ValueError(
-            'batch_reduction must be one of ["none", "mean", "sum"]'
-        )
+        raise ValueError('batch_reduction must be one of ["none", "mean", "sum"]')
     if point_reduction not in ["none", "mean", "sum"]:
-        raise ValueError(
-            'point_reduction must be one of ["none", "mean", "sum"]'
-        )
+        raise ValueError('point_reduction must be one of ["none", "mean", "sum"]')
     if batch_reduction == "none" and point_reduction == "none":
-        raise ValueError(
-            'batch_reduction and point_reduction cannot both be "none".'
-        )
+        raise ValueError('batch_reduction and point_reduction cannot both be "none".')
 
 
 def chamfer_distance(
@@ -87,10 +78,7 @@ def chamfer_distance(
                     (x.sum((1, 2)) * weights).sum() * 0.0,
                     (x.sum((1, 2)) * weights).sum() * 0.0,
                 )
-            return (
-                (x.sum((1, 2)) * weights) * 0.0,
-                (x.sum((1, 2)) * weights) * 0.0,
-            )
+            return ((x.sum((1, 2)) * weights) * 0.0, (x.sum((1, 2)) * weights) * 0.0)
 
     return_normals = x_normals is not None and y_normals is not None
     cham_norm_x = x.new_zeros(())

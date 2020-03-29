@@ -1,10 +1,10 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
 
-import numpy as np
 import unittest
-import torch
 
+import numpy as np
+import torch
 from pytorch3d.transforms.so3 import (
     hat,
     so3_exponential_map,
@@ -26,9 +26,7 @@ class TestSO3(unittest.TestCase):
         randomly generated logarithms of rotation matrices.
         """
         device = torch.device("cuda:0")
-        log_rot = torch.randn(
-            (batch_size, 3), dtype=torch.float32, device=device
-        )
+        log_rot = torch.randn((batch_size, 3), dtype=torch.float32, device=device)
         return log_rot
 
     @staticmethod
@@ -85,16 +83,12 @@ class TestSO3(unittest.TestCase):
         log_rot = torch.randn(size=[5, 4], device=device)
         with self.assertRaises(ValueError) as err:
             so3_exponential_map(log_rot)
-        self.assertTrue(
-            "Input tensor shape has to be Nx3." in str(err.exception)
-        )
+        self.assertTrue("Input tensor shape has to be Nx3." in str(err.exception))
 
         rot = torch.randn(size=[5, 3, 5], device=device)
         with self.assertRaises(ValueError) as err:
             so3_log_map(rot)
-        self.assertTrue(
-            "Input has to be a batch of 3x3 Tensors." in str(err.exception)
-        )
+        self.assertTrue("Input has to be a batch of 3x3 Tensors." in str(err.exception))
 
         # trace of rot definitely bigger than 3 or smaller than -1
         rot = torch.cat(

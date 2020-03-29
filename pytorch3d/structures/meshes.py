@@ -1,6 +1,7 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
 from typing import List
+
 import torch
 
 from . import utils as struct_utils
@@ -314,14 +315,11 @@ class Meshes(object):
         if isinstance(verts, list) and isinstance(faces, list):
             self._verts_list = verts
             self._faces_list = [
-                f[f.gt(-1).all(1)].to(torch.int64) if len(f) > 0 else f
-                for f in faces
+                f[f.gt(-1).all(1)].to(torch.int64) if len(f) > 0 else f for f in faces
             ]
             self._N = len(self._verts_list)
             self.device = torch.device("cpu")
-            self.valid = torch.zeros(
-                (self._N,), dtype=torch.bool, device=self.device
-            )
+            self.valid = torch.zeros((self._N,), dtype=torch.bool, device=self.device)
             if self._N > 0:
                 self.device = self._verts_list[0].device
                 self._num_verts_per_mesh = torch.tensor(
@@ -348,18 +346,14 @@ class Meshes(object):
 
         elif torch.is_tensor(verts) and torch.is_tensor(faces):
             if verts.size(2) != 3 and faces.size(2) != 3:
-                raise ValueError(
-                    "Verts and Faces tensors have incorrect dimensions."
-                )
+                raise ValueError("Verts and Faces tensors have incorrect dimensions.")
             self._verts_padded = verts
             self._faces_padded = faces.to(torch.int64)
             self._N = self._verts_padded.shape[0]
             self._V = self._verts_padded.shape[1]
 
             self.device = self._verts_padded.device
-            self.valid = torch.zeros(
-                (self._N,), dtype=torch.bool, device=self.device
-            )
+            self.valid = torch.zeros((self._N,), dtype=torch.bool, device=self.device)
             if self._N > 0:
                 # Check that padded faces - which have value -1 - are at the
                 # end of the tensors
@@ -400,12 +394,8 @@ class Meshes(object):
 
         # Set the num verts/faces on the textures if present.
         if self.textures is not None:
-            self.textures._num_faces_per_mesh = (
-                self._num_faces_per_mesh.tolist()
-            )
-            self.textures._num_verts_per_mesh = (
-                self._num_verts_per_mesh.tolist()
-            )
+            self.textures._num_faces_per_mesh = self._num_faces_per_mesh.tolist()
+            self.textures._num_verts_per_mesh = self._num_verts_per_mesh.tolist()
 
     def __len__(self):
         return self._N
@@ -665,8 +655,7 @@ class Meshes(object):
 
         self._verts_padded_to_packed_idx = torch.cat(
             [
-                torch.arange(v, dtype=torch.int64, device=self.device)
-                + i * self._V
+                torch.arange(v, dtype=torch.int64, device=self.device) + i * self._V
                 for (i, v) in enumerate(self._num_verts_per_mesh)
             ],
             dim=0,
@@ -706,15 +695,10 @@ class Meshes(object):
             tensor of normals of shape (N, max(V_n), 3).
         """
         if self.isempty():
-            return torch.zeros(
-                (self._N, 0, 3), dtype=torch.float32, device=self.device
-            )
+            return torch.zeros((self._N, 0, 3), dtype=torch.float32, device=self.device)
         verts_normals_list = self.verts_normals_list()
         return struct_utils.list_to_padded(
-            verts_normals_list,
-            (self._V, 3),
-            pad_value=0.0,
-            equisized=self.equisized,
+            verts_normals_list, (self._V, 3), pad_value=0.0, equisized=self.equisized
         )
 
     def faces_normals_packed(self):
@@ -750,15 +734,10 @@ class Meshes(object):
             tensor of normals of shape (N, max(F_n), 3).
         """
         if self.isempty():
-            return torch.zeros(
-                (self._N, 0, 3), dtype=torch.float32, device=self.device
-            )
+            return torch.zeros((self._N, 0, 3), dtype=torch.float32, device=self.device)
         faces_normals_list = self.faces_normals_list()
         return struct_utils.list_to_padded(
-            faces_normals_list,
-            (self._F, 3),
-            pad_value=0.0,
-            equisized=self.equisized,
+            faces_normals_list, (self._F, 3), pad_value=0.0, equisized=self.equisized
         )
 
     def faces_areas_packed(self):
@@ -797,9 +776,7 @@ class Meshes(object):
             return
         faces_packed = self.faces_packed()
         verts_packed = self.verts_packed()
-        face_areas, face_normals = mesh_face_areas_normals(
-            verts_packed, faces_packed
-        )
+        face_areas, face_normals = mesh_face_areas_normals(verts_packed, faces_packed)
         self._faces_areas_packed = face_areas
         self._faces_normals_packed = face_normals
 
@@ -813,9 +790,7 @@ class Meshes(object):
             refresh: Set to True to force recomputation of vertex normals.
                 Default: False.
         """
-        if not (
-            refresh or any(v is None for v in [self._verts_normals_packed])
-        ):
+        if not (refresh or any(v is None for v in [self._verts_normals_packed])):
             return
 
         if self.isempty():
@@ -867,8 +842,7 @@ class Meshes(object):
         Computes the padded version of meshes from verts_list and faces_list.
         """
         if not (
-            refresh
-            or any(v is None for v in [self._verts_padded, self._faces_padded])
+            refresh or any(v is None for v in [self._verts_padded, self._faces_padded])
         ):
             return
 
@@ -887,16 +861,10 @@ class Meshes(object):
             )
         else:
             self._faces_padded = struct_utils.list_to_padded(
-                faces_list,
-                (self._F, 3),
-                pad_value=-1.0,
-                equisized=self.equisized,
+                faces_list, (self._F, 3), pad_value=-1.0, equisized=self.equisized
             )
             self._verts_padded = struct_utils.list_to_padded(
-                verts_list,
-                (self._V, 3),
-                pad_value=0.0,
-                equisized=self.equisized,
+                verts_list, (self._V, 3), pad_value=0.0, equisized=self.equisized
             )
 
     # TODO(nikhilar) Improve performance of _compute_packed.
@@ -1055,9 +1023,7 @@ class Meshes(object):
         face_to_edge = inverse_idxs[face_to_edge]
         self._faces_packed_to_edges_packed = face_to_edge
 
-        num_edges_per_mesh = torch.zeros(
-            self._N, dtype=torch.int32, device=self.device
-        )
+        num_edges_per_mesh = torch.zeros(self._N, dtype=torch.int32, device=self.device)
         ones = torch.ones(1, dtype=torch.int32, device=self.device).expand(
             self._edges_packed_to_mesh_idx.shape
         )

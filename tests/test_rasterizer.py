@@ -1,21 +1,16 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
 
-import numpy as np
 import unittest
 from pathlib import Path
+
+import numpy as np
 import torch
 from PIL import Image
-
-from pytorch3d.renderer.cameras import (
-    OpenGLPerspectiveCameras,
-    look_at_view_transform,
-)
-from pytorch3d.renderer.mesh.rasterizer import (
-    MeshRasterizer,
-    RasterizationSettings,
-)
+from pytorch3d.renderer.cameras import OpenGLPerspectiveCameras, look_at_view_transform
+from pytorch3d.renderer.mesh.rasterizer import MeshRasterizer, RasterizationSettings
 from pytorch3d.utils.ico_sphere import ico_sphere
+
 
 DATA_DIR = Path(__file__).resolve().parent / "data"
 DEBUG = False  # Set DEBUG to true to save outputs from the tests.
@@ -52,9 +47,7 @@ class TestMeshRasterizer(unittest.TestCase):
         )
 
         # Init rasterizer
-        rasterizer = MeshRasterizer(
-            cameras=cameras, raster_settings=raster_settings
-        )
+        rasterizer = MeshRasterizer(cameras=cameras, raster_settings=raster_settings)
 
         ####################################
         # 1. Test rasterizing a single mesh

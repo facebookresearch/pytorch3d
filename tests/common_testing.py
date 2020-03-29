@@ -1,8 +1,9 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
 
-import numpy as np
 import unittest
+
+import numpy as np
 import torch
 
 
@@ -11,17 +12,13 @@ class TestCaseMixin(unittest.TestCase):
         """
         Verify that tensor1 and tensor2 have their data in distinct locations.
         """
-        self.assertNotEqual(
-            tensor1.storage().data_ptr(), tensor2.storage().data_ptr()
-        )
+        self.assertNotEqual(tensor1.storage().data_ptr(), tensor2.storage().data_ptr())
 
     def assertNotSeparate(self, tensor1, tensor2) -> None:
         """
         Verify that tensor1 and tensor2 have their data in the same locations.
         """
-        self.assertEqual(
-            tensor1.storage().data_ptr(), tensor2.storage().data_ptr()
-        )
+        self.assertEqual(tensor1.storage().data_ptr(), tensor2.storage().data_ptr())
 
     def assertAllSeparate(self, tensor_list) -> None:
         """
@@ -57,7 +54,5 @@ class TestCaseMixin(unittest.TestCase):
                 input, other, rtol=rtol, atol=atol, equal_nan=equal_nan
             )
         else:
-            close = np.allclose(
-                input, other, rtol=rtol, atol=atol, equal_nan=equal_nan
-            )
+            close = np.allclose(input, other, rtol=rtol, atol=atol, equal_nan=equal_nan)
         self.assertTrue(close)

@@ -2,9 +2,9 @@
 
 
 import torch
-
 from pytorch3d.ops.subdivide_meshes import SubdivideMeshes
 from pytorch3d.structures.meshes import Meshes
+
 
 # Vertex coordinates for a level 0 ico-sphere.
 _ico_verts0 = [

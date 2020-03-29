@@ -59,9 +59,7 @@ def vert_align(
     elif hasattr(verts, "verts_padded"):
         grid = verts.verts_padded()
     else:
-        raise ValueError(
-            "verts must be a tensor or have a `verts_padded` attribute"
-        )
+        raise ValueError("verts must be a tensor or have a `verts_padded` attribute")
 
     grid = grid[:, None, :, :2]  # (N, 1, V, 2)
 

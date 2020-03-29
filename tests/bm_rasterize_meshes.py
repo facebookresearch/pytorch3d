@@ -2,10 +2,11 @@
 
 
 from itertools import product
+
 import torch
 from fvcore.common.benchmark import benchmark
-
 from test_rasterize_meshes import TestRasterizeMeshes
+
 
 # ico levels:
 # 0: (12 verts, 20 faces)
@@ -39,12 +40,7 @@ def bm_rasterize_meshes() -> None:
     for case in test_cases:
         n, ic, im, b = case
         kwargs_list.append(
-            {
-                "num_meshes": n,
-                "ico_level": ic,
-                "image_size": im,
-                "blur_radius": b,
-            }
+            {"num_meshes": n, "ico_level": ic, "image_size": im, "blur_radius": b}
         )
     benchmark(
         TestRasterizeMeshes.rasterize_meshes_cpu_with_init,
@@ -63,9 +59,7 @@ def bm_rasterize_meshes() -> None:
         test_cases = product(num_meshes, ico_level, image_size, blur, bin_size)
         # only keep cases where bin_size == 0 or image_size / bin_size < 16
         test_cases = [
-            elem
-            for elem in test_cases
-            if (elem[-1] == 0 or elem[-3] / elem[-1] < 16)
+            elem for elem in test_cases if (elem[-1] == 0 or elem[-3] / elem[-1] < 16)
         ]
         for case in test_cases:
             n, ic, im, b, bn = case

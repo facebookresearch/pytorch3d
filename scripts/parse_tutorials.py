@@ -4,9 +4,11 @@
 import argparse
 import json
 import os
+
 import nbformat
 from bs4 import BeautifulSoup
 from nbconvert import HTMLExporter, ScriptExporter
+
 
 TEMPLATE = """const CWD = process.cwd();
 
@@ -41,9 +43,7 @@ def gen_tutorials(repo_dir: str) -> None:
     Also create ipynb and py versions of tutorial in Docusaurus site for
     download.
     """
-    with open(
-        os.path.join(repo_dir, "website", "tutorials.json"), "r"
-    ) as infile:
+    with open(os.path.join(repo_dir, "website", "tutorials.json"), "r") as infile:
         tutorial_config = json.loads(infile.read())
 
     tutorial_ids = {x["id"] for v in tutorial_config.values() for x in v}
@@ -107,10 +107,7 @@ if __name__ == "__main__":
         description="Generate JS, HTML, ipynb, and py files for tutorials."
     )
     parser.add_argument(
-        "--repo_dir",
-        metavar="path",
-        required=True,
-        help="PyTorch3D repo directory.",
+        "--repo_dir", metavar="path", required=True, help="PyTorch3D repo directory."
     )
     args = parser.parse_args()
     gen_tutorials(args.repo_dir)

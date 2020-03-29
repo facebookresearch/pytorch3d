@@ -1,9 +1,9 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
 from itertools import product
+
 import torch
 from fvcore.common.benchmark import benchmark
-
 from pytorch3d import _C
 from pytorch3d.ops.knn import _knn_points_idx_naive
 
@@ -32,9 +32,7 @@ def benchmark_knn_cuda_versions() -> None:
         knn_kwargs.append({"N": N, "D": D, "P": P, "K": K, "v": version})
     for N, P, D in product(Ns, Ps, Ds):
         nn_kwargs.append({"N": N, "D": D, "P": P})
-    benchmark(
-        knn_cuda_with_init, "KNN_CUDA_VERSIONS", knn_kwargs, warmup_iters=1
-    )
+    benchmark(knn_cuda_with_init, "KNN_CUDA_VERSIONS", knn_kwargs, warmup_iters=1)
     benchmark(nn_cuda_with_init, "NN_CUDA", nn_kwargs, warmup_iters=1)
 
 
@@ -50,10 +48,7 @@ def benchmark_knn_cuda_vs_naive() -> None:
         if P <= 4096:
             naive_kwargs.append({"N": N, "D": D, "P": P, "K": K})
     benchmark(
-        knn_python_cuda_with_init,
-        "KNN_CUDA_PYTHON",
-        naive_kwargs,
-        warmup_iters=1,
+        knn_python_cuda_with_init, "KNN_CUDA_PYTHON", naive_kwargs, warmup_iters=1
     )
     benchmark(knn_cuda_with_init, "KNN_CUDA", knn_kwargs, warmup_iters=1)
 
@@ -68,9 +63,7 @@ def benchmark_knn_cpu() -> None:
         knn_kwargs.append({"N": N, "D": D, "P": P, "K": K})
     for N, P, D in product(Ns, Ps, Ds):
         nn_kwargs.append({"N": N, "D": D, "P": P})
-    benchmark(
-        knn_python_cpu_with_init, "KNN_CPU_PYTHON", knn_kwargs, warmup_iters=1
-    )
+    benchmark(knn_python_cpu_with_init, "KNN_CPU_PYTHON", knn_kwargs, warmup_iters=1)
     benchmark(knn_cpu_with_init, "KNN_CPU_CPP", knn_kwargs, warmup_iters=1)
     benchmark(nn_cpu_with_init, "NN_CPU_CPP", nn_kwargs, warmup_iters=1)
 

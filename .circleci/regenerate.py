@@ -8,6 +8,7 @@ TODO: python 3.8 when pytorch 1.4.
 """
 
 import os.path
+
 import jinja2
 import yaml
 
@@ -45,9 +46,7 @@ def workflow_pair(
 ):
 
     w = []
-    base_workflow_name = (
-        f"{prefix}binary_linux_{btype}_py{python_version}_{cu_version}"
-    )
+    base_workflow_name = f"{prefix}binary_linux_{btype}_py{python_version}_{cu_version}"
 
     w.append(
         generate_base_workflow(
@@ -94,9 +93,7 @@ def generate_base_workflow(
     return {f"binary_linux_{btype}": d}
 
 
-def generate_upload_workflow(
-    *, base_workflow_name, btype, cu_version, filter_branch
-):
+def generate_upload_workflow(*, base_workflow_name, btype, cu_version, filter_branch):
     d = {
         "name": f"{base_workflow_name}_upload",
         "context": "org-member",

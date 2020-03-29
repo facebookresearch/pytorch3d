@@ -2,16 +2,16 @@
 
 
 """This module implements utility functions for loading and saving meshes."""
-import numpy as np
 import os
 import pathlib
 import warnings
 from collections import namedtuple
 from typing import List, Optional
+
+import numpy as np
 import torch
 from fvcore.common.file_io import PathManager
 from PIL import Image
-
 from pytorch3d.structures import Meshes, Textures, join_meshes
 
 
@@ -51,9 +51,7 @@ def _read_image(file_name: str, format=None):
 
 # Faces & Aux type returned from load_obj function.
 _Faces = namedtuple("Faces", "verts_idx normals_idx textures_idx materials_idx")
-_Aux = namedtuple(
-    "Properties", "normals verts_uvs material_colors texture_images"
-)
+_Aux = namedtuple("Properties", "normals verts_uvs material_colors texture_images")
 
 
 def _format_faces_indices(faces_indices, max_index):
@@ -247,9 +245,7 @@ def load_objs_as_meshes(files: list, device=None, load_textures: bool = True):
             image = list(tex_maps.values())[0].to(device)[None]
             tex = Textures(verts_uvs=verts_uvs, faces_uvs=faces_uvs, maps=image)
 
-        mesh = Meshes(
-            verts=[verts], faces=[faces.verts_idx.to(device)], textures=tex
-        )
+        mesh = Meshes(verts=[verts], faces=[faces.verts_idx.to(device)], textures=tex)
         mesh_list.append(mesh)
     if len(mesh_list) == 1:
         return mesh_list[0]
@@ -308,9 +304,7 @@ def _parse_face(
     # Subdivide faces with more than 3 vertices. See comments of the
     # load_obj function for more details.
     for i in range(len(face_verts) - 2):
-        faces_verts_idx.append(
-            (face_verts[0], face_verts[i + 1], face_verts[i + 2])
-        )
+        faces_verts_idx.append((face_verts[0], face_verts[i + 1], face_verts[i + 2]))
         if len(face_normals) > 0:
             faces_normals_idx.append(
                 (face_normals[0], face_normals[i + 1], face_normals[i + 2])
@@ -367,8 +361,7 @@ def _load(f_obj, data_dir, load_textures=True):
             tx = [float(x) for x in line.split()[1:3]]
             if len(tx) != 2:
                 raise ValueError(
-                    "Texture %s does not have 2 values. Line: %s"
-                    % (str(tx), str(line))
+                    "Texture %s does not have 2 values. Line: %s" % (str(tx), str(line))
                 )
             verts_uvs.append(tx)
         elif line.startswith("vn "):
@@ -397,17 +390,13 @@ def _load(f_obj, data_dir, load_textures=True):
 
     # Repeat for normals and textures if present.
     if len(faces_normals_idx) > 0:
-        faces_normals_idx = _format_faces_indices(
-            faces_normals_idx, normals.shape[0]
-        )
+        faces_normals_idx = _format_faces_indices(faces_normals_idx, normals.shape[0])
     if len(faces_textures_idx) > 0:
         faces_textures_idx = _format_faces_indices(
             faces_textures_idx, verts_uvs.shape[0]
         )
     if len(faces_materials_idx) > 0:
-        faces_materials_idx = torch.tensor(
-            faces_materials_idx, dtype=torch.int64
-        )
+        faces_materials_idx = torch.tensor(faces_materials_idx, dtype=torch.int64)
 
     # Load materials
     material_colors, texture_images = None, None

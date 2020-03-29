@@ -1,13 +1,12 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
 
-import numpy as np
 import unittest
+
+import numpy as np
 import torch
-
-from pytorch3d.renderer.utils import TensorProperties
-
 from common_testing import TestCaseMixin
+from pytorch3d.renderer.utils import TensorProperties
 
 
 # Example class for testing
@@ -81,9 +80,5 @@ class TestTensorProperties(TestCaseMixin, unittest.TestCase):
             if inds.sum() > 0:
                 # Check the gathered points in the output have the same value from
                 # the input.
-                self.assertClose(
-                    test_class_gathered.x[inds].mean(dim=0), x[i, ...]
-                )
-                self.assertClose(
-                    test_class_gathered.y[inds].mean(dim=0), y[i, ...]
-                )
+                self.assertClose(test_class_gathered.x[inds].mean(dim=0), x[i, ...])
+                self.assertClose(test_class_gathered.y[inds].mean(dim=0), y[i, ...])

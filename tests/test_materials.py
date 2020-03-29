@@ -1,11 +1,10 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
 import unittest
+
 import torch
-
-from pytorch3d.renderer.materials import Materials
-
 from common_testing import TestCaseMixin
+from pytorch3d.renderer.materials import Materials
 
 
 class TestMaterials(TestCaseMixin, unittest.TestCase):
@@ -64,8 +63,7 @@ class TestMaterials(TestCaseMixin, unittest.TestCase):
         """
         with self.assertRaises(ValueError):
             Materials(
-                ambient_color=torch.randn(10, 3),
-                diffuse_color=torch.randn(15, 3),
+                ambient_color=torch.randn(10, 3), diffuse_color=torch.randn(15, 3)
             )
 
     def test_initialize_materials_dimensions_fail(self):
@@ -80,16 +78,12 @@ class TestMaterials(TestCaseMixin, unittest.TestCase):
             Materials(shininess=torch.randn(10, 2))
 
     def test_initialize_materials_mixed_inputs(self):
-        mat = Materials(
-            ambient_color=torch.randn(1, 3), diffuse_color=((1, 1, 1),)
-        )
+        mat = Materials(ambient_color=torch.randn(1, 3), diffuse_color=((1, 1, 1),))
         self.assertTrue(mat.ambient_color.shape == (1, 3))
         self.assertTrue(mat.diffuse_color.shape == (1, 3))
 
     def test_initialize_materials_mixed_inputs_broadcast(self):
-        mat = Materials(
-            ambient_color=torch.randn(10, 3), diffuse_color=((1, 1, 1),)
-        )
+        mat = Materials(ambient_color=torch.randn(10, 3), diffuse_color=((1, 1, 1),))
         self.assertTrue(mat.ambient_color.shape == (10, 3))
         self.assertTrue(mat.diffuse_color.shape == (10, 3))
         self.assertTrue(mat.specular_color.shape == (10, 3))

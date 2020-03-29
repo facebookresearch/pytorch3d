@@ -7,8 +7,8 @@ batches of meshes.
 """
 import sys
 from typing import Tuple, Union
-import torch
 
+import torch
 from pytorch3d.ops.mesh_face_areas_normals import mesh_face_areas_normals
 from pytorch3d.ops.packed_to_padded import packed_to_padded
 
@@ -53,9 +53,7 @@ def sample_points_from_meshes(
 
     # Only compute samples for non empty meshes
     with torch.no_grad():
-        areas, _ = mesh_face_areas_normals(
-            verts, faces
-        )  # Face areas can be zero.
+        areas, _ = mesh_face_areas_normals(verts, faces)  # Face areas can be zero.
         max_faces = meshes.num_faces_per_mesh().max().item()
         areas_padded = packed_to_padded(
             areas, mesh_to_face[meshes.valid], max_faces
@@ -80,21 +78,17 @@ def sample_points_from_meshes(
     a = v0[sample_face_idxs]  # (N, num_samples, 3)
     b = v1[sample_face_idxs]
     c = v2[sample_face_idxs]
-    samples[meshes.valid] = (
-        w0[:, :, None] * a + w1[:, :, None] * b + w2[:, :, None] * c
-    )
+    samples[meshes.valid] = w0[:, :, None] * a + w1[:, :, None] * b + w2[:, :, None] * c
 
     if return_normals:
         # Intialize normals tensor with fill value 0 for empty meshes.
         # Normals for the sampled points are face normals computed from
         # the vertices of the face in which the sampled point lies.
-        normals = torch.zeros(
-            (num_meshes, num_samples, 3), device=meshes.device
-        )
+        normals = torch.zeros((num_meshes, num_samples, 3), device=meshes.device)
         vert_normals = (v1 - v0).cross(v2 - v1, dim=1)
-        vert_normals = vert_normals / vert_normals.norm(
-            dim=1, p=2, keepdim=True
-        ).clamp(min=sys.float_info.epsilon)
+        vert_normals = vert_normals / vert_normals.norm(dim=1, p=2, keepdim=True).clamp(
+            min=sys.float_info.epsilon
+        )
         vert_normals = vert_normals[sample_face_idxs]
         normals[meshes.valid] = vert_normals
 

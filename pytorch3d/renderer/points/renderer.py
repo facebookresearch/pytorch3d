@@ -5,6 +5,7 @@
 import torch
 import torch.nn as nn
 
+
 # A renderer class should be initialized with a
 # function for rasterization and a function for compositing.
 # The rasterizer should:

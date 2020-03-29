@@ -3,12 +3,11 @@
 import struct
 import unittest
 from io import BytesIO, StringIO
-import torch
 
+import torch
+from common_testing import TestCaseMixin
 from pytorch3d.io.ply_io import _load_ply_raw, load_ply, save_ply
 from pytorch3d.utils import torus
-
-from common_testing import TestCaseMixin
 
 
 class TestMeshPlyIO(TestCaseMixin, unittest.TestCase):
@@ -155,14 +154,7 @@ class TestMeshPlyIO(TestCaseMixin, unittest.TestCase):
     def test_load_simple_binary(self):
         for big_endian in [True, False]:
             verts = (
-                "0 0 0 "
-                "0 0 1 "
-                "0 1 1 "
-                "0 1 0 "
-                "1 0 0 "
-                "1 0 1 "
-                "1 1 1 "
-                "1 1 0"
+                "0 0 0 " "0 0 1 " "0 1 1 " "0 1 0 " "1 0 0 " "1 0 1 " "1 1 1 " "1 1 0"
             ).split()
             faces = (
                 "4 0 1 2 3 "
@@ -176,9 +168,7 @@ class TestMeshPlyIO(TestCaseMixin, unittest.TestCase):
                 "3 4 5 1"
             ).split()
             short_one = b"\00\01" if big_endian else b"\01\00"
-            mixed_data = b"\00\00" b"\03\03" + (
-                short_one + b"\00\01\01\01" b"\00\02"
-            )
+            mixed_data = b"\00\00" b"\03\03" + (short_one + b"\00\01\01\01" b"\00\02")
             minus_one_data = b"\xff" * 14
             endian_char = ">" if big_endian else "<"
             format = (
@@ -306,9 +296,7 @@ class TestMeshPlyIO(TestCaseMixin, unittest.TestCase):
 
         lines2 = lines.copy()
         lines2[8] = "1 2"
-        with self.assertRaisesRegex(
-            ValueError, "Inconsistent data for vertex."
-        ):
+        with self.assertRaisesRegex(ValueError, "Inconsistent data for vertex."):
             _load_ply_raw(StringIO("\n".join(lines2)))
 
         lines2 = lines[:-1]
@@ -344,9 +332,7 @@ class TestMeshPlyIO(TestCaseMixin, unittest.TestCase):
 
         lines2 = lines.copy()
         lines2.insert(4, "element bad 1")
-        with self.assertRaisesRegex(
-            ValueError, "Found an element with no properties."
-        ):
+        with self.assertRaisesRegex(ValueError, "Found an element with no properties."):
             _load_ply_raw(StringIO("\n".join(lines2)))
 
         lines2 = lines.copy()
@@ -369,25 +355,19 @@ class TestMeshPlyIO(TestCaseMixin, unittest.TestCase):
         lines2 = lines.copy()
         lines2.insert(4, "property double y")
 
-        with self.assertRaisesRegex(
-            ValueError, "Too little data for an element."
-        ):
+        with self.assertRaisesRegex(ValueError, "Too little data for an element."):
             _load_ply_raw(StringIO("\n".join(lines2)))
 
         lines2[-2] = "3.3 4.2"
         _load_ply_raw(StringIO("\n".join(lines2)))
 
         lines2[-2] = "3.3 4.3 2"
-        with self.assertRaisesRegex(
-            ValueError, "Too much data for an element."
-        ):
+        with self.assertRaisesRegex(ValueError, "Too much data for an element."):
             _load_ply_raw(StringIO("\n".join(lines2)))
 
         # Now make the ply file actually be readable as a Mesh
 
-        with self.assertRaisesRegex(
-            ValueError, "The ply file has no face element."
-        ):
+        with self.assertRaisesRegex(ValueError, "The ply file has no face element."):
             load_ply(StringIO("\n".join(lines)))
 
         lines2 = lines.copy()
@@ -398,9 +378,7 @@ class TestMeshPlyIO(TestCaseMixin, unittest.TestCase):
         lines2.insert(5, "property float z")
         lines2.insert(5, "property float y")
         lines2[-2] = "0 0 0"
-        with self.assertRaisesRegex(
-            ValueError, "Faces must have at least 3 vertices."
-        ):
+        with self.assertRaisesRegex(ValueError, "Faces must have at least 3 vertices."):
             load_ply(StringIO("\n".join(lines2)))
 
         # Good one
@@ -408,17 +386,11 @@ class TestMeshPlyIO(TestCaseMixin, unittest.TestCase):
         load_ply(StringIO("\n".join(lines2)))
 
     @staticmethod
-    def _bm_save_ply(
-        verts: torch.Tensor, faces: torch.Tensor, decimal_places: int
-    ):
-        return lambda: save_ply(
-            StringIO(), verts, faces, decimal_places=decimal_places
-        )
+    def _bm_save_ply(verts: torch.Tensor, faces: torch.Tensor, decimal_places: int):
+        return lambda: save_ply(StringIO(), verts, faces, decimal_places=decimal_places)
 
     @staticmethod
-    def _bm_load_ply(
-        verts: torch.Tensor, faces: torch.Tensor, decimal_places: int
-    ):
+    def _bm_load_ply(verts: torch.Tensor, faces: torch.Tensor, decimal_places: int):
         f = StringIO()
         save_ply(f, verts, faces, decimal_places)
         s = f.getvalue()

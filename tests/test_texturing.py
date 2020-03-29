@@ -2,9 +2,10 @@
 
 
 import unittest
+
 import torch
 import torch.nn.functional as F
-
+from common_testing import TestCaseMixin
 from pytorch3d.renderer.mesh.rasterizer import Fragments
 from pytorch3d.renderer.mesh.texturing import (
     interpolate_face_attributes,
@@ -13,8 +14,6 @@ from pytorch3d.renderer.mesh.texturing import (
 )
 from pytorch3d.structures import Meshes, Textures
 from pytorch3d.structures.utils import list_to_padded
-
-from common_testing import TestCaseMixin
 from test_meshes import TestMeshes
 
 
@@ -68,12 +67,7 @@ class TestTexturing(TestCaseMixin, unittest.TestCase):
             dists=torch.ones_like(pix_to_face),
         )
         grad_vert_tex = torch.tensor(
-            [
-                [0.3, 0.3, 0.3],
-                [0.9, 0.9, 0.9],
-                [0.5, 0.5, 0.5],
-                [0.3, 0.3, 0.3],
-            ],
+            [[0.3, 0.3, 0.3], [0.9, 0.9, 0.9], [0.5, 0.5, 0.5], [0.3, 0.3, 0.3]],
             dtype=torch.float32,
         )
         texels = interpolate_vertex_colors(fragments, mesh)
@@ -115,9 +109,7 @@ class TestTexturing(TestCaseMixin, unittest.TestCase):
             [[0.5, 0.3, 0.2], [0.3, 0.6, 0.1]], dtype=torch.float32
         ).view(1, 1, 1, 2, -1)
         dummy_verts = torch.zeros(4, 3)
-        vert_uvs = torch.tensor(
-            [[1, 0], [0, 1], [1, 1], [0, 0]], dtype=torch.float32
-        )
+        vert_uvs = torch.tensor([[1, 0], [0, 1], [1, 1], [0, 0]], dtype=torch.float32)
         face_uvs = torch.tensor([[0, 1, 2], [1, 2, 3]], dtype=torch.int64)
         interpolated_uvs = torch.tensor(
             [[0.5 + 0.2, 0.3 + 0.2], [0.6, 0.3 + 0.6]], dtype=torch.float32
@@ -137,9 +129,7 @@ class TestTexturing(TestCaseMixin, unittest.TestCase):
             dists=pix_to_face,
         )
         tex = Textures(
-            maps=tex_map,
-            faces_uvs=face_uvs[None, ...],
-            verts_uvs=vert_uvs[None, ...],
+            maps=tex_map, faces_uvs=face_uvs[None, ...], verts_uvs=vert_uvs[None, ...]
         )
         meshes = Meshes(verts=[dummy_verts], faces=[face_uvs], textures=tex)
         texels = interpolate_texture_map(fragments, meshes)
@@ -151,9 +141,7 @@ class TestTexturing(TestCaseMixin, unittest.TestCase):
         tex_map = tex_map.permute(0, 3, 1, 2)
         tex_map = torch.cat([tex_map, tex_map], dim=0)
         expected_out = F.grid_sample(tex_map, pixel_uvs, align_corners=False)
-        self.assertTrue(
-            torch.allclose(texels.squeeze(), expected_out.squeeze())
-        )
+        self.assertTrue(torch.allclose(texels.squeeze(), expected_out.squeeze()))
 
     def test_init_rgb_uv_fail(self):
         V = 20
@@ -183,9 +171,7 @@ class TestTexturing(TestCaseMixin, unittest.TestCase):
             Textures(verts_rgb=torch.ones((5, 16, 16, 3)))
 
         # maps provided without verts/faces uvs
-        with self.assertRaisesRegex(
-            ValueError, "faces_uvs and verts_uvs are required"
-        ):
+        with self.assertRaisesRegex(ValueError, "faces_uvs and verts_uvs are required"):
             Textures(maps=torch.ones((5, 16, 16, 3)))
 
     def test_padded_to_packed(self):
@@ -209,9 +195,7 @@ class TestTexturing(TestCaseMixin, unittest.TestCase):
         # This is set inside Meshes when textures is passed as an input.
         # Here we set _num_faces_per_mesh and _num_verts_per_mesh explicity.
         tex1 = tex.clone()
-        tex1._num_faces_per_mesh = (
-            faces_uvs_padded.gt(-1).all(-1).sum(-1).tolist()
-        )
+        tex1._num_faces_per_mesh = faces_uvs_padded.gt(-1).all(-1).sum(-1).tolist()
         tex1._num_verts_per_mesh = torch.tensor([5, 4])
         faces_packed = tex1.faces_uvs_packed()
         verts_packed = tex1.verts_uvs_packed()
@@ -245,16 +229,12 @@ class TestTexturing(TestCaseMixin, unittest.TestCase):
 
         for i in range(N):
             self.assertTrue(
-                (faces_list[i] == faces_uvs_padded[i, ...].squeeze())
-                .all()
-                .item()
+                (faces_list[i] == faces_uvs_padded[i, ...].squeeze()).all().item()
             )
 
         for i in range(N):
             self.assertTrue(
-                (verts_list[i] == verts_uvs_padded[i, ...].squeeze())
-                .all()
-                .item()
+                (verts_list[i] == verts_uvs_padded[i, ...].squeeze()).all().item()
             )
 
     def test_clone(self):
@@ -344,9 +324,7 @@ class TestTexturing(TestCaseMixin, unittest.TestCase):
             verts_uvs=torch.randn((B, V, 2)),
         )
         tex_mesh = Meshes(
-            verts=mesh.verts_padded(),
-            faces=mesh.faces_padded(),
-            textures=tex_uv,
+            verts=mesh.verts_padded(), faces=mesh.faces_padded(), textures=tex_uv
         )
         N = 20
         new_mesh = tex_mesh.extend(N)
@@ -359,12 +337,10 @@ class TestTexturing(TestCaseMixin, unittest.TestCase):
         for i in range(len(tex_mesh)):
             for n in range(N):
                 self.assertClose(
-                    tex_init.faces_uvs_list()[i],
-                    new_tex.faces_uvs_list()[i * N + n],
+                    tex_init.faces_uvs_list()[i], new_tex.faces_uvs_list()[i * N + n]
                 )
                 self.assertClose(
-                    tex_init.verts_uvs_list()[i],
-                    new_tex.verts_uvs_list()[i * N + n],
+                    tex_init.verts_uvs_list()[i], new_tex.verts_uvs_list()[i * N + n]
                 )
         self.assertAllSeparate(
             [
@@ -384,9 +360,7 @@ class TestTexturing(TestCaseMixin, unittest.TestCase):
         # 2. Texture vertex RGB
         tex_rgb = Textures(verts_rgb=torch.randn((B, V, 3)))
         tex_mesh_rgb = Meshes(
-            verts=mesh.verts_padded(),
-            faces=mesh.faces_padded(),
-            textures=tex_rgb,
+            verts=mesh.verts_padded(), faces=mesh.faces_padded(), textures=tex_rgb
         )
         N = 20
         new_mesh_rgb = tex_mesh_rgb.extend(N)
@@ -399,8 +373,7 @@ class TestTexturing(TestCaseMixin, unittest.TestCase):
         for i in range(len(tex_mesh_rgb)):
             for n in range(N):
                 self.assertClose(
-                    tex_init.verts_rgb_list()[i],
-                    new_tex.verts_rgb_list()[i * N + n],
+                    tex_init.verts_rgb_list()[i], new_tex.verts_rgb_list()[i * N + n]
                 )
         self.assertAllSeparate(
             [tex_init.verts_rgb_padded(), new_tex.verts_rgb_padded()]

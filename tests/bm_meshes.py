@@ -2,9 +2,9 @@
 
 
 from itertools import product
+
 import torch
 from fvcore.common.benchmark import benchmark
-
 from test_meshes import TestMeshes
 
 
@@ -20,9 +20,7 @@ def bm_compute_packed_padded_meshes() -> None:
     test_cases = product(num_meshes, max_v, max_f, devices)
     for case in test_cases:
         n, v, f, d = case
-        kwargs_list.append(
-            {"num_meshes": n, "max_v": v, "max_f": f, "device": d}
-        )
+        kwargs_list.append({"num_meshes": n, "max_v": v, "max_f": f, "device": d})
     benchmark(
         TestMeshes.compute_packed_with_init,
         "COMPUTE_PACKED",

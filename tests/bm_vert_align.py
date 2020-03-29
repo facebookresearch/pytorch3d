@@ -2,9 +2,9 @@
 
 
 from itertools import product
+
 import torch
 from fvcore.common.benchmark import benchmark
-
 from test_vert_align import TestVertAlign
 
 
@@ -25,8 +25,5 @@ def bm_vert_align() -> None:
         )
 
     benchmark(
-        TestVertAlign.vert_align_with_init,
-        "VERT_ALIGN",
-        kwargs_list,
-        warmup_iters=1,
+        TestVertAlign.vert_align_with_init, "VERT_ALIGN", kwargs_list, warmup_iters=1
     )

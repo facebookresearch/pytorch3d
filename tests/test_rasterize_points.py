@@ -1,18 +1,17 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
 
-import numpy as np
 import unittest
-import torch
 
+import numpy as np
+import torch
+from common_testing import TestCaseMixin
 from pytorch3d import _C
 from pytorch3d.renderer.points.rasterize_points import (
     rasterize_points,
     rasterize_points_python,
 )
 from pytorch3d.structures.pointclouds import Pointclouds
-
-from common_testing import TestCaseMixin
 
 
 class TestRasterizePoints(TestCaseMixin, unittest.TestCase):
@@ -38,9 +37,7 @@ class TestRasterizePoints(TestCaseMixin, unittest.TestCase):
         self._test_behind_camera(rasterize_points, torch.device("cpu"))
 
     def test_cuda_behind_camera(self):
-        self._test_behind_camera(
-            rasterize_points, torch.device("cuda"), bin_size=0
-        )
+        self._test_behind_camera(rasterize_points, torch.device("cuda"), bin_size=0)
 
     def test_cpp_vs_naive_vs_binned(self):
         # Make sure that the backward pass runs for all pathways
@@ -167,20 +164,8 @@ class TestRasterizePoints(TestCaseMixin, unittest.TestCase):
         points_cuda = points_cpu.cuda().detach().requires_grad_(True)
         pointclouds_cpu = Pointclouds(points=points_cpu)
         pointclouds_cuda = Pointclouds(points=points_cuda)
-        args_cpu = (
-            pointclouds_cpu,
-            image_size,
-            radius,
-            points_per_pixel,
-            bin_size,
-        )
-        args_cuda = (
-            pointclouds_cuda,
-            image_size,
-            radius,
-            points_per_pixel,
-            bin_size,
-        )
+        args_cpu = (pointclouds_cpu, image_size, radius, points_per_pixel, bin_size)
+        args_cuda = (pointclouds_cuda, image_size, radius, points_per_pixel, bin_size)
         self._compare_impls(
             rasterize_points,
             rasterize_points,
@@ -332,9 +317,7 @@ class TestRasterizePoints(TestCaseMixin, unittest.TestCase):
         ], device=device)
         # fmt: on
 
-        dists1_expected = torch.zeros(
-            (5, 5, 2), dtype=torch.float32, device=device
-        )
+        dists1_expected = torch.zeros((5, 5, 2), dtype=torch.float32, device=device)
         # fmt: off
         dists1_expected[:, :, 0] = torch.tensor([
             [-1.00, -1.00,  0.16, -1.00, -1.00],  # noqa: E241

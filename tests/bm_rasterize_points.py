@@ -3,7 +3,6 @@
 
 import torch
 from fvcore.common.benchmark import benchmark
-
 from pytorch3d.renderer.points.rasterize_points import (
     rasterize_points,
     rasterize_points_python,
@@ -40,9 +39,7 @@ def bm_python_vs_cpu() -> None:
         {"N": 1, "P": 32, "img_size": 32, "radius": 0.1, "pts_per_pxl": 3},
         {"N": 2, "P": 32, "img_size": 32, "radius": 0.1, "pts_per_pxl": 3},
     ]
-    benchmark(
-        _bm_python_with_init, "RASTERIZE_PYTHON", kwargs_list, warmup_iters=1
-    )
+    benchmark(_bm_python_with_init, "RASTERIZE_PYTHON", kwargs_list, warmup_iters=1)
     benchmark(_bm_cpu_with_init, "RASTERIZE_CPU", kwargs_list, warmup_iters=1)
     kwargs_list = [
         {"N": 2, "P": 32, "img_size": 32, "radius": 0.1, "pts_per_pxl": 3},

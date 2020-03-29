@@ -2,8 +2,8 @@
 
 import unittest
 from itertools import product
-import torch
 
+import torch
 from pytorch3d.ops.knn import _knn_points_idx_naive, knn_points_idx
 
 

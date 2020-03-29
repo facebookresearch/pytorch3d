@@ -2,8 +2,8 @@
 
 
 from itertools import product
-from fvcore.common.benchmark import benchmark
 
+from fvcore.common.benchmark import benchmark
 from test_subdivide_meshes import TestSubdivideMeshes
 
 

@@ -176,17 +176,13 @@ class Pointclouds(object):
             self._points_list = points
             self._N = len(self._points_list)
             self.device = torch.device("cpu")
-            self.valid = torch.zeros(
-                (self._N,), dtype=torch.bool, device=self.device
-            )
+            self.valid = torch.zeros((self._N,), dtype=torch.bool, device=self.device)
             self._num_points_per_cloud = []
 
             if self._N > 0:
                 for p in self._points_list:
                     if len(p) > 0 and (p.dim() != 2 or p.shape[1] != 3):
-                        raise ValueError(
-                            "Clouds in list must be of shape Px3 or empty"
-                        )
+                        raise ValueError("Clouds in list must be of shape Px3 or empty")
 
                 self.device = self._points_list[0].device
                 num_points_per_cloud = torch.tensor(
@@ -210,9 +206,7 @@ class Pointclouds(object):
             self._N = self._points_padded.shape[0]
             self._P = self._points_padded.shape[1]
             self.device = self._points_padded.device
-            self.valid = torch.ones(
-                (self._N,), dtype=torch.bool, device=self.device
-            )
+            self.valid = torch.ones((self._N,), dtype=torch.bool, device=self.device)
             self._num_points_per_cloud = torch.tensor(
                 [self._P] * self._N, device=self.device
             )
@@ -260,9 +254,7 @@ class Pointclouds(object):
 
         if isinstance(aux_input, list):
             if len(aux_input) != self._N:
-                raise ValueError(
-                    "Points and auxiliary input must be the same length."
-                )
+                raise ValueError("Points and auxiliary input must be the same length.")
             for p, d in zip(self._num_points_per_cloud, aux_input):
                 if p != d.shape[0]:
                     raise ValueError(
@@ -282,9 +274,7 @@ class Pointclouds(object):
             return aux_input, None, aux_input_C
         elif torch.is_tensor(aux_input):
             if aux_input.dim() != 3:
-                raise ValueError(
-                    "Auxiliary input tensor has incorrect dimensions."
-                )
+                raise ValueError("Auxiliary input tensor has incorrect dimensions.")
             if self._N != aux_input.shape[0]:
                 raise ValueError("Points and inputs must be the same length.")
             if self._P != aux_input.shape[1]:
@@ -531,8 +521,7 @@ class Pointclouds(object):
         else:
             self._padded_to_packed_idx = torch.cat(
                 [
-                    torch.arange(v, dtype=torch.int64, device=self.device)
-                    + i * self._P
+                    torch.arange(v, dtype=torch.int64, device=self.device) + i * self._P
                     for (i, v) in enumerate(self._num_points_per_cloud)
                 ],
                 dim=0,
@@ -551,9 +540,7 @@ class Pointclouds(object):
 
         self._normals_padded, self._features_padded = None, None
         if self.isempty():
-            self._points_padded = torch.zeros(
-                (self._N, 0, 3), device=self.device
-            )
+            self._points_padded = torch.zeros((self._N, 0, 3), device=self.device)
         else:
             self._points_padded = struct_utils.list_to_padded(
                 self.points_list(),
@@ -621,9 +608,7 @@ class Pointclouds(object):
 
         points_list_to_packed = struct_utils.list_to_packed(points_list)
         self._points_packed = points_list_to_packed[0]
-        if not torch.allclose(
-            self._num_points_per_cloud, points_list_to_packed[1]
-        ):
+        if not torch.allclose(self._num_points_per_cloud, points_list_to_packed[1]):
             raise ValueError("Inconsistent list to packed conversion")
         self._cloud_to_packed_first_idx = points_list_to_packed[2]
         self._packed_to_cloud_idx = points_list_to_packed[3]
@@ -696,13 +681,9 @@ class Pointclouds(object):
             if other._N > 0:
                 other._points_list = [v.to(device) for v in other.points_list()]
                 if other._normals_list is not None:
-                    other._normals_list = [
-                        n.to(device) for n in other.normals_list()
-                    ]
+                    other._normals_list = [n.to(device) for n in other.normals_list()]
                 if other._features_list is not None:
-                    other._features_list = [
-                        f.to(device) for f in other.features_list()
-                    ]
+                    other._features_list = [f.to(device) for f in other.features_list()]
             for k in self._INTERNAL_TENSORS:
                 v = getattr(self, k)
                 if torch.is_tensor(v):
@@ -892,16 +873,11 @@ class Pointclouds(object):
             for features in self.features_list():
                 new_features_list.extend(features.clone() for _ in range(N))
         return Pointclouds(
-            points=new_points_list,
-            normals=new_normals_list,
-            features=new_features_list,
+            points=new_points_list, normals=new_normals_list, features=new_features_list
         )
 
     def update_padded(
-        self,
-        new_points_padded,
-        new_normals_padded=None,
-        new_features_padded=None,
+        self, new_points_padded, new_normals_padded=None, new_features_padded=None
     ):
         """
         Returns a Pointcloud structure with updated padded tensors and copies of
@@ -920,13 +896,9 @@ class Pointclouds(object):
 
         def check_shapes(x, size):
             if x.shape[0] != size[0]:
-                raise ValueError(
-                    "new values must have the same batch dimension."
-                )
+                raise ValueError("new values must have the same batch dimension.")
             if x.shape[1] != size[1]:
-                raise ValueError(
-                    "new values must have the same number of points."
-                )
+                raise ValueError("new values must have the same number of points.")
             if size[2] is not None:
                 if x.shape[2] != size[2]:
                     raise ValueError(

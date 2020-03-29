@@ -4,8 +4,8 @@
 import itertools
 import math
 import unittest
-import torch
 
+import torch
 from pytorch3d.transforms.rotation_conversions import (
     euler_angles_to_matrix,
     matrix_to_euler_angles,
@@ -45,9 +45,7 @@ class TestRandomRotation(unittest.TestCase):
             )
             # The 0.1 significance level for chisquare(8-1) is
             # scipy.stats.chi2(7).ppf(0.9) == 12.017.
-            self.assertLess(
-                chisquare_statistic, 12, (counts, chisquare_statistic, k)
-            )
+            self.assertLess(chisquare_statistic, 12, (counts, chisquare_statistic, k))
 
 
 class TestRotationConversion(unittest.TestCase):

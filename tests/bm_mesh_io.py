@@ -1,7 +1,6 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
 from fvcore.common.benchmark import benchmark
-
 from test_obj_io import TestMeshObjIO
 from test_ply_io import TestMeshPlyIO
 

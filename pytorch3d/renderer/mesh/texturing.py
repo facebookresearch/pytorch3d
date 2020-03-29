@@ -3,7 +3,6 @@
 
 import torch
 import torch.nn.functional as F
-
 from pytorch3d.structures.textures import Textures
 
 from .utils import interpolate_face_attributes
@@ -75,9 +74,7 @@ def interpolate_texture_map(fragments, meshes) -> torch.Tensor:
     #   right-bottom pixel of input.
 
     pixel_uvs = pixel_uvs * 2.0 - 1.0
-    texture_maps = torch.flip(
-        texture_maps, [2]
-    )  # flip y axis of the texture map
+    texture_maps = torch.flip(texture_maps, [2])  # flip y axis of the texture map
     if texture_maps.device != pixel_uvs.device:
         texture_maps = texture_maps.to(pixel_uvs.device)
     texels = F.grid_sample(texture_maps, pixel_uvs, align_corners=False)
@@ -107,9 +104,7 @@ def interpolate_vertex_colors(fragments, meshes) -> torch.Tensor:
         There will be one C dimensional value for each element in
         fragments.pix_to_face.
     """
-    vertex_textures = meshes.textures.verts_rgb_padded().reshape(
-        -1, 3
-    )  # (V, C)
+    vertex_textures = meshes.textures.verts_rgb_padded().reshape(-1, 3)  # (V, C)
     vertex_textures = vertex_textures[meshes.verts_padded_to_packed_idx(), :]
     faces_packed = meshes.faces_packed()
     faces_textures = vertex_textures[faces_packed]  # (F, 3, C)

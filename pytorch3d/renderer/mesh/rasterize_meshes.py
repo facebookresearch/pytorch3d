@@ -1,11 +1,12 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
 
-import numpy as np
 from typing import Optional
-import torch
 
+import numpy as np
+import torch
 from pytorch3d import _C
+
 
 # TODO make the epsilon user configurable
 kEpsilon = 1e-30
@@ -172,9 +173,7 @@ class _RasterizeFaceVerts(torch.autograd.Function):
         return pix_to_face, zbuf, barycentric_coords, dists
 
     @staticmethod
-    def backward(
-        ctx, grad_pix_to_face, grad_zbuf, grad_barycentric_coords, grad_dists
-    ):
+    def backward(ctx, grad_pix_to_face, grad_zbuf, grad_barycentric_coords, grad_dists):
         grad_face_verts = None
         grad_mesh_to_face_first_idx = None
         grad_num_faces_per_mesh = None
@@ -243,9 +242,7 @@ def rasterize_meshes_python(
     face_idxs = torch.full(
         (N, H, W, K), fill_value=-1, dtype=torch.int64, device=device
     )
-    zbuf = torch.full(
-        (N, H, W, K), fill_value=-1, dtype=torch.float32, device=device
-    )
+    zbuf = torch.full((N, H, W, K), fill_value=-1, dtype=torch.float32, device=device)
     bary_coords = torch.full(
         (N, H, W, K, 3), fill_value=-1, dtype=torch.float32, device=device
     )
@@ -308,9 +305,7 @@ def rasterize_meshes_python(
                         continue
 
                     # Compute barycentric coordinates and pixel z distance.
-                    pxy = torch.tensor(
-                        [xf, yf], dtype=torch.float32, device=device
-                    )
+                    pxy = torch.tensor([xf, yf], dtype=torch.float32, device=device)
 
                     bary = barycentric_coordinates(pxy, v0[:2], v1[:2], v2[:2])
                     if perspective_correct:

@@ -1,7 +1,6 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
 from fvcore.common.benchmark import benchmark
-
 from test_so3 import TestSO3
 
 

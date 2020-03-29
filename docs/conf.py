@@ -22,6 +22,7 @@ from recommonmark.states import DummyStateMachine
 from sphinx.builders.html import StandaloneHTMLBuilder
 from sphinx.ext.autodoc import between
 
+
 # Monkey patch to fix recommonmark 0.4 doc reference issues.
 orig_run_role = DummyStateMachine.run_role
 
@@ -154,9 +155,7 @@ html_theme_options = {"collapse_navigation": True}
 def url_resolver(url):
     if ".html" not in url:
         url = url.replace("../", "")
-        return (
-            "https://github.com/facebookresearch/pytorch3d/blob/master/" + url
-        )
+        return "https://github.com/facebookresearch/pytorch3d/blob/master/" + url
     else:
         if DEPLOY:
             return "http://pytorch3d.readthedocs.io/" + url
@@ -188,9 +187,7 @@ def setup(app):
 
     # Register a sphinx.ext.autodoc.between listener to ignore everything
     # between lines that contain the word IGNORE
-    app.connect(
-        "autodoc-process-docstring", between("^.*IGNORE.*$", exclude=True)
-    )
+    app.connect("autodoc-process-docstring", between("^.*IGNORE.*$", exclude=True))
     app.add_transform(AutoStructify)
 
     return app

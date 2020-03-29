@@ -3,7 +3,6 @@
 
 import torch
 from fvcore.common.benchmark import benchmark
-
 from test_chamfer import TestChamfer
 
 
@@ -25,9 +24,4 @@ def bm_chamfer() -> None:
             {"batch_size": 1, "P1": 1000, "P2": 3000, "return_normals": False},
             {"batch_size": 1, "P1": 1000, "P2": 30000, "return_normals": True},
         ]
-        benchmark(
-            TestChamfer.chamfer_with_init,
-            "CHAMFER",
-            kwargs_list,
-            warmup_iters=1,
-        )
+        benchmark(TestChamfer.chamfer_with_init, "CHAMFER", kwargs_list, warmup_iters=1)

@@ -2,13 +2,12 @@
 
 
 import unittest
-import torch
 
+import torch
+from common_testing import TestCaseMixin
 from pytorch3d.ops.subdivide_meshes import SubdivideMeshes
 from pytorch3d.structures.meshes import Meshes
 from pytorch3d.utils.ico_sphere import ico_sphere
-
-from common_testing import TestCaseMixin
 
 
 class TestSubdivideMeshes(TestCaseMixin, unittest.TestCase):
@@ -72,25 +71,14 @@ class TestSubdivideMeshes(TestCaseMixin, unittest.TestCase):
         )
         faces1 = torch.tensor([[0, 1, 2]], dtype=torch.int64, device=device)
         verts2 = torch.tensor(
-            [
-                [0.5, 1.0, 0.0],
-                [1.0, 0.0, 0.0],
-                [0.0, 0.0, 0.0],
-                [1.5, 1.0, 0.0],
-            ],
+            [[0.5, 1.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, 0.0], [1.5, 1.0, 0.0]],
             dtype=torch.float32,
             device=device,
             requires_grad=True,
         )
-        faces2 = torch.tensor(
-            [[0, 1, 2], [0, 3, 1]], dtype=torch.int64, device=device
-        )
-        faces3 = torch.tensor(
-            [[0, 1, 2], [0, 2, 3]], dtype=torch.int64, device=device
-        )
-        mesh = Meshes(
-            verts=[verts1, verts2, verts2], faces=[faces1, faces2, faces3]
-        )
+        faces2 = torch.tensor([[0, 1, 2], [0, 3, 1]], dtype=torch.int64, device=device)
+        faces3 = torch.tensor([[0, 1, 2], [0, 2, 3]], dtype=torch.int64, device=device)
+        mesh = Meshes(verts=[verts1, verts2, verts2], faces=[faces1, faces2, faces3])
         subdivide = SubdivideMeshes()
         new_mesh = subdivide(mesh.clone())
 
@@ -218,9 +206,7 @@ class TestSubdivideMeshes(TestCaseMixin, unittest.TestCase):
         self.assertTrue(new_feats.requires_grad == gt_feats.requires_grad)
 
     @staticmethod
-    def subdivide_meshes_with_init(
-        num_meshes: int = 10, same_topo: bool = False
-    ):
+    def subdivide_meshes_with_init(num_meshes: int = 10, same_topo: bool = False):
         device = torch.device("cuda:0")
         meshes = ico_sphere(0, device=device)
         if num_meshes > 1:

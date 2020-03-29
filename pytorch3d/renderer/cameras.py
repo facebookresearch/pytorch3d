@@ -1,14 +1,15 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
 import math
-import numpy as np
 from typing import Optional, Sequence, Tuple
+
+import numpy as np
 import torch
 import torch.nn.functional as F
-
 from pytorch3d.transforms import Rotate, Transform3d, Translate
 
 from .utils import TensorProperties, convert_to_tensors_and_broadcast
+
 
 # Default values for rotation and translation matrices.
 r = np.expand_dims(np.eye(3), axis=0)  # (1, 3, 3)
@@ -106,9 +107,7 @@ class OpenGLPerspectiveCameras(TensorProperties):
         aspect_ratio = kwargs.get("aspect_ratio", self.aspect_ratio)
         degrees = kwargs.get("degrees", self.degrees)
 
-        P = torch.zeros(
-            (self._N, 4, 4), device=self.device, dtype=torch.float32
-        )
+        P = torch.zeros((self._N, 4, 4), device=self.device, dtype=torch.float32)
         ones = torch.ones((self._N), dtype=torch.float32, device=self.device)
         if degrees:
             fov = (np.pi / 180) * fov
@@ -204,9 +203,7 @@ class OpenGLPerspectiveCameras(TensorProperties):
         """
         self.R = kwargs.get("R", self.R)  # pyre-ignore[16]
         self.T = kwargs.get("T", self.T)  # pyre-ignore[16]
-        world_to_view_transform = get_world_to_view_transform(
-            R=self.R, T=self.T
-        )
+        world_to_view_transform = get_world_to_view_transform(R=self.R, T=self.T)
         return world_to_view_transform
 
     def get_full_projection_transform(self, **kwargs) -> Transform3d:
@@ -229,9 +226,7 @@ class OpenGLPerspectiveCameras(TensorProperties):
         """
         self.R = kwargs.get("R", self.R)  # pyre-ignore[16]
         self.T = kwargs.get("T", self.T)  # pyre-ignore[16]
-        world_to_view_transform = self.get_world_to_view_transform(
-            R=self.R, T=self.T
-        )
+        world_to_view_transform = self.get_world_to_view_transform(R=self.R, T=self.T)
         view_to_screen_transform = self.get_projection_transform(**kwargs)
         return world_to_view_transform.compose(view_to_screen_transform)
 
@@ -337,9 +332,7 @@ class OpenGLOrthographicCameras(TensorProperties):
         bottom = kwargs.get("bottom", self.bottom)  # pyre-ignore[16]
         scale_xyz = kwargs.get("scale_xyz", self.scale_xyz)  # pyre-ignore[16]
 
-        P = torch.zeros(
-            (self._N, 4, 4), dtype=torch.float32, device=self.device
-        )
+        P = torch.zeros((self._N, 4, 4), dtype=torch.float32, device=self.device)
         ones = torch.ones((self._N), dtype=torch.float32, device=self.device)
         # NOTE: OpenGL flips handedness of coordinate system between camera
         # space and NDC space so z sign is -ve. In PyTorch3D we maintain a
@@ -417,9 +410,7 @@ class OpenGLOrthographicCameras(TensorProperties):
         """
         self.R = kwargs.get("R", self.R)  # pyre-ignore[16]
         self.T = kwargs.get("T", self.T)  # pyre-ignore[16]
-        world_to_view_transform = get_world_to_view_transform(
-            R=self.R, T=self.T
-        )
+        world_to_view_transform = get_world_to_view_transform(R=self.R, T=self.T)
         return world_to_view_transform
 
     def get_full_projection_transform(self, **kwargs) -> Transform3d:
@@ -442,9 +433,7 @@ class OpenGLOrthographicCameras(TensorProperties):
         """
         self.R = kwargs.get("R", self.R)  # pyre-ignore[16]
         self.T = kwargs.get("T", self.T)  # pyre-ignore[16]
-        world_to_view_transform = self.get_world_to_view_transform(
-            R=self.R, T=self.T
-        )
+        world_to_view_transform = self.get_world_to_view_transform(R=self.R, T=self.T)
         view_to_screen_transform = self.get_projection_transform(**kwargs)
         return world_to_view_transform.compose(view_to_screen_transform)
 
@@ -470,12 +459,7 @@ class SfMPerspectiveCameras(TensorProperties):
     """
 
     def __init__(
-        self,
-        focal_length=1.0,
-        principal_point=((0.0, 0.0),),
-        R=r,
-        T=t,
-        device="cpu",
+        self, focal_length=1.0, principal_point=((0.0, 0.0),), R=r, T=t, device="cpu"
     ):
         """
         __init__(self, focal_length, principal_point, R, T, device) -> None
@@ -589,9 +573,7 @@ class SfMPerspectiveCameras(TensorProperties):
         """
         self.R = kwargs.get("R", self.R)  # pyre-ignore[16]
         self.T = kwargs.get("T", self.T)  # pyre-ignore[16]
-        world_to_view_transform = get_world_to_view_transform(
-            R=self.R, T=self.T
-        )
+        world_to_view_transform = get_world_to_view_transform(R=self.R, T=self.T)
         return world_to_view_transform
 
     def get_full_projection_transform(self, **kwargs) -> Transform3d:
@@ -610,9 +592,7 @@ class SfMPerspectiveCameras(TensorProperties):
         """
         self.R = kwargs.get("R", self.R)  # pyre-ignore[16]
         self.T = kwargs.get("T", self.T)  # pyre-ignore[16]
-        world_to_view_transform = self.get_world_to_view_transform(
-            R=self.R, T=self.T
-        )
+        world_to_view_transform = self.get_world_to_view_transform(R=self.R, T=self.T)
         view_to_screen_transform = self.get_projection_transform(**kwargs)
         return world_to_view_transform.compose(view_to_screen_transform)
 
@@ -638,12 +618,7 @@ class SfMOrthographicCameras(TensorProperties):
     """
 
     def __init__(
-        self,
-        focal_length=1.0,
-        principal_point=((0.0, 0.0),),
-        R=r,
-        T=t,
-        device="cpu",
+        self, focal_length=1.0, principal_point=((0.0, 0.0),), R=r, T=t, device="cpu"
     ):
         """
         __init__(self, focal_length, principal_point, R, T, device) -> None
@@ -757,9 +732,7 @@ class SfMOrthographicCameras(TensorProperties):
         """
         self.R = kwargs.get("R", self.R)  # pyre-ignore[16]
         self.T = kwargs.get("T", self.T)  # pyre-ignore[16]
-        world_to_view_transform = get_world_to_view_transform(
-            R=self.R, T=self.T
-        )
+        world_to_view_transform = get_world_to_view_transform(R=self.R, T=self.T)
         return world_to_view_transform
 
     def get_full_projection_transform(self, **kwargs) -> Transform3d:
@@ -778,9 +751,7 @@ class SfMOrthographicCameras(TensorProperties):
         """
         self.R = kwargs.get("R", self.R)  # pyre-ignore[16]
         self.T = kwargs.get("T", self.T)  # pyre-ignore[16]
-        world_to_view_transform = self.get_world_to_view_transform(
-            R=self.R, T=self.T
-        )
+        world_to_view_transform = self.get_world_to_view_transform(R=self.R, T=self.T)
         view_to_screen_transform = self.get_projection_transform(**kwargs)
         return world_to_view_transform.compose(view_to_screen_transform)
 
@@ -990,9 +961,7 @@ def look_at_rotation(
     z_axis = F.normalize(at - camera_position, eps=1e-5)
     x_axis = F.normalize(torch.cross(up, z_axis), eps=1e-5)
     y_axis = F.normalize(torch.cross(z_axis, x_axis), eps=1e-5)
-    R = torch.cat(
-        (x_axis[:, None, :], y_axis[:, None, :], z_axis[:, None, :]), dim=1
-    )
+    R = torch.cat((x_axis[:, None, :], y_axis[:, None, :], z_axis[:, None, :]), dim=1)
     return R.transpose(1, 2)
 
 
@@ -1038,9 +1007,7 @@ def look_at_view_transform(
     """
 
     if eye is not None:
-        broadcasted_args = convert_to_tensors_and_broadcast(
-            eye, at, up, device=device
-        )
+        broadcasted_args = convert_to_tensors_and_broadcast(eye, at, up, device=device)
         eye, at, up = broadcasted_args
         C = eye
     else:

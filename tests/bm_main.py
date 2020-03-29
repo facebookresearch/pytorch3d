@@ -5,6 +5,7 @@ import glob
 import importlib
 from os.path import basename, dirname, isfile, join, sys
 
+
 if __name__ == "__main__":
     # pyre-ignore[16]
     if len(sys.argv) > 1:
@@ -25,7 +26,5 @@ if __name__ == "__main__":
         for attr in dir(module):
             # Run all the functions with names "bm_*" in the module.
             if attr.startswith("bm_"):
-                print(
-                    "Running benchmarks for " + module_name + "/" + attr + "..."
-                )
+                print("Running benchmarks for " + module_name + "/" + attr + "...")
                 getattr(module, attr)()

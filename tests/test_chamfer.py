@@ -1,12 +1,11 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
 import unittest
+
 import torch
 import torch.nn.functional as F
-
-from pytorch3d.loss import chamfer_distance
-
 from common_testing import TestCaseMixin
+from pytorch3d.loss import chamfer_distance
 
 
 class TestChamfer(TestCaseMixin, unittest.TestCase):
@@ -19,14 +18,10 @@ class TestChamfer(TestCaseMixin, unittest.TestCase):
         """
         device = torch.device("cuda:0")
         p1 = torch.rand((batch_size, P1, 3), dtype=torch.float32, device=device)
-        p1_normals = torch.rand(
-            (batch_size, P1, 3), dtype=torch.float32, device=device
-        )
+        p1_normals = torch.rand((batch_size, P1, 3), dtype=torch.float32, device=device)
         p1_normals = p1_normals / p1_normals.norm(dim=2, p=2, keepdim=True)
         p2 = torch.rand((batch_size, P2, 3), dtype=torch.float32, device=device)
-        p2_normals = torch.rand(
-            (batch_size, P2, 3), dtype=torch.float32, device=device
-        )
+        p2_normals = torch.rand((batch_size, P2, 3), dtype=torch.float32, device=device)
         p2_normals = p2_normals / p2_normals.norm(dim=2, p=2, keepdim=True)
         weights = torch.rand((batch_size,), dtype=torch.float32, device=device)
 
@@ -47,9 +42,7 @@ class TestChamfer(TestCaseMixin, unittest.TestCase):
         for n in range(N):
             for i1 in range(P1):
                 for i2 in range(P2):
-                    dist[n, i1, i2] = torch.sum(
-                        (p1[n, i1, :] - p2[n, i2, :]) ** 2
-                    )
+                    dist[n, i1, i2] = torch.sum((p1[n, i1, :] - p2[n, i2, :]) ** 2)
 
         loss = [
             torch.min(dist, dim=2)[0],  # (N, P1)
@@ -146,11 +139,7 @@ class TestChamfer(TestCaseMixin, unittest.TestCase):
         # Error when point_reduction = "none" and batch_reduction = "none".
         with self.assertRaises(ValueError):
             chamfer_distance(
-                p1,
-                p2,
-                weights=weights,
-                batch_reduction="none",
-                point_reduction="none",
+                p1, p2, weights=weights, batch_reduction="none", point_reduction="none"
             )
 
         # Error when batch_reduction is not in ["none", "mean", "sum"].
@@ -339,9 +328,7 @@ class TestChamfer(TestCaseMixin, unittest.TestCase):
             loss, loss_norm = chamfer_distance(p1, p2, weights=weights)
 
     @staticmethod
-    def chamfer_with_init(
-        batch_size: int, P1: int, P2: int, return_normals: bool
-    ):
+    def chamfer_with_init(batch_size: int, P1: int, P2: int, return_normals: bool):
         p1, p2, p1_normals, p2_normals, weights = TestChamfer.init_pointclouds(
             batch_size, P1, P2
         )

@@ -34,13 +34,9 @@ def image_grid(
         cols = 1
 
     gridspec_kw = {"wspace": 0.0, "hspace": 0.0} if fill else {}
-    fig, axarr = plt.subplots(
-        rows, cols, gridspec_kw=gridspec_kw, figsize=(15, 9)
-    )
+    fig, axarr = plt.subplots(rows, cols, gridspec_kw=gridspec_kw, figsize=(15, 9))
     bleed = 0
-    fig.subplots_adjust(
-        left=bleed, bottom=bleed, right=(1 - bleed), top=(1 - bleed)
-    )
+    fig.subplots_adjust(left=bleed, bottom=bleed, right=(1 - bleed), top=(1 - bleed))
 
     for ax, im in zip(axarr.ravel(), images):
         if rgb:

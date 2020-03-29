@@ -3,6 +3,7 @@
 
 import torch
 
+
 HAT_INV_SKEW_SYMMETRIC_TOL = 1e-5
 
 
@@ -65,9 +66,7 @@ def so3_rotation_angle(R, eps: float = 1e-4, cos_angle: bool = False):
     rot_trace = R[:, 0, 0] + R[:, 1, 1] + R[:, 2, 2]
 
     if ((rot_trace < -1.0 - eps) + (rot_trace > 3.0 + eps)).any():
-        raise ValueError(
-            "A matrix has trace outside valid range [-1-eps,3+eps]."
-        )
+        raise ValueError("A matrix has trace outside valid range [-1-eps,3+eps].")
 
     # clamp to valid range
     rot_trace = torch.clamp(rot_trace, -1.0, 3.0)

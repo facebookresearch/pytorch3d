@@ -1,6 +1,7 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
 from typing import List, Optional, Union
+
 import torch
 import torchvision.transforms as T
 
@@ -233,11 +234,7 @@ class Textures(object):
 
         if all(
             v is not None
-            for v in [
-                self._faces_uvs_padded,
-                self._verts_uvs_padded,
-                self._maps_padded,
-            ]
+            for v in [self._faces_uvs_padded, self._verts_uvs_padded, self._maps_padded]
         ):
             new_verts_uvs = _extend_tensor(self._verts_uvs_padded, N)
             new_faces_uvs = _extend_tensor(self._faces_uvs_padded, N)
