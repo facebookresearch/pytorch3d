@@ -19,7 +19,7 @@ echo "Running isort..."
 isort -y -sp "${DIR}"
 
 echo "Running black..."
-black -l 80 "${DIR}"
+black "${DIR}"
 
 echo "Running flake..."
 flake8 "${DIR}"

@@ -1,6 +1,6 @@
 [flake8]
 ignore = E203, E266, E501, W503, E221
-max-line-length = 80
+max-line-length = 88
 max-complexity = 18
 select = B,C,E,F,W,T4,B9
 exclude = build,__init__.py
