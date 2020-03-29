@@ -13,11 +13,11 @@
 //        containing P1 points of dimension D.
 //    p2: FloatTensor of shape (N, P2, D) giving a batch of pointclouds each
 //        containing P2 points of dimension D.
-//     K: int giving the number of nearest points to return.
-//     sorted: bool telling whether to sort the K returned points by their
-//     distance version: Integer telling which implementation to use.
-//              TODO(jcjohns): Document this more, or maybe remove it before
-//              landing.
+//    K: int giving the number of nearest points to return.
+//    sorted: bool telling whether to sort the K returned points by their
+//        distance.
+//    version: Integer telling which implementation to use.
+//        TODO(jcjohns): Document this more, or maybe remove it before landing.
 //
 // Returns:
 //    p1_neighbor_idx: LongTensor of shape (N, P1, K), where
@@ -41,7 +41,7 @@ std::tuple<at::Tensor, at::Tensor> KNearestNeighborIdx(
     const at::Tensor& p2,
     int K,
     int version) {
-  if (p1.type().is_cuda() || p2.type().is_cuda()) {
+  if (p1.is_cuda() || p2.is_cuda()) {
 #ifdef WITH_CUDA
     CHECK_CONTIGUOUS_CUDA(p1);
     CHECK_CONTIGUOUS_CUDA(p2);

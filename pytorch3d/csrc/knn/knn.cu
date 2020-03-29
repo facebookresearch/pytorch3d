@@ -289,7 +289,7 @@ std::tuple<at::Tensor, at::Tensor> KNearestNeighborIdxCuda(
   const size_t threads = 256;
   const size_t blocks = 256;
   if (version == 0) {
-    AT_DISPATCH_FLOATING_TYPES(p1.type(), "knn_kernel_cuda", ([&] {
+    AT_DISPATCH_FLOATING_TYPES(p1.scalar_type(), "knn_kernel_cuda", ([&] {
                                  KNearestNeighborKernelV0<scalar_t>
                                      <<<blocks, threads>>>(
                                          p1.data_ptr<scalar_t>(),
@@ -303,7 +303,7 @@ std::tuple<at::Tensor, at::Tensor> KNearestNeighborIdxCuda(
                                          K);
                                }));
   } else if (version == 1) {
-    AT_DISPATCH_FLOATING_TYPES(p1.type(), "knn_kernel_cuda", ([&] {
+    AT_DISPATCH_FLOATING_TYPES(p1.scalar_type(), "knn_kernel_cuda", ([&] {
                                  DispatchKernel1D<
                                      KNearestNeighborV1Functor,
                                      scalar_t,
@@ -322,7 +322,7 @@ std::tuple<at::Tensor, at::Tensor> KNearestNeighborIdxCuda(
                                      K);
                                }));
   } else if (version == 2) {
-    AT_DISPATCH_FLOATING_TYPES(p1.type(), "knn_kernel_cuda", ([&] {
+    AT_DISPATCH_FLOATING_TYPES(p1.scalar_type(), "knn_kernel_cuda", ([&] {
                                  DispatchKernel2D<
                                      KNearestNeighborKernelV2Functor,
                                      scalar_t,
@@ -343,7 +343,7 @@ std::tuple<at::Tensor, at::Tensor> KNearestNeighborIdxCuda(
                                      P2);
                                }));
   } else if (version == 3) {
-    AT_DISPATCH_FLOATING_TYPES(p1.type(), "knn_kernel_cuda", ([&] {
+    AT_DISPATCH_FLOATING_TYPES(p1.scalar_type(), "knn_kernel_cuda", ([&] {
                                  DispatchKernel2D<
                                      KNearestNeighborKernelV3Functor,
                                      scalar_t,

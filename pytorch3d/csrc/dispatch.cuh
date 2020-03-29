@@ -1,9 +1,9 @@
 // Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 //
-// This file provides utilities for dispatching to specialized versions of functions.
-// This is especially useful for CUDA kernels, since specializing them to particular
-// input sizes can often allow the compiler to unroll loops and place arrays into
-// registers, which can give huge performance speedups.
+// This file provides utilities for dispatching to specialized versions of
+// functions. This is especially useful for CUDA kernels, since specializing
+// them to particular input sizes can often allow the compiler to unroll loops
+// and place arrays into registers, which can give huge performance speedups.
 //
 // As an example, suppose we have the following function which is specialized
 // based on a compile-time int64_t value:
@@ -92,14 +92,13 @@ namespace {
 // In order to dispatch, we will take an additional template argument curN,
 // and increment it via template recursion until it is equal to the run-time
 // argument N.
-template<
-  template<typename, int64_t> class Kernel,
-  typename T,
-  int64_t minN,
-  int64_t maxN,
-  int64_t curN,
-  typename... Args
->
+template <
+    template <typename, int64_t> class Kernel,
+    typename T,
+    int64_t minN,
+    int64_t maxN,
+    int64_t curN,
+    typename... Args>
 struct DispatchKernelHelper1D {
   static void run(const int64_t N, Args... args) {
     if (curN == N) {
@@ -108,22 +107,21 @@ struct DispatchKernelHelper1D {
       Kernel<T, curN>::run(args...);
     } else if (curN < N) {
       // Increment curN via template recursion
-      DispatchKernelHelper1D<Kernel, T, minN, maxN, curN + 1, Args...>::run(N, args...);
+      DispatchKernelHelper1D<Kernel, T, minN, maxN, curN + 1, Args...>::run(
+          N, args...);
     }
     // We shouldn't get here -- throw an error?
   }
 };
 
-
 // 1D dispatch: Specialization when curN == maxN
 // We need this base case to avoid infinite template recursion.
-template<
-  template<typename, int64_t> class Kernel,
-  typename T,
-  int64_t minN,
-  int64_t maxN,
-  typename... Args
->
+template <
+    template <typename, int64_t> class Kernel,
+    typename T,
+    int64_t minN,
+    int64_t maxN,
+    typename... Args>
 struct DispatchKernelHelper1D<Kernel, T, minN, maxN, maxN, Args...> {
   static void run(const int64_t N, Args... args) {
     if (N == maxN) {
@@ -133,19 +131,21 @@ struct DispatchKernelHelper1D<Kernel, T, minN, maxN, maxN, Args...> {
   }
 };
 
-
 // 2D dispatch, general case.
 // This is similar to the 1D case: we take additional template args curN and
 // curM, and increment them via template recursion until they are equal to
 // the run-time values of N and M, at which point we dispatch to the run
 // method of the kernel.
-template<
-  template<typename, int64_t, int64_t> class Kernel,
-  typename T,
-  int64_t minN, int64_t maxN, int64_t curN,
-  int64_t minM, int64_t maxM, int64_t curM,
-  typename... Args
->
+template <
+    template <typename, int64_t, int64_t> class Kernel,
+    typename T,
+    int64_t minN,
+    int64_t maxN,
+    int64_t curN,
+    int64_t minM,
+    int64_t maxM,
+    int64_t curM,
+    typename... Args>
 struct DispatchKernelHelper2D {
   static void run(const int64_t N, const int64_t M, Args... args) {
     if (curN == N && curM == M) {
@@ -154,67 +154,141 @@ struct DispatchKernelHelper2D {
       // Increment both curN and curM. This isn't strictly necessary; we could
       // just increment one or the other at each step. But this helps to cut
       // on the number of recursive calls we make.
-      DispatchKernelHelper2D<Kernel, T, minN, maxN, curN + 1, minM, maxM, curM + 1, Args...>::run(N, M, args...);
+      DispatchKernelHelper2D<
+          Kernel,
+          T,
+          minN,
+          maxN,
+          curN + 1,
+          minM,
+          maxM,
+          curM + 1,
+          Args...>::run(N, M, args...);
     } else if (curN < N) {
       // Increment curN only
-      DispatchKernelHelper2D<Kernel, T, minN, maxN, curN + 1, minM, maxM, curM, Args...>::run(N, M, args...);
+      DispatchKernelHelper2D<
+          Kernel,
+          T,
+          minN,
+          maxN,
+          curN + 1,
+          minM,
+          maxM,
+          curM,
+          Args...>::run(N, M, args...);
     } else if (curM < M) {
       // Increment curM only
-      DispatchKernelHelper2D<Kernel, T, minN, maxN, curN, minM, maxM, curM + 1, Args...>::run(N, M, args...);
+      DispatchKernelHelper2D<
+          Kernel,
+          T,
+          minN,
+          maxN,
+          curN,
+          minM,
+          maxM,
+          curM + 1,
+          Args...>::run(N, M, args...);
     }
   }
 };
 
-
 // 2D dispatch, specialization for curN == maxN
-template<
-  template<typename, int64_t, int64_t> class Kernel,
-  typename T,
-  int64_t minN, int64_t maxN,
-  int64_t minM, int64_t maxM, int64_t curM,
-  typename... Args
->
-struct DispatchKernelHelper2D<Kernel, T, minN, maxN, maxN, minM, maxM, curM, Args...> {
+template <
+    template <typename, int64_t, int64_t> class Kernel,
+    typename T,
+    int64_t minN,
+    int64_t maxN,
+    int64_t minM,
+    int64_t maxM,
+    int64_t curM,
+    typename... Args>
+struct DispatchKernelHelper2D<
+    Kernel,
+    T,
+    minN,
+    maxN,
+    maxN,
+    minM,
+    maxM,
+    curM,
+    Args...> {
   static void run(const int64_t N, const int64_t M, Args... args) {
     if (maxN == N && curM == M) {
       Kernel<T, maxN, curM>::run(args...);
     } else if (curM < maxM) {
-      DispatchKernelHelper2D<Kernel, T, minN, maxN, maxN, minM, maxM, curM + 1, Args...>::run(N, M, args...);
+      DispatchKernelHelper2D<
+          Kernel,
+          T,
+          minN,
+          maxN,
+          maxN,
+          minM,
+          maxM,
+          curM + 1,
+          Args...>::run(N, M, args...);
     }
     // We should not get here -- throw an error?
   }
 };
 
-
 // 2D dispatch, specialization for curM == maxM
-template<
-  template<typename, int64_t, int64_t> class Kernel,
-  typename T,
-  int64_t minN, int64_t maxN, int64_t curN,
-  int64_t minM, int64_t maxM,
-  typename... Args
->
-struct DispatchKernelHelper2D<Kernel, T, minN, maxN, curN, minM, maxM, maxM, Args...> {
+template <
+    template <typename, int64_t, int64_t> class Kernel,
+    typename T,
+    int64_t minN,
+    int64_t maxN,
+    int64_t curN,
+    int64_t minM,
+    int64_t maxM,
+    typename... Args>
+struct DispatchKernelHelper2D<
+    Kernel,
+    T,
+    minN,
+    maxN,
+    curN,
+    minM,
+    maxM,
+    maxM,
+    Args...> {
   static void run(const int64_t N, const int64_t M, Args... args) {
     if (curN == N && maxM == M) {
       Kernel<T, curN, maxM>::run(args...);
     } else if (curN < maxN) {
-      DispatchKernelHelper2D<Kernel, T, minN, maxN, curN + 1, minM, maxM, maxM, Args...>::run(N, M, args...);
+      DispatchKernelHelper2D<
+          Kernel,
+          T,
+          minN,
+          maxN,
+          curN + 1,
+          minM,
+          maxM,
+          maxM,
+          Args...>::run(N, M, args...);
     }
     // We should not get here -- throw an error?
   }
 };
 
-
 // 2D dispatch, specialization for curN == maxN, curM == maxM
-template<
-  template<typename, int64_t, int64_t> class Kernel,
-  typename T,
-  int64_t minN, int64_t maxN,
-  int64_t minM, int64_t maxM,
-  typename... Args
->
-struct DispatchKernelHelper2D<Kernel, T, minN, maxN, maxN, minM, maxM, maxM, Args...> {
+template <
+    template <typename, int64_t, int64_t> class Kernel,
+    typename T,
+    int64_t minN,
+    int64_t maxN,
+    int64_t minM,
+    int64_t maxM,
+    typename... Args>
+struct DispatchKernelHelper2D<
+    Kernel,
+    T,
+    minN,
+    maxN,
+    maxN,
+    minM,
+    maxM,
+    maxM,
+    Args...> {
   static void run(const int64_t N, const int64_t M, Args... args) {
     if (maxN == N && maxM == M) {
       Kernel<T, maxN, maxM>::run(args...);
@@ -225,37 +299,45 @@ struct DispatchKernelHelper2D<Kernel, T, minN, maxN, maxN, minM, maxM, maxM, Arg
 
 } // namespace
 
-
 // This is the function we expect users to call to dispatch to 1D functions
-template<
-  template<typename, int64_t> class Kernel,
-  typename T,
-  int64_t minN,
-  int64_t maxN,
-  typename... Args
->
+template <
+    template <typename, int64_t> class Kernel,
+    typename T,
+    int64_t minN,
+    int64_t maxN,
+    typename... Args>
 void DispatchKernel1D(const int64_t N, Args... args) {
   if (minN <= N && N <= maxN) {
     // Kick off the template recursion by calling the Helper with curN = minN
-    DispatchKernelHelper1D<Kernel, T, minN, maxN, minN, Args...>::run(N, args...);
+    DispatchKernelHelper1D<Kernel, T, minN, maxN, minN, Args...>::run(
+        N, args...);
   }
   // Maybe throw an error if we tried to dispatch outside the allowed range?
 }
 
-
 // This is the function we expect users to call to dispatch to 2D functions
-template<
-  template<typename, int64_t, int64_t> class Kernel,
-  typename T,
-  int64_t minN, int64_t maxN,
-  int64_t minM, int64_t maxM,
-  typename... Args
->
+template <
+    template <typename, int64_t, int64_t> class Kernel,
+    typename T,
+    int64_t minN,
+    int64_t maxN,
+    int64_t minM,
+    int64_t maxM,
+    typename... Args>
 void DispatchKernel2D(const int64_t N, const int64_t M, Args... args) {
   if (minN <= N && N <= maxN && minM <= M && M <= maxM) {
     // Kick off the template recursion by calling the Helper with curN = minN
     // and curM = minM
-    DispatchKernelHelper2D<Kernel, T, minN, maxN, minN, minM, maxM, minM, Args...>::run(N, M, args...);
+    DispatchKernelHelper2D<
+        Kernel,
+        T,
+        minN,
+        maxN,
+        minN,
+        minM,
+        maxM,
+        minM,
+        Args...>::run(N, M, args...);
   }
   // Maybe throw an error if we tried to dispatch outside the specified range?
 }

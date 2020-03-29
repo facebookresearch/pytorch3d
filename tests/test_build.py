@@ -22,6 +22,27 @@ class TestBuild(unittest.TestCase):
         for k, v in counter.items():
             self.assertEqual(v, 1, f"Too many files with stem {k}.")
 
+    def test_deprecated_usage(self):
+        # Check certain expressions do not occur in the csrc code
+        test_dir = Path(__file__).resolve().parent
+        source_dir = test_dir.parent / "pytorch3d" / "csrc"
+
+        files = sorted(source_dir.glob("**/*.*"))
+        self.assertGreater(len(files), 4)
+
+        patterns = [".type()", ".data()"]
+
+        for file in files:
+            with open(file) as f:
+                text = f.read()
+                for pattern in patterns:
+                    found = pattern in text
+                    msg = (
+                        f"{pattern} found in {file.name}"
+                        + ", this has been deprecated."
+                    )
+                    self.assertFalse(found, msg)
+
     def test_copyright(self):
         test_dir = Path(__file__).resolve().parent
         root_dir = test_dir.parent

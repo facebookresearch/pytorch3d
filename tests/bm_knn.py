@@ -1,7 +1,6 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
 from itertools import product
-
 import torch
 from fvcore.common.benchmark import benchmark
 
@@ -30,21 +29,13 @@ def benchmark_knn_cuda_versions() -> None:
             continue
         if version == 3 and K > 4:
             continue
-        knn_kwargs.append({'N': N, 'D': D, 'P': P, 'K': K, 'v': version})
+        knn_kwargs.append({"N": N, "D": D, "P": P, "K": K, "v": version})
     for N, P, D in product(Ns, Ps, Ds):
-        nn_kwargs.append({'N': N, 'D': D, 'P': P})
+        nn_kwargs.append({"N": N, "D": D, "P": P})
     benchmark(
-        knn_cuda_with_init,
-        'KNN_CUDA_VERSIONS',
-        knn_kwargs,
-        warmup_iters=1,
+        knn_cuda_with_init, "KNN_CUDA_VERSIONS", knn_kwargs, warmup_iters=1
     )
-    benchmark(
-        nn_cuda_with_init,
-        'NN_CUDA',
-        nn_kwargs,
-        warmup_iters=1,
-    )
+    benchmark(nn_cuda_with_init, "NN_CUDA", nn_kwargs, warmup_iters=1)
 
 
 def benchmark_knn_cuda_vs_naive() -> None:
@@ -55,21 +46,16 @@ def benchmark_knn_cuda_vs_naive() -> None:
     Ks = [1, 2, 4, 8, 16]
     knn_kwargs, naive_kwargs = [], []
     for N, P, D, K in product(Ns, Ps, Ds, Ks):
-        knn_kwargs.append({'N': N, 'D': D, 'P': P, 'K': K})
+        knn_kwargs.append({"N": N, "D": D, "P": P, "K": K})
         if P <= 4096:
-            naive_kwargs.append({'N': N, 'D': D, 'P': P, 'K': K})
+            naive_kwargs.append({"N": N, "D": D, "P": P, "K": K})
     benchmark(
         knn_python_cuda_with_init,
-        'KNN_CUDA_PYTHON',
+        "KNN_CUDA_PYTHON",
         naive_kwargs,
         warmup_iters=1,
     )
-    benchmark(
-        knn_cuda_with_init,
-        'KNN_CUDA',
-        knn_kwargs,
-        warmup_iters=1,
-    )
+    benchmark(knn_cuda_with_init, "KNN_CUDA", knn_kwargs, warmup_iters=1)
 
 
 def benchmark_knn_cpu() -> None:
@@ -79,31 +65,18 @@ def benchmark_knn_cpu() -> None:
     Ks = [1, 2, 4]
     knn_kwargs, nn_kwargs = [], []
     for N, P, D, K in product(Ns, Ps, Ds, Ks):
-        knn_kwargs.append({'N': N, 'D': D, 'P': P, 'K': K})
+        knn_kwargs.append({"N": N, "D": D, "P": P, "K": K})
     for N, P, D in product(Ns, Ps, Ds):
-        nn_kwargs.append({'N': N, 'D': D, 'P': P})
+        nn_kwargs.append({"N": N, "D": D, "P": P})
     benchmark(
-        knn_python_cpu_with_init,
-        'KNN_CPU_PYTHON',
-        knn_kwargs,
-        warmup_iters=1,
+        knn_python_cpu_with_init, "KNN_CPU_PYTHON", knn_kwargs, warmup_iters=1
     )
-    benchmark(
-        knn_cpu_with_init,
-        'KNN_CPU_CPP',
-        knn_kwargs,
-        warmup_iters=1,
-    )
-    benchmark(
-        nn_cpu_with_init,
-        'NN_CPU_CPP',
-        nn_kwargs,
-        warmup_iters=1,
-    )
+    benchmark(knn_cpu_with_init, "KNN_CPU_CPP", knn_kwargs, warmup_iters=1)
+    benchmark(nn_cpu_with_init, "NN_CPU_CPP", nn_kwargs, warmup_iters=1)
 
 
 def knn_cuda_with_init(N, D, P, K, v=-1):
-    device = torch.device('cuda:0')
+    device = torch.device("cuda:0")
     x = torch.randn(N, P, D, device=device)
     y = torch.randn(N, P, D, device=device)
     torch.cuda.synchronize()
@@ -116,7 +89,7 @@ def knn_cuda_with_init(N, D, P, K, v=-1):
 
 
 def knn_cpu_with_init(N, D, P, K):
-    device = torch.device('cpu')
+    device = torch.device("cpu")
     x = torch.randn(N, P, D, device=device)
     y = torch.randn(N, P, D, device=device)
 
@@ -127,7 +100,7 @@ def knn_cpu_with_init(N, D, P, K):
 
 
 def knn_python_cuda_with_init(N, D, P, K):
-    device = torch.device('cuda')
+    device = torch.device("cuda")
     x = torch.randn(N, P, D, device=device)
     y = torch.randn(N, P, D, device=device)
     torch.cuda.synchronize()
@@ -140,7 +113,7 @@ def knn_python_cuda_with_init(N, D, P, K):
 
 
 def knn_python_cpu_with_init(N, D, P, K):
-    device = torch.device('cpu')
+    device = torch.device("cpu")
     x = torch.randn(N, P, D, device=device)
     y = torch.randn(N, P, D, device=device)
 
@@ -151,7 +124,7 @@ def knn_python_cpu_with_init(N, D, P, K):
 
 
 def nn_cuda_with_init(N, D, P):
-    device = torch.device('cuda')
+    device = torch.device("cuda")
     x = torch.randn(N, P, D, device=device)
     y = torch.randn(N, P, D, device=device)
     torch.cuda.synchronize()
@@ -164,7 +137,7 @@ def nn_cuda_with_init(N, D, P):
 
 
 def nn_cpu_with_init(N, D, P):
-    device = torch.device('cpu')
+    device = torch.device("cpu")
     x = torch.randn(N, P, D, device=device)
     y = torch.randn(N, P, D, device=device)
 

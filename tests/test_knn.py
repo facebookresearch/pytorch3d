@@ -28,7 +28,7 @@ class TestKNN(unittest.TestCase):
 
     def test_knn_vs_python_cpu(self):
         """ Test CPU output vs PyTorch implementation """
-        device = torch.device('cpu')
+        device = torch.device("cpu")
         Ns = [1, 4]
         Ds = [2, 3]
         P1s = [1, 10, 101]
@@ -45,7 +45,7 @@ class TestKNN(unittest.TestCase):
 
     def test_knn_vs_python_cuda(self):
         """ Test CUDA output vs PyTorch implementation """
-        device = torch.device('cuda')
+        device = torch.device("cuda")
         Ns = [1, 4]
         Ds = [2, 3, 8]
         P1s = [1, 8, 64, 128, 1001]
