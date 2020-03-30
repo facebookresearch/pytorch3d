@@ -245,7 +245,8 @@ class Pointclouds(object):
 
         Returns:
             3-element tuple of list, padded, num_channels.
-            If aux_input is list, then padded is None. If aux_input is a tensor, then list is None.
+            If aux_input is list, then padded is None. If aux_input is a tensor,
+            then list is None.
         """
         if aux_input is None or self._N == 0:
             return None, None, None

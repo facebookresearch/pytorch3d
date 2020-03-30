@@ -28,11 +28,11 @@ echo "Running clang-format ..."
 clangformat=$(command -v clang-format-8 || echo clang-format)
 find "${DIR}" -regex ".*\.\(cpp\|c\|cc\|cu\|cuh\|cxx\|h\|hh\|hpp\|hxx\|tcc\|mm\|m\)" -print0 | xargs -0 "${clangformat}" -i
 
-# (cd "${DIR}"; command -v arc > /dev/null && arc lint) || true
-
-# Run pyre internally only.
+# Run arc and pyre internally only.
 if [[ -f tests/TARGETS ]]
 then
+  (cd "${DIR}"; command -v arc > /dev/null && arc lint) || true
+
   echo "Running pyre..."
   echo "To restart/kill pyre server, run 'pyre restart' or 'pyre kill' in fbcode/"
   ( cd ~/fbsource/fbcode; pyre -l vision/fair/pytorch3d/ )
