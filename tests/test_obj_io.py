@@ -8,7 +8,7 @@ from pathlib import Path
 import torch
 from common_testing import TestCaseMixin
 from pytorch3d.io import load_obj, load_objs_as_meshes, save_obj
-from pytorch3d.structures import Meshes, Textures, join_meshes
+from pytorch3d.structures import Meshes, Textures, join_meshes_as_batch
 from pytorch3d.utils import torus
 
 
@@ -523,10 +523,10 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
         self.assertTrue(aux.material_colors is None)
         self.assertTrue(aux.texture_images is None)
 
-    def test_join_meshes(self):
+    def test_join_meshes_as_batch(self):
         """
-        Test that join_meshes and load_objs_as_meshes are consistent with single
-        meshes.
+        Test that join_meshes_as_batch and load_objs_as_meshes are consistent
+        with single meshes.
         """
 
         def check_triple(mesh, mesh3):
@@ -575,7 +575,7 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
         )
         tex = Textures(verts_rgb=vert_tex[None, :])
         mesh_rgb = Meshes(verts=[verts], faces=[faces], textures=tex)
-        mesh_rgb3 = join_meshes([mesh_rgb, mesh_rgb, mesh_rgb])
+        mesh_rgb3 = join_meshes_as_batch([mesh_rgb, mesh_rgb, mesh_rgb])
         check_triple(mesh_rgb, mesh_rgb3)
 
         teapot_obj = DATA_DIR / "teapot.obj"
@@ -588,7 +588,7 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
         self.assertClose(mix_mesh.verts_list()[1], teapot_verts)
         self.assertClose(mix_mesh.faces_list()[1], teapot_faces)
 
-        cow3_tea = join_meshes([mesh3, mesh_teapot], include_textures=False)
+        cow3_tea = join_meshes_as_batch([mesh3, mesh_teapot], include_textures=False)
         self.assertEqual(len(cow3_tea), 4)
         check_triple(mesh_notex, cow3_tea[:3])
         self.assertClose(cow3_tea.verts_list()[3], mesh_teapot.verts_list()[0])

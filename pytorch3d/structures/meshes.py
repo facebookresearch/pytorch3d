@@ -1346,7 +1346,7 @@ class Meshes(object):
         return Meshes(verts=new_verts_list, faces=new_faces_list, textures=tex)
 
 
-def join_meshes(meshes: List[Meshes], include_textures: bool = True):
+def join_meshes_as_batch(meshes: List[Meshes], include_textures: bool = True):
     """
     Merge multiple Meshes objects, i.e. concatenate the meshes objects. They
     must all be on the same device. If include_textures is true, they must all
@@ -1363,8 +1363,8 @@ def join_meshes(meshes: List[Meshes], include_textures: bool = True):
     """
     if isinstance(meshes, Meshes):
         # Meshes objects can be iterated and produce single Meshes. We avoid
-        # letting join_meshes(mesh1, mesh2) silently do the wrong thing.
-        raise ValueError("Wrong first argument to join_meshes.")
+        # letting join_meshes_as_batch(mesh1, mesh2) silently do the wrong thing.
+        raise ValueError("Wrong first argument to join_meshes_as_batch.")
     verts = [v for mesh in meshes for v in mesh.verts_list()]
     faces = [f for mesh in meshes for f in mesh.faces_list()]
     if len(meshes) == 0 or not include_textures:
@@ -1372,49 +1372,49 @@ def join_meshes(meshes: List[Meshes], include_textures: bool = True):
 
     if meshes[0].textures is None:
         if any(mesh.textures is not None for mesh in meshes):
-            raise ValueError("Inconsistent textures in join_meshes.")
+            raise ValueError("Inconsistent textures in join_meshes_as_batch.")
         return Meshes(verts=verts, faces=faces)
 
     if any(mesh.textures is None for mesh in meshes):
-        raise ValueError("Inconsistent textures in join_meshes.")
+        raise ValueError("Inconsistent textures in join_meshes_as_batch.")
 
     # Now we know there are multiple meshes and they have textures to merge.
     first = meshes[0].textures
     kwargs = {}
     if first.maps_padded() is not None:
         if any(mesh.textures.maps_padded() is None for mesh in meshes):
-            raise ValueError("Inconsistent maps_padded in join_meshes.")
+            raise ValueError("Inconsistent maps_padded in join_meshes_as_batch.")
         maps = [m for mesh in meshes for m in mesh.textures.maps_padded()]
         kwargs["maps"] = maps
     elif any(mesh.textures.maps_padded() is not None for mesh in meshes):
-        raise ValueError("Inconsistent maps_padded in join_meshes.")
+        raise ValueError("Inconsistent maps_padded in join_meshes_as_batch.")
 
     if first.verts_uvs_padded() is not None:
         if any(mesh.textures.verts_uvs_padded() is None for mesh in meshes):
-            raise ValueError("Inconsistent verts_uvs_padded in join_meshes.")
+            raise ValueError("Inconsistent verts_uvs_padded in join_meshes_as_batch.")
         uvs = [uv for mesh in meshes for uv in mesh.textures.verts_uvs_list()]
         V = max(uv.shape[0] for uv in uvs)
         kwargs["verts_uvs"] = struct_utils.list_to_padded(uvs, (V, 2), -1)
     elif any(mesh.textures.verts_uvs_padded() is not None for mesh in meshes):
-        raise ValueError("Inconsistent verts_uvs_padded in join_meshes.")
+        raise ValueError("Inconsistent verts_uvs_padded in join_meshes_as_batch.")
 
     if first.faces_uvs_padded() is not None:
         if any(mesh.textures.faces_uvs_padded() is None for mesh in meshes):
-            raise ValueError("Inconsistent faces_uvs_padded in join_meshes.")
+            raise ValueError("Inconsistent faces_uvs_padded in join_meshes_as_batch.")
         uvs = [uv for mesh in meshes for uv in mesh.textures.faces_uvs_list()]
         F = max(uv.shape[0] for uv in uvs)
         kwargs["faces_uvs"] = struct_utils.list_to_padded(uvs, (F, 3), -1)
     elif any(mesh.textures.faces_uvs_padded() is not None for mesh in meshes):
-        raise ValueError("Inconsistent faces_uvs_padded in join_meshes.")
+        raise ValueError("Inconsistent faces_uvs_padded in join_meshes_as_batch.")
 
     if first.verts_rgb_padded() is not None:
         if any(mesh.textures.verts_rgb_padded() is None for mesh in meshes):
-            raise ValueError("Inconsistent verts_rgb_padded in join_meshes.")
+            raise ValueError("Inconsistent verts_rgb_padded in join_meshes_as_batch.")
         rgb = [i for mesh in meshes for i in mesh.textures.verts_rgb_list()]
         V = max(i.shape[0] for i in rgb)
         kwargs["verts_rgb"] = struct_utils.list_to_padded(rgb, (V, 3))
     elif any(mesh.textures.verts_rgb_padded() is not None for mesh in meshes):
-        raise ValueError("Inconsistent verts_rgb_padded in join_meshes.")
+        raise ValueError("Inconsistent verts_rgb_padded in join_meshes_as_batch.")
 
     tex = Textures(**kwargs)
     return Meshes(verts=verts, faces=faces, textures=tex)

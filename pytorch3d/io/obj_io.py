@@ -12,7 +12,7 @@ import numpy as np
 import torch
 from fvcore.common.file_io import PathManager
 from PIL import Image
-from pytorch3d.structures import Meshes, Textures, join_meshes
+from pytorch3d.structures import Meshes, Textures, join_meshes_as_batch
 
 
 def _make_tensor(data, cols: int, dtype: torch.dtype) -> torch.Tensor:
@@ -249,7 +249,7 @@ def load_objs_as_meshes(files: list, device=None, load_textures: bool = True):
         mesh_list.append(mesh)
     if len(mesh_list) == 1:
         return mesh_list[0]
-    return join_meshes(mesh_list)
+    return join_meshes_as_batch(mesh_list)
 
 
 def _parse_face(
