@@ -1,5 +1,6 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
+from typing import Optional
 
 import unittest
 
@@ -35,13 +36,15 @@ class TestCaseMixin(unittest.TestCase):
         *,
         rtol: float = 1e-05,
         atol: float = 1e-08,
-        equal_nan: bool = False
+        equal_nan: bool = False,
+        msg: Optional[str] = None,
     ) -> None:
         """
         Verify that two tensors or arrays are the same shape and close.
         Args:
             input, other: two tensors or two arrays.
             rtol, atol, equal_nan: as for torch.allclose.
+            msg: message in case the assertion is violated.
         Note:
             Optional arguments here are all keyword-only, to avoid confusion
             with msg arguments on other assert functions.
@@ -54,5 +57,7 @@ class TestCaseMixin(unittest.TestCase):
                 input, other, rtol=rtol, atol=atol, equal_nan=equal_nan
             )
         else:
-            close = np.allclose(input, other, rtol=rtol, atol=atol, equal_nan=equal_nan)
-        self.assertTrue(close)
+            close = np.allclose(
+                input, other, rtol=rtol, atol=atol, equal_nan=equal_nan
+            )
+        self.assertTrue(close, msg)

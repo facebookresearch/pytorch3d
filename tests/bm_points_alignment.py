@@ -16,6 +16,7 @@ def bm_corresponding_points_alignment() -> None:
         "dim": [3, 20],
         "estimate_scale": [True, False],
         "n_points": [100, 10000],
+        "random_weights": [False, True],
         "use_pointclouds": [False],
     }
 
