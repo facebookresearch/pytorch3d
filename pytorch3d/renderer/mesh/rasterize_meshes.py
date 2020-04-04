@@ -102,10 +102,8 @@ def rasterize_meshes(
                 bin_size = 16
             elif image_size <= 512:
                 bin_size = 32
-            elif image_size <= 1024:
+            elif image_size < 1024:
                 bin_size = 64
-            else:
-                bin_size = 0
                 
     if max_faces_per_bin is None:
         max_faces_per_bin = int(max(10000, verts_packed.shape[0] / 5))
