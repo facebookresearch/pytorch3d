@@ -961,8 +961,10 @@ def look_at_rotation(
     z_axis = F.normalize(at - camera_position, eps=1e-5)
     x_axis = F.normalize(torch.cross(up, z_axis), eps=1e-5)
     y_axis = F.normalize(torch.cross(z_axis, x_axis), eps=1e-5)
+    
+    # form the rotation part of the extrinsic matrix
     R = torch.cat((x_axis[:, None, :], y_axis[:, None, :], z_axis[:, None, :]), dim=1)
-    return R.transpose(1, 2)
+    return R
 
 
 def look_at_view_transform(
@@ -1018,7 +1020,7 @@ def look_at_view_transform(
         C = camera_position_from_spherical_angles(
             dist, elev, azim, degrees=degrees, device=device
         )
-
+    # output the rotation and translation parts of the extrinsic matrix.
     R = look_at_rotation(C, at, up, device=device)
-    T = -torch.bmm(R.transpose(1, 2), C[:, :, None])[:, :, 0]
+    T = -torch.bmm(R, C[:, :, None])[:, :, 0]
     return R, T
