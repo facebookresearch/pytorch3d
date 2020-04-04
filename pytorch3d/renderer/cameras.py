@@ -63,7 +63,7 @@ class OpenGLPerspectiveCameras(TensorProperties):
             zfar=zfar,
             aspect_ratio=aspect_ratio,
             fov=fov,
-            R=R,
+            R=R.transpose(1, 2),
             T=T,
         )
 
@@ -292,7 +292,7 @@ class OpenGLOrthographicCameras(TensorProperties):
             left=left,
             right=right,
             scale_xyz=scale_xyz,
-            R=R,
+            R=R.transpose(1, 2),
             T=T,
         )
 
@@ -481,7 +481,7 @@ class SfMPerspectiveCameras(TensorProperties):
             device=device,
             focal_length=focal_length,
             principal_point=principal_point,
-            R=R,
+            R=R.transpose(1, 2),
             T=T,
         )
 
@@ -640,7 +640,7 @@ class SfMOrthographicCameras(TensorProperties):
             device=device,
             focal_length=focal_length,
             principal_point=principal_point,
-            R=R,
+            R=R.transpose(1, 2),
             T=T,
         )
 
