@@ -3,8 +3,8 @@
 
 from copy import deepcopy
 from itertools import product
-from fvcore.common.benchmark import benchmark
 
+from fvcore.common.benchmark import benchmark
 from test_points_alignment import TestCorrespondingPointsAlignment
 
 

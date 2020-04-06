@@ -27,7 +27,7 @@ def wmean(
         * if `weights` is None => `mean(x, dim)`,
         * otherwise => `sum(x*w, dim) / max{sum(w, dim), eps}`.
     """
-    args = dict(dim=dim, keepdim=keepdim)
+    args = {"dim": dim, "keepdim": keepdim}
 
     if weight is None:
         return x.mean(**args)
@@ -38,7 +38,6 @@ def wmean(
     ):
         raise ValueError("wmean: weights are not compatible with the tensor")
 
-    return (
-        (x * weight[..., None]).sum(**args)
-        / weight[..., None].sum(**args).clamp(eps)
+    return (x * weight[..., None]).sum(**args) / weight[..., None].sum(**args).clamp(
+        eps
     )

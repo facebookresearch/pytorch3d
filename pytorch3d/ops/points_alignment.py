@@ -1,12 +1,12 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
 import warnings
-from typing import List, Optional, Tuple, Union
-import torch
+from typing import List, Tuple, Union
 
-from pytorch3d.structures.pointclouds import Pointclouds
-from pytorch3d.structures import utils as strutil
+import torch
 from pytorch3d.ops import utils as oputil
+from pytorch3d.structures import utils as strutil
+from pytorch3d.structures.pointclouds import Pointclouds
 
 
 def corresponding_points_alignment(
@@ -77,9 +77,7 @@ def corresponding_points_alignment(
             weights = strutil.list_to_padded(weights)[..., 0]
 
         if Xt.shape[:2] != weights.shape:
-            raise ValueError(
-                "weights should have the same first two dimensions as X."
-            )
+            raise ValueError("weights should have the same first two dimensions as X.")
 
     b, n, dim = Xt.shape
 
@@ -120,9 +118,7 @@ def corresponding_points_alignment(
     U, S, V = torch.svd(XYcov)
 
     # identity matrix used for fixing reflections
-    E = torch.eye(dim, dtype=XYcov.dtype, device=XYcov.device)[None].repeat(
-        b, 1, 1
-    )
+    E = torch.eye(dim, dtype=XYcov.dtype, device=XYcov.device)[None].repeat(b, 1, 1)
 
     if not allow_reflection:
         # reflection test:

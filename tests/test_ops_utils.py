@@ -3,10 +3,9 @@ import unittest
 
 import numpy as np
 import torch
-
 from common_testing import TestCaseMixin
-
 from pytorch3d.ops import utils as oputil
+
 
 class TestOpsUtils(TestCaseMixin, unittest.TestCase):
     def setUp(self) -> None:
@@ -62,8 +61,7 @@ class TestOpsUtils(TestCaseMixin, unittest.TestCase):
         # test dim
         weight = torch.rand(x.shape[0], n_points, device=device)
         weight_np = np.tile(
-            weight[:, :, None].cpu().data.numpy(),
-            (1, 1, x_np.shape[-1]),
+            weight[:, :, None].cpu().data.numpy(), (1, 1, x_np.shape[-1])
         )
         mean = oputil.wmean(x, dim=0, weight=weight, keepdim=False)
         mean_gt = np.average(x_np, axis=0, weights=weight_np)

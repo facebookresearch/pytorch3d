@@ -1,8 +1,7 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
-from typing import Optional
-
 import unittest
+from typing import Optional
 
 import numpy as np
 import torch
@@ -57,7 +56,5 @@ class TestCaseMixin(unittest.TestCase):
                 input, other, rtol=rtol, atol=atol, equal_nan=equal_nan
             )
         else:
-            close = np.allclose(
-                input, other, rtol=rtol, atol=atol, equal_nan=equal_nan
-            )
+            close = np.allclose(input, other, rtol=rtol, atol=atol, equal_nan=equal_nan)
         self.assertTrue(close, msg)
