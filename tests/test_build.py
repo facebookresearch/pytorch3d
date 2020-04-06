@@ -55,8 +55,17 @@ class TestBuild(unittest.TestCase):
             + " All rights reserved.\n"
         )
 
+        conda_generated_files = [
+            "run_test.py",
+            "run_test.sh",
+            "conda_test_runner.sh",
+            "conda_test_env_vars.sh",
+        ]
+
         for extension in extensions:
             for i in root_dir.glob(f"**/*.{extension}"):
+                if i.name in conda_generated_files:
+                    continue
                 with open(i) as f:
                     firstline = f.readline()
                     if firstline.startswith(("# -*-", "#!")):
