@@ -3,8 +3,6 @@
 
 """
 This script is adapted from the torchvision one.
-There is no python2.7 nor macos.
-TODO: python 3.8 when pytorch 1.4.
 """
 
 import os.path

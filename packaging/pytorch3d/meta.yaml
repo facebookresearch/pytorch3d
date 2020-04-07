@@ -26,7 +26,7 @@ requirements:
     {{ environ.get('CONDA_CUDATOOLKIT_CONSTRAINT') }}
 
 build:
-  string: py{{py}}_{{ environ['CU_VERSION'] }}
+  string: py{{py}}_{{ environ['CU_VERSION'] }}_pyt{{ environ['PYTORCH_VERSION_NODOT']}}
   script: python setup.py install --single-version-externally-managed --record=record.txt # [not win]
   script_env:
     - CUDA_HOME

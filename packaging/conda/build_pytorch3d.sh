@@ -139,6 +139,8 @@ else
     export CONDA_PYTORCH_CONSTRAINT="- pytorch==${PYTORCH_VERSION}"
 fi
 
+export PYTORCH_VERSION_NODOT=${PYTORCH_VERSION//./}
+
 # Loop through all Python versions to build a package for each
 for py_ver in "${DESIRED_PYTHON[@]}"; do
     build_string="py${py_ver}_${build_string_suffix}"

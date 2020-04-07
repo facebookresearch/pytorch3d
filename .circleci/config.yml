@@ -278,16 +278,16 @@ workflows:
           cu_version: "cu100"
       - binary_macos_wheel:
           cu_version: cpu
-          name: binary_linux_wheel_py3.6_cpu
+          name: macos_wheel_py3.6_cpu
           python_version: '3.6'
           pytorch_version: '1.4'
       - binary_macos_wheel:
           cu_version: cpu
-          name: binary_linux_wheel_py3.7_cpu
+          name: macos_wheel_py3.7_cpu
           python_version: '3.7'
           pytorch_version: '1.4'
       - binary_macos_wheel:
           cu_version: cpu
-          name: binary_linux_wheel_py3.8_cpu
+          name: macos_wheel_py3.8_cpu
           python_version: '3.8'
           pytorch_version: '1.4'
