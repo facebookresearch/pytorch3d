@@ -8,10 +8,20 @@
 #include "dispatch.cuh"
 #include "mink.cuh"
 
+// A chunk of work is blocksize-many points of P1.
+// The number of potential chunks to do is N*(1+(P1-1)/blocksize)
+// call (1+(P1-1)/blocksize) chunks_per_cloud
+// These chunks are divided among the gridSize-many blocks.
+// In block b, we work on chunks b, b+gridSize, b+2*gridSize etc .
+// In chunk i, we work on cloud i/chunks_per_cloud on points starting from
+// blocksize*(i%chunks_per_cloud).
+
 template <typename scalar_t>
 __global__ void KNearestNeighborKernelV0(
     const scalar_t* __restrict__ points1,
     const scalar_t* __restrict__ points2,
+    const int64_t* __restrict__ lengths1,
+    const int64_t* __restrict__ lengths2,
     scalar_t* __restrict__ dists,
     int64_t* __restrict__ idxs,
     const size_t N,
@@ -19,18 +29,19 @@ __global__ void KNearestNeighborKernelV0(
     const size_t P2,
     const size_t D,
     const size_t K) {
-  // Stupid version: Make each thread handle one query point and loop over
-  // all P2 target points. There are N * P1 input points to handle, so
-  // do a trivial parallelization over threads.
   // Store both dists and indices for knn in global memory.
-  const int tid = threadIdx.x + blockIdx.x * blockDim.x;
-  const int num_threads = blockDim.x * gridDim.x;
-  for (int np = tid; np < N * P1; np += num_threads) {
-    int n = np / P1;
-    int p1 = np % P1;
+  const int64_t chunks_per_cloud = (1 + (P1 - 1) / blockDim.x);
+  const int64_t chunks_to_do = N * chunks_per_cloud;
+  for (int64_t chunk = blockIdx.x; chunk < chunks_to_do; chunk += gridDim.x) {
+    const int64_t n = chunk / chunks_per_cloud;
+    const int64_t start_point = blockDim.x * (chunk % chunks_per_cloud);
+    int64_t p1 = start_point + threadIdx.x;
+    if (p1 >= lengths1[n])
+      continue;
     int offset = n * P1 * K + p1 * K;
+    int64_t length2 = lengths2[n];
     MinK<scalar_t, int64_t> mink(dists + offset, idxs + offset, K);
-    for (int p2 = 0; p2 < P2; ++p2) {
+    for (int p2 = 0; p2 < length2; ++p2) {
       // Find the distance between points1[n, p1] and points[n, p2]
       scalar_t dist = 0;
       for (int d = 0; d < D; ++d) {
@@ -48,6 +59,8 @@ template <typename scalar_t, int64_t D>
 __global__ void KNearestNeighborKernelV1(
     const scalar_t* __restrict__ points1,
     const scalar_t* __restrict__ points2,
+    const int64_t* __restrict__ lengths1,
+    const int64_t* __restrict__ lengths2,
     scalar_t* __restrict__ dists,
     int64_t* __restrict__ idxs,
     const size_t N,
@@ -58,18 +71,22 @@ __global__ void KNearestNeighborKernelV1(
   // so we can cache the current point in a thread-local array. We still store
   // the current best K dists and indices in global memory, so this should work
   // for very large K and fairly large D.
-  const int tid = threadIdx.x + blockIdx.x * blockDim.x;
-  const int num_threads = blockDim.x * gridDim.x;
   scalar_t cur_point[D];
-  for (int np = tid; np < N * P1; np += num_threads) {
-    int n = np / P1;
-    int p1 = np % P1;
+  const int64_t chunks_per_cloud = (1 + (P1 - 1) / blockDim.x);
+  const int64_t chunks_to_do = N * chunks_per_cloud;
+  for (int64_t chunk = blockIdx.x; chunk < chunks_to_do; chunk += gridDim.x) {
+    const int64_t n = chunk / chunks_per_cloud;
+    const int64_t start_point = blockDim.x * (chunk % chunks_per_cloud);
+    int64_t p1 = start_point + threadIdx.x;
+    if (p1 >= lengths1[n])
+      continue;
     for (int d = 0; d < D; ++d) {
       cur_point[d] = points1[n * P1 * D + p1 * D + d];
     }
     int offset = n * P1 * K + p1 * K;
+    int64_t length2 = lengths2[n];
     MinK<scalar_t, int64_t> mink(dists + offset, idxs + offset, K);
-    for (int p2 = 0; p2 < P2; ++p2) {
+    for (int p2 = 0; p2 < length2; ++p2) {
       // Find the distance between cur_point and points[n, p2]
       scalar_t dist = 0;
       for (int d = 0; d < D; ++d) {
@@ -89,14 +106,16 @@ struct KNearestNeighborV1Functor {
       size_t threads,
       const scalar_t* __restrict__ points1,
       const scalar_t* __restrict__ points2,
+      const int64_t* __restrict__ lengths1,
+      const int64_t* __restrict__ lengths2,
       scalar_t* __restrict__ dists,
       int64_t* __restrict__ idxs,
       const size_t N,
       const size_t P1,
       const size_t P2,
       const size_t K) {
-    KNearestNeighborKernelV1<scalar_t, D>
-        <<<blocks, threads>>>(points1, points2, dists, idxs, N, P1, P2, K);
+    KNearestNeighborKernelV1<scalar_t, D><<<blocks, threads>>>(
+        points1, points2, lengths1, lengths2, dists, idxs, N, P1, P2, K);
   }
 };
 
@@ -104,25 +123,31 @@ template <typename scalar_t, int64_t D, int64_t K>
 __global__ void KNearestNeighborKernelV2(
     const scalar_t* __restrict__ points1,
     const scalar_t* __restrict__ points2,
+    const int64_t* __restrict__ lengths1,
+    const int64_t* __restrict__ lengths2,
     scalar_t* __restrict__ dists,
     int64_t* __restrict__ idxs,
     const int64_t N,
     const int64_t P1,
     const int64_t P2) {
   // Same general implementation as V2, but also hoist K into a template arg.
-  const int tid = threadIdx.x + blockIdx.x * blockDim.x;
-  const int num_threads = blockDim.x * gridDim.x;
   scalar_t cur_point[D];
   scalar_t min_dists[K];
   int min_idxs[K];
-  for (int np = tid; np < N * P1; np += num_threads) {
-    int n = np / P1;
-    int p1 = np % P1;
+  const int64_t chunks_per_cloud = (1 + (P1 - 1) / blockDim.x);
+  const int64_t chunks_to_do = N * chunks_per_cloud;
+  for (int64_t chunk = blockIdx.x; chunk < chunks_to_do; chunk += gridDim.x) {
+    const int64_t n = chunk / chunks_per_cloud;
+    const int64_t start_point = blockDim.x * (chunk % chunks_per_cloud);
+    int64_t p1 = start_point + threadIdx.x;
+    if (p1 >= lengths1[n])
+      continue;
     for (int d = 0; d < D; ++d) {
       cur_point[d] = points1[n * P1 * D + p1 * D + d];
     }
+    int64_t length2 = lengths2[n];
     MinK<scalar_t, int> mink(min_dists, min_idxs, K);
-    for (int p2 = 0; p2 < P2; ++p2) {
+    for (int p2 = 0; p2 < length2; ++p2) {
       scalar_t dist = 0;
       for (int d = 0; d < D; ++d) {
         int offset = n * P2 * D + p2 * D + d;
@@ -146,13 +171,15 @@ struct KNearestNeighborKernelV2Functor {
       size_t threads,
       const scalar_t* __restrict__ points1,
       const scalar_t* __restrict__ points2,
+      const int64_t* __restrict__ lengths1,
+      const int64_t* __restrict__ lengths2,
       scalar_t* __restrict__ dists,
       int64_t* __restrict__ idxs,
       const int64_t N,
       const int64_t P1,
       const int64_t P2) {
-    KNearestNeighborKernelV2<scalar_t, D, K>
-        <<<blocks, threads>>>(points1, points2, dists, idxs, N, P1, P2);
+    KNearestNeighborKernelV2<scalar_t, D, K><<<blocks, threads>>>(
+        points1, points2, lengths1, lengths2, dists, idxs, N, P1, P2);
   }
 };
 
@@ -160,6 +187,8 @@ template <typename scalar_t, int D, int K>
 __global__ void KNearestNeighborKernelV3(
     const scalar_t* __restrict__ points1,
     const scalar_t* __restrict__ points2,
+    const int64_t* __restrict__ lengths1,
+    const int64_t* __restrict__ lengths2,
     scalar_t* __restrict__ dists,
     int64_t* __restrict__ idxs,
     const size_t N,
@@ -169,19 +198,23 @@ __global__ void KNearestNeighborKernelV3(
   // Enabling sorting for this version leads to huge slowdowns; I suspect
   // that it forces min_dists into local memory rather than registers.
   // As a result this version is always unsorted.
-  const int tid = threadIdx.x + blockIdx.x * blockDim.x;
-  const int num_threads = blockDim.x * gridDim.x;
   scalar_t cur_point[D];
   scalar_t min_dists[K];
   int min_idxs[K];
-  for (int np = tid; np < N * P1; np += num_threads) {
-    int n = np / P1;
-    int p1 = np % P1;
+  const int64_t chunks_per_cloud = (1 + (P1 - 1) / blockDim.x);
+  const int64_t chunks_to_do = N * chunks_per_cloud;
+  for (int64_t chunk = blockIdx.x; chunk < chunks_to_do; chunk += gridDim.x) {
+    const int64_t n = chunk / chunks_per_cloud;
+    const int64_t start_point = blockDim.x * (chunk % chunks_per_cloud);
+    int64_t p1 = start_point + threadIdx.x;
+    if (p1 >= lengths1[n])
+      continue;
     for (int d = 0; d < D; ++d) {
       cur_point[d] = points1[n * P1 * D + p1 * D + d];
     }
+    int64_t length2 = lengths2[n];
     RegisterMinK<scalar_t, int, K> mink(min_dists, min_idxs);
-    for (int p2 = 0; p2 < P2; ++p2) {
+    for (int p2 = 0; p2 < length2; ++p2) {
       scalar_t dist = 0;
       for (int d = 0; d < D; ++d) {
         int offset = n * P2 * D + p2 * D + d;
@@ -205,13 +238,15 @@ struct KNearestNeighborKernelV3Functor {
       size_t threads,
       const scalar_t* __restrict__ points1,
       const scalar_t* __restrict__ points2,
+      const int64_t* __restrict__ lengths1,
+      const int64_t* __restrict__ lengths2,
       scalar_t* __restrict__ dists,
       int64_t* __restrict__ idxs,
       const size_t N,
       const size_t P1,
       const size_t P2) {
-    KNearestNeighborKernelV3<scalar_t, D, K>
-        <<<blocks, threads>>>(points1, points2, dists, idxs, N, P1, P2);
+    KNearestNeighborKernelV3<scalar_t, D, K><<<blocks, threads>>>(
+        points1, points2, lengths1, lengths2, dists, idxs, N, P1, P2);
   }
 };
 
@@ -257,6 +292,8 @@ int ChooseVersion(const int64_t D, const int64_t K) {
 std::tuple<at::Tensor, at::Tensor> KNearestNeighborIdxCuda(
     const at::Tensor& p1,
     const at::Tensor& p2,
+    const at::Tensor& lengths1,
+    const at::Tensor& lengths2,
     int K,
     int version) {
   const auto N = p1.size(0);
@@ -267,8 +304,8 @@ std::tuple<at::Tensor, at::Tensor> KNearestNeighborIdxCuda(
 
   AT_ASSERTM(p2.size(2) == D, "Point sets must have the same last dimension");
   auto long_dtype = p1.options().dtype(at::kLong);
-  auto idxs = at::full({N, P1, K}, -1, long_dtype);
-  auto dists = at::full({N, P1, K}, -1, p1.options());
+  auto idxs = at::zeros({N, P1, K}, long_dtype);
+  auto dists = at::zeros({N, P1, K}, p1.options());
 
   if (version < 0) {
     version = ChooseVersion(D, K);
@@ -294,6 +331,8 @@ std::tuple<at::Tensor, at::Tensor> KNearestNeighborIdxCuda(
                                      <<<blocks, threads>>>(
                                          p1.data_ptr<scalar_t>(),
                                          p2.data_ptr<scalar_t>(),
+                                         lengths1.data_ptr<int64_t>(),
+                                         lengths2.data_ptr<int64_t>(),
                                          dists.data_ptr<scalar_t>(),
                                          idxs.data_ptr<int64_t>(),
                                          N,
@@ -314,6 +353,8 @@ std::tuple<at::Tensor, at::Tensor> KNearestNeighborIdxCuda(
                                      threads,
                                      p1.data_ptr<scalar_t>(),
                                      p2.data_ptr<scalar_t>(),
+                                     lengths1.data_ptr<int64_t>(),
+                                     lengths2.data_ptr<int64_t>(),
                                      dists.data_ptr<scalar_t>(),
                                      idxs.data_ptr<int64_t>(),
                                      N,
@@ -336,6 +377,8 @@ std::tuple<at::Tensor, at::Tensor> KNearestNeighborIdxCuda(
                                      threads,
                                      p1.data_ptr<scalar_t>(),
                                      p2.data_ptr<scalar_t>(),
+                                     lengths1.data_ptr<int64_t>(),
+                                     lengths2.data_ptr<int64_t>(),
                                      dists.data_ptr<scalar_t>(),
                                      idxs.data_ptr<int64_t>(),
                                      N,
@@ -357,6 +400,8 @@ std::tuple<at::Tensor, at::Tensor> KNearestNeighborIdxCuda(
                                      threads,
                                      p1.data_ptr<scalar_t>(),
                                      p2.data_ptr<scalar_t>(),
+                                     lengths1.data_ptr<int64_t>(),
+                                     lengths2.data_ptr<int64_t>(),
                                      dists.data_ptr<scalar_t>(),
                                      idxs.data_ptr<int64_t>(),
                                      N,

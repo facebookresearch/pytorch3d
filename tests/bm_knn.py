@@ -13,6 +13,7 @@ def bm_knn() -> None:
     benchmark_knn_cpu()
     benchmark_knn_cuda_vs_naive()
     benchmark_knn_cuda_versions()
+    benchmark_knn_cuda_versions_ragged()
 
 
 def benchmark_knn_cuda_versions() -> None:
@@ -34,6 +35,25 @@ def benchmark_knn_cuda_versions() -> None:
         nn_kwargs.append({"N": N, "D": D, "P": P})
     benchmark(knn_cuda_with_init, "KNN_CUDA_VERSIONS", knn_kwargs, warmup_iters=1)
     benchmark(nn_cuda_with_init, "NN_CUDA", nn_kwargs, warmup_iters=1)
+
+
+def benchmark_knn_cuda_versions_ragged() -> None:
+    # Compare our different KNN implementations,
+    # and also compare against our existing 1-NN
+    Ns = [8]
+    Ps = [4096, 16384]
+    Ds = [3]
+    Ks = [1, 4, 16, 64]
+    versions = [0, 1, 2, 3]
+    knn_kwargs = []
+    for N, P, D, K, version in product(Ns, Ps, Ds, Ks, versions):
+        if version == 2 and K > 32:
+            continue
+        if version == 3 and K > 4:
+            continue
+        knn_kwargs.append({"N": N, "D": D, "P": P, "K": K, "v": version})
+    benchmark(knn_cuda_with_init, "KNN_CUDA_COMPARISON", knn_kwargs, warmup_iters=1)
+    benchmark(knn_cuda_ragged, "KNN_CUDA_RAGGED", knn_kwargs, warmup_iters=1)
 
 
 def benchmark_knn_cuda_vs_naive() -> None:
@@ -72,10 +92,27 @@ def knn_cuda_with_init(N, D, P, K, v=-1):
     device = torch.device("cuda:0")
     x = torch.randn(N, P, D, device=device)
     y = torch.randn(N, P, D, device=device)
+    lengths = torch.full((N,), P, dtype=torch.int64, device=device)
+
     torch.cuda.synchronize()
 
     def knn():
-        _C.knn_points_idx(x, y, K, v)
+        _C.knn_points_idx(x, y, lengths, lengths, K, v)
+        torch.cuda.synchronize()
+
+    return knn
+
+
+def knn_cuda_ragged(N, D, P, K, v=-1):
+    device = torch.device("cuda:0")
+    x = torch.randn(N, P, D, device=device)
+    y = torch.randn(N, P, D, device=device)
+    lengths1 = torch.randint(P, size=(N,), device=device, dtype=torch.int64)
+    lengths2 = torch.randint(P, size=(N,), device=device, dtype=torch.int64)
+    torch.cuda.synchronize()
+
+    def knn():
+        _C.knn_points_idx(x, y, lengths1, lengths2, K, v)
         torch.cuda.synchronize()
 
     return knn
@@ -85,9 +122,10 @@ def knn_cpu_with_init(N, D, P, K):
     device = torch.device("cpu")
     x = torch.randn(N, P, D, device=device)
     y = torch.randn(N, P, D, device=device)
+    lengths = torch.full((N,), P, dtype=torch.int64, device=device)
 
     def knn():
-        _C.knn_points_idx(x, y, K, 0)
+        _C.knn_points_idx(x, y, lengths, lengths, K, -1)
 
     return knn
 
@@ -96,10 +134,12 @@ def knn_python_cuda_with_init(N, D, P, K):
     device = torch.device("cuda")
     x = torch.randn(N, P, D, device=device)
     y = torch.randn(N, P, D, device=device)
+    lengths = torch.full((N,), P, dtype=torch.int64, device=device)
+
     torch.cuda.synchronize()
 
     def knn():
-        _knn_points_idx_naive(x, y, K)
+        _knn_points_idx_naive(x, y, K=K, lengths1=lengths, lengths2=lengths)
         torch.cuda.synchronize()
 
     return knn
@@ -109,9 +149,10 @@ def knn_python_cpu_with_init(N, D, P, K):
     device = torch.device("cpu")
     x = torch.randn(N, P, D, device=device)
     y = torch.randn(N, P, D, device=device)
+    lengths = torch.full((N,), P, dtype=torch.int64, device=device)
 
     def knn():
-        _knn_points_idx_naive(x, y, K)
+        _knn_points_idx_naive(x, y, K=K, lengths1=lengths, lengths2=lengths)
 
     return knn
 
