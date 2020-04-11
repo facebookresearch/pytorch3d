@@ -839,6 +839,60 @@ class TestPointclouds(TestCaseMixin, unittest.TestCase):
                         getattr(new_clouds, attrib)(), getattr(clouds, attrib)()
                     )
 
+    def test_inside_box(self):
+        def inside_box_naive(cloud, box_min, box_max):
+            return (cloud >= box_min.view(1, 3)) * (cloud <= box_max.view(1, 3))
+
+        N, P, C = 5, 100, 4
+
+        clouds = self.init_cloud(N, P, C, with_normals=False, with_features=False)
+        device = clouds.device
+
+        # box of shape Nx2x3
+        box_min = torch.rand((N, 1, 3), device=device)
+        box_max = box_min + torch.rand((N, 1, 3), device=device)
+        box = torch.cat([box_min, box_max], dim=1)
+
+        within_box = clouds.inside_box(box)
+
+        within_box_naive = []
+        for i, cloud in enumerate(clouds.points_list()):
+            within_box_naive.append(inside_box_naive(cloud, box[i, 0], box[i, 1]))
+        within_box_naive = torch.cat(within_box_naive, 0)
+        self.assertTrue(within_box.eq(within_box_naive).all())
+
+        # box of shape 2x3
+        box2 = box[0, :]
+
+        within_box2 = clouds.inside_box(box2)
+
+        within_box_naive2 = []
+        for cloud in clouds.points_list():
+            within_box_naive2.append(inside_box_naive(cloud, box2[0], box2[1]))
+        within_box_naive2 = torch.cat(within_box_naive2, 0)
+        self.assertTrue(within_box2.eq(within_box_naive2).all())
+
+        # box of shape 1x2x3
+        box3 = box2.expand(1, 2, 3)
+
+        within_box3 = clouds.inside_box(box3)
+        self.assertTrue(within_box2.eq(within_box3).all())
+
+        # invalid box
+        invalid_box = torch.cat(
+            [box_min, box_min - torch.rand((N, 1, 3), device=device)], dim=1
+        )
+        with self.assertRaisesRegex(ValueError, "Input box is invalid"):
+            clouds.inside_box(invalid_box)
+
+        # invalid box shapes
+        invalid_box = box[0].expand(2, 2, 3)
+        with self.assertRaisesRegex(ValueError, "Input box dimension is"):
+            clouds.inside_box(invalid_box)
+        invalid_box = torch.rand((5, 8, 9, 3), device=device)
+        with self.assertRaisesRegex(ValueError, "Input box must be of shape"):
+            clouds.inside_box(invalid_box)
+
     @staticmethod
     def compute_packed_with_init(
         num_clouds: int = 10, max_p: int = 100, features: int = 300

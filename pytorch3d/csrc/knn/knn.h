@@ -3,7 +3,7 @@
 #pragma once
 #include <torch/extension.h>
 #include <tuple>
-#include "pytorch3d_cutils.h"
+#include "utils/pytorch3d_cutils.h"
 
 // Compute indices of K nearest neighbors in pointcloud p2 to points
 // in pointcloud p1.

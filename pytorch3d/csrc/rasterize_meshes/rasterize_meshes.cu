@@ -6,10 +6,10 @@
 #include <torch/extension.h>
 #include <cstdio>
 #include <tuple>
-#include "float_math.cuh"
-#include "geometry_utils.cuh"
 #include "rasterize_points/bitmask.cuh"
 #include "rasterize_points/rasterization_utils.cuh"
+#include "utils/float_math.cuh"
+#include "utils/geometry_utils.cuh"
 
 namespace {
 // A structure for holding details about a pixel.

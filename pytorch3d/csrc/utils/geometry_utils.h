@@ -7,7 +7,7 @@
 #include "vec3.h"
 
 // Set epsilon for preventing floating point errors and division by 0.
-const auto kEpsilon = 1e-30;
+const auto kEpsilon = 1e-8;
 
 // Determines whether a point p is on the right side of a 2D line segment
 // given by the end points v0, v1.

@@ -963,3 +963,44 @@ class Pointclouds(object):
             new._features_list = None
             new._features_packed = None
         return new
+
+    def inside_box(self, box):
+        """
+        Finds the points inside a 3D box.
+
+        Args:
+            box: FloatTensor of shape (2, 3) or (N, 2, 3) where N is the number
+                of clouds.
+                    box[..., 0, :] gives the min x, y & z.
+                    box[..., 1, :] gives the max x, y & z.
+        Returns:
+            idx: BoolTensor of length sum(P_i) indicating whether the packed points are within the input box.
+        """
+        if box.dim() > 3 or box.dim() < 2:
+            raise ValueError("Input box must be of shape (2, 3) or (N, 2, 3).")
+
+        if box.dim() == 3 and box.shape[0] != 1 and box.shape[0] != self._N:
+            raise ValueError(
+                "Input box dimension is incompatible with pointcloud size."
+            )
+
+        if box.dim() == 2:
+            box = box[None]
+
+        if (box[..., 0, :] > box[..., 1, :]).any():
+            raise ValueError("Input box is invalid: min values larger than max values.")
+
+        points_packed = self.points_packed()
+        sumP = points_packed.shape[0]
+
+        if box.shape[0] == 1:
+            box = box.expand(sumP, 2, 3)
+        elif box.shape[0] == self._N:
+            box = box.unbind(0)
+            box = [
+                b.expand(p, 2, 3) for (b, p) in zip(box, self.num_points_per_cloud())
+            ]
+            box = torch.cat(box, 0)
+
+        idx = (points_packed >= box[:, 0]) * (points_packed <= box[:, 1])
+        return idx

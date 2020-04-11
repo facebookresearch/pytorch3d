@@ -1,7 +1,7 @@
 // Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
 #include <torch/extension.h>
-#include "pytorch3d_cutils.h"
+#include "utils/pytorch3d_cutils.h"
 
 #include <vector>
 

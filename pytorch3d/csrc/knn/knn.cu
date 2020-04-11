@@ -5,8 +5,8 @@
 #include <iostream>
 #include <tuple>
 
-#include "dispatch.cuh"
-#include "mink.cuh"
+#include "utils/dispatch.cuh"
+#include "utils/mink.cuh"
 
 // A chunk of work is blocksize-many points of P1.
 // The number of potential chunks to do is N*(1+(P1-1)/blocksize)

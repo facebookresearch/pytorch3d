@@ -5,9 +5,9 @@
 #include <list>
 #include <queue>
 #include <tuple>
-#include "geometry_utils.h"
-#include "vec2.h"
-#include "vec3.h"
+#include "utils/geometry_utils.h"
+#include "utils/vec2.h"
+#include "utils/vec3.h"
 
 float PixToNdc(int i, int S) {
   // NDC x-offset + (i * pixel_width + half_pixel_width)

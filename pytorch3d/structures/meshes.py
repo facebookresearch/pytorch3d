@@ -147,36 +147,38 @@ class Meshes(object):
     Total number of unique edges = sum(E_n)
 
     # SPHINX IGNORE
-    Name                          |   Size                  | Example from above
-    ------------------------------|-------------------------|----------------------
-                                  |                         |
-    edges_packed                  | size = (sum(E_n), 2)    |  tensor([
-                                  |                         |     [0, 1],
-                                  |                         |     [0, 2],
-                                  |                         |     [1, 2],
-                                  |                         |       ...
-                                  |                         |     [10, 11],
-                                  |                         |   )]
-                                  |                         |   size = (18, 2)
-                                  |                         |
-    num_edges_per_mesh            | size = (N)              |  tensor([3, 5, 10])
-                                  |                         |  size = (3)
-                                  |                         |
-    edges_packed_to_mesh_idx      | size = (sum(E_n))       |  tensor([
-                                  |                         |    0, 0, 0,
-                                  |                         |     . . .
-                                  |                         |    2, 2, 2
-                                  |                         |   ])
-                                  |                         |   size = (18)
-                                  |                         |
-    faces_packed_to_edges_packed  | size = (sum(F_n), 3)    |  tensor([
-                                  |                         |    [2,   1,  0],
-                                  |                         |    [5,   4,  3],
-                                  |                         |       .  .  .
-                                  |                         |    [12, 14, 16],
-                                  |                         |   ])
-                                  |                         |   size = (10, 3)
-                                  |                         |
+    Name                           |   Size                  | Example from above
+    -------------------------------|-------------------------|----------------------
+                                   |                         |
+    edges_packed                   | size = (sum(E_n), 2)    |  tensor([
+                                   |                         |     [0, 1],
+                                   |                         |     [0, 2],
+                                   |                         |     [1, 2],
+                                   |                         |       ...
+                                   |                         |     [10, 11],
+                                   |                         |   )]
+                                   |                         |   size = (18, 2)
+                                   |                         |
+    num_edges_per_mesh             | size = (N)              |  tensor([3, 5, 10])
+                                   |                         |  size = (3)
+                                   |                         |
+    edges_packed_to_mesh_idx       | size = (sum(E_n))       |  tensor([
+                                   |                         |    0, 0, 0,
+                                   |                         |     . . .
+                                   |                         |    2, 2, 2
+                                   |                         |   ])
+                                   |                         |   size = (18)
+                                   |                         |
+    faces_packed_to_edges_packed   | size = (sum(F_n), 3)    |  tensor([
+                                   |                         |    [2,   1,  0],
+                                   |                         |    [5,   4,  3],
+                                   |                         |       .  .  .
+                                   |                         |    [12, 14, 16],
+                                   |                         |   ])
+                                   |                         |   size = (10, 3)
+                                   |                         |
+    mesh_to_edges_packed_first_idx | size = (N)              |  tensor([0, 3, 8])
+                                   |                         |  size = (3)
     ----------------------------------------------------------------------------
     # SPHINX IGNORE
     """
@@ -197,6 +199,7 @@ class Meshes(object):
         "_num_faces_per_mesh",
         "_edges_packed",
         "_edges_packed_to_mesh_idx",
+        "_mesh_to_edges_packed_first_idx",
         "_faces_packed_to_edges_packed",
         "_num_edges_per_mesh",
         "_verts_padded_to_packed_idx",
@@ -278,6 +281,7 @@ class Meshes(object):
         # Map from packed edges to corresponding mesh index.
         self._edges_packed_to_mesh_idx = None  # sum(E_n)
         self._num_edges_per_mesh = None  # N
+        self._mesh_to_edges_packed_first_idx = None  # N
 
         # Map from packed faces to packed edges. This represents the index of
         # the edge opposite the vertex for each vertex in the face. E.g.
@@ -610,6 +614,17 @@ class Meshes(object):
         """
         self._compute_edges_packed()
         return self._edges_packed_to_mesh_idx
+
+    def mesh_to_edges_packed_first_idx(self):
+        """
+        Return a 1D tensor x with length equal to the number of meshes such that
+        the first edge of the ith mesh is edges_packed[x[i]].
+
+        Returns:
+            1D tensor of indices of first items.
+        """
+        self._compute_edges_packed()
+        return self._mesh_to_edges_packed_first_idx
 
     def faces_packed_to_edges_packed(self):
         """
@@ -955,6 +970,7 @@ class Meshes(object):
                     self._faces_packed_to_mesh_idx,
                     self._edges_packed_to_mesh_idx,
                     self._num_edges_per_mesh,
+                    self._mesh_to_edges_packed_first_idx,
                 ]
             )
         ):
@@ -1023,13 +1039,24 @@ class Meshes(object):
         face_to_edge = inverse_idxs[face_to_edge]
         self._faces_packed_to_edges_packed = face_to_edge
 
+        # Compute number of edges per mesh
         num_edges_per_mesh = torch.zeros(self._N, dtype=torch.int32, device=self.device)
         ones = torch.ones(1, dtype=torch.int32, device=self.device).expand(
             self._edges_packed_to_mesh_idx.shape
         )
-        self._num_edges_per_mesh = num_edges_per_mesh.scatter_add(
+        num_edges_per_mesh = num_edges_per_mesh.scatter_add_(
             0, self._edges_packed_to_mesh_idx, ones
         )
+        self._num_edges_per_mesh = num_edges_per_mesh
+
+        # Compute first idx for each mesh in edges_packed
+        mesh_to_edges_packed_first_idx = torch.zeros(
+            self._N, dtype=torch.int64, device=self.device
+        )
+        num_edges_cumsum = num_edges_per_mesh.cumsum(dim=0)
+        mesh_to_edges_packed_first_idx[1:] = num_edges_cumsum[:-1].clone()
+
+        self._mesh_to_edges_packed_first_idx = mesh_to_edges_packed_first_idx
 
     def _compute_laplacian_packed(self, refresh: bool = False):
         """

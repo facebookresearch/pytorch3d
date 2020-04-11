@@ -151,6 +151,10 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
         self.assertClose(
             mesh.num_edges_per_mesh().cpu(), torch.tensor([3, 5, 10], dtype=torch.int32)
         )
+        self.assertClose(
+            mesh.mesh_to_edges_packed_first_idx().cpu(),
+            torch.tensor([0, 3, 8], dtype=torch.int64),
+        )
 
     def test_simple_random_meshes(self):
 
@@ -219,6 +223,13 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
             self.assertTrue(np.allclose(edge_to_mesh_idx, edge_to_mesh))
             num_edges = np.bincount(edge_to_mesh, minlength=N)
             self.assertTrue(np.allclose(num_edges_per_mesh, num_edges))
+            mesh_to_edges_packed_first_idx = (
+                mesh.mesh_to_edges_packed_first_idx().cpu().numpy()
+            )
+            self.assertTrue(
+                np.allclose(mesh_to_edges_packed_first_idx[1:], num_edges.cumsum()[:-1])
+            )
+            self.assertTrue(mesh_to_edges_packed_first_idx[0] == 0)
 
     def test_allempty(self):
         verts_list = []
@@ -486,6 +497,10 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
             self.assertClose(
                 new_mesh.faces_areas_packed(), new_mesh_naive.faces_areas_packed()
             )
+            self.assertClose(
+                new_mesh.mesh_to_edges_packed_first_idx(),
+                new_mesh_naive.mesh_to_edges_packed_first_idx(),
+            )
 
     def test_scale_verts(self):
         def naive_scale_verts(mesh, scale):
@@ -602,6 +617,10 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
                 )
                 self.assertClose(
                     new_mesh.faces_areas_packed(), new_mesh_naive.faces_areas_packed()
+                )
+                self.assertClose(
+                    new_mesh.mesh_to_edges_packed_first_idx(),
+                    new_mesh_naive.mesh_to_edges_packed_first_idx(),
                 )
 
     def test_extend_list(self):

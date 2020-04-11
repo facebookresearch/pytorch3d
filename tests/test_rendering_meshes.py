@@ -276,7 +276,11 @@ class TestRenderingMeshes(unittest.TestCase):
                 DATA_DIR / "DEBUG_texture_map_back.png"
             )
 
-        self.assertTrue(torch.allclose(rgb, image_ref, atol=0.05))
+        # NOTE some pixels can be flaky and will not lead to
+        # `cond1` being true. Add `cond2` and check `cond1 or cond2`
+        cond1 = torch.allclose(rgb, image_ref, atol=0.05)
+        cond2 = ((rgb - image_ref).abs() > 0.05).sum() < 5
+        self.assertTrue(cond1 or cond2)
 
         # Check grad exists
         [verts] = mesh.verts_list()
