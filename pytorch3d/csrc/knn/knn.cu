@@ -412,3 +412,93 @@ std::tuple<at::Tensor, at::Tensor> KNearestNeighborIdxCuda(
 
   return std::make_tuple(idxs, dists);
 }
+
+// ------------------------------------------------------------- //
+//                   Backward Operators                          //
+// ------------------------------------------------------------- //
+
+// TODO(gkioxari) support all data types once AtomicAdd supports doubles.
+// Currently, support is for floats only.
+__global__ void KNearestNeighborBackwardKernel(
+    const float* __restrict__ p1, // (N, P1, D)
+    const float* __restrict__ p2, // (N, P2, D)
+    const int64_t* __restrict__ lengths1, // (N,)
+    const int64_t* __restrict__ lengths2, // (N,)
+    const int64_t* __restrict__ idxs, // (N, P1, K)
+    const float* __restrict__ grad_dists, // (N, P1, K)
+    float* __restrict__ grad_p1, // (N, P1, D)
+    float* __restrict__ grad_p2, // (N, P2, D)
+    const size_t N,
+    const size_t P1,
+    const size_t P2,
+    const size_t K,
+    const size_t D) {
+  const size_t tid = blockIdx.x * blockDim.x + threadIdx.x;
+  const size_t stride = gridDim.x * blockDim.x;
+
+  for (size_t i = tid; i < N * P1 * K * D; i += stride) {
+    const size_t n = i / (P1 * K * D); // batch index
+    size_t rem = i % (P1 * K * D);
+    const size_t p1_idx = rem / (K * D); // index of point in p1
+    rem = rem % (K * D);
+    const size_t k = rem / D; // k-th nearest neighbor
+    const size_t d = rem % D; // d-th dimension in the feature vector
+
+    const size_t num1 = lengths1[n]; // number of valid points in p1 in batch
+    const size_t num2 = lengths2[n]; // number of valid points in p2 in batch
+    if ((p1_idx < num1) && (k < num2)) {
+      const float grad_dist = grad_dists[n * P1 * K + p1_idx * K + k];
+      // index of point in p2 corresponding to the k-th nearest neighbor
+      const size_t p2_idx = idxs[n * P1 * K + p1_idx * K + k];
+      const float diff = 2.0 * grad_dist *
+          (p1[n * P1 * D + p1_idx * D + d] - p2[n * P2 * D + p2_idx * D + d]);
+      atomicAdd(grad_p1 + n * P1 * D + p1_idx * D + d, diff);
+      atomicAdd(grad_p2 + n * P2 * D + p2_idx * D + d, -1.0f * diff);
+    }
+  }
+}
+
+std::tuple<at::Tensor, at::Tensor> KNearestNeighborBackwardCuda(
+    const at::Tensor& p1,
+    const at::Tensor& p2,
+    const at::Tensor& lengths1,
+    const at::Tensor& lengths2,
+    const at::Tensor& idxs,
+    const at::Tensor& grad_dists) {
+  const auto N = p1.size(0);
+  const auto P1 = p1.size(1);
+  const auto P2 = p2.size(1);
+  const auto D = p2.size(2);
+  const auto K = idxs.size(2);
+
+  AT_ASSERTM(p2.size(2) == D, "Point sets must have the same last dimension");
+  AT_ASSERTM(idxs.size(0) == N, "KNN idxs must have the same batch dimension");
+  AT_ASSERTM(
+      idxs.size(1) == P1, "KNN idxs must have the same point dimension as p1");
+  AT_ASSERTM(grad_dists.size(0) == N);
+  AT_ASSERTM(grad_dists.size(1) == P1);
+  AT_ASSERTM(grad_dists.size(2) == K);
+
+  auto grad_p1 = at::zeros({N, P1, D}, p1.options());
+  auto grad_p2 = at::zeros({N, P2, D}, p2.options());
+
+  const int blocks = 64;
+  const int threads = 512;
+
+  KNearestNeighborBackwardKernel<<<blocks, threads>>>(
+      p1.data_ptr<float>(),
+      p2.data_ptr<float>(),
+      lengths1.data_ptr<int64_t>(),
+      lengths2.data_ptr<int64_t>(),
+      idxs.data_ptr<int64_t>(),
+      grad_dists.data_ptr<float>(),
+      grad_p1.data_ptr<float>(),
+      grad_p2.data_ptr<float>(),
+      N,
+      P1,
+      P2,
+      K,
+      D);
+
+  return std::make_tuple(grad_p1, grad_p2);
+}

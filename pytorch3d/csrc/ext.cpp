@@ -20,6 +20,7 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
   m.def("packed_to_padded", &PackedToPadded);
   m.def("padded_to_packed", &PaddedToPacked);
   m.def("knn_points_idx", &KNearestNeighborIdx);
+  m.def("knn_points_backward", &KNearestNeighborBackward);
   m.def("nn_points_idx", &NearestNeighborIdx);
   m.def("gather_scatter", &gather_scatter);
   m.def("rasterize_points", &RasterizePoints);
