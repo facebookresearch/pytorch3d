@@ -81,8 +81,8 @@ def sfm_perspective_project_naive(points, fx=1.0, fy=1.0, p0x=0.0, p0y=0.0):
         (N, V, 3) tensor of projected points.
     """
     z = points[:, :, 2]
-    x = (points[:, :, 0] * fx + p0x) / z
-    y = (points[:, :, 1] * fy + p0y) / z
+    x = (points[:, :, 0] * fx) / z + p0x
+    y = (points[:, :, 1] * fy) / z + p0y
     points = torch.stack((x, y, 1.0 / z), dim=2)
     return points
 

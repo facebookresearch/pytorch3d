@@ -505,8 +505,8 @@ class SfMPerspectiveCameras(TensorProperties):
             py = principal_point[:,1]
 
             P = [
-                    [fx,   0,    0,  px],
-                    [0,   fy,    0,  py],
+                    [fx,   0,   px,   0],
+                    [0,   fy,   py,   0],
                     [0,    0,    0,   1],
                     [0,    0,    1,   0],
             ]
@@ -800,8 +800,8 @@ def _get_sfm_calibration_matrix(
                 ]
             else:
                 K = [
-                        [fx,   0,    0,  px],
-                        [0,   fy,    0,  py],
+                        [fx,   0,   px,   0],
+                        [0,   fy,   py,   0],
                         [0,    0,    0,   1],
                         [0,    0,    1,   0],
                 ]
@@ -827,12 +827,14 @@ def _get_sfm_calibration_matrix(
     K = fx.new_zeros(N, 4, 4)
     K[:, 0, 0] = fx
     K[:, 1, 1] = fy
-    K[:, 0, 3] = px
-    K[:, 1, 3] = py
     if orthographic:
+        K[:, 0, 3] = px
+        K[:, 1, 3] = py
         K[:, 2, 2] = 1.0
         K[:, 3, 3] = 1.0
     else:
+        K[:, 0, 2] = px
+        K[:, 1, 2] = py
         K[:, 3, 2] = 1.0
         K[:, 2, 3] = 1.0
 
