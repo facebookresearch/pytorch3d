@@ -7,7 +7,6 @@
 #include "face_areas_normals/face_areas_normals.h"
 #include "gather_scatter/gather_scatter.h"
 #include "knn/knn.h"
-#include "nearest_neighbor_points/nearest_neighbor_points.h"
 #include "packed_to_padded_tensor/packed_to_padded_tensor.h"
 #include "point_mesh/point_mesh_edge.h"
 #include "point_mesh/point_mesh_face.h"
@@ -21,7 +20,6 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
   m.def("padded_to_packed", &PaddedToPacked);
   m.def("knn_points_idx", &KNearestNeighborIdx);
   m.def("knn_points_backward", &KNearestNeighborBackward);
-  m.def("nn_points_idx", &NearestNeighborIdx);
   m.def("gather_scatter", &gather_scatter);
   m.def("rasterize_points", &RasterizePoints);
   m.def("rasterize_points_backward", &RasterizePointsBackward);
