@@ -125,7 +125,7 @@ def knn_points(
         p1_dists: Tensor of shape (N, P1, K) giving the squared distances to
             the nearest neighbors. This is padded with zeros both where a cloud in p2
             has fewer than K points and where a cloud in p1 has fewer than P1 points.
-        
+
         p2_nn: Tensor of shape (N, P1, K, D) giving the K nearest neighbors in p2 for
             each point in p1. Concretely, `p2_nn[n, i, k]` gives the k-th nearest neighbor
             for `p1[n, i]`. Returned if `return_nn` is True.
@@ -134,7 +134,7 @@ def knn_points(
             .. code-block::
 
                 p2_nn = knn_gather(p2, p1_idx, lengths2)
-            
+
             which is a helper function that allows indexing any tensor of shape (N, P2, U) with
             the indices `p1_idx` returned by `knn_points`. The outout is a tensor
             of shape (N, P1, K, U).
@@ -168,7 +168,7 @@ def knn_gather(
     """
     A helper function for knn that allows indexing a tensor x with the indices `idx`
     returned by `knn_points`.
-    
+
     For example, if `dists, idx = knn_points(p, x, lengths_p, lengths, K)`
     where p is a tensor of shape (N, L, D) and x a tensor of shape (N, M, D),
     then one can compute the K nearest neighbors of p with `p_nn = knn_gather(x, idx, lengths)`.

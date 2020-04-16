@@ -41,10 +41,10 @@ class _PointFaceDistance(Function):
                 in the corresponding example in the batch
             idxs: LongTensor of shape `(P,)` indicating the closest triangular face
                 in the corresponindg example in the batch.
-                
+
             `dists[p] = d(points[p], tris[idxs[p], 0], tris[idxs[p], 1], tris[idxs[p], 2])`
             where `d(u, v0, v1, v2)` is the distance of point `u` from the trianfular face `(v0, v1, v2)`
-            
+
         """
         dists, idxs = _C.point_face_dist_forward(
             points, points_first_idx, tris, tris_first_idx, max_points
@@ -91,7 +91,7 @@ class _FacePointDistance(Function):
                 corresponding example in the batch
             idxs: LongTensor of shape `(T,)` indicating the closest point in the
                 corresponindg example in the batch.
-                
+
             `dists[t] = d(points[idxs[t]], tris[t, 0], tris[t, 1], tris[t, 2])`,
             where `d(u, v0, v1, v2)` is the distance of point `u` from the triangular
             face `(v0, v1, v2)`.
@@ -141,7 +141,7 @@ class _PointEdgeDistance(Function):
                 corresponding example in the batch
             idxs: LongTensor of shape `(P,)` indicating the closest edge in the
                 corresponindg example in the batch.
-                
+
             `dists[p] = d(points[p], segms[idxs[p], 0], segms[idxs[p], 1])`,
             where `d(u, v0, v1)` is the distance of point `u` from the edge segment
             spanned by `(v0, v1)`.
@@ -191,7 +191,7 @@ class _EdgePointDistance(Function):
                 corresponding example in the batch
             idxs: LongTensor of shape `(S,)` indicating the closest point in the
                 corresponindg example in the batch.
-                
+
             `dists[s] = d(points[idxs[s]], edges[s, 0], edges[s, 1])`,
             where `d(u, v0, v1)` is the distance of point `u` from the segment
             spanned by `(v0, v1)`.
@@ -226,7 +226,7 @@ def point_mesh_edge_distance(meshes: Meshes, pcls: Pointclouds):
         to the closest edge segment in mesh and averages across all points in pcl
     `edge_point(mesh, pcl)`: Computes the squared distance of each edge segment in mesh
         to the closest point in pcl and averages across all edges in mesh.
-    
+
     The above distance functions are applied for all `(mesh, pcl)` pairs in the batch and
     then averaged across the batch.
 
@@ -293,7 +293,7 @@ def point_mesh_face_distance(meshes: Meshes, pcls: Pointclouds):
         to the closest triangular face in mesh and averages across all points in pcl
     `face_point(mesh, pcl)`: Computes the squared distance of each triangular face in mesh
         to the closest point in pcl and averages across all faces in mesh.
-    
+
     The above distance functions are applied for all `(mesh, pcl)` pairs in the batch and
     then averaged across the batch.
 

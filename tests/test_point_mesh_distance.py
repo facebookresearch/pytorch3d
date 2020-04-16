@@ -132,7 +132,7 @@ class TestPointMeshDistance(TestCaseMixin, unittest.TestCase):
             edge: FloatTensor of shape (2, 3)
         Returns:
             dist: FloatTensor of shape (1)
-        
+
         If a, b are the start and end points of the segments, we
         parametrize a point p as
             x(t) = a + t * (b - a)
@@ -165,7 +165,7 @@ class TestPointMeshDistance(TestCaseMixin, unittest.TestCase):
             point: FloatTensor of shape (3)
             tri: FloatTensor of shape (3, 3)
         Returns:
-            dist: FloatTensor of shape (1) 
+            dist: FloatTensor of shape (1)
         """
         a, b, c = tri.unbind(0)
         cross = torch.cross(b - a, c - a)
