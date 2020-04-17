@@ -700,24 +700,38 @@ def load_ply(f):
     return verts, faces
 
 
-def _save_ply(f, verts, faces, decimal_places: Optional[int]) -> None:
+def _save_ply(
+    f,
+    verts: torch.Tensor,
+    faces: torch.LongTensor,
+    verts_normals: torch.Tensor,
+    decimal_places: Optional[int] = None,
+) -> None:
     """
-    Internal implementation for saving a mesh to a .ply file.
+    Internal implementation for saving 3D data to a .ply file.
 
     Args:
-        f: File object to which the mesh should be written.
+        f: File object to which the 3D data should be written.
         verts: FloatTensor of shape (V, 3) giving vertex coordinates.
-        faces: LongTensor of shape (F, 3) giving faces.
+        faces: LongTensor of shsape (F, 3) giving faces.
+        verts_normals: FloatTensor of shape (V, 3) giving vertex normals.
         decimal_places: Number of decimal places for saving.
     """
     assert not len(verts) or (verts.dim() == 2 and verts.size(1) == 3)
     assert not len(faces) or (faces.dim() == 2 and faces.size(1) == 3)
+    assert not len(verts_normals) or (
+        verts_normals.dim() == 2 and verts_normals.size(1) == 3
+    )
 
     print("ply\nformat ascii 1.0", file=f)
     print(f"element vertex {verts.shape[0]}", file=f)
     print("property float x", file=f)
     print("property float y", file=f)
     print("property float z", file=f)
+    if verts_normals.numel() > 0:
+        print("property float nx", file=f)
+        print("property float ny", file=f)
+        print("property float nz", file=f)
     print(f"element face {faces.shape[0]}", file=f)
     print("property list uchar int vertex_index", file=f)
     print("end_header", file=f)
@@ -731,8 +745,8 @@ def _save_ply(f, verts, faces, decimal_places: Optional[int]) -> None:
     else:
         float_str = "%" + ".%df" % decimal_places
 
-    verts_array = verts.detach().numpy()
-    np.savetxt(f, verts_array, float_str)
+    vert_data = torch.cat((verts, verts_normals), dim=1)
+    np.savetxt(f, vert_data.detach().numpy(), float_str)
 
     faces_array = faces.detach().numpy()
 
@@ -743,7 +757,13 @@ def _save_ply(f, verts, faces, decimal_places: Optional[int]) -> None:
         np.savetxt(f, faces_array, "3 %d %d %d")
 
 
-def save_ply(f, verts, faces, decimal_places: Optional[int] = None):
+def save_ply(
+    f,
+    verts: torch.Tensor,
+    faces: Optional[torch.LongTensor] = None,
+    verts_normals: Optional[torch.Tensor] = None,
+    decimal_places: Optional[int] = None,
+) -> None:
     """
     Save a mesh to a .ply file.
 
@@ -751,14 +771,27 @@ def save_ply(f, verts, faces, decimal_places: Optional[int] = None):
         f: File (or path) to which the mesh should be written.
         verts: FloatTensor of shape (V, 3) giving vertex coordinates.
         faces: LongTensor of shape (F, 3) giving faces.
+        verts_normals: FloatTensor of shape (V, 3) giving vertex normals.
         decimal_places: Number of decimal places for saving.
     """
+
+    verts_normals = torch.FloatTensor([]) if verts_normals is None else verts_normals
+    faces = torch.LongTensor([]) if faces is None else faces
+
     if len(verts) and not (verts.dim() == 2 and verts.size(1) == 3):
         message = "Argument 'verts' should either be empty or of shape (num_verts, 3)."
         raise ValueError(message)
 
     if len(faces) and not (faces.dim() == 2 and faces.size(1) == 3):
         message = "Argument 'faces' should either be empty or of shape (num_faces, 3)."
+        raise ValueError(message)
+
+    if len(verts_normals) and not (
+        verts_normals.dim() == 2
+        and verts_normals.size(1) == 3
+        and verts_normals.size(0) == verts.size(0)
+    ):
+        message = "Argument 'verts_normals' should either be empty or of shape (num_verts, 3)."
         raise ValueError(message)
 
     new_f = False
@@ -769,7 +802,7 @@ def save_ply(f, verts, faces, decimal_places: Optional[int] = None):
         new_f = True
         f = f.open("w")
     try:
-        _save_ply(f, verts, faces, decimal_places)
+        _save_ply(f, verts, faces, verts_normals, decimal_places)
     finally:
         if new_f:
             f.close()

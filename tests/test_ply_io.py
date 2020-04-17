@@ -185,6 +185,18 @@ class TestMeshPlyIO(TestCaseMixin, unittest.TestCase):
         self.assertClose(expected_verts, actual_verts)
         self.assertClose(expected_faces, actual_faces)
 
+    def test_normals_save(self):
+        verts = torch.tensor(
+            [[0, 0, 0], [0, 0, 1], [0, 1, 0], [1, 0, 0]], dtype=torch.float32
+        )
+        faces = torch.tensor([[0, 1, 2], [0, 2, 3]])
+        normals = torch.tensor(
+            [[0, 1, 0], [1, 0, 0], [0, 0, 1], [1, 0, 0]], dtype=torch.float32
+        )
+        file = StringIO()
+        save_ply(file, verts=verts, faces=faces, verts_normals=normals)
+        file.close()
+
     def test_empty_save_load(self):
         # Vertices + empty faces
         verts = torch.tensor([[0.1, 0.2, 0.3]])

@@ -2,6 +2,7 @@
 
 import torch
 
+from .. import ops
 from . import utils as struct_utils
 
 
@@ -846,6 +847,51 @@ class Pointclouds(object):
         all_maxes = torch.stack(all_maxes, dim=0)  # (N, 3)
         bboxes = torch.stack([all_mins, all_maxes], dim=2)
         return bboxes
+
+    def estimate_normals(
+        self,
+        neighborhood_size: int = 50,
+        disambiguate_directions: bool = True,
+        assign_to_self: bool = False,
+    ):
+        """
+        Estimates the normals of each point in each cloud and assigns
+        them to the internal tensors `self._normals_list` and `self._normals_padded`
+
+        The function uses `ops.estimate_pointcloud_local_coord_frames`
+        to estimate the normals. Please refer to this function for more
+        detailed information about the implemented algorithm.
+
+        Args:
+        **neighborhood_size**: The size of the neighborhood used to estimate the
+            geometry around each point.
+        **disambiguate_directions**: If `True`, uses the algorithm from [1] to
+            ensure sign consistency of the normals of neigboring points.
+        **normals**: A tensor of normals for each input point
+            of shape `(minibatch, num_point, 3)`.
+            If `pointclouds` are of `Pointclouds` class, returns a padded tensor.
+        **assign_to_self**: If `True`, assigns the computed normals to the
+            internal buffers overwriting any previously stored normals.
+
+        References:
+          [1] Tombari, Salti, Di Stefano: Unique Signatures of Histograms for
+          Local Surface Description, ECCV 2010.
+        """
+
+        # estimate the normals
+        normals_est = ops.estimate_pointcloud_normals(
+            self,
+            neighborhood_size=neighborhood_size,
+            disambiguate_directions=disambiguate_directions,
+        )
+
+        # assign to self
+        if assign_to_self:
+            self._normals_list, self._normals_padded, _ = self._parse_auxiliary_input(
+                normals_est
+            )
+
+        return normals_est
 
     def extend(self, N: int):
         """

@@ -3,6 +3,8 @@ from typing import TYPE_CHECKING, Optional, Tuple, Union
 
 import torch
 
+from .knn import knn_points
+
 
 if TYPE_CHECKING:
     from pytorch3d.structures import Pointclouds
@@ -92,8 +94,53 @@ def convert_pointclouds_to_tensor(pcl: Union[torch.Tensor, "Pointclouds"]):
 
 
 def is_pointclouds(pcl: Union[torch.Tensor, "Pointclouds"]):
-    """ Checks whether the input `pcl` is an instance `Pointclouds` of
+    """ Checks whether the input `pcl` is an instance of `Pointclouds`
     by checking the existence of `points_padded` and `num_points_per_cloud`
     functions.
     """
     return hasattr(pcl, "points_padded") and hasattr(pcl, "num_points_per_cloud")
+
+
+def get_point_covariances(
+    points_padded: torch.Tensor,
+    num_points_per_cloud: torch.Tensor,
+    neighborhood_size: int,
+) -> Tuple[torch.Tensor, torch.Tensor]:
+    """
+    Computes the per-point covariance matrices by of the 3D locations of
+    K-nearest neighbors of each point.
+
+    Args:
+        **points_padded**: Input point clouds as a padded tensor
+            of shape `(minibatch, num_points, dim)`.
+        **num_points_per_cloud**: Number of points per cloud
+            of shape `(minibatch,)`.
+        **neighborhood_size**: Number of nearest neighbors for each point
+            used to estimate the covariance matrices.
+
+    Returns:
+        **covariances**: A batch of per-point covariance matrices
+            of shape `(minibatch, dim, dim)`.
+        **k_nearest_neighbors**: A batch of `neighborhood_size` nearest
+            neighbors for each of the point cloud points
+            of shape `(minibatch, num_points, neighborhood_size, dim)`.
+    """
+    # get K nearest neighbor idx for each point in the point cloud
+    _, _, k_nearest_neighbors = knn_points(
+        points_padded,
+        points_padded,
+        lengths1=num_points_per_cloud,
+        lengths2=num_points_per_cloud,
+        K=neighborhood_size,
+        return_nn=True,
+    )
+    # obtain the mean of the neighborhood
+    pt_mean = k_nearest_neighbors.mean(2, keepdim=True)
+    # compute the diff of the neighborhood and the mean of the neighborhood
+    central_diff = k_nearest_neighbors - pt_mean
+    # per-nn-point covariances
+    per_pt_cov = central_diff.unsqueeze(4) * central_diff.unsqueeze(3)
+    # per-point covariances
+    covariances = per_pt_cov.mean(2)
+
+    return covariances, k_nearest_neighbors
