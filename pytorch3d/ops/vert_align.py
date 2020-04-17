@@ -25,10 +25,10 @@ def vert_align(
         feats: FloatTensor of shape (N, C, H, W) representing image features
             from which to sample or a list of features each with potentially
             different C, H or W dimensions.
-        verts: FloatTensor of shape (N, V, 3) or an object (e.g. Meshes) with
-            'verts_padded' as an attribute giving the (x, y, z) vertex positions
-            for which to sample. (x, y) verts should be normalized such that
-            (-1, -1) corresponds to top-left and (+1, +1) to bottom-right
+        verts: FloatTensor of shape (N, V, 3) or an object (e.g. Meshes or Pointclouds)
+            with `verts_padded' or `points_padded' as an attribute giving the (x, y, z)
+            vertex positions for which to sample. (x, y) verts should be normalized such
+            that (-1, -1) corresponds to top-left and (+1, +1) to bottom-right
             location in the input feature map.
         return_packed: (bool) Indicates whether to return packed features
         interp_mode: (str) Specifies how to interpolate features.
@@ -44,13 +44,11 @@ def vert_align(
             resolution agnostic. Default: ``True``
 
     Returns:
-        feats_sampled: FloatTensor of shape (N, V, C) giving sampled features for
-        each vertex. If feats is a list, we return concatentated
-        features in axis=2 of shape (N, V, sum(C_n)) where
-        C_n = feats[n].shape[1]. If return_packed = True, the
-        features are transformed to a packed representation
-        of shape (sum(V), C)
-
+        feats_sampled: FloatTensor of shape (N, V, C) giving sampled features for each
+            vertex. If feats is a list, we return concatentated features in axis=2 of
+            shape (N, V, sum(C_n)) where C_n = feats[n].shape[1].
+            If return_packed = True, the features are transformed to a packed
+            representation of shape (sum(V), C)
     """
     if torch.is_tensor(verts):
         if verts.dim() != 3:
@@ -58,8 +56,13 @@ def vert_align(
         grid = verts
     elif hasattr(verts, "verts_padded"):
         grid = verts.verts_padded()
+    elif hasattr(verts, "points_padded"):
+        grid = verts.points_padded()
     else:
-        raise ValueError("verts must be a tensor or have a `verts_padded` attribute")
+        raise ValueError(
+            "verts must be a tensor or have a "
+            + "`points_padded' or`verts_padded` attribute."
+        )
 
     grid = grid[:, None, :, :2]  # (N, 1, V, 2)
 
