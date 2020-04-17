@@ -14,10 +14,10 @@ __constant__ const float kEpsilon = 1e-4;
 // Currently, support is for floats only.
 __global__ void weightedSumNormCudaForwardKernel(
     // clang-format off
-    torch::PackedTensorAccessor<float, 4, torch::RestrictPtrTraits, size_t> result,
-    const torch::PackedTensorAccessor<float, 2, torch::RestrictPtrTraits, size_t> features,
-    const torch::PackedTensorAccessor<float, 4, torch::RestrictPtrTraits, size_t> alphas,
-    const torch::PackedTensorAccessor<int64_t, 4, torch::RestrictPtrTraits, size_t> points_idx) {
+    torch::PackedTensorAccessor64<float, 4, torch::RestrictPtrTraits> result,
+    const torch::PackedTensorAccessor64<float, 2, torch::RestrictPtrTraits> features,
+    const torch::PackedTensorAccessor64<float, 4, torch::RestrictPtrTraits> alphas,
+    const torch::PackedTensorAccessor64<int64_t, 4, torch::RestrictPtrTraits> points_idx) {
   // clang-format on
   const int64_t batch_size = result.size(0);
   const int64_t C = features.size(0);
@@ -76,12 +76,12 @@ __global__ void weightedSumNormCudaForwardKernel(
 // Currently, support is for floats only.
 __global__ void weightedSumNormCudaBackwardKernel(
     // clang-format off
-    torch::PackedTensorAccessor<float, 2, torch::RestrictPtrTraits, size_t> grad_features,
-    torch::PackedTensorAccessor<float, 4, torch::RestrictPtrTraits, size_t> grad_alphas,
-    const torch::PackedTensorAccessor<float, 4, torch::RestrictPtrTraits, size_t> grad_outputs,
-    const torch::PackedTensorAccessor<float, 2, torch::RestrictPtrTraits, size_t> features,
-    const torch::PackedTensorAccessor<float, 4, torch::RestrictPtrTraits, size_t> alphas,
-    const torch::PackedTensorAccessor<int64_t, 4, torch::RestrictPtrTraits, size_t> points_idx) {
+    torch::PackedTensorAccessor64<float, 2, torch::RestrictPtrTraits> grad_features,
+    torch::PackedTensorAccessor64<float, 4, torch::RestrictPtrTraits> grad_alphas,
+    const torch::PackedTensorAccessor64<float, 4, torch::RestrictPtrTraits> grad_outputs,
+    const torch::PackedTensorAccessor64<float, 2, torch::RestrictPtrTraits> features,
+    const torch::PackedTensorAccessor64<float, 4, torch::RestrictPtrTraits> alphas,
+    const torch::PackedTensorAccessor64<int64_t, 4, torch::RestrictPtrTraits> points_idx) {
   // clang-format on
   const int64_t batch_size = points_idx.size(0);
   const int64_t C = features.size(0);
@@ -164,10 +164,10 @@ torch::Tensor weightedSumNormCudaForward(
   // doubles. Currently, support is for floats only.
   // clang-format off
   weightedSumNormCudaForwardKernel<<<numBlocks, threadsPerBlock>>>(
-      result.packed_accessor<float, 4, torch::RestrictPtrTraits, size_t>(),
-      features.packed_accessor<float, 2, torch::RestrictPtrTraits, size_t>(),
-      alphas.packed_accessor<float, 4, torch::RestrictPtrTraits, size_t>(),
-      points_idx.packed_accessor<int64_t, 4, torch::RestrictPtrTraits, size_t>());
+      result.packed_accessor64<float, 4, torch::RestrictPtrTraits>(),
+      features.packed_accessor64<float, 2, torch::RestrictPtrTraits>(),
+      alphas.packed_accessor64<float, 4, torch::RestrictPtrTraits>(),
+      points_idx.packed_accessor64<int64_t, 4, torch::RestrictPtrTraits>());
   // clang-format on
 
   return result;
@@ -190,12 +190,12 @@ std::tuple<torch::Tensor, torch::Tensor> weightedSumNormCudaBackward(
   // doubles. Currently, support is for floats only.
   weightedSumNormCudaBackwardKernel<<<numBlocks, threadsPerBlock>>>(
       // clang-format off
-      grad_features.packed_accessor<float, 2, torch::RestrictPtrTraits, size_t>(),
-      grad_alphas.packed_accessor<float, 4, torch::RestrictPtrTraits, size_t>(),
-      grad_outputs.packed_accessor<float, 4, torch::RestrictPtrTraits, size_t>(),
-      features.packed_accessor<float, 2, torch::RestrictPtrTraits, size_t>(),
-      alphas.packed_accessor<float, 4, torch::RestrictPtrTraits, size_t>(),
-      points_idx.packed_accessor<int64_t, 4, torch::RestrictPtrTraits, size_t>());
+      grad_features.packed_accessor64<float, 2, torch::RestrictPtrTraits>(),
+      grad_alphas.packed_accessor64<float, 4, torch::RestrictPtrTraits>(),
+      grad_outputs.packed_accessor64<float, 4, torch::RestrictPtrTraits>(),
+      features.packed_accessor64<float, 2, torch::RestrictPtrTraits>(),
+      alphas.packed_accessor64<float, 4, torch::RestrictPtrTraits>(),
+      points_idx.packed_accessor64<int64_t, 4, torch::RestrictPtrTraits>());
   // clang-format on
 
   return std::make_tuple(grad_features, grad_alphas);

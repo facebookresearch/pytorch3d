@@ -38,7 +38,6 @@ at::Tensor PaddedToPackedCpu(
     const at::Tensor first_idxs,
     const int64_t num_inputs) {
   const int64_t batch_size = inputs_padded.size(0);
-  const int64_t max_size = inputs_padded.size(1);
 
   AT_ASSERTM(
       inputs_padded.dim() == 3, "inputs_padded must be a 3-dimensional tensor");

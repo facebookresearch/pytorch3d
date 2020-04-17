@@ -415,7 +415,6 @@ torch::Tensor RasterizeMeshesCoarseCpu(
   auto opts = face_verts.options().dtype(torch::kInt32);
   torch::Tensor faces_per_bin = torch::zeros({N, BH, BW}, opts);
   torch::Tensor bin_faces = torch::full({N, BH, BW, M}, -1, opts);
-  auto faces_per_bin_a = faces_per_bin.accessor<int32_t, 3>();
   auto bin_faces_a = bin_faces.accessor<int32_t, 4>();
 
   // Precompute all face bounding boxes.
