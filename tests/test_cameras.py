@@ -32,6 +32,7 @@ import numpy as np
 import torch
 from common_testing import TestCaseMixin
 from pytorch3d.renderer.cameras import (
+    CamerasBase,
     OpenGLOrthographicCameras,
     OpenGLPerspectiveCameras,
     SfMOrthographicCameras,
@@ -347,6 +348,8 @@ class TestCameraHelpers(TestCaseMixin, unittest.TestCase):
         RT = get_world_to_view_transform(R=R, T=T)
         self.assertTrue(isinstance(RT, Transform3d))
 
+
+class TestCamerasCommon(TestCaseMixin, unittest.TestCase):
     def test_view_transform_class_method(self):
         T = torch.tensor([0.0, 0.0, -1.0], requires_grad=True).view(1, -1)
         R = look_at_rotation(T)
@@ -376,6 +379,108 @@ class TestCameraHelpers(TestCaseMixin, unittest.TestCase):
             C = cam.get_camera_center()
             C_ = -torch.bmm(R, T[:, :, None])[:, :, 0]
             self.assertTrue(torch.allclose(C, C_, atol=1e-05))
+
+    @staticmethod
+    def init_random_cameras(cam_type: CamerasBase, batch_size: int):
+        cam_params = {}
+        T = torch.randn(batch_size, 3) * 0.03
+        T[:, 2] = 4
+        R = so3_exponential_map(torch.randn(batch_size, 3) * 3.0)
+        cam_params = {"R": R, "T": T}
+        if cam_type in (OpenGLPerspectiveCameras, OpenGLOrthographicCameras):
+            cam_params["znear"] = torch.rand(batch_size) * 10 + 0.1
+            cam_params["zfar"] = torch.rand(batch_size) * 4 + 1 + cam_params["znear"]
+            if cam_type == OpenGLPerspectiveCameras:
+                cam_params["fov"] = torch.rand(batch_size) * 60 + 30
+                cam_params["aspect_ratio"] = torch.rand(batch_size) * 0.5 + 0.5
+            else:
+                cam_params["top"] = torch.rand(batch_size) * 0.2 + 0.9
+                cam_params["bottom"] = -torch.rand(batch_size) * 0.2 - 0.9
+                cam_params["left"] = -torch.rand(batch_size) * 0.2 - 0.9
+                cam_params["right"] = torch.rand(batch_size) * 0.2 + 0.9
+        elif cam_type in (SfMOrthographicCameras, SfMPerspectiveCameras):
+            cam_params["focal_length"] = torch.rand(batch_size) * 10 + 0.1
+            cam_params["principal_point"] = torch.randn((batch_size, 2))
+        else:
+            raise ValueError(str(cam_type))
+        return cam_type(**cam_params)
+
+    def test_unproject_points(self, batch_size=50, num_points=100):
+        """
+        Checks that an unprojection of a randomly projected point cloud
+        stays the same.
+        """
+
+        for cam_type in (
+            SfMOrthographicCameras,
+            OpenGLPerspectiveCameras,
+            OpenGLOrthographicCameras,
+            SfMPerspectiveCameras,
+        ):
+            # init the cameras
+            cameras = TestCamerasCommon.init_random_cameras(cam_type, batch_size)
+            # xyz - the ground truth point cloud
+            xyz = torch.randn(batch_size, num_points, 3) * 0.3
+            # xyz in camera coordinates
+            xyz_cam = cameras.get_world_to_view_transform().transform_points(xyz)
+            # depth = z-component of xyz_cam
+            depth = xyz_cam[:, :, 2:]
+            # project xyz
+            xyz_proj = cameras.transform_points(xyz)
+            xy, cam_depth = xyz_proj.split(2, dim=2)
+            # input to the unprojection function
+            xy_depth = torch.cat((xy, depth), dim=2)
+
+            for to_world in (False, True):
+                if to_world:
+                    matching_xyz = xyz
+                else:
+                    matching_xyz = xyz_cam
+
+                # if we have OpenGL cameras
+                # test for scaled_depth_input=True/False
+                if cam_type in (OpenGLPerspectiveCameras, OpenGLOrthographicCameras):
+                    for scaled_depth_input in (True, False):
+                        if scaled_depth_input:
+                            xy_depth_ = xyz_proj
+                        else:
+                            xy_depth_ = xy_depth
+                        xyz_unproj = cameras.unproject_points(
+                            xy_depth_,
+                            world_coordinates=to_world,
+                            scaled_depth_input=scaled_depth_input,
+                        )
+                        self.assertTrue(
+                            torch.allclose(xyz_unproj, matching_xyz, atol=1e-4)
+                        )
+                else:
+                    xyz_unproj = cameras.unproject_points(
+                        xy_depth, world_coordinates=to_world
+                    )
+                    self.assertTrue(torch.allclose(xyz_unproj, matching_xyz, atol=1e-4))
+
+    def test_clone(self, batch_size: int = 10):
+        """
+        Checks the clone function of the cameras.
+        """
+        for cam_type in (
+            SfMOrthographicCameras,
+            OpenGLPerspectiveCameras,
+            OpenGLOrthographicCameras,
+            SfMPerspectiveCameras,
+        ):
+            cameras = TestCamerasCommon.init_random_cameras(cam_type, batch_size)
+            cameras = cameras.to(torch.device("cpu"))
+            cameras_clone = cameras.clone()
+
+            for var in cameras.__dict__.keys():
+                val = getattr(cameras, var)
+                val_clone = getattr(cameras_clone, var)
+                if torch.is_tensor(val):
+                    self.assertClose(val, val_clone)
+                    self.assertSeparate(val, val_clone)
+                else:
+                    self.assertTrue(val == val_clone)
 
 
 class TestPerspectiveProjection(TestCaseMixin, unittest.TestCase):
@@ -679,4 +784,4 @@ class TestSfMPerspectiveProjection(TestCaseMixin, unittest.TestCase):
         vertices = torch.randn([3, 4, 3], dtype=torch.float32)
         v1 = P.transform_points(vertices)
         v2 = sfm_perspective_project_naive(vertices, fx=2.0, fy=2.0, p0x=2.5, p0y=3.5)
-        self.assertClose(v1, v2)
+        self.assertClose(v1, v2, atol=1e-6)

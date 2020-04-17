@@ -1,6 +1,8 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
 
+import copy
+import inspect
 import warnings
 from typing import Any, Union
 
@@ -168,10 +170,13 @@ class TensorProperties(object):
         """
         for k in dir(self):
             v = getattr(self, k)
-            if k == "device":
-                setattr(self, k, v)
+            if inspect.ismethod(v) or k.startswith("__"):
+                continue
             if torch.is_tensor(v):
-                setattr(other, k, v.clone())
+                v_clone = v.clone()
+            else:
+                v_clone = copy.deepcopy(v)
+            setattr(other, k, v_clone)
         return other
 
     def gather_props(self, batch_idx):
