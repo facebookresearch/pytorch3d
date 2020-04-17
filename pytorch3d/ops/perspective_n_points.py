@@ -3,7 +3,7 @@
 """
 This file contains Efficient PnP algorithm for Perspective-n-Points problem.
 It finds a camera position (defined by rotation `R` and translation `T`) that
-minimises re-projection error between the given 3D points `x` and
+minimizes re-projection error between the given 3D points `x` and
 the corresponding uncalibrated 2D points `y`.
 """
 

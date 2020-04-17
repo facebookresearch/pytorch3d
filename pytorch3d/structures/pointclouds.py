@@ -1020,7 +1020,8 @@ class Pointclouds(object):
                     box[..., 0, :] gives the min x, y & z.
                     box[..., 1, :] gives the max x, y & z.
         Returns:
-            idx: BoolTensor of length sum(P_i) indicating whether the packed points are within the input box.
+            idx: BoolTensor of length sum(P_i) indicating whether the packed points are
+                within the input box.
         """
         if box.dim() > 3 or box.dim() < 2:
             raise ValueError("Input box must be of shape (2, 3) or (N, 2, 3).")

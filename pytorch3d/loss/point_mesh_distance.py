@@ -40,10 +40,12 @@ class _PointFaceDistance(Function):
                 euclidean distance of `p`-th point to the closest triangular face
                 in the corresponding example in the batch
             idxs: LongTensor of shape `(P,)` indicating the closest triangular face
-                in the corresponindg example in the batch.
+                in the corresponding example in the batch.
 
-            `dists[p] = d(points[p], tris[idxs[p], 0], tris[idxs[p], 1], tris[idxs[p], 2])`
-            where `d(u, v0, v1, v2)` is the distance of point `u` from the trianfular face `(v0, v1, v2)`
+            `dists[p]` is
+            `d(points[p], tris[idxs[p], 0], tris[idxs[p], 1], tris[idxs[p], 2])`
+            where `d(u, v0, v1, v2)` is the distance of point `u` from the triangular
+            face `(v0, v1, v2)`
 
         """
         dists, idxs = _C.point_face_dist_forward(
@@ -90,7 +92,7 @@ class _FacePointDistance(Function):
                 euclidean distance of `t`-th trianguar face to the closest point in the
                 corresponding example in the batch
             idxs: LongTensor of shape `(T,)` indicating the closest point in the
-                corresponindg example in the batch.
+                corresponding example in the batch.
 
             `dists[t] = d(points[idxs[t]], tris[t, 0], tris[t, 1], tris[t, 2])`,
             where `d(u, v0, v1, v2)` is the distance of point `u` from the triangular
@@ -140,7 +142,7 @@ class _PointEdgeDistance(Function):
                 euclidean distance of `p`-th point to the closest edge in the
                 corresponding example in the batch
             idxs: LongTensor of shape `(P,)` indicating the closest edge in the
-                corresponindg example in the batch.
+                corresponding example in the batch.
 
             `dists[p] = d(points[p], segms[idxs[p], 0], segms[idxs[p], 1])`,
             where `d(u, v0, v1)` is the distance of point `u` from the edge segment
@@ -190,7 +192,7 @@ class _EdgePointDistance(Function):
                 euclidean distance of `s`-th edge to the closest point in the
                 corresponding example in the batch
             idxs: LongTensor of shape `(S,)` indicating the closest point in the
-                corresponindg example in the batch.
+                corresponding example in the batch.
 
             `dists[s] = d(points[idxs[s]], edges[s, 0], edges[s, 1])`,
             where `d(u, v0, v1)` is the distance of point `u` from the segment
@@ -227,8 +229,8 @@ def point_mesh_edge_distance(meshes: Meshes, pcls: Pointclouds):
     `edge_point(mesh, pcl)`: Computes the squared distance of each edge segment in mesh
         to the closest point in pcl and averages across all edges in mesh.
 
-    The above distance functions are applied for all `(mesh, pcl)` pairs in the batch and
-    then averaged across the batch.
+    The above distance functions are applied for all `(mesh, pcl)` pairs in the batch
+    and then averaged across the batch.
 
     Args:
         meshes: A Meshes data structure containing N meshes
@@ -239,7 +241,7 @@ def point_mesh_edge_distance(meshes: Meshes, pcls: Pointclouds):
             between all `(mesh, pcl)` in a batch averaged across the batch.
     """
     if len(meshes) != len(pcls):
-        raise ValueError("meshes and pointclouds be equal sized batches")
+        raise ValueError("meshes and pointclouds must be equal sized batches")
     N = len(meshes)
 
     # packed representation for pointclouds
@@ -259,7 +261,7 @@ def point_mesh_edge_distance(meshes: Meshes, pcls: Pointclouds):
         points, points_first_idx, segms, segms_first_idx, max_points
     )
 
-    # weigh each example by the inverse of number of points in the example
+    # weight each example by the inverse of number of points in the example
     point_to_cloud_idx = pcls.packed_to_cloud_idx()  # (sum(P_i), )
     num_points_per_cloud = pcls.num_points_per_cloud()  # (N,)
     weights_p = num_points_per_cloud.gather(0, point_to_cloud_idx)
@@ -272,7 +274,7 @@ def point_mesh_edge_distance(meshes: Meshes, pcls: Pointclouds):
         points, points_first_idx, segms, segms_first_idx, max_segms
     )
 
-    # weigh each example by the inverse of number of edges in the example
+    # weight each example by the inverse of number of edges in the example
     segm_to_mesh_idx = meshes.edges_packed_to_mesh_idx()  # (sum(S_n),)
     num_segms_per_mesh = meshes.num_edges_per_mesh()  # (N,)
     weights_s = num_segms_per_mesh.gather(0, segm_to_mesh_idx)
@@ -291,11 +293,11 @@ def point_mesh_face_distance(meshes: Meshes, pcls: Pointclouds):
 
     `point_face(mesh, pcl)`: Computes the squared distance of each point p in pcl
         to the closest triangular face in mesh and averages across all points in pcl
-    `face_point(mesh, pcl)`: Computes the squared distance of each triangular face in mesh
-        to the closest point in pcl and averages across all faces in mesh.
+    `face_point(mesh, pcl)`: Computes the squared distance of each triangular face in
+        mesh to the closest point in pcl and averages across all faces in mesh.
 
-    The above distance functions are applied for all `(mesh, pcl)` pairs in the batch and
-    then averaged across the batch.
+    The above distance functions are applied for all `(mesh, pcl)` pairs in the batch
+    and then averaged across the batch.
 
     Args:
         meshes: A Meshes data structure containing N meshes
@@ -327,7 +329,7 @@ def point_mesh_face_distance(meshes: Meshes, pcls: Pointclouds):
         points, points_first_idx, tris, tris_first_idx, max_points
     )
 
-    # weigh each example by the inverse of number of points in the example
+    # weight each example by the inverse of number of points in the example
     point_to_cloud_idx = pcls.packed_to_cloud_idx()  # (sum(P_i),)
     num_points_per_cloud = pcls.num_points_per_cloud()  # (N,)
     weights_p = num_points_per_cloud.gather(0, point_to_cloud_idx)
@@ -340,7 +342,7 @@ def point_mesh_face_distance(meshes: Meshes, pcls: Pointclouds):
         points, points_first_idx, tris, tris_first_idx, max_tris
     )
 
-    # weigh each example by the inverse of number of faces in the example
+    # weight each example by the inverse of number of faces in the example
     tri_to_mesh_idx = meshes.faces_packed_to_mesh_idx()  # (sum(T_n),)
     num_tris_per_mesh = meshes.num_faces_per_mesh()  # (N, )
     weights_t = num_tris_per_mesh.gather(0, tri_to_mesh_idx)

@@ -56,7 +56,7 @@ T EdgeFunctionForward(const vec2<T>& p, const vec2<T>& v0, const vec2<T>& v1) {
 //     grad_edge: Upstream gradient for output from edge function.
 //
 // Returns:
-//     tuple of  gradients for each of the input points:
+//     tuple of gradients for each of the input points:
 //     (vec2<T> d_edge_dp, vec2<T> d_edge_dv0, vec2<T> d_edge_dv1)
 //
 template <typename T>

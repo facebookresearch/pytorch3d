@@ -43,7 +43,7 @@ EdgeFunctionForward(const float2& p, const float2& v0, const float2& v1) {
 //     grad_edge: Upstream gradient for output from edge function.
 //
 // Returns:
-//     tuple of  gradients for each of the input points:
+//     tuple of gradients for each of the input points:
 //     (float2 d_edge_dp, float2 d_edge_dv0, float2 d_edge_dv1)
 //
 __device__ inline thrust::tuple<float2, float2, float2> EdgeFunctionBackward(

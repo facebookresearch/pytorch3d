@@ -88,7 +88,7 @@ class TestICP(TestCaseMixin, unittest.TestCase):
     def test_init_transformation(self, batch_size=10):
         """
         First runs a full ICP on a random problem. Then takes a given point
-        in the history of  ICP iteration transformations, initializes
+        in the history of ICP iteration transformations, initializes
         a second run of ICP with this transformation and checks whether
         both runs ended with the same solution.
         """
