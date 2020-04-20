@@ -1,13 +1,17 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
+import os
 import unittest
 from collections import Counter
 from pathlib import Path
 
 
 # This file groups together tests which look at the code without running it.
+# When running the tests inside conda's build, the code is not available.
+in_conda_build = os.environ.get("CONDA_BUILD_STATE", "") == "TEST"
 
 
 class TestBuild(unittest.TestCase):
+    @unittest.skipIf(in_conda_build, "In conda build")
     def test_name_clash(self):
         # For setup.py, all translation units need distinct names, so we
         # cannot have foo.cu and foo.cpp, even in different directories.
@@ -23,6 +27,7 @@ class TestBuild(unittest.TestCase):
         for k, v in counter.items():
             self.assertEqual(v, 1, f"Too many files with stem {k}.")
 
+    @unittest.skipIf(in_conda_build, "In conda build")
     def test_deprecated_usage(self):
         # Check certain expressions do not occur in the csrc code
         test_dir = Path(__file__).resolve().parent
@@ -44,6 +49,7 @@ class TestBuild(unittest.TestCase):
                     )
                     self.assertFalse(found, msg)
 
+    @unittest.skipIf(in_conda_build, "In conda build")
     def test_copyright(self):
         test_dir = Path(__file__).resolve().parent
         root_dir = test_dir.parent
@@ -55,17 +61,8 @@ class TestBuild(unittest.TestCase):
             + " All rights reserved.\n"
         )
 
-        conda_generated_files = [
-            "run_test.py",
-            "run_test.sh",
-            "conda_test_runner.sh",
-            "conda_test_env_vars.sh",
-        ]
-
         for extension in extensions:
             for i in root_dir.glob(f"**/*.{extension}"):
-                if i.name in conda_generated_files:
-                    continue
                 with open(i) as f:
                     firstline = f.readline()
                     if firstline.startswith(("# -*-", "#!")):

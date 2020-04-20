@@ -19,7 +19,6 @@ requirements:
   run:
     - python
     - numpy >=1.11
-    - six
     - torchvision >=0.5
     - fvcore
     {{ environ.get('CONDA_PYTORCH_CONSTRAINT') }}
