@@ -556,18 +556,16 @@ __global__ void RasterizeMeshesCoarseCudaKernel(
         // PixToNdc gives the location of the center of each pixel, so we
         // need to add/subtract a half pixel to get the true extent of the bin.
         // Reverse ordering of Y axis so that +Y is upwards in the image.
-        const int yidx = num_bins - by;
-        const float bin_y_max = PixToNdc(yidx * bin_size - 1, H) + half_pix;
-        const float bin_y_min = PixToNdc((yidx - 1) * bin_size, H) - half_pix;
-
+        const float bin_y_min = PixToNdc(by * bin_size, H) - half_pix;
+        const float bin_y_max = PixToNdc((by + 1) * bin_size - 1, H) + half_pix;
         const bool y_overlap = (ymin <= bin_y_max) && (bin_y_min < ymax);
 
         for (int bx = 0; bx < num_bins; ++bx) {
           // X coordinate of the left and right of the bin.
           // Reverse ordering of x axis so that +X is left.
-          const int xidx = num_bins - bx;
-          const float bin_x_max = PixToNdc(xidx * bin_size - 1, W) + half_pix;
-          const float bin_x_min = PixToNdc((xidx - 1) * bin_size, W) - half_pix;
+          const float bin_x_max =
+              PixToNdc((bx + 1) * bin_size - 1, W) + half_pix;
+          const float bin_x_min = PixToNdc(bx * bin_size, W) - half_pix;
 
           const bool x_overlap = (xmin <= bin_x_max) && (bin_x_min < xmax);
           if (y_overlap && x_overlap) {
@@ -629,6 +627,7 @@ torch::Tensor RasterizeMeshesCoarseCuda(
   const int N = num_faces_per_mesh.size(0);
   const int num_bins = 1 + (image_size - 1) / bin_size; // Divide round up.
   const int M = max_faces_per_bin;
+
   if (num_bins >= 22) {
     std::stringstream ss;
     ss << "Got " << num_bins << "; that's too many!";
@@ -702,13 +701,8 @@ __global__ void RasterizeMeshesFineCudaKernel(
     if (yi >= H || xi >= W)
       continue;
 
-    // Reverse ordering of the X and Y axis so that
-    // in the image +Y is pointing up and +X is pointing left.
-    const int yidx = H - 1 - yi;
-    const int xidx = W - 1 - xi;
-
-    const float xf = PixToNdc(xidx, W);
-    const float yf = PixToNdc(yidx, H);
+    const float xf = PixToNdc(xi, W);
+    const float yf = PixToNdc(yi, H);
     const float2 pxy = make_float2(xf, yf);
 
     // This part looks like the naive rasterization kernel, except we use
@@ -743,7 +737,12 @@ __global__ void RasterizeMeshesFineCudaKernel(
     // output for the current pixel.
     // TODO: make sorting an option as only top k is needed, not sorted values.
     BubbleSort(q, q_size);
-    const int pix_idx = n * H * W * K + yi * H * K + xi * K;
+
+    // Reverse ordering of the X and Y axis so that
+    // in the image +Y is pointing up and +X is pointing left.
+    const int yidx = H - 1 - yi;
+    const int xidx = W - 1 - xi;
+    const int pix_idx = n * H * W * K + yidx * H * K + xidx * K;
     for (int k = 0; k < q_size; k++) {
       face_idxs[pix_idx + k] = q[k].idx;
       zbuf[pix_idx + k] = q[k].z;

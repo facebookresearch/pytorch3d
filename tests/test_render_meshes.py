@@ -9,6 +9,7 @@ from pathlib import Path
 
 import numpy as np
 import torch
+from common_testing import TestCaseMixin, load_rgb_image
 from PIL import Image
 from pytorch3d.io import load_objs_as_meshes
 from pytorch3d.renderer.cameras import OpenGLPerspectiveCameras, look_at_view_transform
@@ -35,15 +36,7 @@ DEBUG = False
 DATA_DIR = Path(__file__).resolve().parent / "data"
 
 
-def load_rgb_image(filename, data_dir=DATA_DIR):
-    filepath = data_dir / filename
-    with Image.open(filepath) as raw_image:
-        image = torch.from_numpy(np.array(raw_image) / 255.0)
-    image = image.to(dtype=torch.float32)
-    return image[..., :3]
-
-
-class TestRenderingMeshes(unittest.TestCase):
+class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
     def test_simple_sphere(self, elevated_camera=False):
         """
         Test output of phong and gouraud shading matches a reference image using
@@ -81,7 +74,7 @@ class TestRenderingMeshes(unittest.TestCase):
         lights.location = torch.tensor([0.0, 0.0, +2.0], device=device)[None]
 
         raster_settings = RasterizationSettings(
-            image_size=512, blur_radius=0.0, faces_per_pixel=1, bin_size=0
+            image_size=512, blur_radius=0.0, faces_per_pixel=1
         )
         rasterizer = MeshRasterizer(cameras=cameras, raster_settings=raster_settings)
 
@@ -96,14 +89,14 @@ class TestRenderingMeshes(unittest.TestCase):
             renderer = MeshRenderer(rasterizer=rasterizer, shader=shader)
             images = renderer(sphere_mesh)
             filename = "simple_sphere_light_%s%s.png" % (name, postfix)
-            image_ref = load_rgb_image("test_%s" % filename)
+            image_ref = load_rgb_image("test_%s" % filename, DATA_DIR)
             rgb = images[0, ..., :3].squeeze().cpu()
             if DEBUG:
-                filename = "DEBUG_" % filename
+                filename = "DEBUG_%s" % filename
                 Image.fromarray((rgb.numpy() * 255).astype(np.uint8)).save(
                     DATA_DIR / filename
                 )
-            self.assertTrue(torch.allclose(rgb, image_ref, atol=0.05))
+            self.assertClose(rgb, image_ref, atol=0.05)
 
         ########################################################
         # Move the light to the +z axis in world space so it is
@@ -124,8 +117,10 @@ class TestRenderingMeshes(unittest.TestCase):
             )
 
         # Load reference image
-        image_ref_phong_dark = load_rgb_image("test_simple_sphere_dark%s.png" % postfix)
-        self.assertTrue(torch.allclose(rgb, image_ref_phong_dark, atol=0.05))
+        image_ref_phong_dark = load_rgb_image(
+            "test_simple_sphere_dark%s.png" % postfix, DATA_DIR
+        )
+        self.assertClose(rgb, image_ref_phong_dark, atol=0.05)
 
     def test_simple_sphere_elevated_camera(self):
         """
@@ -160,7 +155,7 @@ class TestRenderingMeshes(unittest.TestCase):
         R, T = look_at_view_transform(dist, elev, azim)
         cameras = OpenGLPerspectiveCameras(device=device, R=R, T=T)
         raster_settings = RasterizationSettings(
-            image_size=512, blur_radius=0.0, faces_per_pixel=1, bin_size=0
+            image_size=512, blur_radius=0.0, faces_per_pixel=1
         )
 
         # Init shader settings
@@ -179,10 +174,12 @@ class TestRenderingMeshes(unittest.TestCase):
             shader = shader_init(lights=lights, cameras=cameras, materials=materials)
             renderer = MeshRenderer(rasterizer=rasterizer, shader=shader)
             images = renderer(sphere_meshes)
-            image_ref = load_rgb_image("test_simple_sphere_light_%s.png" % name)
+            image_ref = load_rgb_image(
+                "test_simple_sphere_light_%s.png" % name, DATA_DIR
+            )
             for i in range(batch_size):
                 rgb = images[i, ..., :3].squeeze().cpu()
-                self.assertTrue(torch.allclose(rgb, image_ref, atol=0.05))
+                self.assertClose(rgb, image_ref, atol=0.05)
 
     def test_silhouette_with_grad(self):
         """
@@ -200,7 +197,6 @@ class TestRenderingMeshes(unittest.TestCase):
             image_size=512,
             blur_radius=np.log(1.0 / 1e-4 - 1.0) * blend_params.sigma,
             faces_per_pixel=80,
-            bin_size=0,
         )
 
         # Init rasterizer settings
@@ -222,7 +218,7 @@ class TestRenderingMeshes(unittest.TestCase):
         with Image.open(image_ref_filename) as raw_image_ref:
             image_ref = torch.from_numpy(np.array(raw_image_ref))
         image_ref = image_ref.to(dtype=torch.float32) / 255.0
-        self.assertTrue(torch.allclose(alpha, image_ref, atol=0.055))
+        self.assertClose(alpha, image_ref, atol=0.055)
 
         # Check grad exist
         verts.requires_grad = True
@@ -237,8 +233,8 @@ class TestRenderingMeshes(unittest.TestCase):
         The pupils in the eyes of the cow should always be looking to the left.
         """
         device = torch.device("cuda:0")
-        DATA_DIR = Path(__file__).resolve().parent.parent / "docs/tutorials/data"
-        obj_filename = DATA_DIR / "cow_mesh/cow.obj"
+        obj_dir = Path(__file__).resolve().parent.parent / "docs/tutorials/data"
+        obj_filename = obj_dir / "cow_mesh/cow.obj"
 
         # Load mesh + texture
         mesh = load_objs_as_meshes([obj_filename], device=device)
@@ -247,7 +243,7 @@ class TestRenderingMeshes(unittest.TestCase):
         R, T = look_at_view_transform(2.7, 0, 0)
         cameras = OpenGLPerspectiveCameras(device=device, R=R, T=T)
         raster_settings = RasterizationSettings(
-            image_size=512, blur_radius=0.0, faces_per_pixel=1, bin_size=0
+            image_size=512, blur_radius=0.0, faces_per_pixel=1
         )
 
         # Init shader settings
@@ -265,22 +261,26 @@ class TestRenderingMeshes(unittest.TestCase):
                 lights=lights, cameras=cameras, materials=materials
             ),
         )
-        images = renderer(mesh)
-        rgb = images[0, ..., :3].squeeze().cpu()
 
         # Load reference image
-        image_ref = load_rgb_image("test_texture_map_back.png")
+        image_ref = load_rgb_image("test_texture_map_back.png", DATA_DIR)
 
-        if DEBUG:
-            Image.fromarray((rgb.numpy() * 255).astype(np.uint8)).save(
-                DATA_DIR / "DEBUG_texture_map_back.png"
-            )
+        for bin_size in [0, None]:
+            # Check both naive and coarse to fine produce the same output.
+            renderer.rasterizer.raster_settings.bin_size = bin_size
+            images = renderer(mesh)
+            rgb = images[0, ..., :3].squeeze().cpu()
 
-        # NOTE some pixels can be flaky and will not lead to
-        # `cond1` being true. Add `cond2` and check `cond1 or cond2`
-        cond1 = torch.allclose(rgb, image_ref, atol=0.05)
-        cond2 = ((rgb - image_ref).abs() > 0.05).sum() < 5
-        self.assertTrue(cond1 or cond2)
+            if DEBUG:
+                Image.fromarray((rgb.numpy() * 255).astype(np.uint8)).save(
+                    DATA_DIR / "DEBUG_texture_map_back.png"
+                )
+
+            # NOTE some pixels can be flaky and will not lead to
+            # `cond1` being true. Add `cond2` and check `cond1 or cond2`
+            cond1 = torch.allclose(rgb, image_ref, atol=0.05)
+            cond2 = ((rgb - image_ref).abs() > 0.05).sum() < 5
+            self.assertTrue(cond1 or cond2)
 
         # Check grad exists
         [verts] = mesh.verts_list()
@@ -299,16 +299,27 @@ class TestRenderingMeshes(unittest.TestCase):
 
         # Move light to the front of the cow in world space
         lights.location = torch.tensor([0.0, 0.0, -2.0], device=device)[None]
-        images = renderer(mesh, cameras=cameras, lights=lights)
-        rgb = images[0, ..., :3].squeeze().cpu()
 
         # Load reference image
-        image_ref = load_rgb_image("test_texture_map_front.png")
+        image_ref = load_rgb_image("test_texture_map_front.png", DATA_DIR)
 
-        if DEBUG:
-            Image.fromarray((rgb.numpy() * 255).astype(np.uint8)).save(
-                DATA_DIR / "DEBUG_texture_map_front.png"
-            )
+        for bin_size in [0, None]:
+            # Check both naive and coarse to fine produce the same output.
+            renderer.rasterizer.raster_settings.bin_size = bin_size
+
+            images = renderer(mesh, cameras=cameras, lights=lights)
+            rgb = images[0, ..., :3].squeeze().cpu()
+
+            if DEBUG:
+                Image.fromarray((rgb.numpy() * 255).astype(np.uint8)).save(
+                    DATA_DIR / "DEBUG_texture_map_front.png"
+                )
+
+            # NOTE some pixels can be flaky and will not lead to
+            # `cond1` being true. Add `cond2` and check `cond1 or cond2`
+            cond1 = torch.allclose(rgb, image_ref, atol=0.05)
+            cond2 = ((rgb - image_ref).abs() > 0.05).sum() < 5
+            self.assertTrue(cond1 or cond2)
 
         #################################
         # Add blurring to rasterization
@@ -320,23 +331,26 @@ class TestRenderingMeshes(unittest.TestCase):
             image_size=512,
             blur_radius=np.log(1.0 / 1e-4 - 1.0) * blend_params.sigma,
             faces_per_pixel=100,
-            bin_size=0,
         )
-
-        images = renderer(
-            mesh.clone(),
-            cameras=cameras,
-            raster_settings=raster_settings,
-            blend_params=blend_params,
-        )
-        rgb = images[0, ..., :3].squeeze().cpu()
 
         # Load reference image
-        image_ref = load_rgb_image("test_blurry_textured_rendering.png")
+        image_ref = load_rgb_image("test_blurry_textured_rendering.png", DATA_DIR)
 
-        if DEBUG:
-            Image.fromarray((rgb.numpy() * 255).astype(np.uint8)).save(
-                DATA_DIR / "DEBUG_blurry_textured_rendering.png"
+        for bin_size in [0, None]:
+            # Check both naive and coarse to fine produce the same output.
+            renderer.rasterizer.raster_settings.bin_size = bin_size
+
+            images = renderer(
+                mesh.clone(),
+                cameras=cameras,
+                raster_settings=raster_settings,
+                blend_params=blend_params,
             )
+            rgb = images[0, ..., :3].squeeze().cpu()
 
-        self.assertTrue(torch.allclose(rgb, image_ref, atol=0.05))
+            if DEBUG:
+                Image.fromarray((rgb.numpy() * 255).astype(np.uint8)).save(
+                    DATA_DIR / "DEBUG_blurry_textured_rendering.png"
+                )
+
+            self.assertClose(rgb, image_ref, atol=0.05)

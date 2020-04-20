@@ -95,7 +95,8 @@ __global__ void RasterizePointsNaiveCudaKernel(
     const int n = i / (S * S); // Batch index
     const int pix_idx = i % (S * S);
 
-    // Reverse ordering of X and Y axes.
+    // Reverse ordering of the X and Y axis as the camera coordinates
+    // assume that +Y is pointing up and +X is pointing left.
     const int yi = S - 1 - pix_idx / S;
     const int xi = S - 1 - pix_idx % S;
 
@@ -260,23 +261,20 @@ __global__ void RasterizePointsCoarseCudaKernel(
         // Get y extent for the bin. PixToNdc gives us the location of
         // the center of each pixel, so we need to add/subtract a half
         // pixel to get the true extent of the bin.
-        // Reverse ordering of Y axis so that +Y is upwards in the image.
-        const int yidx = num_bins - by;
-        const float bin_y_max = PixToNdc(yidx * bin_size - 1, S) + half_pix;
-        const float bin_y_min = PixToNdc((yidx - 1) * bin_size, S) - half_pix;
+        const float by0 = PixToNdc(by * bin_size, S) - half_pix;
+        const float by1 = PixToNdc((by + 1) * bin_size - 1, S) + half_pix;
+        const bool y_overlap = (py0 <= by1) && (by0 <= py1);
 
-        const bool y_overlap = (py0 <= bin_y_max) && (bin_y_min <= py1);
         if (!y_overlap) {
           continue;
         }
         for (int bx = 0; bx < num_bins; ++bx) {
           // Get x extent for the bin; again we need to adjust the
           // output of PixToNdc by half a pixel.
-          // Reverse ordering of x axis so that +X is left.
-          const int xidx = num_bins - bx;
-          const float bin_x_max = PixToNdc(xidx * bin_size - 1, S) + half_pix;
-          const float bin_x_min = PixToNdc((xidx - 1) * bin_size, S) - half_pix;
-          const bool x_overlap = (px0 <= bin_x_max) && (bin_x_min <= px1);
+          const float bx0 = PixToNdc(bx * bin_size, S) - half_pix;
+          const float bx1 = PixToNdc((bx + 1) * bin_size - 1, S) + half_pix;
+          const bool x_overlap = (px0 <= bx1) && (bx0 <= px1);
+
           if (x_overlap) {
             binmask.set(by, bx, p);
           }
@@ -330,6 +328,7 @@ torch::Tensor RasterizePointsCoarseCuda(
   const int N = num_points_per_cloud.size(0);
   const int num_bins = 1 + (image_size - 1) / bin_size; // divide round up
   const int M = max_points_per_bin;
+
   if (points.ndimension() != 2 || points.size(1) != 3) {
     AT_ERROR("points must have dimensions (num_points, 3)");
   }
@@ -346,6 +345,7 @@ torch::Tensor RasterizePointsCoarseCuda(
   const size_t shared_size = num_bins * num_bins * chunk_size / 8;
   const size_t blocks = 64;
   const size_t threads = 512;
+
   RasterizePointsCoarseCudaKernel<<<blocks, threads, shared_size>>>(
       points.contiguous().data_ptr<float>(),
       cloud_to_packed_first_idx.contiguous().data_ptr<int64_t>(),
@@ -372,7 +372,7 @@ __global__ void RasterizePointsFineCudaKernel(
     const float radius,
     const int bin_size,
     const int N,
-    const int B,
+    const int B, // num_bins
     const int M,
     const int S,
     const int K,
@@ -397,19 +397,15 @@ __global__ void RasterizePointsFineCudaKernel(
     i %= B * bin_size * bin_size;
     const int bx = i / (bin_size * bin_size);
     i %= bin_size * bin_size;
+
     const int yi = i / bin_size + by * bin_size;
     const int xi = i % bin_size + bx * bin_size;
 
     if (yi >= S || xi >= S)
       continue;
 
-    // Reverse ordering of the X and Y axis so that
-    // in the image +Y is pointing up and +X is pointing left.
-    const int yidx = S - 1 - yi;
-    const int xidx = S - 1 - xi;
-
-    const float xf = PixToNdc(xidx, S);
-    const float yf = PixToNdc(yidx, S);
+    const float xf = PixToNdc(xi, S);
+    const float yf = PixToNdc(yi, S);
 
     // This part looks like the naive rasterization kernel, except we use
     // bin_points to only look at a subset of points already known to fall
@@ -431,7 +427,13 @@ __global__ void RasterizePointsFineCudaKernel(
     // Now we've looked at all the points for this bin, so we can write
     // output for the current pixel.
     BubbleSort(q, q_size);
-    const int pix_idx = n * S * S * K + yi * S * K + xi * K;
+
+    // Reverse ordering of the X and Y axis as the camera coordinates
+    // assume that +Y is pointing up and +X is pointing left.
+    const int yidx = S - 1 - yi;
+    const int xidx = S - 1 - xi;
+
+    const int pix_idx = n * S * S * K + yidx * S * K + xidx * K;
     for (int k = 0; k < q_size; ++k) {
       point_idxs[pix_idx + k] = q[k].idx;
       zbuf[pix_idx + k] = q[k].z;
@@ -448,7 +450,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> RasterizePointsFineCuda(
     const int bin_size,
     const int points_per_pixel) {
   const int N = bin_points.size(0);
-  const int B = bin_points.size(1);
+  const int B = bin_points.size(1); // num_bins
   const int M = bin_points.size(3);
   const int S = image_size;
   const int K = points_per_pixel;

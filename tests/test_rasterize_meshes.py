@@ -896,10 +896,10 @@ class TestRasterizeMeshes(TestCaseMixin, unittest.TestCase):
             torch.ones((1, 2, 2, max_faces_per_bin), dtype=torch.int32, device=device)
             * -1
         )
-        bin_faces_expected[0, 0, 0, 0] = torch.tensor([1])
-        bin_faces_expected[0, 1, 0, 0:2] = torch.tensor([1, 2])
-        bin_faces_expected[0, 0, 1, 0:2] = torch.tensor([0, 1])
         bin_faces_expected[0, 1, 1, 0] = torch.tensor([1])
+        bin_faces_expected[0, 0, 1, 0:2] = torch.tensor([1, 2])
+        bin_faces_expected[0, 1, 0, 0:2] = torch.tensor([0, 1])
+        bin_faces_expected[0, 0, 0, 0] = torch.tensor([1])
 
         # +Y up, +X left, +Z in
         bin_faces = _C._rasterize_meshes_coarse(
@@ -911,7 +911,7 @@ class TestRasterizeMeshes(TestCaseMixin, unittest.TestCase):
             bin_size,
             max_faces_per_bin,
         )
-        # Flip x and y axis of output before comparing to expected
+
         bin_faces_same = (bin_faces.squeeze() == bin_faces_expected).all()
         self.assertTrue(bin_faces_same.item() == 1)
 

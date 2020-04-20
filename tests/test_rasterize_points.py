@@ -434,23 +434,21 @@ class TestRasterizePoints(TestCaseMixin, unittest.TestCase):
 
     def _test_coarse_rasterize(self, device):
         #
-        #  Note that +Y is up and +X is left in the diagram below.
         #
-        #  (4)              |2
-        #                   |
-        #                   |
-        #                   |
-        #                   |1
-        #                   |
-        #             (1)   |
-        #                   | (2)
-        # ____________(0)__(5)___________________
-        # 2        1        |          -1      -2
-        #                   |
-        #       (3)         |
-        #                   |
-        #                   |-1
-        #                   |
+        #           |2                  (4)
+        #           |
+        #           |
+        #           |
+        #           |1
+        #           |
+        #           |    (1)
+        #        (2)|
+        # _________(5)___(0)_______________
+        # -1        |           1         2
+        #           |
+        #           |            (3)
+        #           |
+        #           |-1
         #
         # Locations of the points are shown by o. The screen bounding box
         # is between [-1, 1] in both the x and y directions.
@@ -486,9 +484,9 @@ class TestRasterizePoints(TestCaseMixin, unittest.TestCase):
         # fit in one chunk. This will the the case for this small example, but
         # to properly exercise coordianted writes among multiple chunks we need
         # to use a bigger test case.
-        bin_points_expected[0, 1, 0, :2] = torch.tensor([0, 3])
-        bin_points_expected[0, 0, 1, 0] = torch.tensor([2])
-        bin_points_expected[0, 0, 0, :2] = torch.tensor([0, 1])
+        bin_points_expected[0, 0, 1, :2] = torch.tensor([0, 3])
+        bin_points_expected[0, 1, 0, 0] = torch.tensor([2])
+        bin_points_expected[0, 1, 1, :2] = torch.tensor([0, 1])
 
         pointclouds = Pointclouds(points=[points])
         args = (
@@ -502,4 +500,5 @@ class TestRasterizePoints(TestCaseMixin, unittest.TestCase):
         )
         bin_points = _C._rasterize_points_coarse(*args)
         bin_points_same = (bin_points == bin_points_expected).all()
+
         self.assertTrue(bin_points_same.item() == 1)

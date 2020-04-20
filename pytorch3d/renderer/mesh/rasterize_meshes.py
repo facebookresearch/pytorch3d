@@ -9,7 +9,7 @@ from pytorch3d import _C
 
 
 # TODO make the epsilon user configurable
-kEpsilon = 1e-30
+kEpsilon = 1e-8
 
 
 def rasterize_meshes(

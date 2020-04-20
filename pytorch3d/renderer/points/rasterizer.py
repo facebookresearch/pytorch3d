@@ -19,12 +19,28 @@ class PointFragments(NamedTuple):
 
 
 # Class to store the point rasterization params with defaults
-class PointsRasterizationSettings(NamedTuple):
-    image_size: int = 256
-    radius: float = 0.01
-    points_per_pixel: int = 8
-    bin_size: Optional[int] = None
-    max_points_per_bin: Optional[int] = None
+class PointsRasterizationSettings:
+    __slots__ = [
+        "image_size",
+        "radius",
+        "points_per_pixel",
+        "bin_size",
+        "max_points_per_bin",
+    ]
+
+    def __init__(
+        self,
+        image_size: int = 256,
+        radius: float = 0.01,
+        points_per_pixel: int = 8,
+        bin_size: Optional[int] = None,
+        max_points_per_bin: Optional[int] = None,
+    ):
+        self.image_size = image_size
+        self.radius = radius
+        self.points_per_pixel = points_per_pixel
+        self.bin_size = bin_size
+        self.max_points_per_bin = max_points_per_bin
 
 
 class PointsRasterizer(nn.Module):

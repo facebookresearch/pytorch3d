@@ -125,13 +125,13 @@ torch::Tensor RasterizePointsCoarseCpu(
     const int point_stop_idx =
         (point_start_idx + num_points_per_cloud[n].item().to<int32_t>());
 
-    float bin_y_max = 1.0f;
-    float bin_y_min = bin_y_max - bin_width;
+    float bin_y_min = -1.0f;
+    float bin_y_max = bin_y_min + bin_width;
 
     // Iterate through the horizontal bins from top to bottom.
     for (int by = 0; by < B; by++) {
-      float bin_x_max = 1.0f;
-      float bin_x_min = bin_x_max - bin_width;
+      float bin_x_min = -1.0f;
+      float bin_x_max = bin_x_min + bin_width;
 
       // Iterate through bins on this horizontal line, left to right.
       for (int bx = 0; bx < B; bx++) {
@@ -166,13 +166,13 @@ torch::Tensor RasterizePointsCoarseCpu(
         // Record the number of points found in this bin
         points_per_bin_a[n][by][bx] = points_hit;
 
-        // Shift the bin to the left for the next loop iteration.
-        bin_x_max = bin_x_min;
-        bin_x_min = bin_x_min - bin_width;
+        // Shift the bin to the right for the next loop iteration
+        bin_x_min = bin_x_max;
+        bin_x_max = bin_x_min + bin_width;
       }
-      // Shift the bin down for the next loop iteration.
-      bin_y_max = bin_y_min;
-      bin_y_min = bin_y_min - bin_width;
+      // Shift the bin down for the next loop iteration
+      bin_y_min = bin_y_max;
+      bin_y_max = bin_y_min + bin_width;
     }
   }
   return bin_points;
