@@ -145,6 +145,9 @@ def knn_points(
     if p1.shape[2] != p2.shape[2]:
         raise ValueError("pts1 and pts2 must have the same point dimension.")
 
+    p1 = p1.contiguous()
+    p2 = p2.contiguous()
+
     P1 = p1.shape[1]
     P2 = p2.shape[1]
 
