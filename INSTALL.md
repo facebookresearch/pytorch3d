@@ -9,17 +9,17 @@ The core library is written in PyTorch. Several components have underlying imple
 
 - Linux or macOS or Windows
 - Python ≥ 3.6
-- PyTorch 1.4
+- PyTorch 1.4 or 1.5
 - torchvision that matches the PyTorch installation. You can install them together at pytorch.org to make sure of this.
 - gcc & g++ ≥ 4.9
-- CUDA 9.2 or 10.0 or 10.1
 - [fvcore](https://github.com/facebookresearch/fvcore)
+- If CUDA is to be used, use at least version 9.2.
 
 These can be installed by running:
 ```
 conda create -n pytorch3d python=3.8
 conda activate pytorch3d
-conda install -c pytorch pytorch torchvision cudatoolkit=10.0
+conda install -c pytorch pytorch torchvision cudatoolkit=10.2
 conda install -c conda-forge -c fvcore fvcore
 ```
 
