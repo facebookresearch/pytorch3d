@@ -123,4 +123,8 @@ class TestCaseMixin(unittest.TestCase):
             input, other, rtol=rtol, atol=atol, equal_nan=equal_nan
         )
 
+        if not close and msg is None:
+            max_diff = backend.abs(input - other).max()
+            self.fail(f"Not close. max diff {max_diff}.")
+
         self.assertTrue(close, msg)
