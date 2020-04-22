@@ -111,7 +111,8 @@ __device__ void CheckPixelInsideFace(
     const float blur_radius,
     const float2 pxy, // Coordinates of the pixel
     const int K,
-    const bool perspective_correct) {
+    const bool perspective_correct,
+    const bool cull_backfaces) {
   const auto v012 = GetSingleFaceVerts(face_verts, face_idx);
   const float3 v0 = thrust::get<0>(v012);
   const float3 v1 = thrust::get<1>(v012);
@@ -124,16 +125,20 @@ __device__ void CheckPixelInsideFace(
 
   // Perform checks and skip if:
   // 1. the face is behind the camera
-  // 2. the face has very small face area
-  // 3. the pixel is outside the face bbox
+  // 2. the face is facing away from the camera
+  // 3. the face has very small face area
+  // 4. the pixel is outside the face bbox
   const float zmax = FloatMax3(v0.z, v1.z, v2.z);
   const bool outside_bbox = CheckPointOutsideBoundingBox(
       v0, v1, v2, sqrt(blur_radius), pxy); // use sqrt of blur for bbox
   const float face_area = EdgeFunctionForward(v0xy, v1xy, v2xy);
+  // Check if the face is visible to the camera.
+  const bool back_face = face_area < 0.0;
   const bool zero_face_area =
       (face_area <= kEpsilon && face_area >= -1.0f * kEpsilon);
 
-  if (zmax < 0 || outside_bbox || zero_face_area) {
+  if (zmax < 0 || cull_backfaces && back_face || outside_bbox ||
+      zero_face_area) {
     return;
   }
 
@@ -191,6 +196,7 @@ __global__ void RasterizeMeshesNaiveCudaKernel(
     const int64_t* num_faces_per_mesh,
     const float blur_radius,
     const bool perspective_correct,
+    const bool cull_backfaces,
     const int N,
     const int H,
     const int W,
@@ -251,7 +257,8 @@ __global__ void RasterizeMeshesNaiveCudaKernel(
           blur_radius,
           pxy,
           K,
-          perspective_correct);
+          perspective_correct,
+          cull_backfaces);
     }
 
     // TODO: make sorting an option as only top k is needed, not sorted values.
@@ -276,7 +283,8 @@ RasterizeMeshesNaiveCuda(
     const int image_size,
     const float blur_radius,
     const int num_closest,
-    const bool perspective_correct) {
+    const bool perspective_correct,
+    const bool cull_backfaces) {
   if (face_verts.ndimension() != 3 || face_verts.size(1) != 3 ||
       face_verts.size(2) != 3) {
     AT_ERROR("face_verts must have dimensions (num_faces, 3, 3)");
@@ -314,6 +322,7 @@ RasterizeMeshesNaiveCuda(
       num_faces_per_mesh.contiguous().data_ptr<int64_t>(),
       blur_radius,
       perspective_correct,
+      cull_backfaces,
       N,
       H,
       W,
@@ -667,6 +676,7 @@ __global__ void RasterizeMeshesFineCudaKernel(
     const float blur_radius,
     const int bin_size,
     const bool perspective_correct,
+    const bool cull_backfaces,
     const int N,
     const int B,
     const int M,
@@ -730,7 +740,8 @@ __global__ void RasterizeMeshesFineCudaKernel(
           blur_radius,
           pxy,
           K,
-          perspective_correct);
+          perspective_correct,
+          cull_backfaces);
     }
 
     // Now we've looked at all the faces for this bin, so we can write
@@ -762,7 +773,8 @@ RasterizeMeshesFineCuda(
     const float blur_radius,
     const int bin_size,
     const int faces_per_pixel,
-    const bool perspective_correct) {
+    const bool perspective_correct,
+    const bool cull_backfaces) {
   if (face_verts.ndimension() != 3 || face_verts.size(1) != 3 ||
       face_verts.size(2) != 3) {
     AT_ERROR("face_verts must have dimensions (num_faces, 3, 3)");
@@ -797,6 +809,7 @@ RasterizeMeshesFineCuda(
       blur_radius,
       bin_size,
       perspective_correct,
+      cull_backfaces,
       N,
       B,
       M,

@@ -20,6 +20,7 @@ def rasterize_meshes(
     bin_size: Optional[int] = None,
     max_faces_per_bin: Optional[int] = None,
     perspective_correct: bool = False,
+    cull_backfaces: bool = False,
 ):
     """
     Rasterize a batch of meshes given the shape of the desired output image.
@@ -45,8 +46,16 @@ def rasterize_meshes(
             bin. If more than this many faces actually fall into a bin, an error
             will be raised. This should not affect the output values, but can affect
             the memory usage in the forward pass.
-        perspective_correct: Whether to apply perspective correction when computing
+        perspective_correct: Bool, Whether to apply perspective correction when computing
             barycentric coordinates for pixels.
+        cull_backfaces: Bool, Whether to only rasterize mesh faces which are
+            visible to the camera.  This assumes that vertices of
+            front-facing triangles are ordered in an anti-clockwise
+            fashion, and triangles that face away from the camera are
+            in a clockwise order relative to the current view
+            direction. NOTE: This will only work if the mesh faces are
+            consistently defined with counter-clockwise ordering when
+            viewed from the outside.
 
     Returns:
         4-element tuple containing
@@ -118,6 +127,7 @@ def rasterize_meshes(
         bin_size,
         max_faces_per_bin,
         perspective_correct,
+        cull_backfaces,
     )
 
 
@@ -139,6 +149,7 @@ class _RasterizeFaceVerts(torch.autograd.Function):
             for each mesh in the batch.
         image_size, blur_radius, faces_per_pixel: same as rasterize_meshes.
         perspective_correct: same as rasterize_meshes.
+        cull_backfaces: same as rasterize_meshes.
 
     Returns:
         same as rasterize_meshes function.
@@ -156,6 +167,7 @@ class _RasterizeFaceVerts(torch.autograd.Function):
         bin_size: int = 0,
         max_faces_per_bin: int = 0,
         perspective_correct: bool = False,
+        cull_backfaces: bool = False,
     ):
         pix_to_face, zbuf, barycentric_coords, dists = _C.rasterize_meshes(
             face_verts,
@@ -167,6 +179,7 @@ class _RasterizeFaceVerts(torch.autograd.Function):
             bin_size,
             max_faces_per_bin,
             perspective_correct,
+            cull_backfaces,
         )
         ctx.save_for_backward(face_verts, pix_to_face)
         ctx.perspective_correct = perspective_correct
@@ -183,6 +196,7 @@ class _RasterizeFaceVerts(torch.autograd.Function):
         grad_bin_size = None
         grad_max_faces_per_bin = None
         grad_perspective_correct = None
+        grad_cull_backfaces = None
         face_verts, pix_to_face = ctx.saved_tensors
         grad_face_verts = _C.rasterize_meshes_backward(
             face_verts,
@@ -202,6 +216,7 @@ class _RasterizeFaceVerts(torch.autograd.Function):
             grad_bin_size,
             grad_max_faces_per_bin,
             grad_perspective_correct,
+            grad_cull_backfaces,
         )
         return grads
 
@@ -217,6 +232,7 @@ def rasterize_meshes_python(
     blur_radius: float = 0.0,
     faces_per_pixel: int = 8,
     perspective_correct: bool = False,
+    cull_backfaces: bool = False,
 ):
     """
     Naive PyTorch implementation of mesh rasterization with the same inputs and
@@ -287,7 +303,12 @@ def rasterize_meshes_python(
                     face = faces_verts[f].squeeze()
                     v0, v1, v2 = face.unbind(0)
 
-                    face_area = edge_function(v2, v0, v1)
+                    face_area = edge_function(v0, v1, v2)
+
+                    # Ignore triangles facing away from the camera.
+                    back_face = face_area < 0
+                    if cull_backfaces and back_face:
+                        continue
 
                     # Ignore faces which have zero area.
                     if face_area == 0.0:
@@ -365,8 +386,8 @@ def edge_function(p, v0, v1):
 
               .. code-block:: python
 
-                  A = p - v0
-                  B = v1 - v0
+                  B = p - v0
+                  A = v1 - v0
 
                         v1 ________
                           /\      /

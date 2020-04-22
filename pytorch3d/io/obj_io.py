@@ -140,16 +140,16 @@ def load_obj(f_obj, load_textures=True):
     If there are faces with more than 3 vertices
     they are subdivided into triangles. Polygonal faces are assummed to have
     vertices ordered counter-clockwise so the (right-handed) normal points
-    into the screen e.g. a proper rectangular face would be specified like this:
+    out of the screen e.g. a proper rectangular face would be specified like this:
     ::
         0_________1
         |         |
         |         |
         3 ________2
 
-    The face would be split into two triangles: (0, 1, 2) and (0, 2, 3),
-    both of which are also oriented clockwise and have normals
-    pointing into the screen.
+    The face would be split into two triangles: (0, 2, 1) and (0, 3, 2),
+    both of which are also oriented counter-clockwise and have normals
+    pointing out of the screen.
 
     Args:
         f: A file-like object (with methods read, readline, tell, and seek),

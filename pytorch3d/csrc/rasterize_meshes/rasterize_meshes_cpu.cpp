@@ -107,7 +107,8 @@ RasterizeMeshesNaiveCpu(
     int image_size,
     const float blur_radius,
     const int faces_per_pixel,
-    const bool perspective_correct) {
+    const bool perspective_correct,
+    const bool cull_backfaces) {
   if (face_verts.ndimension() != 3 || face_verts.size(1) != 3 ||
       face_verts.size(2) != 3) {
     AT_ERROR("face_verts must have dimensions (num_faces, 3, 3)");
@@ -184,8 +185,13 @@ RasterizeMeshesNaiveCpu(
           const vec2<float> v1(x1, y1);
           const vec2<float> v2(x2, y2);
 
-          // Skip faces with zero area.
           const float face_area = face_areas_a[f];
+          const bool back_face = face_area < 0.0;
+          // Check if the face is visible to the camera.
+          if (cull_backfaces && back_face) {
+            continue;
+          }
+          // Skip faces with zero area.
           if (face_area <= kEpsilon && face_area >= -1.0f * kEpsilon) {
             continue;
           }

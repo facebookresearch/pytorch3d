@@ -26,6 +26,7 @@ class RasterizationSettings:
         "bin_size",
         "max_faces_per_bin",
         "perspective_correct",
+        "cull_backfaces",
     ]
 
     def __init__(
@@ -36,6 +37,7 @@ class RasterizationSettings:
         bin_size: Optional[int] = None,
         max_faces_per_bin: Optional[int] = None,
         perspective_correct: bool = False,
+        cull_backfaces: bool = False,
     ):
         self.image_size = image_size
         self.blur_radius = blur_radius
@@ -43,6 +45,7 @@ class RasterizationSettings:
         self.bin_size = bin_size
         self.max_faces_per_bin = max_faces_per_bin
         self.perspective_correct = perspective_correct
+        self.cull_backfaces = cull_backfaces
 
 
 class MeshRasterizer(nn.Module):
@@ -122,6 +125,7 @@ class MeshRasterizer(nn.Module):
             bin_size=raster_settings.bin_size,
             max_faces_per_bin=raster_settings.max_faces_per_bin,
             perspective_correct=raster_settings.perspective_correct,
+            cull_backfaces=raster_settings.cull_backfaces,
         )
         return Fragments(
             pix_to_face=pix_to_face, zbuf=zbuf, bary_coords=bary_coords, dists=dists

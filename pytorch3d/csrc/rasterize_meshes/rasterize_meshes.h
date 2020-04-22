@@ -17,7 +17,8 @@ RasterizeMeshesNaiveCpu(
     const int image_size,
     const float blur_radius,
     const int faces_per_pixel,
-    const bool perspective_correct);
+    const bool perspective_correct,
+    const bool cull_backfaces);
 
 #ifdef WITH_CUDA
 std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor>
@@ -28,7 +29,8 @@ RasterizeMeshesNaiveCuda(
     const int image_size,
     const float blur_radius,
     const int num_closest,
-    const bool perspective_correct);
+    const bool perspective_correct,
+    const bool cull_backfaces);
 #endif
 // Forward pass for rasterizing a batch of meshes.
 //
@@ -55,6 +57,14 @@ RasterizeMeshesNaiveCuda(
 //                         coordinates for each pixel; if this is False then
 //                         this function instead returns screen-space
 //                         barycentric coordinates for each pixel.
+//    cull_backfaces: Bool, Whether to only rasterize mesh faces which are
+//                    visible to the camera.  This assumes that vertices of
+//                    front-facing triangles are ordered in an anti-clockwise
+//                    fashion, and triangles that face away from the camera are
+//                    in a clockwise order relative to the current view
+//                    direction. NOTE: This will only work if the mesh faces are
+//                    consistently defined with counter-clockwise ordering when
+//                    viewed from the outside.
 //
 // Returns:
 //    A 4 element tuple of:
@@ -80,7 +90,8 @@ RasterizeMeshesNaive(
     const int image_size,
     const float blur_radius,
     const int faces_per_pixel,
-    const bool perspective_correct) {
+    const bool perspective_correct,
+    const bool cull_backfaces) {
   // TODO: Better type checking.
   if (face_verts.is_cuda()) {
 #ifdef WITH_CUDA
@@ -91,7 +102,8 @@ RasterizeMeshesNaive(
         image_size,
         blur_radius,
         faces_per_pixel,
-        perspective_correct);
+        perspective_correct,
+        cull_backfaces);
 #else
     AT_ERROR("Not compiled with GPU support");
 #endif
@@ -103,7 +115,8 @@ RasterizeMeshesNaive(
         image_size,
         blur_radius,
         faces_per_pixel,
-        perspective_correct);
+        perspective_correct,
+        cull_backfaces);
   }
 }
 
@@ -274,7 +287,8 @@ RasterizeMeshesFineCuda(
     const float blur_radius,
     const int bin_size,
     const int faces_per_pixel,
-    const bool perspective_correct);
+    const bool perspective_correct,
+    const bool cull_backfaces);
 #endif
 // Args:
 //    face_verts: Tensor of shape (F, 3, 3) giving (packed) vertex positions for
@@ -296,6 +310,14 @@ RasterizeMeshesFineCuda(
 //                         coordinates for each pixel; if this is False then
 //                         this function instead returns screen-space
 //                         barycentric coordinates for each pixel.
+//    cull_backfaces: Bool, Whether to only rasterize mesh faces which are
+//                    visible to the camera.  This assumes that vertices of
+//                    front-facing triangles are ordered in an anti-clockwise
+//                    fashion, and triangles that face away from the camera are
+//                    in a clockwise order relative to the current view
+//                    direction. NOTE: This will only work if the mesh faces are
+//                    consistently defined with counter-clockwise ordering when
+//                    viewed from the outside.
 //
 // Returns (same as rasterize_meshes):
 //    A 4 element tuple of:
@@ -321,7 +343,8 @@ RasterizeMeshesFine(
     const float blur_radius,
     const int bin_size,
     const int faces_per_pixel,
-    const bool perspective_correct) {
+    const bool perspective_correct,
+    const bool cull_backfaces) {
   if (face_verts.is_cuda()) {
 #ifdef WITH_CUDA
     return RasterizeMeshesFineCuda(
@@ -331,7 +354,8 @@ RasterizeMeshesFine(
         blur_radius,
         bin_size,
         faces_per_pixel,
-        perspective_correct);
+        perspective_correct,
+        cull_backfaces);
 #else
     AT_ERROR("Not compiled with GPU support");
 #endif
@@ -372,7 +396,14 @@ RasterizeMeshesFine(
 //                         coordinates for each pixel; if this is False then
 //                         this function instead returns screen-space
 //                         barycentric coordinates for each pixel.
-//
+//    cull_backfaces: Bool, Whether to only rasterize mesh faces which are
+//                    visible to the camera.  This assumes that vertices of
+//                    front-facing triangles are ordered in an anti-clockwise
+//                    fashion, and triangles that face away from the camera are
+//                    in a clockwise order relative to the current view
+//                    direction. NOTE: This will only work if the mesh faces are
+//                    consistently defined with counter-clockwise ordering when
+//                    viewed from the outside.
 //
 // Returns:
 //    A 4 element tuple of:
@@ -400,7 +431,8 @@ RasterizeMeshes(
     const int faces_per_pixel,
     const int bin_size,
     const int max_faces_per_bin,
-    const bool perspective_correct) {
+    const bool perspective_correct,
+    const bool cull_backfaces) {
   if (bin_size > 0 && max_faces_per_bin > 0) {
     // Use coarse-to-fine rasterization
     auto bin_faces = RasterizeMeshesCoarse(
@@ -418,7 +450,8 @@ RasterizeMeshes(
         blur_radius,
         bin_size,
         faces_per_pixel,
-        perspective_correct);
+        perspective_correct,
+        cull_backfaces);
   } else {
     // Use the naive per-pixel implementation
     return RasterizeMeshesNaive(
@@ -428,6 +461,7 @@ RasterizeMeshes(
         image_size,
         blur_radius,
         faces_per_pixel,
-        perspective_correct);
+        perspective_correct,
+        cull_backfaces);
   }
 }

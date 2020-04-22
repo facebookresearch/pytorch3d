@@ -21,6 +21,7 @@ class TestRasterizeMeshes(TestCaseMixin, unittest.TestCase):
         self._simple_blurry_raster(rasterize_meshes_python, device, bin_size=-1)
         self._test_behind_camera(rasterize_meshes_python, device, bin_size=-1)
         self._test_perspective_correct(rasterize_meshes_python, device, bin_size=-1)
+        self._test_back_face_culling(rasterize_meshes_python, device, bin_size=-1)
 
     def test_simple_cpu_naive(self):
         device = torch.device("cpu")
@@ -28,6 +29,7 @@ class TestRasterizeMeshes(TestCaseMixin, unittest.TestCase):
         self._simple_blurry_raster(rasterize_meshes, device, bin_size=0)
         self._test_behind_camera(rasterize_meshes, device, bin_size=0)
         self._test_perspective_correct(rasterize_meshes, device, bin_size=0)
+        self._test_back_face_culling(rasterize_meshes, device, bin_size=0)
 
     def test_simple_cuda_naive(self):
         device = torch.device("cuda:0")
@@ -35,6 +37,7 @@ class TestRasterizeMeshes(TestCaseMixin, unittest.TestCase):
         self._simple_blurry_raster(rasterize_meshes, device, bin_size=0)
         self._test_behind_camera(rasterize_meshes, device, bin_size=0)
         self._test_perspective_correct(rasterize_meshes, device, bin_size=0)
+        self._test_back_face_culling(rasterize_meshes, device, bin_size=0)
 
     def test_simple_cuda_binned(self):
         device = torch.device("cuda:0")
@@ -42,6 +45,7 @@ class TestRasterizeMeshes(TestCaseMixin, unittest.TestCase):
         self._simple_blurry_raster(rasterize_meshes, device, bin_size=5)
         self._test_behind_camera(rasterize_meshes, device, bin_size=5)
         self._test_perspective_correct(rasterize_meshes, device, bin_size=5)
+        self._test_back_face_culling(rasterize_meshes, device, bin_size=5)
 
     def test_python_vs_cpu_vs_cuda(self):
         torch.manual_seed(231)
@@ -376,6 +380,81 @@ class TestRasterizeMeshes(TestCaseMixin, unittest.TestCase):
         fn2 = functools.partial(rasterize_meshes, meshes2, bin_size=8, **kwargs)
         args = ()
         self._compare_impls(fn1, fn2, args, args, verts1, verts2, compare_grads=True)
+
+    def _test_back_face_culling(self, rasterize_meshes_fn, device, bin_size):
+        # Square based pyramid mesh.
+        # fmt: off
+        verts = torch.tensor([
+            [-0.5, 0.0,  0.5],  # noqa: E241 E201 Front right
+            [ 0.5, 0.0,  0.5],  # noqa: E241 E201 Front left
+            [ 0.5, 0.0,  1.5],  # noqa: E241 E201 Back left
+            [-0.5, 0.0,  1.5],  # noqa: E241 E201 Back right
+            [ 0.0, 1.0,  1.0]   # noqa: E241 E201 Top point of pyramid
+        ], dtype=torch.float32, device=device)
+
+        faces = torch.tensor([
+            [2, 1, 0],  # noqa: E241 E201 Square base
+            [3, 2, 0],  # noqa: E241 E201 Square base
+            [1, 0, 4],  # noqa: E241 E201 Triangle on front
+            [2, 4, 3],  # noqa: E241 E201 Triangle on back
+            [3, 4, 0],  # noqa: E241 E201 Triangle on left side
+            [1, 4, 2]   # noqa: E241 E201 Triangle on right side
+        ], dtype=torch.int64, device=device)
+        # fmt: on
+        mesh = Meshes(verts=[verts], faces=[faces])
+        kwargs = {
+            "meshes": mesh,
+            "image_size": 10,
+            "faces_per_pixel": 2,
+            "blur_radius": 0.0,
+            "perspective_correct": False,
+            "cull_backfaces": False,
+        }
+        if bin_size != -1:
+            kwargs["bin_size"] = bin_size
+
+        # fmt: off
+        pix_to_face_frontface = torch.tensor([
+            [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1],  # noqa: E241 E201
+            [-1, -1, -1, -1,  2,  2, -1, -1, -1, -1],  # noqa: E241 E201
+            [-1, -1, -1, -1,  2,  2, -1, -1, -1, -1],  # noqa: E241 E201
+            [-1, -1, -1,  2,  2,  2,  2, -1, -1, -1],  # noqa: E241 E201
+            [-1, -1, -1,  2,  2,  2,  2, -1, -1, -1],  # noqa: E241 E201
+            [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1],  # noqa: E241 E201
+            [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1],  # noqa: E241 E201
+            [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1],  # noqa: E241 E201
+            [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1],  # noqa: E241 E201
+            [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1]   # noqa: E241 E201
+        ], dtype=torch.int64, device=device)
+        pix_to_face_backface = torch.tensor([
+            [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1],  # noqa: E241 E201
+            [-1, -1, -1, -1,  3,  3, -1, -1, -1, -1],  # noqa: E241 E201
+            [-1, -1, -1, -1,  3,  3, -1, -1, -1, -1],  # noqa: E241 E201
+            [-1, -1, -1,  3,  3,  3,  3, -1, -1, -1],  # noqa: E241 E201
+            [-1, -1, -1,  3,  3,  3,  3, -1, -1, -1],  # noqa: E241 E201
+            [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1],  # noqa: E241 E201
+            [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1],  # noqa: E241 E201
+            [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1],  # noqa: E241 E201
+            [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1],  # noqa: E241 E201
+            [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1]   # noqa: E241 E201
+        ], dtype=torch.int64, device=device)
+        # fmt: on
+
+        pix_to_face_padded = -torch.ones_like(pix_to_face_frontface)
+        # Run with and without culling
+        # Without culling, for k=0, the front face (i.e. face 2) is
+        # rasterized and for k=1, the back face (i.e. face 3) is
+        # rasterized.
+        idx_f, zbuf_f, bary_f, dists_f = rasterize_meshes_fn(**kwargs)
+        self.assertTrue(torch.all(idx_f[..., 0].squeeze() == pix_to_face_frontface))
+        self.assertTrue(torch.all(idx_f[..., 1].squeeze() == pix_to_face_backface))
+
+        # With culling, for k=0, the front face (i.e. face 2) is
+        # rasterized and for k=1, there are no faces rasterized
+        kwargs["cull_backfaces"] = True
+        idx_t, zbuf_t, bary_t, dists_t = rasterize_meshes_fn(**kwargs)
+        self.assertTrue(torch.all(idx_t[..., 0].squeeze() == pix_to_face_frontface))
+        self.assertTrue(torch.all(idx_t[..., 1].squeeze() == pix_to_face_padded))
 
     def _compare_impls(
         self,
