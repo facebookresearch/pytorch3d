@@ -128,3 +128,15 @@ std::tuple<at::Tensor, at::Tensor> KNearestNeighborBackward(
   return KNearestNeighborBackwardCpu(
       p1, p2, lengths1, lengths2, idxs, grad_dists);
 }
+
+// Utility to check whether a KNN version can be used.
+//
+// Args:
+//    version: Integer in the range 0 <= version <= 3 indicating one of our
+//        KNN implementations.
+//    D: Number of dimensions for the input and query point clouds
+//    K: Number of neighbors to be found
+//
+// Returns:
+//    Whether the indicated KNN version can be used.
+bool KnnCheckVersion(int version, const int64_t D, const int64_t K);

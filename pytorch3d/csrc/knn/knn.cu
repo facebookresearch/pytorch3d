@@ -267,7 +267,7 @@ bool InBounds(const int64_t min, const int64_t x, const int64_t max) {
   return min <= x && x <= max;
 }
 
-bool CheckVersion(int version, const int64_t D, const int64_t K) {
+bool KnnCheckVersion(int version, const int64_t D, const int64_t K) {
   if (version == 0) {
     return true;
   } else if (version == 1) {
@@ -282,7 +282,7 @@ bool CheckVersion(int version, const int64_t D, const int64_t K) {
 
 int ChooseVersion(const int64_t D, const int64_t K) {
   for (int version = 3; version >= 1; version--) {
-    if (CheckVersion(version, D, K)) {
+    if (KnnCheckVersion(version, D, K)) {
       return version;
     }
   }
@@ -309,7 +309,7 @@ std::tuple<at::Tensor, at::Tensor> KNearestNeighborIdxCuda(
 
   if (version < 0) {
     version = ChooseVersion(D, K);
-  } else if (!CheckVersion(version, D, K)) {
+  } else if (!KnnCheckVersion(version, D, K)) {
     int new_version = ChooseVersion(D, K);
     std::cout << "WARNING: Requested KNN version " << version
               << " is not compatible with D = " << D << "; K = " << K
@@ -321,7 +321,7 @@ std::tuple<at::Tensor, at::Tensor> KNearestNeighborIdxCuda(
   // gave us. But we can check once more to be sure; however this time
   // assert fail since failing at this point means we have a bug in our version
   // selection or checking code.
-  AT_ASSERTM(CheckVersion(version, D, K), "Invalid version");
+  AT_ASSERTM(KnnCheckVersion(version, D, K), "Invalid version");
 
   const size_t threads = 256;
   const size_t blocks = 256;

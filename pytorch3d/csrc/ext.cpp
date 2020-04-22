@@ -18,6 +18,9 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
   m.def("face_areas_normals_backward", &FaceAreasNormalsBackward);
   m.def("packed_to_padded", &PackedToPadded);
   m.def("padded_to_packed", &PaddedToPacked);
+#ifdef WITH_CUDA
+  m.def("knn_check_version", &KnnCheckVersion);
+#endif
   m.def("knn_points_idx", &KNearestNeighborIdx);
   m.def("knn_points_backward", &KNearestNeighborBackward);
   m.def("gather_scatter", &gather_scatter);
