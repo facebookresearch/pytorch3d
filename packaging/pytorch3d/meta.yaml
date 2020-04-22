@@ -41,12 +41,7 @@ test:
     - tests
     - docs
   requires:
-    - pytest
-    - scipy
-    - mock
-    - av
     - ca-certificates
-    - typing
   commands:
     #pytest .
     python -m unittest discover -v -s tests
