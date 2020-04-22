@@ -25,8 +25,8 @@ def rasterize_points(
             can have a different number of points; the coordinates of each point
             are (x, y, z). The coordinates are expected to
             be in normalized device coordinates (NDC): [-1, 1]^3 with the camera at
-            (0, 0, 0); the x-axis goes from left-to-right, the y-axis goes from
-            top-to-bottom, and the z-axis goes from back-to-front.
+            (0, 0, 0); In the camera coordinate frame the x-axis goes from right-to-left,
+            the y-axis goes from bottom-to-top, and the z-axis goes from back-to-front.
         image_size: Integer giving the resolution of the rasterized image
         radius (Optional): Float giving the radius (in NDC units) of the disk to
             be rasterized for each point.
