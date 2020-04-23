@@ -34,11 +34,10 @@ def _define_control_points(x, weight, storage_opts=None):
     """
     storage_opts = storage_opts or {}
     x_mean = oputil.wmean(x, weight)
-    x_std = oputil.wmean((x - x_mean) ** 2, weight) ** 0.5
     c_world = F.pad(torch.eye(3, **storage_opts), (0, 0, 0, 1), value=0.0).expand_as(
         x[:, :4, :]
     )
-    return c_world * x_std + x_mean
+    return c_world + x_mean
 
 
 def _compute_alphas(x, c_world):
