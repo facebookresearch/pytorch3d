@@ -2,7 +2,6 @@
 
 #include <float.h>
 #include <math.h>
-#include <torch/extension.h>
 #include <cstdio>
 #include "float_math.cuh"
 

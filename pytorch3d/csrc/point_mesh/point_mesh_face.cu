@@ -1,6 +1,6 @@
 // Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
-#include <torch/extension.h>
+#include <ATen/ATen.h>
 #include <algorithm>
 #include <list>
 #include <queue>
@@ -98,11 +98,11 @@ __global__ void PointFaceForwardKernel(
   }
 }
 
-std::tuple<torch::Tensor, torch::Tensor> PointFaceDistanceForwardCuda(
-    const torch::Tensor& points,
-    const torch::Tensor& points_first_idx,
-    const torch::Tensor& tris,
-    const torch::Tensor& tris_first_idx,
+std::tuple<at::Tensor, at::Tensor> PointFaceDistanceForwardCuda(
+    const at::Tensor& points,
+    const at::Tensor& points_first_idx,
+    const at::Tensor& tris,
+    const at::Tensor& tris_first_idx,
     const int64_t max_points) {
   const int64_t P = points.size(0);
   const int64_t T = tris.size(0);
@@ -115,8 +115,8 @@ std::tuple<torch::Tensor, torch::Tensor> PointFaceDistanceForwardCuda(
   AT_ASSERTM(tris_first_idx.size(0) == B);
 
   // clang-format off
-  torch::Tensor dists = torch::zeros({P,}, points.options());
-  torch::Tensor idxs = torch::zeros({P,}, points_first_idx.options());
+  at::Tensor dists = at::zeros({P,}, points.options());
+  at::Tensor idxs = at::zeros({P,}, points_first_idx.options());
   // clang-format on
 
   const int threads = 128;
@@ -186,11 +186,11 @@ __global__ void PointFaceBackwardKernel(
   }
 }
 
-std::tuple<torch::Tensor, torch::Tensor> PointFaceDistanceBackwardCuda(
-    const torch::Tensor& points,
-    const torch::Tensor& tris,
-    const torch::Tensor& idx_points,
-    const torch::Tensor& grad_dists) {
+std::tuple<at::Tensor, at::Tensor> PointFaceDistanceBackwardCuda(
+    const at::Tensor& points,
+    const at::Tensor& tris,
+    const at::Tensor& idx_points,
+    const at::Tensor& grad_dists) {
   const int64_t P = points.size(0);
   const int64_t T = tris.size(0);
 
@@ -202,8 +202,8 @@ std::tuple<torch::Tensor, torch::Tensor> PointFaceDistanceBackwardCuda(
   AT_ASSERTM(grad_dists.size(0) == P);
 
   // clang-format off
-  torch::Tensor grad_points = torch::zeros({P, 3}, points.options());
-  torch::Tensor grad_tris = torch::zeros({T, 3, 3}, tris.options());
+  at::Tensor grad_points = at::zeros({P, 3}, points.options());
+  at::Tensor grad_tris = at::zeros({T, 3, 3}, tris.options());
   // clang-format on
 
   const int blocks = 64;
@@ -311,11 +311,11 @@ __global__ void FacePointForwardKernel(
   }
 }
 
-std::tuple<torch::Tensor, torch::Tensor> FacePointDistanceForwardCuda(
-    const torch::Tensor& points,
-    const torch::Tensor& points_first_idx,
-    const torch::Tensor& tris,
-    const torch::Tensor& tris_first_idx,
+std::tuple<at::Tensor, at::Tensor> FacePointDistanceForwardCuda(
+    const at::Tensor& points,
+    const at::Tensor& points_first_idx,
+    const at::Tensor& tris,
+    const at::Tensor& tris_first_idx,
     const int64_t max_tris) {
   const int64_t P = points.size(0);
   const int64_t T = tris.size(0);
@@ -328,8 +328,8 @@ std::tuple<torch::Tensor, torch::Tensor> FacePointDistanceForwardCuda(
   AT_ASSERTM(tris_first_idx.size(0) == B);
 
   // clang-format off
-  torch::Tensor dists = torch::zeros({T,}, tris.options());
-  torch::Tensor idxs = torch::zeros({T,}, tris_first_idx.options());
+  at::Tensor dists = at::zeros({T,}, tris.options());
+  at::Tensor idxs = at::zeros({T,}, tris_first_idx.options());
   // clang-format on
 
   const int threads = 128;
@@ -400,11 +400,11 @@ __global__ void FacePointBackwardKernel(
   }
 }
 
-std::tuple<torch::Tensor, torch::Tensor> FacePointDistanceBackwardCuda(
-    const torch::Tensor& points,
-    const torch::Tensor& tris,
-    const torch::Tensor& idx_tris,
-    const torch::Tensor& grad_dists) {
+std::tuple<at::Tensor, at::Tensor> FacePointDistanceBackwardCuda(
+    const at::Tensor& points,
+    const at::Tensor& tris,
+    const at::Tensor& idx_tris,
+    const at::Tensor& grad_dists) {
   const int64_t P = points.size(0);
   const int64_t T = tris.size(0);
 
@@ -416,8 +416,8 @@ std::tuple<torch::Tensor, torch::Tensor> FacePointDistanceBackwardCuda(
   AT_ASSERTM(grad_dists.size(0) == T);
 
   // clang-format off
-  torch::Tensor grad_points = torch::zeros({P, 3}, points.options());
-  torch::Tensor grad_tris = torch::zeros({T, 3, 3}, tris.options());
+  at::Tensor grad_points = at::zeros({P, 3}, points.options());
+  at::Tensor grad_tris = at::zeros({T, 3, 3}, tris.options());
   // clang-format on
 
   const int blocks = 64;
@@ -465,9 +465,9 @@ __global__ void PointFaceArrayForwardKernel(
   }
 }
 
-torch::Tensor PointFaceArrayDistanceForwardCuda(
-    const torch::Tensor& points,
-    const torch::Tensor& tris) {
+at::Tensor PointFaceArrayDistanceForwardCuda(
+    const at::Tensor& points,
+    const at::Tensor& tris) {
   const int64_t P = points.size(0);
   const int64_t T = tris.size(0);
 
@@ -476,7 +476,7 @@ torch::Tensor PointFaceArrayDistanceForwardCuda(
       (tris.size(1) == 3) && (tris.size(2) == 3),
       "tris must be of shape Tx3x3");
 
-  torch::Tensor dists = torch::zeros({P, T}, points.options());
+  at::Tensor dists = at::zeros({P, T}, points.options());
 
   const size_t blocks = 1024;
   const size_t threads = 64;
@@ -542,10 +542,10 @@ __global__ void PointFaceArrayBackwardKernel(
   }
 }
 
-std::tuple<torch::Tensor, torch::Tensor> PointFaceArrayDistanceBackwardCuda(
-    const torch::Tensor& points,
-    const torch::Tensor& tris,
-    const torch::Tensor& grad_dists) {
+std::tuple<at::Tensor, at::Tensor> PointFaceArrayDistanceBackwardCuda(
+    const at::Tensor& points,
+    const at::Tensor& tris,
+    const at::Tensor& grad_dists) {
   const int64_t P = points.size(0);
   const int64_t T = tris.size(0);
 
@@ -555,8 +555,8 @@ std::tuple<torch::Tensor, torch::Tensor> PointFaceArrayDistanceBackwardCuda(
       "tris must be of shape Tx3x3");
   AT_ASSERTM((grad_dists.size(0) == P) && (grad_dists.size(1) == T));
 
-  torch::Tensor grad_points = torch::zeros({P, 3}, points.options());
-  torch::Tensor grad_tris = torch::zeros({T, 3, 3}, tris.options());
+  at::Tensor grad_points = at::zeros({P, 3}, points.options());
+  at::Tensor grad_tris = at::zeros({T, 3, 3}, tris.options());
 
   const size_t blocks = 1024;
   const size_t threads = 64;

@@ -1,7 +1,6 @@
 // Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
 #include <ATen/ATen.h>
-#include <torch/extension.h>
 
 // Kernel for inputs_packed of shape (F, D), where D > 1
 template <typename scalar_t>
