@@ -1,9 +1,11 @@
 // Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
 #include <ATen/ATen.h>
+#include <ATen/cuda/CUDAContext.h>
+#include <c10/cuda/CUDAGuard.h>
 
 // TODO(T47953967) to make this cuda kernel support all datatypes.
-__global__ void gather_scatter_kernel(
+__global__ void GatherScatterCudaKernel(
     const float* __restrict__ input,
     const int64_t* __restrict__ edges,
     float* __restrict__ output,
@@ -41,11 +43,20 @@ __global__ void gather_scatter_kernel(
   }
 }
 
-at::Tensor gather_scatter_cuda(
+at::Tensor GatherScatterCuda(
     const at::Tensor input,
     const at::Tensor edges,
     bool directed,
     bool backward) {
+  // Check inputs are on the same device
+  at::TensorArg input_t{input, "input", 1}, edges_t{edges, "edges", 2};
+  at::CheckedFrom c = "GatherScatterCuda";
+  at::checkAllSameGPU(c, {input_t, edges_t});
+
+  // Set the device for the kernel launch based on the device of the input
+  at::cuda::CUDAGuard device_guard(input.device());
+  cudaStream_t stream = at::cuda::getCurrentCUDAStream();
+
   const auto num_vertices = input.size(0);
   const auto input_feature_dim = input.size(1);
   const auto num_edges = edges.size(0);
@@ -55,7 +66,12 @@ at::Tensor gather_scatter_cuda(
   const size_t max_blocks = 1920;
   const size_t blocks = num_edges < max_blocks ? num_edges : max_blocks;
 
-  gather_scatter_kernel<<<blocks, threads>>>(
+  if (output.numel() == 0) {
+    AT_CUDA_CHECK(cudaGetLastError());
+    return output;
+  }
+
+  GatherScatterCudaKernel<<<blocks, threads, 0, stream>>>(
       input.data_ptr<float>(),
       edges.data_ptr<int64_t>(),
       output.data_ptr<float>(),
@@ -64,6 +80,6 @@ at::Tensor gather_scatter_cuda(
       num_vertices,
       input_feature_dim,
       num_edges);
-
+  AT_CUDA_CHECK(cudaGetLastError());
   return output;
 }

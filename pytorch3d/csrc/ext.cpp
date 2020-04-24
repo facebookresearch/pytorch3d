@@ -23,7 +23,7 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
 #endif
   m.def("knn_points_idx", &KNearestNeighborIdx);
   m.def("knn_points_backward", &KNearestNeighborBackward);
-  m.def("gather_scatter", &gather_scatter);
+  m.def("gather_scatter", &GatherScatter);
   m.def("rasterize_points", &RasterizePoints);
   m.def("rasterize_points_backward", &RasterizePointsBackward);
   m.def("rasterize_meshes_backward", &RasterizeMeshesBackward);

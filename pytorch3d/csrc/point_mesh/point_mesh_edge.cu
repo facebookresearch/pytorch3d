@@ -1,6 +1,8 @@
 // Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
 #include <ATen/ATen.h>
+#include <ATen/cuda/CUDAContext.h>
+#include <c10/cuda/CUDAGuard.h>
 #include <algorithm>
 #include <list>
 #include <queue>
@@ -103,26 +105,45 @@ std::tuple<at::Tensor, at::Tensor> PointEdgeDistanceForwardCuda(
     const at::Tensor& segms,
     const at::Tensor& segms_first_idx,
     const int64_t max_points) {
+  // Check inputs are on the same device
+  at::TensorArg points_t{points, "points", 1},
+      points_first_idx_t{points_first_idx, "points_first_idx", 2},
+      segms_t{segms, "segms", 3},
+      segms_first_idx_t{segms_first_idx, "segms_first_idx", 4};
+  at::CheckedFrom c = "PointEdgeDistanceForwardCuda";
+  at::checkAllSameGPU(
+      c, {points_t, points_first_idx_t, segms_t, segms_first_idx_t});
+  at::checkAllSameType(c, {points_t, segms_t});
+
+  // Set the device for the kernel launch based on the device of the input
+  at::cuda::CUDAGuard device_guard(points.device());
+  cudaStream_t stream = at::cuda::getCurrentCUDAStream();
+
   const int64_t P = points.size(0);
   const int64_t S = segms.size(0);
   const int64_t B = points_first_idx.size(0);
 
-  AT_ASSERTM(points.size(1) == 3, "points must be of shape Px3");
-  AT_ASSERTM(
+  TORCH_CHECK(points.size(1) == 3, "points must be of shape Px3");
+  TORCH_CHECK(
       (segms.size(1) == 2) && (segms.size(2) == 3),
       "segms must be of shape Sx2x3");
-  AT_ASSERTM(segms_first_idx.size(0) == B);
+  TORCH_CHECK(segms_first_idx.size(0) == B);
 
   // clang-format off
   at::Tensor dists = at::zeros({P,}, points.options());
   at::Tensor idxs = at::zeros({P,}, points_first_idx.options());
   // clang-format on
 
+  if (dists.numel() == 0) {
+    AT_CUDA_CHECK(cudaGetLastError());
+    return std::make_tuple(dists, idxs);
+  }
+
   const int threads = 128;
   const dim3 blocks(max_points, B);
   size_t shared_size = threads * sizeof(size_t) + threads * sizeof(int64_t);
 
-  PointEdgeForwardKernel<<<blocks, threads, shared_size>>>(
+  PointEdgeForwardKernel<<<blocks, threads, shared_size, stream>>>(
       points.data_ptr<float>(),
       points_first_idx.data_ptr<int64_t>(),
       segms.data_ptr<float>(),
@@ -132,7 +153,7 @@ std::tuple<at::Tensor, at::Tensor> PointEdgeDistanceForwardCuda(
       B,
       P,
       S);
-
+  AT_CUDA_CHECK(cudaGetLastError());
   return std::make_tuple(dists, idxs);
 }
 
@@ -183,25 +204,42 @@ std::tuple<at::Tensor, at::Tensor> PointEdgeDistanceBackwardCuda(
     const at::Tensor& segms,
     const at::Tensor& idx_points,
     const at::Tensor& grad_dists) {
+  // Check inputs are on the same device
+  at::TensorArg points_t{points, "points", 1},
+      idx_points_t{idx_points, "idx_points", 2}, segms_t{segms, "segms", 3},
+      grad_dists_t{grad_dists, "grad_dists", 4};
+  at::CheckedFrom c = "PointEdgeDistanceBackwardCuda";
+  at::checkAllSameGPU(c, {points_t, idx_points_t, segms_t, grad_dists_t});
+  at::checkAllSameType(c, {points_t, segms_t, grad_dists_t});
+
+  // Set the device for the kernel launch based on the device of the input
+  at::cuda::CUDAGuard device_guard(points.device());
+  cudaStream_t stream = at::cuda::getCurrentCUDAStream();
+
   const int64_t P = points.size(0);
   const int64_t S = segms.size(0);
 
-  AT_ASSERTM(points.size(1) == 3, "points must be of shape Px3");
-  AT_ASSERTM(
+  TORCH_CHECK(points.size(1) == 3, "points must be of shape Px3");
+  TORCH_CHECK(
       (segms.size(1) == 2) && (segms.size(2) == 3),
       "segms must be of shape Sx2x3");
-  AT_ASSERTM(idx_points.size(0) == P);
-  AT_ASSERTM(grad_dists.size(0) == P);
+  TORCH_CHECK(idx_points.size(0) == P);
+  TORCH_CHECK(grad_dists.size(0) == P);
 
   // clang-format off
   at::Tensor grad_points = at::zeros({P, 3}, points.options());
   at::Tensor grad_segms = at::zeros({S, 2, 3}, segms.options());
   // clang-format on
 
+  if (grad_points.numel() == 0 || grad_segms.numel() == 0) {
+    AT_CUDA_CHECK(cudaGetLastError());
+    return std::make_tuple(grad_points, grad_segms);
+  }
+
   const int blocks = 64;
   const int threads = 512;
 
-  PointEdgeBackwardKernel<<<blocks, threads>>>(
+  PointEdgeBackwardKernel<<<blocks, threads, 0, stream>>>(
       points.data_ptr<float>(),
       segms.data_ptr<float>(),
       idx_points.data_ptr<int64_t>(),
@@ -210,6 +248,7 @@ std::tuple<at::Tensor, at::Tensor> PointEdgeDistanceBackwardCuda(
       grad_segms.data_ptr<float>(),
       P);
 
+  AT_CUDA_CHECK(cudaGetLastError());
   return std::make_tuple(grad_points, grad_segms);
 }
 
@@ -308,26 +347,45 @@ std::tuple<at::Tensor, at::Tensor> EdgePointDistanceForwardCuda(
     const at::Tensor& segms,
     const at::Tensor& segms_first_idx,
     const int64_t max_segms) {
+  // Check inputs are on the same device
+  at::TensorArg points_t{points, "points", 1},
+      points_first_idx_t{points_first_idx, "points_first_idx", 2},
+      segms_t{segms, "segms", 3},
+      segms_first_idx_t{segms_first_idx, "segms_first_idx", 4};
+  at::CheckedFrom c = "EdgePointDistanceForwardCuda";
+  at::checkAllSameGPU(
+      c, {points_t, points_first_idx_t, segms_t, segms_first_idx_t});
+  at::checkAllSameType(c, {points_t, segms_t});
+
+  // Set the device for the kernel launch based on the device of the input
+  at::cuda::CUDAGuard device_guard(points.device());
+  cudaStream_t stream = at::cuda::getCurrentCUDAStream();
+
   const int64_t P = points.size(0);
   const int64_t S = segms.size(0);
   const int64_t B = points_first_idx.size(0);
 
-  AT_ASSERTM(points.size(1) == 3, "points must be of shape Px3");
-  AT_ASSERTM(
+  TORCH_CHECK(points.size(1) == 3, "points must be of shape Px3");
+  TORCH_CHECK(
       (segms.size(1) == 2) && (segms.size(2) == 3),
       "segms must be of shape Sx2x3");
-  AT_ASSERTM(segms_first_idx.size(0) == B);
+  TORCH_CHECK(segms_first_idx.size(0) == B);
 
   // clang-format off
   at::Tensor dists = at::zeros({S,}, segms.options());
   at::Tensor idxs = at::zeros({S,}, segms_first_idx.options());
   // clang-format on
 
+  if (dists.numel() == 0) {
+    AT_CUDA_CHECK(cudaGetLastError());
+    return std::make_tuple(dists, idxs);
+  }
+
   const int threads = 128;
   const dim3 blocks(max_segms, B);
   size_t shared_size = threads * sizeof(size_t) + threads * sizeof(int64_t);
 
-  EdgePointForwardKernel<<<blocks, threads, shared_size>>>(
+  EdgePointForwardKernel<<<blocks, threads, shared_size, stream>>>(
       points.data_ptr<float>(),
       points_first_idx.data_ptr<int64_t>(),
       segms.data_ptr<float>(),
@@ -337,7 +395,7 @@ std::tuple<at::Tensor, at::Tensor> EdgePointDistanceForwardCuda(
       B,
       P,
       S);
-
+  AT_CUDA_CHECK(cudaGetLastError());
   return std::make_tuple(dists, idxs);
 }
 
@@ -389,15 +447,27 @@ std::tuple<at::Tensor, at::Tensor> EdgePointDistanceBackwardCuda(
     const at::Tensor& segms,
     const at::Tensor& idx_segms,
     const at::Tensor& grad_dists) {
+  // Check inputs are on the same device
+  at::TensorArg points_t{points, "points", 1},
+      idx_segms_t{idx_segms, "idx_segms", 2}, segms_t{segms, "segms", 3},
+      grad_dists_t{grad_dists, "grad_dists", 4};
+  at::CheckedFrom c = "PointEdgeDistanceBackwardCuda";
+  at::checkAllSameGPU(c, {points_t, idx_segms_t, segms_t, grad_dists_t});
+  at::checkAllSameType(c, {points_t, segms_t, grad_dists_t});
+
+  // Set the device for the kernel launch based on the device of the input
+  at::cuda::CUDAGuard device_guard(points.device());
+  cudaStream_t stream = at::cuda::getCurrentCUDAStream();
+
   const int64_t P = points.size(0);
   const int64_t S = segms.size(0);
 
-  AT_ASSERTM(points.size(1) == 3, "points must be of shape Px3");
-  AT_ASSERTM(
+  TORCH_CHECK(points.size(1) == 3, "points must be of shape Px3");
+  TORCH_CHECK(
       (segms.size(1) == 2) && (segms.size(2) == 3),
       "segms must be of shape Sx2x3");
-  AT_ASSERTM(idx_segms.size(0) == S);
-  AT_ASSERTM(grad_dists.size(0) == S);
+  TORCH_CHECK(idx_segms.size(0) == S);
+  TORCH_CHECK(grad_dists.size(0) == S);
 
   // clang-format off
   at::Tensor grad_points = at::zeros({P, 3}, points.options());
@@ -407,7 +477,7 @@ std::tuple<at::Tensor, at::Tensor> EdgePointDistanceBackwardCuda(
   const int blocks = 64;
   const int threads = 512;
 
-  EdgePointBackwardKernel<<<blocks, threads>>>(
+  EdgePointBackwardKernel<<<blocks, threads, 0, stream>>>(
       points.data_ptr<float>(),
       segms.data_ptr<float>(),
       idx_segms.data_ptr<int64_t>(),
@@ -451,26 +521,42 @@ __global__ void PointEdgeArrayForwardKernel(
 at::Tensor PointEdgeArrayDistanceForwardCuda(
     const at::Tensor& points,
     const at::Tensor& segms) {
+  // Check inputs are on the same device
+  at::TensorArg points_t{points, "points", 1}, segms_t{segms, "segms", 2};
+  at::CheckedFrom c = "PointEdgeArrayDistanceForwardCuda";
+  at::checkAllSameGPU(c, {points_t, segms_t});
+  at::checkAllSameType(c, {points_t, segms_t});
+
+  // Set the device for the kernel launch based on the device of the input
+  at::cuda::CUDAGuard device_guard(points.device());
+  cudaStream_t stream = at::cuda::getCurrentCUDAStream();
+
   const int64_t P = points.size(0);
   const int64_t S = segms.size(0);
 
-  AT_ASSERTM(points.size(1) == 3, "points must be of shape Px3");
-  AT_ASSERTM(
+  TORCH_CHECK(points.size(1) == 3, "points must be of shape Px3");
+  TORCH_CHECK(
       (segms.size(1) == 2) && (segms.size(2) == 3),
       "segms must be of shape Sx2x3");
 
   at::Tensor dists = at::zeros({P, S}, points.options());
 
+  if (dists.numel() == 0) {
+    AT_CUDA_CHECK(cudaGetLastError());
+    return dists;
+  }
+
   const size_t blocks = 1024;
   const size_t threads = 64;
 
-  PointEdgeArrayForwardKernel<<<blocks, threads>>>(
+  PointEdgeArrayForwardKernel<<<blocks, threads, 0, stream>>>(
       points.data_ptr<float>(),
       segms.data_ptr<float>(),
       dists.data_ptr<float>(),
       P,
       S);
 
+  AT_CUDA_CHECK(cudaGetLastError());
   return dists;
 }
 
@@ -520,22 +606,38 @@ std::tuple<at::Tensor, at::Tensor> PointEdgeArrayDistanceBackwardCuda(
     const at::Tensor& points,
     const at::Tensor& segms,
     const at::Tensor& grad_dists) {
+  // Check inputs are on the same device
+  at::TensorArg points_t{points, "points", 1}, segms_t{segms, "segms", 2},
+      grad_dists_t{grad_dists, "grad_dists", 3};
+  at::CheckedFrom c = "PointEdgeArrayDistanceBackwardCuda";
+  at::checkAllSameGPU(c, {points_t, segms_t, grad_dists_t});
+  at::checkAllSameType(c, {points_t, segms_t, grad_dists_t});
+
+  // Set the device for the kernel launch based on the device of the input
+  at::cuda::CUDAGuard device_guard(points.device());
+  cudaStream_t stream = at::cuda::getCurrentCUDAStream();
+
   const int64_t P = points.size(0);
   const int64_t S = segms.size(0);
 
-  AT_ASSERTM(points.size(1) == 3, "points must be of shape Px3");
-  AT_ASSERTM(
+  TORCH_CHECK(points.size(1) == 3, "points must be of shape Px3");
+  TORCH_CHECK(
       (segms.size(1) == 2) && (segms.size(2) == 3),
       "segms must be of shape Sx2x3");
-  AT_ASSERTM((grad_dists.size(0) == P) && (grad_dists.size(1) == S));
+  TORCH_CHECK((grad_dists.size(0) == P) && (grad_dists.size(1) == S));
 
   at::Tensor grad_points = at::zeros({P, 3}, points.options());
   at::Tensor grad_segms = at::zeros({S, 2, 3}, segms.options());
 
+  if (grad_points.numel() == 0 || grad_segms.numel() == 0) {
+    AT_CUDA_CHECK(cudaGetLastError());
+    return std::make_tuple(grad_points, grad_segms);
+  }
+
   const size_t blocks = 1024;
   const size_t threads = 64;
 
-  PointEdgeArrayBackwardKernel<<<blocks, threads>>>(
+  PointEdgeArrayBackwardKernel<<<blocks, threads, 0, stream>>>(
       points.data_ptr<float>(),
       segms.data_ptr<float>(),
       grad_dists.data_ptr<float>(),
@@ -543,6 +645,6 @@ std::tuple<at::Tensor, at::Tensor> PointEdgeArrayDistanceBackwardCuda(
       grad_segms.data_ptr<float>(),
       P,
       S);
-
+  AT_CUDA_CHECK(cudaGetLastError());
   return std::make_tuple(grad_points, grad_segms);
 }

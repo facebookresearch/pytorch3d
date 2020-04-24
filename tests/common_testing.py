@@ -20,6 +20,18 @@ def load_rgb_image(filename: str, data_dir: Union[str, Path]):
 TensorOrArray = Union[torch.Tensor, np.ndarray]
 
 
+def get_random_cuda_device() -> str:
+    """
+    Function to get a random GPU device from the
+    available devices. This is useful for testing
+    that custom cuda kernels can support inputs on
+    any device without having to set the device explicitly.
+    """
+    num_devices = torch.cuda.device_count()
+    rand_device_id = torch.randint(high=num_devices, size=(1,)).item()
+    return "cuda:%d" % rand_device_id
+
+
 class TestCaseMixin(unittest.TestCase):
     def assertSeparate(self, tensor1, tensor2) -> None:
         """

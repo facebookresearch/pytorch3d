@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 
 import torch
-from common_testing import TestCaseMixin
+from common_testing import TestCaseMixin, get_random_cuda_device
 from pytorch3d.ops import sample_points_from_meshes
 from pytorch3d.structures.meshes import Meshes
 from pytorch3d.utils.ico_sphere import ico_sphere
@@ -42,7 +42,7 @@ class TestSamplePoints(TestCaseMixin, unittest.TestCase):
         Check sample_points_from_meshes raises an exception if all meshes are
         invalid.
         """
-        device = torch.device("cuda:0")
+        device = get_random_cuda_device()
         verts1 = torch.tensor([], dtype=torch.float32, device=device)
         faces1 = torch.tensor([], dtype=torch.int64, device=device)
         meshes = Meshes(verts=[verts1, verts1, verts1], faces=[faces1, faces1, faces1])
@@ -56,7 +56,7 @@ class TestSamplePoints(TestCaseMixin, unittest.TestCase):
         For an ico_sphere, the sampled vertices should lie on a unit sphere.
         For an empty mesh, the samples and normals should be 0.
         """
-        device = torch.device("cuda:0")
+        device = get_random_cuda_device()
 
         # Unit simplex.
         verts_pyramid = torch.tensor(

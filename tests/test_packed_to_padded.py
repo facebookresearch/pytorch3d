@@ -3,7 +3,7 @@
 import unittest
 
 import torch
-from common_testing import TestCaseMixin
+from common_testing import TestCaseMixin, get_random_cuda_device
 from pytorch3d.ops import packed_to_padded, padded_to_packed
 from pytorch3d.structures.meshes import Meshes
 
@@ -126,13 +126,16 @@ class TestPackedToPadded(TestCaseMixin, unittest.TestCase):
         self._test_packed_to_padded_helper(16, "cpu")
 
     def test_packed_to_padded_flat_cuda(self):
-        self._test_packed_to_padded_helper(0, "cuda:0")
+        device = get_random_cuda_device()
+        self._test_packed_to_padded_helper(0, device)
 
     def test_packed_to_padded_D1_cuda(self):
-        self._test_packed_to_padded_helper(1, "cuda:0")
+        device = get_random_cuda_device()
+        self._test_packed_to_padded_helper(1, device)
 
     def test_packed_to_padded_D16_cuda(self):
-        self._test_packed_to_padded_helper(16, "cuda:0")
+        device = get_random_cuda_device()
+        self._test_packed_to_padded_helper(16, device)
 
     def _test_padded_to_packed_helper(self, D, device):
         """
@@ -191,13 +194,16 @@ class TestPackedToPadded(TestCaseMixin, unittest.TestCase):
         self._test_padded_to_packed_helper(16, "cpu")
 
     def test_padded_to_packed_flat_cuda(self):
-        self._test_padded_to_packed_helper(0, "cuda:0")
+        device = get_random_cuda_device()
+        self._test_padded_to_packed_helper(0, device)
 
     def test_padded_to_packed_D1_cuda(self):
-        self._test_padded_to_packed_helper(1, "cuda:0")
+        device = get_random_cuda_device()
+        self._test_padded_to_packed_helper(1, device)
 
     def test_padded_to_packed_D16_cuda(self):
-        self._test_padded_to_packed_helper(16, "cuda:0")
+        device = get_random_cuda_device()
+        self._test_padded_to_packed_helper(16, device)
 
     def test_invalid_inputs_shapes(self, device="cuda:0"):
         with self.assertRaisesRegex(ValueError, "input can only be 2-dimensional."):

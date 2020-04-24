@@ -33,7 +33,9 @@ class TestCubify(unittest.TestCase):
 
         # 1st-check
         verts, faces = meshes.get_mesh_verts_faces(0)
-        self.assertTrue(torch.allclose(faces.max(), torch.tensor([verts.size(0) - 1])))
+        self.assertTrue(
+            torch.allclose(faces.max().cpu(), torch.tensor([verts.size(0) - 1]))
+        )
         self.assertTrue(
             torch.allclose(
                 verts,
@@ -78,7 +80,9 @@ class TestCubify(unittest.TestCase):
         )
         # 2nd-check
         verts, faces = meshes.get_mesh_verts_faces(1)
-        self.assertTrue(torch.allclose(faces.max(), torch.tensor([verts.size(0) - 1])))
+        self.assertTrue(
+            torch.allclose(faces.max().cpu(), torch.tensor([verts.size(0) - 1]))
+        )
         self.assertTrue(
             torch.allclose(
                 verts,

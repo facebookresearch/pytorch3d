@@ -4,7 +4,7 @@ import functools
 import unittest
 
 import torch
-from common_testing import TestCaseMixin
+from common_testing import TestCaseMixin, get_random_cuda_device
 from pytorch3d import _C
 from pytorch3d.renderer.mesh.rasterize_meshes import (
     rasterize_meshes,
@@ -32,7 +32,7 @@ class TestRasterizeMeshes(TestCaseMixin, unittest.TestCase):
         self._test_back_face_culling(rasterize_meshes, device, bin_size=0)
 
     def test_simple_cuda_naive(self):
-        device = torch.device("cuda:0")
+        device = get_random_cuda_device()
         self._simple_triangle_raster(rasterize_meshes, device, bin_size=0)
         self._simple_blurry_raster(rasterize_meshes, device, bin_size=0)
         self._test_behind_camera(rasterize_meshes, device, bin_size=0)
@@ -40,7 +40,7 @@ class TestRasterizeMeshes(TestCaseMixin, unittest.TestCase):
         self._test_back_face_culling(rasterize_meshes, device, bin_size=0)
 
     def test_simple_cuda_binned(self):
-        device = torch.device("cuda:0")
+        device = get_random_cuda_device()
         self._simple_triangle_raster(rasterize_meshes, device, bin_size=5)
         self._simple_blurry_raster(rasterize_meshes, device, bin_size=5)
         self._test_behind_camera(rasterize_meshes, device, bin_size=5)
@@ -54,7 +54,7 @@ class TestRasterizeMeshes(TestCaseMixin, unittest.TestCase):
         blur_radius = 0.1 ** 2
         faces_per_pixel = 3
 
-        for d in ["cpu", "cuda"]:
+        for d in ["cpu", get_random_cuda_device()]:
             device = torch.device(d)
             compare_grads = True
             # Mesh with a single face.
@@ -164,7 +164,7 @@ class TestRasterizeMeshes(TestCaseMixin, unittest.TestCase):
         verts1.requires_grad = True
         meshes_cpu = Meshes(verts=[verts1], faces=[faces1])
 
-        device = torch.device("cuda:0")
+        device = get_random_cuda_device()
         meshes_cuda = ico_sphere(0, device)
         verts2, faces2 = meshes_cuda.get_mesh_verts_faces(0)
         verts2.requires_grad = True
@@ -186,7 +186,7 @@ class TestRasterizeMeshes(TestCaseMixin, unittest.TestCase):
         return self._test_coarse_rasterize(torch.device("cpu"))
 
     def test_coarse_cuda(self):
-        return self._test_coarse_rasterize(torch.device("cuda:0"))
+        return self._test_coarse_rasterize(get_random_cuda_device())
 
     def test_cpp_vs_cuda_naive_vs_cuda_binned(self):
         # Make sure that the backward pass runs for all pathways
@@ -221,7 +221,7 @@ class TestRasterizeMeshes(TestCaseMixin, unittest.TestCase):
         grad1 = verts.grad.data.cpu().clone()
 
         # Option II: CUDA, naive
-        device = torch.device("cuda:0")
+        device = get_random_cuda_device()
         meshes = ico_sphere(0, device)
         verts, faces = meshes.get_mesh_verts_faces(0)
         verts.requires_grad = True
@@ -229,9 +229,9 @@ class TestRasterizeMeshes(TestCaseMixin, unittest.TestCase):
 
         args = (meshes, image_size, radius, faces_per_pixel, 0, 0)
         idx2, zbuf2, bary2, dist2 = rasterize_meshes(*args)
-        grad_zbuf = grad_zbuf.cuda()
-        grad_dist = grad_dist.cuda()
-        grad_bary = grad_bary.cuda()
+        grad_zbuf = grad_zbuf.to(device)
+        grad_dist = grad_dist.to(device)
+        grad_bary = grad_bary.to(device)
         loss = (
             (zbuf2 * grad_zbuf).sum()
             + (dist2 * grad_dist).sum()
@@ -244,7 +244,6 @@ class TestRasterizeMeshes(TestCaseMixin, unittest.TestCase):
         grad2 = verts.grad.data.cpu().clone()
 
         # Option III: CUDA, binned
-        device = torch.device("cuda:0")
         meshes = ico_sphere(0, device)
         verts, faces = meshes.get_mesh_verts_faces(0)
         verts.requires_grad = True
@@ -302,7 +301,7 @@ class TestRasterizeMeshes(TestCaseMixin, unittest.TestCase):
             bin_size,
             max_faces_per_bin,
         )
-        device = torch.device("cuda:0")
+        device = get_random_cuda_device()
         meshes = meshes.clone().to(device)
 
         faces = meshes.faces_packed()
@@ -356,8 +355,9 @@ class TestRasterizeMeshes(TestCaseMixin, unittest.TestCase):
         verts1, faces1 = meshes.get_mesh_verts_faces(0)
         verts1.requires_grad = True
         meshes1 = Meshes(verts=[verts1], faces=[faces1])
-        verts2 = verts1.detach().cuda().requires_grad_(True)
-        faces2 = faces1.detach().clone().cuda()
+        device = get_random_cuda_device()
+        verts2 = verts1.detach().to(device).requires_grad_(True)
+        faces2 = faces1.detach().clone().to(device)
         meshes2 = Meshes(verts=[verts2], faces=[faces2])
 
         kwargs = {"image_size": 64, "perspective_correct": True}
@@ -367,7 +367,8 @@ class TestRasterizeMeshes(TestCaseMixin, unittest.TestCase):
         self._compare_impls(fn1, fn2, args, args, verts1, verts2, compare_grads=True)
 
     def test_cuda_naive_vs_binned_perspective_correct(self):
-        meshes = ico_sphere(2, device=torch.device("cuda"))
+        device = get_random_cuda_device()
+        meshes = ico_sphere(2, device=device)
         verts1, faces1 = meshes.get_mesh_verts_faces(0)
         verts1.requires_grad = True
         meshes1 = Meshes(verts=[verts1], faces=[faces1])
@@ -1029,7 +1030,7 @@ class TestRasterizeMeshes(TestCaseMixin, unittest.TestCase):
         max_faces_per_bin: int,
     ):
 
-        meshes = ico_sphere(ico_level, torch.device("cuda:0"))
+        meshes = ico_sphere(ico_level, get_random_cuda_device())
         meshes_batch = meshes.extend(num_meshes)
         torch.cuda.synchronize()
 

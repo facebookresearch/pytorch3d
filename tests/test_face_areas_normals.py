@@ -4,7 +4,7 @@
 import unittest
 
 import torch
-from common_testing import TestCaseMixin
+from common_testing import TestCaseMixin, get_random_cuda_device
 from pytorch3d.ops import mesh_face_areas_normals
 from pytorch3d.structures.meshes import Meshes
 
@@ -94,13 +94,15 @@ class TestFaceAreasNormals(TestCaseMixin, unittest.TestCase):
         self._test_face_areas_normals_helper("cpu")
 
     def test_face_areas_normals_cuda(self):
-        self._test_face_areas_normals_helper("cuda:0")
+        device = get_random_cuda_device()
+        self._test_face_areas_normals_helper(device)
 
     def test_nonfloats_cpu(self):
         self._test_face_areas_normals_helper("cpu", dtype=torch.double)
 
     def test_nonfloats_cuda(self):
-        self._test_face_areas_normals_helper("cuda:0", dtype=torch.double)
+        device = get_random_cuda_device()
+        self._test_face_areas_normals_helper(device, dtype=torch.double)
 
     @staticmethod
     def face_areas_normals_with_init(

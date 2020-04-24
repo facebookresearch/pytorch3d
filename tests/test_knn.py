@@ -4,7 +4,7 @@ import unittest
 from itertools import product
 
 import torch
-from common_testing import TestCaseMixin
+from common_testing import TestCaseMixin, get_random_cuda_device
 from pytorch3d.ops.knn import _KNN, knn_gather, knn_points
 
 
@@ -89,7 +89,7 @@ class TestKNN(TestCaseMixin, unittest.TestCase):
         self._knn_vs_python_square_helper(device)
 
     def test_knn_vs_python_square_cuda(self):
-        device = torch.device("cuda:0")
+        device = get_random_cuda_device()
         self._knn_vs_python_square_helper(device)
 
     def _knn_vs_python_ragged_helper(self, device):
@@ -133,11 +133,11 @@ class TestKNN(TestCaseMixin, unittest.TestCase):
         self._knn_vs_python_ragged_helper(device)
 
     def test_knn_vs_python_ragged_cuda(self):
-        device = torch.device("cuda:0")
+        device = get_random_cuda_device()
         self._knn_vs_python_ragged_helper(device)
 
     def test_knn_gather(self):
-        device = torch.device("cuda:0")
+        device = get_random_cuda_device()
         N, P1, P2, K, D = 4, 16, 12, 8, 3
         x = torch.rand((N, P1, D), device=device)
         y = torch.rand((N, P2, D), device=device)

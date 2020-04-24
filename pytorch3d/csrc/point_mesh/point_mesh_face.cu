@@ -1,6 +1,8 @@
 // Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
 #include <ATen/ATen.h>
+#include <ATen/cuda/CUDAContext.h>
+#include <c10/cuda/CUDAGuard.h>
 #include <algorithm>
 #include <list>
 #include <queue>
@@ -104,26 +106,45 @@ std::tuple<at::Tensor, at::Tensor> PointFaceDistanceForwardCuda(
     const at::Tensor& tris,
     const at::Tensor& tris_first_idx,
     const int64_t max_points) {
+  // Check inputs are on the same device
+  at::TensorArg points_t{points, "points", 1},
+      points_first_idx_t{points_first_idx, "points_first_idx", 2},
+      tris_t{tris, "tris", 3},
+      tris_first_idx_t{tris_first_idx, "tris_first_idx", 4};
+  at::CheckedFrom c = "PointFaceDistanceForwardCuda";
+  at::checkAllSameGPU(
+      c, {points_t, points_first_idx_t, tris_t, tris_first_idx_t});
+  at::checkAllSameType(c, {points_t, tris_t});
+
+  // Set the device for the kernel launch based on the device of the input
+  at::cuda::CUDAGuard device_guard(points.device());
+  cudaStream_t stream = at::cuda::getCurrentCUDAStream();
+
   const int64_t P = points.size(0);
   const int64_t T = tris.size(0);
   const int64_t B = points_first_idx.size(0);
 
-  AT_ASSERTM(points.size(1) == 3, "points must be of shape Px3");
-  AT_ASSERTM(
+  TORCH_CHECK(points.size(1) == 3, "points must be of shape Px3");
+  TORCH_CHECK(
       (tris.size(1) == 3) && (tris.size(2) == 3),
       "tris must be of shape Tx3x3");
-  AT_ASSERTM(tris_first_idx.size(0) == B);
+  TORCH_CHECK(tris_first_idx.size(0) == B);
 
   // clang-format off
   at::Tensor dists = at::zeros({P,}, points.options());
   at::Tensor idxs = at::zeros({P,}, points_first_idx.options());
   // clang-format on
 
+  if (dists.numel() == 0) {
+    AT_CUDA_CHECK(cudaGetLastError());
+    return std::make_tuple(dists, idxs);
+  }
+
   const int threads = 128;
   const dim3 blocks(max_points, B);
   size_t shared_size = threads * sizeof(size_t) + threads * sizeof(int64_t);
 
-  PointFaceForwardKernel<<<blocks, threads, shared_size>>>(
+  PointFaceForwardKernel<<<blocks, threads, shared_size, stream>>>(
       points.data_ptr<float>(),
       points_first_idx.data_ptr<int64_t>(),
       tris.data_ptr<float>(),
@@ -134,6 +155,7 @@ std::tuple<at::Tensor, at::Tensor> PointFaceDistanceForwardCuda(
       P,
       T);
 
+  AT_CUDA_CHECK(cudaGetLastError());
   return std::make_tuple(dists, idxs);
 }
 
@@ -191,25 +213,42 @@ std::tuple<at::Tensor, at::Tensor> PointFaceDistanceBackwardCuda(
     const at::Tensor& tris,
     const at::Tensor& idx_points,
     const at::Tensor& grad_dists) {
+  // Check inputs are on the same device
+  at::TensorArg points_t{points, "points", 1},
+      idx_points_t{idx_points, "idx_points", 2}, tris_t{tris, "tris", 3},
+      grad_dists_t{grad_dists, "grad_dists", 4};
+  at::CheckedFrom c = "PointFaceDistanceBackwardCuda";
+  at::checkAllSameGPU(c, {points_t, idx_points_t, tris_t, grad_dists_t});
+  at::checkAllSameType(c, {points_t, tris_t, grad_dists_t});
+
+  // Set the device for the kernel launch based on the device of the input
+  at::cuda::CUDAGuard device_guard(points.device());
+  cudaStream_t stream = at::cuda::getCurrentCUDAStream();
+
   const int64_t P = points.size(0);
   const int64_t T = tris.size(0);
 
-  AT_ASSERTM(points.size(1) == 3, "points must be of shape Px3");
-  AT_ASSERTM(
+  TORCH_CHECK(points.size(1) == 3, "points must be of shape Px3");
+  TORCH_CHECK(
       (tris.size(1) == 3) && (tris.size(2) == 3),
       "tris must be of shape Tx3x3");
-  AT_ASSERTM(idx_points.size(0) == P);
-  AT_ASSERTM(grad_dists.size(0) == P);
+  TORCH_CHECK(idx_points.size(0) == P);
+  TORCH_CHECK(grad_dists.size(0) == P);
 
   // clang-format off
   at::Tensor grad_points = at::zeros({P, 3}, points.options());
   at::Tensor grad_tris = at::zeros({T, 3, 3}, tris.options());
   // clang-format on
 
+  if (grad_points.numel() == 0 || grad_tris.numel() == 0) {
+    AT_CUDA_CHECK(cudaGetLastError());
+    return std::make_tuple(grad_points, grad_tris);
+  }
+
   const int blocks = 64;
   const int threads = 512;
 
-  PointFaceBackwardKernel<<<blocks, threads>>>(
+  PointFaceBackwardKernel<<<blocks, threads, 0, stream>>>(
       points.data_ptr<float>(),
       tris.data_ptr<float>(),
       idx_points.data_ptr<int64_t>(),
@@ -218,6 +257,7 @@ std::tuple<at::Tensor, at::Tensor> PointFaceDistanceBackwardCuda(
       grad_tris.data_ptr<float>(),
       P);
 
+  AT_CUDA_CHECK(cudaGetLastError());
   return std::make_tuple(grad_points, grad_tris);
 }
 
@@ -317,26 +357,45 @@ std::tuple<at::Tensor, at::Tensor> FacePointDistanceForwardCuda(
     const at::Tensor& tris,
     const at::Tensor& tris_first_idx,
     const int64_t max_tris) {
+  // Check inputs are on the same device
+  at::TensorArg points_t{points, "points", 1},
+      points_first_idx_t{points_first_idx, "points_first_idx", 2},
+      tris_t{tris, "tris", 3},
+      tris_first_idx_t{tris_first_idx, "tris_first_idx", 4};
+  at::CheckedFrom c = "FacePointDistanceForwardCuda";
+  at::checkAllSameGPU(
+      c, {points_t, points_first_idx_t, tris_t, tris_first_idx_t});
+  at::checkAllSameType(c, {points_t, tris_t});
+
+  // Set the device for the kernel launch based on the device of the input
+  at::cuda::CUDAGuard device_guard(points.device());
+  cudaStream_t stream = at::cuda::getCurrentCUDAStream();
+
   const int64_t P = points.size(0);
   const int64_t T = tris.size(0);
   const int64_t B = points_first_idx.size(0);
 
-  AT_ASSERTM(points.size(1) == 3, "points must be of shape Px3");
-  AT_ASSERTM(
+  TORCH_CHECK(points.size(1) == 3, "points must be of shape Px3");
+  TORCH_CHECK(
       (tris.size(1) == 3) && (tris.size(2) == 3),
       "tris must be of shape Tx3x3");
-  AT_ASSERTM(tris_first_idx.size(0) == B);
+  TORCH_CHECK(tris_first_idx.size(0) == B);
 
   // clang-format off
   at::Tensor dists = at::zeros({T,}, tris.options());
   at::Tensor idxs = at::zeros({T,}, tris_first_idx.options());
   // clang-format on
 
+  if (dists.numel() == 0) {
+    AT_CUDA_CHECK(cudaGetLastError());
+    return std::make_tuple(dists, idxs);
+  }
+
   const int threads = 128;
   const dim3 blocks(max_tris, B);
   size_t shared_size = threads * sizeof(size_t) + threads * sizeof(int64_t);
 
-  FacePointForwardKernel<<<blocks, threads, shared_size>>>(
+  FacePointForwardKernel<<<blocks, threads, shared_size, stream>>>(
       points.data_ptr<float>(),
       points_first_idx.data_ptr<int64_t>(),
       tris.data_ptr<float>(),
@@ -347,6 +406,7 @@ std::tuple<at::Tensor, at::Tensor> FacePointDistanceForwardCuda(
       P,
       T);
 
+  AT_CUDA_CHECK(cudaGetLastError());
   return std::make_tuple(dists, idxs);
 }
 
@@ -405,25 +465,42 @@ std::tuple<at::Tensor, at::Tensor> FacePointDistanceBackwardCuda(
     const at::Tensor& tris,
     const at::Tensor& idx_tris,
     const at::Tensor& grad_dists) {
+  // Check inputs are on the same device
+  at::TensorArg points_t{points, "points", 1},
+      idx_tris_t{idx_tris, "idx_tris", 2}, tris_t{tris, "tris", 3},
+      grad_dists_t{grad_dists, "grad_dists", 4};
+  at::CheckedFrom c = "FacePointDistanceBackwardCuda";
+  at::checkAllSameGPU(c, {points_t, idx_tris_t, tris_t, grad_dists_t});
+  at::checkAllSameType(c, {points_t, tris_t, grad_dists_t});
+
+  // Set the device for the kernel launch based on the device of the input
+  at::cuda::CUDAGuard device_guard(points.device());
+  cudaStream_t stream = at::cuda::getCurrentCUDAStream();
+
   const int64_t P = points.size(0);
   const int64_t T = tris.size(0);
 
-  AT_ASSERTM(points.size(1) == 3, "points must be of shape Px3");
-  AT_ASSERTM(
+  TORCH_CHECK(points.size(1) == 3, "points must be of shape Px3");
+  TORCH_CHECK(
       (tris.size(1) == 3) && (tris.size(2) == 3),
       "tris must be of shape Tx3x3");
-  AT_ASSERTM(idx_tris.size(0) == T);
-  AT_ASSERTM(grad_dists.size(0) == T);
+  TORCH_CHECK(idx_tris.size(0) == T);
+  TORCH_CHECK(grad_dists.size(0) == T);
 
   // clang-format off
   at::Tensor grad_points = at::zeros({P, 3}, points.options());
   at::Tensor grad_tris = at::zeros({T, 3, 3}, tris.options());
   // clang-format on
 
+  if (grad_points.numel() == 0 || grad_tris.numel() == 0) {
+    AT_CUDA_CHECK(cudaGetLastError());
+    return std::make_tuple(grad_points, grad_tris);
+  }
+
   const int blocks = 64;
   const int threads = 512;
 
-  FacePointBackwardKernel<<<blocks, threads>>>(
+  FacePointBackwardKernel<<<blocks, threads, 0, stream>>>(
       points.data_ptr<float>(),
       tris.data_ptr<float>(),
       idx_tris.data_ptr<int64_t>(),
@@ -432,6 +509,7 @@ std::tuple<at::Tensor, at::Tensor> FacePointDistanceBackwardCuda(
       grad_tris.data_ptr<float>(),
       T);
 
+  AT_CUDA_CHECK(cudaGetLastError());
   return std::make_tuple(grad_points, grad_tris);
 }
 
@@ -468,26 +546,42 @@ __global__ void PointFaceArrayForwardKernel(
 at::Tensor PointFaceArrayDistanceForwardCuda(
     const at::Tensor& points,
     const at::Tensor& tris) {
+  // Check inputs are on the same device
+  at::TensorArg points_t{points, "points", 1}, tris_t{tris, "tris", 2};
+  at::CheckedFrom c = "PointFaceArrayDistanceForwardCuda";
+  at::checkAllSameGPU(c, {points_t, tris_t});
+  at::checkAllSameType(c, {points_t, tris_t});
+
+  // Set the device for the kernel launch based on the device of the input
+  at::cuda::CUDAGuard device_guard(points.device());
+  cudaStream_t stream = at::cuda::getCurrentCUDAStream();
+
   const int64_t P = points.size(0);
   const int64_t T = tris.size(0);
 
-  AT_ASSERTM(points.size(1) == 3, "points must be of shape Px3");
-  AT_ASSERTM(
+  TORCH_CHECK(points.size(1) == 3, "points must be of shape Px3");
+  TORCH_CHECK(
       (tris.size(1) == 3) && (tris.size(2) == 3),
       "tris must be of shape Tx3x3");
 
   at::Tensor dists = at::zeros({P, T}, points.options());
 
+  if (dists.numel() == 0) {
+    AT_CUDA_CHECK(cudaGetLastError());
+    return dists;
+  }
+
   const size_t blocks = 1024;
   const size_t threads = 64;
 
-  PointFaceArrayForwardKernel<<<blocks, threads>>>(
+  PointFaceArrayForwardKernel<<<blocks, threads, 0, stream>>>(
       points.data_ptr<float>(),
       tris.data_ptr<float>(),
       dists.data_ptr<float>(),
       P,
       T);
 
+  AT_CUDA_CHECK(cudaGetLastError());
   return dists;
 }
 
@@ -546,22 +640,38 @@ std::tuple<at::Tensor, at::Tensor> PointFaceArrayDistanceBackwardCuda(
     const at::Tensor& points,
     const at::Tensor& tris,
     const at::Tensor& grad_dists) {
+  // Check inputs are on the same device
+  at::TensorArg points_t{points, "points", 1}, tris_t{tris, "tris", 2},
+      grad_dists_t{grad_dists, "grad_dists", 3};
+  at::CheckedFrom c = "PointFaceArrayDistanceBackwardCuda";
+  at::checkAllSameGPU(c, {points_t, tris_t, grad_dists_t});
+  at::checkAllSameType(c, {points_t, tris_t, grad_dists_t});
+
+  // Set the device for the kernel launch based on the device of the input
+  at::cuda::CUDAGuard device_guard(points.device());
+  cudaStream_t stream = at::cuda::getCurrentCUDAStream();
+
   const int64_t P = points.size(0);
   const int64_t T = tris.size(0);
 
-  AT_ASSERTM(points.size(1) == 3, "points must be of shape Px3");
-  AT_ASSERTM(
+  TORCH_CHECK(points.size(1) == 3, "points must be of shape Px3");
+  TORCH_CHECK(
       (tris.size(1) == 3) && (tris.size(2) == 3),
       "tris must be of shape Tx3x3");
-  AT_ASSERTM((grad_dists.size(0) == P) && (grad_dists.size(1) == T));
+  TORCH_CHECK((grad_dists.size(0) == P) && (grad_dists.size(1) == T));
 
   at::Tensor grad_points = at::zeros({P, 3}, points.options());
   at::Tensor grad_tris = at::zeros({T, 3, 3}, tris.options());
 
+  if (grad_points.numel() == 0 || grad_tris.numel() == 0) {
+    AT_CUDA_CHECK(cudaGetLastError());
+    return std::make_tuple(grad_points, grad_tris);
+  }
+
   const size_t blocks = 1024;
   const size_t threads = 64;
 
-  PointFaceArrayBackwardKernel<<<blocks, threads>>>(
+  PointFaceArrayBackwardKernel<<<blocks, threads, 0, stream>>>(
       points.data_ptr<float>(),
       tris.data_ptr<float>(),
       grad_dists.data_ptr<float>(),
@@ -570,5 +680,6 @@ std::tuple<at::Tensor, at::Tensor> PointFaceArrayDistanceBackwardCuda(
       P,
       T);
 
+  AT_CUDA_CHECK(cudaGetLastError());
   return std::make_tuple(grad_points, grad_tris);
 }

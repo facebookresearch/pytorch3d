@@ -1,6 +1,8 @@
 // Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
 #include <ATen/ATen.h>
+#include <ATen/cuda/CUDAContext.h>
+#include <c10/cuda/CUDAGuard.h>
 
 // Kernel for inputs_packed of shape (F, D), where D > 1
 template <typename scalar_t>
@@ -114,21 +116,36 @@ at::Tensor PackedToPaddedCuda(
     const at::Tensor inputs_packed,
     const at::Tensor first_idxs,
     const int64_t max_size) {
+  // Check inputs are on the same device
+  at::TensorArg inputs_packed_t{inputs_packed, "inputs_packed", 1},
+      first_idxs_t{first_idxs, "first_idxs", 2};
+  at::CheckedFrom c = "PackedToPaddedCuda";
+  at::checkAllSameGPU(c, {inputs_packed_t, first_idxs_t});
+
+  // Set the device for the kernel launch based on the device of the input
+  at::cuda::CUDAGuard device_guard(inputs_packed.device());
+  cudaStream_t stream = at::cuda::getCurrentCUDAStream();
+
   const int64_t num_inputs = inputs_packed.size(0);
   const int64_t batch_size = first_idxs.size(0);
 
-  AT_ASSERTM(
+  TORCH_CHECK(
       inputs_packed.dim() == 2, "inputs_packed must be a 2-dimensional tensor");
   const int64_t D = inputs_packed.size(1);
   at::Tensor inputs_padded =
       at::zeros({batch_size, max_size, D}, inputs_packed.options());
+
+  if (inputs_padded.numel() == 0) {
+    AT_CUDA_CHECK(cudaGetLastError());
+    return inputs_padded;
+  }
 
   const int threads = 512;
   const int blocks = batch_size;
   if (D == 1) {
     AT_DISPATCH_FLOATING_TYPES(
         inputs_packed.scalar_type(), "packed_to_padded_d1_kernel", ([&] {
-          PackedToPaddedKernelD1<scalar_t><<<blocks, threads>>>(
+          PackedToPaddedKernelD1<scalar_t><<<blocks, threads, 0, stream>>>(
               inputs_packed.data_ptr<scalar_t>(),
               first_idxs.data_ptr<int64_t>(),
               inputs_padded.data_ptr<scalar_t>(),
@@ -139,7 +156,7 @@ at::Tensor PackedToPaddedCuda(
   } else {
     AT_DISPATCH_FLOATING_TYPES(
         inputs_packed.scalar_type(), "packed_to_padded_kernel", ([&] {
-          PackedToPaddedKernel<scalar_t><<<blocks, threads>>>(
+          PackedToPaddedKernel<scalar_t><<<blocks, threads, 0, stream>>>(
               inputs_packed.data_ptr<scalar_t>(),
               first_idxs.data_ptr<int64_t>(),
               inputs_padded.data_ptr<scalar_t>(),
@@ -150,6 +167,7 @@ at::Tensor PackedToPaddedCuda(
         }));
   }
 
+  AT_CUDA_CHECK(cudaGetLastError());
   return inputs_padded;
 }
 
@@ -157,11 +175,21 @@ at::Tensor PaddedToPackedCuda(
     const at::Tensor inputs_padded,
     const at::Tensor first_idxs,
     const int64_t num_inputs) {
+  // Check inputs are on the same device
+  at::TensorArg inputs_padded_t{inputs_padded, "inputs_padded", 1},
+      first_idxs_t{first_idxs, "first_idxs", 2};
+  at::CheckedFrom c = "PaddedToPackedCuda";
+  at::checkAllSameGPU(c, {inputs_padded_t, first_idxs_t});
+
+  // Set the device for the kernel launch based on the device of the input
+  at::cuda::CUDAGuard device_guard(inputs_padded.device());
+  cudaStream_t stream = at::cuda::getCurrentCUDAStream();
+
   const int64_t batch_size = inputs_padded.size(0);
   const int64_t max_size = inputs_padded.size(1);
 
-  AT_ASSERTM(batch_size == first_idxs.size(0), "sizes mismatch");
-  AT_ASSERTM(
+  TORCH_CHECK(batch_size == first_idxs.size(0), "sizes mismatch");
+  TORCH_CHECK(
       inputs_padded.dim() == 3,
       "inputs_padded  must be a 3-dimensional tensor");
   const int64_t D = inputs_padded.size(2);
@@ -169,13 +197,18 @@ at::Tensor PaddedToPackedCuda(
   at::Tensor inputs_packed =
       at::zeros({num_inputs, D}, inputs_padded.options());
 
+  if (inputs_packed.numel() == 0) {
+    AT_CUDA_CHECK(cudaGetLastError());
+    return inputs_packed;
+  }
+
   const int threads = 512;
   const int blocks = batch_size;
 
   if (D == 1) {
     AT_DISPATCH_FLOATING_TYPES(
         inputs_padded.scalar_type(), "padded_to_packed_d1_kernel", ([&] {
-          PaddedToPackedKernelD1<scalar_t><<<blocks, threads>>>(
+          PaddedToPackedKernelD1<scalar_t><<<blocks, threads, 0, stream>>>(
               inputs_padded.data_ptr<scalar_t>(),
               first_idxs.data_ptr<int64_t>(),
               inputs_packed.data_ptr<scalar_t>(),
@@ -186,7 +219,7 @@ at::Tensor PaddedToPackedCuda(
   } else {
     AT_DISPATCH_FLOATING_TYPES(
         inputs_padded.scalar_type(), "padded_to_packed_kernel", ([&] {
-          PaddedToPackedKernel<scalar_t><<<blocks, threads>>>(
+          PaddedToPackedKernel<scalar_t><<<blocks, threads, 0, stream>>>(
               inputs_padded.data_ptr<scalar_t>(),
               first_idxs.data_ptr<int64_t>(),
               inputs_packed.data_ptr<scalar_t>(),
@@ -197,5 +230,6 @@ at::Tensor PaddedToPackedCuda(
         }));
   }
 
+  AT_CUDA_CHECK(cudaGetLastError());
   return inputs_packed;
 }

@@ -1,6 +1,8 @@
 // Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
 #include <ATen/ATen.h>
+#include <ATen/cuda/CUDAContext.h>
+#include <c10/cuda/CUDAGuard.h>
 #include <float.h>
 #include <iostream>
 #include <tuple>
@@ -114,7 +116,8 @@ struct KNearestNeighborV1Functor {
       const size_t P1,
       const size_t P2,
       const size_t K) {
-    KNearestNeighborKernelV1<scalar_t, D><<<blocks, threads>>>(
+    cudaStream_t stream = at::cuda::getCurrentCUDAStream();
+    KNearestNeighborKernelV1<scalar_t, D><<<blocks, threads, 0, stream>>>(
         points1, points2, lengths1, lengths2, dists, idxs, N, P1, P2, K);
   }
 };
@@ -178,7 +181,8 @@ struct KNearestNeighborKernelV2Functor {
       const int64_t N,
       const int64_t P1,
       const int64_t P2) {
-    KNearestNeighborKernelV2<scalar_t, D, K><<<blocks, threads>>>(
+    cudaStream_t stream = at::cuda::getCurrentCUDAStream();
+    KNearestNeighborKernelV2<scalar_t, D, K><<<blocks, threads, 0, stream>>>(
         points1, points2, lengths1, lengths2, dists, idxs, N, P1, P2);
   }
 };
@@ -245,7 +249,8 @@ struct KNearestNeighborKernelV3Functor {
       const size_t N,
       const size_t P1,
       const size_t P2) {
-    KNearestNeighborKernelV3<scalar_t, D, K><<<blocks, threads>>>(
+    cudaStream_t stream = at::cuda::getCurrentCUDAStream();
+    KNearestNeighborKernelV3<scalar_t, D, K><<<blocks, threads, 0, stream>>>(
         points1, points2, lengths1, lengths2, dists, idxs, N, P1, P2);
   }
 };
@@ -296,16 +301,32 @@ std::tuple<at::Tensor, at::Tensor> KNearestNeighborIdxCuda(
     const at::Tensor& lengths2,
     int K,
     int version) {
+  // Check inputs are on the same device
+  at::TensorArg p1_t{p1, "p1", 1}, p2_t{p2, "p2", 2},
+      lengths1_t{lengths1, "lengths1", 3}, lengths2_t{lengths2, "lengths2", 4};
+  at::CheckedFrom c = "KNearestNeighborIdxCuda";
+  at::checkAllSameGPU(c, {p1_t, p2_t, lengths1_t, lengths2_t});
+  at::checkAllSameType(c, {p1_t, p2_t});
+
+  // Set the device for the kernel launch based on the device of the input
+  at::cuda::CUDAGuard device_guard(p1.device());
+  cudaStream_t stream = at::cuda::getCurrentCUDAStream();
+
   const auto N = p1.size(0);
   const auto P1 = p1.size(1);
   const auto P2 = p2.size(1);
   const auto D = p2.size(2);
   const int64_t K_64 = K;
 
-  AT_ASSERTM(p2.size(2) == D, "Point sets must have the same last dimension");
+  TORCH_CHECK(p2.size(2) == D, "Point sets must have the same last dimension");
   auto long_dtype = p1.options().dtype(at::kLong);
   auto idxs = at::zeros({N, P1, K}, long_dtype);
   auto dists = at::zeros({N, P1, K}, p1.options());
+
+  if (idxs.numel() == 0) {
+    AT_CUDA_CHECK(cudaGetLastError());
+    return std::make_tuple(idxs, dists);
+  }
 
   if (version < 0) {
     version = ChooseVersion(D, K);
@@ -328,7 +349,7 @@ std::tuple<at::Tensor, at::Tensor> KNearestNeighborIdxCuda(
   if (version == 0) {
     AT_DISPATCH_FLOATING_TYPES(p1.scalar_type(), "knn_kernel_cuda", ([&] {
                                  KNearestNeighborKernelV0<scalar_t>
-                                     <<<blocks, threads>>>(
+                                     <<<blocks, threads, 0, stream>>>(
                                          p1.data_ptr<scalar_t>(),
                                          p2.data_ptr<scalar_t>(),
                                          lengths1.data_ptr<int64_t>(),
@@ -409,7 +430,7 @@ std::tuple<at::Tensor, at::Tensor> KNearestNeighborIdxCuda(
                                      P2);
                                }));
   }
-
+  AT_CUDA_CHECK(cudaGetLastError());
   return std::make_tuple(idxs, dists);
 }
 
@@ -465,27 +486,45 @@ std::tuple<at::Tensor, at::Tensor> KNearestNeighborBackwardCuda(
     const at::Tensor& lengths2,
     const at::Tensor& idxs,
     const at::Tensor& grad_dists) {
+  // Check inputs are on the same device
+  at::TensorArg p1_t{p1, "p1", 1}, p2_t{p2, "p2", 2},
+      lengths1_t{lengths1, "lengths1", 3}, lengths2_t{lengths2, "lengths2", 4},
+      idxs_t{idxs, "idxs", 5}, grad_dists_t{grad_dists, "grad_dists", 6};
+  at::CheckedFrom c = "KNearestNeighborBackwardCuda";
+  at::checkAllSameGPU(
+      c, {p1_t, p2_t, lengths1_t, lengths2_t, idxs_t, grad_dists_t});
+  at::checkAllSameType(c, {p1_t, p2_t, grad_dists_t});
+
+  // Set the device for the kernel launch based on the device of the input
+  at::cuda::CUDAGuard device_guard(p1.device());
+  cudaStream_t stream = at::cuda::getCurrentCUDAStream();
+
   const auto N = p1.size(0);
   const auto P1 = p1.size(1);
   const auto P2 = p2.size(1);
   const auto D = p2.size(2);
   const auto K = idxs.size(2);
 
-  AT_ASSERTM(p2.size(2) == D, "Point sets must have the same last dimension");
-  AT_ASSERTM(idxs.size(0) == N, "KNN idxs must have the same batch dimension");
-  AT_ASSERTM(
+  TORCH_CHECK(p2.size(2) == D, "Point sets must have the same last dimension");
+  TORCH_CHECK(idxs.size(0) == N, "KNN idxs must have the same batch dimension");
+  TORCH_CHECK(
       idxs.size(1) == P1, "KNN idxs must have the same point dimension as p1");
-  AT_ASSERTM(grad_dists.size(0) == N);
-  AT_ASSERTM(grad_dists.size(1) == P1);
-  AT_ASSERTM(grad_dists.size(2) == K);
+  TORCH_CHECK(grad_dists.size(0) == N);
+  TORCH_CHECK(grad_dists.size(1) == P1);
+  TORCH_CHECK(grad_dists.size(2) == K);
 
   auto grad_p1 = at::zeros({N, P1, D}, p1.options());
   auto grad_p2 = at::zeros({N, P2, D}, p2.options());
 
+  if (grad_p1.numel() == 0 || grad_p2.numel() == 0) {
+    AT_CUDA_CHECK(cudaGetLastError());
+    return std::make_tuple(grad_p1, grad_p2);
+  }
+
   const int blocks = 64;
   const int threads = 512;
 
-  KNearestNeighborBackwardKernel<<<blocks, threads>>>(
+  KNearestNeighborBackwardKernel<<<blocks, threads, 0, stream>>>(
       p1.data_ptr<float>(),
       p2.data_ptr<float>(),
       lengths1.data_ptr<int64_t>(),
@@ -500,5 +539,6 @@ std::tuple<at::Tensor, at::Tensor> KNearestNeighborBackwardCuda(
       K,
       D);
 
+  AT_CUDA_CHECK(cudaGetLastError());
   return std::make_tuple(grad_p1, grad_p2);
 }

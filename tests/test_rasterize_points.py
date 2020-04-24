@@ -5,7 +5,7 @@ import unittest
 
 import numpy as np
 import torch
-from common_testing import TestCaseMixin
+from common_testing import TestCaseMixin, get_random_cuda_device
 from pytorch3d import _C
 from pytorch3d.renderer.points.rasterize_points import (
     rasterize_points,
@@ -25,7 +25,7 @@ class TestRasterizePoints(TestCaseMixin, unittest.TestCase):
         self._simple_test_case(rasterize_points, device)
 
     def test_naive_simple_cuda(self):
-        device = torch.device("cuda")
+        device = get_random_cuda_device()
         self._simple_test_case(rasterize_points, device, bin_size=0)
 
     def test_python_behind_camera(self):
@@ -37,7 +37,8 @@ class TestRasterizePoints(TestCaseMixin, unittest.TestCase):
         self._test_behind_camera(rasterize_points, torch.device("cpu"))
 
     def test_cuda_behind_camera(self):
-        self._test_behind_camera(rasterize_points, torch.device("cuda"), bin_size=0)
+        device = get_random_cuda_device()
+        self._test_behind_camera(rasterize_points, device, bin_size=0)
 
     def test_cpp_vs_naive_vs_binned(self):
         # Make sure that the backward pass runs for all pathways
@@ -373,7 +374,8 @@ class TestRasterizePoints(TestCaseMixin, unittest.TestCase):
         return self._test_coarse_rasterize(torch.device("cpu"))
 
     def test_coarse_cuda(self):
-        return self._test_coarse_rasterize(torch.device("cuda"))
+        device = get_random_cuda_device()
+        return self._test_coarse_rasterize(device)
 
     def test_compare_coarse_cpu_vs_cuda(self):
         torch.manual_seed(231)
@@ -405,7 +407,8 @@ class TestRasterizePoints(TestCaseMixin, unittest.TestCase):
         )
         bp_cpu = _C._rasterize_points_coarse(*args)
 
-        pointclouds_cuda = pointclouds.to("cuda:0")
+        device = get_random_cuda_device()
+        pointclouds_cuda = pointclouds.to(device)
         points_packed = pointclouds_cuda.points_packed()
         cloud_to_packed_first_idx = pointclouds_cuda.cloud_to_packed_first_idx()
         num_points_per_cloud = pointclouds_cuda.num_points_per_cloud()

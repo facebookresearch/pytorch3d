@@ -3,6 +3,7 @@
 import unittest
 
 import torch
+from common_testing import TestCaseMixin, get_random_cuda_device
 from pytorch3d.renderer.compositing import (
     alpha_composite,
     norm_weighted_sum,
@@ -10,7 +11,7 @@ from pytorch3d.renderer.compositing import (
 )
 
 
-class TestAccumulatePoints(unittest.TestCase):
+class TestAccumulatePoints(TestCaseMixin, unittest.TestCase):
 
     # NAIVE PYTHON IMPLEMENTATIONS (USED FOR TESTING)
     @staticmethod
@@ -120,7 +121,7 @@ class TestAccumulatePoints(unittest.TestCase):
         self._simple_wsumnorm(norm_weighted_sum, device)
 
     def test_cuda(self):
-        device = torch.device("cuda:0")
+        device = get_random_cuda_device()
         self._simple_alphacomposite(alpha_composite, device)
         self._simple_wsum(weighted_sum, device)
         self._simple_wsumnorm(norm_weighted_sum, device)
@@ -142,7 +143,7 @@ class TestAccumulatePoints(unittest.TestCase):
         C = 3
         P = 32
 
-        for d in ["cpu", "cuda"]:
+        for d in ["cpu", get_random_cuda_device()]:
             # TODO(gkioxari) add torch.float64 to types after double precision
             # support is added to atomicAdd
             for t in [torch.float32]:
@@ -181,7 +182,7 @@ class TestAccumulatePoints(unittest.TestCase):
         res1 = fn1(*args1)
         res2 = fn2(*args2)
 
-        self.assertTrue(torch.allclose(res1.cpu(), res2.cpu(), atol=1e-6))
+        self.assertClose(res1.cpu(), res2.cpu(), atol=1e-6)
 
         if not compare_grads:
             return
@@ -200,7 +201,7 @@ class TestAccumulatePoints(unittest.TestCase):
         grads2 = [gradsi.grad.data.clone().cpu() for gradsi in grads2]
 
         for i in range(0, len(grads1)):
-            self.assertTrue(torch.allclose(grads1[i].cpu(), grads2[i].cpu(), atol=1e-6))
+            self.assertClose(grads1[i].cpu(), grads2[i].cpu(), atol=1e-6)
 
     def _simple_wsum(self, accum_func, device):
         # Initialise variables
@@ -273,7 +274,7 @@ class TestAccumulatePoints(unittest.TestCase):
             ]
         ).to(device)
 
-        self.assertTrue(torch.allclose(result.cpu(), true_result.cpu(), rtol=1e-3))
+        self.assertClose(result.cpu(), true_result.cpu(), rtol=1e-3)
 
     def _simple_wsumnorm(self, accum_func, device):
         # Initialise variables
@@ -346,7 +347,7 @@ class TestAccumulatePoints(unittest.TestCase):
             ]
         ).to(device)
 
-        self.assertTrue(torch.allclose(result.cpu(), true_result.cpu(), rtol=1e-3))
+        self.assertClose(result.cpu(), true_result.cpu(), rtol=1e-3)
 
     def _simple_alphacomposite(self, accum_func, device):
         # Initialise variables

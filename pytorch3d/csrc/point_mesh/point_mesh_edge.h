@@ -4,6 +4,7 @@
 #include <torch/extension.h>
 #include <cstdio>
 #include <tuple>
+#include "utils/pytorch3d_cutils.h"
 
 // ****************************************************************************
 // *                      PointEdgeDistance                                   *
@@ -53,6 +54,10 @@ std::tuple<torch::Tensor, torch::Tensor> PointEdgeDistanceForward(
     const int64_t max_points) {
   if (points.is_cuda()) {
 #ifdef WITH_CUDA
+    CHECK_CONTIGUOUS_CUDA(points);
+    CHECK_CONTIGUOUS_CUDA(points_first_idx);
+    CHECK_CONTIGUOUS_CUDA(segms);
+    CHECK_CONTIGUOUS_CUDA(segms_first_idx);
     return PointEdgeDistanceForwardCuda(
         points, points_first_idx, segms, segms_first_idx, max_points);
 #else
@@ -93,6 +98,10 @@ std::tuple<torch::Tensor, torch::Tensor> PointEdgeDistanceBackward(
     const torch::Tensor& grad_dists) {
   if (points.is_cuda()) {
 #ifdef WITH_CUDA
+    CHECK_CONTIGUOUS_CUDA(points);
+    CHECK_CONTIGUOUS_CUDA(segms);
+    CHECK_CONTIGUOUS_CUDA(idx_points);
+    CHECK_CONTIGUOUS_CUDA(grad_dists);
     return PointEdgeDistanceBackwardCuda(points, segms, idx_points, grad_dists);
 #else
     AT_ERROR("Not compiled with GPU support.");
@@ -149,6 +158,10 @@ std::tuple<torch::Tensor, torch::Tensor> EdgePointDistanceForward(
     const int64_t max_segms) {
   if (points.is_cuda()) {
 #ifdef WITH_CUDA
+    CHECK_CONTIGUOUS_CUDA(points);
+    CHECK_CONTIGUOUS_CUDA(points_first_idx);
+    CHECK_CONTIGUOUS_CUDA(segms);
+    CHECK_CONTIGUOUS_CUDA(segms_first_idx);
     return EdgePointDistanceForwardCuda(
         points, points_first_idx, segms, segms_first_idx, max_segms);
 #else
@@ -189,6 +202,10 @@ std::tuple<torch::Tensor, torch::Tensor> EdgePointDistanceBackward(
     const torch::Tensor& grad_dists) {
   if (points.is_cuda()) {
 #ifdef WITH_CUDA
+    CHECK_CONTIGUOUS_CUDA(points);
+    CHECK_CONTIGUOUS_CUDA(segms);
+    CHECK_CONTIGUOUS_CUDA(idx_segms);
+    CHECK_CONTIGUOUS_CUDA(grad_dists);
     return EdgePointDistanceBackwardCuda(points, segms, idx_segms, grad_dists);
 #else
     AT_ERROR("Not compiled with GPU support.");
@@ -220,7 +237,6 @@ std::tuple<torch::Tensor, torch::Tensor> EdgePointDistanceBackward(
 // will require for the forward pass 5.8G of memory to store dists.
 
 #ifdef WITH_CUDA
-
 torch::Tensor PointEdgeArrayDistanceForwardCuda(
     const torch::Tensor& points,
     const torch::Tensor& segms);
@@ -231,6 +247,8 @@ torch::Tensor PointEdgeArrayDistanceForward(
     const torch::Tensor& segms) {
   if (points.is_cuda()) {
 #ifdef WITH_CUDA
+    CHECK_CONTIGUOUS_CUDA(points);
+    CHECK_CONTIGUOUS_CUDA(segms);
     return PointEdgeArrayDistanceForwardCuda(points, segms);
 #else
     AT_ERROR("Not compiled with GPU support.");
@@ -265,6 +283,9 @@ std::tuple<torch::Tensor, torch::Tensor> PointEdgeArrayDistanceBackward(
     const torch::Tensor& grad_dists) {
   if (points.is_cuda()) {
 #ifdef WITH_CUDA
+    CHECK_CONTIGUOUS_CUDA(points);
+    CHECK_CONTIGUOUS_CUDA(segms);
+    CHECK_CONTIGUOUS_CUDA(grad_dists);
     return PointEdgeArrayDistanceBackwardCuda(points, segms, grad_dists);
 #else
     AT_ERROR("Not compiled with GPU support.");
