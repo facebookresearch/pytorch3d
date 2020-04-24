@@ -212,6 +212,13 @@ class TestRasterizePoints(TestCaseMixin, unittest.TestCase):
         if compare_grads:
             self.assertClose(grad_points1, grad_points2, atol=2e-6)
 
+    def test_bin_size_error(self):
+        points = Pointclouds(points=torch.rand(5, 100, 3))
+        image_size = 1024
+        bin_size = 16
+        with self.assertRaisesRegex(ValueError, "bin_size too small"):
+            rasterize_points(points, image_size, 0.0, 2, bin_size=bin_size)
+
     def _test_behind_camera(self, rasterize_points_fn, device, bin_size=None):
         # Test case where all points are behind the camera -- nothing should
         # get rasterized

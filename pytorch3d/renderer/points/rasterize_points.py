@@ -7,6 +7,11 @@ from pytorch3d import _C
 from pytorch3d.renderer.mesh.rasterize_meshes import pix_to_ndc
 
 
+# Maxinum number of faces per bins for
+# coarse-to-fine rasterization
+kMaxPointsPerBin = 22
+
+
 # TODO(jcjohns): Support non-square images
 def rasterize_points(
     pointclouds,
@@ -81,6 +86,15 @@ def rasterize_points(
                 bin_size = 32
             elif image_size <= 1024:
                 bin_size = 64
+
+    if bin_size != 0:
+        # There is a limit on the number of points per bin in the cuda kernel.
+        points_per_bin = 1 + (image_size - 1) // bin_size
+        if points_per_bin >= kMaxPointsPerBin:
+            raise ValueError(
+                "bin_size too small, number of points per bin must be less than %d; got %d"
+                % (kMaxPointsPerBin, points_per_bin)
+            )
 
     if max_points_per_bin is None:
         max_points_per_bin = int(max(10000, points_packed.shape[0] / 5))

@@ -696,7 +696,7 @@ at::Tensor RasterizeMeshesCoarseCuda(
   const int num_bins = 1 + (image_size - 1) / bin_size; // Divide round up.
   const int M = max_faces_per_bin;
 
-  if (num_bins >= 22) {
+  if (num_bins >= kMaxFacesPerBin) {
     std::stringstream ss;
     ss << "Got " << num_bins << "; that's too many!";
     AT_ERROR(ss.str());

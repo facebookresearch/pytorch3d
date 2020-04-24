@@ -382,6 +382,13 @@ class TestRasterizeMeshes(TestCaseMixin, unittest.TestCase):
         args = ()
         self._compare_impls(fn1, fn2, args, args, verts1, verts2, compare_grads=True)
 
+    def test_bin_size_error(self):
+        meshes = ico_sphere(2)
+        image_size = 1024
+        bin_size = 16
+        with self.assertRaisesRegex(ValueError, "bin_size too small"):
+            rasterize_meshes(meshes, image_size, 0.0, 2, bin_size)
+
     def _test_back_face_culling(self, rasterize_meshes_fn, device, bin_size):
         # Square based pyramid mesh.
         # fmt: off

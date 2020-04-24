@@ -11,6 +11,10 @@ from pytorch3d import _C
 # TODO make the epsilon user configurable
 kEpsilon = 1e-8
 
+# Maxinum number of faces per bins for
+# coarse-to-fine rasterization
+kMaxFacesPerBin = 22
+
 
 def rasterize_meshes(
     meshes,
@@ -107,12 +111,23 @@ def rasterize_meshes(
             # TODO better heuristics for bin size.
             if image_size <= 64:
                 bin_size = 8
-            elif image_size <= 256:
-                bin_size = 16
-            elif image_size <= 512:
-                bin_size = 32
-            elif image_size <= 1024:
-                bin_size = 64
+            else:
+                # Heuristic based formula maps image_size -> bin_size as follows:
+                # image_size < 64 -> 8
+                # 16 < image_size < 256 -> 16
+                # 256 < image_size < 512 -> 32
+                # 512 < image_size < 1024 -> 64
+                # 1024 < image_size < 2048 -> 128
+                bin_size = int(2 ** max(np.ceil(np.log2(image_size)) - 4, 4))
+
+    if bin_size != 0:
+        # There is a limit on the number of faces per bin in the cuda kernel.
+        faces_per_bin = 1 + (image_size - 1) // bin_size
+        if faces_per_bin >= kMaxFacesPerBin:
+            raise ValueError(
+                "bin_size too small, number of faces per bin must be less than %d; got %d"
+                % (kMaxFacesPerBin, faces_per_bin)
+            )
 
     if max_faces_per_bin is None:
         max_faces_per_bin = int(max(10000, verts_packed.shape[0] / 5))

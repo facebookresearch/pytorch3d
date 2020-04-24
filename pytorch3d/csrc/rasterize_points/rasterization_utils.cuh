@@ -17,6 +17,8 @@ __device__ inline float PixToNdc(int i, int S) {
 // TODO: is 8 enough? Would increasing have performance considerations?
 const int32_t kMaxPointsPerPixel = 150;
 
+const int32_t kMaxFacesPerBin = 22;
+
 template <typename T>
 __device__ inline void BubbleSort(T* arr, int n) {
   // Bubble sort. We only use it for tiny thread-local arrays (n < 8); in this
