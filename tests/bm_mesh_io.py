@@ -1,5 +1,7 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
+from itertools import product
+
 from fvcore.common.benchmark import benchmark
 from test_obj_io import TestMeshObjIO
 from test_ply_io import TestMeshPlyIO
@@ -59,5 +61,37 @@ def bm_save_load() -> None:
         TestMeshPlyIO.bm_save_complex_ply,
         "SAVE_COMPLEX_PLY",
         complex_kwargs_list,
+        warmup_iters=1,
+    )
+
+    # Texture loading benchmarks
+    kwargs_list = [{"R": 2}, {"R": 4}, {"R": 10}, {"R": 15}, {"R": 20}]
+    benchmark(
+        TestMeshObjIO.bm_load_texture_atlas,
+        "PYTORCH3D_TEXTURE_ATLAS",
+        kwargs_list,
+        warmup_iters=1,
+    )
+
+    kwargs_list = []
+    S = [64, 256, 1024]
+    F = [100, 1000, 10000]
+    R = [5, 10, 20]
+    test_cases = product(S, F, R)
+
+    for case in test_cases:
+        s, f, r = case
+        kwargs_list.append({"S": s, "F": f, "R": r})
+
+    benchmark(
+        TestMeshObjIO.bm_bilinear_sampling_vectorized,
+        "BILINEAR_VECTORIZED",
+        kwargs_list,
+        warmup_iters=1,
+    )
+    benchmark(
+        TestMeshObjIO.bm_bilinear_sampling_grid_sample,
+        "BILINEAR_GRID_SAMPLE",
+        kwargs_list,
         warmup_iters=1,
     )
