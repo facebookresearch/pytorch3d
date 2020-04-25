@@ -62,7 +62,7 @@ def make_mesh_texture_atlas(
         # the convention GL_REPEAT in OpenGL i.e the integer part of the coordinate
         # will be ignored and a repeating pattern is formed.
         # Shapenet data uses this format see:
-        # https://shapenet.org/qaforum/index.php?qa=15&qa_1=why-is-the-texture-coordinate-in-the-obj-file-not-in-the-range
+        # https://shapenet.org/qaforum/index.php?qa=15&qa_1=why-is-the-texture-coordinate-in-the-obj-file-not-in-the-range # noqa: B950
         if (faces_verts_uvs > 1).any() or (faces_verts_uvs < 0).any():
             msg = "Texture UV coordinates outside the range [0, 1]. \
                 The integer part will be ignored to form a repeating pattern."

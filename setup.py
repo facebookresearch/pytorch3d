@@ -72,6 +72,18 @@ __version__ = ""
 with open("pytorch3d/__init__.py", "r") as init:
     exec(init.read())
 
+
+if os.getenv("PYTORCH3D_NO_NINJA", "0") == "1":
+
+    class BuildExtension(torch.utils.cpp_extension.BuildExtension):
+        def __init__(self, *args, **kwargs):
+            super().__init__(use_ninja=False, *args, **kwargs)
+
+
+else:
+    BuildExtension = torch.utils.cpp_extension.BuildExtension
+
+
 setup(
     name="pytorch3d",
     version=__version__,
@@ -86,5 +98,5 @@ setup(
         "dev": ["flake8", "isort", "black==19.3b0"],
     },
     ext_modules=get_extensions(),
-    cmdclass={"build_ext": torch.utils.cpp_extension.BuildExtension},
+    cmdclass={"build_ext": BuildExtension},
 )

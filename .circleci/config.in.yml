@@ -157,7 +157,7 @@ jobs:
           sudo apt-get update && sudo apt-get install -y nvidia-container-toolkit=${NVIDIA_CONTAINER_VERSION}
           sudo systemctl restart docker
 
-          DRIVER_FN="NVIDIA-Linux-x86_64-410.104.run"
+          DRIVER_FN="NVIDIA-Linux-x86_64-440.59.run"
           wget "https://s3.amazonaws.com/ossci-linux/nvidia_driver/$DRIVER_FN"
           sudo /bin/bash "$DRIVER_FN" -s --no-drm || (sudo cat /var/log/nvidia-installer.log && false)
           nvidia-smi
