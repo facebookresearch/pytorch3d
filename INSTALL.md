@@ -128,3 +128,9 @@ After installing, verify whether all unit tests have passed
 cd tests
 python3 -m unittest discover -p *.py
 ```
+
+# FAQ
+
+### Can I use Docker?
+
+We don't provide a docker file but see [#113](https://github.com/facebookresearch/pytorch3d/issues/113) for a docker file shared by a user (NOTE: this has not been tested by the PyTorch3D team).

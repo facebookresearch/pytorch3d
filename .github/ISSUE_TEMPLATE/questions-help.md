@@ -8,7 +8,10 @@ about: How do I do X with PyTorch3D? How does PyTorch3D do X?
 
 <!-- A clear and concise description of the question you need help with. -->
 
-NOTE:
+
+NOTE: Please look at the existing list of Issues tagged with the label ['question`](https://github.com/facebookresearch/pytorch3d/issues?q=label%3Aquestion) or ['how-to`](https://github.com/facebookresearch/pytorch3d/issues?q=label%3A%22how+to%22). **Only open a new issue if you cannot find an answer there**.
+
+Also note the following:
 
 1. If you encountered any errors or unexpected issues while using PyTorch3D and need help resolving them,
    please use the "Bugs / Unexpected behaviors" issue template.

@@ -57,7 +57,6 @@ We also have deep dive notes on several API components:
 
 We welcome new contributions to PyTorch3D and we will be actively maintaining this library! Please refer to [CONTRIBUTING.md](./.github/CONTRIBUTING.md) for full instructions on how to run the code, tests and linter, and submit your pull requests.
 
-
 ## Contributors
 
 PyTorch3D is written and maintained by the Facebook AI Research Computer Vision Team.
@@ -75,3 +74,15 @@ If you find PyTorch3D useful in your research, please cite:
   year =         {2020}
 }
 ```
+
+## News
+
+Please see below for a timeline of the codebase updates in reverse chronological order. We are sharing updates on the releases as well as research projects which are built with PyTorch3D. The changelogs for the releases are available under [`Releases`](https://github.com/facebookresearch/pytorch3d/releases),  and the builds can be installed using `conda` as per the instructions in [INSTALL.md](INSTALL.md).
+
+**[April 24th 2020]:**   PyTorch3D v0.2 released
+
+**[March 25th 2020]:**   [SynSin](https://arxiv.org/abs/1912.08804) codebase released using PyTorch3D: https://github.com/facebookresearch/synsin
+
+**[March 8th 2020]:**   PyTorch3D v0.1.1 bug fix release
+
+**[Jan 23rd 2020]:**   PyTorch3D v0.1 released. [Mesh R-CNN](https://arxiv.org/abs/1906.02739) codebase released: https://github.com/facebookresearch/meshrcnn
