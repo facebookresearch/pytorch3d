@@ -82,10 +82,10 @@ copyright = "2019, facebookresearch"
 author = "facebookresearch"
 
 # The short X.Y version
-version = "0.1"
+version = "0.2.0"
 
 # The full version, including alpha/beta/rc tags
-release = version + ".1"
+release = version
 
 # -- General configuration ---------------------------------------------------
 

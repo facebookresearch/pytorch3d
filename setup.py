@@ -3,6 +3,7 @@
 
 import glob
 import os
+import runpy
 
 import torch
 from setuptools import find_packages, setup
@@ -67,10 +68,8 @@ def get_extensions():
     return ext_modules
 
 
-__version__ = ""
 # Retrieve __version__ from the package.
-with open("pytorch3d/__init__.py", "r") as init:
-    exec(init.read())
+__version__ = runpy.run_path("pytorch3d/__init__.py")["__version__"]
 
 
 if os.getenv("PYTORCH3D_NO_NINJA", "0") == "1":
