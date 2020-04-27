@@ -55,8 +55,9 @@ class MeshRenderer(nn.Module):
             # if no downstream functions requires unclipped values.
             # This will avoid unnecssary re-interpolation of the z buffer.
             clipped_bary_coords = _clip_barycentric_coordinates(fragments.bary_coords)
+            meshes_screen = self.rasterizer.transform(meshes_world, **kwargs)
             clipped_zbuf = _interpolate_zbuf(
-                fragments.pix_to_face, clipped_bary_coords, meshes_world
+                fragments.pix_to_face, clipped_bary_coords, meshes_screen
             )
             fragments = Fragments(
                 bary_coords=clipped_bary_coords,
