@@ -6,6 +6,7 @@ import unittest
 import numpy as np
 import torch
 from common_testing import TestCaseMixin
+from pytorch3d.structures import utils as struct_utils
 from pytorch3d.structures.pointclouds import Pointclouds
 
 
@@ -22,6 +23,7 @@ class TestPointclouds(TestCaseMixin, unittest.TestCase):
         lists_to_tensors: bool = False,
         with_normals: bool = True,
         with_features: bool = True,
+        min_points: int = 0,
     ):
         """
         Function to generate a Pointclouds object of N meshes with
@@ -36,12 +38,13 @@ class TestPointclouds(TestCaseMixin, unittest.TestCase):
                               tensors (=True) of points/normals/features.
             with_normals: bool whether to include normals
             with_features: bool whether to include features
+            min_points: Min number of points per cloud
 
         Returns:
             Pointclouds object.
         """
         device = torch.device("cuda:0")
-        p = torch.randint(max_points, size=(num_clouds,))
+        p = torch.randint(low=min_points, high=max_points, size=(num_clouds,))
         if lists_to_tensors:
             p.fill_(p[0])
 
@@ -892,6 +895,35 @@ class TestPointclouds(TestCaseMixin, unittest.TestCase):
         invalid_box = torch.rand((5, 8, 9, 3), device=device)
         with self.assertRaisesRegex(ValueError, "Input box must be of shape"):
             clouds.inside_box(invalid_box)
+
+    def test_estimate_normals(self):
+        for with_normals in (True, False):
+            for run_padded in (True, False):
+                for run_packed in (True, False):
+
+                    clouds = TestPointclouds.init_cloud(
+                        3,
+                        100,
+                        with_normals=with_normals,
+                        with_features=False,
+                        min_points=60,
+                    )
+                    nums = clouds.num_points_per_cloud()
+                    if run_padded:
+                        clouds.points_padded()
+                    if run_packed:
+                        clouds.points_packed()
+
+                    normals_est_padded = clouds.estimate_normals(assign_to_self=True)
+                    normals_est_list = struct_utils.padded_to_list(
+                        normals_est_padded, nums.tolist()
+                    )
+                    self.assertClose(clouds.normals_padded(), normals_est_padded)
+                    for i in range(len(clouds)):
+                        self.assertClose(clouds.normals_list()[i], normals_est_list[i])
+                    self.assertClose(
+                        clouds.normals_packed(), torch.cat(normals_est_list, dim=0)
+                    )
 
     @staticmethod
     def compute_packed_with_init(
