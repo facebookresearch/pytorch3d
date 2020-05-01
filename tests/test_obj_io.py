@@ -607,6 +607,12 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
         check_triple(mesh, mesh3)
         self.assertTupleEqual(mesh.textures.maps_padded().shape, (1, 1024, 1024, 3))
 
+        # Try mismatched texture map sizes, which needs a call to interpolate()
+        mesh2048 = mesh.clone()
+        maps = mesh.textures.maps_padded()
+        mesh2048.textures._maps_padded = torch.cat([maps, maps], dim=1)
+        join_meshes_as_batch([mesh.to("cuda:0"), mesh2048.to("cuda:0")])
+
         mesh_notex = load_objs_as_meshes([obj_filename], load_textures=False)
         mesh3_notex = load_objs_as_meshes(
             [obj_filename, obj_filename, obj_filename], load_textures=False
