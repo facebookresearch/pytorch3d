@@ -382,11 +382,9 @@ class Pointclouds(object):
             if self._normals_padded is None:
                 # No normals provided so return None
                 return None
-            self._normals_list = []
-            for i in range(self._N):
-                self._normals_list.append(
-                    self._normals_padded[i, : self.num_points_per_cloud()[i]]
-                )
+            self._normals_list = struct_utils.padded_to_list(
+                self._normals_padded, self.num_points_per_cloud().tolist()
+            )
         return self._normals_list
 
     def features_list(self):
@@ -400,11 +398,9 @@ class Pointclouds(object):
             if self._features_padded is None:
                 # No features provided so return None
                 return None
-            self._features_list = []
-            for i in range(self._N):
-                self._features_list.append(
-                    self._features_padded[i, : self.num_points_per_cloud()[i]]
-                )
+            self._features_list = struct_utils.padded_to_list(
+                self._features_padded, self.num_points_per_cloud().tolist()
+            )
         return self._features_list
 
     def points_packed(self):
@@ -887,9 +883,14 @@ class Pointclouds(object):
 
         # assign to self
         if assign_to_self:
-            self._normals_list, self._normals_padded, _ = self._parse_auxiliary_input(
-                normals_est
-            )
+            _, self._normals_padded, _ = self._parse_auxiliary_input(normals_est)
+            self._normals_list, self._normals_packed = None, None
+            if self._points_list is not None:
+                # update self._normals_list
+                self.normals_list()
+            if self._points_packed is not None:
+                # update self._normals_packed
+                self._normals_packed = torch.cat(self._normals_list, dim=0)
 
         return normals_est
 
