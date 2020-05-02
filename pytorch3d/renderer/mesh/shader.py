@@ -12,8 +12,8 @@ from ..blending import (
 )
 from ..cameras import OpenGLPerspectiveCameras
 from ..lighting import PointLights
-from ..materials import Materials
-from .shading import flat_shading, gouraud_shading, phong_shading
+from ..materials import Materials, CookTorranceMaterials
+from .shading import flat_shading, gouraud_shading, phong_shading, cook_torrance_shading
 from .texturing import interpolate_texture_map, interpolate_vertex_colors
 
 
@@ -312,4 +312,94 @@ class SoftSilhouetteShader(nn.Module):
         colors = torch.ones_like(fragments.bary_coords)
         blend_params = kwargs.get("blend_params", self.blend_params)
         images = sigmoid_alpha_blend(colors, fragments, blend_params)
+        return images
+
+class CookTorranceShader(nn.Module):
+    """
+    Per pixel lighting - the lighting model is applied using the interpolated
+    coordinates and normals for each pixel. The blending function returns the
+    soft aggregated color using all the faces per pixel.
+
+    To use the default values, simply initialize the shader with the desired
+    device e.g.
+
+    .. code-block::
+
+        shader = CookTorranceShader(device=torch.device("cuda:0"))
+    """
+
+    def __init__(
+        self, device="cpu", cameras=None, lights=None, materials=None, blend_params=None
+    ):
+        super().__init__()
+        self.lights = lights if lights is not None else PointLights(device=device)
+        self.materials = (
+            materials if materials is not None else CookTorranceMaterials(device=device)
+        )
+        self.cameras = (
+            cameras if cameras is not None else OpenGLPerspectiveCameras(device=device)
+        )
+        self.blend_params = blend_params if blend_params is not None else BlendParams()
+
+    def forward(self, fragments, meshes, **kwargs) -> torch.Tensor:
+        texels = interpolate_vertex_colors(fragments, meshes)
+        cameras = kwargs.get("cameras", self.cameras)
+        lights = kwargs.get("lights", self.lights)
+        materials = kwargs.get("materials", self.materials)
+        colors = cook_torrance_shading(
+            meshes=meshes,
+            fragments=fragments,
+            texels=texels,
+            lights=lights,
+            cameras=cameras,
+            ct_materials=materials,
+        )
+        images = softmax_rgb_blend(colors, fragments, self.blend_params)
+        return images
+
+class TexturedCookTorranceShader(nn.Module):
+    """
+    Per pixel lighting applied to a texture map. First interpolate the vertex
+    uv coordinates and sample from a texture map. Then apply the lighting model
+    using the interpolated coords and normals for each pixel.
+
+    The blending function returns the soft aggregated color using all
+    the faces per pixel.
+
+    To use the default values, simply initialize the shader with the desired
+    device e.g.
+
+    .. code-block::
+
+        shader = TexturedCookTorranceShader(device=torch.device("cuda:0"))
+    """
+
+    def __init__(
+        self, device="cpu", cameras=None, lights=None, materials=None, blend_params=None
+    ):
+        super().__init__()
+        self.lights = lights if lights is not None else PointLights(device=device)
+        self.materials = (
+            materials if materials is not None else CookTorranceMaterials(device=device)
+        )
+        self.cameras = (
+            cameras if cameras is not None else OpenGLPerspectiveCameras(device=device)
+        )
+        self.blend_params = blend_params if blend_params is not None else BlendParams()
+
+    def forward(self, fragments, meshes, **kwargs) -> torch.Tensor:
+        texels = interpolate_texture_map(fragments, meshes)
+        cameras = kwargs.get("cameras", self.cameras)
+        lights = kwargs.get("lights", self.lights)
+        materials = kwargs.get("materials", self.materials)
+        blend_params = kwargs.get("blend_params", self.blend_params)
+        colors = cook_torrance_shading(
+            meshes=meshes,
+            fragments=fragments,
+            texels=texels,
+            lights=lights,
+            cameras=cameras,
+            ct_materials=materials,
+        )
+        images = softmax_rgb_blend(colors, fragments, blend_params)
         return images

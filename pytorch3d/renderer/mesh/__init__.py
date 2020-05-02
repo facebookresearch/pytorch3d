@@ -13,8 +13,10 @@ from .shader import (
     SoftPhongShader,
     SoftSilhouetteShader,
     TexturedSoftPhongShader,
+    CookTorranceShader,
+    TexturedCookTorranceShader,
 )
-from .shading import gouraud_shading, phong_shading
+from .shading import gouraud_shading, phong_shading, cook_torrance_shading
 from .utils import interpolate_face_attributes
 
 

@@ -16,8 +16,8 @@ from .cameras import (
     look_at_rotation,
     look_at_view_transform,
 )
-from .lighting import DirectionalLights, PointLights, diffuse, specular
-from .materials import Materials
+from .lighting import DirectionalLights, PointLights, diffuse, specular, specular_cook_torrance
+from .materials import Materials, CookTorranceMaterials
 from .mesh import (
     HardFlatShader,
     HardGouraudShader,
@@ -29,11 +29,14 @@ from .mesh import (
     SoftPhongShader,
     SoftSilhouetteShader,
     TexturedSoftPhongShader,
+    CookTorranceShader,
+    TexturedCookTorranceShader,
     gouraud_shading,
     interpolate_face_attributes,
     interpolate_texture_map,
     interpolate_vertex_colors,
     phong_shading,
+    cook_torrance_shading,
     rasterize_meshes,
 )
 from .points import (

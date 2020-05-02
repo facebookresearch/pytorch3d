@@ -7,6 +7,43 @@ import torch
 
 from .texturing import interpolate_face_attributes
 
+def _apply_lighting_cook_torrance(
+    points, normals, lights, cameras, ct_materials
+) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """
+    Args:
+        points: torch tensor of shape (N, P, 3) or (P, 3).
+        normals: torch tensor of shape (N, P, 3) or (P, 3)
+        lights: instance of the Lights class.
+        cameras: instance of the Cameras class.
+        ct_materials: instance of the CookTorranceMaterials class.
+
+    Returns:
+        ambient_color: same shape as materials.ambient_color
+        diffuse_color: same shape as the input points
+        specular_color: same shape as the input points
+    """
+    light_diffuse = lights.diffuse(normals=normals, points=points)
+    light_specular = lights.specular_cook_torrance(
+        normals=normals,
+        points=points,
+        camera_position=cameras.get_camera_center(),
+        F0=ct_materials.F0,
+        roughness=ct_materials.roughness
+    )
+
+    ambient_color = ct_materials.ambient_color * lights.ambient_color
+    diffuse_color = ct_materials.diffuse_color * light_diffuse
+    specular_color = ct_materials.specular_color * light_specular
+    if normals.dim() == 2 and points.dim() == 2:
+        # If given packed inputs remove batch dim in output.
+        return (
+            ambient_color.squeeze(),
+            diffuse_color.squeeze(),
+            specular_color.squeeze(),
+        )
+    return ambient_color, diffuse_color, specular_color
+
 
 def _apply_lighting(
     points, normals, lights, cameras, materials
@@ -159,6 +196,45 @@ def flat_shading(meshes, fragments, lights, cameras, materials, texels) -> torch
     # Calculate the illumination at each face
     ambient, diffuse, specular = _apply_lighting(
         pixel_coords, pixel_normals, lights, cameras, materials
+    )
+    colors = (ambient + diffuse) * texels + specular
+    return colors
+
+
+def cook_torrance_shading(
+    meshes, fragments, lights, cameras, ct_materials, texels
+) -> torch.Tensor:
+    """
+    Apply per pixel shading. First interpolate the vertex normals and
+    vertex coordinates using the barycentric coordinates to get the position
+    and normal at each pixel. Then compute the illumination for each pixel.
+    The pixel color is obtained by multiplying the pixel textures by the ambient
+    and diffuse illumination and adding the specular component.
+
+    Args:
+        meshes: Batch of meshes
+        fragments: Fragments named tuple with the outputs of rasterization
+        lights: Lights class containing a batch of lights
+        cameras: Cameras class containing a batch of cameras
+        ct_materials: CookTorranceMaterials class containing a batch of material properties
+        texels: texture per pixel of shape (N, H, W, K, 3)
+
+    Returns:
+        colors: (N, H, W, K, 3)
+    """
+    verts = meshes.verts_packed()  # (V, 3)
+    faces = meshes.faces_packed()  # (F, 3)
+    vertex_normals = meshes.verts_normals_packed()  # (V, 3)
+    faces_verts = verts[faces]
+    faces_normals = vertex_normals[faces]
+    pixel_coords = interpolate_face_attributes(
+        fragments.pix_to_face, fragments.bary_coords, faces_verts
+    )
+    pixel_normals = interpolate_face_attributes(
+        fragments.pix_to_face, fragments.bary_coords, faces_normals
+    )
+    ambient, diffuse, specular = _apply_lighting_cook_torrance(
+        pixel_coords, pixel_normals, lights, cameras, ct_materials
     )
     colors = (ambient + diffuse) * texels + specular
     return colors

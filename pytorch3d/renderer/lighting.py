@@ -4,6 +4,8 @@
 import torch
 import torch.nn.functional as F
 
+import math
+
 from .utils import TensorProperties, convert_to_tensors_and_broadcast
 
 
@@ -148,6 +150,331 @@ def specular(
     return color * torch.pow(alpha, shininess)[..., None]
 
 
+def specular_cook_torrance(
+    points, normals, direction, color, camera_position, F0, roughness
+) -> torch.Tensor:
+    """
+    Calculate the specular component of light reflection.
+
+    Args:
+        points: (N, ..., 3) xyz coordinates of the points.
+        normals: (N, ..., 3) xyz normal vectors for each point.
+        color: (N, 3) RGB color of the specular component of the light.
+        direction: (N, 3) vector direction of the light.
+        camera_position: (N, 3) The xyz position of the camera.
+        F0: (N)  Fresnel reflection coefficient at normal incidence.
+        roughness: (N)  roughness coefficienti of the material.
+
+    Returns:
+        colors: (N, ..., 3), same shape as the input points.
+
+    The points, normals, camera_position, and direction should be in the same
+    coordinate frame i.e. if the points have been transformed from
+    world -> view space then the normals, camera_position, and light direction
+    should also be in view space.
+
+    To use with a batch of packed points reindex in the following way.
+    .. code-block:: python::
+
+        Args:
+            points: (P, 3)
+            normals: (P, 3)
+            color: (N, 3)[batch_idx] -> (P, 3)
+            direction: (N, 3)[batch_idx] -> (P, 3)
+            camera_position: (N, 3)[batch_idx] -> (P, 3)
+            F0: (N)[batch_idx] -> (P)
+            roughness: (N)[batch_idx] -> (P)
+        Returns:
+            colors: (P, 3)
+
+        where batch_idx is of shape (P). For meshes batch_idx can be:
+        meshes.verts_packed_to_mesh_idx() or meshes.faces_packed_to_mesh_idx().
+    """
+    # TODO: handle multiple directional lights
+    # TODO: attentuate based on inverse squared distance to the light source
+
+    if points.shape != normals.shape:
+        msg = "Expected points and normals to have the same shape: got %r, %r"
+        raise ValueError(msg % (points.shape, normals.shape))
+
+    # Ensure all inputs have same batch dimension as points
+    matched_tensors = convert_to_tensors_and_broadcast(
+        points, color, direction, camera_position, F0, roughness, device=points.device
+    )
+    _, color, direction, camera_position, F0, roughness = matched_tensors
+
+    # Reshape direction and color so they have all the arbitrary intermediate
+    # dimensions as points. Assume first dim = batch dim and last dim = 3.
+    points_dims = points.shape[1:-1]
+    expand_dims = (-1,) + (1,) * len(points_dims)
+    if direction.shape != normals.shape:
+        direction = direction.view(expand_dims + (3,))
+    if color.shape != normals.shape:
+        color = color.view(expand_dims + (3,))
+    if camera_position.shape != normals.shape:
+        camera_position = camera_position.view(expand_dims + (3,))
+    if F0.shape != normals.shape:
+        F0 = F0.view(expand_dims)
+    if roughness.shape != normals.shape:
+        roughness = roughness.view(expand_dims)
+
+    fresnels = fresnel_schlick(points, normals, direction, camera_position, F0)
+    geometric_factors = geometric_factor(points, normals, direction, camera_position)
+    beckmann = beckmann_distribution(points, normals, direction, camera_position, roughness)
+
+    # Compute the Cook-Torrance BRDF model
+    # Note that the dot product (normal, light direction) does not appear as it 
+    # cancels out with the denominator of the beckmann distribution
+    brdf = fresnels * geometric_factors * beckmann 
+    
+    return color * brdf[..., None]
+
+
+def fresnel_schlick(
+    points, normals, direction, camera_position, F0
+) -> torch.Tensor:
+    """
+    Calculate the fresnel reflection coefficient of light reflection.
+
+    Args:
+        points: (N, ..., 3) xyz coordinates of the points.
+        normals: (N, ..., 3) xyz normal vectors for each point.
+        direction: (N, 3) vector direction of the light.
+        camera_position: (N, 3) The xyz position of the camera.
+        F0: (N)  Fresnel reflection coefficient at normal incidence.
+        
+    Returns:
+        fresnel: (N, ..., 1), fresnel reflection coefficient per point.
+
+    The points, normals, camera_position, and direction should be in the same
+    coordinate frame i.e. if the points have been transformed from
+    world -> view space then the normals, camera_position, and light direction
+    should also be in view space.
+
+    To use with a batch of packed points reindex in the following way.
+    .. code-block:: python::
+
+        Args:
+            points: (P, 3)
+            normals: (P, 3)
+            direction: (N, 3)[batch_idx] -> (P, 3)
+            camera_position: (N, 3)[batch_idx] -> (P, 3)
+            F0: (N)[batch_idx] -> (P)
+
+        Returns:
+            fresnels: (P, 1)
+
+        where batch_idx is of shape (P). For meshes batch_idx can be:
+        meshes.verts_packed_to_mesh_idx() or meshes.faces_packed_to_mesh_idx().
+    """
+
+    if points.shape != normals.shape:
+        msg = "Expected points and normals to have the same shape: got %r, %r"
+        raise ValueError(msg % (points.shape, normals.shape))
+
+    # Ensure all inputs have same batch dimension as points
+    matched_tensors = convert_to_tensors_and_broadcast(
+        points, direction, camera_position, device=points.device
+    )
+    _, direction, camera_position = matched_tensors
+
+    # Reshape direction and color so they have all the arbitrary intermediate
+    # dimensions as points. Assume first dim = batch dim and last dim = 3.
+    points_dims = points.shape[1:-1]
+    expand_dims = (-1,) + (1,) * len(points_dims)
+    if direction.shape != normals.shape:
+        direction = direction.view(expand_dims + (3,))
+    if camera_position.shape != normals.shape:
+        camera_position = camera_position.view(expand_dims + (3,))
+    if F0.shape != normals.shape:
+        F0 = F0.view(expand_dims)
+   
+    # Renormalize the normals in case they have been interpolated.
+    normals = F.normalize(normals, p=2, dim=-1, eps=1e-6)
+    direction = F.normalize(direction, p=2, dim=-1, eps=1e-6)
+    cos_angle = torch.sum(normals * direction, dim=-1)
+    # No specular highlights if angle is less than 0.
+    mask = (cos_angle > 0).to(torch.float32)
+
+    # Calculate the view direction and half-vector
+    view_direction = camera_position - points
+    view_direction = F.normalize(view_direction, p=2, dim=-1, eps=1e-6)
+    half_vector = view_direction+direction
+    half_vector = F.normalize(half_vector, p=2, dim=-1, eps=1e-6)
+
+    # Compute the fresnel coefficient with Schlick's approximation
+    h_dot_v = torch.sum(half_vector*view_direction, dim=-1)
+    fresnels = F0+(1-F0)*torch.pow(1-h_dot_v, 5)
+    #alpha = F.relu(torch.sum(view_direction * reflect_direction, dim=-1)) * mask
+    return fresnels
+
+def geometric_factor(
+    points, normals, direction, camera_position
+) -> torch.Tensor:
+    """
+    Calculate the geometric factor of Cook Torrance BRDF model. reflection coefficient of light reflection.
+    It accounts for shadowing and masking effects due to V-shaped microfacets.
+
+    Args:
+        points: (N, ..., 3) xyz coordinates of the points.
+        normals: (N, ..., 3) xyz normal vectors for each point.
+        direction: (N, 3) vector direction of the light.
+        camera_position: (N, 3) The xyz position of the camera.
+        
+    Returns:
+        geometric_factors: (N, ..., 1), geometric factor per point.
+
+    The points, normals, camera_position, and direction should be in the same
+    coordinate frame i.e. if the points have been transformed from
+    world -> view space then the normals, camera_position, and light direction
+    should also be in view space.
+
+    To use with a batch of packed points reindex in the following way.
+    .. code-block:: python::
+
+        Args:
+            points: (P, 3)
+            normals: (P, 3)
+            direction: (N, 3)[batch_idx] -> (P, 3)
+            camera_position: (N, 3)[batch_idx] -> (P, 3)
+       
+        Returns:
+            geometric_factors: (P, 1)
+
+        where batch_idx is of shape (P). For meshes batch_idx can be:
+        meshes.verts_packed_to_mesh_idx() or meshes.faces_packed_to_mesh_idx().
+    """
+
+    if points.shape != normals.shape:
+        msg = "Expected points and normals to have the same shape: got %r, %r"
+        raise ValueError(msg % (points.shape, normals.shape))
+
+    # Ensure all inputs have same batch dimension as points
+    matched_tensors = convert_to_tensors_and_broadcast(
+        points, direction, camera_position, device=points.device
+    )
+    _, direction, camera_position = matched_tensors
+
+    # Reshape direction and color so they have all the arbitrary intermediate
+    # dimensions as points. Assume first dim = batch dim and last dim = 3.
+    points_dims = points.shape[1:-1]
+    expand_dims = (-1,) + (1,) * len(points_dims)
+    if direction.shape != normals.shape:
+        direction = direction.view(expand_dims + (3,))
+    if camera_position.shape != normals.shape:
+        camera_position = camera_position.view(expand_dims + (3,))
+    
+    # Renormalize the normals in case they have been interpolated.
+    normals = F.normalize(normals, p=2, dim=-1, eps=1e-6)
+    direction = F.normalize(direction, p=2, dim=-1, eps=1e-6)
+    cos_angle = torch.sum(normals * direction, dim=-1)
+    # No specular highlights if angle is less than 0.
+    mask = (cos_angle > 0).to(torch.float32)
+
+    # Calculate the view direction and half-vector
+    view_direction = camera_position - points
+    view_direction = F.normalize(view_direction, p=2, dim=-1, eps=1e-6)
+    half_vector = view_direction+direction
+    half_vector = F.normalize(half_vector, p=2, dim=-1, eps=1e-6)
+
+    # Compute the necessary dot products
+    h_dot_n = torch.sum(half_vector*normals, dim=-1)*mask
+    h_dot_v = torch.sum(half_vector*view_direction, dim=-1)*mask
+    v_dot_n = torch.sum(view_direction*normals, dim=-1)*mask
+    v_dot_h = torch.sum(view_direction*half_vector, dim=-1)*mask
+    l_dot_n = torch.sum(direction*normals, dim=-1)*mask
+
+    #a=torch.min(2.0*h_dot_n*v_dot_n/(v_dot_h+1e-6), 2.0*h_dot_n*l_dot_n/(v_dot_h+1e-6))
+    geometric_factors = torch.min(torch.ones_like(h_dot_v), torch.min(2.0*h_dot_n*v_dot_n/(v_dot_h+1e-6), 2.0*h_dot_n*l_dot_n/(v_dot_h+1e-6)))
+
+    #alpha = F.relu(torch.sum(view_direction * reflect_direction, dim=-1)) * mask
+    return geometric_factors
+
+
+def beckmann_distribution(
+    points, normals, direction, camera_position, roughness
+) -> torch.Tensor:
+    """
+    Calculates the beckmann distribution of microfacets.
+
+    Args:
+        points: (N, ..., 3) xyz coordinates of the points.
+        normals: (N, ..., 3) xyz normal vectors for each point.
+        direction: (N, 3) vector direction of the light.
+        camera_position: (N, 3) The xyz position of the camera.
+        roughness: (N)  The roughness exponent of the material (standard deviation of the Beckmann distribution).
+
+    Returns:
+        beckmann: (N, ..., 3), same shape as the input points.
+
+    The points, normals, camera_position, and direction should be in the same
+    coordinate frame i.e. if the points have been transformed from
+    world -> view space then the normals, camera_position, and light direction
+    should also be in view space.
+
+    To use with a batch of packed points reindex in the following way.
+    .. code-block:: python::
+
+        Args:
+            points: (P, 3)
+            normals: (P, 3)
+            direction: (N, 3)[batch_idx] -> (P, 3)
+            camera_position: (N, 3)[batch_idx] -> (P, 3)
+            roughness: (N)[batch_idx] -> (P)
+        Returns:
+            colors: (P, 3)
+
+        where batch_idx is of shape (P). For meshes batch_idx can be:
+        meshes.verts_packed_to_mesh_idx() or meshes.faces_packed_to_mesh_idx().
+    """
+    # TODO: handle multiple directional lights
+    # TODO: attentuate based on inverse squared distance to the light source
+
+    if points.shape != normals.shape:
+        msg = "Expected points and normals to have the same shape: got %r, %r"
+        raise ValueError(msg % (points.shape, normals.shape))
+
+    # Ensure all inputs have same batch dimension as points
+    matched_tensors = convert_to_tensors_and_broadcast(
+        points, normals, direction, camera_position, roughness, device=points.device
+    )
+    _, normals, direction, camera_position, roughness = matched_tensors
+
+    # Reshape direction and color so they have all the arbitrary intermediate
+    # dimensions as points. Assume first dim = batch dim and last dim = 3.
+    points_dims = points.shape[1:-1]
+    expand_dims = (-1,) + (1,) * len(points_dims)
+    if direction.shape != normals.shape:
+        direction = direction.view(expand_dims + (3,))
+    if camera_position.shape != normals.shape:
+        camera_position = camera_position.view(expand_dims + (3,))
+    if roughness.shape != normals.shape:
+        roughness = roughness.view(expand_dims)
+
+    # Renormalize the normals in case they have been interpolated.
+    normals = F.normalize(normals, p=2, dim=-1, eps=1e-6)
+    direction = F.normalize(direction, p=2, dim=-1, eps=1e-6)
+    cos_angle = torch.sum(normals * direction, dim=-1)
+    # No specular highlights if angle is less than 0.
+    mask = (cos_angle > 0).to(torch.float32)
+
+
+    # Calculate the specular reflection.
+    view_direction = camera_position - points
+    view_direction = F.normalize(view_direction, p=2, dim=-1, eps=1e-6)
+    half_vector = view_direction+direction
+    half_vector = F.normalize(half_vector, p=2, dim=-1, eps=1e-6)
+
+    # Compute the necessary dot products
+    h_dot_n = torch.sum(half_vector*normals, dim=-1)*mask
+    v_dot_n = torch.sum(view_direction*normals, dim=-1)*mask
+    
+    # Compute the beckmann distribution
+    roughness_var = roughness*roughness
+    beckmann = torch.exp(-(1-h_dot_n*h_dot_n)/(h_dot_n*h_dot_n*roughness_var+1e-6))/(roughness_var*4.0*math.pi*v_dot_n+1e-6)
+    
+    return beckmann
+
 class DirectionalLights(TensorProperties):
     def __init__(
         self,
@@ -206,6 +533,17 @@ class DirectionalLights(TensorProperties):
             shininess=shininess,
         )
 
+    def specular_cook_torrance(self, normals, points, camera_position, F0, roughness) -> torch.Tensor:
+        return specular(
+            points=points,
+            normals=normals,
+            color=self.specular_color,
+            direction=self.direction,
+            camera_position=camera_position,
+            F0=F0,
+            roughness=roughness
+        )
+
 
 class PointLights(TensorProperties):
     def __init__(
@@ -261,6 +599,19 @@ class PointLights(TensorProperties):
             camera_position=camera_position,
             shininess=shininess,
         )
+
+    def specular_cook_torrance(self, normals, points, camera_position, F0, roughness) -> torch.Tensor:
+        direction = self.location - points
+        return specular_cook_torrance(
+            points=points,
+            normals=normals,
+            direction=direction,
+            color=self.specular_color,
+            camera_position=camera_position,
+            F0=F0,
+            roughness=roughness,
+        )
+        
 
 
 def _validate_light_properties(obj):
