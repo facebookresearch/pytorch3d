@@ -81,16 +81,16 @@ class CookTorranceMaterials(TensorProperties):
             F0: Fresnel coefficient at normal incidence. 
                 Fresnel reflections cause lengthy reflections at grazing angles.
                 Values are in range from 0-1.
-            roughness: Roughness parameter : standard deviation of the distribution of microfacets.
+            roughness: Roughness of the surface. It corresponds to the standard deviation of the distribution of microfacets.
                 A large roughness value will lead to a very diffuse surface (large specular highlight).
                 A low value leads to a shiny material.
-                Vqlues are in range 0-1.
+                Values are in range 0-1.
             device: torch.device or string
 
         ambient_color, diffuse_color and specular_color can be of shape
         (1, 3) or (N, 3). shininess can be of shape (1) or (N).
 
-        The colors and shininess are broadcast against each other so need to
+        The colors, roughness and fresnel values are broadcast against each other so need to
         have either the same batch dimension or batch dimension = 1.
         """
         super().__init__(

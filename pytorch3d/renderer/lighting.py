@@ -154,7 +154,7 @@ def specular_cook_torrance(
     points, normals, direction, color, camera_position, F0, roughness
 ) -> torch.Tensor:
     """
-    Calculate the specular component of light reflection.
+    Calculate the specular component of light reflection with a Cook Torrance BRDF model.
 
     Args:
         points: (N, ..., 3) xyz coordinates of the points.
@@ -218,13 +218,13 @@ def specular_cook_torrance(
     if roughness.shape != normals.shape:
         roughness = roughness.view(expand_dims)
 
+    # Compute the Cook-Torrance BRDF model
+    # Note that the dot product (normal, light direction) does not appear as it 
+    # cancels out with the denominator of the beckmann distribution
     fresnels = fresnel_schlick(points, normals, direction, camera_position, F0)
     geometric_factors = geometric_factor(points, normals, direction, camera_position)
     beckmann = beckmann_distribution(points, normals, direction, camera_position, roughness)
 
-    # Compute the Cook-Torrance BRDF model
-    # Note that the dot product (normal, light direction) does not appear as it 
-    # cancels out with the denominator of the beckmann distribution
     brdf = fresnels * geometric_factors * beckmann 
     
     return color * brdf[..., None]
@@ -244,7 +244,7 @@ def fresnel_schlick(
         F0: (N)  Fresnel reflection coefficient at normal incidence.
         
     Returns:
-        fresnel: (N, ..., 1), fresnel reflection coefficient per point.
+        fresnels: (N, ..., 1), fresnel reflection coefficient per point.
 
     The points, normals, camera_position, and direction should be in the same
     coordinate frame i.e. if the points have been transformed from
@@ -290,11 +290,7 @@ def fresnel_schlick(
         F0 = F0.view(expand_dims)
    
     # Renormalize the normals in case they have been interpolated.
-    normals = F.normalize(normals, p=2, dim=-1, eps=1e-6)
     direction = F.normalize(direction, p=2, dim=-1, eps=1e-6)
-    cos_angle = torch.sum(normals * direction, dim=-1)
-    # No specular highlights if angle is less than 0.
-    mask = (cos_angle > 0).to(torch.float32)
 
     # Calculate the view direction and half-vector
     view_direction = camera_position - points
@@ -312,7 +308,7 @@ def geometric_factor(
     points, normals, direction, camera_position
 ) -> torch.Tensor:
     """
-    Calculate the geometric factor of Cook Torrance BRDF model. reflection coefficient of light reflection.
+    Computes the geometric factor of the Cook Torrance BRDF model.
     It accounts for shadowing and masking effects due to V-shaped microfacets.
 
     Args:
@@ -384,10 +380,8 @@ def geometric_factor(
     v_dot_h = torch.sum(view_direction*half_vector, dim=-1)*mask
     l_dot_n = torch.sum(direction*normals, dim=-1)*mask
 
-    #a=torch.min(2.0*h_dot_n*v_dot_n/(v_dot_h+1e-6), 2.0*h_dot_n*l_dot_n/(v_dot_h+1e-6))
+    # Compute the geometric factor
     geometric_factors = torch.min(torch.ones_like(h_dot_v), torch.min(2.0*h_dot_n*v_dot_n/(v_dot_h+1e-6), 2.0*h_dot_n*l_dot_n/(v_dot_h+1e-6)))
-
-    #alpha = F.relu(torch.sum(view_direction * reflect_direction, dim=-1)) * mask
     return geometric_factors
 
 
