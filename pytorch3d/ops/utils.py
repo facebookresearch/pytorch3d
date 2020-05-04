@@ -126,14 +126,14 @@ def get_point_covariances(
             of shape `(minibatch, num_points, neighborhood_size, dim)`.
     """
     # get K nearest neighbor idx for each point in the point cloud
-    _, _, k_nearest_neighbors = knn_points(
+    k_nearest_neighbors = knn_points(
         points_padded,
         points_padded,
         lengths1=num_points_per_cloud,
         lengths2=num_points_per_cloud,
         K=neighborhood_size,
         return_nn=True,
-    )
+    ).knn
     # obtain the mean of the neighborhood
     pt_mean = k_nearest_neighbors.mean(2, keepdim=True)
     # compute the diff of the neighborhood and the mean of the neighborhood

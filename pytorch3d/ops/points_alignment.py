@@ -158,7 +158,7 @@ def iterative_closest_point(
     for iteration in range(max_iterations):
         Xt_nn_points = knn_points(
             Xt, Yt, lengths1=num_points_X, lengths2=num_points_Y, K=1, return_nn=True
-        )[2][:, :, 0, :]
+        ).knn[:, :, 0, :]
 
         # get the alignment of the nearest neighbors from Yt with Xt_init
         R, T, s = corresponding_points_alignment(
