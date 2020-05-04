@@ -259,7 +259,7 @@ def rasterize_meshes_python(
     N = len(meshes)
     # Assume only square images.
     # TODO(T52813608) extend support for non-square images.
-    H, W, = image_size, image_size
+    H, W = image_size, image_size
     K = faces_per_pixel
     device = meshes.device
 
@@ -479,7 +479,7 @@ def point_line_distance(p, v0, v1):
     if l2 <= kEpsilon:
         return (p - v1).dot(p - v1)  # v0 == v1
 
-    t = (v1v0).dot(p - v0) / l2
+    t = v1v0.dot(p - v0) / l2
     t = torch.clamp(t, min=0.0, max=1.0)
     p_proj = v0 + t * v1v0
     delta_p = p_proj - p

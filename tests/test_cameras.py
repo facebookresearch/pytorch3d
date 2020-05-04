@@ -203,7 +203,7 @@ class TestCameraHelpers(TestCaseMixin, unittest.TestCase):
             + torch.cos(elev) * torch.cos(azim)
         )
         grad_elev = (
-            -torch.sin(elev) * torch.sin(azim)
+            -(torch.sin(elev)) * torch.sin(azim)
             + torch.cos(elev)
             - torch.sin(elev) * torch.cos(azim)
         )
@@ -260,7 +260,7 @@ class TestCameraHelpers(TestCaseMixin, unittest.TestCase):
             + torch.cos(elev) * torch.cos(azim)
         )
         grad_elev = (
-            -torch.sin(elev) * torch.sin(azim)
+            -(torch.sin(elev)) * torch.sin(azim)
             + torch.cos(elev)
             - torch.sin(elev) * torch.cos(azim)
         )
@@ -395,8 +395,8 @@ class TestCamerasCommon(TestCaseMixin, unittest.TestCase):
                 cam_params["aspect_ratio"] = torch.rand(batch_size) * 0.5 + 0.5
             else:
                 cam_params["top"] = torch.rand(batch_size) * 0.2 + 0.9
-                cam_params["bottom"] = -torch.rand(batch_size) * 0.2 - 0.9
-                cam_params["left"] = -torch.rand(batch_size) * 0.2 - 0.9
+                cam_params["bottom"] = -(torch.rand(batch_size)) * 0.2 - 0.9
+                cam_params["left"] = -(torch.rand(batch_size)) * 0.2 - 0.9
                 cam_params["right"] = torch.rand(batch_size) * 0.2 + 0.9
         elif cam_type in (SfMOrthographicCameras, SfMPerspectiveCameras):
             cam_params["focal_length"] = torch.rand(batch_size) * 10 + 0.1
@@ -532,7 +532,7 @@ class TestPerspectiveProjection(TestCaseMixin, unittest.TestCase):
         P = cameras.get_projection_transform()
         vertices = torch.tensor([1, 2, 10], dtype=torch.float32)
         z1 = 1.0  # vertices at far clipping plane so z = 1.0
-        z2 = (20.0 / (20.0 - 1.0) * 10.0 + -(20.0) / (20.0 - 1.0)) / 10.0
+        z2 = (20.0 / (20.0 - 1.0) * 10.0 + -20.0 / (20.0 - 1.0)) / 10.0
         projected_verts = torch.tensor(
             [
                 [np.sqrt(3) / 10.0, 2 * np.sqrt(3) / 10.0, z1],
@@ -660,7 +660,7 @@ class TestOpenGLOrthographicProjection(TestCaseMixin, unittest.TestCase):
         cameras = OpenGLOrthographicCameras(znear=near, zfar=far)
         P = cameras.get_projection_transform()
         vertices = torch.tensor([1.0, 2.0, 10.0], dtype=torch.float32)
-        z2 = 1.0 / (20.0 - 1.0) * 10.0 + -(1.0) / (20.0 - 1.0)
+        z2 = 1.0 / (20.0 - 1.0) * 10.0 + -1.0 / (20.0 - 1.0)
         projected_verts = torch.tensor(
             [[1.0, 2.0, 1.0], [1.0, 2.0, z2]], dtype=torch.float32
         )

@@ -112,11 +112,13 @@ class TestICP(TestCaseMixin, unittest.TestCase):
                     ]
 
                     # run full icp
-                    converged, _, Xt, (
-                        R,
-                        T,
-                        s,
-                    ), t_hist = points_alignment.iterative_closest_point(
+                    (
+                        converged,
+                        _,
+                        Xt,
+                        (R, T, s),
+                        t_hist,
+                    ) = points_alignment.iterative_closest_point(
                         X,
                         Y,
                         estimate_scale=False,
@@ -130,11 +132,13 @@ class TestICP(TestCaseMixin, unittest.TestCase):
                     t_init = t_hist[min(2, len(t_hist) - 1)]
 
                     # rerun the ICP
-                    converged_init, _, Xt_init, (
-                        R_init,
-                        T_init,
-                        s_init,
-                    ), t_hist_init = points_alignment.iterative_closest_point(
+                    (
+                        converged_init,
+                        _,
+                        Xt_init,
+                        (R_init, T_init, s_init),
+                        t_hist_init,
+                    ) = points_alignment.iterative_closest_point(
                         X,
                         Y,
                         init_transform=t_init,
@@ -182,11 +186,13 @@ class TestICP(TestCaseMixin, unittest.TestCase):
                 n_points_Y = Y_pcl.num_points_per_cloud()
 
                 # run icp with Pointlouds inputs
-                _, _, Xt_pcl, (
-                    R_pcl,
-                    T_pcl,
-                    s_pcl,
-                ), _ = points_alignment.iterative_closest_point(
+                (
+                    _,
+                    _,
+                    Xt_pcl,
+                    (R_pcl, T_pcl, s_pcl),
+                    _,
+                ) = points_alignment.iterative_closest_point(
                     X_pcl,
                     Y_pcl,
                     estimate_scale=estimate_scale,
@@ -263,11 +269,13 @@ class TestICP(TestCaseMixin, unittest.TestCase):
         ]
 
         # run the icp algorithm
-        converged, _, _, (
-            R_ours,
-            T_ours,
-            s_ours,
-        ), _ = points_alignment.iterative_closest_point(
+        (
+            converged,
+            _,
+            _,
+            (R_ours, T_ours, s_ours),
+            _,
+        ) = points_alignment.iterative_closest_point(
             X,
             Y,
             estimate_scale=estimate_scale,

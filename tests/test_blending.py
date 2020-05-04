@@ -261,7 +261,9 @@ class TestBlending(unittest.TestCase):
         # of the image with surrounding padded values.
         N, S, K = 1, 8, 2
         device = torch.device("cuda")
-        pix_to_face = -torch.ones((N, S, S, K), dtype=torch.int64, device=device)
+        pix_to_face = torch.full(
+            (N, S, S, K), fill_value=-1, dtype=torch.int64, device=device
+        )
         h = int(S / 2)
         pix_to_face_full = torch.randint(
             size=(N, h, h, K), low=0, high=100, device=device

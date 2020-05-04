@@ -80,7 +80,7 @@ def make_mesh_texture_atlas(
         faces_material_ind = torch.from_numpy(face_material_names == material_name).to(
             faces_verts_uvs.device
         )
-        if (faces_material_ind).sum() > 0:
+        if faces_material_ind.sum() > 0:
             # For these faces, update the base color to the
             # diffuse material color.
             if "diffuse_color" not in props:

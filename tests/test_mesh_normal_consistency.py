@@ -180,7 +180,7 @@ class TestMeshNormalConsistency(unittest.TestCase):
         # mesh1: normal consistency computation
         n0 = (verts1[1] - verts1[2]).cross(verts1[3] - verts1[2])
         n1 = (verts1[1] - verts1[2]).cross(verts1[0] - verts1[2])
-        loss1 = 1.0 - torch.cosine_similarity(n0.view(1, 3), -n1.view(1, 3))
+        loss1 = 1.0 - torch.cosine_similarity(n0.view(1, 3), -(n1.view(1, 3)))
 
         # mesh2: normal consistency computation
         # In the cube mesh, 6 edges are shared with coplanar faces (loss=0),
@@ -193,9 +193,9 @@ class TestMeshNormalConsistency(unittest.TestCase):
         n2 = (verts3[1] - verts3[2]).cross(verts3[4] - verts3[2])
         loss3 = (
             3.0
-            - torch.cosine_similarity(n0.view(1, 3), -n1.view(1, 3))
-            - torch.cosine_similarity(n0.view(1, 3), -n2.view(1, 3))
-            - torch.cosine_similarity(n1.view(1, 3), -n2.view(1, 3))
+            - torch.cosine_similarity(n0.view(1, 3), -(n1.view(1, 3)))
+            - torch.cosine_similarity(n0.view(1, 3), -(n2.view(1, 3)))
+            - torch.cosine_similarity(n1.view(1, 3), -(n2.view(1, 3)))
         )
         loss3 /= 3.0
 

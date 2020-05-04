@@ -35,6 +35,8 @@ class TestChamfer(TestCaseMixin, unittest.TestCase):
         low = 0 if allow_empty else 1
         p1_lengths = torch.randint(low, P1, size=(N,), dtype=torch.int64, device=device)
         p2_lengths = torch.randint(low, P2, size=(N,), dtype=torch.int64, device=device)
+        P1 = p1_lengths.max().item()
+        P2 = p2_lengths.max().item()
         weights = torch.rand((N,), dtype=torch.float32, device=device)
 
         # list of points and normals tensors
@@ -109,9 +111,8 @@ class TestChamfer(TestCaseMixin, unittest.TestCase):
             torch.arange(P2, device=y.device)[None] >= y_lengths[:, None]
         )  # shape [N, P2]
 
-        is_x_heterogeneous = ~(x_lengths == P1).all()
-        is_y_heterogeneous = ~(y_lengths == P2).all()
-
+        is_x_heterogeneous = (x_lengths != P1).any()
+        is_y_heterogeneous = (y_lengths != P2).any()
         # Only calculate the distances for the points which are not masked
         for n in range(N):
             for i1 in range(x_lengths[n]):

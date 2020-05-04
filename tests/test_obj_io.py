@@ -52,11 +52,11 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
         )
         self.assertTrue(torch.all(verts == expected_verts))
         self.assertTrue(torch.all(faces.verts_idx == expected_faces))
-        padded_vals = -torch.ones_like(faces.verts_idx)
+        padded_vals = -(torch.ones_like(faces.verts_idx))
         self.assertTrue(torch.all(faces.normals_idx == padded_vals))
         self.assertTrue(torch.all(faces.textures_idx == padded_vals))
         self.assertTrue(
-            torch.all(faces.materials_idx == -torch.ones(len(expected_faces)))
+            torch.all(faces.materials_idx == -(torch.ones(len(expected_faces))))
         )
         self.assertTrue(normals is None)
         self.assertTrue(textures is None)
@@ -124,10 +124,12 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
             [[0.749279, 0.501284], [0.999110, 0.501077], [0.999455, 0.750380]],
             dtype=torch.float32,
         )
-        expected_faces_normals_idx = -torch.ones_like(expected_faces, dtype=torch.int64)
+        expected_faces_normals_idx = -(
+            torch.ones_like(expected_faces, dtype=torch.int64)
+        )
         expected_faces_normals_idx[4, :] = torch.tensor([1, 1, 1], dtype=torch.int64)
-        expected_faces_textures_idx = -torch.ones_like(
-            expected_faces, dtype=torch.int64
+        expected_faces_textures_idx = -(
+            torch.ones_like(expected_faces, dtype=torch.int64)
         )
         expected_faces_textures_idx[4, :] = torch.tensor([0, 0, 1], dtype=torch.int64)
 
@@ -207,7 +209,7 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
         self.assertClose(expected_textures, textures)
         self.assertClose(expected_verts, verts)
         self.assertTrue(
-            torch.all(faces.normals_idx == -torch.ones_like(faces.textures_idx))
+            torch.all(faces.normals_idx == -(torch.ones_like(faces.textures_idx)))
         )
         self.assertTrue(normals is None)
         self.assertTrue(materials is None)

@@ -74,7 +74,10 @@ class TestPCLNormals(TestCaseMixin, unittest.TestCase):
 
                 # check for both disambiguation options
                 for disambiguate_directions in (True, False):
-                    curvatures, local_coord_frames = estimate_pointcloud_local_coord_frames(
+                    (
+                        curvatures,
+                        local_coord_frames,
+                    ) = estimate_pointcloud_local_coord_frames(
                         pcl,
                         neighborhood_size=neighborhood_size,
                         disambiguate_directions=disambiguate_directions,

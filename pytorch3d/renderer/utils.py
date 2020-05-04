@@ -308,7 +308,7 @@ def convert_to_tensors_and_broadcast(*args, dtype=torch.float32, device: str = "
     args_Nd = []
     for c in args_1d:
         if c.shape[0] != 1 and c.shape[0] != N:
-            msg = "Got non-broadcastable sizes %r" % (sizes)
+            msg = "Got non-broadcastable sizes %r" % sizes
             raise ValueError(msg)
 
         # Expand broadcast dim and keep non broadcast dims the same size

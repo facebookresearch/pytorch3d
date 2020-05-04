@@ -431,7 +431,7 @@ class TestPointMeshDistance(TestCaseMixin, unittest.TestCase):
         # Naive implementation: forward & backward
         edges_packed = meshes.edges_packed()
         edges_list = packed_to_list(edges_packed, meshes.num_edges_per_mesh().tolist())
-        loss_naive = torch.zeros((N), dtype=torch.float32, device=device)
+        loss_naive = torch.zeros(N, dtype=torch.float32, device=device)
         for i in range(N):
             points = pcls.points_list()[i]
             verts = meshes.verts_list()[i]
@@ -461,7 +461,7 @@ class TestPointMeshDistance(TestCaseMixin, unittest.TestCase):
         self.assertClose(loss_op, loss_naive)
 
         # Compare backward pass
-        rand_val = torch.rand((1)).item()
+        rand_val = torch.rand(1).item()
         grad_dist = torch.tensor(rand_val, dtype=torch.float32, device=device)
 
         loss_naive.backward(grad_dist)
@@ -707,7 +707,7 @@ class TestPointMeshDistance(TestCaseMixin, unittest.TestCase):
         pcls_op = Pointclouds(points_op)
 
         # naive implementation
-        loss_naive = torch.zeros((N), dtype=torch.float32, device=device)
+        loss_naive = torch.zeros(N, dtype=torch.float32, device=device)
         for i in range(N):
             points = pcls.points_list()[i]
             verts = meshes.verts_list()[i]
@@ -735,7 +735,7 @@ class TestPointMeshDistance(TestCaseMixin, unittest.TestCase):
         self.assertClose(loss_op, loss_naive)
 
         # Compare backward pass
-        rand_val = torch.rand((1)).item()
+        rand_val = torch.rand(1).item()
         grad_dist = torch.tensor(rand_val, dtype=torch.float32, device=device)
 
         loss_naive.backward(grad_dist)

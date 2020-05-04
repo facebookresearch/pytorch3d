@@ -117,8 +117,8 @@ def chamfer_distance(
     P2 = y.shape[1]
 
     # Check if inputs are heterogeneous and create a lengths mask.
-    is_x_heterogeneous = ~(x_lengths == P1).all()
-    is_y_heterogeneous = ~(y_lengths == P2).all()
+    is_x_heterogeneous = (x_lengths != P1).any()
+    is_y_heterogeneous = (y_lengths != P2).any()
     x_mask = (
         torch.arange(P1, device=x.device)[None] >= x_lengths[:, None]
     )  # shape [N, P1]

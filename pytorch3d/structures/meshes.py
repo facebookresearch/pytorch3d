@@ -926,8 +926,8 @@ class Meshes(object):
             self._num_verts_per_mesh = torch.zeros(
                 (0,), dtype=torch.int64, device=self.device
             )
-            self._faces_packed = -torch.ones(
-                (0, 3), dtype=torch.int64, device=self.device
+            self._faces_packed = -(
+                torch.ones((0, 3), dtype=torch.int64, device=self.device)
             )
             self._faces_packed_to_mesh_idx = torch.zeros(
                 (0,), dtype=torch.int64, device=self.device
@@ -977,8 +977,8 @@ class Meshes(object):
             return
 
         if self.isempty():
-            self._edges_packed = -torch.ones(
-                (0, 2), dtype=torch.int64, device=self.device
+            self._edges_packed = torch.full(
+                (0, 2), fill_value=-1, dtype=torch.int64, device=self.device
             )
             self._edges_packed_to_mesh_idx = torch.zeros(
                 (0,), dtype=torch.int64, device=self.device

@@ -448,7 +448,7 @@ class TestRasterizeMeshes(TestCaseMixin, unittest.TestCase):
         ], dtype=torch.int64, device=device)
         # fmt: on
 
-        pix_to_face_padded = -torch.ones_like(pix_to_face_frontface)
+        pix_to_face_padded = -(torch.ones_like(pix_to_face_frontface))
         # Run with and without culling
         # Without culling, for k=0, the front face (i.e. face 2) is
         # rasterized and for k=1, the back face (i.e. face 3) is
