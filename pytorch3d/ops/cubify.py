@@ -45,7 +45,7 @@ def ravel_index(idx, dims) -> torch.Tensor:
 
 
 @torch.no_grad()
-def cubify(voxels, thresh, device=None) -> Meshes:
+def cubify(voxels, thresh, device=None, align: str = "topleft") -> Meshes:
     r"""
     Converts a voxel to a mesh by replacing each occupied voxel with a cube
     consisting of 12 faces and 8 vertices. Shared vertices are merged, and
@@ -54,12 +54,37 @@ def cubify(voxels, thresh, device=None) -> Meshes:
       voxels: A FloatTensor of shape (N, D, H, W) containing occupancy probabilities.
       thresh: A scalar threshold. If a voxel occupancy is larger than
           thresh, the voxel is considered occupied.
+      device: The device of the output meshes
+      align: Defines the alignment of the mesh vertices and the grid locations.
+          Has to be one of {"topleft", "corner", "center"}. See below for explanation.
+          Default is "topleft".
     Returns:
       meshes: A Meshes object of the corresponding meshes.
+
+
+    The alignment between the vertices of the cubified mesh and the voxel locations (or pixels)
+    is defined by the choice of `align`. We support three modes, as shown below for a 2x2 grid:
+
+                X---X----         X-------X        ---------
+                |   |   |         |   |   |        | X | X |
+                X---X----         ---------        ---------
+                |   |   |         |   |   |        | X | X |
+                ---------         X-------X        ---------
+
+                 topleft           corner            center
+
+    In the figure, X denote the grid locations and the squares represent the added cuboids.
+    When `align="topleft"`, then the top left corner of each cuboid corresponds to the
+    pixel coordinate of the input grid.
+    When `align="corner"`, then the corners of the output mesh span the whole grid.
+    When `align="center"`, then the grid locations form the center of the cuboids.
     """
 
     if device is None:
         device = voxels.device
+
+    if align not in ["topleft", "corner", "center"]:
+        raise ValueError("Align mode must be one of (topleft, corner, center).")
 
     if len(voxels) == 0:
         return Meshes(verts=[], faces=[])
@@ -146,7 +171,7 @@ def cubify(voxels, thresh, device=None) -> Meshes:
 
     # boolean to linear index
     # NF x 2
-    linind = torch.nonzero(faces_idx)
+    linind = torch.nonzero(faces_idx, as_tuple=False)
     # NF x 4
     nyxz = unravel_index(linind[:, 0], (N, H, W, D))
 
@@ -170,11 +195,19 @@ def cubify(voxels, thresh, device=None) -> Meshes:
         torch.arange(H + 1), torch.arange(W + 1), torch.arange(D + 1)
     )
     y = y.to(device=device, dtype=torch.float32)
-    y = y * 2.0 / (H - 1.0) - 1.0
     x = x.to(device=device, dtype=torch.float32)
-    x = x * 2.0 / (W - 1.0) - 1.0
     z = z.to(device=device, dtype=torch.float32)
-    z = z * 2.0 / (D - 1.0) - 1.0
+
+    if align == "center":
+        x = x - 0.5
+        y = y - 0.5
+        z = z - 0.5
+
+    margin = 0.0 if align == "corner" else 1.0
+    y = y * 2.0 / (H - margin) - 1.0
+    x = x * 2.0 / (W - margin) - 1.0
+    z = z * 2.0 / (D - margin) - 1.0
+
     # ((H+1)(W+1)(D+1)) x 3
     grid_verts = torch.stack((x, y, z), dim=3).view(-1, 3)
 
@@ -196,7 +229,7 @@ def cubify(voxels, thresh, device=None) -> Meshes:
     idlenum = idleverts.cumsum(1)
 
     verts_list = [
-        grid_verts.index_select(0, (idleverts[n] == 0).nonzero()[:, 0])
+        grid_verts.index_select(0, (idleverts[n] == 0).nonzero(as_tuple=False)[:, 0])
         for n in range(N)
     ]
     faces_list = [nface - idlenum[n][nface] for n, nface in enumerate(faces_list)]
