@@ -507,7 +507,7 @@ class TestRasterizeMeshes(TestCaseMixin, unittest.TestCase):
         grad_var1.grad.data.zero_()
         loss2.backward()
         grad_verts2 = grad_var2.grad.data.clone().cpu()
-        self.assertClose(grad_verts1, grad_verts2, rtol=1e-3)
+        self.assertClose(grad_verts1, grad_verts2, rtol=2e-3)
 
     def _test_perspective_correct(self, rasterize_meshes_fn, device, bin_size=None):
         # fmt: off

@@ -13,7 +13,6 @@ std::tuple<at::Tensor, at::Tensor> KNearestNeighborIdxCpu(
   const int N = p1.size(0);
   const int P1 = p1.size(1);
   const int D = p1.size(2);
-  const int P2 = p2.size(1);
 
   auto long_opts = p1.options().dtype(torch::kInt64);
   torch::Tensor idxs = torch::full({N, P1, K}, 0, long_opts);
