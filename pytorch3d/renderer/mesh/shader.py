@@ -10,7 +10,6 @@ from ..blending import (
     sigmoid_alpha_blend,
     softmax_rgb_blend,
 )
-from ..cameras import OpenGLPerspectiveCameras
 from ..lighting import PointLights
 from ..materials import Materials
 from .shading import flat_shading, gouraud_shading, phong_shading
@@ -46,13 +45,16 @@ class HardPhongShader(nn.Module):
         self.materials = (
             materials if materials is not None else Materials(device=device)
         )
-        self.cameras = (
-            cameras if cameras is not None else OpenGLPerspectiveCameras(device=device)
-        )
+        self.cameras = cameras
 
     def forward(self, fragments, meshes, **kwargs) -> torch.Tensor:
-        texels = interpolate_vertex_colors(fragments, meshes)
         cameras = kwargs.get("cameras", self.cameras)
+        if cameras is None:
+            msg = "Cameras must be specified either at initialization \
+                or in the forward pass of HardPhongShader"
+            raise ValueError(msg)
+
+        texels = interpolate_vertex_colors(fragments, meshes)
         lights = kwargs.get("lights", self.lights)
         materials = kwargs.get("materials", self.materials)
         colors = phong_shading(
@@ -89,14 +91,16 @@ class SoftPhongShader(nn.Module):
         self.materials = (
             materials if materials is not None else Materials(device=device)
         )
-        self.cameras = (
-            cameras if cameras is not None else OpenGLPerspectiveCameras(device=device)
-        )
+        self.cameras = cameras
         self.blend_params = blend_params if blend_params is not None else BlendParams()
 
     def forward(self, fragments, meshes, **kwargs) -> torch.Tensor:
-        texels = interpolate_vertex_colors(fragments, meshes)
         cameras = kwargs.get("cameras", self.cameras)
+        if cameras is None:
+            msg = "Cameras must be specified either at initialization \
+                or in the forward pass of SoftPhongShader"
+            raise ValueError(msg)
+        texels = interpolate_vertex_colors(fragments, meshes)
         lights = kwargs.get("lights", self.lights)
         materials = kwargs.get("materials", self.materials)
         colors = phong_shading(
@@ -132,12 +136,14 @@ class HardGouraudShader(nn.Module):
         self.materials = (
             materials if materials is not None else Materials(device=device)
         )
-        self.cameras = (
-            cameras if cameras is not None else OpenGLPerspectiveCameras(device=device)
-        )
+        self.cameras = cameras
 
     def forward(self, fragments, meshes, **kwargs) -> torch.Tensor:
         cameras = kwargs.get("cameras", self.cameras)
+        if cameras is None:
+            msg = "Cameras must be specified either at initialization \
+                or in the forward pass of SoftPhongShader"
+            raise ValueError(msg)
         lights = kwargs.get("lights", self.lights)
         materials = kwargs.get("materials", self.materials)
         pixel_colors = gouraud_shading(
@@ -174,13 +180,15 @@ class SoftGouraudShader(nn.Module):
         self.materials = (
             materials if materials is not None else Materials(device=device)
         )
-        self.cameras = (
-            cameras if cameras is not None else OpenGLPerspectiveCameras(device=device)
-        )
+        self.cameras = cameras
         self.blend_params = blend_params if blend_params is not None else BlendParams()
 
     def forward(self, fragments, meshes, **kwargs) -> torch.Tensor:
         cameras = kwargs.get("cameras", self.cameras)
+        if cameras is None:
+            msg = "Cameras must be specified either at initialization \
+                or in the forward pass of SoftPhongShader"
+            raise ValueError(msg)
         lights = kwargs.get("lights", self.lights)
         materials = kwargs.get("materials", self.materials)
         pixel_colors = gouraud_shading(
@@ -219,14 +227,16 @@ class TexturedSoftPhongShader(nn.Module):
         self.materials = (
             materials if materials is not None else Materials(device=device)
         )
-        self.cameras = (
-            cameras if cameras is not None else OpenGLPerspectiveCameras(device=device)
-        )
+        self.cameras = cameras
         self.blend_params = blend_params if blend_params is not None else BlendParams()
 
     def forward(self, fragments, meshes, **kwargs) -> torch.Tensor:
-        texels = interpolate_texture_map(fragments, meshes)
         cameras = kwargs.get("cameras", self.cameras)
+        if cameras is None:
+            msg = "Cameras must be specified either at initialization \
+                or in the forward pass of SoftPhongShader"
+            raise ValueError(msg)
+        texels = interpolate_texture_map(fragments, meshes)
         lights = kwargs.get("lights", self.lights)
         materials = kwargs.get("materials", self.materials)
         blend_params = kwargs.get("blend_params", self.blend_params)
@@ -262,13 +272,15 @@ class HardFlatShader(nn.Module):
         self.materials = (
             materials if materials is not None else Materials(device=device)
         )
-        self.cameras = (
-            cameras if cameras is not None else OpenGLPerspectiveCameras(device=device)
-        )
+        self.cameras = cameras
 
     def forward(self, fragments, meshes, **kwargs) -> torch.Tensor:
-        texels = interpolate_vertex_colors(fragments, meshes)
         cameras = kwargs.get("cameras", self.cameras)
+        if cameras is None:
+            msg = "Cameras must be specified either at initialization \
+                or in the forward pass of SoftPhongShader"
+            raise ValueError(msg)
+        texels = interpolate_vertex_colors(fragments, meshes)
         lights = kwargs.get("lights", self.lights)
         materials = kwargs.get("materials", self.materials)
         colors = flat_shading(

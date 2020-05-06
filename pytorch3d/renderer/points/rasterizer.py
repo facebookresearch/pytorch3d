@@ -48,7 +48,7 @@ class PointsRasterizer(nn.Module):
     This class implements methods for rasterizing a batch of pointclouds.
     """
 
-    def __init__(self, cameras, raster_settings=None):
+    def __init__(self, cameras=None, raster_settings=None):
         """
         cameras: A cameras object which has a  `transform_points` method
                 which returns the transformed points after applying the
@@ -80,6 +80,10 @@ class PointsRasterizer(nn.Module):
         be moved into forward.
         """
         cameras = kwargs.get("cameras", self.cameras)
+        if cameras is None:
+            msg = "Cameras must be specified either at initialization \
+                or in the forward pass of PointsRasterizer"
+            raise ValueError(msg)
 
         pts_world = point_clouds.points_padded()
         pts_world_packed = point_clouds.points_packed()

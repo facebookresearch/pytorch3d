@@ -54,7 +54,7 @@ class MeshRasterizer(nn.Module):
     Meshes.
     """
 
-    def __init__(self, cameras, raster_settings=None):
+    def __init__(self, cameras=None, raster_settings=None):
         """
         Args:
             cameras: A cameras object which has a  `transform_points` method
@@ -88,6 +88,11 @@ class MeshRasterizer(nn.Module):
         be moved into forward.
         """
         cameras = kwargs.get("cameras", self.cameras)
+        if cameras is None:
+            msg = "Cameras must be specified either at initialization \
+                or in the forward pass of MeshRasterizer"
+            raise ValueError(msg)
+
         verts_world = meshes_world.verts_padded()
         verts_world_packed = meshes_world.verts_packed()
         verts_screen = cameras.transform_points(verts_world, **kwargs)
