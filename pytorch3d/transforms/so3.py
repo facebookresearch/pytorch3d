@@ -152,11 +152,14 @@ def so3_log_map(R, eps: float = 0.0001):
 
     phi = so3_rotation_angle(R)
 
-    phi_valid = torch.clamp(phi.abs(), eps) * phi.sign()
+    phi_sin = phi.sin()
 
-    log_rot_hat = (phi_valid / (2.0 * phi_valid.sin()))[:, None, None] * (
-        R - R.permute(0, 2, 1)
+    phi_denom = (
+        torch.clamp(phi_sin.abs(), eps) * phi_sin.sign()
+        + (phi_sin == 0).type_as(phi) * eps
     )
+
+    log_rot_hat = (phi / (2.0 * phi_denom))[:, None, None] * (R - R.permute(0, 2, 1))
     log_rot = hat_inv(log_rot_hat)
 
     return log_rot
