@@ -341,7 +341,7 @@ class Pointclouds(object):
         else:
             raise IndexError(index)
 
-        return Pointclouds(points=points, normals=normals, features=features)
+        return self.__class__(points=points, normals=normals, features=features)
 
     def isempty(self) -> bool:
         """
@@ -647,7 +647,7 @@ class Pointclouds(object):
                 new_normals = self.normals_padded().clone()
             if features_padded is not None:
                 new_features = self.features_padded().clone()
-        other = Pointclouds(
+        other = self.__class__(
             points=new_points, normals=new_normals, features=new_features
         )
         for k in self._INTERNAL_TENSORS:
@@ -920,7 +920,7 @@ class Pointclouds(object):
             new_features_list = []
             for features in self.features_list():
                 new_features_list.extend(features.clone() for _ in range(N))
-        return Pointclouds(
+        return self.__class__(
             points=new_points_list, normals=new_normals_list, features=new_features_list
         )
 
@@ -959,7 +959,7 @@ class Pointclouds(object):
         if new_features_padded is not None:
             check_shapes(new_features_padded, [self._N, self._P, self._C])
 
-        new = Pointclouds(
+        new = self.__class__(
             points=new_points_padded,
             normals=new_normals_padded,
             features=new_features_padded,

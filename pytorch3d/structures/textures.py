@@ -129,7 +129,7 @@ class Textures(object):
         self._num_verts_per_mesh = None
 
     def clone(self):
-        other = Textures()
+        other = self.__class__()
         for k in dir(self):
             v = getattr(self, k)
             if torch.is_tensor(v):
@@ -144,7 +144,7 @@ class Textures(object):
         return self
 
     def __getitem__(self, index):
-        other = Textures()
+        other = self.__class__()
         for key in dir(self):
             value = getattr(self, key)
             if torch.is_tensor(value):
@@ -237,12 +237,12 @@ class Textures(object):
             new_verts_uvs = _extend_tensor(self._verts_uvs_padded, N)
             new_faces_uvs = _extend_tensor(self._faces_uvs_padded, N)
             new_maps = _extend_tensor(self._maps_padded, N)
-            return Textures(
+            return self.__class__(
                 verts_uvs=new_verts_uvs, faces_uvs=new_faces_uvs, maps=new_maps
             )
         elif self._verts_rgb_padded is not None:
             new_verts_rgb = _extend_tensor(self._verts_rgb_padded, N)
-            return Textures(verts_rgb=new_verts_rgb)
+            return self.__class__(verts_rgb=new_verts_rgb)
         else:
             msg = "Either vertex colors or texture maps are required."
             raise ValueError(msg)
