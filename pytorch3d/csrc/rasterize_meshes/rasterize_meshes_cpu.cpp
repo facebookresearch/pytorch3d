@@ -123,7 +123,7 @@ RasterizeMeshesNaiveCpu(
   const int W = image_size;
   const int K = faces_per_pixel;
 
-  auto long_opts = face_verts.options().dtype(torch::kInt64);
+  auto long_opts = num_faces_per_mesh.options().dtype(torch::kInt64);
   auto float_opts = face_verts.options().dtype(torch::kFloat32);
 
   // Initialize output tensors.
@@ -418,7 +418,7 @@ torch::Tensor RasterizeMeshesCoarseCpu(
   const int BH = 1 + (height - 1) / bin_size; // Integer division round up.
   const int BW = 1 + (width - 1) / bin_size; // Integer division round up.
 
-  auto opts = face_verts.options().dtype(torch::kInt32);
+  auto opts = num_faces_per_mesh.options().dtype(torch::kInt32);
   torch::Tensor faces_per_bin = torch::zeros({N, BH, BW}, opts);
   torch::Tensor bin_faces = torch::full({N, BH, BW, M}, -1, opts);
   auto bin_faces_a = bin_faces.accessor<int32_t, 4>();

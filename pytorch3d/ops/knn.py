@@ -67,6 +67,7 @@ class _knn_points(Function):
             idx = idx.gather(2, sort_idx)
 
         ctx.save_for_backward(p1, p2, lengths1, lengths2, idx)
+        ctx.mark_non_differentiable(idx)
         return dists, idx
 
     @staticmethod

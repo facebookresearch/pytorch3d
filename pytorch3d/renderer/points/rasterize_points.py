@@ -140,6 +140,7 @@ class _RasterizePoints(torch.autograd.Function):
         )
         idx, zbuf, dists = _C.rasterize_points(*args)
         ctx.save_for_backward(points, idx)
+        ctx.mark_non_differentiable(idx)
         return idx, zbuf, dists
 
     @staticmethod

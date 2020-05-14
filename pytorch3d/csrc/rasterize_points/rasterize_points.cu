@@ -177,7 +177,7 @@ std::tuple<at::Tensor, at::Tensor, at::Tensor> RasterizePointsNaiveCuda(
     AT_ERROR(ss.str());
   }
 
-  auto int_opts = points.options().dtype(at::kInt);
+  auto int_opts = num_points_per_cloud.options().dtype(at::kInt);
   auto float_opts = points.options().dtype(at::kFloat);
   at::Tensor point_idxs = at::full({N, S, S, K}, -1, int_opts);
   at::Tensor zbuf = at::full({N, S, S, K}, -1, float_opts);
@@ -372,7 +372,7 @@ at::Tensor RasterizePointsCoarseCuda(
     ss << "Got " << num_bins << "; that's too many!";
     AT_ERROR(ss.str());
   }
-  auto opts = points.options().dtype(at::kInt);
+  auto opts = num_points_per_cloud.options().dtype(at::kInt);
   at::Tensor points_per_bin = at::zeros({N, num_bins, num_bins}, opts);
   at::Tensor bin_points = at::full({N, num_bins, num_bins, M}, -1, opts);
 
@@ -509,7 +509,7 @@ std::tuple<at::Tensor, at::Tensor, at::Tensor> RasterizePointsFineCuda(
   if (K > kMaxPointsPerPixel) {
     AT_ERROR("Must have num_closest <= 150");
   }
-  auto int_opts = points.options().dtype(at::kInt);
+  auto int_opts = bin_points.options().dtype(at::kInt);
   auto float_opts = points.options().dtype(at::kFloat);
   at::Tensor point_idxs = at::full({N, S, S, K}, -1, int_opts);
   at::Tensor zbuf = at::full({N, S, S, K}, -1, float_opts);

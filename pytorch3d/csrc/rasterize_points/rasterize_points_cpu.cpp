@@ -25,7 +25,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> RasterizePointsNaiveCpu(
   const int K = points_per_pixel;
 
   // Initialize output tensors.
-  auto int_opts = points.options().dtype(torch::kInt32);
+  auto int_opts = num_points_per_cloud.options().dtype(torch::kInt32);
   auto float_opts = points.options().dtype(torch::kFloat32);
   torch::Tensor point_idxs = torch::full({N, S, S, K}, -1, int_opts);
   torch::Tensor zbuf = torch::full({N, S, S, K}, -1, float_opts);
@@ -105,7 +105,7 @@ torch::Tensor RasterizePointsCoarseCpu(
 
   const int B = 1 + (image_size - 1) / bin_size; // Integer division round up
   const int M = max_points_per_bin;
-  auto opts = points.options().dtype(torch::kInt32);
+  auto opts = num_points_per_cloud.options().dtype(torch::kInt32);
   torch::Tensor points_per_bin = torch::zeros({N, B, B}, opts);
   torch::Tensor bin_points = torch::full({N, B, B, M}, -1, opts);
 

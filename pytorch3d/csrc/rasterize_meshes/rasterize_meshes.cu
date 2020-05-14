@@ -321,7 +321,7 @@ RasterizeMeshesNaiveCuda(
   const int W = image_size;
   const int K = num_closest;
 
-  auto long_opts = face_verts.options().dtype(at::kLong);
+  auto long_opts = num_faces_per_mesh.options().dtype(at::kLong);
   auto float_opts = face_verts.options().dtype(at::kFloat);
 
   at::Tensor face_idxs = at::full({N, H, W, K}, -1, long_opts);
@@ -701,7 +701,7 @@ at::Tensor RasterizeMeshesCoarseCuda(
     ss << "Got " << num_bins << "; that's too many!";
     AT_ERROR(ss.str());
   }
-  auto opts = face_verts.options().dtype(at::kInt);
+  auto opts = num_faces_per_mesh.options().dtype(at::kInt);
   at::Tensor faces_per_bin = at::zeros({N, num_bins, num_bins}, opts);
   at::Tensor bin_faces = at::full({N, num_bins, num_bins, M}, -1, opts);
 
@@ -868,7 +868,7 @@ RasterizeMeshesFineCuda(
   if (K > kMaxPointsPerPixel) {
     AT_ERROR("Must have num_closest <= 150");
   }
-  auto long_opts = face_verts.options().dtype(at::kLong);
+  auto long_opts = bin_faces.options().dtype(at::kLong);
   auto float_opts = face_verts.options().dtype(at::kFloat);
 
   at::Tensor face_idxs = at::full({N, H, W, K}, -1, long_opts);

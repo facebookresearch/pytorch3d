@@ -197,6 +197,7 @@ class _RasterizeFaceVerts(torch.autograd.Function):
             cull_backfaces,
         )
         ctx.save_for_backward(face_verts, pix_to_face)
+        ctx.mark_non_differentiable(pix_to_face)
         ctx.perspective_correct = perspective_correct
         return pix_to_face, zbuf, barycentric_coords, dists
 
