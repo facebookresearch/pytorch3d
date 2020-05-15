@@ -348,10 +348,10 @@ RasterizeMeshesNaiveCuda(
       H,
       W,
       K,
-      face_idxs.contiguous().data_ptr<int64_t>(),
-      zbuf.contiguous().data_ptr<float>(),
-      pix_dists.contiguous().data_ptr<float>(),
-      bary.contiguous().data_ptr<float>());
+      face_idxs.data_ptr<int64_t>(),
+      zbuf.data_ptr<float>(),
+      pix_dists.data_ptr<float>(),
+      bary.data_ptr<float>());
 
   AT_CUDA_CHECK(cudaGetLastError());
   return std::make_tuple(face_idxs, zbuf, bary, pix_dists);
@@ -530,7 +530,7 @@ at::Tensor RasterizeMeshesBackwardCuda(
       grad_zbuf.contiguous().data_ptr<float>(),
       grad_bary.contiguous().data_ptr<float>(),
       grad_dists.contiguous().data_ptr<float>(),
-      grad_face_verts.contiguous().data_ptr<float>());
+      grad_face_verts.data_ptr<float>());
 
   AT_CUDA_CHECK(cudaGetLastError());
   return grad_face_verts;
@@ -727,8 +727,8 @@ at::Tensor RasterizeMeshesCoarseCuda(
       bin_size,
       chunk_size,
       M,
-      faces_per_bin.contiguous().data_ptr<int32_t>(),
-      bin_faces.contiguous().data_ptr<int32_t>());
+      faces_per_bin.data_ptr<int32_t>(),
+      bin_faces.data_ptr<int32_t>());
 
   AT_CUDA_CHECK(cudaGetLastError());
   return bin_faces;
@@ -897,10 +897,10 @@ RasterizeMeshesFineCuda(
       H,
       W,
       K,
-      face_idxs.contiguous().data_ptr<int64_t>(),
-      zbuf.contiguous().data_ptr<float>(),
-      pix_dists.contiguous().data_ptr<float>(),
-      bary.contiguous().data_ptr<float>());
+      face_idxs.data_ptr<int64_t>(),
+      zbuf.data_ptr<float>(),
+      pix_dists.data_ptr<float>(),
+      bary.data_ptr<float>());
 
   return std::make_tuple(face_idxs, zbuf, bary, pix_dists);
 }

@@ -347,21 +347,21 @@ std::tuple<at::Tensor, at::Tensor> KNearestNeighborIdxCuda(
   const size_t threads = 256;
   const size_t blocks = 256;
   if (version == 0) {
-    AT_DISPATCH_FLOATING_TYPES(p1.scalar_type(), "knn_kernel_cuda", ([&] {
-                                 KNearestNeighborKernelV0<scalar_t>
-                                     <<<blocks, threads, 0, stream>>>(
-                                         p1.data_ptr<scalar_t>(),
-                                         p2.data_ptr<scalar_t>(),
-                                         lengths1.data_ptr<int64_t>(),
-                                         lengths2.data_ptr<int64_t>(),
-                                         dists.data_ptr<scalar_t>(),
-                                         idxs.data_ptr<int64_t>(),
-                                         N,
-                                         P1,
-                                         P2,
-                                         D,
-                                         K);
-                               }));
+    AT_DISPATCH_FLOATING_TYPES(
+        p1.scalar_type(), "knn_kernel_cuda", ([&] {
+          KNearestNeighborKernelV0<scalar_t><<<blocks, threads, 0, stream>>>(
+              p1.contiguous().data_ptr<scalar_t>(),
+              p2.contiguous().data_ptr<scalar_t>(),
+              lengths1.contiguous().data_ptr<int64_t>(),
+              lengths2.contiguous().data_ptr<int64_t>(),
+              dists.data_ptr<scalar_t>(),
+              idxs.data_ptr<int64_t>(),
+              N,
+              P1,
+              P2,
+              D,
+              K);
+        }));
   } else if (version == 1) {
     AT_DISPATCH_FLOATING_TYPES(p1.scalar_type(), "knn_kernel_cuda", ([&] {
                                  DispatchKernel1D<
@@ -372,10 +372,10 @@ std::tuple<at::Tensor, at::Tensor> KNearestNeighborIdxCuda(
                                      D,
                                      blocks,
                                      threads,
-                                     p1.data_ptr<scalar_t>(),
-                                     p2.data_ptr<scalar_t>(),
-                                     lengths1.data_ptr<int64_t>(),
-                                     lengths2.data_ptr<int64_t>(),
+                                     p1.contiguous().data_ptr<scalar_t>(),
+                                     p2.contiguous().data_ptr<scalar_t>(),
+                                     lengths1.contiguous().data_ptr<int64_t>(),
+                                     lengths2.contiguous().data_ptr<int64_t>(),
                                      dists.data_ptr<scalar_t>(),
                                      idxs.data_ptr<int64_t>(),
                                      N,
@@ -396,10 +396,10 @@ std::tuple<at::Tensor, at::Tensor> KNearestNeighborIdxCuda(
                                      K_64,
                                      blocks,
                                      threads,
-                                     p1.data_ptr<scalar_t>(),
-                                     p2.data_ptr<scalar_t>(),
-                                     lengths1.data_ptr<int64_t>(),
-                                     lengths2.data_ptr<int64_t>(),
+                                     p1.contiguous().data_ptr<scalar_t>(),
+                                     p2.contiguous().data_ptr<scalar_t>(),
+                                     lengths1.contiguous().data_ptr<int64_t>(),
+                                     lengths2.contiguous().data_ptr<int64_t>(),
                                      dists.data_ptr<scalar_t>(),
                                      idxs.data_ptr<int64_t>(),
                                      N,
@@ -419,10 +419,10 @@ std::tuple<at::Tensor, at::Tensor> KNearestNeighborIdxCuda(
                                      K_64,
                                      blocks,
                                      threads,
-                                     p1.data_ptr<scalar_t>(),
-                                     p2.data_ptr<scalar_t>(),
-                                     lengths1.data_ptr<int64_t>(),
-                                     lengths2.data_ptr<int64_t>(),
+                                     p1.contiguous().data_ptr<scalar_t>(),
+                                     p2.contiguous().data_ptr<scalar_t>(),
+                                     lengths1.contiguous().data_ptr<int64_t>(),
+                                     lengths2.contiguous().data_ptr<int64_t>(),
                                      dists.data_ptr<scalar_t>(),
                                      idxs.data_ptr<int64_t>(),
                                      N,
@@ -525,12 +525,12 @@ std::tuple<at::Tensor, at::Tensor> KNearestNeighborBackwardCuda(
   const int threads = 512;
 
   KNearestNeighborBackwardKernel<<<blocks, threads, 0, stream>>>(
-      p1.data_ptr<float>(),
-      p2.data_ptr<float>(),
-      lengths1.data_ptr<int64_t>(),
-      lengths2.data_ptr<int64_t>(),
-      idxs.data_ptr<int64_t>(),
-      grad_dists.data_ptr<float>(),
+      p1.contiguous().data_ptr<float>(),
+      p2.contiguous().data_ptr<float>(),
+      lengths1.contiguous().data_ptr<int64_t>(),
+      lengths2.contiguous().data_ptr<int64_t>(),
+      idxs.contiguous().data_ptr<int64_t>(),
+      grad_dists.contiguous().data_ptr<float>(),
       grad_p1.data_ptr<float>(),
       grad_p2.data_ptr<float>(),
       N,

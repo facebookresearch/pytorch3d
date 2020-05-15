@@ -35,8 +35,8 @@ at::Tensor GatherScatter(
     bool backward) {
   if (input.is_cuda() && edges.is_cuda()) {
 #ifdef WITH_CUDA
-    CHECK_CONTIGUOUS_CUDA(input);
-    CHECK_CONTIGUOUS_CUDA(edges);
+    CHECK_CUDA(input);
+    CHECK_CUDA(edges);
     return GatherScatterCuda(input, edges, directed, backward);
 #else
     AT_ERROR("Not compiled with GPU support.");

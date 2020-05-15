@@ -239,8 +239,8 @@ std::tuple<at::Tensor, at::Tensor> FaceAreasNormalsForwardCuda(
   AT_DISPATCH_FLOATING_TYPES(
       verts.scalar_type(), "face_areas_normals_forward_cuda", ([&] {
         FaceAreasNormalsForwardKernel<scalar_t><<<blocks, threads, 0, stream>>>(
-            verts.data_ptr<scalar_t>(),
-            faces.data_ptr<int64_t>(),
+            verts.contiguous().data_ptr<scalar_t>(),
+            faces.contiguous().data_ptr<int64_t>(),
             areas.data_ptr<scalar_t>(),
             normals.data_ptr<scalar_t>(),
             V,
@@ -282,10 +282,10 @@ at::Tensor FaceAreasNormalsBackwardCuda(
   // TODO(gkioxari) add AT_DISPATCH_FLOATING_TYPES once atomicAdd supports
   // doubles. Currently, support is for floats only.
   FaceAreasNormalsBackwardKernel<<<blocks, threads, 0, stream>>>(
-      grad_areas.data_ptr<float>(),
-      grad_normals.data_ptr<float>(),
-      verts.data_ptr<float>(),
-      faces.data_ptr<int64_t>(),
+      grad_areas.contiguous().data_ptr<float>(),
+      grad_normals.contiguous().data_ptr<float>(),
+      verts.contiguous().data_ptr<float>(),
+      faces.contiguous().data_ptr<int64_t>(),
       grad_verts.data_ptr<float>(),
       V,
       F);

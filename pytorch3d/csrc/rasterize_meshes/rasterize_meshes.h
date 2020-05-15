@@ -96,9 +96,9 @@ RasterizeMeshesNaive(
   // TODO: Better type checking.
   if (face_verts.is_cuda()) {
 #ifdef WITH_CUDA
-    CHECK_CONTIGUOUS_CUDA(face_verts);
-    CHECK_CONTIGUOUS_CUDA(mesh_to_face_first_idx);
-    CHECK_CONTIGUOUS_CUDA(num_faces_per_mesh);
+    CHECK_CUDA(face_verts);
+    CHECK_CUDA(mesh_to_face_first_idx);
+    CHECK_CUDA(num_faces_per_mesh);
     return RasterizeMeshesNaiveCuda(
         face_verts,
         mesh_to_face_first_idx,
@@ -179,11 +179,11 @@ torch::Tensor RasterizeMeshesBackward(
     const bool perspective_correct) {
   if (face_verts.is_cuda()) {
 #ifdef WITH_CUDA
-    CHECK_CONTIGUOUS_CUDA(face_verts);
-    CHECK_CONTIGUOUS_CUDA(pix_to_face);
-    CHECK_CONTIGUOUS_CUDA(grad_zbuf);
-    CHECK_CONTIGUOUS_CUDA(grad_bary);
-    CHECK_CONTIGUOUS_CUDA(grad_dists);
+    CHECK_CUDA(face_verts);
+    CHECK_CUDA(pix_to_face);
+    CHECK_CUDA(grad_zbuf);
+    CHECK_CUDA(grad_bary);
+    CHECK_CUDA(grad_dists);
     return RasterizeMeshesBackwardCuda(
         face_verts,
         pix_to_face,
@@ -260,9 +260,9 @@ torch::Tensor RasterizeMeshesCoarse(
     const int max_faces_per_bin) {
   if (face_verts.is_cuda()) {
 #ifdef WITH_CUDA
-    CHECK_CONTIGUOUS_CUDA(face_verts);
-    CHECK_CONTIGUOUS_CUDA(mesh_to_face_first_idx);
-    CHECK_CONTIGUOUS_CUDA(num_faces_per_mesh);
+    CHECK_CUDA(face_verts);
+    CHECK_CUDA(mesh_to_face_first_idx);
+    CHECK_CUDA(num_faces_per_mesh);
     return RasterizeMeshesCoarseCuda(
         face_verts,
         mesh_to_face_first_idx,
@@ -359,8 +359,8 @@ RasterizeMeshesFine(
     const bool cull_backfaces) {
   if (face_verts.is_cuda()) {
 #ifdef WITH_CUDA
-    CHECK_CONTIGUOUS_CUDA(face_verts);
-    CHECK_CONTIGUOUS_CUDA(bin_faces);
+    CHECK_CUDA(face_verts);
+    CHECK_CUDA(bin_faces);
     return RasterizeMeshesFineCuda(
         face_verts,
         bin_faces,

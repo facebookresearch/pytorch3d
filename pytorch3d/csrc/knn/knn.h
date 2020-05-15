@@ -56,8 +56,8 @@ std::tuple<at::Tensor, at::Tensor> KNearestNeighborIdx(
     int version) {
   if (p1.is_cuda() || p2.is_cuda()) {
 #ifdef WITH_CUDA
-    CHECK_CONTIGUOUS_CUDA(p1);
-    CHECK_CONTIGUOUS_CUDA(p2);
+    CHECK_CUDA(p1);
+    CHECK_CUDA(p2);
     return KNearestNeighborIdxCuda(p1, p2, lengths1, lengths2, K, version);
 #else
     AT_ERROR("Not compiled with GPU support.");
@@ -117,8 +117,8 @@ std::tuple<at::Tensor, at::Tensor> KNearestNeighborBackward(
     const at::Tensor& grad_dists) {
   if (p1.is_cuda() || p2.is_cuda()) {
 #ifdef WITH_CUDA
-    CHECK_CONTIGUOUS_CUDA(p1);
-    CHECK_CONTIGUOUS_CUDA(p2);
+    CHECK_CUDA(p1);
+    CHECK_CUDA(p2);
     return KNearestNeighborBackwardCuda(
         p1, p2, lengths1, lengths2, idxs, grad_dists);
 #else

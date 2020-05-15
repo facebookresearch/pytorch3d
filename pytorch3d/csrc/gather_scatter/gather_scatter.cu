@@ -72,8 +72,8 @@ at::Tensor GatherScatterCuda(
   }
 
   GatherScatterCudaKernel<<<blocks, threads, 0, stream>>>(
-      input.data_ptr<float>(),
-      edges.data_ptr<int64_t>(),
+      input.contiguous().data_ptr<float>(),
+      edges.contiguous().data_ptr<int64_t>(),
       output.data_ptr<float>(),
       directed,
       backward,

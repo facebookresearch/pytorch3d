@@ -146,8 +146,8 @@ at::Tensor PackedToPaddedCuda(
     AT_DISPATCH_FLOATING_TYPES(
         inputs_packed.scalar_type(), "packed_to_padded_d1_kernel", ([&] {
           PackedToPaddedKernelD1<scalar_t><<<blocks, threads, 0, stream>>>(
-              inputs_packed.data_ptr<scalar_t>(),
-              first_idxs.data_ptr<int64_t>(),
+              inputs_packed.contiguous().data_ptr<scalar_t>(),
+              first_idxs.contiguous().data_ptr<int64_t>(),
               inputs_padded.data_ptr<scalar_t>(),
               batch_size,
               max_size,
@@ -157,8 +157,8 @@ at::Tensor PackedToPaddedCuda(
     AT_DISPATCH_FLOATING_TYPES(
         inputs_packed.scalar_type(), "packed_to_padded_kernel", ([&] {
           PackedToPaddedKernel<scalar_t><<<blocks, threads, 0, stream>>>(
-              inputs_packed.data_ptr<scalar_t>(),
-              first_idxs.data_ptr<int64_t>(),
+              inputs_packed.contiguous().data_ptr<scalar_t>(),
+              first_idxs.contiguous().data_ptr<int64_t>(),
               inputs_padded.data_ptr<scalar_t>(),
               batch_size,
               max_size,
@@ -209,8 +209,8 @@ at::Tensor PaddedToPackedCuda(
     AT_DISPATCH_FLOATING_TYPES(
         inputs_padded.scalar_type(), "padded_to_packed_d1_kernel", ([&] {
           PaddedToPackedKernelD1<scalar_t><<<blocks, threads, 0, stream>>>(
-              inputs_padded.data_ptr<scalar_t>(),
-              first_idxs.data_ptr<int64_t>(),
+              inputs_padded.contiguous().data_ptr<scalar_t>(),
+              first_idxs.contiguous().data_ptr<int64_t>(),
               inputs_packed.data_ptr<scalar_t>(),
               batch_size,
               max_size,
@@ -220,8 +220,8 @@ at::Tensor PaddedToPackedCuda(
     AT_DISPATCH_FLOATING_TYPES(
         inputs_padded.scalar_type(), "padded_to_packed_kernel", ([&] {
           PaddedToPackedKernel<scalar_t><<<blocks, threads, 0, stream>>>(
-              inputs_padded.data_ptr<scalar_t>(),
-              first_idxs.data_ptr<int64_t>(),
+              inputs_padded.contiguous().data_ptr<scalar_t>(),
+              first_idxs.contiguous().data_ptr<int64_t>(),
               inputs_packed.data_ptr<scalar_t>(),
               batch_size,
               max_size,

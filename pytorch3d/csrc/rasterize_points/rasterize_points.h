@@ -67,9 +67,9 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> RasterizePointsNaive(
   if (points.is_cuda() && cloud_to_packed_first_idx.is_cuda() &&
       num_points_per_cloud.is_cuda()) {
 #ifdef WITH_CUDA
-    CHECK_CONTIGUOUS_CUDA(points);
-    CHECK_CONTIGUOUS_CUDA(cloud_to_packed_first_idx);
-    CHECK_CONTIGUOUS_CUDA(num_points_per_cloud);
+    CHECK_CUDA(points);
+    CHECK_CUDA(cloud_to_packed_first_idx);
+    CHECK_CUDA(num_points_per_cloud);
     return RasterizePointsNaiveCuda(
         points,
         cloud_to_packed_first_idx,
@@ -144,9 +144,9 @@ torch::Tensor RasterizePointsCoarse(
   if (points.is_cuda() && cloud_to_packed_first_idx.is_cuda() &&
       num_points_per_cloud.is_cuda()) {
 #ifdef WITH_CUDA
-    CHECK_CONTIGUOUS_CUDA(points);
-    CHECK_CONTIGUOUS_CUDA(cloud_to_packed_first_idx);
-    CHECK_CONTIGUOUS_CUDA(num_points_per_cloud);
+    CHECK_CUDA(points);
+    CHECK_CUDA(cloud_to_packed_first_idx);
+    CHECK_CUDA(num_points_per_cloud);
     return RasterizePointsCoarseCuda(
         points,
         cloud_to_packed_first_idx,
@@ -215,8 +215,8 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> RasterizePointsFine(
     const int points_per_pixel) {
   if (points.is_cuda()) {
 #ifdef WITH_CUDA
-    CHECK_CONTIGUOUS_CUDA(points);
-    CHECK_CONTIGUOUS_CUDA(bin_points);
+    CHECK_CUDA(points);
+    CHECK_CUDA(bin_points);
     return RasterizePointsFineCuda(
         points, bin_points, image_size, radius, bin_size, points_per_pixel);
 #else
@@ -266,10 +266,10 @@ torch::Tensor RasterizePointsBackward(
     const torch::Tensor& grad_dists) {
   if (points.is_cuda()) {
 #ifdef WITH_CUDA
-    CHECK_CONTIGUOUS_CUDA(points);
-    CHECK_CONTIGUOUS_CUDA(idxs);
-    CHECK_CONTIGUOUS_CUDA(grad_zbuf);
-    CHECK_CONTIGUOUS_CUDA(grad_dists);
+    CHECK_CUDA(points);
+    CHECK_CUDA(idxs);
+    CHECK_CUDA(grad_zbuf);
+    CHECK_CUDA(grad_dists);
     return RasterizePointsBackwardCuda(points, idxs, grad_zbuf, grad_dists);
 #else
     AT_ERROR("Not compiled with GPU support");

@@ -168,6 +168,8 @@ at::Tensor alphaCompositeCudaForward(
   // doubles. Currently, support is for floats only.
   alphaCompositeCudaForwardKernel<<<numBlocks, threadsPerBlock, 0, stream>>>(
       // clang-format off
+      // As we are using packed accessors here the tensors
+      // do not need to be made contiguous.
       result.packed_accessor64<float, 4, at::RestrictPtrTraits>(),
       features.packed_accessor64<float, 2, at::RestrictPtrTraits>(),
       alphas.packed_accessor64<float, 4, at::RestrictPtrTraits>(),
@@ -211,6 +213,8 @@ std::tuple<at::Tensor, at::Tensor> alphaCompositeCudaBackward(
   // doubles. Currently, support is for floats only.
   alphaCompositeCudaBackwardKernel<<<numBlocks, threadsPerBlock, 0, stream>>>(
       // clang-format off
+      // As we are using packed accessors here the tensors
+      // do not need to be made contiguous.
       grad_features.packed_accessor64<float, 2, at::RestrictPtrTraits>(),
       grad_alphas.packed_accessor64<float, 4, at::RestrictPtrTraits>(),
       grad_outputs.packed_accessor64<float, 4, at::RestrictPtrTraits>(),

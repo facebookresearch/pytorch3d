@@ -145,10 +145,10 @@ std::tuple<at::Tensor, at::Tensor> PointFaceDistanceForwardCuda(
   size_t shared_size = threads * sizeof(size_t) + threads * sizeof(int64_t);
 
   PointFaceForwardKernel<<<blocks, threads, shared_size, stream>>>(
-      points.data_ptr<float>(),
-      points_first_idx.data_ptr<int64_t>(),
-      tris.data_ptr<float>(),
-      tris_first_idx.data_ptr<int64_t>(),
+      points.contiguous().data_ptr<float>(),
+      points_first_idx.contiguous().data_ptr<int64_t>(),
+      tris.contiguous().data_ptr<float>(),
+      tris_first_idx.contiguous().data_ptr<int64_t>(),
       dists.data_ptr<float>(),
       idxs.data_ptr<int64_t>(),
       B,
@@ -249,10 +249,10 @@ std::tuple<at::Tensor, at::Tensor> PointFaceDistanceBackwardCuda(
   const int threads = 512;
 
   PointFaceBackwardKernel<<<blocks, threads, 0, stream>>>(
-      points.data_ptr<float>(),
-      tris.data_ptr<float>(),
-      idx_points.data_ptr<int64_t>(),
-      grad_dists.data_ptr<float>(),
+      points.contiguous().data_ptr<float>(),
+      tris.contiguous().data_ptr<float>(),
+      idx_points.contiguous().data_ptr<int64_t>(),
+      grad_dists.contiguous().data_ptr<float>(),
       grad_points.data_ptr<float>(),
       grad_tris.data_ptr<float>(),
       P);
@@ -396,10 +396,10 @@ std::tuple<at::Tensor, at::Tensor> FacePointDistanceForwardCuda(
   size_t shared_size = threads * sizeof(size_t) + threads * sizeof(int64_t);
 
   FacePointForwardKernel<<<blocks, threads, shared_size, stream>>>(
-      points.data_ptr<float>(),
-      points_first_idx.data_ptr<int64_t>(),
-      tris.data_ptr<float>(),
-      tris_first_idx.data_ptr<int64_t>(),
+      points.contiguous().data_ptr<float>(),
+      points_first_idx.contiguous().data_ptr<int64_t>(),
+      tris.contiguous().data_ptr<float>(),
+      tris_first_idx.contiguous().data_ptr<int64_t>(),
       dists.data_ptr<float>(),
       idxs.data_ptr<int64_t>(),
       B,
@@ -501,10 +501,10 @@ std::tuple<at::Tensor, at::Tensor> FacePointDistanceBackwardCuda(
   const int threads = 512;
 
   FacePointBackwardKernel<<<blocks, threads, 0, stream>>>(
-      points.data_ptr<float>(),
-      tris.data_ptr<float>(),
-      idx_tris.data_ptr<int64_t>(),
-      grad_dists.data_ptr<float>(),
+      points.contiguous().data_ptr<float>(),
+      tris.contiguous().data_ptr<float>(),
+      idx_tris.contiguous().data_ptr<int64_t>(),
+      grad_dists.contiguous().data_ptr<float>(),
       grad_points.data_ptr<float>(),
       grad_tris.data_ptr<float>(),
       T);
@@ -575,8 +575,8 @@ at::Tensor PointFaceArrayDistanceForwardCuda(
   const size_t threads = 64;
 
   PointFaceArrayForwardKernel<<<blocks, threads, 0, stream>>>(
-      points.data_ptr<float>(),
-      tris.data_ptr<float>(),
+      points.contiguous().data_ptr<float>(),
+      tris.contiguous().data_ptr<float>(),
       dists.data_ptr<float>(),
       P,
       T);
@@ -672,9 +672,9 @@ std::tuple<at::Tensor, at::Tensor> PointFaceArrayDistanceBackwardCuda(
   const size_t threads = 64;
 
   PointFaceArrayBackwardKernel<<<blocks, threads, 0, stream>>>(
-      points.data_ptr<float>(),
-      tris.data_ptr<float>(),
-      grad_dists.data_ptr<float>(),
+      points.contiguous().data_ptr<float>(),
+      tris.contiguous().data_ptr<float>(),
+      grad_dists.contiguous().data_ptr<float>(),
       grad_points.data_ptr<float>(),
       grad_tris.data_ptr<float>(),
       P,

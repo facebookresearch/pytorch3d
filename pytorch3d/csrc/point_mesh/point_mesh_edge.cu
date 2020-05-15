@@ -144,15 +144,16 @@ std::tuple<at::Tensor, at::Tensor> PointEdgeDistanceForwardCuda(
   size_t shared_size = threads * sizeof(size_t) + threads * sizeof(int64_t);
 
   PointEdgeForwardKernel<<<blocks, threads, shared_size, stream>>>(
-      points.data_ptr<float>(),
-      points_first_idx.data_ptr<int64_t>(),
-      segms.data_ptr<float>(),
-      segms_first_idx.data_ptr<int64_t>(),
+      points.contiguous().data_ptr<float>(),
+      points_first_idx.contiguous().data_ptr<int64_t>(),
+      segms.contiguous().data_ptr<float>(),
+      segms_first_idx.contiguous().data_ptr<int64_t>(),
       dists.data_ptr<float>(),
       idxs.data_ptr<int64_t>(),
       B,
       P,
       S);
+
   AT_CUDA_CHECK(cudaGetLastError());
   return std::make_tuple(dists, idxs);
 }
@@ -240,10 +241,10 @@ std::tuple<at::Tensor, at::Tensor> PointEdgeDistanceBackwardCuda(
   const int threads = 512;
 
   PointEdgeBackwardKernel<<<blocks, threads, 0, stream>>>(
-      points.data_ptr<float>(),
-      segms.data_ptr<float>(),
-      idx_points.data_ptr<int64_t>(),
-      grad_dists.data_ptr<float>(),
+      points.contiguous().data_ptr<float>(),
+      segms.contiguous().data_ptr<float>(),
+      idx_points.contiguous().data_ptr<int64_t>(),
+      grad_dists.contiguous().data_ptr<float>(),
       grad_points.data_ptr<float>(),
       grad_segms.data_ptr<float>(),
       P);
@@ -386,10 +387,10 @@ std::tuple<at::Tensor, at::Tensor> EdgePointDistanceForwardCuda(
   size_t shared_size = threads * sizeof(size_t) + threads * sizeof(int64_t);
 
   EdgePointForwardKernel<<<blocks, threads, shared_size, stream>>>(
-      points.data_ptr<float>(),
-      points_first_idx.data_ptr<int64_t>(),
-      segms.data_ptr<float>(),
-      segms_first_idx.data_ptr<int64_t>(),
+      points.contiguous().data_ptr<float>(),
+      points_first_idx.contiguous().data_ptr<int64_t>(),
+      segms.contiguous().data_ptr<float>(),
+      segms_first_idx.contiguous().data_ptr<int64_t>(),
       dists.data_ptr<float>(),
       idxs.data_ptr<int64_t>(),
       B,
@@ -478,10 +479,10 @@ std::tuple<at::Tensor, at::Tensor> EdgePointDistanceBackwardCuda(
   const int threads = 512;
 
   EdgePointBackwardKernel<<<blocks, threads, 0, stream>>>(
-      points.data_ptr<float>(),
-      segms.data_ptr<float>(),
-      idx_segms.data_ptr<int64_t>(),
-      grad_dists.data_ptr<float>(),
+      points.contiguous().data_ptr<float>(),
+      segms.contiguous().data_ptr<float>(),
+      idx_segms.contiguous().data_ptr<int64_t>(),
+      grad_dists.contiguous().data_ptr<float>(),
       grad_points.data_ptr<float>(),
       grad_segms.data_ptr<float>(),
       S);
@@ -550,8 +551,8 @@ at::Tensor PointEdgeArrayDistanceForwardCuda(
   const size_t threads = 64;
 
   PointEdgeArrayForwardKernel<<<blocks, threads, 0, stream>>>(
-      points.data_ptr<float>(),
-      segms.data_ptr<float>(),
+      points.contiguous().data_ptr<float>(),
+      segms.contiguous().data_ptr<float>(),
       dists.data_ptr<float>(),
       P,
       S);
@@ -638,9 +639,9 @@ std::tuple<at::Tensor, at::Tensor> PointEdgeArrayDistanceBackwardCuda(
   const size_t threads = 64;
 
   PointEdgeArrayBackwardKernel<<<blocks, threads, 0, stream>>>(
-      points.data_ptr<float>(),
-      segms.data_ptr<float>(),
-      grad_dists.data_ptr<float>(),
+      points.contiguous().data_ptr<float>(),
+      segms.contiguous().data_ptr<float>(),
+      grad_dists.contiguous().data_ptr<float>(),
       grad_points.data_ptr<float>(),
       grad_segms.data_ptr<float>(),
       P,

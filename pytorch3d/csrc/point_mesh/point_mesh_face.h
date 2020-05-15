@@ -56,10 +56,10 @@ std::tuple<torch::Tensor, torch::Tensor> PointFaceDistanceForward(
     const int64_t max_points) {
   if (points.is_cuda()) {
 #ifdef WITH_CUDA
-    CHECK_CONTIGUOUS_CUDA(points);
-    CHECK_CONTIGUOUS_CUDA(points_first_idx);
-    CHECK_CONTIGUOUS_CUDA(tris);
-    CHECK_CONTIGUOUS_CUDA(tris_first_idx);
+    CHECK_CUDA(points);
+    CHECK_CUDA(points_first_idx);
+    CHECK_CUDA(tris);
+    CHECK_CUDA(tris_first_idx);
     return PointFaceDistanceForwardCuda(
         points, points_first_idx, tris, tris_first_idx, max_points);
 #else
@@ -100,10 +100,10 @@ std::tuple<torch::Tensor, torch::Tensor> PointFaceDistanceBackward(
     const torch::Tensor& grad_dists) {
   if (points.is_cuda()) {
 #ifdef WITH_CUDA
-    CHECK_CONTIGUOUS_CUDA(points);
-    CHECK_CONTIGUOUS_CUDA(tris);
-    CHECK_CONTIGUOUS_CUDA(idx_points);
-    CHECK_CONTIGUOUS_CUDA(grad_dists);
+    CHECK_CUDA(points);
+    CHECK_CUDA(tris);
+    CHECK_CUDA(idx_points);
+    CHECK_CUDA(grad_dists);
     return PointFaceDistanceBackwardCuda(points, tris, idx_points, grad_dists);
 #else
     AT_ERROR("Not compiled with GPU support.");
@@ -160,10 +160,10 @@ std::tuple<torch::Tensor, torch::Tensor> FacePointDistanceForward(
     const int64_t max_tris) {
   if (points.is_cuda()) {
 #ifdef WITH_CUDA
-    CHECK_CONTIGUOUS_CUDA(points);
-    CHECK_CONTIGUOUS_CUDA(points_first_idx);
-    CHECK_CONTIGUOUS_CUDA(tris);
-    CHECK_CONTIGUOUS_CUDA(tris_first_idx);
+    CHECK_CUDA(points);
+    CHECK_CUDA(points_first_idx);
+    CHECK_CUDA(tris);
+    CHECK_CUDA(tris_first_idx);
     return FacePointDistanceForwardCuda(
         points, points_first_idx, tris, tris_first_idx, max_tris);
 #else
@@ -204,10 +204,10 @@ std::tuple<torch::Tensor, torch::Tensor> FacePointDistanceBackward(
     const torch::Tensor& grad_dists) {
   if (points.is_cuda()) {
 #ifdef WITH_CUDA
-    CHECK_CONTIGUOUS_CUDA(points);
-    CHECK_CONTIGUOUS_CUDA(tris);
-    CHECK_CONTIGUOUS_CUDA(idx_tris);
-    CHECK_CONTIGUOUS_CUDA(grad_dists);
+    CHECK_CUDA(points);
+    CHECK_CUDA(tris);
+    CHECK_CUDA(idx_tris);
+    CHECK_CUDA(grad_dists);
     return FacePointDistanceBackwardCuda(points, tris, idx_tris, grad_dists);
 #else
     AT_ERROR("Not compiled with GPU support.");
@@ -250,8 +250,8 @@ torch::Tensor PointFaceArrayDistanceForward(
     const torch::Tensor& tris) {
   if (points.is_cuda()) {
 #ifdef WITH_CUDA
-    CHECK_CONTIGUOUS_CUDA(points);
-    CHECK_CONTIGUOUS_CUDA(tris);
+    CHECK_CUDA(points);
+    CHECK_CUDA(tris);
     return PointFaceArrayDistanceForwardCuda(points, tris);
 #else
     AT_ERROR("Not compiled with GPU support.");
@@ -285,9 +285,9 @@ std::tuple<torch::Tensor, torch::Tensor> PointFaceArrayDistanceBackward(
     const torch::Tensor& grad_dists) {
   if (points.is_cuda()) {
 #ifdef WITH_CUDA
-    CHECK_CONTIGUOUS_CUDA(points);
-    CHECK_CONTIGUOUS_CUDA(tris);
-    CHECK_CONTIGUOUS_CUDA(grad_dists);
+    CHECK_CUDA(points);
+    CHECK_CUDA(tris);
+    CHECK_CUDA(grad_dists);
     return PointFaceArrayDistanceBackwardCuda(points, tris, grad_dists);
 #else
     AT_ERROR("Not compiled with GPU support.");

@@ -75,8 +75,8 @@ at::Tensor PackedToPadded(
     const int64_t max_size) {
   if (inputs_packed.is_cuda()) {
 #ifdef WITH_CUDA
-    CHECK_CONTIGUOUS_CUDA(inputs_packed);
-    CHECK_CONTIGUOUS_CUDA(first_idxs);
+    CHECK_CUDA(inputs_packed);
+    CHECK_CUDA(first_idxs);
     return PackedToPaddedCuda(inputs_packed, first_idxs, max_size);
 #else
     AT_ERROR("Not compiled with GPU support.");
@@ -92,8 +92,8 @@ at::Tensor PaddedToPacked(
     const int64_t num_inputs) {
   if (inputs_padded.is_cuda()) {
 #ifdef WITH_CUDA
-    CHECK_CONTIGUOUS_CUDA(inputs_padded);
-    CHECK_CONTIGUOUS_CUDA(first_idxs);
+    CHECK_CUDA(inputs_padded);
+    CHECK_CUDA(first_idxs);
     return PaddedToPackedCuda(inputs_padded, first_idxs, num_inputs);
 #else
     AT_ERROR("Not compiled with GPU support.");
