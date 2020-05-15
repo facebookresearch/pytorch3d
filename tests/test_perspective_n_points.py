@@ -51,7 +51,7 @@ class TestPerspectiveNPoints(TestCaseMixin, unittest.TestCase):
                 return t.norm(dim=-1)
 
             self.assertNormsClose(
-                T, sol.T[:, None, :], rtol=1e-2, norm_fn=norm_fn, msg=assert_msg
+                T, sol.T[:, None, :], rtol=3e-3, norm_fn=norm_fn, msg=assert_msg
             )
             self.assertNormsClose(
                 R_quat, R_est_quat, rtol=3e-4, norm_fn=norm_fn, msg=assert_msg
