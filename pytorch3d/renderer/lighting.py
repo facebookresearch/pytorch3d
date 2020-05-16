@@ -61,6 +61,7 @@ def diffuse(normals, color, direction) -> torch.Tensor:
         color = color.view(expand_dims)
 
     # Renormalize the normals in case they have been interpolated.
+    # We tried to replace the following with F.cosine_similarity, but it wasn't faster.
     normals = F.normalize(normals, p=2, dim=-1, eps=1e-6)
     direction = F.normalize(direction, p=2, dim=-1, eps=1e-6)
     angle = F.relu(torch.sum(normals * direction, dim=-1))
@@ -132,6 +133,8 @@ def specular(
         shininess = shininess.view(expand_dims)
 
     # Renormalize the normals in case they have been interpolated.
+    # We tried a version that uses F.cosine_similarity instead of renormalizing,
+    # but it was slower.
     normals = F.normalize(normals, p=2, dim=-1, eps=1e-6)
     direction = F.normalize(direction, p=2, dim=-1, eps=1e-6)
     cos_angle = torch.sum(normals * direction, dim=-1)
