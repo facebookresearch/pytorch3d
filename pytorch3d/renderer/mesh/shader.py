@@ -142,7 +142,7 @@ class HardGouraudShader(nn.Module):
         cameras = kwargs.get("cameras", self.cameras)
         if cameras is None:
             msg = "Cameras must be specified either at initialization \
-                or in the forward pass of SoftPhongShader"
+                or in the forward pass of HardGouraudShader"
             raise ValueError(msg)
         lights = kwargs.get("lights", self.lights)
         materials = kwargs.get("materials", self.materials)
@@ -187,7 +187,7 @@ class SoftGouraudShader(nn.Module):
         cameras = kwargs.get("cameras", self.cameras)
         if cameras is None:
             msg = "Cameras must be specified either at initialization \
-                or in the forward pass of SoftPhongShader"
+                or in the forward pass of SoftGouraudShader"
             raise ValueError(msg)
         lights = kwargs.get("lights", self.lights)
         materials = kwargs.get("materials", self.materials)
@@ -234,7 +234,7 @@ class TexturedSoftPhongShader(nn.Module):
         cameras = kwargs.get("cameras", self.cameras)
         if cameras is None:
             msg = "Cameras must be specified either at initialization \
-                or in the forward pass of SoftPhongShader"
+                or in the forward pass of TexturedSoftPhongShader"
             raise ValueError(msg)
         texels = interpolate_texture_map(fragments, meshes)
         lights = kwargs.get("lights", self.lights)
@@ -278,7 +278,7 @@ class HardFlatShader(nn.Module):
         cameras = kwargs.get("cameras", self.cameras)
         if cameras is None:
             msg = "Cameras must be specified either at initialization \
-                or in the forward pass of SoftPhongShader"
+                or in the forward pass of HardFlatShader"
             raise ValueError(msg)
         texels = interpolate_vertex_colors(fragments, meshes)
         lights = kwargs.get("lights", self.lights)
