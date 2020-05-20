@@ -284,7 +284,7 @@ class TestMeshPlyIO(TestCaseMixin, unittest.TestCase):
                     format,
                     "element vertex 8",
                     "property float x",
-                    "property float y",
+                    "property float32 y",
                     "property float z",
                     "element vertex1 8",
                     "property float x",

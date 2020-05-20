@@ -26,6 +26,14 @@ _PLY_TYPES = {
     "uint": _PlyTypeData(4, "I", np.uint32),
     "float": _PlyTypeData(4, "f", np.float32),
     "double": _PlyTypeData(8, "d", np.float64),
+    "int8": _PlyTypeData(1, "b", np.byte),
+    "uint8": _PlyTypeData(1, "B", np.ubyte),
+    "int16": _PlyTypeData(2, "h", np.short),
+    "uint16": _PlyTypeData(2, "H", np.ushort),
+    "int32": _PlyTypeData(4, "i", np.int32),
+    "uint32": _PlyTypeData(4, "I", np.uint32),
+    "float32": _PlyTypeData(4, "f", np.float32),
+    "float64": _PlyTypeData(8, "d", np.float64),
 }
 
 _Property = namedtuple("_Property", "name data_type list_size_type")
@@ -84,9 +92,9 @@ class _PlyElementType:
         """
         if not self.is_fixed_size():
             return False
-        first_type = self.properties[0].data_type
+        first_type = _PLY_TYPES[self.properties[0].data_type]
         for property in self.properties:
-            if property.data_type != first_type:
+            if _PLY_TYPES[property.data_type] != first_type:
                 return False
         return True
 
