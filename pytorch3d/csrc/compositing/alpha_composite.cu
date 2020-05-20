@@ -11,6 +11,8 @@
 #include <stdio.h>
 #include <vector>
 
+__constant__ const float kEpsilon = 1e-9;
+
 // TODO(gkioxari) support all data types once AtomicAdd supports doubles.
 // Currently, support is for floats only.
 __global__ void alphaCompositeCudaForwardKernel(
@@ -126,7 +128,7 @@ __global__ void alphaCompositeCudaBackwardKernel(
         atomicAdd(
             &grad_alphas[batch][t][j][i],
             -grad_outputs[batch][ch][j][i] * features[ch][n_idx] * cum_alpha *
-                alpha / (1 - alpha_tvalue));
+                alpha / (1 - alpha_tvalue + kEpsilon));
       }
 
       cum_alpha = cum_alpha * (1 - alphas[batch][k][j][i]);

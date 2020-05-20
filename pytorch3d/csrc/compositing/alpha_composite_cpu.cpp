@@ -5,6 +5,9 @@
 #include <cmath>
 #include <vector>
 
+// Epsilon float
+const float kEps = 1e-9;
+
 torch::Tensor alphaCompositeCpuForward(
     const torch::Tensor& features,
     const torch::Tensor& alphas,
@@ -101,7 +104,8 @@ std::tuple<torch::Tensor, torch::Tensor> alphaCompositeCpuBackward(
               }
               float alpha_tvalue = alphas_a[b][t][j][i];
               grad_alphas_a[b][t][j][i] -= grad_outputs_a[b][c][j][i] *
-                  features_a[c][n_idx] * cum_alpha * alpha / (1 - alpha_tvalue);
+                  features_a[c][n_idx] * cum_alpha * alpha /
+                  (1 - alpha_tvalue + kEps);
             }
 
             cum_alpha = cum_alpha * (1 - alpha);
