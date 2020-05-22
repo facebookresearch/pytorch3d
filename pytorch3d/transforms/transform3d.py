@@ -155,6 +155,7 @@ class Transform3d:
         if matrix is None:
             self._matrix = torch.eye(4, dtype=dtype, device=device).view(1, 4, 4)
         else:
+            # pyre-fixme[16]: `Tensor` has no attribute `ndim`.
             if matrix.ndim not in (2, 3):
                 raise ValueError('"matrix" has to be a 2- or a 3-dimensional tensor.')
             if matrix.shape[-2] != 4 or matrix.shape[-1] != 4:

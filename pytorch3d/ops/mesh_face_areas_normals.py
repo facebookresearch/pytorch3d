@@ -59,4 +59,5 @@ class _MeshFaceAreasNormals(Function):
         return grad_verts, None
 
 
+# pyre-fixme[16]: `_MeshFaceAreasNormals` has no attribute `apply`.
 mesh_face_areas_normals = _MeshFaceAreasNormals.apply

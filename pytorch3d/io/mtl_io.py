@@ -51,6 +51,7 @@ def make_mesh_texture_atlas(
 
     # Initialize the per face texture map to a white color.
     # TODO: allow customization of this base color?
+    # pyre-fixme[16]: `Tensor` has no attribute `new_ones`.
     atlas = faces_verts_uvs.new_ones(size=(F, R, R, 3))
 
     # Check for empty materials.
@@ -63,10 +64,13 @@ def make_mesh_texture_atlas(
         # will be ignored and a repeating pattern is formed.
         # Shapenet data uses this format see:
         # https://shapenet.org/qaforum/index.php?qa=15&qa_1=why-is-the-texture-coordinate-in-the-obj-file-not-in-the-range # noqa: B950
+        # pyre-fixme[16]: `ByteTensor` has no attribute `any`.
         if (faces_verts_uvs > 1).any() or (faces_verts_uvs < 0).any():
             msg = "Texture UV coordinates outside the range [0, 1]. \
                 The integer part will be ignored to form a repeating pattern."
             warnings.warn(msg)
+            # pyre-fixme[9]: faces_verts_uvs has type `Tensor`; used as `int`.
+            # pyre-fixme[6]: Expected `int` for 1st param but got `Tensor`.
             faces_verts_uvs = faces_verts_uvs % 1
     elif texture_wrap == "clamp":
         # Clamp uv coordinates to the [0, 1] range.
@@ -257,6 +261,7 @@ def make_material_atlas(
     # Meshgrid returns (row, column) i.e (Y, X)
     # Change order to (X, Y) to make the grid.
     Y, X = torch.meshgrid(rng, rng)
+    # pyre-fixme[28]: Unexpected keyword argument `axis`.
     grid = torch.stack([X, Y], axis=-1)  # (R, R, 2)
 
     # Grid cells below the diagonal: x + y < R.
@@ -269,6 +274,7 @@ def make_material_atlas(
     # w0, w1
     bary[below_diag, slc] = ((grid[below_diag] + 1.0 / 3.0) / R).T
     # w0, w1 for above diagonal grid cells.
+    # pyre-fixme[16]: `float` has no attribute `T`.
     bary[~below_diag, slc] = (((R - 1.0 - grid[~below_diag]) + 2.0 / 3.0) / R).T
     # w2 = 1. - w0 - w1
     bary[..., -1] = 1 - bary[..., :2].sum(dim=-1)

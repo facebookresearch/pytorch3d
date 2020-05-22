@@ -77,6 +77,7 @@ def so3_rotation_angle(R, eps: float = 1e-4, cos_angle: bool = False):
     if cos_angle:
         return phi
     else:
+        # pyre-fixme[16]: `float` has no attribute `acos`.
         return phi.acos()
 
 
@@ -118,6 +119,7 @@ def so3_exponential_map(log_rot, eps: float = 0.0001):
     skews = hat(log_rot)
 
     R = (
+        # pyre-fixme[16]: `float` has no attribute `__getitem__`.
         fac1[:, None, None] * skews
         + fac2[:, None, None] * torch.bmm(skews, skews)
         + torch.eye(3, dtype=log_rot.dtype, device=log_rot.device)[None]

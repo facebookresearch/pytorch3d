@@ -213,6 +213,8 @@ def load_obj(
     """
     data_dir = "./"
     if isinstance(f_obj, (str, bytes, os.PathLike)):
+        # pyre-fixme[6]: Expected `_PathLike[Variable[typing.AnyStr <: [str,
+        #  bytes]]]` for 1st param but got `Union[_PathLike[typing.Any], bytes, str]`.
         data_dir = os.path.dirname(f_obj)
     f_obj, new_f = _open_file(f_obj)
     try:
@@ -453,6 +455,8 @@ def _load(
     material_colors, texture_images, texture_atlas = None, None, None
     if load_textures:
         if (len(material_names) > 0) and (f_mtl is not None):
+            # pyre-fixme[6]: Expected `Union[_PathLike[typing.Any], bytes, str]` for
+            #  1st param but got `Optional[str]`.
             if os.path.isfile(f_mtl):
                 # Texture mode uv wrap
                 material_colors, texture_images = load_mtl(

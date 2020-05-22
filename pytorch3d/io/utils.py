@@ -30,6 +30,8 @@ def _read_image(file_name: str, format=None):
     if format not in ["RGB", "BGR"]:
         raise ValueError("format can only be one of [RGB, BGR]; got %s", format)
     with PathManager.open(file_name, "rb") as f:
+        # pyre-fixme[6]: Expected `Union[str, typing.BinaryIO]` for 1st param but
+        #  got `Union[typing.IO[bytes], typing.IO[str]]`.
         image = Image.open(f)
         if format is not None:
             # PIL only supports RGB. First convert to RGB and flip channels

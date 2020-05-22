@@ -63,6 +63,7 @@ def interpolate_face_attributes(
     pix_to_face = pix_to_face.clone()
     pix_to_face[mask] = 0
     idx = pix_to_face.view(N * H * W * K, 1, 1).expand(N * H * W * K, 3, D)
+    # pyre-fixme[16]: `Tensor` has no attribute `gather`.
     pixel_face_vals = face_attributes.gather(0, idx).view(N, H, W, K, 3, D)
     pixel_vals = (barycentric_coords[..., None] * pixel_face_vals).sum(dim=-2)
     pixel_vals[mask] = 0  # Replace masked values in output.

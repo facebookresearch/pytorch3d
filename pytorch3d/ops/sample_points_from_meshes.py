@@ -120,4 +120,6 @@ def _rand_barycentric_coords(
     w0 = 1.0 - u_sqrt
     w1 = u_sqrt * (1.0 - v)
     w2 = u_sqrt * v
+    # pyre-fixme[7]: Expected `Tuple[torch.Tensor, torch.Tensor, torch.Tensor]` but
+    #  got `Tuple[float, typing.Any, typing.Any]`.
     return w0, w1, w2

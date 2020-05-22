@@ -132,6 +132,7 @@ def rasterize_meshes(
     if max_faces_per_bin is None:
         max_faces_per_bin = int(max(10000, verts_packed.shape[0] / 5))
 
+    # pyre-fixme[16]: `_RasterizeFaceVerts` has no attribute `apply`.
     return _RasterizeFaceVerts.apply(
         face_verts,
         mesh_to_face_first_idx,
@@ -184,6 +185,7 @@ class _RasterizeFaceVerts(torch.autograd.Function):
         perspective_correct: bool = False,
         cull_backfaces: bool = False,
     ):
+        # pyre-fixme[16]: Module `pytorch3d` has no attribute `_C`.
         pix_to_face, zbuf, barycentric_coords, dists = _C.rasterize_meshes(
             face_verts,
             mesh_to_face_first_idx,
@@ -283,6 +285,7 @@ def rasterize_meshes_python(
     )
 
     # Calculate all face bounding boxes.
+    # pyre-fixme[16]: `Tuple` has no attribute `values`.
     x_mins = torch.min(faces_verts[:, :, 0], dim=1, keepdim=True).values
     x_maxs = torch.max(faces_verts[:, :, 0], dim=1, keepdim=True).values
     y_mins = torch.min(faces_verts[:, :, 1], dim=1, keepdim=True).values

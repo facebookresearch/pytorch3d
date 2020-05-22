@@ -89,6 +89,7 @@ def rasterize_points(
 
     if bin_size != 0:
         # There is a limit on the number of points per bin in the cuda kernel.
+        # pyre-fixme[6]: Expected `int` for 1st param but got `Union[int, None, int]`.
         points_per_bin = 1 + (image_size - 1) // bin_size
         if points_per_bin >= kMaxPointsPerBin:
             raise ValueError(
@@ -101,6 +102,7 @@ def rasterize_points(
 
     # Function.apply cannot take keyword args, so we handle defaults in this
     # wrapper and call apply with positional args only
+    # pyre-fixme[16]: `_RasterizePoints` has no attribute `apply`.
     return _RasterizePoints.apply(
         points_packed,
         cloud_to_packed_first_idx,
@@ -138,6 +140,7 @@ class _RasterizePoints(torch.autograd.Function):
             bin_size,
             max_points_per_bin,
         )
+        # pyre-fixme[16]: Module `pytorch3d` has no attribute `_C`.
         idx, zbuf, dists = _C.rasterize_points(*args)
         ctx.save_for_backward(points, idx)
         ctx.mark_non_differentiable(idx)

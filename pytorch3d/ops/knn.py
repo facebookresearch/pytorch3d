@@ -157,6 +157,7 @@ def knn_points(
     if lengths2 is None:
         lengths2 = torch.full((p1.shape[0],), P2, dtype=torch.int64, device=p1.device)
 
+    # pyre-fixme[16]: `_knn_points` has no attribute `apply`.
     p1_dists, p1_idx = _knn_points.apply(p1, p2, lengths1, lengths2, K, version)
 
     p2_nn = None

@@ -229,6 +229,7 @@ def cubify(voxels, thresh, device=None, align: str = "topleft") -> Meshes:
     idlenum = idleverts.cumsum(1)
 
     verts_list = [
+        # pyre-fixme[16]: `Tensor` has no attribute `index_select`.
         grid_verts.index_select(0, (idleverts[n] == 0).nonzero(as_tuple=False)[:, 0])
         for n in range(N)
     ]

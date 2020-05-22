@@ -48,6 +48,7 @@ def list_to_padded(
     )
     for i, y in enumerate(x):
         if len(y) > 0:
+            # pyre-fixme[16]: `Tensor` has no attribute `ndim`.
             if y.ndim != 2:
                 raise ValueError("Supports only 2-dimensional tensor items")
             x_padded[i, : y.shape[0], : y.shape[1]] = y
@@ -69,6 +70,7 @@ def padded_to_list(x: torch.Tensor, split_size: Union[list, tuple, None] = None)
     Returns:
       x_list: a list of tensors
     """
+    # pyre-fixme[16]: `Tensor` has no attribute `ndim`.
     if x.ndim != 3:
         raise ValueError("Supports only 3-dimensional input tensors")
     x_list = list(x.unbind(0))
@@ -145,6 +147,7 @@ def packed_to_list(x: torch.Tensor, split_size: Union[list, int]):
     Returns:
       x_list: A list of Tensors
     """
+    # pyre-fixme[16]: `Tensor` has no attribute `split`.
     return x.split(split_size, dim=0)
 
 
@@ -174,6 +177,7 @@ def padded_to_packed(
     Returns:
       x_packed: a packed tensor.
     """
+    # pyre-fixme[16]: `Tensor` has no attribute `ndim`.
     if x.ndim != 3:
         raise ValueError("Supports only 3-dimensional input tensors")
 
@@ -189,15 +193,19 @@ def padded_to_packed(
 
     # Convert to packed using pad value
     if pad_value is not None:
+        # pyre-fixme[16]: `ByteTensor` has no attribute `any`.
         mask = x_packed.ne(pad_value).any(-1)
         x_packed = x_packed[mask]
         return x_packed
 
     # Convert to packed using split sizes
+    # pyre-fixme[6]: Expected `Sized` for 1st param but got `Union[None,
+    #  List[typing.Any], typing.Tuple[typing.Any, ...]]`.
     N = len(split_size)
     if x.shape[0] != N:
         raise ValueError("Split size must be of same length as inputs first dimension")
 
+    # pyre-fixme[16]: `None` has no attribute `__iter__`.
     if not all(isinstance(i, int) for i in split_size):
         raise ValueError(
             "Support only 1-dimensional unbinded tensor. \
@@ -207,6 +215,8 @@ def padded_to_packed(
     padded_to_packed_idx = torch.cat(
         [
             torch.arange(v, dtype=torch.int64, device=x.device) + i * M
+            # pyre-fixme[6]: Expected `Iterable[Variable[_T]]` for 1st param but got
+            #  `Union[None, List[typing.Any], typing.Tuple[typing.Any, ...]]`.
             for (i, v) in enumerate(split_size)
         ],
         dim=0,

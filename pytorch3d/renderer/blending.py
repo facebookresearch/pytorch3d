@@ -150,7 +150,10 @@ def softmax_rgb_blend(
     # TODO: there may still be some instability in the exponent calculation.
 
     z_inv = (zfar - fragments.zbuf) / (zfar - znear) * mask
+    # pyre-fixme[16]: `Tuple` has no attribute `values`.
+    # pyre-fixme[6]: Expected `Tensor` for 1st param but got `float`.
     z_inv_max = torch.max(z_inv, dim=-1).values[..., None]
+    # pyre-fixme[6]: Expected `Tensor` for 1st param but got `float`.
     weights_num = prob_map * torch.exp((z_inv - z_inv_max) / blend_params.gamma)
 
     # Normalize weights.
