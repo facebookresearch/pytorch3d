@@ -92,23 +92,20 @@ class MeshRasterizer(nn.Module):
             msg = "Cameras must be specified either at initialization \
                 or in the forward pass of MeshRasterizer"
             raise ValueError(msg)
-
         verts_world = meshes_world.verts_padded()
-        verts_world_packed = meshes_world.verts_packed()
-        verts_screen = cameras.transform_points(verts_world, **kwargs)
 
         # NOTE: Retaining view space z coordinate for now.
         # TODO: Revisit whether or not to transform z coordinate to [-1, 1] or
         # [0, 1] range.
-        view_transform = get_world_to_view_transform(R=cameras.R, T=cameras.T)
-        verts_view = view_transform.transform_points(verts_world)
+        verts_view = cameras.get_world_to_view_transform(**kwargs).transform_points(
+            verts_world
+        )
+        verts_screen = cameras.get_projection_transform(**kwargs).transform_points(
+            verts_view
+        )
         verts_screen[..., 2] = verts_view[..., 2]
-
-        # Offset verts of input mesh to reuse cached padded/packed calculations.
-        pad_to_packed_idx = meshes_world.verts_padded_to_packed_idx()
-        verts_screen_packed = verts_screen.view(-1, 3)[pad_to_packed_idx, :]
-        verts_packed_offset = verts_screen_packed - verts_world_packed
-        return meshes_world.offset_verts(verts_packed_offset)
+        meshes_screen = meshes_world.update_padded(new_verts_padded=verts_screen)
+        return meshes_screen
 
     def forward(self, meshes_world, **kwargs) -> Fragments:
         """
