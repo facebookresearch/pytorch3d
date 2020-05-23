@@ -342,15 +342,10 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
 
             # Modify tensors in both meshes.
             new_mesh._verts_list[0] = new_mesh._verts_list[0] * 5
-            mesh._num_verts_per_mesh = torch.randint_like(
-                mesh.num_verts_per_mesh(), high=10
-            )
+
             # Check cloned and original Meshes objects do not share tensors.
             self.assertFalse(
                 torch.allclose(new_mesh._verts_list[0], mesh._verts_list[0])
-            )
-            self.assertFalse(
-                torch.allclose(mesh.num_verts_per_mesh(), new_mesh.num_verts_per_mesh())
             )
             self.assertSeparate(new_mesh.verts_packed(), mesh.verts_packed())
             self.assertSeparate(new_mesh.verts_padded(), mesh.verts_padded())
@@ -689,6 +684,99 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
         split_sizes = [2, 0.3]
         with self.assertRaises(ValueError):
             mesh.split(split_sizes)
+
+    def test_update_padded(self):
+        # Define the test mesh object either as a list or tensor of faces/verts.
+        N = 10
+        for lists_to_tensors in (False, True):
+            for force in (True, False):
+                mesh = TestMeshes.init_mesh(
+                    N, 100, 300, lists_to_tensors=lists_to_tensors
+                )
+                num_verts_per_mesh = mesh.num_verts_per_mesh()
+                if force:
+                    # force mesh to have computed attributes
+                    mesh.verts_packed()
+                    mesh.edges_packed()
+                    mesh.laplacian_packed()
+                    mesh.faces_areas_packed()
+
+                new_verts = torch.rand((mesh._N, mesh._V, 3), device=mesh.device)
+                new_verts_list = [
+                    new_verts[i, : num_verts_per_mesh[i]] for i in range(N)
+                ]
+                new_mesh = mesh.update_padded(new_verts)
+
+                # check the attributes assigned at construction time
+                self.assertEqual(new_mesh._N, mesh._N)
+                self.assertEqual(new_mesh._F, mesh._F)
+                self.assertEqual(new_mesh._V, mesh._V)
+                self.assertEqual(new_mesh.equisized, mesh.equisized)
+                self.assertTrue(all(new_mesh.valid == mesh.valid))
+                self.assertNotSeparate(
+                    new_mesh.num_verts_per_mesh(), mesh.num_verts_per_mesh()
+                )
+                self.assertClose(
+                    new_mesh.num_verts_per_mesh(), mesh.num_verts_per_mesh()
+                )
+                self.assertNotSeparate(
+                    new_mesh.num_faces_per_mesh(), mesh.num_faces_per_mesh()
+                )
+                self.assertClose(
+                    new_mesh.num_faces_per_mesh(), mesh.num_faces_per_mesh()
+                )
+
+                # check that the following attributes are not assigned
+                self.assertIsNone(new_mesh._verts_list)
+                self.assertIsNone(new_mesh._faces_areas_packed)
+                self.assertIsNone(new_mesh._faces_normals_packed)
+                self.assertIsNone(new_mesh._verts_normals_packed)
+
+                check_tensors = [
+                    "_faces_packed",
+                    "_verts_packed_to_mesh_idx",
+                    "_faces_packed_to_mesh_idx",
+                    "_mesh_to_verts_packed_first_idx",
+                    "_mesh_to_faces_packed_first_idx",
+                    "_edges_packed",
+                    "_edges_packed_to_mesh_idx",
+                    "_mesh_to_edges_packed_first_idx",
+                    "_faces_packed_to_edges_packed",
+                    "_num_edges_per_mesh",
+                ]
+                for k in check_tensors:
+                    v = getattr(new_mesh, k)
+                    if not force:
+                        self.assertIsNone(v)
+                    else:
+                        v_old = getattr(mesh, k)
+                        self.assertNotSeparate(v, v_old)
+                        self.assertClose(v, v_old)
+
+                # check verts/faces padded
+                self.assertClose(new_mesh.verts_padded(), new_verts)
+                self.assertNotSeparate(new_mesh.verts_padded(), new_verts)
+                self.assertClose(new_mesh.faces_padded(), mesh.faces_padded())
+                self.assertNotSeparate(new_mesh.faces_padded(), mesh.faces_padded())
+                # check verts/faces list
+                for i in range(N):
+                    self.assertNotSeparate(
+                        new_mesh.faces_list()[i], mesh.faces_list()[i]
+                    )
+                    self.assertClose(new_mesh.faces_list()[i], mesh.faces_list()[i])
+                    self.assertSeparate(new_mesh.verts_list()[i], mesh.verts_list()[i])
+                    self.assertClose(new_mesh.verts_list()[i], new_verts_list[i])
+                # check verts/faces packed
+                self.assertClose(new_mesh.verts_packed(), torch.cat(new_verts_list))
+                self.assertSeparate(new_mesh.verts_packed(), mesh.verts_packed())
+                self.assertClose(new_mesh.faces_packed(), mesh.faces_packed())
+                # check pad_to_packed
+                self.assertClose(
+                    new_mesh.verts_padded_to_packed_idx(),
+                    mesh.verts_padded_to_packed_idx(),
+                )
+                # check edges
+                self.assertClose(new_mesh.edges_packed(), mesh.edges_packed())
 
     def test_get_mesh_verts_faces(self):
         device = torch.device("cuda:0")
