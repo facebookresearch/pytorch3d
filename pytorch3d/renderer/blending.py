@@ -19,7 +19,7 @@ class BlendParams(NamedTuple):
     background_color: Sequence = (1.0, 1.0, 1.0)
 
 
-def hard_rgb_blend(colors, fragments) -> torch.Tensor:
+def hard_rgb_blend(colors, fragments, blend_params) -> torch.Tensor:
     """
     Naive blending of top K faces to return an RGBA image
       - **RGB** - choose color of the closest point i.e. K=0
@@ -32,14 +32,31 @@ def hard_rgb_blend(colors, fragments) -> torch.Tensor:
               of the faces (in the packed representation) which
               overlap each pixel in the image. This is used to
               determine the output shape.
+        blend_params: BlendParams instance that contains a background_color
+        field specifying the color for the background
     Returns:
         RGBA pixel_colors: (N, H, W, 4)
     """
     N, H, W, K = fragments.pix_to_face.shape
     device = fragments.pix_to_face.device
-    pixel_colors = torch.ones((N, H, W, 4), dtype=colors.dtype, device=device)
-    pixel_colors[..., :3] = colors[..., 0, :]
-    return pixel_colors
+
+    # Mask for the background.
+    is_background = fragments.pix_to_face[..., 0] < 0  # (N, H, W)
+
+    background_color = colors.new_tensor(blend_params.background_color)  # (3)
+
+    # Find out how much background_color needs to be expanded to be used for masked_scatter.
+    num_background_pixels = is_background.sum()
+
+    # Set background color.
+    pixel_colors = colors[..., 0, :].masked_scatter(
+        is_background[..., None],
+        background_color[None, :].expand(num_background_pixels, -1),
+    )  # (N, H, W, 3)
+
+    # Concat with the alpha channel.
+    alpha = torch.ones((N, H, W, 1), dtype=colors.dtype, device=device)
+    return torch.cat([pixel_colors, alpha], dim=-1)  # (N, H, W, 4)
 
 
 def sigmoid_alpha_blend(colors, fragments, blend_params) -> torch.Tensor:

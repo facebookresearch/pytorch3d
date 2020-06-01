@@ -39,13 +39,16 @@ class HardPhongShader(nn.Module):
         shader = HardPhongShader(device=torch.device("cuda:0"))
     """
 
-    def __init__(self, device="cpu", cameras=None, lights=None, materials=None):
+    def __init__(
+        self, device="cpu", cameras=None, lights=None, materials=None, blend_params=None
+    ):
         super().__init__()
         self.lights = lights if lights is not None else PointLights(device=device)
         self.materials = (
             materials if materials is not None else Materials(device=device)
         )
         self.cameras = cameras
+        self.blend_params = blend_params if blend_params is not None else BlendParams()
 
     def forward(self, fragments, meshes, **kwargs) -> torch.Tensor:
         cameras = kwargs.get("cameras", self.cameras)
@@ -57,6 +60,7 @@ class HardPhongShader(nn.Module):
         texels = interpolate_vertex_colors(fragments, meshes)
         lights = kwargs.get("lights", self.lights)
         materials = kwargs.get("materials", self.materials)
+        blend_params = kwargs.get("blend_params", self.blend_params)
         colors = phong_shading(
             meshes=meshes,
             fragments=fragments,
@@ -65,7 +69,7 @@ class HardPhongShader(nn.Module):
             cameras=cameras,
             materials=materials,
         )
-        images = hard_rgb_blend(colors, fragments)
+        images = hard_rgb_blend(colors, fragments, blend_params)
         return images
 
 
@@ -130,13 +134,16 @@ class HardGouraudShader(nn.Module):
         shader = HardGouraudShader(device=torch.device("cuda:0"))
     """
 
-    def __init__(self, device="cpu", cameras=None, lights=None, materials=None):
+    def __init__(
+        self, device="cpu", cameras=None, lights=None, materials=None, blend_params=None
+    ):
         super().__init__()
         self.lights = lights if lights is not None else PointLights(device=device)
         self.materials = (
             materials if materials is not None else Materials(device=device)
         )
         self.cameras = cameras
+        self.blend_params = blend_params if blend_params is not None else BlendParams()
 
     def forward(self, fragments, meshes, **kwargs) -> torch.Tensor:
         cameras = kwargs.get("cameras", self.cameras)
@@ -146,6 +153,7 @@ class HardGouraudShader(nn.Module):
             raise ValueError(msg)
         lights = kwargs.get("lights", self.lights)
         materials = kwargs.get("materials", self.materials)
+        blend_params = kwargs.get("blend_params", self.blend_params)
         pixel_colors = gouraud_shading(
             meshes=meshes,
             fragments=fragments,
@@ -153,7 +161,7 @@ class HardGouraudShader(nn.Module):
             cameras=cameras,
             materials=materials,
         )
-        images = hard_rgb_blend(pixel_colors, fragments)
+        images = hard_rgb_blend(pixel_colors, fragments, blend_params)
         return images
 
 
@@ -266,13 +274,16 @@ class HardFlatShader(nn.Module):
         shader = HardFlatShader(device=torch.device("cuda:0"))
     """
 
-    def __init__(self, device="cpu", cameras=None, lights=None, materials=None):
+    def __init__(
+        self, device="cpu", cameras=None, lights=None, materials=None, blend_params=None
+    ):
         super().__init__()
         self.lights = lights if lights is not None else PointLights(device=device)
         self.materials = (
             materials if materials is not None else Materials(device=device)
         )
         self.cameras = cameras
+        self.blend_params = blend_params if blend_params is not None else BlendParams()
 
     def forward(self, fragments, meshes, **kwargs) -> torch.Tensor:
         cameras = kwargs.get("cameras", self.cameras)
@@ -283,6 +294,7 @@ class HardFlatShader(nn.Module):
         texels = interpolate_vertex_colors(fragments, meshes)
         lights = kwargs.get("lights", self.lights)
         materials = kwargs.get("materials", self.materials)
+        blend_params = kwargs.get("blend_params", self.blend_params)
         colors = flat_shading(
             meshes=meshes,
             fragments=fragments,
@@ -291,7 +303,7 @@ class HardFlatShader(nn.Module):
             cameras=cameras,
             materials=materials,
         )
-        images = hard_rgb_blend(colors, fragments)
+        images = hard_rgb_blend(colors, fragments, blend_params)
         return images
 
 

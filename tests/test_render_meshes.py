@@ -77,6 +77,7 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
             image_size=512, blur_radius=0.0, faces_per_pixel=1
         )
         rasterizer = MeshRasterizer(cameras=cameras, raster_settings=raster_settings)
+        blend_params = BlendParams(1e-4, 1e-4, (0, 0, 0))
 
         # Test several shaders
         shaders = {
@@ -85,7 +86,12 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
             "flat": HardFlatShader,
         }
         for (name, shader_init) in shaders.items():
-            shader = shader_init(lights=lights, cameras=cameras, materials=materials)
+            shader = shader_init(
+                lights=lights,
+                cameras=cameras,
+                materials=materials,
+                blend_params=blend_params,
+            )
             renderer = MeshRenderer(rasterizer=rasterizer, shader=shader)
             images = renderer(sphere_mesh)
             filename = "simple_sphere_light_%s%s.png" % (name, postfix)
@@ -105,7 +111,10 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
         ########################################################
         lights.location[..., 2] = -2.0
         phong_shader = HardPhongShader(
-            lights=lights, cameras=cameras, materials=materials
+            lights=lights,
+            cameras=cameras,
+            materials=materials,
+            blend_params=blend_params,
         )
         phong_renderer = MeshRenderer(rasterizer=rasterizer, shader=phong_shader)
         images = phong_renderer(sphere_mesh, lights=lights)
@@ -162,6 +171,7 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
         materials = Materials(device=device)
         lights = PointLights(device=device)
         lights.location = torch.tensor([0.0, 0.0, +2.0], device=device)[None]
+        blend_params = BlendParams(1e-4, 1e-4, (0, 0, 0))
 
         # Init renderer
         rasterizer = MeshRasterizer(cameras=cameras, raster_settings=raster_settings)
@@ -171,7 +181,12 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
             "flat": HardFlatShader,
         }
         for (name, shader_init) in shaders.items():
-            shader = shader_init(lights=lights, cameras=cameras, materials=materials)
+            shader = shader_init(
+                lights=lights,
+                cameras=cameras,
+                materials=materials,
+                blend_params=blend_params,
+            )
             renderer = MeshRenderer(rasterizer=rasterizer, shader=shader)
             images = renderer(sphere_meshes)
             image_ref = load_rgb_image(
