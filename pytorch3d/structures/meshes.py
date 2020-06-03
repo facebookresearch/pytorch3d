@@ -1031,7 +1031,7 @@ class Meshes(object):
         unique_mask[1:] = sorted_hash[1:] != sorted_hash[:-1]
         unique_idx = sort_idx[unique_mask]
 
-        self._edges_packed = torch.stack([u / V, u % V], dim=1)
+        self._edges_packed = torch.stack([u // V, u % V], dim=1)
         self._edges_packed_to_mesh_idx = edge_to_mesh[unique_idx]
 
         face_to_edge = torch.arange(3 * F).view(3, F).t()

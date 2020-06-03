@@ -18,9 +18,9 @@ def unravel_index(idx, dims) -> torch.Tensor:
     if len(dims) != 4:
         raise ValueError("Expects a 4-element list.")
     N, H, W, D = dims
-    n = torch.div(idx, H * W * D)
-    h = torch.div(idx - n * H * W * D, W * D)
-    w = torch.div(idx - n * H * W * D - h * W * D, D)
+    n = idx // (H * W * D)
+    h = (idx - n * H * W * D) // (W * D)
+    w = (idx - n * H * W * D - h * W * D) // D
     d = idx - n * H * W * D - h * W * D - w * D
     return torch.stack((n, h, w, d), dim=1)
 

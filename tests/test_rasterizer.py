@@ -24,11 +24,8 @@ DEBUG = False  # Set DEBUG to true to save outputs from the tests.
 def convert_image_to_binary_mask(filename):
     with Image.open(filename) as raw_image:
         image = torch.from_numpy(np.array(raw_image))
-    min = image.min()
-    max = image.max()
-    image_norm = (image - min) / (max - min)
-    image_norm[image_norm > 0] == 1.0
-    image_norm = image_norm.to(torch.int64)
+    mx = image.max()
+    image_norm = (image == mx).to(torch.int64)
     return image_norm
 
 
