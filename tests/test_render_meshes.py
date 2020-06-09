@@ -26,7 +26,7 @@ from pytorch3d.renderer.mesh.shader import (
     TexturedSoftPhongShader,
 )
 from pytorch3d.renderer.mesh.texturing import Textures
-from pytorch3d.structures.meshes import Meshes
+from pytorch3d.structures.meshes import Meshes, join_mesh
 from pytorch3d.utils.ico_sphere import ico_sphere
 
 
@@ -176,7 +176,7 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
         # Init renderer
         rasterizer = MeshRasterizer(cameras=cameras, raster_settings=raster_settings)
         shaders = {
-            "phong": HardGouraudShader,
+            "phong": HardPhongShader,
             "gouraud": HardGouraudShader,
             "flat": HardFlatShader,
         }
@@ -368,4 +368,71 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
                     DATA_DIR / "DEBUG_blurry_textured_rendering.png"
                 )
 
+            self.assertClose(rgb, image_ref, atol=0.05)
+
+    def test_joined_spheres(self):
+        """
+        Test a list of Meshes can be joined as a single mesh and
+        the single mesh is rendered correctly with Phong, Gouraud
+        and Flat Shaders.
+        """
+        device = torch.device("cuda:0")
+
+        # Init mesh with vertex textures.
+        # Initialize a list containing two ico spheres of different sizes.
+        sphere_list = [ico_sphere(3, device), ico_sphere(4, device)]
+        # [(42 verts, 80 faces), (162 verts, 320 faces)]
+        # The scale the vertices need to be set at to resize the spheres
+        scales = [0.25, 1]
+        # The distance the spheres ought to be offset horizontally to prevent overlap.
+        offsets = [1.2, -0.3]
+        # Initialize a list containing the adjusted sphere meshes.
+        sphere_mesh_list = []
+        for i in range(len(sphere_list)):
+            verts = sphere_list[i].verts_padded() * scales[i]
+            verts[0, :, 0] += offsets[i]
+            sphere_mesh_list.append(
+                Meshes(verts=verts, faces=sphere_list[i].faces_padded())
+            )
+        joined_sphere_mesh = join_mesh(sphere_mesh_list)
+        joined_sphere_mesh.textures = Textures(
+            verts_rgb=torch.ones_like(joined_sphere_mesh.verts_padded())
+        )
+
+        # Init rasterizer settings
+        R, T = look_at_view_transform(2.7, 0.0, 0.0)
+        cameras = OpenGLPerspectiveCameras(device=device, R=R, T=T)
+        raster_settings = RasterizationSettings(
+            image_size=512, blur_radius=0.0, faces_per_pixel=1
+        )
+
+        # Init shader settings
+        materials = Materials(device=device)
+        lights = PointLights(device=device)
+        lights.location = torch.tensor([0.0, 0.0, +2.0], device=device)[None]
+        blend_params = BlendParams(1e-4, 1e-4, (0, 0, 0))
+
+        # Init renderer
+        rasterizer = MeshRasterizer(cameras=cameras, raster_settings=raster_settings)
+        shaders = {
+            "phong": HardPhongShader,
+            "gouraud": HardGouraudShader,
+            "flat": HardFlatShader,
+        }
+        for (name, shader_init) in shaders.items():
+            shader = shader_init(
+                lights=lights,
+                cameras=cameras,
+                materials=materials,
+                blend_params=blend_params,
+            )
+            renderer = MeshRenderer(rasterizer=rasterizer, shader=shader)
+            image = renderer(joined_sphere_mesh)
+            rgb = image[..., :3].squeeze().cpu()
+            if DEBUG:
+                file_name = "DEBUG_joined_spheres_%s.png" % name
+                Image.fromarray((rgb.numpy() * 255).astype(np.uint8)).save(
+                    DATA_DIR / file_name
+                )
+            image_ref = load_rgb_image("test_joined_spheres_%s.png" % name, DATA_DIR)
             self.assertClose(rgb, image_ref, atol=0.05)

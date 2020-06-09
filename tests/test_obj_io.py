@@ -14,6 +14,7 @@ from pytorch3d.io.mtl_io import (
     _bilinear_interpolation_vectorized,
 )
 from pytorch3d.structures import Meshes, Textures, join_meshes_as_batch
+from pytorch3d.structures.meshes import join_mesh
 from pytorch3d.utils import torus
 
 
@@ -647,6 +648,42 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
         check_triple(mesh_notex, cow3_tea[:3])
         self.assertClose(cow3_tea.verts_list()[3], mesh_teapot.verts_list()[0])
         self.assertClose(cow3_tea.faces_list()[3], mesh_teapot.faces_list()[0])
+
+    def test_join_meshes(self):
+        """
+        Test that join_mesh joins single meshes and the corresponding values are
+        consistent with the single meshes.
+        """
+
+        # Load cow mesh.
+        DATA_DIR = Path(__file__).resolve().parent.parent / "docs/tutorials/data"
+        cow_obj = DATA_DIR / "cow_mesh/cow.obj"
+
+        cow_mesh = load_objs_as_meshes([cow_obj])
+        cow_verts, cow_faces = cow_mesh.get_mesh_verts_faces(0)
+        # Join a batch of three single meshes and check that the values are consistent
+        # with the individual meshes.
+        cow_mesh3 = join_mesh([cow_mesh, cow_mesh, cow_mesh])
+
+        def check_item(x, y, offset):
+            self.assertClose(torch.cat([x, x + offset, x + 2 * offset], dim=1), y)
+
+        check_item(cow_mesh.verts_padded(), cow_mesh3.verts_padded(), 0)
+        check_item(cow_mesh.faces_padded(), cow_mesh3.faces_padded(), cow_mesh._V)
+
+        # Test the joining of meshes of different sizes.
+        teapot_obj = DATA_DIR / "teapot.obj"
+        teapot_mesh = load_objs_as_meshes([teapot_obj])
+        teapot_verts, teapot_faces = teapot_mesh.get_mesh_verts_faces(0)
+
+        mix_mesh = join_mesh([cow_mesh, teapot_mesh])
+        mix_verts, mix_faces = mix_mesh.get_mesh_verts_faces(0)
+        self.assertEqual(len(mix_mesh), 1)
+
+        self.assertClose(mix_verts[: cow_mesh._V], cow_verts)
+        self.assertClose(mix_faces[: cow_mesh._F], cow_faces)
+        self.assertClose(mix_verts[cow_mesh._V :], teapot_verts)
+        self.assertClose(mix_faces[cow_mesh._F :], teapot_faces + cow_mesh._V)
 
     @staticmethod
     def _bm_save_obj(verts: torch.Tensor, faces: torch.Tensor, decimal_places: int):
