@@ -329,11 +329,11 @@ class Meshes(object):
                 self._num_verts_per_mesh = torch.tensor(
                     [len(v) for v in self._verts_list], device=self.device
                 )
-                self._V = self._num_verts_per_mesh.max()
+                self._V = int(self._num_verts_per_mesh.max())
                 self._num_faces_per_mesh = torch.tensor(
                     [len(f) for f in self._faces_list], device=self.device
                 )
-                self._F = self._num_faces_per_mesh.max()
+                self._F = int(self._num_faces_per_mesh.max())
                 self.valid = torch.tensor(
                     [
                         len(v) > 0 and len(f) > 0
@@ -370,7 +370,7 @@ class Meshes(object):
                 # as long as the faces index correspond to the right vertices.
 
                 self.valid = self._num_faces_per_mesh > 0
-                self._F = self._num_faces_per_mesh.max()
+                self._F = int(self._num_faces_per_mesh.max())
                 if len(self._num_faces_per_mesh.unique()) == 1:
                     self.equisized = True
 

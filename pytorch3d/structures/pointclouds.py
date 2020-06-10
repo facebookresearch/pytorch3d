@@ -189,7 +189,7 @@ class Pointclouds(object):
                 num_points_per_cloud = torch.tensor(
                     [len(p) for p in self._points_list], device=self.device
                 )
-                self._P = num_points_per_cloud.max()
+                self._P = int(num_points_per_cloud.max())
                 self.valid = torch.tensor(
                     [len(p) > 0 for p in self._points_list],
                     dtype=torch.bool,

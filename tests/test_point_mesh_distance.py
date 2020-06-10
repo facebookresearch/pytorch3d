@@ -385,7 +385,7 @@ class TestPointMeshDistance(TestCaseMixin, unittest.TestCase):
             start = edges_first_idx[i]
             end = edges_first_idx[i + 1] if i < N - 1 else edges_packed.shape[0]
 
-            min_idx = idx_cuda.cpu()[start:end] - points_first_idx[i]
+            min_idx = idx_cuda.cpu()[start:end] - points_first_idx[i].cpu()
             iidx = torch.arange(edges.shape[0], device=device)
             min_dist = dists_temp[iidx, min_idx]
 
@@ -583,7 +583,7 @@ class TestPointMeshDistance(TestCaseMixin, unittest.TestCase):
             start = points_first_idx[i]
             end = points_first_idx[i + 1] if i < N - 1 else points_packed.shape[0]
 
-            min_idx = idx_cuda.cpu()[start:end] - faces_first_idx[i]
+            min_idx = idx_cuda.cpu()[start:end] - faces_first_idx[i].cpu()
             iidx = torch.arange(points.shape[0], device=device)
             min_dist = dists_temp[iidx, min_idx]
 
@@ -666,7 +666,7 @@ class TestPointMeshDistance(TestCaseMixin, unittest.TestCase):
             start = faces_first_idx[i]
             end = faces_first_idx[i + 1] if i < N - 1 else faces_packed.shape[0]
 
-            min_idx = idx_cuda.cpu()[start:end] - points_first_idx[i]
+            min_idx = idx_cuda.cpu()[start:end] - points_first_idx[i].cpu()
             iidx = torch.arange(tris.shape[0], device=device)
             min_dist = dists_temp[iidx, min_idx]
 
