@@ -974,7 +974,7 @@ def look_at_view_transform(
         dist, elev, azim, at, up = broadcasted_args
         C = camera_position_from_spherical_angles(
             dist, elev, azim, degrees=degrees, device=device
-        )
+        ) + at
 
     R = look_at_rotation(C, at, up, device=device)
     T = -torch.bmm(R.transpose(1, 2), C[:, :, None])[:, :, 0]
