@@ -19,7 +19,7 @@
 //    points_first_idx: LongTensor of shape (N,) indicating the first point
 //        index for each example in the batch
 //    tris: FloatTensor of shape (T, 3, 3) of the triangular faces. The t-th
-//        triangulare face is spanned by (tris[t, 0], tris[t, 1], tris[t, 2])
+//        triangular face is spanned by (tris[t, 0], tris[t, 1], tris[t, 2])
 //    tris_first_idx: LongTensor of shape (N,) indicating the first face
 //        index for each example in the batch
 //    max_points: Scalar equal to max(P_i) for i in [0, N - 1] containing
@@ -48,6 +48,12 @@ std::tuple<torch::Tensor, torch::Tensor> PointFaceDistanceForwardCuda(
     const int64_t max_points);
 #endif
 
+std::tuple<torch::Tensor, torch::Tensor> PointFaceDistanceForwardCpu(
+    const torch::Tensor& points,
+    const torch::Tensor& points_first_idx,
+    const torch::Tensor& tris,
+    const torch::Tensor& tris_first_idx);
+
 std::tuple<torch::Tensor, torch::Tensor> PointFaceDistanceForward(
     const torch::Tensor& points,
     const torch::Tensor& points_first_idx,
@@ -66,7 +72,8 @@ std::tuple<torch::Tensor, torch::Tensor> PointFaceDistanceForward(
     AT_ERROR("Not compiled with GPU support.");
 #endif
   }
-  AT_ERROR("No CPU implementation.");
+  return PointFaceDistanceForwardCpu(
+      points, points_first_idx, tris, tris_first_idx);
 }
 
 // Backward pass for PointFaceDistance.
@@ -92,6 +99,11 @@ std::tuple<torch::Tensor, torch::Tensor> PointFaceDistanceBackwardCuda(
     const torch::Tensor& idx_points,
     const torch::Tensor& grad_dists);
 #endif
+std::tuple<torch::Tensor, torch::Tensor> PointFaceDistanceBackwardCpu(
+    const torch::Tensor& points,
+    const torch::Tensor& tris,
+    const torch::Tensor& idx_points,
+    const torch::Tensor& grad_dists);
 
 std::tuple<torch::Tensor, torch::Tensor> PointFaceDistanceBackward(
     const torch::Tensor& points,
@@ -109,7 +121,7 @@ std::tuple<torch::Tensor, torch::Tensor> PointFaceDistanceBackward(
     AT_ERROR("Not compiled with GPU support.");
 #endif
   }
-  AT_ERROR("No CPU implementation.");
+  return PointFaceDistanceBackwardCpu(points, tris, idx_points, grad_dists);
 }
 
 // ****************************************************************************
@@ -124,7 +136,7 @@ std::tuple<torch::Tensor, torch::Tensor> PointFaceDistanceBackward(
 //    points_first_idx: LongTensor of shape (N,) indicating the first point
 //        index for each example in the batch
 //    tris: FloatTensor of shape (T, 3, 3) of the triangular faces. The t-th
-//        triangulare face is spanned by (tris[t, 0], tris[t, 1], tris[t, 2])
+//        triangular face is spanned by (tris[t, 0], tris[t, 1], tris[t, 2])
 //    tris_first_idx: LongTensor of shape (N,) indicating the first face
 //        index for each example in the batch
 //    max_tris: Scalar equal to max(T_i) for i in [0, N - 1] containing
@@ -149,8 +161,14 @@ std::tuple<torch::Tensor, torch::Tensor> FacePointDistanceForwardCuda(
     const torch::Tensor& points_first_idx,
     const torch::Tensor& tris,
     const torch::Tensor& tris_first_idx,
-    const int64_t max_tros);
+    const int64_t max_tris);
 #endif
+
+std::tuple<torch::Tensor, torch::Tensor> FacePointDistanceForwardCpu(
+    const torch::Tensor& points,
+    const torch::Tensor& points_first_idx,
+    const torch::Tensor& tris,
+    const torch::Tensor& tris_first_idx);
 
 std::tuple<torch::Tensor, torch::Tensor> FacePointDistanceForward(
     const torch::Tensor& points,
@@ -170,7 +188,8 @@ std::tuple<torch::Tensor, torch::Tensor> FacePointDistanceForward(
     AT_ERROR("Not compiled with GPU support.");
 #endif
   }
-  AT_ERROR("No CPU implementation.");
+  return FacePointDistanceForwardCpu(
+      points, points_first_idx, tris, tris_first_idx);
 }
 
 // Backward pass for FacePointDistance.
@@ -197,6 +216,12 @@ std::tuple<torch::Tensor, torch::Tensor> FacePointDistanceBackwardCuda(
     const torch::Tensor& grad_dists);
 #endif
 
+std::tuple<torch::Tensor, torch::Tensor> FacePointDistanceBackwardCpu(
+    const torch::Tensor& points,
+    const torch::Tensor& tris,
+    const torch::Tensor& idx_tris,
+    const torch::Tensor& grad_dists);
+
 std::tuple<torch::Tensor, torch::Tensor> FacePointDistanceBackward(
     const torch::Tensor& points,
     const torch::Tensor& tris,
@@ -213,7 +238,7 @@ std::tuple<torch::Tensor, torch::Tensor> FacePointDistanceBackward(
     AT_ERROR("Not compiled with GPU support.");
 #endif
   }
-  AT_ERROR("No CPU implementation.");
+  return FacePointDistanceBackwardCpu(points, tris, idx_tris, grad_dists);
 }
 
 // ****************************************************************************
@@ -226,7 +251,7 @@ std::tuple<torch::Tensor, torch::Tensor> FacePointDistanceBackward(
 // Args:
 //    points: FloatTensor of shape (P, 3)
 //    tris: FloatTensor of shape (T, 3, 3) of the triangular faces. The t-th
-//        triangulare face is spanned by (tris[t, 0], tris[t, 1], tris[t, 2])
+//        triangular face is spanned by (tris[t, 0], tris[t, 1], tris[t, 2])
 //
 // Returns:
 //    dists: FloatTensor of shape (P, T), where dists[p, t] is the squared
@@ -245,6 +270,10 @@ torch::Tensor PointFaceArrayDistanceForwardCuda(
     const torch::Tensor& tris);
 #endif
 
+torch::Tensor PointFaceArrayDistanceForwardCpu(
+    const torch::Tensor& points,
+    const torch::Tensor& tris);
+
 torch::Tensor PointFaceArrayDistanceForward(
     const torch::Tensor& points,
     const torch::Tensor& tris) {
@@ -257,7 +286,7 @@ torch::Tensor PointFaceArrayDistanceForward(
     AT_ERROR("Not compiled with GPU support.");
 #endif
   }
-  AT_ERROR("No CPU implementation.");
+  return PointFaceArrayDistanceForwardCpu(points, tris);
 }
 
 // Backward pass for PointFaceArrayDistance.
@@ -278,6 +307,10 @@ std::tuple<torch::Tensor, torch::Tensor> PointFaceArrayDistanceBackwardCuda(
     const torch::Tensor& tris,
     const torch::Tensor& grad_dists);
 #endif
+std::tuple<torch::Tensor, torch::Tensor> PointFaceArrayDistanceBackwardCpu(
+    const torch::Tensor& points,
+    const torch::Tensor& tris,
+    const torch::Tensor& grad_dists);
 
 std::tuple<torch::Tensor, torch::Tensor> PointFaceArrayDistanceBackward(
     const torch::Tensor& points,
@@ -293,5 +326,5 @@ std::tuple<torch::Tensor, torch::Tensor> PointFaceArrayDistanceBackward(
     AT_ERROR("Not compiled with GPU support.");
 #endif
   }
-  AT_ERROR("No CPU implementation.");
+  return PointFaceArrayDistanceBackwardCpu(points, tris, grad_dists);
 }

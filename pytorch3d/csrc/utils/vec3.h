@@ -57,6 +57,11 @@ inline vec3<T> cross(const vec3<T>& a, const vec3<T>& b) {
 }
 
 template <typename T>
+inline T norm(const vec3<T>& a) {
+  return sqrt(dot(a, a));
+}
+
+template <typename T>
 std::ostream& operator<<(std::ostream& os, const vec3<T>& v) {
   os << "vec3(" << v.x << ", " << v.y << ", " << v.z << ")";
   return os;

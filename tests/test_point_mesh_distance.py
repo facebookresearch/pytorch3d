@@ -211,6 +211,9 @@ class TestPointMeshDistance(TestCaseMixin, unittest.TestCase):
         same = torch.rand((E,), dtype=torch.float32, device=device) > 0.5
         edges[same, 1] = edges[same, 0].clone().detach()
 
+        points_cpu = points.clone().cpu()
+        edges_cpu = edges.clone().cpu()
+
         points.requires_grad = True
         edges.requires_grad = True
         grad_dists = torch.rand((P, E), dtype=torch.float32, device=device)
@@ -224,22 +227,29 @@ class TestPointMeshDistance(TestCaseMixin, unittest.TestCase):
 
         # Cuda Forward Implementation
         dists_cuda = _C.point_edge_array_dist_forward(points, edges)
+        dists_cpu = _C.point_edge_array_dist_forward(points_cpu, edges_cpu)
 
         # Compare
         self.assertClose(dists_naive.cpu(), dists_cuda.cpu())
+        self.assertClose(dists_naive.cpu(), dists_cpu)
 
         # CUDA Bacwkard Implementation
         grad_points_cuda, grad_edges_cuda = _C.point_edge_array_dist_backward(
             points, edges, grad_dists
         )
+        grad_points_cpu, grad_edges_cpu = _C.point_edge_array_dist_backward(
+            points_cpu, edges_cpu, grad_dists.cpu()
+        )
 
         dists_naive.backward(grad_dists)
-        grad_points_naive = points.grad
-        grad_edges_naive = edges.grad
+        grad_points_naive = points.grad.cpu()
+        grad_edges_naive = edges.grad.cpu()
 
         # Compare
-        self.assertClose(grad_points_naive.cpu(), grad_points_cuda.cpu())
-        self.assertClose(grad_edges_naive.cpu(), grad_edges_cuda.cpu())
+        self.assertClose(grad_points_naive, grad_points_cuda.cpu())
+        self.assertClose(grad_edges_naive, grad_edges_cuda.cpu())
+        self.assertClose(grad_points_naive, grad_points_cpu)
+        self.assertClose(grad_edges_naive, grad_edges_cpu)
 
     def test_point_edge_distance(self):
         """
@@ -270,13 +280,27 @@ class TestPointMeshDistance(TestCaseMixin, unittest.TestCase):
             (points_packed.shape[0],), dtype=torch.float32, device=device
         )
 
-        # Cuda Implementation: forrward
+        # Cuda Implementation: forward
         dists_cuda, idx_cuda = _C.point_edge_dist_forward(
             points_packed, points_first_idx, edges_packed, edges_first_idx, max_p
         )
         # Cuda Implementation: backward
         grad_points_cuda, grad_edges_cuda = _C.point_edge_dist_backward(
             points_packed, edges_packed, idx_cuda, grad_dists
+        )
+        # Cpu Implementation: forward
+        dists_cpu, idx_cpu = _C.point_edge_dist_forward(
+            points_packed.cpu(),
+            points_first_idx.cpu(),
+            edges_packed.cpu(),
+            edges_first_idx.cpu(),
+            max_p,
+        )
+
+        # Cpu Implementation: backward
+        # Note that using idx_cpu doesn't pass - there seems to be a problem with tied results.
+        grad_points_cpu, grad_edges_cpu = _C.point_edge_dist_backward(
+            points_packed.cpu(), edges_packed.cpu(), idx_cuda.cpu(), grad_dists.cpu()
         )
 
         # Naive Implementation: forward
@@ -312,15 +336,18 @@ class TestPointMeshDistance(TestCaseMixin, unittest.TestCase):
 
         # Compare
         self.assertClose(dists_naive.cpu(), dists_cuda.cpu())
+        self.assertClose(dists_naive.cpu(), dists_cpu)
 
         # Naive Implementation: backward
         dists_naive.backward(grad_dists)
         grad_points_naive = torch.cat([cloud.grad for cloud in pcls.points_list()])
-        grad_edges_naive = edges_packed.grad
+        grad_edges_naive = edges_packed.grad.cpu()
 
         # Compare
         self.assertClose(grad_points_naive.cpu(), grad_points_cuda.cpu(), atol=1e-7)
-        self.assertClose(grad_edges_naive.cpu(), grad_edges_cuda.cpu(), atol=5e-7)
+        self.assertClose(grad_edges_naive, grad_edges_cuda.cpu(), atol=5e-7)
+        self.assertClose(grad_points_naive.cpu(), grad_points_cpu, atol=1e-7)
+        self.assertClose(grad_edges_naive, grad_edges_cpu, atol=5e-7)
 
     def test_edge_point_distance(self):
         """
@@ -361,6 +388,20 @@ class TestPointMeshDistance(TestCaseMixin, unittest.TestCase):
             points_packed, edges_packed, idx_cuda, grad_dists
         )
 
+        # Cpu Implementation: forward
+        dists_cpu, idx_cpu = _C.edge_point_dist_forward(
+            points_packed.cpu(),
+            points_first_idx.cpu(),
+            edges_packed.cpu(),
+            edges_first_idx.cpu(),
+            max_e,
+        )
+
+        # Cpu Implementation: backward
+        grad_points_cpu, grad_edges_cpu = _C.edge_point_dist_backward(
+            points_packed.cpu(), edges_packed.cpu(), idx_cpu, grad_dists.cpu()
+        )
+
         # Naive Implementation: forward
         edges_list = packed_to_list(edges_packed, meshes.num_edges_per_mesh().tolist())
         dists_naive = []
@@ -395,15 +436,18 @@ class TestPointMeshDistance(TestCaseMixin, unittest.TestCase):
 
         # Compare
         self.assertClose(dists_naive.cpu(), dists_cuda.cpu())
+        self.assertClose(dists_naive.cpu(), dists_cpu)
 
         # Naive Implementation: backward
         dists_naive.backward(grad_dists)
         grad_points_naive = torch.cat([cloud.grad for cloud in pcls.points_list()])
-        grad_edges_naive = edges_packed.grad
+        grad_edges_naive = edges_packed.grad.cpu()
 
         # Compare
         self.assertClose(grad_points_naive.cpu(), grad_points_cuda.cpu(), atol=1e-7)
-        self.assertClose(grad_edges_naive.cpu(), grad_edges_cuda.cpu(), atol=5e-7)
+        self.assertClose(grad_edges_naive, grad_edges_cuda.cpu(), atol=5e-7)
+        self.assertClose(grad_points_naive.cpu(), grad_points_cpu, atol=1e-7)
+        self.assertClose(grad_edges_naive, grad_edges_cpu, atol=5e-7)
 
     def test_point_mesh_edge_distance(self):
         """
@@ -483,6 +527,8 @@ class TestPointMeshDistance(TestCaseMixin, unittest.TestCase):
         device = get_random_cuda_device()
         points = torch.rand((P, 3), dtype=torch.float32, device=device)
         tris = torch.rand((T, 3, 3), dtype=torch.float32, device=device)
+        points_cpu = points.clone().cpu()
+        tris_cpu = tris.clone().cpu()
 
         points.requires_grad = True
         tris.requires_grad = True
@@ -502,23 +548,30 @@ class TestPointMeshDistance(TestCaseMixin, unittest.TestCase):
 
         # Naive Backward
         dists_naive.backward(grad_dists)
-        grad_points_naive = points.grad
-        grad_tris_naive = tris.grad
+        grad_points_naive = points.grad.cpu()
+        grad_tris_naive = tris.grad.cpu()
 
         # Cuda Forward Implementation
         dists_cuda = _C.point_face_array_dist_forward(points, tris)
+        dists_cpu = _C.point_face_array_dist_forward(points_cpu, tris_cpu)
 
         # Compare
         self.assertClose(dists_naive.cpu(), dists_cuda.cpu())
+        self.assertClose(dists_naive.cpu(), dists_cpu)
 
         # CUDA Backward Implementation
         grad_points_cuda, grad_tris_cuda = _C.point_face_array_dist_backward(
             points, tris, grad_dists
         )
+        grad_points_cpu, grad_tris_cpu = _C.point_face_array_dist_backward(
+            points_cpu, tris_cpu, grad_dists.cpu()
+        )
 
         # Compare
-        self.assertClose(grad_points_naive.cpu(), grad_points_cuda.cpu())
-        self.assertClose(grad_tris_naive.cpu(), grad_tris_cuda.cpu(), atol=5e-6)
+        self.assertClose(grad_points_naive, grad_points_cuda.cpu())
+        self.assertClose(grad_tris_naive, grad_tris_cuda.cpu(), atol=5e-6)
+        self.assertClose(grad_points_naive, grad_points_cpu)
+        self.assertClose(grad_tris_naive, grad_tris_cpu, atol=5e-6)
 
     def test_point_face_distance(self):
         """
@@ -559,6 +612,21 @@ class TestPointMeshDistance(TestCaseMixin, unittest.TestCase):
             points_packed, faces_packed, idx_cuda, grad_dists
         )
 
+        # Cpu Implementation: forward
+        dists_cpu, idx_cpu = _C.point_face_dist_forward(
+            points_packed.cpu(),
+            points_first_idx.cpu(),
+            faces_packed.cpu(),
+            faces_first_idx.cpu(),
+            max_p,
+        )
+
+        # Cpu Implementation: backward
+        # Note that using idx_cpu doesn't pass - there seems to be a problem with tied results.
+        grad_points_cpu, grad_faces_cpu = _C.point_face_dist_backward(
+            points_packed.cpu(), faces_packed.cpu(), idx_cuda.cpu(), grad_dists.cpu()
+        )
+
         # Naive Implementation: forward
         faces_list = packed_to_list(faces_packed, meshes.num_faces_per_mesh().tolist())
         dists_naive = []
@@ -593,15 +661,18 @@ class TestPointMeshDistance(TestCaseMixin, unittest.TestCase):
 
         # Compare
         self.assertClose(dists_naive.cpu(), dists_cuda.cpu())
+        self.assertClose(dists_naive.cpu(), dists_cpu)
 
         #  Naive Implementation: backward
         dists_naive.backward(grad_dists)
         grad_points_naive = torch.cat([cloud.grad for cloud in pcls.points_list()])
-        grad_faces_naive = faces_packed.grad
+        grad_faces_naive = faces_packed.grad.cpu()
 
         # Compare
         self.assertClose(grad_points_naive.cpu(), grad_points_cuda.cpu(), atol=1e-7)
-        self.assertClose(grad_faces_naive.cpu(), grad_faces_cuda.cpu(), atol=5e-7)
+        self.assertClose(grad_faces_naive, grad_faces_cuda.cpu(), atol=5e-7)
+        self.assertClose(grad_points_naive.cpu(), grad_points_cpu, atol=1e-7)
+        self.assertClose(grad_faces_naive, grad_faces_cpu, atol=5e-7)
 
     def test_face_point_distance(self):
         """
@@ -642,6 +713,20 @@ class TestPointMeshDistance(TestCaseMixin, unittest.TestCase):
             points_packed, faces_packed, idx_cuda, grad_dists
         )
 
+        # Cpu Implementation: forward
+        dists_cpu, idx_cpu = _C.face_point_dist_forward(
+            points_packed.cpu(),
+            points_first_idx.cpu(),
+            faces_packed.cpu(),
+            faces_first_idx.cpu(),
+            max_f,
+        )
+
+        # Cpu Implementation: backward
+        grad_points_cpu, grad_faces_cpu = _C.face_point_dist_backward(
+            points_packed.cpu(), faces_packed.cpu(), idx_cpu, grad_dists.cpu()
+        )
+
         # Naive Implementation: forward
         faces_list = packed_to_list(faces_packed, meshes.num_faces_per_mesh().tolist())
         dists_naive = []
@@ -676,6 +761,7 @@ class TestPointMeshDistance(TestCaseMixin, unittest.TestCase):
 
         # Compare
         self.assertClose(dists_naive.cpu(), dists_cuda.cpu())
+        self.assertClose(dists_naive.cpu(), dists_cpu)
 
         # Naive Implementation: backward
         dists_naive.backward(grad_dists)
@@ -685,6 +771,8 @@ class TestPointMeshDistance(TestCaseMixin, unittest.TestCase):
         # Compare
         self.assertClose(grad_points_naive.cpu(), grad_points_cuda.cpu(), atol=1e-7)
         self.assertClose(grad_faces_naive.cpu(), grad_faces_cuda.cpu(), atol=5e-7)
+        self.assertClose(grad_points_naive.cpu(), grad_points_cpu, atol=1e-7)
+        self.assertClose(grad_faces_naive.cpu(), grad_faces_cpu, atol=5e-7)
 
     def test_point_mesh_face_distance(self):
         """

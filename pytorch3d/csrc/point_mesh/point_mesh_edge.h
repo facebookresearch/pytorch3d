@@ -46,6 +46,13 @@ std::tuple<torch::Tensor, torch::Tensor> PointEdgeDistanceForwardCuda(
     const int64_t max_points);
 #endif
 
+std::tuple<torch::Tensor, torch::Tensor> PointEdgeDistanceForwardCpu(
+    const torch::Tensor& points,
+    const torch::Tensor& points_first_idx,
+    const torch::Tensor& segms,
+    const torch::Tensor& segms_first_idx,
+    const int64_t max_points);
+
 std::tuple<torch::Tensor, torch::Tensor> PointEdgeDistanceForward(
     const torch::Tensor& points,
     const torch::Tensor& points_first_idx,
@@ -64,7 +71,8 @@ std::tuple<torch::Tensor, torch::Tensor> PointEdgeDistanceForward(
     AT_ERROR("Not compiled with GPU support.");
 #endif
   }
-  AT_ERROR("No CPU implementation.");
+  return PointEdgeDistanceForwardCpu(
+      points, points_first_idx, segms, segms_first_idx, max_points);
 }
 
 // Backward pass for PointEdgeDistance.
@@ -91,6 +99,12 @@ std::tuple<torch::Tensor, torch::Tensor> PointEdgeDistanceBackwardCuda(
     const torch::Tensor& grad_dists);
 #endif
 
+std::tuple<torch::Tensor, torch::Tensor> PointEdgeDistanceBackwardCpu(
+    const torch::Tensor& points,
+    const torch::Tensor& segms,
+    const torch::Tensor& idx_points,
+    const torch::Tensor& grad_dists);
+
 std::tuple<torch::Tensor, torch::Tensor> PointEdgeDistanceBackward(
     const torch::Tensor& points,
     const torch::Tensor& segms,
@@ -107,7 +121,7 @@ std::tuple<torch::Tensor, torch::Tensor> PointEdgeDistanceBackward(
     AT_ERROR("Not compiled with GPU support.");
 #endif
   }
-  AT_ERROR("No CPU implementation.");
+  return PointEdgeDistanceBackwardCpu(points, segms, idx_points, grad_dists);
 }
 
 // ****************************************************************************
@@ -150,6 +164,13 @@ std::tuple<torch::Tensor, torch::Tensor> EdgePointDistanceForwardCuda(
     const int64_t max_segms);
 #endif
 
+std::tuple<torch::Tensor, torch::Tensor> EdgePointDistanceForwardCpu(
+    const torch::Tensor& points,
+    const torch::Tensor& points_first_idx,
+    const torch::Tensor& segms,
+    const torch::Tensor& segms_first_idx,
+    const int64_t max_segms);
+
 std::tuple<torch::Tensor, torch::Tensor> EdgePointDistanceForward(
     const torch::Tensor& points,
     const torch::Tensor& points_first_idx,
@@ -168,7 +189,8 @@ std::tuple<torch::Tensor, torch::Tensor> EdgePointDistanceForward(
     AT_ERROR("Not compiled with GPU support.");
 #endif
   }
-  AT_ERROR("No CPU implementation.");
+  return EdgePointDistanceForwardCpu(
+      points, points_first_idx, segms, segms_first_idx, max_segms);
 }
 
 // Backward pass for EdgePointDistance.
@@ -195,6 +217,12 @@ std::tuple<torch::Tensor, torch::Tensor> EdgePointDistanceBackwardCuda(
     const torch::Tensor& grad_dists);
 #endif
 
+std::tuple<torch::Tensor, torch::Tensor> EdgePointDistanceBackwardCpu(
+    const torch::Tensor& points,
+    const torch::Tensor& segms,
+    const torch::Tensor& idx_segms,
+    const torch::Tensor& grad_dists);
+
 std::tuple<torch::Tensor, torch::Tensor> EdgePointDistanceBackward(
     const torch::Tensor& points,
     const torch::Tensor& segms,
@@ -211,7 +239,7 @@ std::tuple<torch::Tensor, torch::Tensor> EdgePointDistanceBackward(
     AT_ERROR("Not compiled with GPU support.");
 #endif
   }
-  AT_ERROR("No CPU implementation.");
+  return EdgePointDistanceBackwardCpu(points, segms, idx_segms, grad_dists);
 }
 
 // ****************************************************************************
@@ -242,6 +270,10 @@ torch::Tensor PointEdgeArrayDistanceForwardCuda(
     const torch::Tensor& segms);
 #endif
 
+torch::Tensor PointEdgeArrayDistanceForwardCpu(
+    const torch::Tensor& points,
+    const torch::Tensor& segms);
+
 torch::Tensor PointEdgeArrayDistanceForward(
     const torch::Tensor& points,
     const torch::Tensor& segms) {
@@ -254,7 +286,7 @@ torch::Tensor PointEdgeArrayDistanceForward(
     AT_ERROR("Not compiled with GPU support.");
 #endif
   }
-  AT_ERROR("No CPU implementation.");
+  return PointEdgeArrayDistanceForwardCpu(points, segms);
 }
 
 // Backward pass for PointEdgeArrayDistance.
@@ -277,6 +309,11 @@ std::tuple<torch::Tensor, torch::Tensor> PointEdgeArrayDistanceBackwardCuda(
     const torch::Tensor& grad_dists);
 #endif
 
+std::tuple<torch::Tensor, torch::Tensor> PointEdgeArrayDistanceBackwardCpu(
+    const torch::Tensor& points,
+    const torch::Tensor& segms,
+    const torch::Tensor& grad_dists);
+
 std::tuple<torch::Tensor, torch::Tensor> PointEdgeArrayDistanceBackward(
     const torch::Tensor& points,
     const torch::Tensor& segms,
@@ -291,5 +328,5 @@ std::tuple<torch::Tensor, torch::Tensor> PointEdgeArrayDistanceBackward(
     AT_ERROR("Not compiled with GPU support.");
 #endif
   }
-  AT_ERROR("No CPU implementation.");
+  return PointEdgeArrayDistanceBackwardCpu(points, segms, grad_dists);
 }

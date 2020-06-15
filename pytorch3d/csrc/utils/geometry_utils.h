@@ -2,6 +2,7 @@
 
 #include <ATen/ATen.h>
 #include <algorithm>
+#include <tuple>
 #include <type_traits>
 #include "vec2.h"
 #include "vec3.h"
@@ -281,6 +282,23 @@ T PointLineDistanceForward(
   return dot(p - p_proj, p - p_proj);
 }
 
+template <typename T>
+T PointLine3DistanceForward(
+    const vec3<T>& p,
+    const vec3<T>& v0,
+    const vec3<T>& v1) {
+  const vec3<T> v1v0 = v1 - v0;
+  const T l2 = dot(v1v0, v1v0);
+  if (l2 <= kEpsilon) {
+    return dot(p - v1, p - v1);
+  }
+
+  const T t = dot(v1v0, p - v0) / l2;
+  const T tt = std::min(std::max(t, 0.00f), 1.00f);
+  const vec3<T> p_proj = v0 + tt * v1v0;
+  return dot(p - p_proj, p - p_proj);
+}
+
 // Backward pass for point to line distance in 2D.
 //
 // Args:
@@ -310,6 +328,51 @@ inline std::tuple<vec2<T>, vec2<T>, vec2<T>> PointLineDistanceBackward(
   const vec2<T> grad_v0 = grad_dist * (1.0f - tt) * 2.0f * (p_proj - p);
   const vec2<T> grad_v1 = grad_dist * tt * 2.0f * (p_proj - p);
   const vec2<T> grad_p = -1.0f * grad_dist * 2.0f * (p_proj - p);
+
+  return std::make_tuple(grad_p, grad_v0, grad_v1);
+}
+
+template <typename T>
+std::tuple<vec3<T>, vec3<T>, vec3<T>> PointLine3DistanceBackward(
+    const vec3<T>& p,
+    const vec3<T>& v0,
+    const vec3<T>& v1,
+    const T& grad_dist) {
+  const vec3<T> v1v0 = v1 - v0;
+  const vec3<T> pv0 = p - v0;
+  const T t_bot = dot(v1v0, v1v0);
+  const T t_top = dot(v1v0, pv0);
+
+  vec3<T> grad_p{0.0f, 0.0f, 0.0f};
+  vec3<T> grad_v0{0.0f, 0.0f, 0.0f};
+  vec3<T> grad_v1{0.0f, 0.0f, 0.0f};
+
+  const T tt = t_top / t_bot;
+
+  if (t_bot < kEpsilon) {
+    // if t_bot small, then v0 == v1,
+    // and dist = 0.5 * dot(pv0, pv0) + 0.5 * dot(pv1, pv1)
+    grad_p = grad_dist * 2.0f * pv0;
+    grad_v0 = -0.5f * grad_p;
+    grad_v1 = grad_v0;
+  } else if (tt < 0.0f) {
+    grad_p = grad_dist * 2.0f * pv0;
+    grad_v0 = -1.0f * grad_p;
+    // no gradients wrt v1
+  } else if (tt > 1.0f) {
+    grad_p = grad_dist * 2.0f * (p - v1);
+    grad_v1 = -1.0f * grad_p;
+    // no gradients wrt v0
+  } else {
+    const vec3<T> p_proj = v0 + tt * v1v0;
+    const vec3<T> diff = p - p_proj;
+    const vec3<T> grad_base = grad_dist * 2.0f * diff;
+    grad_p = grad_base - dot(grad_base, v1v0) * v1v0 / t_bot;
+    const vec3<T> dtt_v0 = (-1.0f * v1v0 - pv0 + 2.0f * tt * v1v0) / t_bot;
+    grad_v0 = (-1.0f + tt) * grad_base - dot(grad_base, v1v0) * dtt_v0;
+    const vec3<T> dtt_v1 = (pv0 - 2.0f * tt * v1v0) / t_bot;
+    grad_v1 = -dot(grad_base, v1v0) * dtt_v1 - tt * grad_base;
+  }
 
   return std::make_tuple(grad_p, grad_v0, grad_v1);
 }
@@ -392,6 +455,229 @@ PointTriangleDistanceBackward(
     grad_p = std::get<0>(grad_e12);
     grad_v1 = std::get<1>(grad_e12);
     grad_v2 = std::get<2>(grad_e12);
+  }
+
+  return std::make_tuple(grad_p, grad_v0, grad_v1, grad_v2);
+}
+
+// Computes the squared distance of a point p relative to a triangle (v0, v1,
+// v2). If the point's projection p0 on the plane spanned by (v0, v1, v2) is
+// inside the triangle with vertices (v0, v1, v2), then the returned value is
+// the squared distance of p to its projection p0. Otherwise, the returned value
+// is the smallest squared distance of p from the line segments (v0, v1), (v0,
+// v2) and (v1, v2).
+//
+// Args:
+//     p: vec3 coordinates of a point
+//     v0, v1, v2: vec3 coordinates of the triangle vertices
+//
+// Returns:
+//     dist: Float of the squared distance
+//
+
+const float vEpsilon = 1e-8;
+
+template <typename T>
+vec3<T> BarycentricCoords3Forward(
+    const vec3<T>& p,
+    const vec3<T>& v0,
+    const vec3<T>& v1,
+    const vec3<T>& v2) {
+  vec3<T> p0 = v1 - v0;
+  vec3<T> p1 = v2 - v0;
+  vec3<T> p2 = p - v0;
+
+  const T d00 = dot(p0, p0);
+  const T d01 = dot(p0, p1);
+  const T d11 = dot(p1, p1);
+  const T d20 = dot(p2, p0);
+  const T d21 = dot(p2, p1);
+
+  const T denom = d00 * d11 - d01 * d01 + kEpsilon;
+  const T w1 = (d11 * d20 - d01 * d21) / denom;
+  const T w2 = (d00 * d21 - d01 * d20) / denom;
+  const T w0 = 1.0f - w1 - w2;
+
+  return vec3<T>(w0, w1, w2);
+}
+
+// Checks whether the point p is inside the triangle (v0, v1, v2).
+// A point is inside the triangle, if all barycentric coordinates
+// wrt the triangle are >= 0 & <= 1.
+//
+// NOTE that this function assumes that p lives on the space spanned
+// by (v0, v1, v2).
+// TODO(gkioxari) explicitly check whether p is coplanar with (v0, v1, v2)
+// and throw an error if check fails
+//
+// Args:
+//     p: vec3 coordinates of a point
+//     v0, v1, v2: vec3 coordinates of the triangle vertices
+//
+// Returns:
+//     inside: bool indicating wether p is inside triangle
+//
+template <typename T>
+static bool IsInsideTriangle(
+    const vec3<T>& p,
+    const vec3<T>& v0,
+    const vec3<T>& v1,
+    const vec3<T>& v2) {
+  vec3<T> bary = BarycentricCoords3Forward(p, v0, v1, v2);
+  bool x_in = 0.0f <= bary.x && bary.x <= 1.0f;
+  bool y_in = 0.0f <= bary.y && bary.y <= 1.0f;
+  bool z_in = 0.0f <= bary.z && bary.z <= 1.0f;
+  bool inside = x_in && y_in && z_in;
+  return inside;
+}
+
+template <typename T>
+T PointTriangle3DistanceForward(
+    const vec3<T>& p,
+    const vec3<T>& v0,
+    const vec3<T>& v1,
+    const vec3<T>& v2) {
+  vec3<T> normal = cross(v2 - v0, v1 - v0);
+  const T norm_normal = norm(normal);
+  normal = normal / (norm_normal + vEpsilon);
+
+  // p0 is the projection of p on the plane spanned by (v0, v1, v2)
+  // i.e. p0 = p + t * normal, s.t. (p0 - v0) is orthogonal to normal
+  const T t = dot(v0 - p, normal);
+  const vec3<T> p0 = p + t * normal;
+
+  bool is_inside = IsInsideTriangle(p0, v0, v1, v2);
+  T dist = 0.0f;
+
+  if ((is_inside) && (norm_normal > kEpsilon)) {
+    // if projection p0 is inside triangle spanned by (v0, v1, v2)
+    // then distance is equal to norm(p0 - p)^2
+    dist = t * t;
+  } else {
+    const float e01 = PointLine3DistanceForward(p, v0, v1);
+    const float e02 = PointLine3DistanceForward(p, v0, v2);
+    const float e12 = PointLine3DistanceForward(p, v1, v2);
+
+    dist = (e01 > e02) ? e02 : e01;
+    dist = (dist > e12) ? e12 : dist;
+  }
+
+  return dist;
+}
+
+template <typename T>
+std::tuple<vec3<T>, vec3<T>>
+cross_backward(const vec3<T>& a, const vec3<T>& b, const vec3<T>& grad_cross) {
+  const float grad_ax = -grad_cross.y * b.z + grad_cross.z * b.y;
+  const float grad_ay = grad_cross.x * b.z - grad_cross.z * b.x;
+  const float grad_az = -grad_cross.x * b.y + grad_cross.y * b.x;
+  const vec3<T> grad_a = vec3<T>(grad_ax, grad_ay, grad_az);
+
+  const float grad_bx = grad_cross.y * a.z - grad_cross.z * a.y;
+  const float grad_by = -grad_cross.x * a.z + grad_cross.z * a.x;
+  const float grad_bz = grad_cross.x * a.y - grad_cross.y * a.x;
+  const vec3<T> grad_b = vec3<T>(grad_bx, grad_by, grad_bz);
+
+  return std::make_tuple(grad_a, grad_b);
+}
+
+template <typename T>
+vec3<T> normalize_backward(const vec3<T>& a, const vec3<T>& grad_normz) {
+  const float a_norm = norm(a) + vEpsilon;
+  const vec3<T> out = a / a_norm;
+
+  const float grad_ax = grad_normz.x * (1.0f - out.x * out.x) / a_norm +
+      grad_normz.y * (-out.x * out.y) / a_norm +
+      grad_normz.z * (-out.x * out.z) / a_norm;
+  const float grad_ay = grad_normz.x * (-out.x * out.y) / a_norm +
+      grad_normz.y * (1.0f - out.y * out.y) / a_norm +
+      grad_normz.z * (-out.y * out.z) / a_norm;
+  const float grad_az = grad_normz.x * (-out.x * out.z) / a_norm +
+      grad_normz.y * (-out.y * out.z) / a_norm +
+      grad_normz.z * (1.0f - out.z * out.z) / a_norm;
+  return vec3<T>(grad_ax, grad_ay, grad_az);
+}
+
+// The backward pass for computing the squared distance of a point
+// to the triangle (v0, v1, v2).
+//
+// Args:
+//     p: xyz coordinates of a point
+//     v0, v1, v2: xyz coordinates of the triangle vertices
+//     grad_dist: Float of the gradient wrt dist
+//
+// Returns:
+//     tuple of gradients for the point and triangle:
+//        (float3 grad_p, float3 grad_v0, float3 grad_v1, float3 grad_v2)
+//
+
+template <typename T>
+static std::tuple<vec3<T>, vec3<T>, vec3<T>, vec3<T>>
+PointTriangle3DistanceBackward(
+    const vec3<T>& p,
+    const vec3<T>& v0,
+    const vec3<T>& v1,
+    const vec3<T>& v2,
+    const T& grad_dist) {
+  const vec3<T> v2v0 = v2 - v0;
+  const vec3<T> v1v0 = v1 - v0;
+  const vec3<T> v0p = v0 - p;
+  vec3<T> raw_normal = cross(v2v0, v1v0);
+  const T norm_normal = norm(raw_normal);
+  vec3<T> normal = raw_normal / (norm_normal + vEpsilon);
+
+  // p0 is the projection of p on the plane spanned by (v0, v1, v2)
+  // i.e. p0 = p + t * normal, s.t. (p0 - v0) is orthogonal to normal
+  const T t = dot(v0 - p, normal);
+  const vec3<T> p0 = p + t * normal;
+  const vec3<T> diff = t * normal;
+
+  bool is_inside = IsInsideTriangle(p0, v0, v1, v2);
+
+  vec3<T> grad_p(0.0f, 0.0f, 0.0f);
+  vec3<T> grad_v0(0.0f, 0.0f, 0.0f);
+  vec3<T> grad_v1(0.0f, 0.0f, 0.0f);
+  vec3<T> grad_v2(0.0f, 0.0f, 0.0f);
+
+  if ((is_inside) && (norm_normal > kEpsilon)) {
+    // derivative of dist wrt p
+    grad_p = -2.0f * grad_dist * t * normal;
+    // derivative of dist wrt normal
+    const vec3<T> grad_normal = 2.0f * grad_dist * t * (v0p + diff);
+    // derivative of dist wrt raw_normal
+    const vec3<T> grad_raw_normal = normalize_backward(raw_normal, grad_normal);
+    // derivative of dist wrt v2v0 and v1v0
+    const auto grad_cross = cross_backward(v2v0, v1v0, grad_raw_normal);
+    const vec3<T> grad_cross_v2v0 = std::get<0>(grad_cross);
+    const vec3<T> grad_cross_v1v0 = std::get<1>(grad_cross);
+    grad_v0 =
+        grad_dist * 2.0f * t * normal - (grad_cross_v2v0 + grad_cross_v1v0);
+    grad_v1 = grad_cross_v1v0;
+    grad_v2 = grad_cross_v2v0;
+  } else {
+    const T e01 = PointLine3DistanceForward(p, v0, v1);
+    const T e02 = PointLine3DistanceForward(p, v0, v2);
+    const T e12 = PointLine3DistanceForward(p, v1, v2);
+
+    if ((e01 <= e02) && (e01 <= e12)) {
+      // e01 is smallest
+      const auto grads = PointLine3DistanceBackward(p, v0, v1, grad_dist);
+      grad_p = std::get<0>(grads);
+      grad_v0 = std::get<1>(grads);
+      grad_v1 = std::get<2>(grads);
+    } else if ((e02 <= e01) && (e02 <= e12)) {
+      // e02 is smallest
+      const auto grads = PointLine3DistanceBackward(p, v0, v2, grad_dist);
+      grad_p = std::get<0>(grads);
+      grad_v0 = std::get<1>(grads);
+      grad_v2 = std::get<2>(grads);
+    } else if ((e12 <= e01) && (e12 <= e02)) {
+      // e12 is smallest
+      const auto grads = PointLine3DistanceBackward(p, v1, v2, grad_dist);
+      grad_p = std::get<0>(grads);
+      grad_v1 = std::get<1>(grads);
+      grad_v2 = std::get<2>(grads);
+    }
   }
 
   return std::make_tuple(grad_p, grad_v0, grad_v1, grad_v2);
