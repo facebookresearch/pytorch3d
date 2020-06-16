@@ -11,38 +11,32 @@
 
 template <typename T>
 vec3<T> ExtractPoint(const at::TensorAccessor<T, 1>& t) {
-  return vec3(t[0], t[1], t[2]);
+  return vec3<T>(t[0], t[1], t[2]);
 }
 
-template <class Accessor>
-struct ExtractHullHelper {
-  template <int H>
-  static std::array<vec3<std::remove_pointer_t<typename Accessor::PtrType>>, H>
-  get(const Accessor& t);
+template <typename Accessor>
+static std::array<vec3<std::remove_pointer_t<typename Accessor::PtrType>>, 1>
+ExtractHullHelper(const Accessor& t, std::array<char, 1> /*tag*/) {
+  return {ExtractPoint(t)};
+}
 
-  template <>
-  static std::array<vec3<std::remove_pointer_t<typename Accessor::PtrType>>, 1>
-  get<1>(const Accessor& t) {
-    return {ExtractPoint(t)};
-  }
+template <typename Accessor>
+static std::array<vec3<std::remove_pointer_t<typename Accessor::PtrType>>, 2>
+ExtractHullHelper(const Accessor& t, std::array<char, 2> /*tag*/) {
+  return {ExtractPoint(t[0]), ExtractPoint(t[1])};
+}
 
-  template <>
-  static std::array<vec3<std::remove_pointer_t<typename Accessor::PtrType>>, 2>
-  get<2>(const Accessor& t) {
-    return {ExtractPoint(t[0]), ExtractPoint(t[1])};
-  }
-
-  template <>
-  static std::array<vec3<std::remove_pointer_t<typename Accessor::PtrType>>, 3>
-  get<3>(const Accessor& t) {
-    return {ExtractPoint(t[0]), ExtractPoint(t[1]), ExtractPoint(t[2])};
-  }
-};
+template <typename Accessor>
+static std::array<vec3<std::remove_pointer_t<typename Accessor::PtrType>>, 3>
+ExtractHullHelper(const Accessor& t, std::array<char, 3> /*tag*/) {
+  return {ExtractPoint(t[0]), ExtractPoint(t[1]), ExtractPoint(t[2])};
+}
 
 template <int H, typename Accessor>
 std::array<vec3<std::remove_pointer_t<typename Accessor::PtrType>>, H>
 ExtractHull(const Accessor& t) {
-  return ExtractHullHelper<Accessor>::template get<H>(t);
+  std::array<char, H> tag;
+  return ExtractHullHelper(t, tag);
 }
 
 template <typename T>
