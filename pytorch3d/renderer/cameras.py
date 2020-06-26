@@ -848,7 +848,7 @@ def camera_position_from_spherical_angles(
     the target point, the elevation and azimuth angles.
 
     Args:
-        distance: distance of the camera from the object.
+        distance: distance of the camera from the origin.
         elevation, azimuth: angles.
             The inputs distance, elevation and azimuth can be one of the following
                 - Python scalar
@@ -937,7 +937,7 @@ def look_at_view_transform(
     to apply the 'Look At' transformation from world -> view coordinates [0].
 
     Args:
-        dist: distance of the camera from the object
+        dist: distance of the camera from the origin
         elev: angle in degres or radians. This is the angle between the
             vector from the object to the camera, and the horizontal plane y = 0 (xz-plane).
         azim: angle in degrees or radians. The vector from the object to
