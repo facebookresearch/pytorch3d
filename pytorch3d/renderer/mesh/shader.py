@@ -13,7 +13,7 @@ from ..blending import (
 from ..lighting import PointLights
 from ..materials import Materials
 from .shading import flat_shading, gouraud_shading, phong_shading
-from .texturing import interpolate_texture_map, interpolate_vertex_colors
+from .texturing import interpolate_texture_map, interpolate_vertex_colors,interpolate_vertex_uvs,interpolate_vertex_normals
 
 
 # A Shader should take as input fragments from the output of rasterization
@@ -336,4 +336,97 @@ class SoftSilhouetteShader(nn.Module):
         colors = torch.ones_like(fragments.bary_coords)
         blend_params = kwargs.get("blend_params", self.blend_params)
         images = sigmoid_alpha_blend(colors, fragments, blend_params)
+        return images
+class NormalShader(nn.Module):
+    """
+    Per pixel lighting - the lighting model is applied using the interpolated
+    coordinates and normals for each pixel. The blending function returns the
+    soft aggregated color using all the faces per pixel.
+    To use the default values, simply initialize the shader with the desired
+    device e.g.
+    .. code-block::
+        shader = SoftPhongShader(device=torch.device("cuda:0"))
+    """
+
+
+    def __init__(
+            self, device="cpu", cameras=None, lights=None, materials=None, blend_params=None
+    ):
+        super().__init__()
+        self.lights = lights if lights is not None else PointLights(device=device)
+        self.materials = (
+            materials if materials is not None else Materials(device=device)
+        )
+        self.cameras = cameras
+        self.blend_params = blend_params if blend_params is not None else BlendParams()
+
+    def forward(self, fragments, meshes, **kwargs) -> torch.Tensor:
+        cameras = kwargs.get("cameras", self.cameras)
+        if cameras is None:
+            msg = "Cameras must be specified either at initialization \
+                or in the forward pass of SoftPhongShader"
+            raise ValueError(msg)
+        texels = interpolate_vertex_normals(fragments, meshes)
+        lights = kwargs.get("lights", self.lights)
+
+        materials = kwargs.get("materials", self.materials)
+
+        colors = phong_shading(
+            meshes=meshes,
+            fragments=fragments,
+            texels=texels,
+            cameras=cameras,
+            lights=lights,
+            materials = materials,
+
+        )
+        images = softmax_rgb_blend(colors, fragments, self.blend_params)
+        return images
+
+class UVsCorrespondenceShader(nn.Module):
+    """
+    Per pixel lighting - the lighting model is applied using the interpolated
+    coordinates and normals for each pixel. The blending function returns the
+    soft aggregated color using all the faces per pixel.
+    To use the default values, simply initialize the shader with the desired
+    device e.g.
+    .. code-block::
+        shader = SoftPhongShader(device=torch.device("cuda:0"))
+    """
+
+
+    def __init__(
+            self, device="cpu", cameras=None, lights=None, materials=None, blend_params=None,colormap=None
+    ):
+        super().__init__()
+        self.lights = lights if lights is not None else PointLights(device=device)
+        self.materials = (
+            materials if materials is not None else Materials(device=device)
+        )
+        self.cameras = cameras
+        self.colormap = colormap
+        self.blend_params = blend_params if blend_params is not None else BlendParams()
+
+    def forward(self, fragments, meshes, **kwargs) -> torch.Tensor:
+        cameras = kwargs.get("cameras", self.cameras)
+        colormap = kwargs.get("colormap", self.colormap)
+        if cameras is None:
+            msg = "Cameras must be specified either at initialization \
+                or in the forward pass of SoftPhongShader"
+            raise ValueError(msg)
+        texels = interpolate_vertex_uvs(fragments, meshes,colormap)
+        lights = kwargs.get("lights", self.lights)
+
+        materials = kwargs.get("materials", self.materials)
+
+        colors = phong_shading(
+            meshes=meshes,
+            fragments=fragments,
+            texels=texels,
+            cameras=cameras,
+            lights=lights,
+            materials = materials,
+
+        )
+        images = softmax_rgb_blend(colors, fragments, self.blend_params)
         return images
