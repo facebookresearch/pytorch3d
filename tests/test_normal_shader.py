@@ -16,7 +16,7 @@ from pytorch3d.renderer import (
     MeshRasterizer, MeshRenderer
 )
 from pytorch3d.renderer.mesh.shader import NormalShader, UVsCorrespondenceShader
-import cv2
+from PIL import Image
 
 
 class Test(unittest.TestCase):
@@ -72,13 +72,15 @@ class Test(unittest.TestCase):
         images = renderer(mesh)
         # cv2.imshow('render_normal_texture.png',
         #            ((255 * images[0, ..., :3]).squeeze().cpu().numpy().astype(np.uint8))[..., ::-1])
-
-        cv2.imwrite(str(data_dir / 'render_normal_texture.png'),
-                    ((255 * images[0, ..., :3]).squeeze().cpu().numpy().astype(np.uint8))[..., ::-1])
+        Image.fromarray(((255 * images[0, ..., :3]).squeeze().cpu().numpy().astype(np.uint8))).save(
+            str(data_dir / 'render_normal_texture11.png')
+            )
+        # cv2.imwrite(str(data_dir / 'render_normal_texture.png'),
+        #             ((255 * images[0, ..., :3]).squeeze().cpu().numpy().astype(np.uint8))[..., ::-1])
         self.assertTrue((data_dir / 'render_normal_texture.png').exists())
 
 
-cv2.waitKey(0)
+# cv2.waitKey(0)
 if __name__ == '__main__':
     # begin the unittest.main()
     unittest.main()

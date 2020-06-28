@@ -18,7 +18,7 @@ from pytorch3d.renderer import (
 from matplotlib import cm
 from numpy import linspace
 from pytorch3d.renderer.mesh.shader import NormalShader, UVsCorrespondenceShader
-import cv2
+from PIL import Image
 
 
 class Test(unittest.TestCase):
@@ -100,9 +100,10 @@ class Test(unittest.TestCase):
         # cv2.imshow('render_correspondence_texture.png',
         #            ((255 * images[0, ..., :3]).squeeze().cpu().numpy().astype(np.uint8))[..., ::-1])
 
-        cv2.imwrite(str(data_dir / 'render_correspondence_texture.png'),
-                    ((255 * images[0, ..., :3]).squeeze().cpu().numpy().astype(np.uint8))[..., ::-1])
-
+        # cv2.imwrite(str(data_dir / 'render_correspondence_texture.png'),
+        #             ((255 * images[0, ..., :3]).squeeze().cpu().numpy().astype(np.uint8))[..., ::-1])
+        Image.fromarray(((255 * images[0, ..., :3]).squeeze().cpu().numpy().astype(np.uint8))).save(str(data_dir / 'render_correspondence_texture.png')
+        )
         # cv2.waitKey(0)
         self.assertTrue((data_dir / 'render_correspondence_texture.png').exists())
 
