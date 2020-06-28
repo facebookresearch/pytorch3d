@@ -73,7 +73,7 @@ class Test(unittest.TestCase):
         # cv2.imshow('render_normal_texture.png',
         #            ((255 * images[0, ..., :3]).squeeze().cpu().numpy().astype(np.uint8))[..., ::-1])
         Image.fromarray(((255 * images[0, ..., :3]).squeeze().cpu().numpy().astype(np.uint8))).save(
-            str(data_dir / 'render_normal_texture11.png')
+            str(data_dir / 'render_normal_texture.png')
             )
         # cv2.imwrite(str(data_dir / 'render_normal_texture.png'),
         #             ((255 * images[0, ..., :3]).squeeze().cpu().numpy().astype(np.uint8))[..., ::-1])
