@@ -15,8 +15,6 @@ from pytorch3d.renderer import (
     RasterizationSettings,
     MeshRasterizer, MeshRenderer
 )
-from matplotlib import cm
-from numpy import linspace
 from pytorch3d.renderer.mesh.shader import NormalShader, UVsCorrespondenceShader
 from PIL import Image
 
@@ -75,7 +73,6 @@ class Test(unittest.TestCase):
         m_norm = normalize(magnitude)
         colors = np.dstack((x, y, np.zeros_like(x)))
 
-        import matplotlib.pyplot as plt
 
 
         colors = torch.from_numpy(np.array(colors))
