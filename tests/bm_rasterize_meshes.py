@@ -13,6 +13,8 @@ from test_rasterize_meshes import TestRasterizeMeshes
 # 1: (42 verts, 80 faces)
 # 3: (642 verts, 1280 faces)
 # 4: (2562 verts, 5120 faces)
+# 5: (10242 verts, 20480 faces)
+# 6: (40962 verts, 81920 faces)
 
 
 def bm_rasterize_meshes() -> None:
@@ -22,6 +24,7 @@ def bm_rasterize_meshes() -> None:
             "ico_level": 0,
             "image_size": 10,  # very slow with large image size
             "blur_radius": 0.0,
+            "faces_per_pixel": 3,
         }
     ]
     benchmark(
@@ -35,12 +38,19 @@ def bm_rasterize_meshes() -> None:
     num_meshes = [1]
     ico_level = [1]
     image_size = [64, 128]
-    blur = [0.0, 1e-8, 1e-4]
-    test_cases = product(num_meshes, ico_level, image_size, blur)
+    blur = [1e-6]
+    faces_per_pixel = [3, 50]
+    test_cases = product(num_meshes, ico_level, image_size, blur, faces_per_pixel)
     for case in test_cases:
-        n, ic, im, b = case
+        n, ic, im, b, f = case
         kwargs_list.append(
-            {"num_meshes": n, "ico_level": ic, "image_size": im, "blur_radius": b}
+            {
+                "num_meshes": n,
+                "ico_level": ic,
+                "image_size": im,
+                "blur_radius": b,
+                "faces_per_pixel": f,
+            }
         )
     benchmark(
         TestRasterizeMeshes.rasterize_meshes_cpu_with_init,
@@ -51,26 +61,22 @@ def bm_rasterize_meshes() -> None:
 
     if torch.cuda.is_available():
         kwargs_list = []
-        num_meshes = [1, 8]
-        ico_level = [0, 1, 3, 4]
+        num_meshes = [8, 16]
+        ico_level = [4, 5, 6]
         image_size = [64, 128, 512]
-        blur = [0.0, 1e-8, 1e-4]
-        bin_size = [0, 8, 32]
-        test_cases = product(num_meshes, ico_level, image_size, blur, bin_size)
-        # only keep cases where bin_size == 0 or image_size / bin_size < 16
-        test_cases = [
-            elem for elem in test_cases if (elem[-1] == 0 or elem[-3] / elem[-1] < 16)
-        ]
+        blur = [1e-6]
+        faces_per_pixel = [50]
+        test_cases = product(num_meshes, ico_level, image_size, blur, faces_per_pixel)
+
         for case in test_cases:
-            n, ic, im, b, bn = case
+            n, ic, im, b, f = case
             kwargs_list.append(
                 {
                     "num_meshes": n,
                     "ico_level": ic,
                     "image_size": im,
                     "blur_radius": b,
-                    "bin_size": bn,
-                    "max_faces_per_bin": 200,
+                    "faces_per_pixel": f,
                 }
             )
         benchmark(

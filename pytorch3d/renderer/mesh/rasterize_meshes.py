@@ -130,7 +130,7 @@ def rasterize_meshes(
             )
 
     if max_faces_per_bin is None:
-        max_faces_per_bin = int(max(10000, verts_packed.shape[0] / 5))
+        max_faces_per_bin = int(max(10000, meshes._F / 5))
 
     # pyre-fixme[16]: `_RasterizeFaceVerts` has no attribute `apply`.
     return _RasterizeFaceVerts.apply(
