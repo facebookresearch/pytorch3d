@@ -49,7 +49,7 @@ class TestKNN(TestCaseMixin, unittest.TestCase):
 
         return _KNN(dists=dists, idx=idx, knn=None)
 
-    def _knn_vs_python_square_helper(self, device):
+    def _knn_vs_python_square_helper(self, device, return_sorted):
         Ns = [1, 4]
         Ds = [3, 5, 8]
         P1s = [8, 24]
@@ -70,7 +70,24 @@ class TestKNN(TestCaseMixin, unittest.TestCase):
 
                 # forward
                 out1 = self._knn_points_naive(x, y, lengths1=None, lengths2=None, K=K)
-                out2 = knn_points(x_cuda, y_cuda, K=K, version=version)
+                out2 = knn_points(
+                    x_cuda, y_cuda, K=K, version=version, return_sorted=return_sorted
+                )
+                if K > 1 and not return_sorted:
+                    # check out2 is not sorted
+                    self.assertFalse(torch.allclose(out1[0], out2[0]))
+                    self.assertFalse(torch.allclose(out1[1], out2[1]))
+                    # now sort out2
+                    dists, idx, _ = out2
+                    if P2 < K:
+                        dists[..., P2:] = float("inf")
+                        dists, sort_idx = dists.sort(dim=2)
+                        dists[..., P2:] = 0
+                    else:
+                        dists, sort_idx = dists.sort(dim=2)
+                    idx = idx.gather(2, sort_idx)
+                    out2 = _KNN(dists, idx, None)
+
                 self.assertClose(out1[0], out2[0])
                 self.assertTrue(torch.all(out1[1] == out2[1]))
 
@@ -86,11 +103,13 @@ class TestKNN(TestCaseMixin, unittest.TestCase):
 
     def test_knn_vs_python_square_cpu(self):
         device = torch.device("cpu")
-        self._knn_vs_python_square_helper(device)
+        self._knn_vs_python_square_helper(device, return_sorted=True)
 
     def test_knn_vs_python_square_cuda(self):
         device = get_random_cuda_device()
-        self._knn_vs_python_square_helper(device)
+        # Check both cases where the output is sorted and unsorted
+        self._knn_vs_python_square_helper(device, return_sorted=True)
+        self._knn_vs_python_square_helper(device, return_sorted=False)
 
     def _knn_vs_python_ragged_helper(self, device):
         Ns = [1, 4]
