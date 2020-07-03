@@ -53,6 +53,7 @@ class _knn_points(Function):
                 in p2 has fewer than K points and where a cloud in p1 has fewer than P1 points.
         """
 
+        # pyre-fixme[16]: Module `pytorch3d` has no attribute `_C`.
         idx, dists = _C.knn_points_idx(p1, p2, lengths1, lengths2, K, version)
 
         # sort KNN in ascending order if K > 1
