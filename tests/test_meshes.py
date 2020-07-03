@@ -510,8 +510,8 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
 
         N = 5
         for test in ["tensor", "scalar"]:
-            mesh = TestMeshes.init_mesh(N, 10, 100)
-            for force in [0, 1]:
+            for force in (False, True):
+                mesh = TestMeshes.init_mesh(N, 10, 100)
                 if force:
                     # force mesh to have computed attributes
                     mesh.verts_packed()

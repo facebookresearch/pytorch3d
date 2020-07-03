@@ -460,7 +460,7 @@ class TestPointclouds(TestCaseMixin, unittest.TestCase):
     def test_scale(self):
         def naive_scale(cloud, scale):
             if not torch.is_tensor(scale):
-                scale = torch.full(len(cloud), scale)
+                scale = torch.full((len(cloud),), scale, device=cloud.device)
             new_points_list = [
                 scale[i] * points.clone()
                 for (i, points) in enumerate(cloud.points_list())
@@ -470,26 +470,37 @@ class TestPointclouds(TestCaseMixin, unittest.TestCase):
             )
 
         N = 5
-        clouds = self.init_cloud(N, 100, 10)
-        for force in (False, True):
-            if force:
-                clouds._compute_packed(refresh=True)
-                clouds._compute_padded()
-                clouds.padded_to_packed_idx()
-            scales = torch.rand(N)
-            new_clouds_naive = naive_scale(clouds, scales)
-            new_clouds = clouds.scale(scales)
-            for i in range(N):
-                self.assertClose(
-                    scales[i] * clouds.points_list()[i], new_clouds.points_list()[i]
-                )
-                self.assertClose(
-                    clouds.normals_list()[i], new_clouds_naive.normals_list()[i]
-                )
-                self.assertClose(
-                    clouds.features_list()[i], new_clouds_naive.features_list()[i]
-                )
-            self.assertCloudsEqual(new_clouds, new_clouds_naive)
+        for test in ["tensor", "scalar"]:
+            for force in (False, True):
+                clouds = self.init_cloud(N, 100, 10)
+                if force:
+                    clouds._compute_packed(refresh=True)
+                    clouds._compute_padded()
+                    clouds.padded_to_packed_idx()
+                if test == "tensor":
+                    scales = torch.rand(N)
+                elif test == "scalar":
+                    scales = torch.rand(1)[0].item()
+                new_clouds_naive = naive_scale(clouds, scales)
+                new_clouds = clouds.scale(scales)
+                for i in range(N):
+                    if test == "tensor":
+                        self.assertClose(
+                            scales[i] * clouds.points_list()[i],
+                            new_clouds.points_list()[i],
+                        )
+                    else:
+                        self.assertClose(
+                            scales * clouds.points_list()[i],
+                            new_clouds.points_list()[i],
+                        )
+                    self.assertClose(
+                        clouds.normals_list()[i], new_clouds_naive.normals_list()[i]
+                    )
+                    self.assertClose(
+                        clouds.features_list()[i], new_clouds_naive.features_list()[i]
+                    )
+                self.assertCloudsEqual(new_clouds, new_clouds_naive)
 
     def test_extend_list(self):
         N = 10

@@ -783,7 +783,11 @@ def save_ply(
         decimal_places: Number of decimal places for saving.
     """
 
-    verts_normals = torch.FloatTensor([]) if verts_normals is None else verts_normals
+    verts_normals = (
+        torch.tensor([], dtype=torch.float32, device=verts.device)
+        if verts_normals is None
+        else verts_normals
+    )
     faces = torch.LongTensor([]) if faces is None else faces
 
     if len(verts) and not (verts.dim() == 2 and verts.size(1) == 3):

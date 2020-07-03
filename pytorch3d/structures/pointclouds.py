@@ -511,7 +511,6 @@ class Pointclouds(object):
         Returns:
             1D tensor of indices.
         """
-        self._compute_packed()
         if self._padded_to_packed_idx is not None:
             return self._padded_to_packed_idx
         if self._N == 0:
@@ -520,7 +519,7 @@ class Pointclouds(object):
             self._padded_to_packed_idx = torch.cat(
                 [
                     torch.arange(v, dtype=torch.int64, device=self.device) + i * self._P
-                    for (i, v) in enumerate(self._num_points_per_cloud)
+                    for (i, v) in enumerate(self.num_points_per_cloud())
                 ],
                 dim=0,
             )
@@ -797,7 +796,7 @@ class Pointclouds(object):
             self.
         """
         if not torch.is_tensor(scale):
-            scale = torch.full(len(self), scale)
+            scale = torch.full((len(self),), scale, device=self.device)
         new_points_list = []
         points_list = self.points_list()
         for i, old_points in enumerate(points_list):
