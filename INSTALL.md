@@ -71,7 +71,7 @@ CUDA support will be included if CUDA is enabled or if the environment variable
 
 ### 1. Install from GitHub
 ```
-pip install 'git+https://github.com/facebookresearch/pytorch3d.git'
+pip install "git+https://github.com/facebookresearch/pytorch3d.git"
 ```
 
 **Install from Github on macOS:**
