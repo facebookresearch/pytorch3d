@@ -6,16 +6,19 @@ import math
 import unittest
 
 import torch
+from common_testing import TestCaseMixin
 from pytorch3d.transforms.rotation_conversions import (
     euler_angles_to_matrix,
     matrix_to_euler_angles,
     matrix_to_quaternion,
+    matrix_to_rotation_6d,
     quaternion_apply,
     quaternion_multiply,
     quaternion_to_matrix,
     random_quaternions,
     random_rotation,
     random_rotations,
+    rotation_6d_to_matrix,
 )
 
 
@@ -48,7 +51,7 @@ class TestRandomRotation(unittest.TestCase):
             self.assertLess(chisquare_statistic, 12, (counts, chisquare_statistic, k))
 
 
-class TestRotationConversion(unittest.TestCase):
+class TestRotationConversion(TestCaseMixin, unittest.TestCase):
     def setUp(self) -> None:
         super().setUp()
         torch.manual_seed(1)
@@ -154,3 +157,31 @@ class TestRotationConversion(unittest.TestCase):
         [p, q] = torch.autograd.grad(transform1.sum(), [points, quaternions])
         self.assertTrue(torch.isfinite(p).all())
         self.assertTrue(torch.isfinite(q).all())
+
+    def test_6d(self):
+        """Converting to 6d and back"""
+        r = random_rotations(13, dtype=torch.float64)
+
+        # 6D representation is not unique,
+        # but we implement it by taking the first two rows of the matrix
+        r6d = matrix_to_rotation_6d(r)
+        self.assertClose(r6d, r[:, :2, :].reshape(-1, 6))
+
+        # going to 6D and back should not change the matrix
+        r_hat = rotation_6d_to_matrix(r6d)
+        self.assertClose(r_hat, r)
+
+        # moving the second row R2 in the span of (R1, R2) should not matter
+        r6d[:, 3:] += 2 * r6d[:, :3]
+        r6d[:, :3] *= 3.0
+        r_hat = rotation_6d_to_matrix(r6d)
+        self.assertClose(r_hat, r)
+
+        # check that we map anything to a valid rotation
+        r6d = torch.rand(13, 6)
+        r6d[:4, :] *= 3.0
+        r6d[4:8, :] -= 0.5
+        r = rotation_6d_to_matrix(r6d)
+        self.assertClose(
+            torch.matmul(r, r.permute(0, 2, 1)), torch.eye(3).expand_as(r), atol=1e-6
+        )

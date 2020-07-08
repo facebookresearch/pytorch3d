@@ -10,7 +10,7 @@ HAT_INV_SKEW_SYMMETRIC_TOL = 1e-5
 def so3_relative_angle(R1, R2, cos_angle: bool = False):
     """
     Calculates the relative angle (in radians) between pairs of
-    rotation matrices `R1` and `R2` with `angle = acos(0.5 * Trace(R1 R2^T)-1)`
+    rotation matrices `R1` and `R2` with `angle = acos(0.5 * (Trace(R1 R2^T)-1))`
 
     .. note::
         This corresponds to a geodesic distance on the 3D manifold of rotation

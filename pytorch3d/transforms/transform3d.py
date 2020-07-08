@@ -45,9 +45,9 @@ class Transform3d:
 
     .. code-block:: python
 
-        y1 = t3.transform_points(t2.transform_points(t2.transform_points(x)))
-        y2 = t1.compose(t2).compose(t3).transform_points()
-        y3 = t1.compose(t2, t3).transform_points()
+        y1 = t3.transform_points(t2.transform_points(t1.transform_points(x)))
+        y2 = t1.compose(t2).compose(t3).transform_points(x)
+        y3 = t1.compose(t2, t3).transform_points(x)
 
 
     Composing transforms should broadcast.
