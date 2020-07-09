@@ -66,6 +66,10 @@ def _build_M(y, alphas, weight):
     def prepad(t, v):
         return F.pad(t, (1, 0), value=v)
 
+    if weight is not None:
+        # weight the alphas in order to get a correctly weighted version of M
+        alphas = alphas * weight[:, :, None]
+
     # outer left-multiply by alphas
     def lm_alphas(t):
         return torch.matmul(alphas[..., None], t).reshape(bs, n, 12)
@@ -81,9 +85,6 @@ def _build_M(y, alphas, weight):
         ),
         dim=-1,
     ).reshape(bs, -1, 12)
-
-    if weight is not None:
-        M = M * weight.repeat(1, 2)[:, :, None]
 
     return M
 
