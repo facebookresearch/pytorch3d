@@ -13,6 +13,7 @@ import torch
 from pytorch3d.io.mtl_io import load_mtl, make_mesh_texture_atlas
 from pytorch3d.io.utils import _open_file
 from pytorch3d.structures import Meshes, Textures, join_meshes_as_batch
+from torchvision import transforms
 
 
 def _make_tensor(data, cols: int, dtype: torch.dtype, device="cpu") -> torch.Tensor:
@@ -525,6 +526,8 @@ def save_obj(f, verts, faces, decimal_places: Optional[int] = None, verts_uvs: O
     use_texture = verts_uvs is not None and texture_map is not None and faces_uvs is not None
     if use_texture:
         output_path = pathlib.Path(f)
+        obj_header = f'mtllib {output_path.stem}.mtl \nusemtl mesh \n'
+
     if len(verts) and not (verts.dim() == 2 and verts.size(1) == 3):
         message = "Argument 'verts' should either be empty or of shape (num_verts, 3)."
         raise ValueError(message)
@@ -541,8 +544,8 @@ def save_obj(f, verts, faces, decimal_places: Optional[int] = None, verts_uvs: O
         new_f = True
         f = f.open("w")
     try:
-        header = f'mtllib {output_path.stem}.mtl \nusemtl mesh \n'
-        f.write(header)
+        if use_texture:
+            f.write(obj_header)
         _save(f, verts, faces, decimal_places, verts_uvs, texture_map, faces_uvs, use_texture)
     finally:
         if new_f:
@@ -599,9 +602,9 @@ def _save(f, verts, faces, decimal_places: Optional[int] = None, verts_uvs: Opti
             vert = [float_str % verts[i, j] for j in range(D)]
             lines += "v %s\n" % " ".join(vert)
 
-    verts, texture_map = verts.cpu(), texture_map.cpu()
 
     if use_texture:
+
         verts_uvs, texture_map, faces_uvs = verts_uvs.cpu(), texture_map.squeeze().cpu(), faces_uvs.cpu()
         assert not len(verts_uvs) or (verts_uvs.dim() == 2 and verts_uvs.size(1) == 2)
         assert not len(faces_uvs) or (faces_uvs.dim() == 2 and faces_uvs.size(1) == 3)
