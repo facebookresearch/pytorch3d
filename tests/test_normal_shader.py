@@ -54,9 +54,7 @@ class Test(unittest.TestCase):
             perspective_correct=True,
         )
 
-        # Place a point light in front of the object. As mentioned above, the front of the cow is facing the
-        # -z direction.
-        lights = PointLights(device=device.type, location=[[0.0, 0.0, -3.0]])
+
         renderer = MeshRenderer(
             rasterizer=MeshRasterizer(
                 cameras=cameras,
@@ -66,7 +64,6 @@ class Test(unittest.TestCase):
             shader=NormalShader(
                 device=device,
                 cameras=cameras,
-                # lights=lights
             )
         )
         images = renderer(mesh)

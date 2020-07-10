@@ -72,14 +72,8 @@ class Test(unittest.TestCase):
         d_norm = normalize(directions)
         m_norm = normalize(magnitude)
         colors = np.dstack((x, y, np.zeros_like(x)))
-
-
-
         colors = torch.from_numpy(np.array(colors))
 
-        # Place a point light in front of the object. As mentioned above, the front of the cow is facing the
-        # -z direction.
-        lights = PointLights(device=device.type, location=[[0.0, 0.0, -3.0]])
 
         renderer = MeshRenderer(
             rasterizer=MeshRasterizer(

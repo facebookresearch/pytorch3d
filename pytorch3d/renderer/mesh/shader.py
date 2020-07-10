@@ -348,15 +348,11 @@ class NormalShader(nn.Module):
         shader = SoftPhongShader(device=torch.device("cuda:0"))
     """
 
-
     def __init__(
-            self, device="cpu", cameras=None, lights=None, materials=None, blend_params=None
+            self, device="cpu", cameras=None, blend_params=None
     ):
         super().__init__()
-        self.lights = lights if lights is not None else PointLights(device=device)
-        self.materials = (
-            materials if materials is not None else Materials(device=device)
-        )
+
         self.cameras = cameras
         self.blend_params = blend_params if blend_params is not None else BlendParams()
 
@@ -367,21 +363,9 @@ class NormalShader(nn.Module):
                 or in the forward pass of SoftPhongShader"
             raise ValueError(msg)
         texels = interpolate_vertex_normals(fragments, meshes)
-        lights = kwargs.get("lights", self.lights)
-
-        materials = kwargs.get("materials", self.materials)
-
-        colors = phong_shading(
-            meshes=meshes,
-            fragments=fragments,
-            texels=texels,
-            cameras=cameras,
-            lights=lights,
-            materials = materials,
-
-        )
-        images = softmax_rgb_blend(colors, fragments, self.blend_params)
+        images = softmax_rgb_blend(texels, fragments, self.blend_params)
         return images
+
 
 class UVsCorrespondenceShader(nn.Module):
     """
@@ -394,15 +378,11 @@ class UVsCorrespondenceShader(nn.Module):
         shader = SoftPhongShader(device=torch.device("cuda:0"))
     """
 
-
     def __init__(
-            self, device="cpu", cameras=None, lights=None, materials=None, blend_params=None,colormap=None
+            self, device="cpu", cameras=None, blend_params=None, colormap=None
     ):
         super().__init__()
-        self.lights = lights if lights is not None else PointLights(device=device)
-        self.materials = (
-            materials if materials is not None else Materials(device=device)
-        )
+
         self.cameras = cameras
         self.colormap = colormap
         self.blend_params = blend_params if blend_params is not None else BlendParams()
@@ -414,19 +394,6 @@ class UVsCorrespondenceShader(nn.Module):
             msg = "Cameras must be specified either at initialization \
                 or in the forward pass of SoftPhongShader"
             raise ValueError(msg)
-        texels = interpolate_vertex_uvs(fragments, meshes,colormap)
-        lights = kwargs.get("lights", self.lights)
-
-        materials = kwargs.get("materials", self.materials)
-
-        colors = phong_shading(
-            meshes=meshes,
-            fragments=fragments,
-            texels=texels,
-            cameras=cameras,
-            lights=lights,
-            materials = materials,
-
-        )
-        images = softmax_rgb_blend(colors, fragments, self.blend_params)
+        texels = interpolate_vertex_uvs(fragments, meshes, colormap)
+        images = softmax_rgb_blend(texels, fragments, self.blend_params)
         return images
