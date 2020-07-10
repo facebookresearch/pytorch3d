@@ -14,11 +14,6 @@ from pytorch3d import _C
 # This can be an image (C=3) or a set of features.
 
 
-# Data class to store blending params with defaults
-class CompositeParams(NamedTuple):
-    radius: float = 4.0 / 256.0
-
-
 class _CompositeAlphaPoints(torch.autograd.Function):
     """
     Composite features within a z-buffer using alpha compositing. Given a z-buffer
@@ -67,7 +62,7 @@ class _CompositeAlphaPoints(torch.autograd.Function):
         return grad_features, grad_alphas, grad_points_idx, None
 
 
-def alpha_composite(pointsidx, alphas, pt_clds, blend_params=None) -> torch.Tensor:
+def alpha_composite(pointsidx, alphas, pt_clds) -> torch.Tensor:
     """
     Composite features within a z-buffer using alpha compositing. Given a z-buffer
     with corresponding features and weights, these values are accumulated according
@@ -147,7 +142,7 @@ class _CompositeNormWeightedSumPoints(torch.autograd.Function):
         return grad_features, grad_alphas, grad_points_idx, None
 
 
-def norm_weighted_sum(pointsidx, alphas, pt_clds, blend_params=None) -> torch.Tensor:
+def norm_weighted_sum(pointsidx, alphas, pt_clds) -> torch.Tensor:
     """
     Composite features within a z-buffer using normalized weighted sum. Given a z-buffer
     with corresponding features and weights, these values are accumulated
@@ -226,7 +221,7 @@ class _CompositeWeightedSumPoints(torch.autograd.Function):
         return grad_features, grad_alphas, grad_points_idx, None
 
 
-def weighted_sum(pointsidx, alphas, pt_clds, blend_params=None) -> torch.Tensor:
+def weighted_sum(pointsidx, alphas, pt_clds) -> torch.Tensor:
     """
     Composite features within a z-buffer using normalized weighted sum.
 
