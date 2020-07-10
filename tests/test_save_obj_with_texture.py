@@ -24,6 +24,7 @@ class Test(unittest.TestCase):
             save_obj(final_obj, mesh.verts_packed(), mesh.faces_packed(),
                      verts_uvs=mesh.textures.verts_uvs_packed(), texture_map=texture_image,
                      faces_uvs=mesh.textures.faces_uvs_packed())
+
         except:
             pass
 if __name__ == '__main__':
