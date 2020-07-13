@@ -379,13 +379,13 @@ def _bilinear_interpolation_grid_sample(
     return out.permute(0, 2, 3, 1)
 
 
-def load_mtl(f_mtl, material_names: List, data_dir: str, device="cpu"):
+def load_mtl(f, material_names: List, data_dir: str, device="cpu"):
     """
     Load texture images and material reflectivity values for ambient, diffuse
     and specular light (Ka, Kd, Ks, Ns).
 
     Args:
-        f_mtl: a file like object of the material information.
+        f: a file-like object of the material information.
         material_names: a list of the material names found in the .obj file.
         data_dir: the directory where the material texture files are located.
 
@@ -414,39 +414,36 @@ def load_mtl(f_mtl, material_names: List, data_dir: str, device="cpu"):
     texture_images = {}
     material_name = ""
 
-    f_mtl, new_f = _open_file(f_mtl)
-    lines = [line.strip() for line in f_mtl]
-    for line in lines:
-        if len(line.split()) != 0:
-            if line.split()[0] == "newmtl":
-                material_name = line.split()[1]
-                material_colors[material_name] = {}
-            if line.split()[0] == "map_Kd":
-                # Texture map.
-                texture_files[material_name] = line.split()[1]
-            if line.split()[0] == "Kd":
-                # RGB diffuse reflectivity
-                kd = np.array(list(line.split()[1:4])).astype(np.float32)
-                kd = torch.from_numpy(kd).to(device)
-                material_colors[material_name]["diffuse_color"] = kd
-            if line.split()[0] == "Ka":
-                # RGB ambient reflectivity
-                ka = np.array(list(line.split()[1:4])).astype(np.float32)
-                ka = torch.from_numpy(ka).to(device)
-                material_colors[material_name]["ambient_color"] = ka
-            if line.split()[0] == "Ks":
-                # RGB specular reflectivity
-                ks = np.array(list(line.split()[1:4])).astype(np.float32)
-                ks = torch.from_numpy(ks).to(device)
-                material_colors[material_name]["specular_color"] = ks
-            if line.split()[0] == "Ns":
-                # Specular exponent
-                ns = np.array(list(line.split()[1:4])).astype(np.float32)
-                ns = torch.from_numpy(ns).to(device)
-                material_colors[material_name]["shininess"] = ns
-
-    if new_f:
-        f_mtl.close()
+    with _open_file(f) as f:
+        lines = [line.strip() for line in f]
+        for line in lines:
+            if len(line.split()) != 0:
+                if line.split()[0] == "newmtl":
+                    material_name = line.split()[1]
+                    material_colors[material_name] = {}
+                if line.split()[0] == "map_Kd":
+                    # Texture map.
+                    texture_files[material_name] = line.split()[1]
+                if line.split()[0] == "Kd":
+                    # RGB diffuse reflectivity
+                    kd = np.array(list(line.split()[1:4])).astype(np.float32)
+                    kd = torch.from_numpy(kd).to(device)
+                    material_colors[material_name]["diffuse_color"] = kd
+                if line.split()[0] == "Ka":
+                    # RGB ambient reflectivity
+                    ka = np.array(list(line.split()[1:4])).astype(np.float32)
+                    ka = torch.from_numpy(ka).to(device)
+                    material_colors[material_name]["ambient_color"] = ka
+                if line.split()[0] == "Ks":
+                    # RGB specular reflectivity
+                    ks = np.array(list(line.split()[1:4])).astype(np.float32)
+                    ks = torch.from_numpy(ks).to(device)
+                    material_colors[material_name]["specular_color"] = ks
+                if line.split()[0] == "Ns":
+                    # Specular exponent
+                    ns = np.array(list(line.split()[1:4])).astype(np.float32)
+                    ns = torch.from_numpy(ns).to(device)
+                    material_colors[material_name]["shininess"] = ns
 
     # Only keep the materials referenced in the obj.
     for name in material_names:

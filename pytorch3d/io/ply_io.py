@@ -603,13 +603,8 @@ def _load_ply_raw(f) -> Tuple[_PlyHeader, dict]:
                   uniformly-sized list, then the value will be a 2D numpy array.
                   If not, it is a list of the relevant property values.
     """
-    f, new_f = _open_file(f, "rb")
-    try:
+    with _open_file(f, "rb") as f:
         header, elements = _load_ply_raw_stream(f)
-    finally:
-        if new_f:
-            f.close()
-
     return header, elements
 
 
@@ -800,9 +795,5 @@ def save_ply(
         message = "Argument 'verts_normals' should either be empty or of shape (num_verts, 3)."
         raise ValueError(message)
 
-    f, new_f = _open_file(f, "w")
-    try:
+    with _open_file(f, "w") as f:
         _save_ply(f, verts, faces, verts_normals, decimal_places)
-    finally:
-        if new_f:
-            f.close()

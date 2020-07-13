@@ -1,22 +1,23 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
+import contextlib
 import pathlib
+from typing import IO, ContextManager
 
 import numpy as np
 from fvcore.common.file_io import PathManager
 from PIL import Image
 
 
-# TODO(plabatut): Replace with a context manager
-def _open_file(f, mode="r"):
-    new_f = False
+def _open_file(f, mode="r") -> ContextManager[IO]:
     if isinstance(f, str):
-        new_f = True
         f = open(f, mode)
+        return contextlib.closing(f)
     elif isinstance(f, pathlib.Path):
-        new_f = True
         f = f.open(mode)
-    return f, new_f
+        return contextlib.closing(f)
+    else:
+        return contextlib.nullcontext(f)
 
 
 def _read_image(file_name: str, format=None):
