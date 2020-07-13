@@ -3,7 +3,6 @@
 
 """This module implements utility functions for loading and saving meshes."""
 import os
-import pathlib
 import warnings
 from collections import namedtuple
 from typing import Optional
@@ -216,7 +215,7 @@ def load_obj(
         # pyre-fixme[6]: Expected `_PathLike[Variable[typing.AnyStr <: [str,
         #  bytes]]]` for 1st param but got `Union[_PathLike[typing.Any], bytes, str]`.
         data_dir = os.path.dirname(f_obj)
-    f_obj, new_f = _open_file(f_obj)
+    f_obj, new_f = _open_file(f_obj, "r")
     try:
         return _load(
             f_obj,
@@ -524,13 +523,7 @@ def save_obj(f, verts, faces, decimal_places: Optional[int] = None):
         message = "Argument 'faces' should either be empty or of shape (num_faces, 3)."
         raise ValueError(message)
 
-    new_f = False
-    if isinstance(f, str):
-        new_f = True
-        f = open(f, "w")
-    elif isinstance(f, pathlib.Path):
-        new_f = True
-        f = f.open("w")
+    f, new_f = _open_file(f, "w")
     try:
         return _save(f, verts, faces, decimal_places)
     finally:

@@ -7,14 +7,15 @@ from fvcore.common.file_io import PathManager
 from PIL import Image
 
 
-def _open_file(f):
+# TODO(plabatut): Replace with a context manager
+def _open_file(f, mode="r"):
     new_f = False
     if isinstance(f, str):
         new_f = True
-        f = open(f, "r")
+        f = open(f, mode)
     elif isinstance(f, pathlib.Path):
         new_f = True
-        f = f.open("r")
+        f = f.open(mode)
     return f, new_f
 
 

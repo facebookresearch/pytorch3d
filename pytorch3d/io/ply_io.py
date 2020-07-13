@@ -4,7 +4,6 @@
 
 
 """This module implements utility functions for loading and saving meshes."""
-import pathlib
 import struct
 import sys
 import warnings
@@ -13,6 +12,7 @@ from typing import Optional, Tuple
 
 import numpy as np
 import torch
+from pytorch3d.io.utils import _open_file
 
 
 _PlyTypeData = namedtuple("_PlyTypeData", "size struct_char np_type")
@@ -603,13 +603,7 @@ def _load_ply_raw(f) -> Tuple[_PlyHeader, dict]:
                   uniformly-sized list, then the value will be a 2D numpy array.
                   If not, it is a list of the relevant property values.
     """
-    new_f = False
-    if isinstance(f, str):
-        new_f = True
-        f = open(f, "rb")
-    elif isinstance(f, pathlib.Path):
-        new_f = True
-        f = f.open("rb")
+    f, new_f = _open_file(f, "rb")
     try:
         header, elements = _load_ply_raw_stream(f)
     finally:
@@ -806,13 +800,7 @@ def save_ply(
         message = "Argument 'verts_normals' should either be empty or of shape (num_verts, 3)."
         raise ValueError(message)
 
-    new_f = False
-    if isinstance(f, str):
-        new_f = True
-        f = open(f, "w")
-    elif isinstance(f, pathlib.Path):
-        new_f = True
-        f = f.open("w")
+    f, new_f = _open_file(f, "w")
     try:
         _save_ply(f, verts, faces, verts_normals, decimal_places)
     finally:
