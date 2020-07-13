@@ -2,6 +2,7 @@
 
 
 import torch
+from pytorch3d.ops import interpolate_face_attributes
 
 
 def _clip_barycentric_coordinates(bary) -> torch.Tensor:
@@ -23,51 +24,6 @@ def _clip_barycentric_coordinates(bary) -> torch.Tensor:
     clipped_sum = torch.clamp(clipped.sum(dim=-1, keepdim=True), min=1e-5)
     clipped = clipped / clipped_sum
     return clipped
-
-
-def interpolate_face_attributes(
-    pix_to_face: torch.Tensor,
-    barycentric_coords: torch.Tensor,
-    face_attributes: torch.Tensor,
-) -> torch.Tensor:
-    """
-    Interpolate arbitrary face attributes using the barycentric coordinates
-    for each pixel in the rasterized output.
-
-    Args:
-        pix_to_face: LongTensor of shape (N, H, W, K) specifying the indices
-            of the faces (in the packed representation) which
-            overlap each pixel in the image.
-        barycentric_coords: FloatTensor of shape (N, H, W, K, 3) specifying
-            the barycentric coordianates of each pixel
-            relative to the faces (in the packed
-            representation) which overlap the pixel.
-        face_attributes: packed attributes of shape (total_faces, 3, D),
-            specifying the value of the attribute for each
-            vertex in the face.
-
-    Returns:
-        pixel_vals: tensor of shape (N, H, W, K, D) giving the interpolated
-        value of the face attribute for each pixel.
-    """
-    F, FV, D = face_attributes.shape
-    if FV != 3:
-        raise ValueError("Faces can only have three vertices; got %r" % FV)
-    N, H, W, K, _ = barycentric_coords.shape
-    if pix_to_face.shape != (N, H, W, K):
-        msg = "pix_to_face must have shape (batch_size, H, W, K); got %r"
-        raise ValueError(msg % (pix_to_face.shape,))
-
-    # Replace empty pixels in pix_to_face with 0 in order to interpolate.
-    mask = pix_to_face == -1
-    pix_to_face = pix_to_face.clone()
-    pix_to_face[mask] = 0
-    idx = pix_to_face.view(N * H * W * K, 1, 1).expand(N * H * W * K, 3, D)
-    # pyre-fixme[16]: `Tensor` has no attribute `gather`.
-    pixel_face_vals = face_attributes.gather(0, idx).view(N, H, W, K, 3, D)
-    pixel_vals = (barycentric_coords[..., None] * pixel_face_vals).sum(dim=-2)
-    pixel_vals[mask] = 0  # Replace masked values in output.
-    return pixel_vals
 
 
 def _interpolate_zbuf(

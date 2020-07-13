@@ -3,9 +3,8 @@
 
 import torch
 import torch.nn.functional as F
+from pytorch3d.ops import interpolate_face_attributes
 from pytorch3d.structures.textures import Textures
-
-from .utils import interpolate_face_attributes
 
 
 def interpolate_texture_map(fragments, meshes) -> torch.Tensor:

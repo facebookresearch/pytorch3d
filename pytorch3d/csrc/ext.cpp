@@ -6,6 +6,7 @@
 #include "compositing/weighted_sum.h"
 #include "face_areas_normals/face_areas_normals.h"
 #include "gather_scatter/gather_scatter.h"
+#include "interp_face_attrs/interp_face_attrs.h"
 #include "knn/knn.h"
 #include "packed_to_padded_tensor/packed_to_padded_tensor.h"
 #include "point_mesh/point_mesh_edge.h"
@@ -18,6 +19,8 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
   m.def("face_areas_normals_backward", &FaceAreasNormalsBackward);
   m.def("packed_to_padded", &PackedToPadded);
   m.def("padded_to_packed", &PaddedToPacked);
+  m.def("interp_face_attrs_forward", &InterpFaceAttrsForward);
+  m.def("interp_face_attrs_backward", &InterpFaceAttrsBackward);
 #ifdef WITH_CUDA
   m.def("knn_check_version", &KnnCheckVersion);
 #endif

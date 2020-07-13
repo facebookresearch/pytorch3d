@@ -4,8 +4,7 @@
 from typing import Tuple
 
 import torch
-
-from .texturing import interpolate_face_attributes
+from pytorch3d.ops import interpolate_face_attributes
 
 
 def _apply_lighting(
