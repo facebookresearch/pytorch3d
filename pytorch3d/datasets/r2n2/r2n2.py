@@ -64,6 +64,7 @@ class R2N2(ShapeNetBase):
                 continue
 
             synset_set.add(synset)
+            self.synset_starts[synset] = len(self.synset_ids)
             models = split_dict[synset].keys()
             for model in models:
                 # Examine if the given model is present in the ShapeNetCore path.
@@ -78,6 +79,7 @@ class R2N2(ShapeNetBase):
                     continue
                 self.synset_ids.append(synset)
                 self.model_ids.append(model)
+            self.synset_lens[synset] = len(self.synset_ids) - self.synset_starts[synset]
 
         # Examine if all the synsets in the standard R2N2 mapping are present.
         # Update self.synset_inv so that it only includes the loaded categories.

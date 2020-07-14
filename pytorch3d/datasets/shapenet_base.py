@@ -34,7 +34,7 @@ class ShapeNetBase(torch.utils.data.Dataset):
         self.synset_starts = {}
         self.synset_lens = {}
         self.shapenet_dir = ""
-        self.model_dir = ""
+        self.model_dir = "model.obj"
 
     def __len__(self):
         """
