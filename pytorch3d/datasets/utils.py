@@ -2,6 +2,7 @@
 
 from typing import Dict, List
 
+import torch
 from pytorch3d.structures import Meshes
 
 
@@ -31,5 +32,11 @@ def collate_batched_meshes(batch: List[Dict]):
         collated_dict["mesh"] = Meshes(
             verts=collated_dict["verts"], faces=collated_dict["faces"]
         )
+
+    # If collate_batched_meshes receives R2N2 items, stack the batches of
+    # views of each model into a new batch of shape (N, V, H, W, 3) where
+    # V is the number of views.
+    if "images" in collated_dict:
+        collated_dict["images"] = torch.stack(collated_dict["images"])
 
     return collated_dict

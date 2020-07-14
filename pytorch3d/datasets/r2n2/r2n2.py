@@ -4,8 +4,11 @@ import json
 import warnings
 from os import path
 from pathlib import Path
-from typing import Dict
+from typing import Dict, List, Optional
 
+import numpy as np
+import torch
+from PIL import Image
 from pytorch3d.datasets.shapenet_base import ShapeNetBase
 from pytorch3d.io import load_obj
 
@@ -21,18 +24,29 @@ class R2N2(ShapeNetBase):
     voxelized models.
     """
 
-    def __init__(self, split, shapenet_dir, r2n2_dir, splits_file):
+    def __init__(
+        self,
+        split: str,
+        shapenet_dir,
+        r2n2_dir,
+        splits_file,
+        return_all_views: bool = True,
+    ):
         """
         Store each object's synset id and models id the given directories.
+
         Args:
             split (str): One of (train, val, test).
             shapenet_dir (path): Path to ShapeNet core v1.
             r2n2_dir (path): Path to the R2N2 dataset.
             splits_file (path): File containing the train/val/test splits.
+            return_all_views (bool): Indicator of whether or not to return all 24 views. If set
+                to False, one of the 24 views would be randomly selected and returned.
         """
         super().__init__()
         self.shapenet_dir = shapenet_dir
         self.r2n2_dir = r2n2_dir
+        self.return_all_views = return_all_views
         # Examine if split is valid.
         if split not in ["train", "val", "test"]:
             raise ValueError("split has to be one of (train, val, test).")
@@ -47,6 +61,16 @@ class R2N2(ShapeNetBase):
         # Store synset and model ids of objects mentioned in the splits_file.
         with open(splits_file) as splits:
             split_dict = json.load(splits)[split]
+
+        self.return_images = True
+        # Check if the folder containing R2N2 renderings is included in r2n2_dir.
+        if not path.isdir(path.join(r2n2_dir, "ShapeNetRendering")):
+            self.return_images = False
+            msg = (
+                "ShapeNetRendering not found in %s. R2N2 renderings will "
+                "be skipped when returning models."
+            ) % (r2n2_dir)
+            warnings.warn(msg)
 
         synset_set = set()
         for synset in split_dict.keys():
@@ -95,12 +119,15 @@ class R2N2(ShapeNetBase):
             ) % (shapenet_dir, ", ".join(synset_not_present))
             warnings.warn(msg)
 
-    def __getitem__(self, idx: int) -> Dict:
+    def __getitem__(self, model_idx, view_idxs: Optional[List[int]] = None) -> Dict:
         """
         Read a model by the given index.
 
         Args:
-            idx: The idx of the model to be retrieved in the dataset.
+            model_idx: The idx of the model to be retrieved in the dataset.
+            view_idx: List of indices of the view to be returned. Each index needs to be
+                between 0 and 23, inclusive. If an invalid index is supplied, view_idx will be
+                ignored and views will be sampled according to self.return_all_views.
 
         Returns:
             dictionary with following keys:
@@ -109,12 +136,51 @@ class R2N2(ShapeNetBase):
             - synset_id (str): synset id.
             - model_id (str): model id.
             - label (str): synset label.
+            - images: FloatTensor of shape (V, H, W, C), where V is number of views
+                returned. Returns a batch of the renderings of the models from the R2N2 dataset.
         """
-        model = self._get_item_ids(idx)
+        if type(model_idx) is tuple:
+            model_idx, view_idxs = model_idx
+        model = self._get_item_ids(model_idx)
         model_path = path.join(
             self.shapenet_dir, model["synset_id"], model["model_id"], "model.obj"
         )
         model["verts"], faces, _ = load_obj(model_path)
         model["faces"] = faces.verts_idx
         model["label"] = self.synset_dict[model["synset_id"]]
+
+        model["images"] = None
+        # Retrieve R2N2's renderings if required.
+        if self.return_images:
+            ranges = (
+                range(24) if self.return_all_views else torch.randint(24, (1,)).tolist()
+            )
+            if view_idxs is not None and any(idx < 0 or idx > 23 for idx in view_idxs):
+                msg = (
+                    "One of the indicies in view_idxs is out of range. "
+                    "Index needs to be between 0 and 23, inclusive. "
+                    "Now sampling according to self.return_all_views."
+                )
+                warnings.warn(msg)
+            elif view_idxs is not None:
+                ranges = view_idxs
+
+            rendering_path = path.join(
+                self.r2n2_dir,
+                "ShapeNetRendering",
+                model["synset_id"],
+                model["model_id"],
+                "rendering",
+            )
+
+            images = []
+            for i in ranges:
+                # Read image.
+                image_path = path.join(rendering_path, "%02d.png" % i)
+                raw_img = Image.open(image_path)
+                image = torch.from_numpy(np.array(raw_img) / 255.0)[..., :3]
+                images.append(image.to(dtype=torch.float32))
+
+            model["images"] = torch.stack(images)
+
         return model
