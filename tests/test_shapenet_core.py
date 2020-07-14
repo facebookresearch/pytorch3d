@@ -6,17 +6,32 @@ import os
 import random
 import unittest
 import warnings
+from pathlib import Path
 
+import numpy as np
 import torch
-from common_testing import TestCaseMixin
+from common_testing import TestCaseMixin, load_rgb_image
+from PIL import Image
 from pytorch3d.datasets import ShapeNetCore
+from pytorch3d.renderer import (
+    OpenGLPerspectiveCameras,
+    PointLights,
+    RasterizationSettings,
+    look_at_view_transform,
+)
 
 
 SHAPENET_PATH = None
+# If DEBUG=True, save out images generated in the tests for debugging.
+# All saved images have prefix DEBUG_
+DEBUG = False
+DATA_DIR = Path(__file__).resolve().parent / "data"
 
 
 class TestShapenetCore(TestCaseMixin, unittest.TestCase):
     def test_load_shapenet_core(self):
+        # Setup
+        device = torch.device("cuda:0")
 
         # The ShapeNet dataset is not provided in the repo.
         # Download this separately and update the `shapenet_path`
@@ -31,7 +46,7 @@ class TestShapenetCore(TestCaseMixin, unittest.TestCase):
             warnings.warn(msg)
             return True
 
-        # Try load ShapeNetCore with an invalid version number and catch error.
+        # Try loading ShapeNetCore with an invalid version number and catch error.
         with self.assertRaises(ValueError) as err:
             ShapeNetCore(SHAPENET_PATH, version=3)
         self.assertTrue("Version number must be either 1 or 2." in str(err.exception))
@@ -93,3 +108,31 @@ class TestShapenetCore(TestCaseMixin, unittest.TestCase):
             for offset in subset_offsets
         ]
         self.assertEqual(len(shapenet_subset), sum(subset_model_nums))
+
+        # Render the first image in the piano category.
+        R, T = look_at_view_transform(1.0, 1.0, 90)
+        piano_dataset = ShapeNetCore(SHAPENET_PATH, synsets=["piano"])
+
+        cameras = OpenGLPerspectiveCameras(R=R, T=T, device=device)
+        raster_settings = RasterizationSettings(image_size=512)
+        lights = PointLights(
+            location=torch.tensor([0.0, 1.0, -2.0], device=device)[None],
+            # TODO: debug the source of the discrepancy in two images when rendering on GPU.
+            diffuse_color=((0, 0, 0),),
+            specular_color=((0, 0, 0),),
+            device=device,
+        )
+        images = piano_dataset.render(
+            0,
+            device=device,
+            cameras=cameras,
+            raster_settings=raster_settings,
+            lights=lights,
+        )
+        rgb = images[0, ..., :3].squeeze().cpu()
+        if DEBUG:
+            Image.fromarray((rgb.numpy() * 255).astype(np.uint8)).save(
+                DATA_DIR / "DEBUG_shapenet_core_render_piano.png"
+            )
+        image_ref = load_rgb_image("test_shapenet_core_render_piano.png", DATA_DIR)
+        self.assertClose(rgb, image_ref, atol=0.05)
