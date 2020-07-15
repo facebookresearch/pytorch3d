@@ -141,7 +141,7 @@ def interpolate_vertex_uvs(fragments, meshes, colormap) -> torch.Tensor:
     verts_uvs_packed = meshes.textures.verts_uvs_packed()[faces_uvs, :]
     verts_uvs_packed -= verts_uvs_packed.min()
     faces_verts_uvs = ((verts_uvs_packed) * ((colormap.shape[0] / (verts_uvs_packed.max()))-1)).long()
-    faces_textures = colormap[faces_verts_uvs[..., 0], faces_verts_uvs[..., 1], :].to(meshes.device)
+    faces_textures = colormap[colormap.shape[1]-1-faces_verts_uvs[..., 1], faces_verts_uvs[..., 0], :].to(meshes.device)
     # print(faces_textures[3960:4120, :])
     # faces_textures[3960:4120, :] = torch.ones(1,1,3)
     texels = interpolate_face_attributes(
