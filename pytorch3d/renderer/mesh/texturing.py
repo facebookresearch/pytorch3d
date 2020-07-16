@@ -8,7 +8,7 @@ from pytorch3d.structures.textures import Textures
 from .utils import interpolate_face_attributes
 
 
-def interpolate_texture_map(fragments, meshes) -> torch.Tensor:
+def interpolate_texture_map(fragments, meshes,texture_maps = None) -> torch.Tensor:
     """
     Interpolate a 2D texture map using uv vertex texture coordinates for each
     face in the mesh. First interpolate the vertex uvs using barycentric coordinates
@@ -28,7 +28,8 @@ def interpolate_texture_map(fragments, meshes) -> torch.Tensor:
               representation) which overlap the pixel.
         meshes: Meshes representing a batch of meshes. It is expected that
             meshes has a textures attribute which is an instance of the
-            Textures class.
+            Textures class. An external texture map could also be supplied. In that case the
+            supplied texture map will be used.
 
     Returns:
         texels: tensor of shape (N, H, W, K, C) giving the interpolated
@@ -41,7 +42,8 @@ def interpolate_texture_map(fragments, meshes) -> torch.Tensor:
     faces_uvs = meshes.textures.faces_uvs_packed()
     verts_uvs = meshes.textures.verts_uvs_packed()
     faces_verts_uvs = verts_uvs[faces_uvs]
-    texture_maps = meshes.textures.maps_padded()
+    if texture_maps is None:
+        texture_maps = meshes.textures.maps_padded()
 
     # pixel_uvs: (N, H, W, K, 2)
     pixel_uvs = interpolate_face_attributes(

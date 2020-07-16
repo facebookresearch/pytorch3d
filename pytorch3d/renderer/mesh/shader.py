@@ -345,7 +345,7 @@ class NormalShader(nn.Module):
     To use the default values, simply initialize the shader with the desired
     device e.g.
     .. code-block::
-        shader = SoftPhongShader(device=torch.device("cuda:0"))
+        shader = NormalShader(device=torch.device("cuda:0"))
     """
 
     def __init__(
@@ -369,13 +369,16 @@ class NormalShader(nn.Module):
 
 class UVsCorrespondenceShader(nn.Module):
     """
-    Per pixel lighting - the lighting model is applied using the interpolated
-    coordinates and normals for each pixel. The blending function returns the
-    soft aggregated color using all the faces per pixel.
+    UV correspondence shader will render the model with a custom texture map as it's input.
+    No lightning or blending will be applied
     To use the default values, simply initialize the shader with the desired
     device e.g.
     .. code-block::
-        shader = SoftPhongShader(device=torch.device("cuda:0"))
+        shader = UVsCorrespondenceShader(
+                blend_params=bp,
+                device=device,
+                cameras=cameras,
+                colormap_padded=colormap_padded
     """
 
     def __init__(
@@ -394,6 +397,6 @@ class UVsCorrespondenceShader(nn.Module):
             msg = "Cameras must be specified either at initialization \
                 or in the forward pass of SoftPhongShader"
             raise ValueError(msg)
-        texels = interpolate_vertex_uvs(fragments, meshes, colormap)
+        texels = interpolate_texture_map(fragments, meshes,colormap)
         images = softmax_rgb_blend(texels, fragments, self.blend_params)
         return images

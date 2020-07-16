@@ -72,7 +72,7 @@ class Test(unittest.TestCase):
         d_norm = normalize(directions)
         m_norm = normalize(magnitude)
         colors = np.dstack((x, y, np.zeros_like(x)))
-        colors = torch.from_numpy(np.array(colors))
+        colors = (torch.from_numpy(np.array(colors))).unsqueeze(0).float()
 
 
         renderer = MeshRenderer(
