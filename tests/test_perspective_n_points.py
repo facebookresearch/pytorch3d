@@ -60,7 +60,7 @@ class TestPerspectiveNPoints(TestCaseMixin, unittest.TestCase):
             )
 
             self.assertClose(err_2d, sol.err_2d, msg=assert_msg)
-            self.assertTrue((err_2d < 5e-4).all(), msg=assert_msg)
+            self.assertTrue((err_2d < 1e-3).all(), msg=assert_msg)
 
             def norm_fn(t):
                 return t.norm(dim=-1)

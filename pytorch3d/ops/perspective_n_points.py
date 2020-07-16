@@ -166,7 +166,7 @@ def _compute_norm_sign_scaling_factor(c_cam, alphas, x_world, y, weight, eps=1e-
     return EpnpSolution(x_cam, R, T, err_2d, err_3d)
 
 
-def _gen_pairs(input, dim=-2, reducer=lambda l, r: ((l - r) ** 2).sum(dim=-1)):
+def _gen_pairs(input, dim=-2, reducer=lambda a, b: ((a - b) ** 2).sum(dim=-1)):
     """ Generates all pairs of different rows and then applies the reducer
     Args:
         input: a tensor
@@ -194,10 +194,10 @@ def _kernel_vec_distances(v):
         a tensor of B x 6 x [(D choose 2) + D];
         for D=4, the last dim means [B11 B22 B33 B44 B12 B13 B14 B23 B24 B34].
     """
-    dv = _gen_pairs(v, dim=-3, reducer=lambda l, r: l - r)  # B x 6 x 3 x D
+    dv = _gen_pairs(v, dim=-3, reducer=lambda a, b: a - b)  # B x 6 x 3 x D
 
     # we should take dot-product of all (i,j), i < j, with coeff 2
-    rows_2ij = 2.0 * _gen_pairs(dv, dim=-1, reducer=lambda l, r: (l * r).sum(dim=-2))
+    rows_2ij = 2.0 * _gen_pairs(dv, dim=-1, reducer=lambda a, b: (a * b).sum(dim=-2))
     # this should produce B x 6 x (D choose 2) tensor
 
     # we should take dot-product of all (i,i)
