@@ -24,6 +24,7 @@ def rasterize_meshes(
     bin_size: Optional[int] = None,
     max_faces_per_bin: Optional[int] = None,
     perspective_correct: bool = False,
+    clip_barycentric_coords: bool = False,
     cull_backfaces: bool = False,
 ):
     """
@@ -143,6 +144,7 @@ def rasterize_meshes(
         bin_size,
         max_faces_per_bin,
         perspective_correct,
+        clip_barycentric_coords,
         cull_backfaces,
     )
 
@@ -183,6 +185,7 @@ class _RasterizeFaceVerts(torch.autograd.Function):
         bin_size: int = 0,
         max_faces_per_bin: int = 0,
         perspective_correct: bool = False,
+        clip_barycentric_coords: bool = False,
         cull_backfaces: bool = False,
     ):
         # pyre-fixme[16]: Module `pytorch3d` has no attribute `_C`.
@@ -196,11 +199,13 @@ class _RasterizeFaceVerts(torch.autograd.Function):
             bin_size,
             max_faces_per_bin,
             perspective_correct,
+            clip_barycentric_coords,
             cull_backfaces,
         )
         ctx.save_for_backward(face_verts, pix_to_face)
         ctx.mark_non_differentiable(pix_to_face)
         ctx.perspective_correct = perspective_correct
+        ctx.clip_barycentric_coords = clip_barycentric_coords
         return pix_to_face, zbuf, barycentric_coords, dists
 
     @staticmethod
@@ -214,6 +219,7 @@ class _RasterizeFaceVerts(torch.autograd.Function):
         grad_bin_size = None
         grad_max_faces_per_bin = None
         grad_perspective_correct = None
+        grad_clip_barycentric_coords = None
         grad_cull_backfaces = None
         face_verts, pix_to_face = ctx.saved_tensors
         grad_face_verts = _C.rasterize_meshes_backward(
@@ -223,6 +229,7 @@ class _RasterizeFaceVerts(torch.autograd.Function):
             grad_barycentric_coords,
             grad_dists,
             ctx.perspective_correct,
+            ctx.clip_barycentric_coords,
         )
         grads = (
             grad_face_verts,
@@ -234,6 +241,7 @@ class _RasterizeFaceVerts(torch.autograd.Function):
             grad_bin_size,
             grad_max_faces_per_bin,
             grad_perspective_correct,
+            grad_clip_barycentric_coords,
             grad_cull_backfaces,
         )
         return grads
@@ -250,6 +258,7 @@ def rasterize_meshes_python(
     blur_radius: float = 0.0,
     faces_per_pixel: int = 8,
     perspective_correct: bool = False,
+    clip_barycentric_coords: bool = False,
     cull_backfaces: bool = False,
 ):
     """
@@ -356,6 +365,14 @@ def rasterize_meshes_python(
                         top2 = z0 * z1 * l2
                         bot = top0 + top1 + top2
                         bary = torch.stack([top0 / bot, top1 / bot, top2 / bot])
+
+                    # Check if inside before clipping
+                    inside = all(x > 0.0 for x in bary)
+
+                    # Barycentric clipping
+                    if clip_barycentric_coords:
+                        bary = barycentric_coordinates_clip(bary)
+                    # use clipped barycentric coords to calculate the z value
                     pz = bary[0] * v0[2] + bary[1] * v1[2] + bary[2] * v2[2]
 
                     # Check if point is behind the image.
@@ -365,7 +382,6 @@ def rasterize_meshes_python(
                     # Calculate signed 2D distance from point to face.
                     # Points inside the triangle have negative distance.
                     dist = point_triangle_distance(pxy, v0[:2], v1[:2], v2[:2])
-                    inside = all(x > 0.0 for x in bary)
 
                     signed_dist = dist * -1.0 if inside else dist
 
@@ -431,6 +447,33 @@ def edge_function(p, v0, v1):
                       v0
     """
     return (p[0] - v0[0]) * (v1[1] - v0[1]) - (p[1] - v0[1]) * (v1[0] - v0[0])
+
+
+def barycentric_coordinates_clip(bary):
+    """
+    Clip negative barycentric coordinates to 0.0 and renormalize so
+    the barycentric coordinates for a point sum to 1. When the blur_radius
+    is greater than 0, a face will still be recorded as overlapping a pixel
+    if the pixel is outisde the face. In this case at least one of the
+    barycentric coordinates for the pixel relative to the face will be negative.
+    Clipping will ensure that the texture and z buffer are interpolated correctly.
+
+    Args:
+        bary: tuple of barycentric coordinates
+
+    Returns
+        bary_clip: (w0, w1, w2) barycentric coordinates with no negative values.
+    """
+    # Only negative values are clamped to 0.0.
+    w0_clip = torch.clamp(bary[0], min=0.0)
+    w1_clip = torch.clamp(bary[1], min=0.0)
+    w2_clip = torch.clamp(bary[2], min=0.0)
+    bary_sum = torch.clamp(w0_clip + w1_clip + w2_clip, min=1e-5)
+    w0_clip = w0_clip / bary_sum
+    w1_clip = w1_clip / bary_sum
+    w2_clip = w2_clip / bary_sum
+
+    return (w0_clip, w1_clip, w2_clip)
 
 
 def barycentric_coordinates(p, v0, v1, v2):

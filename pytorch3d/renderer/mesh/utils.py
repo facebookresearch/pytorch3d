@@ -20,9 +20,13 @@ def _clip_barycentric_coordinates(bary) -> torch.Tensor:
     if bary.shape[-1] != 3:
         msg = "Expected barycentric coords to have last dim = 3; got %r"
         raise ValueError(msg % (bary.shape,))
+    ndims = bary.ndim - 1
+    mask = bary.eq(-1).all(dim=-1, keepdim=True).expand(*((-1,) * ndims + (3,)))
     clipped = bary.clamp(min=0.0)
+    clipped[mask] = 0.0
     clipped_sum = torch.clamp(clipped.sum(dim=-1, keepdim=True), min=1e-5)
     clipped = clipped / clipped_sum
+    clipped[mask] = -1.0
     return clipped
 
 
@@ -49,6 +53,8 @@ def _interpolate_zbuf(
     verts = meshes.verts_packed()
     faces = meshes.faces_packed()
     faces_verts_z = verts[faces][..., 2][..., None]  # (F, 3, 1)
-    return interpolate_face_attributes(pix_to_face, barycentric_coords, faces_verts_z)[
+    zbuf = interpolate_face_attributes(pix_to_face, barycentric_coords, faces_verts_z)[
         ..., 0
     ]  # (1, H, W, K)
+    zbuf[pix_to_face == -1] = -1
+    return zbuf

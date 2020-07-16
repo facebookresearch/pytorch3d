@@ -212,6 +212,7 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
             image_size=512,
             blur_radius=np.log(1.0 / 1e-4 - 1.0) * blend_params.sigma,
             faces_per_pixel=80,
+            clip_barycentric_coords=True,
         )
 
         # Init rasterizer settings
@@ -269,11 +270,19 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
         # the cow is facing the -z direction.
         lights.location = torch.tensor([0.0, 0.0, 2.0], device=device)[None]
 
+        blend_params = BlendParams(
+            sigma=1e-1,
+            gamma=1e-4,
+            background_color=torch.tensor([1.0, 1.0, 1.0], device=device),
+        )
         # Init renderer
         renderer = MeshRenderer(
             rasterizer=MeshRasterizer(cameras=cameras, raster_settings=raster_settings),
             shader=TexturedSoftPhongShader(
-                lights=lights, cameras=cameras, materials=materials
+                lights=lights,
+                cameras=cameras,
+                materials=materials,
+                blend_params=blend_params,
             ),
         )
 
@@ -346,6 +355,7 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
             image_size=512,
             blur_radius=np.log(1.0 / 1e-4 - 1.0) * blend_params.sigma,
             faces_per_pixel=100,
+            clip_barycentric_coords=True,
         )
 
         # Load reference image
