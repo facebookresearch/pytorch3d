@@ -5,6 +5,7 @@ from typing import NamedTuple, Sequence
 
 import numpy as np
 import torch
+from pytorch3d import _C
 
 
 # Example functions for blending the top K colors per pixel using the outputs
@@ -59,6 +60,29 @@ def hard_rgb_blend(colors, fragments, blend_params) -> torch.Tensor:
     return torch.cat([pixel_colors, alpha], dim=-1)  # (N, H, W, 4)
 
 
+# Wrapper for the C++/CUDA Implementation of sigmoid alpha blend.
+class _SigmoidAlphaBlend(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, dists, pix_to_face, sigma):
+        alphas = _C.sigmoid_alpha_blend(dists, pix_to_face, sigma)
+        ctx.save_for_backward(dists, pix_to_face, alphas)
+        ctx.sigma = sigma
+        return alphas
+
+    @staticmethod
+    def backward(ctx, grad_alphas):
+        dists, pix_to_face, alphas = ctx.saved_tensors
+        sigma = ctx.sigma
+        grad_dists = _C.sigmoid_alpha_blend_backward(
+            grad_alphas, alphas, dists, pix_to_face, sigma
+        )
+        return grad_dists, None, None
+
+
+# pyre-fixme[16]: `_SigmoidAlphaBlend` has no attribute `apply`.
+_sigmoid_alpha = _SigmoidAlphaBlend.apply
+
+
 def sigmoid_alpha_blend(colors, fragments, blend_params) -> torch.Tensor:
     """
     Silhouette blending to return an RGBA image
@@ -83,19 +107,9 @@ def sigmoid_alpha_blend(colors, fragments, blend_params) -> torch.Tensor:
     """
     N, H, W, K = fragments.pix_to_face.shape
     pixel_colors = torch.ones((N, H, W, 4), dtype=colors.dtype, device=colors.device)
-    mask = fragments.pix_to_face >= 0
-
-    # The distance is negative if a pixel is inside a face and positive outside
-    # the face. Therefore use -1.0 *  fragments.dists to get the correct sign.
-    prob = torch.sigmoid(-fragments.dists / blend_params.sigma) * mask
-
-    # The cumulative product ensures that alpha will be 0.0 if at least 1
-    # face fully covers the pixel as for that face, prob will be 1.0.
-    # This results in a multiplication by 0.0 because of the (1.0 - prob)
-    # term. Therefore 1.0 - alpha will be 1.0.
-    alpha = torch.prod((1.0 - prob), dim=-1)
-    pixel_colors[..., :3] = colors[..., 0, :]  # Hard assign for RGB
-    pixel_colors[..., 3] = 1.0 - alpha
+    pixel_colors[..., :3] = colors[..., 0, :]
+    alpha = _sigmoid_alpha(fragments.dists, fragments.pix_to_face, blend_params.sigma)
+    pixel_colors[..., 3] = alpha
     return pixel_colors
 
 

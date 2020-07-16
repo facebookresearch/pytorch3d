@@ -1,6 +1,7 @@
 // Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
 #include <torch/extension.h>
+#include "blending/sigmoid_alpha_blend.h"
 #include "compositing/alpha_composite.h"
 #include "compositing/norm_weighted_sum.h"
 #include "compositing/weighted_sum.h"
@@ -31,6 +32,8 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
   m.def("rasterize_points_backward", &RasterizePointsBackward);
   m.def("rasterize_meshes_backward", &RasterizeMeshesBackward);
   m.def("rasterize_meshes", &RasterizeMeshes);
+  m.def("sigmoid_alpha_blend", &SigmoidAlphaBlend);
+  m.def("sigmoid_alpha_blend_backward", &SigmoidAlphaBlendBackward);
 
   // Accumulation functions
   m.def("accum_weightedsumnorm", &weightedSumNormForward);
