@@ -53,6 +53,13 @@ We also have deep dive notes on several API components:
 - [Mesh IO](https://github.com/facebookresearch/pytorch3d/tree/master/docs/notes/meshes_io.md)
 - [Differentiable Rendering](https://github.com/facebookresearch/pytorch3d/tree/master/docs/notes/renderer_getting_started.md)
 
+## Overview Video
+
+This 14 min tutorial provides an overview of the structure of the PyTorch3D codebase and how to get started including several code examples.
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/Pph1r-x9nyY" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+
 ## Development
 
 We welcome new contributions to PyTorch3D and we will be actively maintaining this library! Please refer to [CONTRIBUTING.md](./.github/CONTRIBUTING.md) for full instructions on how to run the code, tests and linter, and submit your pull requests.
