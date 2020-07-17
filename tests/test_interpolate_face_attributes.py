@@ -9,10 +9,7 @@ from pytorch3d.ops.interp_face_attrs import (
     interpolate_face_attributes_python,
 )
 from pytorch3d.renderer.mesh.rasterizer import Fragments
-from pytorch3d.renderer.mesh.texturing import (
-    interpolate_texture_map,
-    interpolate_vertex_colors,
-)
+from pytorch3d.renderer.mesh.texturing import interpolate_vertex_colors
 from pytorch3d.structures import Meshes, Textures
 
 

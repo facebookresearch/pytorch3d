@@ -368,7 +368,7 @@ def _load_obj(
     # startswith expects each line to be a string. If the file is read in as
     # bytes then first decode to strings.
     if lines and isinstance(lines[0], bytes):
-        lines = [l.decode("utf-8") for l in lines]
+        lines = [el.decode("utf-8") for el in lines]
 
     for line in lines:
         if line.startswith("mtllib"):

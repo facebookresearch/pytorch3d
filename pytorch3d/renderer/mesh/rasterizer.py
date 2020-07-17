@@ -5,7 +5,6 @@ from typing import NamedTuple, Optional
 import torch
 import torch.nn as nn
 
-from ..cameras import get_world_to_view_transform
 from .rasterize_meshes import rasterize_meshes
 
 

@@ -4,9 +4,6 @@
 import torch
 import torch.nn as nn
 
-from .rasterizer import Fragments
-from .utils import _clip_barycentric_coordinates, _interpolate_zbuf
-
 
 # A renderer class should be initialized with a
 # function for rasterization and a function for shading.
