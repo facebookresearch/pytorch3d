@@ -1485,7 +1485,6 @@ def join_meshes_as_batch(meshes: List[Meshes], include_textures: bool = True):
         # Meshes objects can be iterated and produce single Meshes. We avoid
         # letting join_meshes_as_batch(mesh1, mesh2) silently do the wrong thing.
         raise ValueError("Wrong first argument to join_meshes_as_batch.")
-    # pyre-fixme[10]: Name `mesh` is used but not defined.
     verts = [v for mesh in meshes for v in mesh.verts_list()]
     faces = [f for mesh in meshes for f in mesh.faces_list()]
     if len(meshes) == 0 or not include_textures:

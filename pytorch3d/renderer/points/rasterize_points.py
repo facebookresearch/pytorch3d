@@ -3,6 +3,8 @@
 from typing import Optional
 
 import torch
+
+# pyre-fixme[21]: Could not find name `_C` in `pytorch3d`.
 from pytorch3d import _C
 from pytorch3d.renderer.mesh.rasterize_meshes import pix_to_ndc
 

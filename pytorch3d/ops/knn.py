@@ -4,6 +4,8 @@ from collections import namedtuple
 from typing import Union
 
 import torch
+
+# pyre-fixme[21]: Could not find name `_C` in `pytorch3d`.
 from pytorch3d import _C
 from torch.autograd import Function
 from torch.autograd.function import once_differentiable
