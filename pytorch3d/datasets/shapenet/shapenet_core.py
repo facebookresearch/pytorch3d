@@ -100,7 +100,7 @@ class ShapeNetCore(ShapeNetBase):
         # Each grandchildren directory of data_dir contains an object, and the name
         # of the directory is the object's model_id.
         for synset in synset_set:
-            self.synset_starts[synset] = len(self.synset_ids)
+            self.synset_start_idxs[synset] = len(self.synset_ids)
             for model in os.listdir(path.join(data_dir, synset)):
                 if not path.exists(path.join(data_dir, synset, model, self.model_dir)):
                     msg = (
@@ -111,7 +111,8 @@ class ShapeNetCore(ShapeNetBase):
                     continue
                 self.synset_ids.append(synset)
                 self.model_ids.append(model)
-            self.synset_lens[synset] = len(self.synset_ids) - self.synset_starts[synset]
+            model_count = len(self.synset_ids) - self.synset_start_idxs[synset]
+            self.synset_num_models[synset] = model_count
 
     def __getitem__(self, idx: int) -> Dict:
         """

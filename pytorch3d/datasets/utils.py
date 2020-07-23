@@ -17,6 +17,7 @@ def collate_batched_meshes(batch: List[Dict]):
     Args:
         batch: List of dictionaries containing information about objects
             in the dataset.
+
     Returns:
         collated_dict: Dictionary of collated lists. If batch contains both
             verts and faces, a collated mesh batch is also returned.

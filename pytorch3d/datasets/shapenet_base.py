@@ -31,8 +31,8 @@ class ShapeNetBase(torch.utils.data.Dataset):
         self.synset_ids = []
         self.model_ids = []
         self.synset_inv = {}
-        self.synset_starts = {}
-        self.synset_lens = {}
+        self.synset_start_idxs = {}
+        self.synset_num_models = {}
         self.shapenet_dir = ""
         self.model_dir = "model.obj"
 
@@ -227,9 +227,9 @@ class ShapeNetBase(torch.utils.data.Dataset):
             category: category synset of the category to be sampled from. If not
                 specified, sample from all models in the loaded dataset.
         """
-        start = self.synset_starts[category] if category is not None else 0
+        start = self.synset_start_idxs[category] if category is not None else 0
         range_len = (
-            self.synset_lens[category] if category is not None else self.__len__()
+            self.synset_num_models[category] if category is not None else self.__len__()
         )
         replacement = sample_num > range_len
         sampled_idxs = (
