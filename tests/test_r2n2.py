@@ -11,13 +11,16 @@ import numpy as np
 import torch
 from common_testing import TestCaseMixin, load_rgb_image
 from PIL import Image
-from pytorch3d.datasets import R2N2, collate_batched_meshes
+from pytorch3d.datasets import R2N2, BlenderCamera, collate_batched_meshes
 from pytorch3d.renderer import (
     OpenGLPerspectiveCameras,
     PointLights,
     RasterizationSettings,
     look_at_view_transform,
 )
+from pytorch3d.renderer.cameras import get_world_to_view_transform
+from pytorch3d.transforms import Transform3d
+from pytorch3d.transforms.so3 import so3_exponential_map
 from torch.utils.data import DataLoader
 
 
@@ -258,3 +261,21 @@ class TestR2N2(TestCaseMixin, unittest.TestCase):
                 "test_r2n2_render_by_categories_%s.png" % idx, DATA_DIR
             )
             self.assertClose(mixed_rgb, image_ref, atol=0.05)
+
+    def test_blender_camera(self):
+        """
+        Test BlenderCamera.
+        """
+        # Test get_world_to_view_transform.
+        T = torch.randn(10, 3)
+        R = so3_exponential_map(torch.randn(10, 3) * 3.0)
+        RT = get_world_to_view_transform(R=R, T=T)
+        cam = BlenderCamera(R=R, T=T)
+        RT_class = cam.get_world_to_view_transform()
+        self.assertTrue(torch.allclose(RT.get_matrix(), RT_class.get_matrix()))
+        self.assertTrue(isinstance(RT, Transform3d))
+
+        # Test getting camera center.
+        C = cam.get_camera_center()
+        C_ = -torch.bmm(R, T[:, :, None])[:, :, 0]
+        self.assertTrue(torch.allclose(C, C_, atol=1e-05))

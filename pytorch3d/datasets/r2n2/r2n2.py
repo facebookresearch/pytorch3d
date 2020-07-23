@@ -11,10 +11,17 @@ import torch
 from PIL import Image
 from pytorch3d.datasets.shapenet_base import ShapeNetBase
 from pytorch3d.io import load_obj
+from pytorch3d.renderer.cameras import CamerasBase
+from pytorch3d.transforms import Transform3d
 from tabulate import tabulate
 
 
 SYNSET_DICT_DIR = Path(__file__).resolve().parent
+
+# Default values of rotation, translation and intrinsic matrices for BlenderCamera.
+r = np.expand_dims(np.eye(3), axis=0)  # (1, 3, 3)
+t = np.expand_dims(np.zeros(3), axis=0)  # (1, 3)
+k = np.expand_dims(np.eye(4), axis=0)  # (1, 4, 4)
 
 
 class R2N2(ShapeNetBase):
@@ -217,3 +224,27 @@ class R2N2(ShapeNetBase):
             model["images"] = torch.stack(images)
 
         return model
+
+
+class BlenderCamera(CamerasBase):
+    """
+    Camera for rendering objects with calibration matrices from the R2N2 dataset
+    (which uses Blender for rendering the views for each model).
+    """
+
+    def __init__(self, R=r, T=t, K=k, device="cpu"):
+        """
+        Args:
+            R: Rotation matrix of shape (N, 3, 3).
+            T: Translation matrix of shape (N, 3).
+            K: Intrinsic matrix of shape (N, 4, 4).
+            device: torch.device or str.
+        """
+        # The initializer formats all inputs to torch tensors and broadcasts
+        # all the inputs to have the same batch dimension where necessary.
+        super().__init__(device=device, R=R, T=T, K=K)
+
+    def get_projection_transform(self, **kwargs) -> Transform3d:
+        transform = Transform3d(device=self.device)
+        transform._matrix = self.K.transpose(1, 2).contiguous()  # pyre-ignore[16]
+        return transform
