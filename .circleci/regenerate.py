@@ -17,6 +17,7 @@ CONDA_CUDA_VERSIONS = {
     "1.4": ["cu92", "cu100", "cu101"],
     "1.5.0": ["cu92", "cu101", "cu102"],
     "1.5.1": ["cu92", "cu101", "cu102"],
+    "1.6.0": ["cu92", "cu101", "cu102"],
 }
 
 
@@ -24,7 +25,7 @@ def workflows(prefix="", filter_branch=None, upload=False, indentation=6):
     w = []
     for btype in ["conda"]:
         for python_version in ["3.6", "3.7", "3.8"]:
-            for pytorch_version in ["1.4", "1.5.0", "1.5.1"]:
+            for pytorch_version in ["1.4", "1.5.0", "1.5.1", "1.6.0"]:
                 for cu_version in CONDA_CUDA_VERSIONS[pytorch_version]:
                     w += workflow_pair(
                         btype=btype,
@@ -41,7 +42,7 @@ def workflows(prefix="", filter_branch=None, upload=False, indentation=6):
                 w += workflow_pair(
                     btype=btype,
                     python_version=python_version,
-                    pytorch_version="1.5",
+                    pytorch_version="1.6.0",
                     cu_version=cu_version,
                     prefix=prefix,
                     upload=upload,

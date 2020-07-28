@@ -252,6 +252,21 @@ workflows:
           pytorch_version: 1.5.1
       - binary_linux_conda:
           cu_version: cu92
+          name: linux_conda_py36_cu92_pyt160
+          python_version: '3.6'
+          pytorch_version: 1.6.0
+      - binary_linux_conda:
+          cu_version: cu101
+          name: linux_conda_py36_cu101_pyt160
+          python_version: '3.6'
+          pytorch_version: 1.6.0
+      - binary_linux_conda:
+          cu_version: cu102
+          name: linux_conda_py36_cu102_pyt160
+          python_version: '3.6'
+          pytorch_version: 1.6.0
+      - binary_linux_conda:
+          cu_version: cu92
           name: linux_conda_py37_cu92_pyt14
           python_version: '3.7'
           pytorch_version: '1.4'
@@ -297,6 +312,21 @@ workflows:
           pytorch_version: 1.5.1
       - binary_linux_conda:
           cu_version: cu92
+          name: linux_conda_py37_cu92_pyt160
+          python_version: '3.7'
+          pytorch_version: 1.6.0
+      - binary_linux_conda:
+          cu_version: cu101
+          name: linux_conda_py37_cu101_pyt160
+          python_version: '3.7'
+          pytorch_version: 1.6.0
+      - binary_linux_conda:
+          cu_version: cu102
+          name: linux_conda_py37_cu102_pyt160
+          python_version: '3.7'
+          pytorch_version: 1.6.0
+      - binary_linux_conda:
+          cu_version: cu92
           name: linux_conda_py38_cu92_pyt14
           python_version: '3.8'
           pytorch_version: '1.4'
@@ -340,43 +370,58 @@ workflows:
           name: linux_conda_py38_cu102_pyt151
           python_version: '3.8'
           pytorch_version: 1.5.1
-      - binary_linux_wheel:
-          cu_version: cpu
-          name: linux_wheel_py36_cpu_pyt15
-          python_version: '3.6'
-          pytorch_version: '1.5'
-      - binary_linux_wheel:
-          cu_version: cpu
-          name: linux_wheel_py37_cpu_pyt15
-          python_version: '3.7'
-          pytorch_version: '1.5'
-      - binary_linux_wheel:
-          cu_version: cpu
-          name: linux_wheel_py38_cpu_pyt15
+      - binary_linux_conda:
+          cu_version: cu92
+          name: linux_conda_py38_cu92_pyt160
           python_version: '3.8'
-          pytorch_version: '1.5'
+          pytorch_version: 1.6.0
+      - binary_linux_conda:
+          cu_version: cu101
+          name: linux_conda_py38_cu101_pyt160
+          python_version: '3.8'
+          pytorch_version: 1.6.0
+      - binary_linux_conda:
+          cu_version: cu102
+          name: linux_conda_py38_cu102_pyt160
+          python_version: '3.8'
+          pytorch_version: 1.6.0
+      - binary_linux_wheel:
+          cu_version: cpu
+          name: linux_wheel_py36_cpu_pyt160
+          python_version: '3.6'
+          pytorch_version: 1.6.0
+      - binary_linux_wheel:
+          cu_version: cpu
+          name: linux_wheel_py37_cpu_pyt160
+          python_version: '3.7'
+          pytorch_version: 1.6.0
+      - binary_linux_wheel:
+          cu_version: cpu
+          name: linux_wheel_py38_cpu_pyt160
+          python_version: '3.8'
+          pytorch_version: 1.6.0
       - binary_linux_conda_cuda:
           name: testrun_conda_cuda_py37_cu100_pyt14
           python_version: "3.7"
           pytorch_version: "1.4"
           cu_version: "cu100"
       - binary_linux_conda_cuda:
-          name: testrun_conda_cuda_py37_cu102_pyt151
+          name: testrun_conda_cuda_py37_cu102_pyt160
           python_version: "3.7"
-          pytorch_version: "1.5.1"
+          pytorch_version: '1.6.0'
           cu_version: "cu102"
       - binary_macos_wheel:
           cu_version: cpu
           name: macos_wheel_py36_cpu
           python_version: '3.6'
-          pytorch_version: '1.5'
+          pytorch_version: '1.6.0'
       - binary_macos_wheel:
           cu_version: cpu
           name: macos_wheel_py37_cpu
           python_version: '3.7'
-          pytorch_version: '1.5'
+          pytorch_version: '1.6.0'
       - binary_macos_wheel:
           cu_version: cpu
           name: macos_wheel_py38_cpu
           python_version: '3.8'
-          pytorch_version: '1.5'
+          pytorch_version: '1.6.0'
