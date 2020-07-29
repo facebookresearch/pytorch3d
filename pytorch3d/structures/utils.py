@@ -73,6 +73,7 @@ def padded_to_list(x: torch.Tensor, split_size: Union[list, tuple, None] = None)
     # pyre-fixme[16]: `Tensor` has no attribute `ndim`.
     if x.ndim != 3:
         raise ValueError("Supports only 3-dimensional input tensors")
+
     x_list = list(x.unbind(0))
 
     if split_size is None:

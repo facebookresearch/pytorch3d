@@ -13,8 +13,8 @@ from pytorch3d.renderer import (
     OpenGLPerspectiveCameras,
     PointLights,
     RasterizationSettings,
+    TexturesVertex,
 )
-from pytorch3d.structures import Textures
 
 
 class ShapeNetBase(torch.utils.data.Dataset):
@@ -113,8 +113,8 @@ class ShapeNetBase(torch.utils.data.Dataset):
         """
         paths = self._handle_render_inputs(model_ids, categories, sample_nums, idxs)
         meshes = load_objs_as_meshes(paths, device=device, load_textures=False)
-        meshes.textures = Textures(
-            verts_rgb=torch.ones_like(meshes.verts_padded(), device=device)
+        meshes.textures = TexturesVertex(
+            verts_features=torch.ones_like(meshes.verts_padded(), device=device)
         )
         cameras = kwargs.get("cameras", OpenGLPerspectiveCameras()).to(device)
         renderer = MeshRenderer(

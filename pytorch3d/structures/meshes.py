@@ -5,7 +5,6 @@ from typing import List, Union
 import torch
 
 from . import utils as struct_utils
-from .textures import Textures
 
 
 class Meshes(object):
@@ -234,9 +233,9 @@ class Meshes(object):
         Refer to comments above for descriptions of List and Padded representations.
         """
         self.device = None
-        if textures is not None and not isinstance(textures, Textures):
-            msg = "Expected textures to be of type Textures; got %r"
-            raise ValueError(msg % type(textures))
+        if textures is not None and not repr(textures) == "TexturesBase":
+            msg = "Expected textures to be an instance of type TexturesBase; got %r"
+            raise ValueError(msg % repr(textures))
         self.textures = textures
 
         # Indicates whether the meshes in the list/batch have the same number
@@ -400,6 +399,8 @@ class Meshes(object):
         if self.textures is not None:
             self.textures._num_faces_per_mesh = self._num_faces_per_mesh.tolist()
             self.textures._num_verts_per_mesh = self._num_verts_per_mesh.tolist()
+            self.textures._N = self._N
+            self.textures.valid = self.valid
 
     def __len__(self):
         return self._N
@@ -1465,6 +1466,17 @@ class Meshes(object):
 
         return self.__class__(verts=new_verts_list, faces=new_faces_list, textures=tex)
 
+    def sample_textures(self, fragments):
+        if self.textures is not None:
+            # Pass in faces packed. If the textures are defined per
+            # vertex, the face indices are needed in order to interpolate
+            # the vertex attributes across the face.
+            return self.textures.sample_textures(
+                fragments, faces_packed=self.faces_packed()
+            )
+        else:
+            raise ValueError("Meshes does not have textures")
+
 
 def join_meshes_as_batch(meshes: List[Meshes], include_textures: bool = True):
     """
@@ -1499,44 +1511,14 @@ def join_meshes_as_batch(meshes: List[Meshes], include_textures: bool = True):
         raise ValueError("Inconsistent textures in join_meshes_as_batch.")
 
     # Now we know there are multiple meshes and they have textures to merge.
-    first = meshes[0].textures
-    kwargs = {}
-    if first.maps_padded() is not None:
-        if any(mesh.textures.maps_padded() is None for mesh in meshes):
-            raise ValueError("Inconsistent maps_padded in join_meshes_as_batch.")
-        maps = [m for mesh in meshes for m in mesh.textures.maps_padded()]
-        kwargs["maps"] = maps
-    elif any(mesh.textures.maps_padded() is not None for mesh in meshes):
-        raise ValueError("Inconsistent maps_padded in join_meshes_as_batch.")
+    all_textures = [mesh.textures for mesh in meshes]
+    first = all_textures[0]
+    tex_types_same = all(type(tex) == type(first) for tex in all_textures)
 
-    if first.verts_uvs_padded() is not None:
-        if any(mesh.textures.verts_uvs_padded() is None for mesh in meshes):
-            raise ValueError("Inconsistent verts_uvs_padded in join_meshes_as_batch.")
-        uvs = [uv for mesh in meshes for uv in mesh.textures.verts_uvs_list()]
-        V = max(uv.shape[0] for uv in uvs)
-        kwargs["verts_uvs"] = struct_utils.list_to_padded(uvs, (V, 2), -1)
-    elif any(mesh.textures.verts_uvs_padded() is not None for mesh in meshes):
-        raise ValueError("Inconsistent verts_uvs_padded in join_meshes_as_batch.")
+    if not tex_types_same:
+        raise ValueError("All meshes in the batch must have the same type of texture.")
 
-    if first.faces_uvs_padded() is not None:
-        if any(mesh.textures.faces_uvs_padded() is None for mesh in meshes):
-            raise ValueError("Inconsistent faces_uvs_padded in join_meshes_as_batch.")
-        uvs = [uv for mesh in meshes for uv in mesh.textures.faces_uvs_list()]
-        F = max(uv.shape[0] for uv in uvs)
-        kwargs["faces_uvs"] = struct_utils.list_to_padded(uvs, (F, 3), -1)
-    elif any(mesh.textures.faces_uvs_padded() is not None for mesh in meshes):
-        raise ValueError("Inconsistent faces_uvs_padded in join_meshes_as_batch.")
-
-    if first.verts_rgb_padded() is not None:
-        if any(mesh.textures.verts_rgb_padded() is None for mesh in meshes):
-            raise ValueError("Inconsistent verts_rgb_padded in join_meshes_as_batch.")
-        rgb = [i for mesh in meshes for i in mesh.textures.verts_rgb_list()]
-        V = max(i.shape[0] for i in rgb)
-        kwargs["verts_rgb"] = struct_utils.list_to_padded(rgb, (V, 3))
-    elif any(mesh.textures.verts_rgb_padded() is not None for mesh in meshes):
-        raise ValueError("Inconsistent verts_rgb_padded in join_meshes_as_batch.")
-
-    tex = Textures(**kwargs)
+    tex = first.join_batch(all_textures[1:])
     return Meshes(verts=verts, faces=faces, textures=tex)
 
 
@@ -1544,7 +1526,7 @@ def join_mesh(meshes: Union[Meshes, List[Meshes]]) -> Meshes:
     """
     Joins a batch of meshes in the form of a Meshes object or a list of Meshes
     objects as a single mesh. If the input is a list, the Meshes objects in the list
-    must all be on the same device. This version ignores all textures in the input mehses.
+    must all be on the same device. This version ignores all textures in the input meshes.
 
     Args:
         meshes: Meshes object that contains a batch of meshes or a list of Meshes objects
