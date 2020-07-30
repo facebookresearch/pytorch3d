@@ -50,6 +50,7 @@ def _list_to_padded_wrapper(
       x_padded: tensor consisting of padded input tensors
     """
     N = len(x)
+    # pyre-fixme[16]: `Tensor` has no attribute `ndim`.
     dims = x[0].ndim
     reshape_dims = x[0].shape[1:]
     D = torch.prod(torch.tensor(reshape_dims)).item()
@@ -208,6 +209,7 @@ class TexturesBase(object):
             index = torch.tensor(index)
         if isinstance(index, torch.Tensor):
             if index.dtype == torch.bool:
+                # pyre-fixme[16]: `Tensor` has no attribute `nonzero`.
                 index = index.nonzero()
                 index = index.squeeze(1) if index.numel() > 0 else index
                 index = index.tolist()
@@ -291,6 +293,8 @@ def Textures(
     )
 
     if all(x is not None for x in [faces_uvs, verts_uvs, maps]):
+        # pyre-fixme[6]: Expected `Union[List[torch.Tensor], torch.Tensor]` for 1st
+        #  param but got `Union[None, List[typing.Any], torch.Tensor]`.
         return TexturesUV(maps=maps, faces_uvs=faces_uvs, verts_uvs=verts_uvs)
     elif verts_rgb is not None:
         return TexturesVertex(verts_features=verts_rgb)
@@ -347,17 +351,22 @@ class TexturesAtlas(TexturesBase):
                 self.device = atlas[0].device
 
         elif torch.is_tensor(atlas):
+            # pyre-fixme[16]: `Optional` has no attribute `ndim`.
             if atlas.ndim != 5:
                 msg = "Expected atlas to be of shape (N, F, R, R, D); got %r"
                 raise ValueError(msg % repr(atlas.ndim))
             self._atlas_padded = atlas
             self._atlas_list = None
+            # pyre-fixme[16]: `Optional` has no attribute `device`.
             self.device = atlas.device
 
             # These values may be overridden when textures is
             # passed into the Meshes constructor. For more details
             # refer to the __init__ of Meshes.
+            # pyre-fixme[6]: Expected `Sized` for 1st param but got
+            #  `Optional[torch.Tensor]`.
             self._N = len(atlas)
+            # pyre-fixme[16]: `Optional` has no attribute `shape`.
             max_F = atlas.shape[1]
             self._num_faces_per_mesh = [max_F] * self._N
         else:
@@ -464,6 +473,7 @@ class TexturesAtlas(TexturesBase):
         pix_to_face = fragments.pix_to_face
 
         bary_w01 = bary[..., :2]
+        # pyre-fixme[16]: `bool` has no attribute `__getitem__`.
         mask = (pix_to_face < 0)[..., None]
         bary_w01 = torch.where(mask, torch.zeros_like(bary_w01), bary_w01)
         w_xy = (bary_w01 * R).to(torch.int64)  # (N, H, W, K, 2)
@@ -532,6 +542,7 @@ class TexturesUV(TexturesBase):
         super().__init__()
         if isinstance(faces_uvs, (list, tuple)):
             for fv in faces_uvs:
+                # pyre-fixme[16]: `Tensor` has no attribute `ndim`.
                 if fv.ndim != 2 or fv.shape[-1] != 3:
                     msg = "Expected faces_uvs to be of shape (F, 3); got %r"
                     raise ValueError(msg % repr(fv.shape))
@@ -610,6 +621,8 @@ class TexturesUV(TexturesBase):
             raise ValueError("Expected verts_uvs to be a tensor or list")
 
         if torch.is_tensor(maps):
+            # pyre-fixme[16]: `List` has no attribute `ndim`.
+            # pyre-fixme[16]: `List` has no attribute `shape`.
             if maps.ndim != 4 or maps.shape[0] != self._N:
                 msg = "Expected maps to be of shape (N, H, W, 3); got %r"
                 raise ValueError(msg % repr(maps.shape))
@@ -884,7 +897,9 @@ class TexturesVertex(TexturesBase):
         """
         if isinstance(verts_features, (tuple, list)):
             correct_shape = all(
-                (torch.is_tensor(v) and v.ndim == 2) for v in verts_features
+                # pyre-fixme[16]: `Tensor` has no attribute `ndim`.
+                (torch.is_tensor(v) and v.ndim == 2)
+                for v in verts_features
             )
             if not correct_shape:
                 raise ValueError(
