@@ -55,7 +55,7 @@ binary_common: &binary_common
     wheel_docker_image:
       description: "Wheel only: what docker image to use"
       type: string
-      default: "pytorch/manylinux-cuda101"
+      default: "pytorch/manylinux-cuda102"
   environment:
     PYTHON_VERSION: << parameters.python_version >>
     BUILD_VERSION: << parameters.build_version >>
@@ -386,18 +386,18 @@ workflows:
           python_version: '3.8'
           pytorch_version: 1.6.0
       - binary_linux_wheel:
-          cu_version: cpu
-          name: linux_wheel_py36_cpu_pyt160
+          cu_version: cu102
+          name: linux_wheel_py36_cu102_pyt160
           python_version: '3.6'
           pytorch_version: 1.6.0
       - binary_linux_wheel:
-          cu_version: cpu
-          name: linux_wheel_py37_cpu_pyt160
+          cu_version: cu102
+          name: linux_wheel_py37_cu102_pyt160
           python_version: '3.7'
           pytorch_version: 1.6.0
       - binary_linux_wheel:
-          cu_version: cpu
-          name: linux_wheel_py38_cpu_pyt160
+          cu_version: cu102
+          name: linux_wheel_py38_cu102_pyt160
           python_version: '3.8'
           pytorch_version: 1.6.0
       - binary_linux_conda_cuda:
