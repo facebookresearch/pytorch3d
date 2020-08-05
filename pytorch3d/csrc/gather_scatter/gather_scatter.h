@@ -20,17 +20,22 @@
 // Returns:
 //   output: float32 Tensor of same shape as input.
 
-// Cuda implementation.
 at::Tensor GatherScatterCuda(
-    const at::Tensor input,
-    const at::Tensor edges,
+    const at::Tensor& input,
+    const at::Tensor& edges,
+    bool directed,
+    bool backward);
+
+at::Tensor GatherScatterCpu(
+    const at::Tensor& input,
+    const at::Tensor& edges,
     bool directed,
     bool backward);
 
 // Exposed implementation.
 at::Tensor GatherScatter(
-    const at::Tensor input,
-    const at::Tensor edges,
+    const at::Tensor& input,
+    const at::Tensor& edges,
     bool directed,
     bool backward) {
   if (input.is_cuda() && edges.is_cuda()) {
@@ -42,5 +47,5 @@ at::Tensor GatherScatter(
     AT_ERROR("Not compiled with GPU support.");
 #endif
   }
-  AT_ERROR("Not implemented on the CPU");
+  return GatherScatterCpu(input, edges, directed, backward);
 }
