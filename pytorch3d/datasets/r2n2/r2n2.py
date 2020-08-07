@@ -10,20 +10,32 @@ import numpy as np
 import torch
 from PIL import Image
 from pytorch3d.datasets.shapenet_base import ShapeNetBase
-from pytorch3d.datasets.utils import compute_extrinsic_matrix
 from pytorch3d.io import load_obj
 from pytorch3d.renderer import HardPhongShader
-from pytorch3d.renderer.cameras import CamerasBase
-from pytorch3d.transforms import Transform3d
 from tabulate import tabulate
+
+from .utils import (
+    BlenderCamera,
+    align_bbox,
+    compute_extrinsic_matrix,
+    read_binvox_coords,
+    voxelize,
+)
 
 
 SYNSET_DICT_DIR = Path(__file__).resolve().parent
-
-# Default values of rotation, translation and intrinsic matrices for BlenderCamera.
-r = np.expand_dims(np.eye(3), axis=0)  # (1, 3, 3)
-t = np.expand_dims(np.zeros(3), axis=0)  # (1, 3)
-k = np.expand_dims(np.eye(4), axis=0)  # (1, 4, 4)
+MAX_CAMERA_DISTANCE = 1.75  # Constant from R2N2.
+VOXEL_SIZE = 128
+# Intrinsic matrix extracted from Blender. Taken from meshrcnn codebase:
+# https://github.com/facebookresearch/meshrcnn/blob/master/shapenet/utils/coords.py
+BLENDER_INTRINSIC = torch.tensor(
+    [
+        [2.1875, 0.0, 0.0, 0.0],
+        [0.0, 2.1875, 0.0, 0.0],
+        [0.0, 0.0, -1.002002, -0.2002002],
+        [0.0, 0.0, -1.0, 0.0],
+    ]
+)
 
 
 class R2N2(ShapeNetBase):
@@ -42,6 +54,7 @@ class R2N2(ShapeNetBase):
         r2n2_dir,
         splits_file,
         return_all_views: bool = True,
+        return_voxels: bool = False,
     ):
         """
         Store each object's synset id and models id the given directories.
@@ -54,6 +67,8 @@ class R2N2(ShapeNetBase):
             return_all_views (bool): Indicator of whether or not to load all the views in
                 the split. If set to False, one of the views in the split will be randomly
                 selected and loaded.
+            return_voxels(bool): Indicator of whether or not to return voxels as a tensor
+                of shape (D, D, D) where D is the number of voxels along each dimension.
         """
         super().__init__()
         self.shapenet_dir = shapenet_dir
@@ -79,6 +94,16 @@ class R2N2(ShapeNetBase):
             self.return_images = False
             msg = (
                 "ShapeNetRendering not found in %s. R2N2 renderings will "
+                "be skipped when returning models."
+            ) % (r2n2_dir)
+            warnings.warn(msg)
+
+        self.return_voxels = return_voxels
+        # Check if the folder containing voxel coordinates is included in r2n2_dir.
+        if not path.isdir(path.join(r2n2_dir, "ShapeNetVox32")):
+            self.return_voxels = False
+            msg = (
+                "ShapeNetVox32 not found in %s. Voxel coordinates will "
                 "be skipped when returning models."
             ) % (r2n2_dir)
             warnings.warn(msg)
@@ -173,6 +198,8 @@ class R2N2(ShapeNetBase):
             - R: Rotation matrix of shape (V, 3, 3), where V is number of views returned.
             - T: Translation matrix of shape (V, 3), where V is number of views returned.
             - K: Intrinsic matrix of shape (V, 4, 4), where V is number of views returned.
+            - voxels: Voxels of shape (D, D, D), where D is the number of voxels along each
+                dimension.
         """
         if isinstance(model_idx, tuple):
             model_idx, view_idxs = model_idx
@@ -208,6 +235,7 @@ class R2N2(ShapeNetBase):
         model["label"] = self.synset_dict[model["synset_id"]]
 
         model["images"] = None
+        images, Rs, Ts, voxel_RTs = [], [], [], []
         # Retrieve R2N2's renderings if required.
         if self.return_images:
             rendering_path = path.join(
@@ -217,12 +245,9 @@ class R2N2(ShapeNetBase):
                 model["model_id"],
                 "rendering",
             )
-
             # Read metadata file to obtain params for calibration matrices.
             with open(path.join(rendering_path, "rendering_metadata.txt"), "r") as f:
                 metadata_lines = f.readlines()
-
-            images, Rs, Ts = [], [], []
             for i in model_views:
                 # Read image.
                 image_path = path.join(rendering_path, "%02d.png" % i)
@@ -234,9 +259,13 @@ class R2N2(ShapeNetBase):
                 azim, elev, yaw, dist_ratio, fov = [
                     float(v) for v in metadata_lines[i].strip().split(" ")
                 ]
-                R, T = self._compute_camera_calibration(azim, elev, dist_ratio)
+                dist = dist_ratio * MAX_CAMERA_DISTANCE
+                # Extrinsic matrix before transformation to PyTorch3D world space.
+                RT = compute_extrinsic_matrix(azim, elev, dist)
+                R, T = self._compute_camera_calibration(RT)
                 Rs.append(R)
                 Ts.append(T)
+                voxel_RTs.append(RT)
 
             # Intrinsic matrix extracted from the Blender with slight modification to work with
             # PyTorch3D world space. Taken from meshrcnn codebase:
@@ -254,27 +283,48 @@ class R2N2(ShapeNetBase):
             model["T"] = torch.stack(Ts)
             model["K"] = K.expand(len(model_views), 4, 4)
 
+        voxels_list = []
+        # Read voxels if required.
+        voxel_path = path.join(
+            self.r2n2_dir,
+            "ShapeNetVox32",
+            model["synset_id"],
+            model["model_id"],
+            "model.binvox",
+        )
+        if self.return_voxels:
+            if not path.isfile(voxel_path):
+                msg = "Voxel file not found for model %s from category %s."
+                raise FileNotFoundError(msg % (model["model_id"], model["synset_id"]))
+
+            with open(voxel_path, "rb") as f:
+                # Read voxel coordinates as a tensor of shape (N, 3).
+                voxel_coords = read_binvox_coords(f)
+            # Align voxels to the same coordinate system as mesh verts.
+            voxel_coords = align_bbox(voxel_coords, model["verts"])
+            for RT in voxel_RTs:
+                # Compute projection matrix.
+                P = BLENDER_INTRINSIC.mm(RT)
+                # Convert voxel coordinates of shape (N, 3) to voxels of shape (D, D, D).
+                voxels = voxelize(voxel_coords, P, VOXEL_SIZE)
+                voxels_list.append(voxels)
+            model["voxels"] = torch.stack(voxels_list)
+
         return model
 
-    def _compute_camera_calibration(self, azim: float, elev: float, dist_ratio: float):
+    def _compute_camera_calibration(self, RT):
         """
-        Helper function for calculating rotation and translation matrices from azimuth
-        angle, elevation and distance ratio.
+        Helper function for calculating rotation and translation matrices from ShapeNet
+        to camera transformation and ShapeNet to PyTorch3D transformation.
 
         Args:
-            azim: Rotation about the z-axis, in degrees.
-            elev: Rotation above the xy-plane, in degrees.
-            dist_ratio: Ratio of distance from the origin to the maximum camera distance.
+            RT: Extrinsic matrix that performs ShapeNet world view to camera view
+                transformation.
 
         Returns:
-            - R: Rotation matrix of shape (3, 3).
-            - T: Translation matrix of shape (3).
+            R: Rotation matrix of shape (3, 3).
+            T: Translation matrix of shape (3).
         """
-        # Retrive R,T,K of the selected view(s) by reading the metadata.
-        MAX_CAMERA_DISTANCE = 1.75  # Constant from R2N2.
-        dist = dist_ratio * MAX_CAMERA_DISTANCE
-        RT = compute_extrinsic_matrix(azim, elev, dist)
-
         # Transform the mesh vertices from shapenet world to pytorch3d world.
         shapenet_to_pytorch3d = torch.tensor(
             [
@@ -285,9 +335,7 @@ class R2N2(ShapeNetBase):
             ],
             dtype=torch.float32,
         )
-        RT = compute_extrinsic_matrix(azim, elev, dist)  # (4, 4)
         RT = torch.transpose(RT, 0, 1).mm(shapenet_to_pytorch3d)  # (4, 4)
-
         # Extract rotation and translation matrices from RT.
         R = RT[:3, :3]
         T = RT[3, :3]
@@ -348,27 +396,3 @@ class R2N2(ShapeNetBase):
         return super().render(
             idxs=idxs, shader_type=shader_type, device=device, cameras=cameras, **kwargs
         )
-
-
-class BlenderCamera(CamerasBase):
-    """
-    Camera for rendering objects with calibration matrices from the R2N2 dataset
-    (which uses Blender for rendering the views for each model).
-    """
-
-    def __init__(self, R=r, T=t, K=k, device="cpu"):
-        """
-        Args:
-            R: Rotation matrix of shape (N, 3, 3).
-            T: Translation matrix of shape (N, 3).
-            K: Intrinsic matrix of shape (N, 4, 4).
-            device: torch.device or str.
-        """
-        # The initializer formats all inputs to torch tensors and broadcasts
-        # all the inputs to have the same batch dimension where necessary.
-        super().__init__(device=device, R=R, T=T, K=K)
-
-    def get_projection_transform(self, **kwargs) -> Transform3d:
-        transform = Transform3d(device=self.device)
-        transform._matrix = self.K.transpose(1, 2).contiguous()  # pyre-ignore[16]
-        return transform

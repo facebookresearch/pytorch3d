@@ -11,7 +11,12 @@ import numpy as np
 import torch
 from common_testing import TestCaseMixin, load_rgb_image
 from PIL import Image
-from pytorch3d.datasets import R2N2, BlenderCamera, collate_batched_meshes
+from pytorch3d.datasets import (
+    R2N2,
+    BlenderCamera,
+    collate_batched_R2N2,
+    render_cubified_voxels,
+)
 from pytorch3d.renderer import (
     OpenGLPerspectiveCameras,
     PointLights,
@@ -62,8 +67,10 @@ class TestR2N2(TestCaseMixin, unittest.TestCase):
         Test the loaded train split of R2N2 return items of the correct shapes and types. Also
         check the first image returned is correct.
         """
-        # Load dataset in the test split.
-        r2n2_dataset = R2N2("test", SHAPENET_PATH, R2N2_PATH, SPLITS_PATH)
+        # Load dataset in the train split.
+        r2n2_dataset = R2N2(
+            "test", SHAPENET_PATH, R2N2_PATH, SPLITS_PATH, return_voxels=True
+        )
 
         # Check total number of objects in the dataset is correct.
         with open(SPLITS_PATH) as splits:
@@ -114,6 +121,10 @@ class TestR2N2(TestCaseMixin, unittest.TestCase):
         self.assertEqual(r2n2_dataset[635]["images"].shape[0], 5)
         self.assertEqual(r2n2_dataset[8369]["images"].shape[0], 10)
 
+        # Check that the voxel tensor returned by __getitem__ has the correct shape.
+        self.assertEqual(r2n2_obj["voxels"].ndim, 4)
+        self.assertEqual(r2n2_obj["voxels"].shape, (24, 128, 128, 128))
+
     def test_collate_models(self):
         """
         Test collate_batched_meshes returns items of the correct shapes and types.
@@ -121,10 +132,12 @@ class TestR2N2(TestCaseMixin, unittest.TestCase):
         the correct shapes and types are returned.
         """
         # Load dataset in the train split.
-        r2n2_dataset = R2N2("val", SHAPENET_PATH, R2N2_PATH, SPLITS_PATH)
+        r2n2_dataset = R2N2(
+            "val", SHAPENET_PATH, R2N2_PATH, SPLITS_PATH, return_voxels=True
+        )
 
         # Randomly retrieve several objects from the dataset and collate them.
-        collated_meshes = collate_batched_meshes(
+        collated_meshes = collate_batched_R2N2(
             [r2n2_dataset[idx] for idx in torch.randint(len(r2n2_dataset), (6,))]
         )
         # Check the collated verts and faces have the correct shapes.
@@ -145,7 +158,7 @@ class TestR2N2(TestCaseMixin, unittest.TestCase):
         # in batch have the correct shape.
         batch_size = 12
         r2n2_loader = DataLoader(
-            r2n2_dataset, batch_size=batch_size, collate_fn=collate_batched_meshes
+            r2n2_dataset, batch_size=batch_size, collate_fn=collate_batched_R2N2
         )
         it = iter(r2n2_loader)
         object_batch = next(it)
@@ -158,6 +171,7 @@ class TestR2N2(TestCaseMixin, unittest.TestCase):
         self.assertEqual(object_batch["R"].shape[0], batch_size)
         self.assertEqual(object_batch["T"].shape[0], batch_size)
         self.assertEqual(object_batch["K"].shape[0], batch_size)
+        self.assertEqual(len(object_batch["voxels"]), batch_size)
 
     def test_catch_render_arg_errors(self):
         """
@@ -338,3 +352,24 @@ class TestR2N2(TestCaseMixin, unittest.TestCase):
                 "test_r2n2_render_with_blender_calibrations_%s.png" % idx, DATA_DIR
             )
             self.assertClose(r2n2_batch_rgb, image_ref, atol=0.05)
+
+    def test_render_voxels(self):
+        """
+        Test rendering meshes formed from voxels.
+        """
+        # Set up device and seed for random selections.
+        device = torch.device("cuda:0")
+
+        # Load dataset in the train split with only a single view returned for each model.
+        r2n2_dataset = R2N2(
+            "train", SHAPENET_PATH, R2N2_PATH, SPLITS_PATH, return_voxels=True
+        )
+        r2n2_model = r2n2_dataset[6, [5]]
+        vox_render = render_cubified_voxels(r2n2_model["voxels"], device=device)
+        vox_render_rgb = vox_render[0, ..., :3].squeeze().cpu()
+        if DEBUG:
+            Image.fromarray((vox_render_rgb.numpy() * 255).astype(np.uint8)).save(
+                DATA_DIR / ("DEBUG_r2n2_voxel_to_mesh_render.png")
+            )
+        image_ref = load_rgb_image("test_r2n2_voxel_to_mesh_render.png", DATA_DIR)
+        self.assertClose(vox_render_rgb, image_ref, atol=0.05)
