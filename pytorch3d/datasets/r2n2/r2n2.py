@@ -10,7 +10,9 @@ import numpy as np
 import torch
 from PIL import Image
 from pytorch3d.datasets.shapenet_base import ShapeNetBase
+from pytorch3d.datasets.utils import compute_extrinsic_matrix
 from pytorch3d.io import load_obj
+from pytorch3d.renderer import HardPhongShader
 from pytorch3d.renderer.cameras import CamerasBase
 from pytorch3d.transforms import Transform3d
 from tabulate import tabulate
@@ -168,6 +170,9 @@ class R2N2(ShapeNetBase):
             - label (str): synset label.
             - images: FloatTensor of shape (V, H, W, C), where V is number of views
                 returned. Returns a batch of the renderings of the models from the R2N2 dataset.
+            - R: Rotation matrix of shape (V, 3, 3), where V is number of views returned.
+            - T: Translation matrix of shape (V, 3), where V is number of views returned.
+            - K: Intrinsic matrix of shape (V, 4, 4), where V is number of views returned.
         """
         if isinstance(model_idx, tuple):
             model_idx, view_idxs = model_idx
@@ -213,7 +218,11 @@ class R2N2(ShapeNetBase):
                 "rendering",
             )
 
-            images = []
+            # Read metadata file to obtain params for calibration matrices.
+            with open(path.join(rendering_path, "rendering_metadata.txt"), "r") as f:
+                metadata_lines = f.readlines()
+
+            images, Rs, Ts = [], [], []
             for i in model_views:
                 # Read image.
                 image_path = path.join(rendering_path, "%02d.png" % i)
@@ -221,9 +230,124 @@ class R2N2(ShapeNetBase):
                 image = torch.from_numpy(np.array(raw_img) / 255.0)[..., :3]
                 images.append(image.to(dtype=torch.float32))
 
+                # Get camera calibration.
+                azim, elev, yaw, dist_ratio, fov = [
+                    float(v) for v in metadata_lines[i].strip().split(" ")
+                ]
+                R, T = self._compute_camera_calibration(azim, elev, dist_ratio)
+                Rs.append(R)
+                Ts.append(T)
+
+            # Intrinsic matrix extracted from the Blender with slight modification to work with
+            # PyTorch3D world space. Taken from meshrcnn codebase:
+            # https://github.com/facebookresearch/meshrcnn/blob/master/shapenet/utils/coords.py
+            K = torch.tensor(
+                [
+                    [2.1875, 0.0, 0.0, 0.0],
+                    [0.0, 2.1875, 0.0, 0.0],
+                    [0.0, 0.0, -1.002002, -0.2002002],
+                    [0.0, 0.0, 1.0, 0.0],
+                ]
+            )
             model["images"] = torch.stack(images)
+            model["R"] = torch.stack(Rs)
+            model["T"] = torch.stack(Ts)
+            model["K"] = K.expand(len(model_views), 4, 4)
 
         return model
+
+    def _compute_camera_calibration(self, azim: float, elev: float, dist_ratio: float):
+        """
+        Helper function for calculating rotation and translation matrices from azimuth
+        angle, elevation and distance ratio.
+
+        Args:
+            azim: Rotation about the z-axis, in degrees.
+            elev: Rotation above the xy-plane, in degrees.
+            dist_ratio: Ratio of distance from the origin to the maximum camera distance.
+
+        Returns:
+            - R: Rotation matrix of shape (3, 3).
+            - T: Translation matrix of shape (3).
+        """
+        # Retrive R,T,K of the selected view(s) by reading the metadata.
+        MAX_CAMERA_DISTANCE = 1.75  # Constant from R2N2.
+        dist = dist_ratio * MAX_CAMERA_DISTANCE
+        RT = compute_extrinsic_matrix(azim, elev, dist)
+
+        # Transform the mesh vertices from shapenet world to pytorch3d world.
+        shapenet_to_pytorch3d = torch.tensor(
+            [
+                [-1.0, 0.0, 0.0, 0.0],
+                [0.0, 1.0, 0.0, 0.0],
+                [0.0, 0.0, -1.0, 0.0],
+                [0.0, 0.0, 0.0, 1.0],
+            ],
+            dtype=torch.float32,
+        )
+        RT = compute_extrinsic_matrix(azim, elev, dist)  # (4, 4)
+        RT = torch.transpose(RT, 0, 1).mm(shapenet_to_pytorch3d)  # (4, 4)
+
+        # Extract rotation and translation matrices from RT.
+        R = RT[:3, :3]
+        T = RT[3, :3]
+        return R, T
+
+    def render(
+        self,
+        model_ids: Optional[List[str]] = None,
+        categories: Optional[List[str]] = None,
+        sample_nums: Optional[List[int]] = None,
+        idxs: Optional[List[int]] = None,
+        view_idxs: Optional[List[int]] = None,
+        shader_type=HardPhongShader,
+        device="cpu",
+        **kwargs
+    ) -> torch.Tensor:
+        """
+        Render models with BlenderCamera by default to achieve the same orientations as the
+        R2N2 renderings. Also accepts other types of cameras and any of the args that the
+        render function in the ShapeNetBase class accepts.
+
+        Args:
+            view_idxs: each model will be rendered with the orientation(s) of the specified
+                views. Only render by view_idxs if no camera or args for BlenderCamera is
+                supplied.
+            Accepts any of the args of the render function in ShapnetBase:
+            model_ids: List[str] of model_ids of models intended to be rendered.
+            categories: List[str] of categories intended to be rendered. categories
+                and sample_nums must be specified at the same time. categories can be given
+                in the form of synset offsets or labels, or a combination of both.
+            sample_nums: List[int] of number of models to be randomly sampled from
+                each category. Could also contain one single integer, in which case it
+                will be broadcasted for every category.
+            idxs: List[int] of indices of models to be rendered in the dataset.
+            shader_type: Shader to use for rendering. Examples include HardPhongShader
+            (default), SoftPhongShader etc or any other type of valid Shader class.
+            device: torch.device on which the tensors should be located.
+            **kwargs: Accepts any of the kwargs that the renderer supports and any of the
+                args that BlenderCamera supports.
+
+        Returns:
+            Batch of rendered images of shape (N, H, W, 3).
+        """
+        idxs = self._handle_render_inputs(model_ids, categories, sample_nums, idxs)
+        r = torch.cat([self[idxs[i], view_idxs]["R"] for i in range(len(idxs))])
+        t = torch.cat([self[idxs[i], view_idxs]["T"] for i in range(len(idxs))])
+        k = torch.cat([self[idxs[i], view_idxs]["K"] for i in range(len(idxs))])
+        # Initialize default camera using R, T, K from kwargs or R, T, K of the specified views.
+        blend_cameras = BlenderCamera(
+            R=kwargs.get("R", r),
+            T=kwargs.get("T", t),
+            K=kwargs.get("K", k),
+            device=device,
+        )
+        cameras = kwargs.get("cameras", blend_cameras).to(device)
+        kwargs.pop("cameras", None)
+        # pass down all the same inputs
+        return super().render(
+            idxs=idxs, shader_type=shader_type, device=device, cameras=cameras, **kwargs
+        )
 
 
 class BlenderCamera(CamerasBase):

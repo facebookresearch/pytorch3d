@@ -111,12 +111,27 @@ class ShapeNetBase(torch.utils.data.Dataset):
         Returns:
             Batch of rendered images of shape (N, H, W, 3).
         """
-        paths = self._handle_render_inputs(model_ids, categories, sample_nums, idxs)
+        idxs = self._handle_render_inputs(model_ids, categories, sample_nums, idxs)
+        paths = [
+            path.join(
+                self.shapenet_dir,
+                self.synset_ids[idx],
+                self.model_ids[idx],
+                self.model_dir,
+            )
+            for idx in idxs
+        ]
         meshes = load_objs_as_meshes(paths, device=device, load_textures=False)
         meshes.textures = TexturesVertex(
             verts_features=torch.ones_like(meshes.verts_padded(), device=device)
         )
         cameras = kwargs.get("cameras", OpenGLPerspectiveCameras()).to(device)
+        if len(cameras) != 1 and len(cameras) % len(meshes) != 0:
+            raise ValueError("Mismatch between batch dims of cameras and meshes.")
+        if len(cameras) > 1:
+            # When rendering R2N2 models, if more than one views are provided, broadcast
+            # the meshes so that each mesh can be rendered for each of the views.
+            meshes = meshes.extend(len(cameras) // len(meshes))
         renderer = MeshRenderer(
             rasterizer=MeshRasterizer(
                 cameras=cameras,
@@ -136,7 +151,7 @@ class ShapeNetBase(torch.utils.data.Dataset):
         categories: Optional[List[str]] = None,
         sample_nums: Optional[List[int]] = None,
         idxs: Optional[List[int]] = None,
-    ) -> List[str]:
+    ) -> List[int]:
         """
         Helper function for converting user provided model_ids, categories and sample_nums
         to indices of models in the loaded dataset. If model idxs are provided, we check if
@@ -206,15 +221,7 @@ class ShapeNetBase(torch.utils.data.Dataset):
                 )
                 warnings.warn(msg)
             idxs = self._sample_idxs_from_category(sample_nums[0])
-        return [
-            path.join(
-                self.shapenet_dir,
-                self.synset_ids[idx],
-                self.model_ids[idx],
-                self.model_dir,
-            )
-            for idx in idxs
-        ]
+        return idxs
 
     def _sample_idxs_from_category(
         self, sample_num: int = 1, category: Optional[str] = None
