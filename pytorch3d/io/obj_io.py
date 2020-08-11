@@ -10,20 +10,9 @@ from typing import Optional
 import numpy as np
 import torch
 from pytorch3d.io.mtl_io import load_mtl, make_mesh_texture_atlas
-from pytorch3d.io.utils import _open_file
+from pytorch3d.io.utils import _check_faces_indices, _make_tensor, _open_file
 from pytorch3d.renderer import TexturesAtlas, TexturesUV
 from pytorch3d.structures import Meshes, join_meshes_as_batch
-
-
-def _make_tensor(data, cols: int, dtype: torch.dtype, device="cpu") -> torch.Tensor:
-    """
-    Return a 2D tensor with the specified cols and dtype filled with data,
-    even when data is empty.
-    """
-    if not data:
-        return torch.zeros((0, cols), dtype=dtype, device=device)
-
-    return torch.tensor(data, dtype=dtype, device=device)
 
 
 # Faces & Aux type returned from load_obj function.
@@ -57,8 +46,8 @@ def _format_faces_indices(faces_indices, max_index, device, pad_value=None):
         faces_indices, cols=3, dtype=torch.int64, device=device
     )
 
-    if pad_value:
-        mask = faces_indices.eq(pad_value).all(-1)
+    if pad_value is not None:
+        mask = faces_indices.eq(pad_value).all(dim=-1)
 
     # Change to 0 based indexing.
     faces_indices[(faces_indices > 0)] -= 1
@@ -66,16 +55,10 @@ def _format_faces_indices(faces_indices, max_index, device, pad_value=None):
     # Negative indexing counts from the end.
     faces_indices[(faces_indices < 0)] += max_index
 
-    if pad_value:
+    if pad_value is not None:
         faces_indices[mask] = pad_value
 
-    # Check indices are valid.
-    if torch.any(faces_indices >= max_index) or (
-        pad_value is None and torch.any(faces_indices < 0)
-    ):
-        warnings.warn("Faces have invalid indices")
-
-    return faces_indices
+    return _check_faces_indices(faces_indices, max_index, pad_value)
 
 
 def load_obj(

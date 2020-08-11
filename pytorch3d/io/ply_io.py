@@ -12,7 +12,7 @@ from typing import Optional, Tuple
 
 import numpy as np
 import torch
-from pytorch3d.io.utils import _open_file
+from pytorch3d.io.utils import _check_faces_indices, _make_tensor, _open_file
 
 
 _PlyTypeData = namedtuple("_PlyTypeData", "size struct_char np_type")
@@ -219,17 +219,6 @@ class _PlyHeader:
             msg = "Number of items for %s was not a number."
             raise ValueError(msg % items[1])
         self.elements.append(_PlyElementType(items[1], count))
-
-
-def _make_tensor(data, cols: int, dtype: torch.dtype) -> torch.Tensor:
-    """
-    Return a 2D tensor with the specified cols and dtype filled with data,
-    even when data is empty.
-    """
-    if not len(data):
-        return torch.zeros((0, cols), dtype=dtype)
-
-    return torch.tensor(data, dtype=dtype)
 
 
 def _read_ply_fixed_size_element_ascii(f, definition: _PlyElementType):
@@ -691,9 +680,7 @@ def load_ply(f):
                 face_list.append([face_item[0], face_item[i + 1], face_item[i + 2]])
         faces = _make_tensor(face_list, cols=3, dtype=torch.int64)
 
-    if torch.any(faces >= verts.shape[0]) or torch.any(faces < 0):
-        warnings.warn("Faces have invalid indices")
-
+    _check_faces_indices(faces, max_index=verts.shape[0])
     return verts, faces
 
 
@@ -747,8 +734,7 @@ def _save_ply(
 
     faces_array = faces.detach().numpy()
 
-    if torch.any(faces >= verts.shape[0]) or torch.any(faces < 0):
-        warnings.warn("Faces have invalid indices")
+    _check_faces_indices(faces, max_index=verts.shape[0])
 
     if len(faces_array):
         np.savetxt(f, faces_array, "3 %d %d %d")
