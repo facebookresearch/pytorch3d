@@ -1138,6 +1138,28 @@ class Meshes(object):
             other.textures = self.textures.clone()
         return other
 
+    def detach(self):
+        """
+        Detach Meshes object. All internal tensors are detached individually.
+
+        Returns:
+            new Meshes object.
+        """
+        verts_list = self.verts_list()
+        faces_list = self.faces_list()
+        new_verts_list = [v.detach() for v in verts_list]
+        new_faces_list = [f.detach() for f in faces_list]
+        other = self.__class__(verts=new_verts_list, faces=new_faces_list)
+        for k in self._INTERNAL_TENSORS:
+            v = getattr(self, k)
+            if torch.is_tensor(v):
+                setattr(other, k, v.detach())
+
+        # Textures is not a tensor but has a detach method
+        if self.textures is not None:
+            other.textures = self.textures.detach()
+        return other
+
     def to(self, device, copy: bool = False):
         """
         Match functionality of torch.Tensor.to()

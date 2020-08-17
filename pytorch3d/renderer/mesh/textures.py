@@ -242,6 +242,13 @@ class TexturesBase(object):
         """
         raise NotImplementedError()
 
+    def detach(self):
+        """
+        Each texture class should implement a method
+        to detach all necessary internal tensors.
+        """
+        raise NotImplementedError()
+
     def __getitem__(self, index):
         """
         Each texture class should implement a method
@@ -388,12 +395,27 @@ class TexturesAtlas(TexturesBase):
 
     def clone(self):
         tex = self.__class__(atlas=self.atlas_padded().clone())
+        if self._atlas_list is not None:
+            tex._atlas_list = [atlas.clone() for atlas in self._atlas_list]
         num_faces = (
             self._num_faces_per_mesh.clone()
             if torch.is_tensor(self._num_faces_per_mesh)
             else self._num_faces_per_mesh
         )
         tex.valid = self.valid.clone()
+        tex._num_faces_per_mesh = num_faces
+        return tex
+
+    def detach(self):
+        tex = self.__class__(atlas=self.atlas_padded().detach())
+        if self._atlas_list is not None:
+            tex._atlas_list = [atlas.detach() for atlas in self._atlas_list]
+        num_faces = (
+            self._num_faces_per_mesh.detach()
+            if torch.is_tensor(self._num_faces_per_mesh)
+            else self._num_faces_per_mesh
+        )
+        tex.valid = self.valid.detach()
         tex._num_faces_per_mesh = num_faces
         return tex
 
@@ -656,6 +678,12 @@ class TexturesUV(TexturesBase):
             self.faces_uvs_padded().clone(),
             self.verts_uvs_padded().clone(),
         )
+        if self._maps_list is not None:
+            tex._maps_list = [m.clone() for m in self._maps_list]
+        if self._verts_uvs_list is not None:
+            tex._verts_uvs_list = [v.clone() for v in self._verts_uvs_list]
+        if self._faces_uvs_list is not None:
+            tex._faces_uvs_list = [f.clone() for f in self._faces_uvs_list]
         num_faces = (
             self._num_faces_per_mesh.clone()
             if torch.is_tensor(self._num_faces_per_mesh)
@@ -663,6 +691,27 @@ class TexturesUV(TexturesBase):
         )
         tex._num_faces_per_mesh = num_faces
         tex.valid = self.valid.clone()
+        return tex
+
+    def detach(self):
+        tex = self.__class__(
+            self.maps_padded().detach(),
+            self.faces_uvs_padded().detach(),
+            self.verts_uvs_padded().detach(),
+        )
+        if self._maps_list is not None:
+            tex._maps_list = [m.detach() for m in self._maps_list]
+        if self._verts_uvs_list is not None:
+            tex._verts_uvs_list = [v.detach() for v in self._verts_uvs_list]
+        if self._faces_uvs_list is not None:
+            tex._faces_uvs_list = [f.detach() for f in self._faces_uvs_list]
+        num_faces = (
+            self._num_faces_per_mesh.detach()
+            if torch.is_tensor(self._num_faces_per_mesh)
+            else self._num_faces_per_mesh
+        )
+        tex._num_faces_per_mesh = num_faces
+        tex.valid = self.valid.detach()
         return tex
 
     def __getitem__(self, index):
@@ -892,8 +941,8 @@ class TexturesVertex(TexturesBase):
         has a D dimensional feature vector.
 
         Args:
-            verts_features: (N, V, D) tensor giving a feature vector with
-                artbitrary dimensions for each vertex.
+            verts_features: list of (Vi, D) or (N, V, D) tensor giving a feature
+                vector with artbitrary dimensions for each vertex.
         """
         if isinstance(verts_features, (tuple, list)):
             correct_shape = all(
@@ -948,13 +997,26 @@ class TexturesVertex(TexturesBase):
         tex = self.__class__(self.verts_features_padded().clone())
         if self._verts_features_list is not None:
             tex._verts_features_list = [f.clone() for f in self._verts_features_list]
-        num_faces = (
+        num_verts = (
             self._num_verts_per_mesh.clone()
             if torch.is_tensor(self._num_verts_per_mesh)
             else self._num_verts_per_mesh
         )
-        tex._num_verts_per_mesh = num_faces
+        tex._num_verts_per_mesh = num_verts
         tex.valid = self.valid.clone()
+        return tex
+
+    def detach(self):
+        tex = self.__class__(self.verts_features_padded().detach())
+        if self._verts_features_list is not None:
+            tex._verts_features_list = [f.detach() for f in self._verts_features_list]
+        num_verts = (
+            self._num_verts_per_mesh.detach()
+            if torch.is_tensor(self._num_verts_per_mesh)
+            else self._num_verts_per_mesh
+        )
+        tex._num_verts_per_mesh = num_verts
+        tex.valid = self.valid.detach()
         return tex
 
     def __getitem__(self, index):
