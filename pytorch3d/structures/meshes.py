@@ -1329,7 +1329,7 @@ class Meshes(object):
 
     def update_padded(self, new_verts_padded):
         """
-        This function allows for an pdate of verts_padded without having to
+        This function allows for an update of verts_padded without having to
         explicitly convert it to the list representation for heterogeneous batches.
         Returns a Meshes structure with updated padded tensors and copies of the
         auxiliary tensors at construction time.
