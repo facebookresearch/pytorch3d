@@ -2,7 +2,6 @@
 
 import unittest
 
-import numpy as np
 import torch
 from common_testing import TestCaseMixin
 from pytorch3d.renderer.blending import (
@@ -97,21 +96,18 @@ def softmax_blend_naive(colors, fragments, blend_params):
     # Near and far clipping planes
     zfar = 100.0
     znear = 1.0
+    eps = 1e-10
 
     bk_color = blend_params.background_color
     if not torch.is_tensor(bk_color):
         bk_color = torch.tensor(bk_color, dtype=colors.dtype, device=device)
-
-    # Background color component
-    delta = np.exp(1e-10 / gamma) * 1e-10
-    delta = torch.tensor(delta).to(device=device)
 
     for n in range(N):
         for h in range(H):
             for w in range(W):
                 alpha = 1.0
                 weights_k = torch.zeros(K, device=device)
-                zmax = 0.0
+                zmax = torch.tensor(0.0, device=device)
 
                 # Loop over K to find max z.
                 for k in range(K):
@@ -129,11 +125,13 @@ def softmax_blend_naive(colors, fragments, blend_params):
                         alpha *= 1.0 - prob  # cumulative product
                         weights_k[k] = prob * torch.exp((zinv - zmax) / gamma)
 
+                # Clamp to ensure delta is never 0
+                delta = torch.exp((eps - zmax) / blend_params.gamma).clamp(min=eps)
+                delta = delta.to(device)
                 denom = weights_k.sum() + delta
-                weights = weights_k / denom
-                cols = (weights[..., None] * colors[n, h, w, :, :]).sum(dim=0)
-                pixel_colors[n, h, w, :3] = cols
-                pixel_colors[n, h, w, :3] += (delta / denom) * bk_color
+                cols = (weights_k[..., None] * colors[n, h, w, :, :]).sum(dim=0)
+                pixel_colors[n, h, w, :3] = cols + delta * bk_color
+                pixel_colors[n, h, w, :3] /= denom
                 pixel_colors[n, h, w, 3] = 1.0 - alpha
 
     return pixel_colors
@@ -160,6 +158,7 @@ class TestBlending(TestCaseMixin, unittest.TestCase):
 
         (out2 * grad_out).sum().backward()
         self.assertTrue(hasattr(grad_var2, "grad"))
+
         self.assertClose(grad_var1.grad.cpu(), grad_var2.grad.cpu(), atol=2e-5)
 
     def test_hard_rgb_blend(self):
