@@ -511,7 +511,6 @@ class Pointclouds(object):
         Returns:
             1D tensor of indices.
         """
-        self._compute_packed()
         if self._padded_to_packed_idx is not None:
             return self._padded_to_packed_idx
         if self._N == 0:
@@ -520,7 +519,7 @@ class Pointclouds(object):
             self._padded_to_packed_idx = torch.cat(
                 [
                     torch.arange(v, dtype=torch.int64, device=self.device) + i * self._P
-                    for (i, v) in enumerate(self._num_points_per_cloud)
+                    for (i, v) in enumerate(self.num_points_per_cloud())
                 ],
                 dim=0,
             )
@@ -654,6 +653,42 @@ class Pointclouds(object):
             v = getattr(self, k)
             if torch.is_tensor(v):
                 setattr(other, k, v.clone())
+        return other
+
+    def detach(self):
+        """
+        Detach Pointclouds object. All internal tensors are detached
+        individually.
+
+        Returns:
+            new Pointclouds object.
+        """
+        # instantiate new pointcloud with the representation which is not None
+        # (either list or tensor) to save compute.
+        new_points, new_normals, new_features = None, None, None
+        if self._points_list is not None:
+            new_points = [v.detach() for v in self.points_list()]
+            normals_list = self.normals_list()
+            features_list = self.features_list()
+            if normals_list is not None:
+                new_normals = [n.detach() for n in normals_list]
+            if features_list is not None:
+                new_features = [f.detach() for f in features_list]
+        elif self._points_padded is not None:
+            new_points = self.points_padded().detach()
+            normals_padded = self.normals_padded()
+            features_padded = self.features_padded()
+            if normals_padded is not None:
+                new_normals = self.normals_padded().detach()
+            if features_padded is not None:
+                new_features = self.features_padded().detach()
+        other = self.__class__(
+            points=new_points, normals=new_normals, features=new_features
+        )
+        for k in self._INTERNAL_TENSORS:
+            v = getattr(self, k)
+            if torch.is_tensor(v):
+                setattr(other, k, v.detach())
         return other
 
     def to(self, device, copy: bool = False):
@@ -797,7 +832,7 @@ class Pointclouds(object):
             self.
         """
         if not torch.is_tensor(scale):
-            scale = torch.full(len(self), scale)
+            scale = torch.full((len(self),), scale, device=self.device)
         new_points_list = []
         points_list = self.points_list()
         for i, old_points in enumerate(points_list):

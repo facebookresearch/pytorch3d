@@ -24,6 +24,7 @@ class TestPointclouds(TestCaseMixin, unittest.TestCase):
         with_normals: bool = True,
         with_features: bool = True,
         min_points: int = 0,
+        requires_grad: bool = False,
     ):
         """
         Function to generate a Pointclouds object of N meshes with
@@ -49,16 +50,31 @@ class TestPointclouds(TestCaseMixin, unittest.TestCase):
             p.fill_(p[0])
 
         points_list = [
-            torch.rand((i, 3), device=device, dtype=torch.float32) for i in p
+            torch.rand(
+                (i, 3), device=device, dtype=torch.float32, requires_grad=requires_grad
+            )
+            for i in p
         ]
         normals_list, features_list = None, None
         if with_normals:
             normals_list = [
-                torch.rand((i, 3), device=device, dtype=torch.float32) for i in p
+                torch.rand(
+                    (i, 3),
+                    device=device,
+                    dtype=torch.float32,
+                    requires_grad=requires_grad,
+                )
+                for i in p
             ]
         if with_features:
             features_list = [
-                torch.rand((i, channels), device=device, dtype=torch.float32) for i in p
+                torch.rand(
+                    (i, channels),
+                    device=device,
+                    dtype=torch.float32,
+                    requires_grad=requires_grad,
+                )
+                for i in p
             ]
 
         if lists_to_tensors:
@@ -382,6 +398,39 @@ class TestPointclouds(TestCaseMixin, unittest.TestCase):
 
             self.assertCloudsEqual(clouds, new_clouds)
 
+    def test_detach(self):
+        N = 5
+        for lists_to_tensors in (True, False):
+            clouds = self.init_cloud(
+                N, 100, 5, lists_to_tensors=lists_to_tensors, requires_grad=True
+            )
+            for force in (False, True):
+                if force:
+                    clouds.points_packed()
+
+                new_clouds = clouds.detach()
+
+                for cloud in new_clouds.points_list():
+                    self.assertTrue(cloud.requires_grad == False)
+                for normal in new_clouds.normals_list():
+                    self.assertTrue(normal.requires_grad == False)
+                for feats in new_clouds.features_list():
+                    self.assertTrue(feats.requires_grad == False)
+
+                for attrib in [
+                    "points_packed",
+                    "normals_packed",
+                    "features_packed",
+                    "points_padded",
+                    "normals_padded",
+                    "features_padded",
+                ]:
+                    self.assertTrue(
+                        getattr(new_clouds, attrib)().requires_grad == False
+                    )
+
+                self.assertCloudsEqual(clouds, new_clouds)
+
     def assertCloudsEqual(self, cloud1, cloud2):
         N = len(cloud1)
         self.assertEqual(N, len(cloud2))
@@ -460,7 +509,7 @@ class TestPointclouds(TestCaseMixin, unittest.TestCase):
     def test_scale(self):
         def naive_scale(cloud, scale):
             if not torch.is_tensor(scale):
-                scale = torch.full(len(cloud), scale)
+                scale = torch.full((len(cloud),), scale, device=cloud.device)
             new_points_list = [
                 scale[i] * points.clone()
                 for (i, points) in enumerate(cloud.points_list())
@@ -470,26 +519,37 @@ class TestPointclouds(TestCaseMixin, unittest.TestCase):
             )
 
         N = 5
-        clouds = self.init_cloud(N, 100, 10)
-        for force in (False, True):
-            if force:
-                clouds._compute_packed(refresh=True)
-                clouds._compute_padded()
-                clouds.padded_to_packed_idx()
-            scales = torch.rand(N)
-            new_clouds_naive = naive_scale(clouds, scales)
-            new_clouds = clouds.scale(scales)
-            for i in range(N):
-                self.assertClose(
-                    scales[i] * clouds.points_list()[i], new_clouds.points_list()[i]
-                )
-                self.assertClose(
-                    clouds.normals_list()[i], new_clouds_naive.normals_list()[i]
-                )
-                self.assertClose(
-                    clouds.features_list()[i], new_clouds_naive.features_list()[i]
-                )
-            self.assertCloudsEqual(new_clouds, new_clouds_naive)
+        for test in ["tensor", "scalar"]:
+            for force in (False, True):
+                clouds = self.init_cloud(N, 100, 10)
+                if force:
+                    clouds._compute_packed(refresh=True)
+                    clouds._compute_padded()
+                    clouds.padded_to_packed_idx()
+                if test == "tensor":
+                    scales = torch.rand(N)
+                elif test == "scalar":
+                    scales = torch.rand(1)[0].item()
+                new_clouds_naive = naive_scale(clouds, scales)
+                new_clouds = clouds.scale(scales)
+                for i in range(N):
+                    if test == "tensor":
+                        self.assertClose(
+                            scales[i] * clouds.points_list()[i],
+                            new_clouds.points_list()[i],
+                        )
+                    else:
+                        self.assertClose(
+                            scales * clouds.points_list()[i],
+                            new_clouds.points_list()[i],
+                        )
+                    self.assertClose(
+                        clouds.normals_list()[i], new_clouds_naive.normals_list()[i]
+                    )
+                    self.assertClose(
+                        clouds.features_list()[i], new_clouds_naive.features_list()[i]
+                    )
+                self.assertCloudsEqual(new_clouds, new_clouds_naive)
 
     def test_extend_list(self):
         N = 10

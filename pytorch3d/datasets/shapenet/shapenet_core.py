@@ -5,15 +5,16 @@ import os
 import warnings
 from os import path
 from pathlib import Path
+from typing import Dict
 
-import torch
+from pytorch3d.datasets.shapenet_base import ShapeNetBase
 from pytorch3d.io import load_obj
 
 
 SYNSET_DICT_DIR = Path(__file__).resolve().parent
 
 
-class ShapeNetCore(torch.utils.data.Dataset):
+class ShapeNetCore(ShapeNetBase):
     """
     This class loads ShapeNetCore from a given directory into a Dataset object.
     ShapeNetCore is a subset of the ShapeNet dataset and can be downloaded from
@@ -23,6 +24,7 @@ class ShapeNetCore(torch.utils.data.Dataset):
     def __init__(self, data_dir, synsets=None, version: int = 1):
         """
         Store each object's synset id and models id from data_dir.
+
         Args:
             data_dir: Path to ShapeNetCore data.
             synsets: List of synset categories to load from ShapeNetCore in the form of
@@ -38,7 +40,8 @@ class ShapeNetCore(torch.utils.data.Dataset):
                 version 1.
 
         """
-        self.data_dir = data_dir
+        super().__init__()
+        self.shapenet_dir = data_dir
         if version not in [1, 2]:
             raise ValueError("Version number must be either 1 or 2.")
         self.model_dir = "model.obj" if version == 1 else "models/model_normalized.obj"
@@ -48,7 +51,7 @@ class ShapeNetCore(torch.utils.data.Dataset):
         with open(path.join(SYNSET_DICT_DIR, dict_file), "r") as read_dict:
             self.synset_dict = json.load(read_dict)
         # Inverse dicitonary mapping synset labels to corresponding offsets.
-        synset_inv = {label: offset for offset, label in self.synset_dict.items()}
+        self.synset_inv = {label: offset for offset, label in self.synset_dict.items()}
 
         # If categories are specified, check if each category is in the form of either
         # synset offset or synset label, and if the category exists in the given directory.
@@ -60,62 +63,64 @@ class ShapeNetCore(torch.utils.data.Dataset):
                     path.isdir(path.join(data_dir, synset))
                 ):
                     synset_set.add(synset)
-                elif (synset in synset_inv.keys()) and (
-                    (path.isdir(path.join(data_dir, synset_inv[synset])))
+                elif (synset in self.synset_inv.keys()) and (
+                    (path.isdir(path.join(data_dir, self.synset_inv[synset])))
                 ):
-                    synset_set.add(synset_inv[synset])
+                    synset_set.add(self.synset_inv[synset])
                 else:
-                    msg = """Synset category %s either not part of ShapeNetCore dataset
-                         or cannot be found in %s.""" % (
-                        synset,
-                        data_dir,
-                    )
+                    msg = (
+                        "Synset category %s either not part of ShapeNetCore dataset "
+                        "or cannot be found in %s."
+                    ) % (synset, data_dir)
                     warnings.warn(msg)
         # If no category is given, load every category in the given directory.
+        # Ignore synset folders not included in the official mapping.
         else:
             synset_set = {
                 synset
                 for synset in os.listdir(data_dir)
                 if path.isdir(path.join(data_dir, synset))
+                and synset in self.synset_dict
             }
-            for synset in synset_set:
-                if synset not in self.synset_dict.keys():
-                    msg = """Synset category %s(%s) is part of ShapeNetCore ver.%s
-                        but not found in %s.""" % (
-                        synset,
-                        self.synset_dict[synset],
-                        version,
-                        data_dir,
-                    )
-                    warnings.warn(msg)
+
+        # Check if there are any categories in the official mapping that are not loaded.
+        # Update self.synset_inv so that it only includes the loaded categories.
+        synset_not_present = set(self.synset_dict.keys()).difference(synset_set)
+        [self.synset_inv.pop(self.synset_dict[synset]) for synset in synset_not_present]
+
+        if len(synset_not_present) > 0:
+            msg = (
+                "The following categories are included in ShapeNetCore ver.%d's "
+                "official mapping but not found in the dataset location %s: %s"
+                ""
+            ) % (version, data_dir, ", ".join(synset_not_present))
+            warnings.warn(msg)
 
         # Extract model_id of each object from directory names.
         # Each grandchildren directory of data_dir contains an object, and the name
         # of the directory is the object's model_id.
-        self.synset_ids = []
-        self.model_ids = []
         for synset in synset_set:
+            self.synset_start_idxs[synset] = len(self.synset_ids)
             for model in os.listdir(path.join(data_dir, synset)):
                 if not path.exists(path.join(data_dir, synset, model, self.model_dir)):
-                    msg = """ Object file not found in the model directory %s
-                        under synset directory %s.""" % (
-                        model,
-                        synset,
-                    )
+                    msg = (
+                        "Object file not found in the model directory %s "
+                        "under synset directory %s."
+                    ) % (model, synset)
                     warnings.warn(msg)
-                else:
-                    self.synset_ids.append(synset)
-                    self.model_ids.append(model)
+                    continue
+                self.synset_ids.append(synset)
+                self.model_ids.append(model)
+            model_count = len(self.synset_ids) - self.synset_start_idxs[synset]
+            self.synset_num_models[synset] = model_count
 
-    def __len__(self):
-        """
-        Return number of total models in shapenet core.
-        """
-        return len(self.model_ids)
-
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: int) -> Dict:
         """
         Read a model by the given index.
+
+        Args:
+            idx: The idx of the model to be retrieved in the dataset.
+
         Returns:
             dictionary with following keys:
             - verts: FloatTensor of shape (V, 3).
@@ -124,11 +129,9 @@ class ShapeNetCore(torch.utils.data.Dataset):
             - model_id (str): model id
             - label (str): synset label.
         """
-        model = {}
-        model["synset_id"] = self.synset_ids[idx]
-        model["model_id"] = self.model_ids[idx]
+        model = self._get_item_ids(idx)
         model_path = path.join(
-            self.data_dir, model["synset_id"], model["model_id"], self.model_dir
+            self.shapenet_dir, model["synset_id"], model["model_id"], self.model_dir
         )
         model["verts"], faces, _ = load_obj(model_path)
         model["faces"] = faces.verts_idx

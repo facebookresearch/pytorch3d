@@ -221,8 +221,108 @@ BarycentricPerspectiveCorrectionBackward(
   return thrust::make_tuple(grad_bary, grad_z0, grad_z1, grad_z2);
 }
 
-// Calculate minimum squared distance between a line segment (v1 - v0) and a
-// point p.
+// Clip negative barycentric coordinates to 0.0 and renormalize so
+// the barycentric coordinates for a point sum to 1. When the blur_radius
+// is greater than 0, a face will still be recorded as overlapping a pixel
+// if the pixel is outisde the face. In this case at least one of the
+// barycentric coordinates for the pixel relative to the face will be negative.
+// Clipping will ensure that the texture and z buffer are interpolated
+// correctly.
+//
+//  Args
+//     bary: (w0, w1, w2) barycentric coordinates which can be outside the
+//            range [0, 1].
+//
+//  Returns
+//     bary: (w0, w1, w2) barycentric coordinates in the range [0, 1] which
+//           satisfy the condition: sum(w0, w1, w2) = 1.0.
+//
+__device__ inline float3 BarycentricClipForward(const float3 bary) {
+  float3 w = make_float3(0.0f, 0.0f, 0.0f);
+  // Clamp lower bound only
+  w.x = max(bary.x, 0.0);
+  w.y = max(bary.y, 0.0);
+  w.z = max(bary.z, 0.0);
+  float w_sum = w.x + w.y + w.z;
+  w_sum = fmaxf(w_sum, 1e-5);
+  w.x /= w_sum;
+  w.y /= w_sum;
+  w.z /= w_sum;
+
+  return w;
+}
+
+// Backward pass for barycentric coordinate clipping.
+//
+//  Args
+//     bary: (w0, w1, w2) barycentric coordinates which can be outside the
+//            range [0, 1].
+//     grad_baryclip_upstream: vec3<T> Upstream gradient for each of the clipped
+//                         barycentric coordinates [grad_w0, grad_w1, grad_w2].
+//
+// Returns
+//    vec3<T> of gradients for the unclipped barycentric coordinates:
+//    (grad_w0, grad_w1, grad_w2)
+//
+__device__ inline float3 BarycentricClipBackward(
+    const float3 bary,
+    const float3 grad_baryclip_upstream) {
+  // Redo some of the forward pass calculations
+  float3 w = make_float3(0.0f, 0.0f, 0.0f);
+  // Clamp lower bound only
+  w.x = max(bary.x, 0.0);
+  w.y = max(bary.y, 0.0);
+  w.z = max(bary.z, 0.0);
+  float w_sum = w.x + w.y + w.z;
+
+  float3 grad_bary = make_float3(1.0f, 1.0f, 1.0f);
+  float3 grad_clip = make_float3(1.0f, 1.0f, 1.0f);
+  float3 grad_sum = make_float3(1.0f, 1.0f, 1.0f);
+
+  // Check if sum was clipped.
+  float grad_sum_clip = 1.0f;
+  if (w_sum < 1e-5) {
+    grad_sum_clip = 0.0f;
+    w_sum = 1e-5;
+  }
+
+  // Check if any of bary values have been clipped.
+  if (bary.x < 0.0f) {
+    grad_clip.x = 0.0f;
+  }
+  if (bary.y < 0.0f) {
+    grad_clip.y = 0.0f;
+  }
+  if (bary.z < 0.0f) {
+    grad_clip.z = 0.0f;
+  }
+
+  // Gradients of the sum.
+  grad_sum.x = -w.x / (pow(w_sum, 2.0f)) * grad_sum_clip;
+  grad_sum.y = -w.y / (pow(w_sum, 2.0f)) * grad_sum_clip;
+  grad_sum.z = -w.z / (pow(w_sum, 2.0f)) * grad_sum_clip;
+
+  // Gradients for each of the bary coordinates including the cross terms
+  // from the sum.
+  grad_bary.x = grad_clip.x *
+      (grad_baryclip_upstream.x * (1.0f / w_sum + grad_sum.x) +
+       grad_baryclip_upstream.y * (grad_sum.y) +
+       grad_baryclip_upstream.z * (grad_sum.z));
+
+  grad_bary.y = grad_clip.y *
+      (grad_baryclip_upstream.y * (1.0f / w_sum + grad_sum.y) +
+       grad_baryclip_upstream.x * (grad_sum.x) +
+       grad_baryclip_upstream.z * (grad_sum.z));
+
+  grad_bary.z = grad_clip.z *
+      (grad_baryclip_upstream.z * (1.0f / w_sum + grad_sum.z) +
+       grad_baryclip_upstream.x * (grad_sum.x) +
+       grad_baryclip_upstream.y * (grad_sum.y));
+
+  return grad_bary;
+}
+
+// Return minimum distance between line segment (v1 - v0) and point p.
 //
 // Args:
 //     p: Coordinates of a point.

@@ -1,21 +1,53 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
+import contextlib
 import pathlib
+import warnings
+from typing import IO, ContextManager, Optional
 
 import numpy as np
+import torch
 from fvcore.common.file_io import PathManager
 from PIL import Image
 
 
-def _open_file(f):
-    new_f = False
+def _open_file(f, mode="r") -> ContextManager[IO]:
     if isinstance(f, str):
-        new_f = True
-        f = open(f, "r")
+        f = open(f, mode)
+        return contextlib.closing(f)
     elif isinstance(f, pathlib.Path):
-        new_f = True
-        f = f.open("r")
-    return f, new_f
+        f = f.open(mode)
+        return contextlib.closing(f)
+    else:
+        return contextlib.nullcontext(f)
+
+
+def _make_tensor(
+    data, cols: int, dtype: torch.dtype, device: str = "cpu"
+) -> torch.Tensor:
+    """
+    Return a 2D tensor with the specified cols and dtype filled with data,
+    even when data is empty.
+    """
+    if not len(data):
+        return torch.zeros((0, cols), dtype=dtype, device=device)
+
+    return torch.tensor(data, dtype=dtype, device=device)
+
+
+def _check_faces_indices(
+    faces_indices: torch.Tensor, max_index: int, pad_value: Optional[int] = None
+) -> torch.Tensor:
+    if pad_value is None:
+        mask = torch.ones(faces_indices.shape[:-1]).bool()  # Keep all faces
+    else:
+        # pyre-fixme[16]: `torch.ByteTensor` has no attribute `any`
+        mask = faces_indices.ne(pad_value).any(dim=-1)
+    if torch.any(faces_indices[mask] >= max_index) or torch.any(
+        faces_indices[mask] < 0
+    ):
+        warnings.warn("Faces have invalid indices")
+    return faces_indices
 
 
 def _read_image(file_name: str, format=None):

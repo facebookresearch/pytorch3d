@@ -1,5 +1,6 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
+import warnings
 
 import torch
 import torch.nn as nn
@@ -13,7 +14,6 @@ from ..blending import (
 from ..lighting import PointLights
 from ..materials import Materials
 from .shading import flat_shading, gouraud_shading, phong_shading
-from .texturing import interpolate_texture_map, interpolate_vertex_colors
 
 
 # A Shader should take as input fragments from the output of rasterization
@@ -57,7 +57,7 @@ class HardPhongShader(nn.Module):
                 or in the forward pass of HardPhongShader"
             raise ValueError(msg)
 
-        texels = interpolate_vertex_colors(fragments, meshes)
+        texels = meshes.sample_textures(fragments)
         lights = kwargs.get("lights", self.lights)
         materials = kwargs.get("materials", self.materials)
         blend_params = kwargs.get("blend_params", self.blend_params)
@@ -104,9 +104,11 @@ class SoftPhongShader(nn.Module):
             msg = "Cameras must be specified either at initialization \
                 or in the forward pass of SoftPhongShader"
             raise ValueError(msg)
-        texels = interpolate_vertex_colors(fragments, meshes)
+
+        texels = meshes.sample_textures(fragments)
         lights = kwargs.get("lights", self.lights)
         materials = kwargs.get("materials", self.materials)
+        blend_params = kwargs.get("blend_params", self.blend_params)
         colors = phong_shading(
             meshes=meshes,
             fragments=fragments,
@@ -115,7 +117,7 @@ class SoftPhongShader(nn.Module):
             cameras=cameras,
             materials=materials,
         )
-        images = softmax_rgb_blend(colors, fragments, self.blend_params)
+        images = softmax_rgb_blend(colors, fragments, blend_params)
         return images
 
 
@@ -154,6 +156,12 @@ class HardGouraudShader(nn.Module):
         lights = kwargs.get("lights", self.lights)
         materials = kwargs.get("materials", self.materials)
         blend_params = kwargs.get("blend_params", self.blend_params)
+
+        # As Gouraud shading applies the illumination to the vertex
+        # colors, the interpolated pixel texture is calculated in the
+        # shading step. In comparison, for Phong shading, the pixel
+        # textures are computed first after which the illumination is
+        # applied.
         pixel_colors = gouraud_shading(
             meshes=meshes,
             fragments=fragments,
@@ -210,54 +218,25 @@ class SoftGouraudShader(nn.Module):
         return images
 
 
-class TexturedSoftPhongShader(nn.Module):
+def TexturedSoftPhongShader(
+    device="cpu", cameras=None, lights=None, materials=None, blend_params=None
+):
     """
-    Per pixel lighting applied to a texture map. First interpolate the vertex
-    uv coordinates and sample from a texture map. Then apply the lighting model
-    using the interpolated coords and normals for each pixel.
-
-    The blending function returns the soft aggregated color using all
-    the faces per pixel.
-
-    To use the default values, simply initialize the shader with the desired
-    device e.g.
-
-    .. code-block::
-
-        shader = TexturedPhongShader(device=torch.device("cuda:0"))
+    TexturedSoftPhongShader class has been DEPRECATED. Use SoftPhongShader instead.
+    Preserving TexturedSoftPhongShader as a function for backwards compatibility.
     """
-
-    def __init__(
-        self, device="cpu", cameras=None, lights=None, materials=None, blend_params=None
-    ):
-        super().__init__()
-        self.lights = lights if lights is not None else PointLights(device=device)
-        self.materials = (
-            materials if materials is not None else Materials(device=device)
-        )
-        self.cameras = cameras
-        self.blend_params = blend_params if blend_params is not None else BlendParams()
-
-    def forward(self, fragments, meshes, **kwargs) -> torch.Tensor:
-        cameras = kwargs.get("cameras", self.cameras)
-        if cameras is None:
-            msg = "Cameras must be specified either at initialization \
-                or in the forward pass of TexturedSoftPhongShader"
-            raise ValueError(msg)
-        texels = interpolate_texture_map(fragments, meshes)
-        lights = kwargs.get("lights", self.lights)
-        materials = kwargs.get("materials", self.materials)
-        blend_params = kwargs.get("blend_params", self.blend_params)
-        colors = phong_shading(
-            meshes=meshes,
-            fragments=fragments,
-            texels=texels,
-            lights=lights,
-            cameras=cameras,
-            materials=materials,
-        )
-        images = softmax_rgb_blend(colors, fragments, blend_params)
-        return images
+    warnings.warn(
+        """TexturedSoftPhongShader is now deprecated;
+            use SoftPhongShader instead.""",
+        PendingDeprecationWarning,
+    )
+    return SoftPhongShader(
+        device=device,
+        cameras=cameras,
+        lights=lights,
+        materials=materials,
+        blend_params=blend_params,
+    )
 
 
 class HardFlatShader(nn.Module):
@@ -291,7 +270,7 @@ class HardFlatShader(nn.Module):
             msg = "Cameras must be specified either at initialization \
                 or in the forward pass of HardFlatShader"
             raise ValueError(msg)
-        texels = interpolate_vertex_colors(fragments, meshes)
+        texels = meshes.sample_textures(fragments)
         lights = kwargs.get("lights", self.lights)
         materials = kwargs.get("materials", self.materials)
         blend_params = kwargs.get("blend_params", self.blend_params)

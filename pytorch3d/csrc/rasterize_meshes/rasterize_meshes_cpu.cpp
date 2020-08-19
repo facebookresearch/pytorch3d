@@ -108,6 +108,7 @@ RasterizeMeshesNaiveCpu(
     const float blur_radius,
     const int faces_per_pixel,
     const bool perspective_correct,
+    const bool clip_barycentric_coords,
     const bool cull_backfaces) {
   if (face_verts.ndimension() != 3 || face_verts.size(1) != 3 ||
       face_verts.size(2) != 3) {
@@ -213,8 +214,12 @@ RasterizeMeshesNaiveCpu(
               ? bary0
               : BarycentricPerspectiveCorrectionForward(bary0, z0, z1, z2);
 
+          const vec3<float> bary_clip =
+              !clip_barycentric_coords ? bary : BarycentricClipForward(bary);
+
           // Use barycentric coordinates to get the depth of the current pixel
-          const float pz = (bary.x * z0 + bary.y * z1 + bary.z * z2);
+          const float pz =
+              (bary_clip.x * z0 + bary_clip.y * z1 + bary_clip.z * z2);
 
           if (pz < 0) {
             continue; // Point is behind the image plane so ignore.
@@ -236,7 +241,7 @@ RasterizeMeshesNaiveCpu(
             continue;
           }
           // The current pixel lies inside the current face.
-          q.emplace(pz, f, signed_dist, bary.x, bary.y, bary.z);
+          q.emplace(pz, f, signed_dist, bary_clip.x, bary_clip.y, bary_clip.z);
           if (static_cast<int>(q.size()) > K) {
             q.pop();
           }
@@ -264,7 +269,8 @@ torch::Tensor RasterizeMeshesBackwardCpu(
     const torch::Tensor& grad_zbuf, // (N, H, W, K)
     const torch::Tensor& grad_bary, // (N, H, W, K, 3)
     const torch::Tensor& grad_dists, // (N, H, W, K)
-    const bool perspective_correct) {
+    const bool perspective_correct,
+    const bool clip_barycentric_coords) {
   const int F = face_verts.size(0);
   const int N = pix_to_face.size(0);
   const int H = pix_to_face.size(1);
@@ -335,6 +341,8 @@ torch::Tensor RasterizeMeshesBackwardCpu(
           const vec3<float> bary = !perspective_correct
               ? bary0
               : BarycentricPerspectiveCorrectionForward(bary0, z0, z1, z2);
+          const vec3<float> bary_clip =
+              !clip_barycentric_coords ? bary : BarycentricClipForward(bary);
 
           // Distances inside the face are negative so get the
           // correct sign to apply to the upstream gradient.
@@ -354,22 +362,28 @@ torch::Tensor RasterizeMeshesBackwardCpu(
           // d_zbuf/d_bary_w0 = z0
           // d_zbuf/d_bary_w1 = z1
           // d_zbuf/d_bary_w2 = z2
-          const vec3<float> d_zbuf_d_bary(z0, z1, z2);
+          const vec3<float> d_zbuf_d_baryclip(z0, z1, z2);
 
           // Total upstream barycentric gradients are the sum of
           // external upstream gradients and contribution from zbuf.
-          vec3<float> grad_bary_f_sum =
-              (grad_bary_upstream + grad_zbuf_upstream * d_zbuf_d_bary);
+          const vec3<float> grad_bary_f_sum =
+              (grad_bary_upstream + grad_zbuf_upstream * d_zbuf_d_baryclip);
 
           vec3<float> grad_bary0 = grad_bary_f_sum;
+
+          if (clip_barycentric_coords) {
+            grad_bary0 = BarycentricClipBackward(bary, grad_bary0);
+          }
+
           if (perspective_correct) {
             auto perspective_grads = BarycentricPerspectiveCorrectionBackward(
-                bary0, z0, z1, z2, grad_bary_f_sum);
+                bary0, z0, z1, z2, grad_bary0);
             grad_bary0 = std::get<0>(perspective_grads);
             grad_face_verts[f][0][2] += std::get<1>(perspective_grads);
             grad_face_verts[f][1][2] += std::get<2>(perspective_grads);
             grad_face_verts[f][2][2] += std::get<3>(perspective_grads);
           }
+
           auto grad_bary_f =
               BarycentricCoordsBackward(pxy, v0xy, v1xy, v2xy, grad_bary0);
           const vec2<float> dbary_d_v0 = std::get<1>(grad_bary_f);
@@ -379,13 +393,13 @@ torch::Tensor RasterizeMeshesBackwardCpu(
           // Update output gradient buffer.
           grad_face_verts[f][0][0] += dbary_d_v0.x + ddist_d_v0.x;
           grad_face_verts[f][0][1] += dbary_d_v0.y + ddist_d_v0.y;
-          grad_face_verts[f][0][2] += grad_zbuf_upstream * bary.x;
+          grad_face_verts[f][0][2] += grad_zbuf_upstream * bary_clip.x;
           grad_face_verts[f][1][0] += dbary_d_v1.x + ddist_d_v1.x;
           grad_face_verts[f][1][1] += dbary_d_v1.y + ddist_d_v1.y;
-          grad_face_verts[f][1][2] += grad_zbuf_upstream * bary.y;
+          grad_face_verts[f][1][2] += grad_zbuf_upstream * bary_clip.y;
           grad_face_verts[f][2][0] += dbary_d_v2.x + ddist_d_v2.x;
           grad_face_verts[f][2][1] += dbary_d_v2.y + ddist_d_v2.y;
-          grad_face_verts[f][2][2] += grad_zbuf_upstream * bary.z;
+          grad_face_verts[f][2][2] += grad_zbuf_upstream * bary_clip.z;
         }
       }
     }

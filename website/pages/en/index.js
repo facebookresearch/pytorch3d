@@ -132,8 +132,9 @@ loss_chamfer, _ = chamfer_distance(sample_sphere, sample_test)
           <ol>
             <li>
               <strong>Install PyTorch3D:</strong>
-              <MarkdownBlock>{bash`conda install pytorch torchvision -c pytorch  # OSX only
-conda install pytorch3d -c pytorch3d  # all systems`}</MarkdownBlock>
+              <p>See the instructions
+              <a href="https://github.com/facebookresearch/pytorch3d/blob/master/INSTALL.md">here</a>.
+              </p>
             </li>
             <li>
               <strong>Try a few 3D operators  </strong>

@@ -1,11 +1,13 @@
 // Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
 #include <torch/extension.h>
+#include "blending/sigmoid_alpha_blend.h"
 #include "compositing/alpha_composite.h"
 #include "compositing/norm_weighted_sum.h"
 #include "compositing/weighted_sum.h"
 #include "face_areas_normals/face_areas_normals.h"
 #include "gather_scatter/gather_scatter.h"
+#include "interp_face_attrs/interp_face_attrs.h"
 #include "knn/knn.h"
 #include "packed_to_padded_tensor/packed_to_padded_tensor.h"
 #include "point_mesh/point_mesh_edge.h"
@@ -18,6 +20,8 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
   m.def("face_areas_normals_backward", &FaceAreasNormalsBackward);
   m.def("packed_to_padded", &PackedToPadded);
   m.def("padded_to_packed", &PaddedToPacked);
+  m.def("interp_face_attrs_forward", &InterpFaceAttrsForward);
+  m.def("interp_face_attrs_backward", &InterpFaceAttrsBackward);
 #ifdef WITH_CUDA
   m.def("knn_check_version", &KnnCheckVersion);
 #endif
@@ -28,6 +32,8 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
   m.def("rasterize_points_backward", &RasterizePointsBackward);
   m.def("rasterize_meshes_backward", &RasterizeMeshesBackward);
   m.def("rasterize_meshes", &RasterizeMeshes);
+  m.def("sigmoid_alpha_blend", &SigmoidAlphaBlend);
+  m.def("sigmoid_alpha_blend_backward", &SigmoidAlphaBlendBackward);
 
   // Accumulation functions
   m.def("accum_weightedsumnorm", &weightedSumNormForward);

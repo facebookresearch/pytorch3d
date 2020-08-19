@@ -4,7 +4,6 @@
 
 
 """This module implements utility functions for loading and saving meshes."""
-import pathlib
 import struct
 import sys
 import warnings
@@ -13,6 +12,7 @@ from typing import Optional, Tuple
 
 import numpy as np
 import torch
+from pytorch3d.io.utils import _check_faces_indices, _make_tensor, _open_file
 
 
 _PlyTypeData = namedtuple("_PlyTypeData", "size struct_char np_type")
@@ -219,17 +219,6 @@ class _PlyHeader:
             msg = "Number of items for %s was not a number."
             raise ValueError(msg % items[1])
         self.elements.append(_PlyElementType(items[1], count))
-
-
-def _make_tensor(data, cols: int, dtype: torch.dtype) -> torch.Tensor:
-    """
-    Return a 2D tensor with the specified cols and dtype filled with data,
-    even when data is empty.
-    """
-    if not len(data):
-        return torch.zeros((0, cols), dtype=dtype)
-
-    return torch.tensor(data, dtype=dtype)
 
 
 def _read_ply_fixed_size_element_ascii(f, definition: _PlyElementType):
@@ -603,19 +592,8 @@ def _load_ply_raw(f) -> Tuple[_PlyHeader, dict]:
                   uniformly-sized list, then the value will be a 2D numpy array.
                   If not, it is a list of the relevant property values.
     """
-    new_f = False
-    if isinstance(f, str):
-        new_f = True
-        f = open(f, "rb")
-    elif isinstance(f, pathlib.Path):
-        new_f = True
-        f = f.open("rb")
-    try:
+    with _open_file(f, "rb") as f:
         header, elements = _load_ply_raw_stream(f)
-    finally:
-        if new_f:
-            f.close()
-
     return header, elements
 
 
@@ -702,9 +680,7 @@ def load_ply(f):
                 face_list.append([face_item[0], face_item[i + 1], face_item[i + 2]])
         faces = _make_tensor(face_list, cols=3, dtype=torch.int64)
 
-    if torch.any(faces >= verts.shape[0]) or torch.any(faces < 0):
-        warnings.warn("Faces have invalid indices")
-
+    _check_faces_indices(faces, max_index=verts.shape[0])
     return verts, faces
 
 
@@ -758,8 +734,7 @@ def _save_ply(
 
     faces_array = faces.detach().numpy()
 
-    if torch.any(faces >= verts.shape[0]) or torch.any(faces < 0):
-        warnings.warn("Faces have invalid indices")
+    _check_faces_indices(faces, max_index=verts.shape[0])
 
     if len(faces_array):
         np.savetxt(f, faces_array, "3 %d %d %d")
@@ -783,7 +758,11 @@ def save_ply(
         decimal_places: Number of decimal places for saving.
     """
 
-    verts_normals = torch.FloatTensor([]) if verts_normals is None else verts_normals
+    verts_normals = (
+        torch.tensor([], dtype=torch.float32, device=verts.device)
+        if verts_normals is None
+        else verts_normals
+    )
     faces = torch.LongTensor([]) if faces is None else faces
 
     if len(verts) and not (verts.dim() == 2 and verts.size(1) == 3):
@@ -802,15 +781,5 @@ def save_ply(
         message = "Argument 'verts_normals' should either be empty or of shape (num_verts, 3)."
         raise ValueError(message)
 
-    new_f = False
-    if isinstance(f, str):
-        new_f = True
-        f = open(f, "w")
-    elif isinstance(f, pathlib.Path):
-        new_f = True
-        f = f.open("w")
-    try:
+    with _open_file(f, "w") as f:
         _save_ply(f, verts, faces, verts_normals, decimal_places)
-    finally:
-        if new_f:
-            f.close()

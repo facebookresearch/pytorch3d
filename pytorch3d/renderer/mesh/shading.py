@@ -4,8 +4,9 @@
 from typing import Tuple
 
 import torch
+from pytorch3d.ops import interpolate_face_attributes
 
-from .texturing import interpolate_face_attributes
+from .textures import TexturesVertex
 
 
 def _apply_lighting(
@@ -92,6 +93,9 @@ def gouraud_shading(meshes, fragments, lights, cameras, materials) -> torch.Tens
     Then interpolate the vertex shaded colors using the barycentric coordinates
     to get a color per pixel.
 
+    Gouraud shading is only supported for meshes with texture type `TexturesVertex`.
+    This is because the illumination is applied to the vertex colors.
+
     Args:
         meshes: Batch of meshes
         fragments: Fragments named tuple with the outputs of rasterization
@@ -102,10 +106,13 @@ def gouraud_shading(meshes, fragments, lights, cameras, materials) -> torch.Tens
     Returns:
         colors: (N, H, W, K, 3)
     """
+    if not isinstance(meshes.textures, TexturesVertex):
+        raise ValueError("Mesh textures must be an instance of TexturesVertex")
+
     faces = meshes.faces_packed()  # (F, 3)
-    verts = meshes.verts_packed()
-    vertex_normals = meshes.verts_normals_packed()  # (V, 3)
-    vertex_colors = meshes.textures.verts_rgb_packed()
+    verts = meshes.verts_packed()  # (V, 3)
+    verts_normals = meshes.verts_normals_packed()  # (V, 3)
+    verts_colors = meshes.textures.verts_features_packed()  # (V, D)
     vert_to_mesh_idx = meshes.verts_packed_to_mesh_idx()
 
     # Format properties of lights and materials so they are compatible
@@ -120,9 +127,10 @@ def gouraud_shading(meshes, fragments, lights, cameras, materials) -> torch.Tens
 
     # Calculate the illumination at each vertex
     ambient, diffuse, specular = _apply_lighting(
-        verts, vertex_normals, lights, cameras, materials
+        verts, verts_normals, lights, cameras, materials
     )
-    verts_colors_shaded = vertex_colors * (ambient + diffuse) + specular
+
+    verts_colors_shaded = verts_colors * (ambient + diffuse) + specular
     face_colors = verts_colors_shaded[faces]
     colors = interpolate_face_attributes(
         fragments.pix_to_face, fragments.bary_coords, face_colors

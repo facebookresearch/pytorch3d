@@ -20,6 +20,7 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
         max_f: int = 300,
         lists_to_tensors: bool = False,
         device: str = "cpu",
+        requires_grad: bool = False,
     ):
         """
         Function to generate a Meshes object of N meshes with
@@ -57,7 +58,12 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
 
         # Generate the actual vertices and faces.
         for i in range(num_meshes):
-            verts = torch.rand((v[i], 3), dtype=torch.float32, device=device)
+            verts = torch.rand(
+                (v[i], 3),
+                dtype=torch.float32,
+                device=device,
+                requires_grad=requires_grad,
+            )
             faces = torch.randint(
                 v[i], size=(f[i], 3), dtype=torch.int64, device=device
             )
@@ -353,6 +359,26 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
             self.assertSeparate(new_mesh.faces_padded(), mesh.faces_padded())
             self.assertSeparate(new_mesh.edges_packed(), mesh.edges_packed())
 
+    def test_detach(self):
+        N = 5
+        mesh = TestMeshes.init_mesh(N, 10, 100, requires_grad=True)
+        for force in [0, 1]:
+            if force:
+                # force mesh to have computed attributes
+                mesh.verts_packed()
+                mesh.edges_packed()
+                mesh.verts_padded()
+
+            new_mesh = mesh.detach()
+
+            self.assertFalse(new_mesh.verts_packed().requires_grad)
+            self.assertClose(new_mesh.verts_packed(), mesh.verts_packed())
+            self.assertTrue(new_mesh.verts_padded().requires_grad == False)
+            self.assertClose(new_mesh.verts_padded(), mesh.verts_padded())
+            for v, newv in zip(mesh.verts_list(), new_mesh.verts_list()):
+                self.assertTrue(newv.requires_grad == False)
+                self.assertClose(newv, v)
+
     def test_laplacian_packed(self):
         def naive_laplacian_packed(meshes):
             verts_packed = meshes.verts_packed()
@@ -510,8 +536,8 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
 
         N = 5
         for test in ["tensor", "scalar"]:
-            mesh = TestMeshes.init_mesh(N, 10, 100)
-            for force in [0, 1]:
+            for force in (False, True):
+                mesh = TestMeshes.init_mesh(N, 10, 100)
                 if force:
                     # force mesh to have computed attributes
                     mesh.verts_packed()

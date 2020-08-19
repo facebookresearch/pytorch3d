@@ -5,7 +5,6 @@ from typing import NamedTuple, Optional
 import torch
 import torch.nn as nn
 
-from ..cameras import get_world_to_view_transform
 from .rasterize_meshes import rasterize_meshes
 
 
@@ -26,6 +25,7 @@ class RasterizationSettings:
         "bin_size",
         "max_faces_per_bin",
         "perspective_correct",
+        "clip_barycentric_coords",
         "cull_backfaces",
     ]
 
@@ -37,6 +37,7 @@ class RasterizationSettings:
         bin_size: Optional[int] = None,
         max_faces_per_bin: Optional[int] = None,
         perspective_correct: bool = False,
+        clip_barycentric_coords: bool = False,
         cull_backfaces: bool = False,
     ):
         self.image_size = image_size
@@ -45,6 +46,7 @@ class RasterizationSettings:
         self.bin_size = bin_size
         self.max_faces_per_bin = max_faces_per_bin
         self.perspective_correct = perspective_correct
+        self.clip_barycentric_coords = clip_barycentric_coords
         self.cull_backfaces = cull_backfaces
 
 
@@ -127,6 +129,7 @@ class MeshRasterizer(nn.Module):
             bin_size=raster_settings.bin_size,
             max_faces_per_bin=raster_settings.max_faces_per_bin,
             perspective_correct=raster_settings.perspective_correct,
+            clip_barycentric_coords=raster_settings.clip_barycentric_coords,
             cull_backfaces=raster_settings.cull_backfaces,
         )
         return Fragments(

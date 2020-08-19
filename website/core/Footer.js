@@ -63,7 +63,22 @@ class Footer extends React.Component {
             height="45"
           />
         </a>
-        <section className="copyright">{this.props.config.copyright}</section>
+        <section className="copyright">{this.props.config.copyright}
+          <br/>
+          Legal:
+          <a
+            href="https://opensource.facebook.com/legal/privacy/"
+            target="_blank"
+            rel="noreferrer noopener">
+            Privacy
+          </a>
+          <a
+            href="https://opensource.facebook.com/legal/terms/"
+            target="_blank"
+            rel="noreferrer noopener">
+            Terms
+          </a>
+        </section>
       </footer>
     );
   }

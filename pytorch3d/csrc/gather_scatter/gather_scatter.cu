@@ -44,8 +44,8 @@ __global__ void GatherScatterCudaKernel(
 }
 
 at::Tensor GatherScatterCuda(
-    const at::Tensor input,
-    const at::Tensor edges,
+    const at::Tensor& input,
+    const at::Tensor& edges,
     bool directed,
     bool backward) {
   // Check inputs are on the same device

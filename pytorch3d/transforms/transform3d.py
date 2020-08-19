@@ -21,7 +21,7 @@ class Transform3d:
         points = torch.randn(N, P, 3)
         normals = torch.randn(N, P, 3)
         points_transformed = t.transform_points(points)    # => (N, P, 3)
-        normals_transformed = t.transform_points(normals)  # => (N, P, 3)
+        normals_transformed = t.transform_normals(normals)  # => (N, P, 3)
 
 
     BROADCASTING
@@ -45,9 +45,9 @@ class Transform3d:
 
     .. code-block:: python
 
-        y1 = t3.transform_points(t2.transform_points(t2.transform_points(x)))
-        y2 = t1.compose(t2).compose(t3).transform_points()
-        y3 = t1.compose(t2, t3).transform_points()
+        y1 = t3.transform_points(t2.transform_points(t1.transform_points(x)))
+        y2 = t1.compose(t2).compose(t3).transform_points(x)
+        y3 = t1.compose(t2, t3).transform_points(x)
 
 
     Composing transforms should broadcast.
@@ -375,7 +375,7 @@ class Transform3d:
         """
         other = Transform3d(device=self.device)
         if self._lu is not None:
-            other._lu = [l.clone() for l in self._lu]
+            other._lu = [elem.clone() for elem in self._lu]
         other._matrix = self._matrix.clone()
         other._transforms = [t.clone() for t in self._transforms]
         return other

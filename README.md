@@ -53,6 +53,12 @@ We also have deep dive notes on several API components:
 - [Mesh IO](https://github.com/facebookresearch/pytorch3d/tree/master/docs/notes/meshes_io.md)
 - [Differentiable Rendering](https://github.com/facebookresearch/pytorch3d/tree/master/docs/notes/renderer_getting_started.md)
 
+### Overview Video
+
+We have created a short (~14 min) video tutorial providing an overview of the PyTorch3D codebase including several code examples. Click on the image below to watch the video on YouTube:
+
+<a href="http://www.youtube.com/watch?v=Pph1r-x9nyY"><img src="http://img.youtube.com/vi/Pph1r-x9nyY/0.jpg" height="225" ></a>
+
 ## Development
 
 We welcome new contributions to PyTorch3D and we will be actively maintaining this library! Please refer to [CONTRIBUTING.md](./.github/CONTRIBUTING.md) for full instructions on how to run the code, tests and linter, and submit your pull requests.
@@ -63,21 +69,23 @@ PyTorch3D is written and maintained by the Facebook AI Research Computer Vision 
 
 ## Citation
 
-If you find PyTorch3D useful in your research, please cite:
+If you find PyTorch3D useful in your research, please cite our tech report:
 
 ```bibtex
-@misc{ravi2020pytorch3d,
-  author =       {Nikhila Ravi and Jeremy Reizenstein and David Novotny and Taylor Gordon
+@article{ravi2020pytorch3d,
+    author = {Nikhila Ravi and Jeremy Reizenstein and David Novotny and Taylor Gordon
                   and Wan-Yen Lo and Justin Johnson and Georgia Gkioxari},
-  title =        {PyTorch3D},
-  howpublished = {\url{https://github.com/facebookresearch/pytorch3d}},
-  year =         {2020}
+    title = {Accelerating 3D Deep Learning with PyTorch3D},
+    journal = {arXiv:2007.08501},
+    year = {2020},
 }
 ```
 
 ## News
 
 Please see below for a timeline of the codebase updates in reverse chronological order. We are sharing updates on the releases as well as research projects which are built with PyTorch3D. The changelogs for the releases are available under [`Releases`](https://github.com/facebookresearch/pytorch3d/releases),  and the builds can be installed using `conda` as per the instructions in [INSTALL.md](INSTALL.md).
+
+**[July 17th 2020]:**   PyTorch3D tech report published on ArXiv: https://arxiv.org/abs/2007.08501
 
 **[April 24th 2020]:**   PyTorch3D v0.2 released
 

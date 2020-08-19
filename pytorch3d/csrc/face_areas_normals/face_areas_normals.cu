@@ -216,10 +216,9 @@ std::tuple<at::Tensor, at::Tensor> FaceAreasNormalsForwardCuda(
   const auto F = faces.size(0);
 
   // Check inputs are on the same device
-  at::TensorArg verts_t{verts, "verts", 1}, faces_t{verts, "faces", 2};
+  at::TensorArg verts_t{verts, "verts", 1}, faces_t{faces, "faces", 2};
   at::CheckedFrom c = "FaceAreasNormalsForwardCuda";
   at::checkAllSameGPU(c, {verts_t, faces_t});
-  at::checkAllSameType(c, {verts_t, faces_t});
 
   // Set the device for the kernel launch based on the device of verts
   at::cuda::CUDAGuard device_guard(verts.device());
@@ -256,12 +255,11 @@ at::Tensor FaceAreasNormalsBackwardCuda(
     const at::Tensor verts,
     const at::Tensor faces) {
   // Check inputs are on the same device
-  at::TensorArg verts_t{verts, "verts", 1}, faces_t{verts, "faces", 2},
-      grad_areas_t{verts, "grad_areas", 3},
-      grad_normals_t{verts, "grad_normals", 4};
+  at::TensorArg verts_t{verts, "verts", 1}, faces_t{faces, "faces", 2},
+      grad_areas_t{grad_areas, "grad_areas", 3},
+      grad_normals_t{grad_normals, "grad_normals", 4};
   at::CheckedFrom c = "FaceAreasNormalsBackwardCuda";
   at::checkAllSameGPU(c, {verts_t, faces_t, grad_areas_t, grad_normals_t});
-  at::checkAllSameType(c, {verts_t, faces_t, grad_areas_t, grad_normals_t});
 
   // Set the device for the kernel launch based on the device of verts
   at::cuda::CUDAGuard device_guard(verts.device());

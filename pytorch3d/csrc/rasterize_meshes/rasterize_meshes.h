@@ -19,6 +19,7 @@ RasterizeMeshesNaiveCpu(
     const float blur_radius,
     const int faces_per_pixel,
     const bool perspective_correct,
+    const bool clip_barycentric_coords,
     const bool cull_backfaces);
 
 #ifdef WITH_CUDA
@@ -31,6 +32,7 @@ RasterizeMeshesNaiveCuda(
     const float blur_radius,
     const int num_closest,
     const bool perspective_correct,
+    const bool clip_barycentric_coords,
     const bool cull_backfaces);
 #endif
 // Forward pass for rasterizing a batch of meshes.
@@ -92,6 +94,7 @@ RasterizeMeshesNaive(
     const float blur_radius,
     const int faces_per_pixel,
     const bool perspective_correct,
+    const bool clip_barycentric_coords,
     const bool cull_backfaces) {
   // TODO: Better type checking.
   if (face_verts.is_cuda()) {
@@ -107,6 +110,7 @@ RasterizeMeshesNaive(
         blur_radius,
         faces_per_pixel,
         perspective_correct,
+        clip_barycentric_coords,
         cull_backfaces);
 #else
     AT_ERROR("Not compiled with GPU support");
@@ -120,6 +124,7 @@ RasterizeMeshesNaive(
         blur_radius,
         faces_per_pixel,
         perspective_correct,
+        clip_barycentric_coords,
         cull_backfaces);
   }
 }
@@ -134,7 +139,8 @@ torch::Tensor RasterizeMeshesBackwardCpu(
     const torch::Tensor& grad_bary,
     const torch::Tensor& grad_zbuf,
     const torch::Tensor& grad_dists,
-    const bool perspective_correct);
+    const bool perspective_correct,
+    const bool clip_barycentric_coords);
 
 #ifdef WITH_CUDA
 torch::Tensor RasterizeMeshesBackwardCuda(
@@ -143,7 +149,8 @@ torch::Tensor RasterizeMeshesBackwardCuda(
     const torch::Tensor& grad_bary,
     const torch::Tensor& grad_zbuf,
     const torch::Tensor& grad_dists,
-    const bool perspective_correct);
+    const bool perspective_correct,
+    const bool clip_barycentric_coords);
 #endif
 
 // Args:
@@ -176,7 +183,8 @@ torch::Tensor RasterizeMeshesBackward(
     const torch::Tensor& grad_zbuf,
     const torch::Tensor& grad_bary,
     const torch::Tensor& grad_dists,
-    const bool perspective_correct) {
+    const bool perspective_correct,
+    const bool clip_barycentric_coords) {
   if (face_verts.is_cuda()) {
 #ifdef WITH_CUDA
     CHECK_CUDA(face_verts);
@@ -190,7 +198,8 @@ torch::Tensor RasterizeMeshesBackward(
         grad_zbuf,
         grad_bary,
         grad_dists,
-        perspective_correct);
+        perspective_correct,
+        clip_barycentric_coords);
 #else
     AT_ERROR("Not compiled with GPU support");
 #endif
@@ -201,7 +210,8 @@ torch::Tensor RasterizeMeshesBackward(
         grad_zbuf,
         grad_bary,
         grad_dists,
-        perspective_correct);
+        perspective_correct,
+        clip_barycentric_coords);
   }
 }
 
@@ -300,6 +310,7 @@ RasterizeMeshesFineCuda(
     const int bin_size,
     const int faces_per_pixel,
     const bool perspective_correct,
+    const bool clip_barycentric_coords,
     const bool cull_backfaces);
 #endif
 // Args:
@@ -356,6 +367,7 @@ RasterizeMeshesFine(
     const int bin_size,
     const int faces_per_pixel,
     const bool perspective_correct,
+    const bool clip_barycentric_coords,
     const bool cull_backfaces) {
   if (face_verts.is_cuda()) {
 #ifdef WITH_CUDA
@@ -369,6 +381,7 @@ RasterizeMeshesFine(
         bin_size,
         faces_per_pixel,
         perspective_correct,
+        clip_barycentric_coords,
         cull_backfaces);
 #else
     AT_ERROR("Not compiled with GPU support");
@@ -446,6 +459,7 @@ RasterizeMeshes(
     const int bin_size,
     const int max_faces_per_bin,
     const bool perspective_correct,
+    const bool clip_barycentric_coords,
     const bool cull_backfaces) {
   if (bin_size > 0 && max_faces_per_bin > 0) {
     // Use coarse-to-fine rasterization
@@ -465,6 +479,7 @@ RasterizeMeshes(
         bin_size,
         faces_per_pixel,
         perspective_correct,
+        clip_barycentric_coords,
         cull_backfaces);
   } else {
     // Use the naive per-pixel implementation
@@ -476,6 +491,7 @@ RasterizeMeshes(
         blur_radius,
         faces_per_pixel,
         perspective_correct,
+        clip_barycentric_coords,
         cull_backfaces);
   }
 }

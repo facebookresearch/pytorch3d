@@ -3,6 +3,8 @@
 from typing import Optional
 
 import torch
+
+# pyre-fixme[21]: Could not find name `_C` in `pytorch3d`.
 from pytorch3d import _C
 from pytorch3d.renderer.mesh.rasterize_meshes import pix_to_ndc
 
@@ -98,7 +100,7 @@ def rasterize_points(
             )
 
     if max_points_per_bin is None:
-        max_points_per_bin = int(max(10000, points_packed.shape[0] / 5))
+        max_points_per_bin = int(max(10000, pointclouds._P / 5))
 
     # Function.apply cannot take keyword args, so we handle defaults in this
     # wrapper and call apply with positional args only
