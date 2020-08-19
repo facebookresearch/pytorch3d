@@ -10,7 +10,7 @@ from typing import Optional
 import numpy as np
 import torch
 from pytorch3d.io.mtl_io import load_mtl, make_mesh_texture_atlas
-from pytorch3d.io.utils import _check_faces_indices, _make_tensor, _open_file
+from pytorch3d.io.utils import _make_tensor, _open_file
 from pytorch3d.structures import Meshes, Textures, join_meshes_as_batch
 from torchvision import transforms
 from pytorch3d.renderer import TexturesAtlas, TexturesUV
