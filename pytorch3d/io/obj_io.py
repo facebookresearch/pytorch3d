@@ -526,7 +526,8 @@ def save_obj(f, verts, faces, decimal_places: Optional[int] = None, verts_uvs: O
     use_texture = verts_uvs is not None and texture_map is not None and faces_uvs is not None
     if use_texture:
         output_path = pathlib.Path(f)
-        obj_header = f'\nmtllib {output_path.stem}.mtl\nusemtl mesh\n\n'
+        # obj_header = f'\nmtllib {output_path.stem}.mtl\nusemtl mesh\n\n'
+        obj_header = '\nmtllib {0}.mtl\nusemtl mesh\n\n'.format(output_path.stem)
 
     if len(verts) and not (verts.dim() == 2 and verts.size(1) == 3):
         message = "Argument 'verts' should either be empty or of shape (num_verts, 3)."
