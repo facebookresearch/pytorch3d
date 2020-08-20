@@ -1,7 +1,7 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
 
-from .texturing import interpolate_texture_map, interpolate_vertex_colors  ,interpolate_vertex_uvs ,interpolate_texture_map # isort:skip
+from .texturing import interpolate_texture_map, interpolate_vertex_colors  ,interpolate_vertex_uvs ,interpolate_vertex_normals,interpolate_texture_map # isort:skip
 from .rasterize_meshes import rasterize_meshes
 from .rasterizer import MeshRasterizer, RasterizationSettings
 from .renderer import MeshRenderer
