@@ -3,7 +3,7 @@ hide_title: true
 sidebar_label: Getting Started
 ---
 
-# Renderer Getting Started
+# Getting Started With Renderer
 
 ### Architecture Overview
 
