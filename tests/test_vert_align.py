@@ -22,7 +22,7 @@ class TestVertAlign(TestCaseMixin, unittest.TestCase):
         if torch.is_tensor(feats):
             feats = [feats]
         N = feats[0].shape[0]
-
+#
         out_feats = []
         # sample every example in the batch separately
         for i in range(N):
