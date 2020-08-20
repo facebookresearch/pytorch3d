@@ -6,7 +6,7 @@ import os
 import warnings
 from collections import namedtuple
 from typing import Optional
-
+import pathlib
 import numpy as np
 import torch
 from pytorch3d.io.mtl_io import load_mtl, make_mesh_texture_atlas
