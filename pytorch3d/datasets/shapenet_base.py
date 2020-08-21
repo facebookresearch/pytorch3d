@@ -10,7 +10,7 @@ from pytorch3d.renderer import (
     HardPhongShader,
     MeshRasterizer,
     MeshRenderer,
-    OpenGLPerspectiveCameras,
+    FoVPerspectiveCameras,
     PointLights,
     RasterizationSettings,
     TexturesVertex,
@@ -125,7 +125,7 @@ class ShapeNetBase(torch.utils.data.Dataset):
         meshes.textures = TexturesVertex(
             verts_features=torch.ones_like(meshes.verts_padded(), device=device)
         )
-        cameras = kwargs.get("cameras", OpenGLPerspectiveCameras()).to(device)
+        cameras = kwargs.get("cameras", FoVPerspectiveCameras()).to(device)
         if len(cameras) != 1 and len(cameras) % len(meshes) != 0:
             raise ValueError("Mismatch between batch dims of cameras and meshes.")
         if len(cameras) > 1:

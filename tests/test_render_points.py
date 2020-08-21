@@ -14,8 +14,8 @@ import torch
 from common_testing import TestCaseMixin, load_rgb_image
 from PIL import Image
 from pytorch3d.renderer.cameras import (
-    OpenGLOrthographicCameras,
-    OpenGLPerspectiveCameras,
+    FoVOrthographicCameras,
+    FoVPerspectiveCameras,
     look_at_view_transform,
 )
 from pytorch3d.renderer.points import (
@@ -47,7 +47,7 @@ class TestRenderPoints(TestCaseMixin, unittest.TestCase):
             points=verts_padded, features=torch.ones_like(verts_padded)
         )
         R, T = look_at_view_transform(2.7, 0.0, 0.0)
-        cameras = OpenGLPerspectiveCameras(device=device, R=R, T=T)
+        cameras = FoVPerspectiveCameras(device=device, R=R, T=T)
         raster_settings = PointsRasterizationSettings(
             image_size=256, radius=5e-2, points_per_pixel=1
         )
@@ -97,7 +97,7 @@ class TestRenderPoints(TestCaseMixin, unittest.TestCase):
         point_cloud = Pointclouds(points=[verts], features=[rgb_feats])
 
         R, T = look_at_view_transform(20, 10, 0)
-        cameras = OpenGLOrthographicCameras(device=device, R=R, T=T, znear=0.01)
+        cameras = FoVOrthographicCameras(device=device, R=R, T=T, znear=0.01)
 
         raster_settings = PointsRasterizationSettings(
             # Set image_size so it is not a multiple of 16 (min bin_size)
@@ -150,7 +150,7 @@ class TestRenderPoints(TestCaseMixin, unittest.TestCase):
         batch_size = 20
         pointclouds = pointclouds.extend(batch_size)
         R, T = look_at_view_transform(2.7, 0.0, 0.0)
-        cameras = OpenGLPerspectiveCameras(device=device, R=R, T=T)
+        cameras = FoVPerspectiveCameras(device=device, R=R, T=T)
         raster_settings = PointsRasterizationSettings(
             image_size=256, radius=5e-2, points_per_pixel=1
         )

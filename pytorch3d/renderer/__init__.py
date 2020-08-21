@@ -6,11 +6,15 @@ from .blending import (
     sigmoid_alpha_blend,
     softmax_rgb_blend,
 )
+from .cameras import OpenGLOrthographicCameras  # deprecated
+from .cameras import OpenGLPerspectiveCameras  # deprecated
+from .cameras import SfMOrthographicCameras  # deprecated
+from .cameras import SfMPerspectiveCameras  # deprecated
 from .cameras import (
-    OpenGLOrthographicCameras,
-    OpenGLPerspectiveCameras,
-    SfMOrthographicCameras,
-    SfMPerspectiveCameras,
+    FoVOrthographicCameras,
+    FoVPerspectiveCameras,
+    OrthographicCameras,
+    PerspectiveCameras,
     camera_position_from_spherical_angles,
     get_world_to_view_transform,
     look_at_rotation,

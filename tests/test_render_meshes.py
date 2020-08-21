@@ -4,6 +4,7 @@
 """
 Sanity checks for output images from the renderer.
 """
+import os
 import unittest
 from pathlib import Path
 
@@ -12,7 +13,13 @@ import torch
 from common_testing import TestCaseMixin, load_rgb_image
 from PIL import Image
 from pytorch3d.io import load_obj
-from pytorch3d.renderer.cameras import OpenGLPerspectiveCameras, look_at_view_transform
+from pytorch3d.renderer.cameras import (
+    FoVOrthographicCameras,
+    FoVPerspectiveCameras,
+    OrthographicCameras,
+    PerspectiveCameras,
+    look_at_view_transform,
+)
 from pytorch3d.renderer.lighting import PointLights
 from pytorch3d.renderer.materials import Materials
 from pytorch3d.renderer.mesh import TexturesAtlas, TexturesUV, TexturesVertex
@@ -60,78 +67,94 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
         if elevated_camera:
             # Elevated and rotated camera
             R, T = look_at_view_transform(dist=2.7, elev=45.0, azim=45.0)
-            postfix = "_elevated_camera"
+            postfix = "_elevated_"
             # If y axis is up, the spot of light should
             # be on the bottom left of the sphere.
         else:
             # No elevation or azimuth rotation
             R, T = look_at_view_transform(2.7, 0.0, 0.0)
-            postfix = ""
-        cameras = OpenGLPerspectiveCameras(device=device, R=R, T=T)
+            postfix = "_"
+        for cam_type in (
+            FoVPerspectiveCameras,
+            FoVOrthographicCameras,
+            PerspectiveCameras,
+            OrthographicCameras,
+        ):
+            cameras = cam_type(device=device, R=R, T=T)
 
-        # Init shader settings
-        materials = Materials(device=device)
-        lights = PointLights(device=device)
-        lights.location = torch.tensor([0.0, 0.0, +2.0], device=device)[None]
+            # Init shader settings
+            materials = Materials(device=device)
+            lights = PointLights(device=device)
+            lights.location = torch.tensor([0.0, 0.0, +2.0], device=device)[None]
 
-        raster_settings = RasterizationSettings(
-            image_size=512, blur_radius=0.0, faces_per_pixel=1
-        )
-        rasterizer = MeshRasterizer(cameras=cameras, raster_settings=raster_settings)
-        blend_params = BlendParams(1e-4, 1e-4, (0, 0, 0))
+            raster_settings = RasterizationSettings(
+                image_size=512, blur_radius=0.0, faces_per_pixel=1
+            )
+            rasterizer = MeshRasterizer(
+                cameras=cameras, raster_settings=raster_settings
+            )
+            blend_params = BlendParams(1e-4, 1e-4, (0, 0, 0))
 
-        # Test several shaders
-        shaders = {
-            "phong": HardPhongShader,
-            "gouraud": HardGouraudShader,
-            "flat": HardFlatShader,
-        }
-        for (name, shader_init) in shaders.items():
-            shader = shader_init(
+            # Test several shaders
+            shaders = {
+                "phong": HardPhongShader,
+                "gouraud": HardGouraudShader,
+                "flat": HardFlatShader,
+            }
+            for (name, shader_init) in shaders.items():
+                shader = shader_init(
+                    lights=lights,
+                    cameras=cameras,
+                    materials=materials,
+                    blend_params=blend_params,
+                )
+                renderer = MeshRenderer(rasterizer=rasterizer, shader=shader)
+                images = renderer(sphere_mesh)
+                rgb = images[0, ..., :3].squeeze().cpu()
+                filename = "simple_sphere_light_%s%s%s.png" % (
+                    name,
+                    postfix,
+                    cam_type.__name__,
+                )
+
+                image_ref = load_rgb_image("test_%s" % filename, DATA_DIR)
+                self.assertClose(rgb, image_ref, atol=0.05)
+
+                if DEBUG:
+                    filename = "DEBUG_%s" % filename
+                    Image.fromarray((rgb.numpy() * 255).astype(np.uint8)).save(
+                        DATA_DIR / filename
+                    )
+
+            ########################################################
+            # Move the light to the +z axis in world space so it is
+            # behind the sphere. Note that +Z is in, +Y up,
+            # +X left for both world and camera space.
+            ########################################################
+            lights.location[..., 2] = -2.0
+            phong_shader = HardPhongShader(
                 lights=lights,
                 cameras=cameras,
                 materials=materials,
                 blend_params=blend_params,
             )
-            renderer = MeshRenderer(rasterizer=rasterizer, shader=shader)
-            images = renderer(sphere_mesh)
-            filename = "simple_sphere_light_%s%s.png" % (name, postfix)
-            image_ref = load_rgb_image("test_%s" % filename, DATA_DIR)
+            phong_renderer = MeshRenderer(rasterizer=rasterizer, shader=phong_shader)
+            images = phong_renderer(sphere_mesh, lights=lights)
             rgb = images[0, ..., :3].squeeze().cpu()
-
             if DEBUG:
-                filename = "DEBUG_%s" % filename
+                filename = "DEBUG_simple_sphere_dark%s%s.png" % (
+                    postfix,
+                    cam_type.__name__,
+                )
                 Image.fromarray((rgb.numpy() * 255).astype(np.uint8)).save(
                     DATA_DIR / filename
                 )
-            self.assertClose(rgb, image_ref, atol=0.05)
 
-        ########################################################
-        # Move the light to the +z axis in world space so it is
-        # behind the sphere. Note that +Z is in, +Y up,
-        # +X left for both world and camera space.
-        ########################################################
-        lights.location[..., 2] = -2.0
-        phong_shader = HardPhongShader(
-            lights=lights,
-            cameras=cameras,
-            materials=materials,
-            blend_params=blend_params,
-        )
-        phong_renderer = MeshRenderer(rasterizer=rasterizer, shader=phong_shader)
-        images = phong_renderer(sphere_mesh, lights=lights)
-        rgb = images[0, ..., :3].squeeze().cpu()
-        if DEBUG:
-            filename = "DEBUG_simple_sphere_dark%s.png" % postfix
-            Image.fromarray((rgb.numpy() * 255).astype(np.uint8)).save(
-                DATA_DIR / filename
+            image_ref_phong_dark = load_rgb_image(
+                "test_simple_sphere_dark%s%s.png" % (postfix, cam_type.__name__),
+                DATA_DIR,
             )
-
-        # Load reference image
-        image_ref_phong_dark = load_rgb_image(
-            "test_simple_sphere_dark%s.png" % postfix, DATA_DIR
-        )
-        self.assertClose(rgb, image_ref_phong_dark, atol=0.05)
+            self.assertClose(rgb, image_ref_phong_dark, atol=0.05)
 
     def test_simple_sphere_elevated_camera(self):
         """
@@ -141,6 +164,60 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
         The rendering is performed with a camera that has non-zero elevation.
         """
         self.test_simple_sphere(elevated_camera=True)
+
+    def test_simple_sphere_screen(self):
+
+        """
+        Test output when rendering with PerspectiveCameras & OrthographicCameras
+        in NDC vs screen space.
+        """
+        device = torch.device("cuda:0")
+
+        # Init mesh
+        sphere_mesh = ico_sphere(5, device)
+        verts_padded = sphere_mesh.verts_padded()
+        faces_padded = sphere_mesh.faces_padded()
+        feats = torch.ones_like(verts_padded, device=device)
+        textures = TexturesVertex(verts_features=feats)
+        sphere_mesh = Meshes(verts=verts_padded, faces=faces_padded, textures=textures)
+
+        R, T = look_at_view_transform(2.7, 0.0, 0.0)
+
+        # Init shader settings
+        materials = Materials(device=device)
+        lights = PointLights(device=device)
+        lights.location = torch.tensor([0.0, 0.0, +2.0], device=device)[None]
+
+        raster_settings = RasterizationSettings(
+            image_size=512, blur_radius=0.0, faces_per_pixel=1
+        )
+        for cam_type in (PerspectiveCameras, OrthographicCameras):
+            cameras = cam_type(
+                device=device,
+                R=R,
+                T=T,
+                principal_point=((256.0, 256.0),),
+                focal_length=((256.0, 256.0),),
+                image_size=((512, 512),),
+            )
+            rasterizer = MeshRasterizer(
+                cameras=cameras, raster_settings=raster_settings
+            )
+            blend_params = BlendParams(1e-4, 1e-4, (0, 0, 0))
+
+            shader = HardPhongShader(
+                lights=lights,
+                cameras=cameras,
+                materials=materials,
+                blend_params=blend_params,
+            )
+            renderer = MeshRenderer(rasterizer=rasterizer, shader=shader)
+            images = renderer(sphere_mesh)
+            rgb = images[0, ..., :3].squeeze().cpu()
+            filename = "test_simple_sphere_light_phong_%s.png" % cam_type.__name__
+
+            image_ref = load_rgb_image(filename, DATA_DIR)
+            self.assertClose(rgb, image_ref, atol=0.05)
 
     def test_simple_sphere_batched(self):
         """
@@ -165,7 +242,7 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
         elev = torch.zeros_like(dist)
         azim = torch.zeros_like(dist)
         R, T = look_at_view_transform(dist, elev, azim)
-        cameras = OpenGLPerspectiveCameras(device=device, R=R, T=T)
+        cameras = FoVPerspectiveCameras(device=device, R=R, T=T)
         raster_settings = RasterizationSettings(
             image_size=512, blur_radius=0.0, faces_per_pixel=1
         )
@@ -193,12 +270,16 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
             renderer = MeshRenderer(rasterizer=rasterizer, shader=shader)
             images = renderer(sphere_meshes)
             image_ref = load_rgb_image(
-                "test_simple_sphere_light_%s.png" % name, DATA_DIR
+                "test_simple_sphere_light_%s_%s.png" % (name, type(cameras).__name__),
+                DATA_DIR,
             )
             for i in range(batch_size):
                 rgb = images[i, ..., :3].squeeze().cpu()
                 if i == 0 and DEBUG:
-                    filename = "DEBUG_simple_sphere_batched_%s.png" % name
+                    filename = "DEBUG_simple_sphere_batched_%s_%s.png" % (
+                        name,
+                        type(cameras).__name__,
+                    )
                     Image.fromarray((rgb.numpy() * 255).astype(np.uint8)).save(
                         DATA_DIR / filename
                     )
@@ -209,8 +290,6 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
         Test silhouette blending. Also check that gradient calculation works.
         """
         device = torch.device("cuda:0")
-        ref_filename = "test_silhouette.png"
-        image_ref_filename = DATA_DIR / ref_filename
         sphere_mesh = ico_sphere(5, device)
         verts, faces = sphere_mesh.get_mesh_verts_faces(0)
         sphere_mesh = Meshes(verts=[verts], faces=[faces])
@@ -225,32 +304,45 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
 
         # Init rasterizer settings
         R, T = look_at_view_transform(2.7, 0, 0)
-        cameras = OpenGLPerspectiveCameras(device=device, R=R, T=T)
+        for cam_type in (
+            FoVPerspectiveCameras,
+            FoVOrthographicCameras,
+            PerspectiveCameras,
+            OrthographicCameras,
+        ):
+            cameras = cam_type(device=device, R=R, T=T)
 
-        # Init renderer
-        renderer = MeshRenderer(
-            rasterizer=MeshRasterizer(cameras=cameras, raster_settings=raster_settings),
-            shader=SoftSilhouetteShader(blend_params=blend_params),
-        )
-        images = renderer(sphere_mesh)
-        alpha = images[0, ..., 3].squeeze().cpu()
-        if DEBUG:
-            Image.fromarray((alpha.numpy() * 255).astype(np.uint8)).save(
-                DATA_DIR / "DEBUG_silhouette.png"
+            # Init renderer
+            renderer = MeshRenderer(
+                rasterizer=MeshRasterizer(
+                    cameras=cameras, raster_settings=raster_settings
+                ),
+                shader=SoftSilhouetteShader(blend_params=blend_params),
             )
+            images = renderer(sphere_mesh)
+            alpha = images[0, ..., 3].squeeze().cpu()
+            if DEBUG:
+                filename = os.path.join(
+                    DATA_DIR, "DEBUG_%s_silhouette.png" % (cam_type.__name__)
+                )
+                Image.fromarray((alpha.detach().numpy() * 255).astype(np.uint8)).save(
+                    filename
+                )
 
-        with Image.open(image_ref_filename) as raw_image_ref:
-            image_ref = torch.from_numpy(np.array(raw_image_ref))
+            ref_filename = "test_%s_silhouette.png" % (cam_type.__name__)
+            image_ref_filename = DATA_DIR / ref_filename
+            with Image.open(image_ref_filename) as raw_image_ref:
+                image_ref = torch.from_numpy(np.array(raw_image_ref))
 
-        image_ref = image_ref.to(dtype=torch.float32) / 255.0
-        self.assertClose(alpha, image_ref, atol=0.055)
+            image_ref = image_ref.to(dtype=torch.float32) / 255.0
+            self.assertClose(alpha, image_ref, atol=0.055)
 
-        # Check grad exist
-        verts.requires_grad = True
-        sphere_mesh = Meshes(verts=[verts], faces=[faces])
-        images = renderer(sphere_mesh)
-        images[0, ...].sum().backward()
-        self.assertIsNotNone(verts.grad)
+            # Check grad exist
+            verts.requires_grad = True
+            sphere_mesh = Meshes(verts=[verts], faces=[faces])
+            images = renderer(sphere_mesh)
+            images[0, ...].sum().backward()
+            self.assertIsNotNone(verts.grad)
 
     def test_texture_map(self):
         """
@@ -274,7 +366,7 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
 
         # Init rasterizer settings
         R, T = look_at_view_transform(2.7, 0, 0)
-        cameras = OpenGLPerspectiveCameras(device=device, R=R, T=T)
+        cameras = FoVPerspectiveCameras(device=device, R=R, T=T)
 
         raster_settings = RasterizationSettings(
             image_size=512, blur_radius=0.0, faces_per_pixel=1
@@ -337,7 +429,7 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
         ##########################################
 
         R, T = look_at_view_transform(2.7, 0, 180)
-        cameras = OpenGLPerspectiveCameras(device=device, R=R, T=T)
+        cameras = FoVPerspectiveCameras(device=device, R=R, T=T)
 
         # Move light to the front of the cow in world space
         lights.location = torch.tensor([0.0, 0.0, -2.0], device=device)[None]
@@ -367,7 +459,7 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
         # Add blurring to rasterization
         #################################
         R, T = look_at_view_transform(2.7, 0, 180)
-        cameras = OpenGLPerspectiveCameras(device=device, R=R, T=T)
+        cameras = FoVPerspectiveCameras(device=device, R=R, T=T)
         blend_params = BlendParams(sigma=5e-4, gamma=1e-4)
         raster_settings = RasterizationSettings(
             image_size=512,
@@ -429,7 +521,7 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
 
         # Init rasterizer settings
         R, T = look_at_view_transform(2.7, 0.0, 0.0)
-        cameras = OpenGLPerspectiveCameras(device=device, R=R, T=T)
+        cameras = FoVPerspectiveCameras(device=device, R=R, T=T)
         raster_settings = RasterizationSettings(
             image_size=512, blur_radius=0.0, faces_per_pixel=1
         )
@@ -490,7 +582,7 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
 
         # Init rasterizer settings
         R, T = look_at_view_transform(2.7, 0, 0)
-        cameras = OpenGLPerspectiveCameras(device=device, R=R, T=T)
+        cameras = FoVPerspectiveCameras(device=device, R=R, T=T)
 
         raster_settings = RasterizationSettings(
             image_size=512, blur_radius=0.0, faces_per_pixel=1, cull_backfaces=True

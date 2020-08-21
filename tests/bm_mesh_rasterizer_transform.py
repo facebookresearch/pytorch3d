@@ -5,7 +5,7 @@ from itertools import product
 
 import torch
 from fvcore.common.benchmark import benchmark
-from pytorch3d.renderer.cameras import OpenGLPerspectiveCameras, look_at_view_transform
+from pytorch3d.renderer.cameras import FoVPerspectiveCameras, look_at_view_transform
 from pytorch3d.renderer.mesh.rasterizer import MeshRasterizer
 from pytorch3d.utils.ico_sphere import ico_sphere
 
@@ -15,7 +15,7 @@ def rasterize_transform_with_init(num_meshes: int, ico_level: int = 5, device="c
     sphere_meshes = ico_sphere(ico_level, device).extend(num_meshes)
     # Init transform
     R, T = look_at_view_transform(1.0, 0.0, 0.0)
-    cameras = OpenGLPerspectiveCameras(device=device, R=R, T=T)
+    cameras = FoVPerspectiveCameras(device=device, R=R, T=T)
     # Init rasterizer
     rasterizer = MeshRasterizer(cameras=cameras)
 

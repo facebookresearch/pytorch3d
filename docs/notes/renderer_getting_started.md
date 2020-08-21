@@ -39,7 +39,7 @@ Rendering requires transformations between several different coordinate frames: 
 <img src="assets/transformations_overview.png" width="1000">
 
 
-For example, given a teapot mesh, the world coordinate frame, camera coordiante frame and image are show in the figure below. Note that the world and camera coordinate frames have the +z direction pointing in to the page. 
+For example, given a teapot mesh, the world coordinate frame, camera coordiante frame and image are show in the figure below. Note that the world and camera coordinate frames have the +z direction pointing in to the page.
 
 <img src="assets/world_camera_image.png" width="1000">
 
@@ -47,8 +47,8 @@ For example, given a teapot mesh, the world coordinate frame, camera coordiante 
 
 **NOTE: PyTorch3D vs OpenGL**
 
-While we tried to emulate several aspects of OpenGL, there are differences in the coordinate frame conventions. 
-- The default world coordinate frame in PyTorch3D has +Z pointing in to the screen whereas in OpenGL, +Z is pointing out of the screen.  Both are right handed. 
+While we tried to emulate several aspects of OpenGL, there are differences in the coordinate frame conventions.
+- The default world coordinate frame in PyTorch3D has +Z pointing in to the screen whereas in OpenGL, +Z is pointing out of the screen.  Both are right handed.
 - The NDC coordinate system in PyTorch3D is **right-handed** compared with a **left-handed** NDC coordinate system in OpenGL (the projection matrix switches the handedness).
 
 <img align="center" src="assets/opengl_coordframes.png" width="300">
@@ -61,14 +61,14 @@ A renderer in PyTorch3D is composed of a **rasterizer** and a **shader**. Create
 ```
 # Imports
 from pytorch3d.renderer import (
-    OpenGLPerspectiveCameras, look_at_view_transform,
+    FoVPerspectiveCameras, look_at_view_transform,
     RasterizationSettings, BlendParams,
     MeshRenderer, MeshRasterizer, HardPhongShader
 )
 
 # Initialize an OpenGL perspective camera.
 R, T = look_at_view_transform(2.7, 10, 20)
-cameras = OpenGLPerspectiveCameras(device=device, R=R, T=T)
+cameras = FoVPerspectiveCameras(device=device, R=R, T=T)
 
 # Define the settings for rasterization and shading. Here we set the output image to be of size
 # 512x512. As we are rendering images for visualization purposes only we will set faces_per_pixel=1

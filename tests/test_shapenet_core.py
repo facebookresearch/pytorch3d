@@ -12,7 +12,7 @@ from common_testing import TestCaseMixin, load_rgb_image
 from PIL import Image
 from pytorch3d.datasets import ShapeNetCore, collate_batched_meshes
 from pytorch3d.renderer import (
-    OpenGLPerspectiveCameras,
+    FoVPerspectiveCameras,
     PointLights,
     RasterizationSettings,
     look_at_view_transform,
@@ -174,7 +174,7 @@ class TestShapenetCore(TestCaseMixin, unittest.TestCase):
 
         # Rendering settings.
         R, T = look_at_view_transform(1.0, 1.0, 90)
-        cameras = OpenGLPerspectiveCameras(R=R, T=T, device=device)
+        cameras = FoVPerspectiveCameras(R=R, T=T, device=device)
         raster_settings = RasterizationSettings(image_size=512)
         lights = PointLights(
             location=torch.tensor([0.0, 1.0, -2.0], device=device)[None],

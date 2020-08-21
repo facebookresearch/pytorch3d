@@ -18,7 +18,7 @@ from pytorch3d.datasets import (
     render_cubified_voxels,
 )
 from pytorch3d.renderer import (
-    OpenGLPerspectiveCameras,
+    FoVPerspectiveCameras,
     PointLights,
     RasterizationSettings,
     look_at_view_transform,
@@ -211,7 +211,7 @@ class TestR2N2(TestCaseMixin, unittest.TestCase):
 
         # Render first three models in the dataset.
         R, T = look_at_view_transform(1.0, 1.0, 90)
-        cameras = OpenGLPerspectiveCameras(R=R, T=T, device=device)
+        cameras = FoVPerspectiveCameras(R=R, T=T, device=device)
         raster_settings = RasterizationSettings(image_size=512)
         lights = PointLights(
             location=torch.tensor([0.0, 1.0, -2.0], device=device)[None],

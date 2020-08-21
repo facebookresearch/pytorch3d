@@ -4,7 +4,7 @@ from itertools import product
 
 import torch
 from fvcore.common.benchmark import benchmark
-from pytorch3d.renderer.cameras import OpenGLPerspectiveCameras, look_at_view_transform
+from pytorch3d.renderer.cameras import FoVPerspectiveCameras, look_at_view_transform
 from pytorch3d.renderer.mesh.rasterizer import (
     Fragments,
     MeshRasterizer,
@@ -28,7 +28,7 @@ def baryclip_cuda(
     sphere_meshes = ico_sphere(ico_level, device).extend(num_meshes)
     # Init transform
     R, T = look_at_view_transform(1.0, 0.0, 0.0)
-    cameras = OpenGLPerspectiveCameras(device=device, R=R, T=T)
+    cameras = FoVPerspectiveCameras(device=device, R=R, T=T)
     # Init rasterizer
     raster_settings = RasterizationSettings(
         image_size=image_size,
@@ -58,7 +58,7 @@ def baryclip_pytorch(
     sphere_meshes = ico_sphere(ico_level, device).extend(num_meshes)
     # Init transform
     R, T = look_at_view_transform(1.0, 0.0, 0.0)
-    cameras = OpenGLPerspectiveCameras(device=device, R=R, T=T)
+    cameras = FoVPerspectiveCameras(device=device, R=R, T=T)
     # Init rasterizer
     raster_settings = RasterizationSettings(
         image_size=image_size,
