@@ -45,7 +45,10 @@ def hard_rgb_blend(colors, fragments, blend_params) -> torch.Tensor:
     # Mask for the background.
     is_background = fragments.pix_to_face[..., 0] < 0  # (N, H, W)
 
-    background_color = colors.new_tensor(blend_params.background_color)  # (3)
+    if torch.is_tensor(blend_params.background_color):
+        background_color = blend_params.background_color
+    else:
+        background_color = colors.new_tensor(blend_params.background_color)  # (3)
 
     # Find out how much background_color needs to be expanded to be used for masked_scatter.
     num_background_pixels = is_background.sum()

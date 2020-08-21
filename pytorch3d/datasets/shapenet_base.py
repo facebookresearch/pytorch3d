@@ -7,10 +7,10 @@ from typing import Dict, List, Optional
 import torch
 from pytorch3d.io import load_objs_as_meshes
 from pytorch3d.renderer import (
+    FoVPerspectiveCameras,
     HardPhongShader,
     MeshRasterizer,
     MeshRenderer,
-    FoVPerspectiveCameras,
     PointLights,
     RasterizationSettings,
     TexturesVertex,

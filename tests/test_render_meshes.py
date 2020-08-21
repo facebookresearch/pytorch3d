@@ -33,8 +33,9 @@ from pytorch3d.renderer.mesh.shader import (
     SoftSilhouetteShader,
     TexturedSoftPhongShader,
 )
-from pytorch3d.structures.meshes import Meshes, join_mesh
+from pytorch3d.structures.meshes import Meshes, join_mesh, join_meshes_as_batch
 from pytorch3d.utils.ico_sphere import ico_sphere
+from pytorch3d.utils.torus import torus
 
 
 # If DEBUG=True, save out images generated in the tests for debugging.
@@ -489,6 +490,86 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
                 )
 
             self.assertClose(rgb, image_ref, atol=0.05)
+
+    def test_batch_uvs(self):
+        """Test that two random tori with TexturesUV render the same as each individually."""
+        torch.manual_seed(1)
+        device = torch.device("cuda:0")
+        plain_torus = torus(r=1, R=4, sides=10, rings=10, device=device)
+        [verts] = plain_torus.verts_list()
+        [faces] = plain_torus.faces_list()
+        nocolor = torch.zeros((100, 100), device=device)
+        color_gradient = torch.linspace(0, 1, steps=100, device=device)
+        color_gradient1 = color_gradient[None].expand_as(nocolor)
+        color_gradient2 = color_gradient[:, None].expand_as(nocolor)
+        colors1 = torch.stack([nocolor, color_gradient1, color_gradient2], dim=2)
+        colors2 = torch.stack([color_gradient1, color_gradient2, nocolor], dim=2)
+        verts_uvs1 = torch.rand(size=(verts.shape[0], 2), device=device)
+        verts_uvs2 = torch.rand(size=(verts.shape[0], 2), device=device)
+
+        textures1 = TexturesUV(
+            maps=[colors1], faces_uvs=[faces], verts_uvs=[verts_uvs1]
+        )
+        textures2 = TexturesUV(
+            maps=[colors2], faces_uvs=[faces], verts_uvs=[verts_uvs2]
+        )
+        mesh1 = Meshes(verts=[verts], faces=[faces], textures=textures1)
+        mesh2 = Meshes(verts=[verts], faces=[faces], textures=textures2)
+        mesh_both = join_meshes_as_batch([mesh1, mesh2])
+
+        R, T = look_at_view_transform(10, 10, 0)
+        cameras = FoVPerspectiveCameras(device=device, R=R, T=T)
+
+        raster_settings = RasterizationSettings(
+            image_size=128, blur_radius=0.0, faces_per_pixel=1
+        )
+
+        # Init shader settings
+        lights = PointLights(device=device)
+        lights.location = torch.tensor([0.0, 0.0, 2.0], device=device)[None]
+
+        blend_params = BlendParams(
+            sigma=1e-1,
+            gamma=1e-4,
+            background_color=torch.tensor([1.0, 1.0, 1.0], device=device),
+        )
+        # Init renderer
+        renderer = MeshRenderer(
+            rasterizer=MeshRasterizer(cameras=cameras, raster_settings=raster_settings),
+            shader=HardPhongShader(
+                device=device, lights=lights, cameras=cameras, blend_params=blend_params
+            ),
+        )
+
+        outputs = []
+        for meshes in [mesh_both, mesh1, mesh2]:
+            outputs.append(renderer(meshes))
+
+        if DEBUG:
+            Image.fromarray(
+                (outputs[0][0, ..., :3].cpu().numpy() * 255).astype(np.uint8)
+            ).save(DATA_DIR / "test_batch_uvs0.png")
+            Image.fromarray(
+                (outputs[1][0, ..., :3].cpu().numpy() * 255).astype(np.uint8)
+            ).save(DATA_DIR / "test_batch_uvs1.png")
+            Image.fromarray(
+                (outputs[0][1, ..., :3].cpu().numpy() * 255).astype(np.uint8)
+            ).save(DATA_DIR / "test_batch_uvs2.png")
+            Image.fromarray(
+                (outputs[2][0, ..., :3].cpu().numpy() * 255).astype(np.uint8)
+            ).save(DATA_DIR / "test_batch_uvs3.png")
+
+            diff = torch.abs(outputs[0][0, ..., :3] - outputs[1][0, ..., :3])
+            Image.fromarray(((diff > 1e-5).cpu().numpy().astype(np.uint8) * 255)).save(
+                DATA_DIR / "test_batch_uvs01.png"
+            )
+            diff = torch.abs(outputs[0][1, ..., :3] - outputs[2][0, ..., :3])
+            Image.fromarray(((diff > 1e-5).cpu().numpy().astype(np.uint8) * 255)).save(
+                DATA_DIR / "test_batch_uvs23.png"
+            )
+
+        self.assertClose(outputs[0][0, ..., :3], outputs[1][0, ..., :3], atol=1e-5)
+        self.assertClose(outputs[0][1, ..., :3], outputs[2][0, ..., :3], atol=1e-5)
 
     def test_joined_spheres(self):
         """

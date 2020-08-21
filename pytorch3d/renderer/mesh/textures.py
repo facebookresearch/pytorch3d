@@ -137,7 +137,7 @@ def _pad_texture_maps(
 # This is also useful to have so that inside `Meshes`
 # we can allow the input textures to be any texture
 # type which is an instance of the base class.
-class TexturesBase(object):
+class TexturesBase:
     def __init__(self):
         self._N = 0
         self.valid = None
@@ -262,9 +262,6 @@ class TexturesBase(object):
         """
         raise NotImplementedError()
 
-    def __repr__(self):
-        return "TexturesBase"
-
 
 def Textures(
     maps: Union[List, torch.Tensor, None] = None,
@@ -384,14 +381,6 @@ class TexturesAtlas(TexturesBase):
         # passed into the Meshes constructor. For more details
         # refer to the __init__ of Meshes.
         self.valid = torch.ones((self._N,), dtype=torch.bool, device=self.device)
-
-    # This is a hack to allow the child classes to also have the same representation
-    # as the parent. In meshes.py we check that the input textures have the correct
-    # type. However due to circular imports issues, we can't import the texture
-    # classes into any files in pytorch3d.structures. Instead we check
-    # for repr(textures) == "TexturesBase".
-    def __repr__(self):
-        return super().__repr__()
 
     def clone(self):
         tex = self.__class__(atlas=self.atlas_padded().clone())
@@ -556,10 +545,7 @@ class TexturesUV(TexturesBase):
               [(H, W, 3)] or a padded tensor of shape (N, H, W, 3)
             faces_uvs: (N, F, 3) tensor giving the index into verts_uvs for each face
             verts_uvs: (N, V, 2) tensor giving the uv coordinates per vertex
-
-        Note: only the padded and list representation of the textures are stored
-        and the packed representations is computed on the fly and
-        not cached.
+                         (a FloatTensor with values between 0 and 1)
         """
         super().__init__()
         if isinstance(faces_uvs, (list, tuple)):
@@ -611,9 +597,6 @@ class TexturesUV(TexturesBase):
                     "verts_uvs and faces_uvs must have the same batch dimension"
                 )
             if not all(v.device == self.device for v in verts_uvs):
-                import pdb
-
-                pdb.set_trace()
                 raise ValueError("verts_uvs and faces_uvs must be on the same device")
 
             # These values may be overridden when textures is
@@ -668,9 +651,6 @@ class TexturesUV(TexturesBase):
             raise ValueError("maps must be on the same device as verts/faces uvs.")
 
         self.valid = torch.ones((self._N,), dtype=torch.bool, device=self.device)
-
-    def __repr__(self):
-        return super().__repr__()
 
     def clone(self):
         tex = self.__class__(
@@ -759,12 +739,6 @@ class TexturesUV(TexturesBase):
                 )
         return self._faces_uvs_list
 
-    def faces_uvs_packed(self) -> torch.Tensor:
-        if self.isempty():
-            return torch.zeros((self._N, 3), dtype=torch.float32, device=self.device)
-        faces_uvs_list = self.faces_uvs_list()
-        return list_to_packed(faces_uvs_list)[0]
-
     def verts_uvs_padded(self) -> torch.Tensor:
         if self._verts_uvs_padded is None:
             if self.isempty():
@@ -788,12 +762,6 @@ class TexturesUV(TexturesBase):
                     self._verts_uvs_padded, split_size=self._num_verts_per_mesh
                 )
         return self._verts_uvs_list
-
-    def verts_uvs_packed(self) -> torch.Tensor:
-        if self.isempty():
-            return torch.zeros((self._N, 2), dtype=torch.float32, device=self.device)
-        verts_uvs_list = self.verts_uvs_list()
-        return list_to_packed(verts_uvs_list)[0]
 
     # Currently only the padded maps are used.
     def maps_padded(self) -> torch.Tensor:
@@ -850,9 +818,15 @@ class TexturesUV(TexturesBase):
             texels: tensor of shape (N, H, W, K, C) giving the interpolated
             texture for each pixel in the rasterized image.
         """
-        verts_uvs = self.verts_uvs_packed()
-        faces_uvs = self.faces_uvs_packed()
-        faces_verts_uvs = verts_uvs[faces_uvs]
+        if self.isempty():
+            faces_verts_uvs = torch.zeros(
+                (self._N, 3, 2), dtype=torch.float32, device=self.device
+            )
+        else:
+            packing_list = [
+                i[j] for i, j in zip(self.verts_uvs_list(), self.faces_uvs_list())
+            ]
+            faces_verts_uvs = torch.cat(packing_list)
         texture_maps = self.maps_padded()
 
         # pixel_uvs: (N, H, W, K, 2)
@@ -890,6 +864,7 @@ class TexturesUV(TexturesBase):
         if texture_maps.device != pixel_uvs.device:
             texture_maps = texture_maps.to(pixel_uvs.device)
         texels = F.grid_sample(texture_maps, pixel_uvs, align_corners=False)
+        # texels now has shape (NK, C, H_out, W_out)
         texels = texels.reshape(N, K, C, H_out, W_out).permute(0, 3, 4, 1, 2)
         return texels
 
@@ -990,9 +965,6 @@ class TexturesVertex(TexturesBase):
         # refer to the __init__ of Meshes.
         self.valid = torch.ones((self._N,), dtype=torch.bool, device=self.device)
 
-    def __repr__(self):
-        return super().__repr__()
-
     def clone(self):
         tex = self.__class__(self.verts_features_padded().clone())
         if self._verts_features_list is not None:
@@ -1048,7 +1020,7 @@ class TexturesVertex(TexturesBase):
         if self._verts_features_list is None:
             if self.isempty():
                 self._verts_features_list = [
-                    torch.empty((0, 3, 0), dtype=torch.float32, device=self.device)
+                    torch.empty((0, 3), dtype=torch.float32, device=self.device)
                 ] * self._N
             else:
                 self._verts_features_list = padded_to_list(

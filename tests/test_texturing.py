@@ -29,8 +29,8 @@ def tryindex(self, index, tex, meshes, source):
             basic = basic[None]
 
         if len(basic) == 0:
-            self.assertEquals(len(from_texture), 0)
-            self.assertEquals(len(from_meshes), 0)
+            self.assertEqual(len(from_texture), 0)
+            self.assertEqual(len(from_meshes), 0)
         else:
             self.assertClose(basic, from_texture)
             self.assertClose(basic, from_meshes)
@@ -608,12 +608,8 @@ class TestTexturesUV(TestCaseMixin, unittest.TestCase):
             [
                 tex_init.faces_uvs_padded(),
                 new_tex.faces_uvs_padded(),
-                tex_init.faces_uvs_packed(),
-                new_tex.faces_uvs_packed(),
                 tex_init.verts_uvs_padded(),
                 new_tex.verts_uvs_padded(),
-                tex_init.verts_uvs_packed(),
-                new_tex.verts_uvs_packed(),
                 tex_init.maps_padded(),
                 new_tex.maps_padded(),
             ]
@@ -646,11 +642,9 @@ class TestTexturesUV(TestCaseMixin, unittest.TestCase):
         tex1 = tex.clone()
         tex1._num_faces_per_mesh = num_faces_per_mesh
         tex1._num_verts_per_mesh = num_verts_per_mesh
-        verts_packed = tex1.verts_uvs_packed()
         verts_list = tex1.verts_uvs_list()
         verts_padded = tex1.verts_uvs_padded()
 
-        faces_packed = tex1.faces_uvs_packed()
         faces_list = tex1.faces_uvs_list()
         faces_padded = tex1.faces_uvs_padded()
 
@@ -660,9 +654,7 @@ class TestTexturesUV(TestCaseMixin, unittest.TestCase):
         for f1, f2 in zip(verts_list, verts_uvs_list):
             self.assertTrue((f1 == f2).all().item())
 
-        self.assertTrue(faces_packed.shape == (3 + 2, 3))
         self.assertTrue(faces_padded.shape == (2, 3, 3))
-        self.assertTrue(verts_packed.shape == (9 + 6, 2))
         self.assertTrue(verts_padded.shape == (2, 9, 2))
 
         # Case where num_faces_per_mesh is not set and faces_verts_uvs
@@ -672,15 +664,8 @@ class TestTexturesUV(TestCaseMixin, unittest.TestCase):
             verts_uvs=verts_padded,
             faces_uvs=faces_padded,
         )
-        faces_packed = tex2.faces_uvs_packed()
         faces_list = tex2.faces_uvs_list()
-        verts_packed = tex2.verts_uvs_packed()
         verts_list = tex2.verts_uvs_list()
-
-        # Packed is just flattened padded as num_faces_per_mesh
-        # has not been provided.
-        self.assertTrue(faces_packed.shape == (3 * 2, 3))
-        self.assertTrue(verts_packed.shape == (9 * 2, 2))
 
         for i, (f1, f2) in enumerate(zip(faces_list, faces_uvs_list)):
             n = num_faces_per_mesh[i]

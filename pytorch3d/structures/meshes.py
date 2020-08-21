@@ -233,9 +233,9 @@ class Meshes(object):
         Refer to comments above for descriptions of List and Padded representations.
         """
         self.device = None
-        if textures is not None and not repr(textures) == "TexturesBase":
+        if textures is not None and not hasattr(textures, "sample_textures"):
             msg = "Expected textures to be an instance of type TexturesBase; got %r"
-            raise ValueError(msg % repr(textures))
+            raise ValueError(msg % type(textures))
         self.textures = textures
 
         # Indicates whether the meshes in the list/batch have the same number
