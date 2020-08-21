@@ -301,6 +301,7 @@ def rasterize_meshes_python(
     x_maxs = torch.max(faces_verts[:, :, 0], dim=1, keepdim=True).values
     y_mins = torch.min(faces_verts[:, :, 1], dim=1, keepdim=True).values
     y_maxs = torch.max(faces_verts[:, :, 1], dim=1, keepdim=True).values
+    z_mins = torch.min(faces_verts[:, :, 2], dim=1, keepdim=True).values
 
     # Expand by blur radius.
     x_mins = x_mins - np.sqrt(blur_radius) - kEpsilon
@@ -350,6 +351,12 @@ def rasterize_meshes_python(
                         or yf < y_mins[f]
                         or yf > y_maxs[f]
                     )
+
+                    # Faces with at least one vertex behind the camera won't
+                    # render correctly and should be removed or clipped before
+                    # calling the rasterizer
+                    if z_mins[f] < kEpsilon:
+                        continue
 
                     # Check if pixel is outside of face bbox.
                     if outside_bbox:

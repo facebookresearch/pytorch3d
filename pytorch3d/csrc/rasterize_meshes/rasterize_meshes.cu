@@ -90,8 +90,14 @@ __device__ bool CheckPointOutsideBoundingBox(
   const float x_max = xlims.y + blur_radius;
   const float y_max = ylims.y + blur_radius;
 
+  // Faces with at least one vertex behind the camera won't render correctly
+  // and should be removed or clipped before calling the rasterizer
+  const bool z_invalid = zlims.x < kEpsilon;
+
   // Check if the current point is oustside the triangle bounding box.
-  return (pxy.x > x_max || pxy.x < x_min || pxy.y > y_max || pxy.y < y_min);
+  return (
+      pxy.x > x_max || pxy.x < x_min || pxy.y > y_max || pxy.y < y_min ||
+      z_invalid);
 }
 
 // This function checks if a pixel given by xy location pxy lies within the
@@ -625,10 +631,13 @@ __global__ void RasterizeMeshesCoarseCudaKernel(
       float ymin = FloatMin3(v0.y, v1.y, v2.y) - sqrt(blur_radius);
       float xmax = FloatMax3(v0.x, v1.x, v2.x) + sqrt(blur_radius);
       float ymax = FloatMax3(v0.y, v1.y, v2.y) + sqrt(blur_radius);
-      float zmax = FloatMax3(v0.z, v1.z, v2.z);
+      float zmin = FloatMin3(v0.z, v1.z, v2.z);
 
-      if (zmax < 0) {
-        continue; // Face is behind the camera.
+      // Faces with at least one vertex behind the camera won't render
+      // correctly and should be removed or clipped before calling the
+      // rasterizer
+      if (zmin < kEpsilon) {
+        continue;
       }
 
       // Brute-force search over all bins; TODO(T54294966) something smarter.

@@ -68,8 +68,12 @@ bool CheckPointOutsideBoundingBox(
   float x_max = face_bbox[2] + blur_radius;
   float y_max = face_bbox[3] + blur_radius;
 
+  // Faces with at least one vertex behind the camera won't render correctly
+  // and should be removed or clipped before calling the rasterizer
+  const bool z_invalid = face_bbox[4] < kEpsilon;
+
   // Check if the current point is within the triangle bounding box.
-  return (px > x_max || px < x_min || py > y_max || py < y_min);
+  return (px > x_max || px < x_min || py > y_max || py < y_min || z_invalid);
 }
 
 // Calculate areas of all faces. Returns a tensor of shape (total_faces, 1)
@@ -468,10 +472,13 @@ torch::Tensor RasterizeMeshesCoarseCpu(
           float face_y_min = face_bboxes_a[f][1] - std::sqrt(blur_radius);
           float face_x_max = face_bboxes_a[f][2] + std::sqrt(blur_radius);
           float face_y_max = face_bboxes_a[f][3] + std::sqrt(blur_radius);
-          float face_z_max = face_bboxes_a[f][5];
+          float face_z_min = face_bboxes_a[f][4];
 
-          if (face_z_max < 0) {
-            continue; // Face is behind the camera.
+          // Faces with at least one vertex behind the camera won't render
+          // correctly and should be removed or clipped before calling the
+          // rasterizer
+          if (face_z_min < kEpsilon) {
+            continue;
           }
 
           // Use a half-open interval so that faces exactly on the

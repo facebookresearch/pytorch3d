@@ -552,6 +552,10 @@ class TestRasterizeMeshes(TestCaseMixin, unittest.TestCase):
             + (zbuf1 * grad_zbuf).sum()
             + (bary1 * grad_bary).sum()
         )
+
+        # avoid gradient error if rasterize_meshes_python() culls all triangles
+        loss1 += grad_var1.sum() * 0.0
+
         loss1.backward()
         grad_verts1 = grad_var1.grad.data.clone().cpu()
 
@@ -563,6 +567,10 @@ class TestRasterizeMeshes(TestCaseMixin, unittest.TestCase):
             + (zbuf2 * grad_zbuf).sum()
             + (bary2 * grad_bary).sum()
         )
+
+        # avoid gradient error if rasterize_meshes_python() culls all triangles
+        loss2 += grad_var2.sum() * 0.0
+
         grad_var1.grad.data.zero_()
         loss2.backward()
         grad_verts2 = grad_var2.grad.data.clone().cpu()
