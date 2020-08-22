@@ -1,7 +1,8 @@
 {
   "docs": {
     "Introduction": ["why_pytorch3d"],
-    "Meshes": ["batching", "meshes_io"],
-    "Differentiable Renderer": ["renderer", "renderer_getting_started"]
+    "Data": ["meshes_io", "datasets", "batching"],
+    "Ops": ["cubify"],
+    "Renderer": ["renderer", "renderer_getting_started", "cameras"]
   }
 }

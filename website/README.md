@@ -2,7 +2,7 @@ This website was created with [Docusaurus](https://docusaurus.io/).
 
 # Building the PyTorch3D website
 
-## Install 
+## Install
 
 1. Make sure all the dependencies for the website are installed:
 
@@ -10,7 +10,7 @@ This website was created with [Docusaurus](https://docusaurus.io/).
 # Install dependencies
 $ yarn
 
-or 
+or
 
 $ npm install docusaurus-init
 ```
@@ -40,7 +40,7 @@ Install yarn:
 ```
 brew install yarn
 
-# or 
+# or
 
 curl -o- -L https://yarnpkg.com/install.sh | bash
 ```
@@ -57,11 +57,11 @@ This will build the docusaurus website and run a script to parse the tutorials a
 - `.py`/`.ipynb` files in the `website/static/files` folder
 
 
-TODO: Add support for latex in markdown in jupyter notebooks and embedded images. 
+TODO: Add support for latex in markdown in jupyter notebooks and embedded images.
 
 ## Build and publish the website
 
-The following script will build the tutorials and the website and push to the gh-pages 
+The following script will build the tutorials and the website and push to the gh-pages
 branch of `github.com/facebookresearch/pytorch3d`.
 
 ```
@@ -71,17 +71,17 @@ bash scripts/publish_website.sh
 
 ## Add a new tutorial
 
-The tutorials to include in the website are listed in `website/tutorials.json`. If you create a new tutorial add an entry to the list in this file. This is needed in order to generate the sidebar for the tutorials page. 
+The tutorials to include in the website are listed in `website/tutorials.json`. If you create a new tutorial add an entry to the list in this file. This is needed in order to generate the sidebar for the tutorials page.
 
 
 ## Edit the landing page
 
-To change the content of the landing page modify: `website/pages/en/index.js`. 
+To change the content of the landing page modify: `website/pages/en/index.js`.
 
 
 ## Edit the tutorials page
 
-To change the content of the tutorials home page modify: `website/pages/tutorials/index.js`. 
+To change the content of the tutorials home page modify: `website/pages/tutorials/index.js`.
 
 
 ---------------------------------------------------------

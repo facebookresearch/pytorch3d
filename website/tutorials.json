@@ -12,9 +12,18 @@
      {
       "id": "render_textured_meshes",
       "title": "Render Textured Meshes"
+     },{
+      "id": "fit_textured_mesh",
+      "title": "Fit a mesh with texture via rendering"
      }, {
       "id": "camera_position_optimization_with_differentiable_rendering",
-      "title": "Camera Position Optimization"         
+      "title": "Camera Position Optimization"
      }
-  ]
+  ],
+  "Dataloaders": [
+      {
+         "id": "dataloaders_ShapeNetCore_R2N2",
+         "title": "Data loaders for ShapeNetCore and R2N2"
+      }
+   ]
 }
