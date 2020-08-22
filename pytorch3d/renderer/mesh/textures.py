@@ -599,11 +599,6 @@ class TexturesUV(TexturesBase):
             if not all(v.device == self.device for v in verts_uvs):
                 raise ValueError("verts_uvs and faces_uvs must be on the same device")
 
-            # These values may be overridden when textures is
-            # passed into the Meshes constructor. For more details
-            # refer to the __init__ of Meshes.
-            self._num_verts_per_mesh = [len(v) for v in verts_uvs]
-
         elif torch.is_tensor(verts_uvs):
             if (
                 verts_uvs.ndim != 3
@@ -621,7 +616,6 @@ class TexturesUV(TexturesBase):
             # These values may be overridden when textures is
             # passed into the Meshes constructor.
             max_V = verts_uvs.shape[1]
-            self._num_verts_per_mesh = [max_V] * self._N
         else:
             raise ValueError("Expected verts_uvs to be a tensor or list")
 
@@ -758,9 +752,11 @@ class TexturesUV(TexturesBase):
                     torch.empty((0, 2), dtype=torch.float32, device=self.device)
                 ] * self._N
             else:
-                self._verts_uvs_list = padded_to_list(
-                    self._verts_uvs_padded, split_size=self._num_verts_per_mesh
-                )
+                # The number of vertices in the mesh and in verts_uvs can differ
+                # e.g. if a vertex is shared between 3 faces, it can
+                # have up to 3 different uv coordinates. Therefore we cannot
+                # convert directly from padded to list using _num_verts_per_mesh
+                self._verts_uvs_list = list(self._verts_uvs_padded.unbind(0))
         return self._verts_uvs_list
 
     # Currently only the padded maps are used.
@@ -783,7 +779,6 @@ class TexturesUV(TexturesBase):
                 "verts_uvs_padded",
                 "faces_uvs_padded",
                 "_num_faces_per_mesh",
-                "_num_verts_per_mesh",
             ],
         )
         new_tex = TexturesUV(
@@ -791,8 +786,8 @@ class TexturesUV(TexturesBase):
             faces_uvs=new_props["faces_uvs_padded"],
             verts_uvs=new_props["verts_uvs_padded"],
         )
+
         new_tex._num_faces_per_mesh = new_props["_num_faces_per_mesh"]
-        new_tex._num_verts_per_mesh = new_props["_num_verts_per_mesh"]
         return new_tex
 
     def sample_textures(self, fragments, **kwargs) -> torch.Tensor:
@@ -860,6 +855,7 @@ class TexturesUV(TexturesBase):
         #   right-bottom pixel of input.
 
         pixel_uvs = pixel_uvs * 2.0 - 1.0
+
         texture_maps = torch.flip(texture_maps, [2])  # flip y axis of the texture map
         if texture_maps.device != pixel_uvs.device:
             texture_maps = texture_maps.to(pixel_uvs.device)

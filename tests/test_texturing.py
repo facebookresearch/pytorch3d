@@ -588,10 +588,19 @@ class TestTexturesUV(TestCaseMixin, unittest.TestCase):
         tex_init = tex_mesh.textures
         new_tex = new_mesh.textures
 
+        new_tex_num_verts = new_mesh.num_verts_per_mesh()
         for i in range(len(tex_mesh)):
             for n in range(N):
+                tex_nv = new_tex_num_verts[i * N + n]
                 self.assertClose(
-                    tex_init.verts_uvs_list()[i], new_tex.verts_uvs_list()[i * N + n]
+                    # The original textures were initialized using
+                    # verts uvs list
+                    tex_init.verts_uvs_list()[i],
+                    # In the new textures, the verts_uvs are initialized
+                    # from padded. The verts per mesh are not used to
+                    # convert from padded to list. See TexturesUV for an
+                    # explanation.
+                    new_tex.verts_uvs_list()[i * N + n][:tex_nv, ...],
                 )
                 self.assertClose(
                     tex_init.faces_uvs_list()[i], new_tex.faces_uvs_list()[i * N + n]
