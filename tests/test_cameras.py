@@ -167,6 +167,21 @@ class TestCameraHelpers(TestCaseMixin, unittest.TestCase):
         self.assertTrue(torch.allclose(R, R_default, atol=2e-7))
         self.assertTrue(torch.allclose(t, t_default, atol=2e-7))
 
+    def test_look_at_view_transform_non_default_at_position(self):
+        dist = 1.0
+        elev = 0.0
+        azim = 0.0
+        at = ((1, 1, 1),)
+        # Using passed values for dist, elev, azim, at
+        R, t = look_at_view_transform(dist, elev, azim, at=at)
+        # Using default dist=1.0, elev=0.0, azim=0.0
+        R_default, t_default = look_at_view_transform()
+        # test default = passed = expected
+        # R must be the same, t must be translated by (1,-1,1) with respect to t_default
+        t_trans = torch.tensor([1, -1, 1], dtype=torch.float32).view(1, 3)
+        self.assertTrue(torch.allclose(R, R_default, atol=2e-7))
+        self.assertTrue(torch.allclose(t, t_default + t_trans, atol=2e-7))
+
     def test_camera_position_from_angles_python_scalar(self):
         dist = 2.7
         elev = 90.0
