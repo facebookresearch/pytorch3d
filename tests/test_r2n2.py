@@ -33,6 +33,8 @@ from torch.utils.data import DataLoader
 R2N2_PATH = None
 SHAPENET_PATH = None
 SPLITS_PATH = None
+VOXELS_REL_PATH = "ShapeNetVox"
+
 
 DEBUG = False
 DATA_DIR = Path(__file__).resolve().parent / "data"
@@ -69,7 +71,12 @@ class TestR2N2(TestCaseMixin, unittest.TestCase):
         """
         # Load dataset in the train split.
         r2n2_dataset = R2N2(
-            "test", SHAPENET_PATH, R2N2_PATH, SPLITS_PATH, return_voxels=True
+            "test",
+            SHAPENET_PATH,
+            R2N2_PATH,
+            SPLITS_PATH,
+            return_voxels=True,
+            voxels_rel_path=VOXELS_REL_PATH,
         )
 
         # Check total number of objects in the dataset is correct.
@@ -133,7 +140,12 @@ class TestR2N2(TestCaseMixin, unittest.TestCase):
         """
         # Load dataset in the train split.
         r2n2_dataset = R2N2(
-            "val", SHAPENET_PATH, R2N2_PATH, SPLITS_PATH, return_voxels=True
+            "val",
+            SHAPENET_PATH,
+            R2N2_PATH,
+            SPLITS_PATH,
+            return_voxels=True,
+            voxels_rel_path=VOXELS_REL_PATH,
         )
 
         # Randomly retrieve several objects from the dataset and collate them.
@@ -362,7 +374,12 @@ class TestR2N2(TestCaseMixin, unittest.TestCase):
 
         # Load dataset in the train split with only a single view returned for each model.
         r2n2_dataset = R2N2(
-            "train", SHAPENET_PATH, R2N2_PATH, SPLITS_PATH, return_voxels=True
+            "train",
+            SHAPENET_PATH,
+            R2N2_PATH,
+            SPLITS_PATH,
+            return_voxels=True,
+            voxels_rel_path=VOXELS_REL_PATH,
         )
         r2n2_model = r2n2_dataset[6, [5]]
         vox_render = render_cubified_voxels(r2n2_model["voxels"], device=device)

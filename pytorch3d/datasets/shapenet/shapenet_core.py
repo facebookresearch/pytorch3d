@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import Dict
 
 from pytorch3d.datasets.shapenet_base import ShapeNetBase
-from pytorch3d.io import load_obj
 
 
 SYNSET_DICT_DIR = Path(__file__).resolve().parent
@@ -21,7 +20,14 @@ class ShapeNetCore(ShapeNetBase):
     https://www.shapenet.org/.
     """
 
-    def __init__(self, data_dir, synsets=None, version: int = 1):
+    def __init__(
+        self,
+        data_dir,
+        synsets=None,
+        version: int = 1,
+        load_textures: bool = True,
+        texture_resolution: int = 4,
+    ):
         """
         Store each object's synset id and models id from data_dir.
 
@@ -38,10 +44,17 @@ class ShapeNetCore(ShapeNetBase):
                 respectively. You can combine the categories manually if needed.
                 Version 2 doesn't have 02858304(boat) or 02834778(bicycle) compared to
                 version 1.
-
+            load_textures: Boolean indicating whether textures should loaded for the model.
+                Textures will be of type TexturesAtlas i.e. a texture map per face.
+            texture_resolution: Int specifying the resolution of the texture map per face
+                created using the textures in the obj file. A
+                (texture_resolution, texture_resolution, 3) map is created per face.
         """
         super().__init__()
         self.shapenet_dir = data_dir
+        self.load_textures = load_textures
+        self.texture_resolution = texture_resolution
+
         if version not in [1, 2]:
             raise ValueError("Version number must be either 1 or 2.")
         self.model_dir = "model.obj" if version == 1 else "models/model_normalized.obj"
@@ -133,7 +146,9 @@ class ShapeNetCore(ShapeNetBase):
         model_path = path.join(
             self.shapenet_dir, model["synset_id"], model["model_id"], self.model_dir
         )
-        model["verts"], faces, _ = load_obj(model_path)
-        model["faces"] = faces.verts_idx
+        verts, faces, textures = self._load_mesh(model_path)
+        model["verts"] = verts
+        model["faces"] = faces
+        model["textures"] = textures
         model["label"] = self.synset_dict[model["synset_id"]]
         return model

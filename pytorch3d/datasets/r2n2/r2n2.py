@@ -10,7 +10,6 @@ import numpy as np
 import torch
 from PIL import Image
 from pytorch3d.datasets.shapenet_base import ShapeNetBase
-from pytorch3d.io import load_obj
 from pytorch3d.renderer import HardPhongShader
 from tabulate import tabulate
 
@@ -45,6 +44,7 @@ class R2N2(ShapeNetBase):
     dataset. The R2N2 dataset also contains its own 24 renderings of each object and
     voxelized models. Most of the models have all 24 views in the same split, but there
     are eight of them that divide their views between train and test splits.
+
     """
 
     def __init__(
@@ -55,6 +55,10 @@ class R2N2(ShapeNetBase):
         splits_file,
         return_all_views: bool = True,
         return_voxels: bool = False,
+        views_rel_path: str = "ShapeNetRendering",
+        voxels_rel_path: str = "ShapeNetVoxels",
+        load_textures: bool = True,
+        texture_resolution: int = 4,
     ):
         """
         Store each object's synset id and models id the given directories.
@@ -69,10 +73,24 @@ class R2N2(ShapeNetBase):
                 selected and loaded.
             return_voxels(bool): Indicator of whether or not to return voxels as a tensor
                 of shape (D, D, D) where D is the number of voxels along each dimension.
+            views_rel_path: path to rendered views within the r2n2_dir. If not specified,
+                the renderings are assumed to be at os.path.join(rn2n_dir, "ShapeNetRendering").
+            voxels_rel_path: path to rendered views within the r2n2_dir. If not specified,
+                the renderings are assumed to be at os.path.join(rn2n_dir, "ShapeNetVoxels").
+            load_textures: Boolean indicating whether textures should loaded for the model.
+                Textures will be of type TexturesAtlas i.e. a texture map per face.
+            texture_resolution: Int specifying the resolution of the texture map per face
+                created using the textures in the obj file. A
+                (texture_resolution, texture_resolution, 3) map is created per face.
+
         """
         super().__init__()
         self.shapenet_dir = shapenet_dir
         self.r2n2_dir = r2n2_dir
+        self.views_rel_path = views_rel_path
+        self.voxels_rel_path = voxels_rel_path
+        self.load_textures = load_textures
+        self.texture_resolution = texture_resolution
         # Examine if split is valid.
         if split not in ["train", "val", "test"]:
             raise ValueError("split has to be one of (train, val, test).")
@@ -90,22 +108,22 @@ class R2N2(ShapeNetBase):
 
         self.return_images = True
         # Check if the folder containing R2N2 renderings is included in r2n2_dir.
-        if not path.isdir(path.join(r2n2_dir, "ShapeNetRendering")):
+        if not path.isdir(path.join(r2n2_dir, views_rel_path)):
             self.return_images = False
             msg = (
-                "ShapeNetRendering not found in %s. R2N2 renderings will "
+                "%s not found in %s. R2N2 renderings will "
                 "be skipped when returning models."
-            ) % (r2n2_dir)
+            ) % (views_rel_path, r2n2_dir)
             warnings.warn(msg)
 
         self.return_voxels = return_voxels
         # Check if the folder containing voxel coordinates is included in r2n2_dir.
-        if not path.isdir(path.join(r2n2_dir, "ShapeNetVox32")):
+        if not path.isdir(path.join(r2n2_dir, voxels_rel_path)):
             self.return_voxels = False
             msg = (
-                "ShapeNetVox32 not found in %s. Voxel coordinates will "
+                "%s not found in %s. Voxel coordinates will "
                 "be skipped when returning models."
-            ) % (r2n2_dir)
+            ) % (voxels_rel_path, r2n2_dir)
             warnings.warn(msg)
 
         synset_set = set()
@@ -230,8 +248,11 @@ class R2N2(ShapeNetBase):
         model_path = path.join(
             self.shapenet_dir, model["synset_id"], model["model_id"], "model.obj"
         )
-        model["verts"], faces, _ = load_obj(model_path)
-        model["faces"] = faces.verts_idx
+
+        verts, faces, textures = self._load_mesh(model_path)
+        model["verts"] = verts
+        model["faces"] = faces
+        model["textures"] = textures
         model["label"] = self.synset_dict[model["synset_id"]]
 
         model["images"] = None
@@ -240,7 +261,7 @@ class R2N2(ShapeNetBase):
         if self.return_images:
             rendering_path = path.join(
                 self.r2n2_dir,
-                "ShapeNetRendering",
+                self.views_rel_path,
                 model["synset_id"],
                 model["model_id"],
                 "rendering",
@@ -284,10 +305,11 @@ class R2N2(ShapeNetBase):
             model["K"] = K.expand(len(model_views), 4, 4)
 
         voxels_list = []
+
         # Read voxels if required.
         voxel_path = path.join(
             self.r2n2_dir,
-            "ShapeNetVox32",
+            self.voxels_rel_path,
             model["synset_id"],
             model["model_id"],
             "model.binvox",

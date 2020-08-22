@@ -22,6 +22,7 @@ from torch.utils.data import DataLoader
 
 # Set the SHAPENET_PATH to the local path to the dataset
 SHAPENET_PATH = None
+VERSION = 1
 # If DEBUG=True, save out images generated in the tests for debugging.
 # All saved images have prefix DEBUG_
 DEBUG = False
@@ -55,7 +56,7 @@ class TestShapenetCore(TestCaseMixin, unittest.TestCase):
         self.assertTrue("Version number must be either 1 or 2." in str(err.exception))
 
         # Load ShapeNetCore without specifying any particular categories.
-        shapenet_dataset = ShapeNetCore(SHAPENET_PATH)
+        shapenet_dataset = ShapeNetCore(SHAPENET_PATH, version=VERSION)
 
         # Count the number of grandchildren directories (which should be equal to
         # the total number of objects in the dataset) by walking through the given

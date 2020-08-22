@@ -1,6 +1,7 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 from typing import Dict, List
 
+from pytorch3d.renderer.mesh import TexturesAtlas
 from pytorch3d.structures import Meshes
 
 
@@ -28,7 +29,15 @@ def collate_batched_meshes(batch: List[Dict]):
 
     collated_dict["mesh"] = None
     if {"verts", "faces"}.issubset(collated_dict.keys()):
+
+        textures = None
+        if "textures" in collated_dict:
+            textures = TexturesAtlas(atlas=collated_dict["textures"])
+
         collated_dict["mesh"] = Meshes(
-            verts=collated_dict["verts"], faces=collated_dict["faces"]
+            verts=collated_dict["verts"],
+            faces=collated_dict["faces"],
+            textures=textures,
         )
+
     return collated_dict

@@ -1,11 +1,10 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
 import warnings
-from os import path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 import torch
-from pytorch3d.io import load_objs_as_meshes
+from pytorch3d.io import load_obj
 from pytorch3d.renderer import (
     FoVPerspectiveCameras,
     HardPhongShader,
@@ -15,6 +14,8 @@ from pytorch3d.renderer import (
     RasterizationSettings,
     TexturesVertex,
 )
+
+from .utils import collate_batched_meshes
 
 
 class ShapeNetBase(torch.utils.data.Dataset):
@@ -35,6 +36,8 @@ class ShapeNetBase(torch.utils.data.Dataset):
         self.synset_num_models = {}
         self.shapenet_dir = ""
         self.model_dir = "model.obj"
+        self.load_textures = True
+        self.texture_resolution = 4
 
     def __len__(self):
         """
@@ -74,6 +77,27 @@ class ShapeNetBase(torch.utils.data.Dataset):
         model["model_id"] = self.model_ids[idx]
         return model
 
+    def _load_mesh(self, model_path) -> Tuple:
+        verts, faces, aux = load_obj(
+            model_path,
+            create_texture_atlas=self.load_textures,
+            load_textures=self.load_textures,
+            texture_atlas_size=self.texture_resolution,
+        )
+        if self.load_textures:
+            textures = aux.texture_atlas
+            # Some meshes don't have textures. In this case
+            # create a white texture map
+            if textures is None:
+                textures = verts.new_ones(
+                    faces.verts_idx.shape[0],
+                    self.texture_resolution,
+                    self.texture_resolution,
+                    3,
+                )
+
+        return verts, faces.verts_idx, textures
+
     def render(
         self,
         model_ids: Optional[List[str]] = None,
@@ -112,19 +136,15 @@ class ShapeNetBase(torch.utils.data.Dataset):
             Batch of rendered images of shape (N, H, W, 3).
         """
         idxs = self._handle_render_inputs(model_ids, categories, sample_nums, idxs)
-        paths = [
-            path.join(
-                self.shapenet_dir,
-                self.synset_ids[idx],
-                self.model_ids[idx],
-                self.model_dir,
+        # Use the getitem method which loads mesh + texture
+        models = [self[idx] for idx in idxs]
+        meshes = collate_batched_meshes(models)["mesh"]
+        if meshes.textures is None:
+            meshes.textures = TexturesVertex(
+                verts_features=torch.ones_like(meshes.verts_padded(), device=device)
             )
-            for idx in idxs
-        ]
-        meshes = load_objs_as_meshes(paths, device=device, load_textures=False)
-        meshes.textures = TexturesVertex(
-            verts_features=torch.ones_like(meshes.verts_padded(), device=device)
-        )
+
+        meshes = meshes.to(device)
         cameras = kwargs.get("cameras", FoVPerspectiveCameras()).to(device)
         if len(cameras) != 1 and len(cameras) % len(meshes) != 0:
             raise ValueError("Mismatch between batch dims of cameras and meshes.")

@@ -253,7 +253,7 @@ def load_objs_as_meshes(
         tex = None
         if create_texture_atlas:
             # TexturesAtlas type
-            tex = TexturesAtlas(atlas=[aux.texture_atlas])
+            tex = TexturesAtlas(atlas=[aux.texture_atlas.to(device)])
         else:
             # TexturesUV type
             tex_maps = aux.texture_images
@@ -477,18 +477,20 @@ def _load_obj(
                     face_material_names = np.array(material_names)[idx]  # (F,)
                     face_material_names[idx == -1] = ""
 
-                    # Get the uv coords for each vert in each face
-                    faces_verts_uvs = verts_uvs[faces_textures_idx]  # (F, 3, 2)
+                    texture_atlas = None
+                    if len(verts_uvs) > 0:
+                        # Get the uv coords for each vert in each face
+                        faces_verts_uvs = verts_uvs[faces_textures_idx]  # (F, 3, 2)
 
-                    # Construct the atlas.
-                    texture_atlas = make_mesh_texture_atlas(
-                        material_colors,
-                        texture_images,
-                        face_material_names,
-                        faces_verts_uvs,
-                        texture_atlas_size,
-                        texture_wrap,
-                    )
+                        # Construct the atlas.
+                        texture_atlas = make_mesh_texture_atlas(
+                            material_colors,
+                            texture_images,
+                            face_material_names,
+                            faces_verts_uvs,
+                            texture_atlas_size,
+                            texture_wrap,
+                        )
             else:
                 warnings.warn(f"Mtl file does not exist: {f_mtl}")
         elif len(material_names) > 0:
