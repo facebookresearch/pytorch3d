@@ -39,7 +39,7 @@ def workflows(prefix="", filter_branch=None, upload=False, indentation=6):
                     )
     for btype in ["wheel"]:
         for python_version in ["3.6", "3.7", "3.8"]:
-            for cu_version in ["cu102"]:
+            for cu_version in ["cu101"]:
                 w += workflow_pair(
                     btype=btype,
                     python_version=python_version,
