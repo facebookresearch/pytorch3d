@@ -1505,8 +1505,12 @@ def join_meshes_as_batch(meshes: List[Meshes], include_textures: bool = True):
     Merge multiple Meshes objects, i.e. concatenate the meshes objects. They
     must all be on the same device. If include_textures is true, they must all
     be compatible, either all or none having textures, and all the Textures
-    objects having the same members. If  include_textures is False, textures are
+    objects being the same type. If include_textures is False, textures are
     ignored.
+
+    If the textures are TexturesAtlas then being the same type includes having
+    the same resolution. If they are TexturesUV then it includes having the same
+    align_corners and padding_mode.
 
     Args:
         meshes: list of meshes.

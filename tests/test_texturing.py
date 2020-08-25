@@ -443,19 +443,26 @@ class TestTexturesUV(TestCaseMixin, unittest.TestCase):
             dists=pix_to_face,
         )
 
-        tex = TexturesUV(maps=tex_map, faces_uvs=[face_uvs], verts_uvs=[vert_uvs])
-        meshes = Meshes(verts=[dummy_verts], faces=[face_uvs], textures=tex)
-        mesh_textures = meshes.textures
-        texels = mesh_textures.sample_textures(fragments)
+        for align_corners in [True, False]:
+            tex = TexturesUV(
+                maps=tex_map,
+                faces_uvs=[face_uvs],
+                verts_uvs=[vert_uvs],
+                align_corners=align_corners,
+            )
+            meshes = Meshes(verts=[dummy_verts], faces=[face_uvs], textures=tex)
+            mesh_textures = meshes.textures
+            texels = mesh_textures.sample_textures(fragments)
 
-        # Expected output
-        pixel_uvs = interpolated_uvs * 2.0 - 1.0
-        pixel_uvs = pixel_uvs.view(2, 1, 1, 2)
-        tex_map = torch.flip(tex_map, [1])
-        tex_map = tex_map.permute(0, 3, 1, 2)
-        tex_map = torch.cat([tex_map, tex_map], dim=0)
-        expected_out = F.grid_sample(tex_map, pixel_uvs, align_corners=False)
-        self.assertTrue(torch.allclose(texels.squeeze(), expected_out.squeeze()))
+            # Expected output
+            pixel_uvs = interpolated_uvs * 2.0 - 1.0
+            pixel_uvs = pixel_uvs.view(2, 1, 1, 2)
+            tex_map_ = torch.flip(tex_map, [1]).permute(0, 3, 1, 2)
+            tex_map_ = torch.cat([tex_map_, tex_map_], dim=0)
+            expected_out = F.grid_sample(
+                tex_map_, pixel_uvs, align_corners=align_corners, padding_mode="border"
+            )
+            self.assertTrue(torch.allclose(texels.squeeze(), expected_out.squeeze()))
 
     def test_textures_uv_init_fail(self):
         # Maps has wrong shape

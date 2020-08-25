@@ -411,11 +411,11 @@ class TestPointclouds(TestCaseMixin, unittest.TestCase):
                 new_clouds = clouds.detach()
 
                 for cloud in new_clouds.points_list():
-                    self.assertTrue(cloud.requires_grad == False)
+                    self.assertFalse(cloud.requires_grad)
                 for normal in new_clouds.normals_list():
-                    self.assertTrue(normal.requires_grad == False)
+                    self.assertFalse(normal.requires_grad)
                 for feats in new_clouds.features_list():
-                    self.assertTrue(feats.requires_grad == False)
+                    self.assertFalse(feats.requires_grad)
 
                 for attrib in [
                     "points_packed",
@@ -425,9 +425,7 @@ class TestPointclouds(TestCaseMixin, unittest.TestCase):
                     "normals_padded",
                     "features_padded",
                 ]:
-                    self.assertTrue(
-                        getattr(new_clouds, attrib)().requires_grad == False
-                    )
+                    self.assertFalse(getattr(new_clouds, attrib)().requires_grad)
 
                 self.assertCloudsEqual(clouds, new_clouds)
 

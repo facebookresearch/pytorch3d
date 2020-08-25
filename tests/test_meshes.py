@@ -373,10 +373,10 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
 
             self.assertFalse(new_mesh.verts_packed().requires_grad)
             self.assertClose(new_mesh.verts_packed(), mesh.verts_packed())
-            self.assertTrue(new_mesh.verts_padded().requires_grad == False)
+            self.assertFalse(new_mesh.verts_padded().requires_grad)
             self.assertClose(new_mesh.verts_padded(), mesh.verts_padded())
             for v, newv in zip(mesh.verts_list(), new_mesh.verts_list()):
-                self.assertTrue(newv.requires_grad == False)
+                self.assertFalse(newv.requires_grad)
                 self.assertClose(newv, v)
 
     def test_laplacian_packed(self):
