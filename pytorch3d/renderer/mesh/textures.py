@@ -2,13 +2,15 @@
 
 import itertools
 import warnings
-from typing import Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Union
 
 import torch
 import torch.nn.functional as F
 from pytorch3d.ops import interpolate_face_attributes
 from pytorch3d.structures.utils import list_to_packed, list_to_padded, padded_to_list
 from torch.nn.functional import interpolate
+
+from .utils import pack_rectangles
 
 
 # This file contains classes and helper functions for texturing.
@@ -329,6 +331,7 @@ class TexturesAtlas(TexturesBase):
 
         [1] Liu et al, 'Soft Rasterizer: A Differentiable Renderer for Image-based
             3D Reasoning', ICCV 2019
+            See also https://github.com/ShichenLiu/SoftRas/issues/21
         """
         if isinstance(atlas, (list, tuple)):
             correct_format = all(
@@ -336,11 +339,15 @@ class TexturesAtlas(TexturesBase):
                     torch.is_tensor(elem)
                     and elem.ndim == 4
                     and elem.shape[1] == elem.shape[2]
+                    and elem.shape[1] == atlas[0].shape[1]
                 )
                 for elem in atlas
             )
             if not correct_format:
-                msg = "Expected atlas to be a list of tensors of shape (F, R, R, D)"
+                msg = (
+                    "Expected atlas to be a list of tensors of shape (F, R, R, D) "
+                    "with the same value of R."
+                )
                 raise ValueError(msg)
             self._atlas_list = atlas
             self._atlas_padded = None
@@ -529,6 +536,12 @@ class TexturesAtlas(TexturesBase):
         new_tex._num_faces_per_mesh = num_faces_per_mesh
         return new_tex
 
+    def join_scene(self) -> "TexturesAtlas":
+        """
+        Return a new TexturesAtlas amalgamating the batch.
+        """
+        return self.__class__(atlas=[torch.cat(self.atlas_list())])
+
 
 class TexturesUV(TexturesBase):
     def __init__(
@@ -560,7 +573,7 @@ class TexturesUV(TexturesBase):
         the two align_corners options at
         https://discuss.pytorch.org/t/22663/9 .
 
-        An example of how the indexing into the maps, with align_corners=True
+        An example of how the indexing into the maps, with align_corners=True,
         works is as follows.
         If maps[i] has shape [101, 1001] and the value of verts_uvs[i][j]
         is [0.4, 0.3], then a value of j in faces_uvs[i] means a vertex
@@ -574,10 +587,11 @@ class TexturesUV(TexturesBase):
         If maps[i] has shape [100, 1000] and the value of verts_uvs[i][j]
         is [0.405, 0.2995], then a value of j in faces_uvs[i] means a vertex
         whose color is given by maps[i][700, 40].
-        In this case, padding_mode even matters for values in verts_uvs
-        slightly above 0 or slightly below 1. In this case, it matters if the
-        first value is outside the interval [0.0005, 0.9995] or if the second
-        is outside the interval [0.005, 0.995].
+        When align_corners=False, padding_mode even matters for values in
+        verts_uvs slightly above 0 or slightly below 1. In this case, the
+        padding_mode matters if the first value is outside the interval
+        [0.0005, 0.9995] or if the second is outside the interval
+        [0.005, 0.995].
         """
         super().__init__()
         self.padding_mode = padding_mode
@@ -805,12 +819,9 @@ class TexturesUV(TexturesBase):
     def maps_padded(self) -> torch.Tensor:
         return self._maps_padded
 
-    def maps_list(self) -> torch.Tensor:
-        # maps_list is not used anywhere currently - maps
-        # are padded to ensure the (H, W) of all maps is the
-        # same across the batch and we don't store the
-        # unpadded sizes of the maps. Therefore just return
-        # the unbinded padded tensor.
+    def maps_list(self) -> List[torch.Tensor]:
+        if self._maps_list is not None:
+            return self._maps_list
         return self._maps_padded.unbind(0)
 
     def extend(self, N: int) -> "TexturesUV":
@@ -964,6 +975,143 @@ class TexturesUV(TexturesBase):
         )
         new_tex._num_faces_per_mesh = num_faces_per_mesh
         return new_tex
+
+    def _place_map_into_single_map(
+        self,
+        single_map: torch.Tensor,
+        map_: torch.Tensor,
+        location: Tuple[int, int, bool],  # (x,y) and whether flipped
+    ) -> None:
+        """
+        Copy map into a larger tensor single_map at the destination specified by location.
+        If align_corners is False, we add the needed border around the destination.
+
+        Used by join_scene.
+
+        Args:
+            single_map: (total_H, total_W, 3)
+            map_: (H, W, 3) source data
+            location: where to place map
+        """
+        do_flip = location[2]
+        source = map_.transpose(0, 1) if do_flip else map_
+        border_width = 0 if self.align_corners else 1
+        lower_u = location[0] + border_width
+        lower_v = location[1] + border_width
+        upper_u = lower_u + source.shape[0]
+        upper_v = lower_v + source.shape[1]
+        single_map[lower_u:upper_u, lower_v:upper_v] = source
+
+        if self.padding_mode != "zeros" and not self.align_corners:
+            single_map[lower_u - 1, lower_v:upper_v] = single_map[
+                lower_u, lower_v:upper_v
+            ]
+            single_map[upper_u, lower_v:upper_v] = single_map[
+                upper_u - 1, lower_v:upper_v
+            ]
+            single_map[lower_u:upper_u, lower_v - 1] = single_map[
+                lower_u:upper_u, lower_v
+            ]
+            single_map[lower_u:upper_u, upper_v] = single_map[
+                lower_u:upper_u, upper_v - 1
+            ]
+            single_map[lower_u - 1, lower_v - 1] = single_map[lower_u, lower_v]
+            single_map[lower_u - 1, upper_v] = single_map[lower_u, upper_v - 1]
+            single_map[upper_u, lower_v - 1] = single_map[upper_u - 1, lower_v]
+            single_map[upper_u, upper_v] = single_map[upper_u - 1, upper_v - 1]
+
+    def join_scene(self) -> "TexturesUV":
+        """
+        Return a new TexturesUV amalgamating the batch.
+
+        We calculate a large single map which contains the original maps,
+        and find verts_uvs to point into it. This will not replicate
+        behavior of padding for verts_uvs values outside [0,1].
+
+        If align_corners=False, we need to add an artificial border around
+        every map.
+
+        We use the function `pack_rectangles` to provide a layout for the
+        single map. _place_map_into_single_map is used to copy the maps
+        into the single map. The merging of verts_uvs and faces_uvs are
+        handled locally in this function.
+        """
+        maps = self.maps_list()
+        heights_and_widths = []
+        extra_border = 0 if self.align_corners else 2
+        for map_ in maps:
+            heights_and_widths.append(
+                (map_.shape[0] + extra_border, map_.shape[1] + extra_border)
+            )
+        merging_plan = pack_rectangles(heights_and_widths)
+        # pyre-fixme[16]: `Tensor` has no attribute `new_zeros`.
+        single_map = maps[0].new_zeros((*merging_plan.total_size, 3))
+        verts_uvs = self.verts_uvs_list()
+        verts_uvs_merged = []
+
+        for map_, loc, uvs in zip(maps, merging_plan.locations, verts_uvs):
+            new_uvs = uvs.clone()
+            self._place_map_into_single_map(single_map, map_, loc)
+            do_flip = loc[2]
+            x_shape = map_.shape[1] if do_flip else map_.shape[0]
+            y_shape = map_.shape[0] if do_flip else map_.shape[1]
+
+            if do_flip:
+                # Here we have flipped / transposed the map.
+                # In uvs, the y values are decreasing from 1 to 0 and the x
+                # values increase from 0 to 1. We subtract all values from 1
+                # as the x's become y's and the y's become x's.
+                new_uvs = 1.0 - new_uvs[:, [1, 0]]
+                if TYPE_CHECKING:
+                    new_uvs = torch.Tensor(new_uvs)
+
+            # If align_corners is True, then an index of x (where x is in
+            # the range 0 .. map_.shape[]-1) in one of the input maps
+            # was hit by a u of x/(map_.shape[]-1).
+            # That x is located at the index loc[] + x in the single_map, and
+            # to hit that we need u to equal (loc[] + x) / (total_size[]-1)
+            # so the old u should be mapped to
+            #   { u*(map_.shape[]-1) + loc[] } / (total_size[]-1)
+
+            # If align_corners is False, then an index of x (where x is in
+            # the range 1 .. map_.shape[]-2) in one of the input maps
+            # was hit by a u of (x+0.5)/(map_.shape[]).
+            # That x is located at the index loc[] + 1 + x in the single_map,
+            # (where the 1 is for the border)
+            # and to hit that we need u to equal (loc[] + 1 + x + 0.5) / (total_size[])
+            # so the old u should be mapped to
+            #   { loc[] + 1 + u*map_.shape[]-0.5 + 0.5 } / (total_size[])
+            #  = { loc[] + 1 + u*map_.shape[] } / (total_size[])
+
+            # We change the y's in new_uvs for the scaling of height,
+            # and the x's for the scaling of width.
+            # That is why the 1's and 0's are mismatched in these lines.
+            one_if_align = 1 if self.align_corners else 0
+            one_if_not_align = 1 - one_if_align
+            denom_x = merging_plan.total_size[0] - one_if_align
+            scale_x = x_shape - one_if_align
+            denom_y = merging_plan.total_size[1] - one_if_align
+            scale_y = y_shape - one_if_align
+            new_uvs[:, 1] *= scale_x / denom_x
+            new_uvs[:, 1] += (loc[0] + one_if_not_align) / denom_x
+            new_uvs[:, 0] *= scale_y / denom_y
+            new_uvs[:, 0] += (loc[1] + one_if_not_align) / denom_y
+
+            verts_uvs_merged.append(new_uvs)
+
+        faces_uvs_merged = []
+        offset = 0
+        for faces_uvs_, verts_uvs_ in zip(self.faces_uvs_list(), verts_uvs):
+            faces_uvs_merged.append(offset + faces_uvs_)
+            offset += verts_uvs_.shape[0]
+
+        return self.__class__(
+            maps=[single_map],
+            verts_uvs=[torch.cat(verts_uvs_merged)],
+            faces_uvs=[torch.cat(faces_uvs_merged)],
+            align_corners=self.align_corners,
+            padding_mode=self.padding_mode,
+        )
 
 
 class TexturesVertex(TexturesBase):
@@ -1156,3 +1304,9 @@ class TexturesVertex(TexturesBase):
         new_tex = self.__class__(verts_features=verts_features_list)
         new_tex._num_verts_per_mesh = num_faces_per_mesh
         return new_tex
+
+    def join_scene(self) -> "TexturesVertex":
+        """
+        Return a new TexturesVertex amalgamating the batch.
+        """
+        return self.__class__(verts_features=[torch.cat(self.verts_features_list())])

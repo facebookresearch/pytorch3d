@@ -33,7 +33,11 @@ from pytorch3d.renderer.mesh.shader import (
     SoftSilhouetteShader,
     TexturedSoftPhongShader,
 )
-from pytorch3d.structures.meshes import Meshes, join_mesh, join_meshes_as_batch
+from pytorch3d.structures.meshes import (
+    Meshes,
+    join_meshes_as_batch,
+    join_meshes_as_scene,
+)
 from pytorch3d.utils.ico_sphere import ico_sphere
 from pytorch3d.utils.torus import torus
 
@@ -571,6 +575,288 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
         self.assertClose(outputs[0][0, ..., :3], outputs[1][0, ..., :3], atol=1e-5)
         self.assertClose(outputs[0][1, ..., :3], outputs[2][0, ..., :3], atol=1e-5)
 
+    def test_join_uvs(self):
+        """Meshes with TexturesUV joined into a scene"""
+        # Test the result of rendering three tori with separate textures.
+        # The expected result is consistent with rendering them each alone.
+        # This tests TexturesUV.join_scene with rectangle flipping,
+        # and we check the form of the merged map as well.
+        torch.manual_seed(1)
+        device = torch.device("cuda:0")
+
+        R, T = look_at_view_transform(18, 0, 0)
+        cameras = FoVPerspectiveCameras(device=device, R=R, T=T)
+
+        raster_settings = RasterizationSettings(
+            image_size=256, blur_radius=0.0, faces_per_pixel=1
+        )
+
+        lights = PointLights(
+            device=device,
+            ambient_color=((1.0, 1.0, 1.0),),
+            diffuse_color=((0.0, 0.0, 0.0),),
+            specular_color=((0.0, 0.0, 0.0),),
+        )
+        blend_params = BlendParams(
+            sigma=1e-1,
+            gamma=1e-4,
+            background_color=torch.tensor([1.0, 1.0, 1.0], device=device),
+        )
+        renderer = MeshRenderer(
+            rasterizer=MeshRasterizer(cameras=cameras, raster_settings=raster_settings),
+            shader=HardPhongShader(
+                device=device, blend_params=blend_params, cameras=cameras, lights=lights
+            ),
+        )
+
+        plain_torus = torus(r=1, R=4, sides=5, rings=6, device=device)
+        [verts] = plain_torus.verts_list()
+        verts_shifted1 = verts.clone()
+        verts_shifted1 *= 0.5
+        verts_shifted1[:, 1] += 7
+        verts_shifted2 = verts.clone()
+        verts_shifted2 *= 0.5
+        verts_shifted2[:, 1] -= 7
+
+        [faces] = plain_torus.faces_list()
+        nocolor = torch.zeros((100, 100), device=device)
+        color_gradient = torch.linspace(0, 1, steps=100, device=device)
+        color_gradient1 = color_gradient[None].expand_as(nocolor)
+        color_gradient2 = color_gradient[:, None].expand_as(nocolor)
+        colors1 = torch.stack([nocolor, color_gradient1, color_gradient2], dim=2)
+        colors2 = torch.stack([color_gradient1, color_gradient2, nocolor], dim=2)
+        verts_uvs1 = torch.rand(size=(verts.shape[0], 2), device=device)
+        verts_uvs2 = torch.rand(size=(verts.shape[0], 2), device=device)
+
+        for i, align_corners, padding_mode in [
+            (0, True, "border"),
+            (1, False, "border"),
+            (2, False, "zeros"),
+        ]:
+            textures1 = TexturesUV(
+                maps=[colors1],
+                faces_uvs=[faces],
+                verts_uvs=[verts_uvs1],
+                align_corners=align_corners,
+                padding_mode=padding_mode,
+            )
+
+            # These downsamplings of colors2 are chosen to ensure a flip and a non flip
+            # when the maps are merged.
+            # We have maps of size (100, 100), (50, 99) and (99, 50).
+            textures2 = TexturesUV(
+                maps=[colors2[::2, :-1]],
+                faces_uvs=[faces],
+                verts_uvs=[verts_uvs2],
+                align_corners=align_corners,
+                padding_mode=padding_mode,
+            )
+            offset = torch.tensor([0, 0, 0.5], device=device)
+            textures3 = TexturesUV(
+                maps=[colors2[:-1, ::2] + offset],
+                faces_uvs=[faces],
+                verts_uvs=[verts_uvs2],
+                align_corners=align_corners,
+                padding_mode=padding_mode,
+            )
+            mesh1 = Meshes(verts=[verts], faces=[faces], textures=textures1)
+            mesh2 = Meshes(verts=[verts_shifted1], faces=[faces], textures=textures2)
+            mesh3 = Meshes(verts=[verts_shifted2], faces=[faces], textures=textures3)
+            mesh = join_meshes_as_scene([mesh1, mesh2, mesh3])
+
+            output = renderer(mesh)[0, ..., :3].cpu()
+            output1 = renderer(mesh1)[0, ..., :3].cpu()
+            output2 = renderer(mesh2)[0, ..., :3].cpu()
+            output3 = renderer(mesh3)[0, ..., :3].cpu()
+            # The background color is white and the objects do not overlap, so we can
+            # predict the merged image by taking the minimum over every channel
+            merged = torch.min(torch.min(output1, output2), output3)
+
+            image_ref = load_rgb_image(f"test_joinuvs{i}_final.png", DATA_DIR)
+            map_ref = load_rgb_image(f"test_joinuvs{i}_map.png", DATA_DIR)
+
+            if DEBUG:
+                Image.fromarray((output.numpy() * 255).astype(np.uint8)).save(
+                    DATA_DIR / f"test_joinuvs{i}_final_.png"
+                )
+                Image.fromarray((output.numpy() * 255).astype(np.uint8)).save(
+                    DATA_DIR / f"test_joinuvs{i}_merged.png"
+                )
+
+                Image.fromarray((output1.numpy() * 255).astype(np.uint8)).save(
+                    DATA_DIR / f"test_joinuvs{i}_1.png"
+                )
+                Image.fromarray((output2.numpy() * 255).astype(np.uint8)).save(
+                    DATA_DIR / f"test_joinuvs{i}_2.png"
+                )
+                Image.fromarray((output3.numpy() * 255).astype(np.uint8)).save(
+                    DATA_DIR / f"test_joinuvs{i}_3.png"
+                )
+                Image.fromarray(
+                    (mesh.textures.maps_padded()[0].cpu().numpy() * 255).astype(
+                        np.uint8
+                    )
+                ).save(DATA_DIR / f"test_joinuvs{i}_map_.png")
+                Image.fromarray(
+                    (mesh2.textures.maps_padded()[0].cpu().numpy() * 255).astype(
+                        np.uint8
+                    )
+                ).save(DATA_DIR / f"test_joinuvs{i}_map2.png")
+                Image.fromarray(
+                    (mesh3.textures.maps_padded()[0].cpu().numpy() * 255).astype(
+                        np.uint8
+                    )
+                ).save(DATA_DIR / f"test_joinuvs{i}_map3.png")
+
+            self.assertClose(output, merged, atol=0.015)
+            self.assertClose(output, image_ref, atol=0.05)
+            self.assertClose(mesh.textures.maps_padded()[0].cpu(), map_ref, atol=0.05)
+
+    def test_join_verts(self):
+        """Meshes with TexturesVertex joined into a scene"""
+        # Test the result of rendering two tori with separate textures.
+        # The expected result is consistent with rendering them each alone.
+        torch.manual_seed(1)
+        device = torch.device("cuda:0")
+        plain_torus = torus(r=1, R=4, sides=5, rings=6, device=device)
+        [verts] = plain_torus.verts_list()
+        verts_shifted1 = verts.clone()
+        verts_shifted1 *= 0.5
+        verts_shifted1[:, 1] += 7
+
+        faces = plain_torus.faces_list()
+        textures1 = TexturesVertex(verts_features=[torch.rand_like(verts)])
+        textures2 = TexturesVertex(verts_features=[torch.rand_like(verts)])
+        mesh1 = Meshes(verts=[verts], faces=faces, textures=textures1)
+        mesh2 = Meshes(verts=[verts_shifted1], faces=faces, textures=textures2)
+        mesh = join_meshes_as_scene([mesh1, mesh2])
+
+        R, T = look_at_view_transform(18, 0, 0)
+        cameras = FoVPerspectiveCameras(device=device, R=R, T=T)
+
+        raster_settings = RasterizationSettings(
+            image_size=256, blur_radius=0.0, faces_per_pixel=1
+        )
+
+        lights = PointLights(
+            device=device,
+            ambient_color=((1.0, 1.0, 1.0),),
+            diffuse_color=((0.0, 0.0, 0.0),),
+            specular_color=((0.0, 0.0, 0.0),),
+        )
+        blend_params = BlendParams(
+            sigma=1e-1,
+            gamma=1e-4,
+            background_color=torch.tensor([1.0, 1.0, 1.0], device=device),
+        )
+        renderer = MeshRenderer(
+            rasterizer=MeshRasterizer(cameras=cameras, raster_settings=raster_settings),
+            shader=HardPhongShader(
+                device=device, blend_params=blend_params, cameras=cameras, lights=lights
+            ),
+        )
+
+        output = renderer(mesh)
+
+        image_ref = load_rgb_image("test_joinverts_final.png", DATA_DIR)
+
+        if DEBUG:
+            debugging_outputs = []
+            for mesh_ in [mesh1, mesh2]:
+                debugging_outputs.append(renderer(mesh_))
+            Image.fromarray(
+                (output[0, ..., :3].cpu().numpy() * 255).astype(np.uint8)
+            ).save(DATA_DIR / "test_joinverts_final_.png")
+            Image.fromarray(
+                (debugging_outputs[0][0, ..., :3].cpu().numpy() * 255).astype(np.uint8)
+            ).save(DATA_DIR / "test_joinverts_1.png")
+            Image.fromarray(
+                (debugging_outputs[1][0, ..., :3].cpu().numpy() * 255).astype(np.uint8)
+            ).save(DATA_DIR / "test_joinverts_2.png")
+
+        result = output[0, ..., :3].cpu()
+        self.assertClose(result, image_ref, atol=0.05)
+
+    def test_join_atlas(self):
+        """Meshes with TexturesAtlas joined into a scene"""
+        # Test the result of rendering two tori with separate textures.
+        # The expected result is consistent with rendering them each alone.
+        torch.manual_seed(1)
+        device = torch.device("cuda:0")
+        plain_torus = torus(r=1, R=4, sides=5, rings=6, device=device)
+        [verts] = plain_torus.verts_list()
+        verts_shifted1 = verts.clone()
+        verts_shifted1 *= 1.2
+        verts_shifted1[:, 0] += 4
+        verts_shifted1[:, 1] += 5
+        verts[:, 0] -= 4
+        verts[:, 1] -= 4
+
+        [faces] = plain_torus.faces_list()
+        map_size = 3
+        # Two random atlases.
+        # The averaging of the random numbers here is not consistent with the
+        # meaning of the atlases, but makes each face a bit smoother than
+        # if everything had a random color.
+        atlas1 = torch.rand(size=(faces.shape[0], map_size, map_size, 3), device=device)
+        atlas1[:, 1] = 0.5 * atlas1[:, 0] + 0.5 * atlas1[:, 2]
+        atlas1[:, :, 1] = 0.5 * atlas1[:, :, 0] + 0.5 * atlas1[:, :, 2]
+        atlas2 = torch.rand(size=(faces.shape[0], map_size, map_size, 3), device=device)
+        atlas2[:, 1] = 0.5 * atlas2[:, 0] + 0.5 * atlas2[:, 2]
+        atlas2[:, :, 1] = 0.5 * atlas2[:, :, 0] + 0.5 * atlas2[:, :, 2]
+
+        textures1 = TexturesAtlas(atlas=[atlas1])
+        textures2 = TexturesAtlas(atlas=[atlas2])
+        mesh1 = Meshes(verts=[verts], faces=[faces], textures=textures1)
+        mesh2 = Meshes(verts=[verts_shifted1], faces=[faces], textures=textures2)
+        mesh_joined = join_meshes_as_scene([mesh1, mesh2])
+
+        R, T = look_at_view_transform(18, 0, 0)
+        cameras = FoVPerspectiveCameras(device=device, R=R, T=T)
+
+        raster_settings = RasterizationSettings(
+            image_size=512, blur_radius=0.0, faces_per_pixel=1
+        )
+
+        lights = PointLights(
+            device=device,
+            ambient_color=((1.0, 1.0, 1.0),),
+            diffuse_color=((0.0, 0.0, 0.0),),
+            specular_color=((0.0, 0.0, 0.0),),
+        )
+        blend_params = BlendParams(
+            sigma=1e-1,
+            gamma=1e-4,
+            background_color=torch.tensor([1.0, 1.0, 1.0], device=device),
+        )
+        renderer = MeshRenderer(
+            rasterizer=MeshRasterizer(cameras=cameras, raster_settings=raster_settings),
+            shader=HardPhongShader(
+                device=device, blend_params=blend_params, cameras=cameras, lights=lights
+            ),
+        )
+
+        output = renderer(mesh_joined)
+
+        image_ref = load_rgb_image("test_joinatlas_final.png", DATA_DIR)
+
+        if DEBUG:
+            debugging_outputs = []
+            for mesh_ in [mesh1, mesh2]:
+                debugging_outputs.append(renderer(mesh_))
+            Image.fromarray(
+                (output[0, ..., :3].cpu().numpy() * 255).astype(np.uint8)
+            ).save(DATA_DIR / "test_joinatlas_final_.png")
+            Image.fromarray(
+                (debugging_outputs[0][0, ..., :3].cpu().numpy() * 255).astype(np.uint8)
+            ).save(DATA_DIR / "test_joinatlas_1.png")
+            Image.fromarray(
+                (debugging_outputs[1][0, ..., :3].cpu().numpy() * 255).astype(np.uint8)
+            ).save(DATA_DIR / "test_joinatlas_2.png")
+
+        result = output[0, ..., :3].cpu()
+        self.assertClose(result, image_ref, atol=0.05)
+
     def test_joined_spheres(self):
         """
         Test a list of Meshes can be joined as a single mesh and
@@ -595,7 +881,7 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
             sphere_mesh_list.append(
                 Meshes(verts=verts, faces=sphere_list[i].faces_padded())
             )
-        joined_sphere_mesh = join_mesh(sphere_mesh_list)
+        joined_sphere_mesh = join_meshes_as_scene(sphere_mesh_list)
         joined_sphere_mesh.textures = TexturesVertex(
             verts_features=torch.ones_like(joined_sphere_mesh.verts_padded())
         )

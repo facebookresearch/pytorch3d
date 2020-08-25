@@ -1254,7 +1254,7 @@ class Meshes(object):
         """
         verts_packed = self.verts_packed()
         if vert_offsets_packed.shape != verts_packed.shape:
-            raise ValueError("Verts offsets must have dimension (all_v, 2).")
+            raise ValueError("Verts offsets must have dimension (all_v, 3).")
         # update verts packed
         self._verts_packed = verts_packed + vert_offsets_packed
         new_verts_list = list(
@@ -1548,26 +1548,43 @@ def join_meshes_as_batch(meshes: List[Meshes], include_textures: bool = True):
     return Meshes(verts=verts, faces=faces, textures=tex)
 
 
-def join_mesh(meshes: Union[Meshes, List[Meshes]]) -> Meshes:
+def join_meshes_as_scene(
+    meshes: Union[Meshes, List[Meshes]], include_textures: bool = True
+) -> Meshes:
     """
     Joins a batch of meshes in the form of a Meshes object or a list of Meshes
-    objects as a single mesh. If the input is a list, the Meshes objects in the list
-    must all be on the same device. This version ignores all textures in the input meshes.
+    objects as a single mesh. If the input is a list, the Meshes objects in the
+    list must all be on the same device. Unless include_textures is False, the
+    meshes must all have the same type of texture or must all not have textures.
+
+    If textures are included, then the textures are joined as a single scene in
+    addition to the meshes. For this, texture types have an appropriate method
+    called join_scene which joins mesh textures into a single texture.
+    If the textures are TexturesAtlas then they must have the same resolution.
+    If they are TexturesUV then they must have the same align_corners and
+    padding_mode. Values in verts_uvs outside [0, 1] will not
+    be respected.
 
     Args:
-        meshes: Meshes object that contains a batch of meshes or a list of Meshes objects
+        meshes: Meshes object that contains a batch of meshes, or a list of
+                    Meshes objects.
+        include_textures: (bool) whether to try to join the textures.
 
     Returns:
         new Meshes object containing a single mesh
     """
     if isinstance(meshes, List):
-        meshes = join_meshes_as_batch(meshes, include_textures=False)
+        meshes = join_meshes_as_batch(meshes, include_textures=include_textures)
 
     if len(meshes) == 1:
         return meshes
     verts = meshes.verts_packed()  # (sum(V_n), 3)
     # Offset automatically done by faces_packed
     faces = meshes.faces_packed()  # (sum(F_n), 3)
+    textures = None
 
-    mesh = Meshes(verts=verts.unsqueeze(0), faces=faces.unsqueeze(0))
+    if include_textures and meshes.textures is not None:
+        textures = meshes.textures.join_scene()
+
+    mesh = Meshes(verts=verts.unsqueeze(0), faces=faces.unsqueeze(0), textures=textures)
     return mesh

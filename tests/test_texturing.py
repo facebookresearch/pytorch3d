@@ -12,6 +12,7 @@ from pytorch3d.renderer.mesh.textures import (
     TexturesUV,
     TexturesVertex,
     _list_to_padded_wrapper,
+    pack_rectangles,
 )
 from pytorch3d.structures import Meshes, list_to_packed, packed_to_list
 from test_meshes import TestMeshes
@@ -730,3 +731,80 @@ class TestTexturesUV(TestCaseMixin, unittest.TestCase):
         index = torch.tensor([1, 2], dtype=torch.int64)
         tryindex(self, index, tex, meshes, source)
         tryindex(self, [2, 4], tex, meshes, source)
+
+
+class TestRectanglePacking(TestCaseMixin, unittest.TestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        torch.manual_seed(42)
+
+    def wrap_pack(self, sizes):
+        """
+        Call the pack_rectangles function, which we want to test,
+        and return its outputs.
+        Additionally makes some sanity checks on the output.
+        """
+        res = pack_rectangles(sizes)
+        total = res.total_size
+        self.assertGreaterEqual(total[0], 0)
+        self.assertGreaterEqual(total[1], 0)
+        mask = torch.zeros(total, dtype=torch.bool)
+        seen_x_bound = False
+        seen_y_bound = False
+        for (in_x, in_y), loc in zip(sizes, res.locations):
+            self.assertGreaterEqual(loc[0], 0)
+            self.assertGreaterEqual(loc[1], 0)
+            placed_x, placed_y = (in_y, in_x) if loc[2] else (in_x, in_y)
+            upper_x = placed_x + loc[0]
+            upper_y = placed_y + loc[1]
+            self.assertGreaterEqual(total[0], upper_x)
+            if total[0] == upper_x:
+                seen_x_bound = True
+            self.assertGreaterEqual(total[1], upper_y)
+            if total[1] == upper_y:
+                seen_y_bound = True
+            already_taken = torch.sum(mask[loc[0] : upper_x, loc[1] : upper_y])
+            self.assertEqual(already_taken, 0)
+            mask[loc[0] : upper_x, loc[1] : upper_y] = 1
+        self.assertTrue(seen_x_bound)
+        self.assertTrue(seen_y_bound)
+
+        self.assertTrue(torch.all(torch.sum(mask, dim=0, dtype=torch.int32) > 0))
+        self.assertTrue(torch.all(torch.sum(mask, dim=1, dtype=torch.int32) > 0))
+        return res
+
+    def assert_bb(self, sizes, expected):
+        """
+        Apply the pack_rectangles function to sizes and verify the
+        bounding box dimensions are expected.
+        """
+        self.assertSetEqual(set(self.wrap_pack(sizes).total_size), expected)
+
+    def test_simple(self):
+        self.assert_bb([(3, 4), (4, 3)], {6, 4})
+        self.assert_bb([(2, 2), (2, 4), (2, 2)], {4, 4})
+
+        # many squares
+        self.assert_bb([(2, 2)] * 9, {2, 18})
+
+        # One big square and many small ones.
+        self.assert_bb([(3, 3)] + [(1, 1)] * 2, {3, 4})
+        self.assert_bb([(3, 3)] + [(1, 1)] * 3, {3, 4})
+        self.assert_bb([(3, 3)] + [(1, 1)] * 4, {3, 5})
+        self.assert_bb([(3, 3)] + [(1, 1)] * 5, {3, 5})
+        self.assert_bb([(1, 1)] * 6 + [(3, 3)], {3, 5})
+        self.assert_bb([(3, 3)] + [(1, 1)] * 7, {3, 6})
+
+        # many identical rectangles
+        self.assert_bb([(7, 190)] * 4 + [(190, 7)] * 4, {190, 56})
+
+        # require placing the flipped version of a rectangle
+        self.assert_bb([(1, 100), (5, 96), (4, 5)], {100, 6})
+
+    def test_random(self):
+        for _ in range(5):
+            vals = torch.randint(size=(20, 2), low=1, high=18)
+            sizes = []
+            for j in range(vals.shape[0]):
+                sizes.append((int(vals[j, 0]), int(vals[j, 1])))
+            self.wrap_pack(sizes)
