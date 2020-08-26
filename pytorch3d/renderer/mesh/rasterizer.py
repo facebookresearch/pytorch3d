@@ -94,6 +94,12 @@ class MeshRasterizer(nn.Module):
             msg = "Cameras must be specified either at initialization \
                 or in the forward pass of MeshRasterizer"
             raise ValueError(msg)
+
+        n_cameras = len(cameras)
+        if n_cameras != 1 and n_cameras != len(meshes_world):
+            msg = "Wrong number (%r) of cameras for %r meshes"
+            raise ValueError(msg % (n_cameras, len(meshes_world)))
+
         verts_world = meshes_world.verts_padded()
 
         # NOTE: Retaining view space z coordinate for now.
