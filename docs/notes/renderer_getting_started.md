@@ -41,7 +41,7 @@ Rendering requires transformations between several different coordinate frames: 
 
 For example, given a teapot mesh, the world coordinate frame, camera coordiante frame and image are show in the figure below. Note that the world and camera coordinate frames have the +z direction pointing in to the page.
 
-<img src="assets/world_camera_image.png" width="1000">
+<img src="assets/world_camera_image.jpg" width="1000">
 
 ---
 

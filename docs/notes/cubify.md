@@ -1,3 +1,8 @@
+---
+hide_title: true
+sidebar_label: Cubify
+---
+
 # Cubify
 
 The [cubify operator](https://github.com/facebookresearch/pytorch3d/blob/master/pytorch3d/ops/cubify.py) converts an 3D occupancy grid of shape `BxDxHxW`, where `B` is the batch size, into a mesh instantiated as a [Meshes](https://github.com/facebookresearch/pytorch3d/blob/master/pytorch3d/structures/meshes.py) data structure of `B` elements. The operator replaces every occupied voxel (if its occupancy probability is greater than a user defined threshold) with a cuboid of 12 faces and 8 vertices. Shared vertices are merged, and internal faces are removed resulting in a **watertight** mesh.

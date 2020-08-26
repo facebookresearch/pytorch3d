@@ -1,3 +1,8 @@
+---
+hide_title: true
+sidebar_label: Data loaders
+---
+
 # Data loaders for common 3D Datasets
 
 ### ShapetNetCore
