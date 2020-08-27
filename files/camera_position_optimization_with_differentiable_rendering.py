@@ -1,4 +1,4 @@
-
+#!/usr/bin/env python
 # coding: utf-8
 
 # In[ ]:
@@ -24,20 +24,25 @@
 
 # If `torch`, `torchvision` and `pytorch3d` are not installed, run the following cell:
 
-# In[1]:
+# In[ ]:
 
 
 get_ipython().system('pip install torch torchvision')
-get_ipython().system("pip install 'git+https://github.com/facebookresearch/pytorch3d.git@stable'")
+import sys
+import torch
+if torch.__version__=='1.6.0+cu101' and sys.platform.startswith('linux'):
+    get_ipython().system('pip install pytorch3d')
+else:
+    get_ipython().system("pip install 'git+https://github.com/facebookresearch/pytorch3d.git@stable'")
 
 
-# In[2]:
+# In[ ]:
 
 
 import os
 import torch
 import numpy as np
-from tqdm import tqdm_notebook
+from tqdm.notebook import tqdm
 import imageio
 import torch.nn as nn
 import torch.nn.functional as F
@@ -48,16 +53,16 @@ from skimage import img_as_ubyte
 from pytorch3d.io import load_obj
 
 # datastructures
-from pytorch3d.structures import Meshes, Textures
+from pytorch3d.structures import Meshes
 
 # 3D transformations functions
 from pytorch3d.transforms import Rotate, Translate
 
 # rendering components
 from pytorch3d.renderer import (
-    OpenGLPerspectiveCameras, look_at_view_transform, look_at_rotation, 
+    FoVPerspectiveCameras, look_at_view_transform, look_at_rotation, 
     RasterizationSettings, MeshRenderer, MeshRasterizer, BlendParams,
-    SoftSilhouetteShader, HardPhongShader, PointLights
+    SoftSilhouetteShader, HardPhongShader, PointLights, TexturesVertex,
 )
 
 
@@ -67,19 +72,22 @@ from pytorch3d.renderer import (
 
 # If you are running this notebook locally after cloning the PyTorch3D repository, the mesh will already be available. **If using Google Colab, fetch the mesh and save it at the path `data/`**:
 
-# In[2]:
+# In[ ]:
 
 
 get_ipython().system('mkdir -p data')
 get_ipython().system('wget -P data https://dl.fbaipublicfiles.com/pytorch3d/data/teapot/teapot.obj')
 
 
-# In[3]:
+# In[ ]:
 
 
 # Set the cuda device 
-device = torch.device("cuda:0")
-torch.cuda.set_device(device)
+if torch.cuda.is_available():
+    device = torch.device("cuda:0")
+    torch.cuda.set_device(device)
+else:
+    device = torch.device("cpu")
 
 # Load the obj and ignore the textures and materials.
 verts, faces_idx, _ = load_obj("./data/teapot.obj")
@@ -87,7 +95,7 @@ faces = faces_idx.verts_idx
 
 # Initialize each vertex to be white in color.
 verts_rgb = torch.ones_like(verts)[None]  # (1, V, 3)
-textures = Textures(verts_rgb=verts_rgb.to(device))
+textures = TexturesVertex(verts_features=verts_rgb.to(device))
 
 # Create a Meshes object for the teapot. Here we have only one mesh in the batch.
 teapot_mesh = Meshes(
@@ -107,11 +115,11 @@ teapot_mesh = Meshes(
 # 
 # For optimizing the camera position we will use a renderer which produces a **silhouette** of the object only and does not apply any **lighting** or **shading**. We will also initialize another renderer which applies full **phong shading** and use this for visualizing the outputs. 
 
-# In[4]:
+# In[ ]:
 
 
-# Initialize an OpenGL perspective camera.
-cameras = OpenGLPerspectiveCameras(device=device)
+# Initialize a perspective camera.
+cameras = FoVPerspectiveCameras(device=device)
 
 # To blend the 100 faces we set a few parameters which control the opacity and the sharpness of 
 # edges. Refer to blending.py for more details. 
@@ -126,8 +134,6 @@ raster_settings = RasterizationSettings(
     image_size=256, 
     blur_radius=np.log(1. / 1e-4 - 1.) * blend_params.sigma, 
     faces_per_pixel=100, 
-    bin_size = None,  # this setting controls whether naive or coarse-to-fine rasterization is used
-    max_faces_per_bin = None  # this setting is for coarse rasterization
 )
 
 # Create a silhouette mesh renderer by composing a rasterizer and a shader. 
@@ -145,7 +151,6 @@ raster_settings = RasterizationSettings(
     image_size=256, 
     blur_radius=0.0, 
     faces_per_pixel=1, 
-    bin_size=0
 )
 # We can add a point light in front of the object. 
 lights = PointLights(device=device, location=((2.0, 2.0, -2.0),))
@@ -154,7 +159,7 @@ phong_renderer = MeshRenderer(
         cameras=cameras, 
         raster_settings=raster_settings
     ),
-    shader=HardPhongShader(device=device, lights=lights)
+    shader=HardPhongShader(device=device, cameras=cameras, lights=lights)
 )
 
 
@@ -166,7 +171,7 @@ phong_renderer = MeshRenderer(
 # 
 # We defined a camera which is positioned on the positive z axis hence sees the spout to the right. 
 
-# In[5]:
+# In[ ]:
 
 
 # Select the viewpoint using spherical angles  
@@ -197,7 +202,7 @@ plt.grid(False)
 # 
 # Here we create a simple model class and initialize a parameter for the camera position. 
 
-# In[17]:
+# In[ ]:
 
 
 class Model(nn.Module):
@@ -234,7 +239,7 @@ class Model(nn.Module):
 # 
 # Now we can create an instance of the **model** above and set up an **optimizer** for the camera position parameter. 
 
-# In[18]:
+# In[ ]:
 
 
 # We will save images periodically and compose them into a GIF.
@@ -250,7 +255,7 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.05)
 
 # ### Visualize the starting position and the reference position
 
-# In[19]:
+# In[ ]:
 
 
 plt.figure(figsize=(10, 10))
@@ -264,17 +269,17 @@ plt.title("Starting position")
 plt.subplot(1, 2, 2)
 plt.imshow(model.image_ref.cpu().numpy().squeeze())
 plt.grid(False)
-plt.title("Reference silhouette")
+plt.title("Reference silhouette");
 
 
 # ## 4. Run the optimization 
 # 
 # We run several iterations of the forward and backward pass and save outputs every 10 iterations. When this has finished take a look at `./teapot_optimization_demo.gif` for a cool gif of the optimization process!
 
-# In[20]:
+# In[ ]:
 
 
-loop = tqdm_notebook(range(200))
+loop = tqdm(range(200))
 for i in loop:
     optimizer.zero_grad()
     loss, _ = model()

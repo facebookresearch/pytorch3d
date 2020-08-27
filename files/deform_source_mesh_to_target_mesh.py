@@ -1,4 +1,4 @@
-
+#!/usr/bin/env python
 # coding: utf-8
 
 # In[ ]:
@@ -40,7 +40,12 @@
 
 
 get_ipython().system('pip install torch torchvision')
-get_ipython().system("pip install 'git+https://github.com/facebookresearch/pytorch3d.git@stable'")
+import sys
+import torch
+if torch.__version__=='1.6.0+cu101' and sys.platform.startswith('linux'):
+    get_ipython().system('pip install pytorch3d')
+else:
+    get_ipython().system("pip install 'git+https://github.com/facebookresearch/pytorch3d.git@stable'")
 
 
 # In[ ]:
@@ -59,7 +64,7 @@ from pytorch3d.loss import (
     mesh_normal_consistency,
 )
 import numpy as np
-from tqdm import tqdm_notebook
+from tqdm.notebook import tqdm
 get_ipython().run_line_magic('matplotlib', 'notebook')
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
@@ -68,14 +73,18 @@ mpl.rcParams['savefig.dpi'] = 80
 mpl.rcParams['figure.dpi'] = 80
 
 # Set the device
-device = torch.device("cuda:0")
+if torch.cuda.is_available():
+    device = torch.device("cuda:0")
+else:
+    device = torch.device("cpu")
+    print("WARNING: CPU only, this will be slow!")
 
 
 # ## 1. Load an obj file and create a Meshes object
 
 # Download the target 3D model of a dolphin. It will be saved locally as a file called `dolphin.obj`.
 
-# In[1]:
+# In[ ]:
 
 
 get_ipython().system('wget https://dl.fbaipublicfiles.com/pytorch3d/data/dolphin/dolphin.obj')
@@ -139,7 +148,7 @@ def plot_pointcloud(mesh, title=""):
     plt.show()
 
 
-# In[75]:
+# In[ ]:
 
 
 # %matplotlib notebook
@@ -164,7 +173,7 @@ deform_verts = torch.full(src_mesh.verts_packed().shape, 0.0, device=device, req
 optimizer = torch.optim.SGD([deform_verts], lr=1.0, momentum=0.9)
 
 
-# In[78]:
+# In[ ]:
 
 
 # Number of optimization steps
@@ -179,7 +188,7 @@ w_normal = 0.01
 w_laplacian = 0.1 
 # Plot period for the losses
 plot_period = 250
-loop = tqdm_notebook(range(Niter))
+loop = tqdm(range(Niter))
 
 chamfer_losses = []
 laplacian_losses = []
@@ -234,7 +243,7 @@ for i in loop:
 
 # ## 4. Visualize the loss
 
-# In[79]:
+# In[ ]:
 
 
 fig = plt.figure(figsize=(13, 5))
@@ -246,7 +255,7 @@ ax.plot(laplacian_losses, label="laplacian loss")
 ax.legend(fontsize="16")
 ax.set_xlabel("Iteration", fontsize="16")
 ax.set_ylabel("Loss", fontsize="16")
-ax.set_title("Loss vs iterations", fontsize="16")
+ax.set_title("Loss vs iterations", fontsize="16");
 
 
 # ## 5. Save the predicted mesh

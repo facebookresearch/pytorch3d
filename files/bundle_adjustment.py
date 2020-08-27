@@ -1,4 +1,4 @@
-
+#!/usr/bin/env python
 # coding: utf-8
 
 # In[ ]:
@@ -37,14 +37,19 @@
 
 # If `torch`, `torchvision` and `pytorch3d` are not installed, run the following cell:
 
-# In[1]:
+# In[ ]:
 
 
 get_ipython().system('pip install torch torchvision')
-get_ipython().system("pip install 'git+https://github.com/facebookresearch/pytorch3d.git@stable'")
+import sys
+import torch
+if torch.__version__=='1.6.0+cu101' and sys.platform.startswith('linux'):
+    get_ipython().system('pip install pytorch3d')
+else:
+    get_ipython().system("pip install 'git+https://github.com/facebookresearch/pytorch3d.git@stable'")
 
 
-# In[3]:
+# In[ ]:
 
 
 # imports
@@ -64,11 +69,16 @@ sys.path.append(os.path.abspath(''))
 
 # set for reproducibility
 torch.manual_seed(42)
+if torch.cuda.is_available():
+    device = torch.device("cuda:0")
+else:
+    device = torch.device("cpu")
+    print("WARNING: CPU only, this will be slow!")
 
 
 # If using **Google Colab**, fetch the utils file for plotting the camera scene, and the ground truth camera positions:
 
-# In[2]:
+# In[ ]:
 
 
 get_ipython().system('wget https://raw.githubusercontent.com/facebookresearch/pytorch3d/master/docs/tutorials/utils/camera_visualization.py')
@@ -97,16 +107,16 @@ camera_graph_file = './data/camera_graph.pth'
 
 # create the relative cameras
 cameras_relative = SfMPerspectiveCameras(
-    R = R_relative.cuda(),
-    T = T_relative.cuda(),
-    device = "cuda",
+    R = R_relative.to(device),
+    T = T_relative.to(device),
+    device = device,
 )
 
 # create the absolute ground truth cameras
 cameras_absolute_gt = SfMPerspectiveCameras(
-    R = R_absolute_gt.cuda(),
-    T = T_absolute_gt.cuda(),
-    device = "cuda",
+    R = R_absolute_gt.to(device),
+    T = T_absolute_gt.to(device),
+    device = device,
 )
 
 # the number of absolute camera positions
@@ -152,7 +162,7 @@ def get_relative_camera(cams, edges):
         SfMPerspectiveCameras(
             R = cams.R[edges[:, i]],
             T = cams.T[edges[:, i]],
-            device = "cuda",
+            device = device,
         ).get_world_to_view_transform()
          for i in (0, 1)
     ]
@@ -165,7 +175,7 @@ def get_relative_camera(cams, edges):
     cams_relative = SfMPerspectiveCameras(
                         R = matrix_rel[:, :3, :3],
                         T = matrix_rel[:, 3, :3],
-                        device = "cuda",
+                        device = device,
                     )
     return cams_relative
 
@@ -180,12 +190,12 @@ def get_relative_camera(cams, edges):
 # `R_absolute = so3_exponential_map(log_R_absolute)`
 # 
 
-# In[8]:
+# In[ ]:
 
 
 # initialize the absolute log-rotations/translations with random entries
-log_R_absolute_init = torch.randn(N, 3).float().cuda()
-T_absolute_init = torch.randn(N, 3).float().cuda()
+log_R_absolute_init = torch.randn(N, 3, dtype=torch.float32, device=device)
+T_absolute_init = torch.randn(N, 3, dtype=torch.float32, device=device)
 
 # furthermore, we know that the first camera is a trivial one 
 #    (see the description above)
@@ -201,7 +211,7 @@ T_absolute.requires_grad = True
 # the mask the specifies which cameras are going to be optimized
 #     (since we know the first camera is already correct, 
 #      we only optimize over the 2nd-to-last cameras)
-camera_mask = torch.ones(N, 1).float().cuda()
+camera_mask = torch.ones(N, 1, dtype=torch.float32, device=device)
 camera_mask[0] = 0.
 
 # init the optimizer
@@ -222,7 +232,7 @@ for it in range(n_iter):
     cameras_absolute = SfMPerspectiveCameras(
         R = R_absolute,
         T = T_absolute * camera_mask,
-        device = "cuda",
+        device = device,
     )
 
     # compute the relative cameras as a compositon of the absolute cameras

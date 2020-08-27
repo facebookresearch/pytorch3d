@@ -1,0 +1,614 @@
+<!DOCTYPE html><html lang=""><head><meta charSet="utf-8"/><meta http-equiv="X-UA-Compatible" content="IE=edge"/><title>PyTorch3D · A library for deep learning with 3D data</title><meta name="viewport" content="width=device-width"/><meta name="generator" content="Docusaurus"/><meta name="description" content="A library for deep learning with 3D data"/><meta property="og:title" content="PyTorch3D · A library for deep learning with 3D data"/><meta property="og:type" content="website"/><meta property="og:url" content="https://pytorch3d.org/"/><meta property="og:description" content="A library for deep learning with 3D data"/><meta property="og:image" content="https://pytorch3d.org/img/pytorch3dlogoicon.svg"/><meta name="twitter:card" content="summary"/><meta name="twitter:image" content="https://pytorch3d.org/img/pytorch3dlogoicon.svg"/><link rel="shortcut icon" href="/img/pytorch3dfavicon.png"/><link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css"/><script>
+              (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+              (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+              m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+              })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+              ga('create', 'UA-157376881-1', 'auto');
+              ga('send', 'pageview');
+            </script><script type="text/javascript" src="https://buttons.github.io/buttons.js"></script><script src="/js/scrollSpy.js"></script><link rel="stylesheet" href="/css/main.css"/><script src="/js/codetabs.js"></script></head><body><div class="fixedHeaderContainer"><div class="headerWrapper wrapper"><header><a href="/"><img class="logo" src="/img/pytorch3dfavicon.png" alt="PyTorch3D"/><h2 class="headerTitleWithLogo">PyTorch3D</h2></a><div class="navigationWrapper navigationSlider"><nav class="slidingNav"><ul class="nav-site nav-site-internal"><li class=""><a href="/docs/why_pytorch3d" target="_self">Docs</a></li><li class=""><a href="/tutorials" target="_self">Tutorials</a></li><li class=""><a href="https://pytorch3d.readthedocs.io/" target="_self">API</a></li><li class=""><a href="https://github.com/facebookresearch/pytorch3d" target="_self">GitHub</a></li></ul></nav></div></header></div></div><div class="navPusher"><div class="docMainWrapper wrapper"><div class="container docsNavContainer" id="docsNav"><nav class="toc"><div class="toggleNav"><section class="navWrapper wrapper"><div class="navBreadcrumb wrapper"><div class="navToggle" id="navToggler"><div class="hamburger-menu"><div class="line1"></div><div class="line2"></div><div class="line3"></div></div></div><h2><i>›</i><span></span></h2><div class="tocToggler" id="tocToggler"><i class="icon-toc"></i></div></div><div class="navGroups"><div class="navGroup"><h3 class="navGroupCategoryTitle">Tutorials</h3><ul class=""><li class="navListItem"><a class="navItem" href="/tutorials/">Overview</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">3D operators</h3><ul class=""><li class="navListItem"><a class="navItem" href="/tutorials/deform_source_mesh_to_target_mesh">Fit Mesh</a></li><li class="navListItem"><a class="navItem" href="/tutorials/bundle_adjustment">Bundle Adjustment</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Rendering</h3><ul class=""><li class="navListItem"><a class="navItem" href="/tutorials/render_textured_meshes">Render Textured Meshes</a></li><li class="navListItem"><a class="navItem" href="/tutorials/fit_textured_mesh">Fit a mesh with texture via rendering</a></li><li class="navListItem"><a class="navItem" href="/tutorials/camera_position_optimization_with_differentiable_rendering">Camera Position Optimization</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Dataloaders</h3><ul class=""><li class="navListItem navListItemActive"><a class="navItem" href="/tutorials/dataloaders_ShapeNetCore_R2N2">Data loaders for ShapeNetCore and R2N2</a></li></ul></div></div></section></div><script>
+            var coll = document.getElementsByClassName('collapsible');
+            var checkActiveCategory = true;
+            for (var i = 0; i < coll.length; i++) {
+              var links = coll[i].nextElementSibling.getElementsByTagName('*');
+              if (checkActiveCategory){
+                for (var j = 0; j < links.length; j++) {
+                  if (links[j].classList.contains('navListItemActive')){
+                    coll[i].nextElementSibling.classList.toggle('hide');
+                    coll[i].childNodes[1].classList.toggle('rotate');
+                    checkActiveCategory = false;
+                    break;
+                  }
+                }
+              }
+
+              coll[i].addEventListener('click', function() {
+                var arrow = this.childNodes[1];
+                arrow.classList.toggle('rotate');
+                var content = this.nextElementSibling;
+                content.classList.toggle('hide');
+              });
+            }
+
+            document.addEventListener('DOMContentLoaded', function() {
+              createToggler('#navToggler', '#docsNav', 'docsSliderActive');
+              createToggler('#tocToggler', 'body', 'tocActive');
+
+              var headings = document.querySelector('.toc-headings');
+              headings && headings.addEventListener('click', function(event) {
+                var el = event.target;
+                while(el !== headings){
+                  if (el.tagName === 'A') {
+                    document.body.classList.remove('tocActive');
+                    break;
+                  } else{
+                    el = el.parentNode;
+                  }
+                }
+              }, false);
+
+              function createToggler(togglerSelector, targetSelector, className) {
+                var toggler = document.querySelector(togglerSelector);
+                var target = document.querySelector(targetSelector);
+
+                if (!toggler) {
+                  return;
+                }
+
+                toggler.onclick = function(event) {
+                  event.preventDefault();
+
+                  target.classList.toggle(className);
+                };
+              }
+            });
+        </script></nav></div><div class="container mainContainer"><div class="wrapper"><div class="tutorialButtonsWrapper"><div class="tutorialButtonWrapper buttonWrapper"><a class="tutorialButton button" download="" href="https://colab.research.google.com/github/facebookresearch/pytorch3d/blob/stable/docs/tutorials/dataloaders_ShapeNetCore_R2N2.ipynb" target="_blank"><img class="colabButton" align="left" src="/img/colab_icon.png"/>Run in Google Colab</a></div><div class="tutorialButtonWrapper buttonWrapper"><a class="tutorialButton button" download="" href="/files/dataloaders_ShapeNetCore_R2N2.ipynb" target="_blank"><svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="file-download" class="svg-inline--fa fa-file-download fa-w-12" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path fill="currentColor" d="M224 136V0H24C10.7 0 0 10.7 0 24v464c0 13.3 10.7 24 24 24h336c13.3 0 24-10.7 24-24V160H248c-13.2 0-24-10.8-24-24zm76.45 211.36l-96.42 95.7c-6.65 6.61-17.39 6.61-24.04 0l-96.42-95.7C73.42 337.29 80.54 320 94.82 320H160v-80c0-8.84 7.16-16 16-16h32c8.84 0 16 7.16 16 16v80h65.18c14.28 0 21.4 17.29 11.27 27.36zM377 105L279.1 7c-4.5-4.5-10.6-7-17-7H256v128h128v-6.1c0-6.3-2.5-12.4-7-16.9z"></path></svg>Download Tutorial Jupyter Notebook</a></div><div class="tutorialButtonWrapper buttonWrapper"><a class="tutorialButton button" download="" href="/files/dataloaders_ShapeNetCore_R2N2.py" target="_blank"><svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="file-download" class="svg-inline--fa fa-file-download fa-w-12" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path fill="currentColor" d="M224 136V0H24C10.7 0 0 10.7 0 24v464c0 13.3 10.7 24 24 24h336c13.3 0 24-10.7 24-24V160H248c-13.2 0-24-10.8-24-24zm76.45 211.36l-96.42 95.7c-6.65 6.61-17.39 6.61-24.04 0l-96.42-95.7C73.42 337.29 80.54 320 94.82 320H160v-80c0-8.84 7.16-16 16-16h32c8.84 0 16 7.16 16 16v80h65.18c14.28 0 21.4 17.29 11.27 27.36zM377 105L279.1 7c-4.5-4.5-10.6-7-17-7H256v128h128v-6.1c0-6.3-2.5-12.4-7-16.9z"></path></svg>Download Tutorial Source Code</a></div></div><div class="tutorialBody">
+<script
+  src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js">
+</script>
+<script
+  src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js">
+</script>
+<div class="notebook">
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h1 id="Dataloaders-for-ShapeNetCore-and-R2N2">Dataloaders for ShapeNetCore and R2N2<a class="anchor-link" href="#Dataloaders-for-ShapeNetCore-and-R2N2">¶</a></h1><p>This tutorial shows how to:</p>
+<ul>
+<li>Load models from ShapeNetCore and R2N2 using PyTorch3D's data loaders.</li>
+<li>Pass the loaded datasets to <code>torch.utils.data.DataLoader</code>.</li>
+<li>Render ShapeNetCore models with PyTorch3D's renderer.</li>
+<li>Render R2N2 models with the same orientations as the original renderings in the dataset.</li>
+<li>Visualize R2N2 model voxels.</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="0.-Install-and-import-modules">0. Install and import modules<a class="anchor-link" href="#0.-Install-and-import-modules">¶</a></h2>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>If <code>torch</code>, <code>torchvision</code> and <code>pytorch3d</code> are not installed, run the following cell:</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="o">!</span>pip install torch torchvision
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">__version__</span><span class="o">==</span><span class="s1">'1.6.0+cu101'</span> <span class="ow">and</span> <span class="n">sys</span><span class="o">.</span><span class="n">platform</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">'linux'</span><span class="p">):</span>
+    <span class="o">!</span>pip install pytorch3d
+<span class="k">else</span><span class="p">:</span>
+    <span class="o">!</span>pip install <span class="s1">'git+https://github.com/facebookresearch/pytorch3d.git@stable'</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+
+<span class="kn">from</span> <span class="nn">pytorch3d.datasets</span> <span class="k">import</span> <span class="p">(</span>
+    <span class="n">R2N2</span><span class="p">,</span>
+    <span class="n">ShapeNetCore</span><span class="p">,</span>
+    <span class="n">collate_batched_meshes</span><span class="p">,</span>
+    <span class="n">render_cubified_voxels</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">pytorch3d.renderer</span> <span class="k">import</span> <span class="p">(</span>
+    <span class="n">OpenGLPerspectiveCameras</span><span class="p">,</span>
+    <span class="n">PointLights</span><span class="p">,</span>
+    <span class="n">RasterizationSettings</span><span class="p">,</span>
+    <span class="n">TexturesVertex</span><span class="p">,</span>
+    <span class="n">look_at_view_transform</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">pytorch3d.structures</span> <span class="k">import</span> <span class="n">Meshes</span>
+<span class="kn">from</span> <span class="nn">torch.utils.data</span> <span class="k">import</span> <span class="n">DataLoader</span>
+
+<span class="c1"># add path for demo utils functions </span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="s1">''</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>If using <strong>Google Colab</strong>, fetch the utils file for plotting image grids:</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="o">!</span>wget https://raw.githubusercontent.com/facebookresearch/pytorch3d/master/docs/tutorials/utils/plot_image_grid.py
+<span class="kn">from</span> <span class="nn">plot_image_grid</span> <span class="k">import</span> <span class="n">image_grid</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>OR if running locally uncomment and run the following cell:</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># from utils import image_grid</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="1.-Load-the-datasets">1. Load the datasets<a class="anchor-link" href="#1.-Load-the-datasets">¶</a></h2>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>If you haven't already downloaded the ShapeNetCore dataset, first do that following the instructions here: <a href="https://www.shapenet.org/">https://www.shapenet.org/</a>. ShapeNetCore is a subset of the ShapeNet dataset. In PyTorch3D we support both version 1 (57 categories) and version 2 (55 categories).</p>
+<p>Then modify <code>SHAPENET_PATH</code> below to you local path to the ShapeNetCore dataset folder.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Setup</span>
+<span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">():</span>
+    <span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">"cuda:0"</span><span class="p">)</span>
+    <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">set_device</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">"cpu"</span><span class="p">)</span>
+    
+<span class="n">SHAPENET_PATH</span> <span class="o">=</span> <span class="s2">""</span>
+<span class="n">shapenet_dataset</span> <span class="o">=</span> <span class="n">ShapeNetCore</span><span class="p">(</span><span class="n">SHAPENET_PATH</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>The R2N2 dataset can be downloaded using the instructions here: <a href="http://3d-r2n2.stanford.edu/">http://3d-r2n2.stanford.edu/</a>. Look at the links for <code>ShapeNetRendering</code> and <code>ShapeNetVox32</code>. The R2N2 dataset contains 13 categories that are a subset of the ShapeNetCore v.1
+dataset. The R2N2 dataset also contains its own 24 renderings of each object and voxelized models.</p>
+<p>Then modify <code>R2N2_PATH</code> and <code>SPLITS_PATH</code> below to your local R2N2 dataset folder path and splits file path respectively. Here we will load the <code>train</code> split of R2N2 and ask the voxels of each model to be returned.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">R2N2_PATH</span> <span class="o">=</span> <span class="s2">""</span>
+<span class="n">SPLITS_PATH</span> <span class="o">=</span> <span class="s2">"None"</span>
+<span class="n">r2n2_dataset</span> <span class="o">=</span> <span class="n">R2N2</span><span class="p">(</span><span class="s2">"train"</span><span class="p">,</span> <span class="n">SHAPENET_PATH</span><span class="p">,</span> <span class="n">R2N2_PATH</span><span class="p">,</span> <span class="n">SPLITS_PATH</span><span class="p">,</span> <span class="n">return_voxels</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>We can retrieve a model by indexing into the loaded dataset. For both ShapeNetCore and R2N2, we can examine the category this model belongs to (in the form of a synset id, equivalend to wnid described in ImageNet's API: <a href="http://image-net.org/download-API">http://image-net.org/download-API</a>), its model id, and its vertices and faces.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">shapenet_model</span> <span class="o">=</span> <span class="n">shapenet_dataset</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"This model belongs to the category "</span> <span class="o">+</span> <span class="n">shapenet_model</span><span class="p">[</span><span class="s2">"synset_id"</span><span class="p">]</span> <span class="o">+</span> <span class="s2">"."</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"This model has model id "</span> <span class="o">+</span> <span class="n">shapenet_model</span><span class="p">[</span><span class="s2">"model_id"</span><span class="p">]</span> <span class="o">+</span> <span class="s2">"."</span><span class="p">)</span>
+<span class="n">model_verts</span><span class="p">,</span> <span class="n">model_faces</span> <span class="o">=</span> <span class="n">shapenet_model</span><span class="p">[</span><span class="s2">"verts"</span><span class="p">],</span> <span class="n">shapenet_model</span><span class="p">[</span><span class="s2">"faces"</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>We can use its vertices and faces to form a <code>Meshes</code> object which is a PyTorch3D datastructure for working with batched meshes.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">model_textures</span> <span class="o">=</span> <span class="n">TexturesVertex</span><span class="p">(</span><span class="n">verts_features</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">model_verts</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)[</span><span class="kc">None</span><span class="p">])</span>
+<span class="n">shapenet_model_mesh</span> <span class="o">=</span> <span class="n">Meshes</span><span class="p">(</span>
+    <span class="n">verts</span><span class="o">=</span><span class="p">[</span><span class="n">model_verts</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)],</span>   
+    <span class="n">faces</span><span class="o">=</span><span class="p">[</span><span class="n">model_faces</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)],</span>
+    <span class="n">textures</span><span class="o">=</span><span class="n">model_textures</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>With R2N2, we can further examine R2N2's original renderings. For instance, if we would like to see the second and third views of the eleventh objects in the R2N2 dataset, we can do the following:</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">r2n2_renderings</span> <span class="o">=</span> <span class="n">r2n2_dataset</span><span class="p">[</span><span class="mi">10</span><span class="p">,[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">]]</span>
+<span class="n">image_grid</span><span class="p">(</span><span class="n">r2n2_renderings</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">rows</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">cols</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">rgb</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="2.-Use-the-datasets-with-torch.utils.data.DataLoader">2. Use the datasets with <code>torch.utils.data.DataLoader</code><a class="anchor-link" href="#2.-Use-the-datasets-with-torch.utils.data.DataLoader">¶</a></h2>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Training deep learning models, usually requires passing in batches of inputs. The <code>torch.utils.data.DataLoader</code> from Pytorch helps us do this. PyTorch3D provides a function <code>collate_batched_meshes</code> to group the input meshes into a single <code>Meshes</code> object which represents the batch. The <code>Meshes</code> datastructure can then be used directly by other PyTorch3D ops which might be part of the deep learning model (e.g. <code>graph_conv</code>).</p>
+<p>For R2N2, if all the models in the batch have the same number of views, the views, rotation matrices, translation matrices, intrinsic matrices and voxels will also be stacked into batched tensors.</p>
+<p><strong>NOTE</strong>: All models in the <code>val</code> split of R2N2 have 24 views, but there are 8 models that split their 24 views between <code>train</code> and <code>test</code> splits, in which case <code>collate_batched_meshes</code> will only be able to join the matrices, views and voxels as lists. However, this can be avoided by laoding only one view of each model by setting <code>return_all_views = False</code>.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">batch_size</span> <span class="o">=</span> <span class="mi">12</span>
+<span class="n">r2n2_single_view</span> <span class="o">=</span> <span class="n">R2N2</span><span class="p">(</span><span class="s2">"train"</span><span class="p">,</span> <span class="n">SHAPENET_PATH</span><span class="p">,</span> <span class="n">R2N2_PATH</span><span class="p">,</span> <span class="n">SPLITS_PATH</span><span class="p">,</span> <span class="n">return_all_views</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">return_voxels</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">r2n2_loader</span> <span class="o">=</span> <span class="n">DataLoader</span><span class="p">(</span><span class="n">r2n2_single_view</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">collate_fn</span><span class="o">=</span><span class="n">collate_batched_meshes</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Let's visualize all the views (one for each model) in the batch:</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">it</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="n">r2n2_loader</span><span class="p">)</span>
+<span class="n">r2n2_batch</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">it</span><span class="p">)</span>
+<span class="n">batch_renderings</span> <span class="o">=</span> <span class="n">r2n2_batch</span><span class="p">[</span><span class="s2">"images"</span><span class="p">]</span> <span class="c1"># (N, V, H, W, 3), and in this case V is 1.</span>
+<span class="n">image_grid</span><span class="p">(</span><span class="n">batch_renderings</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">rows</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">cols</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">rgb</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="3.-Render-ShapeNetCore-models-with-PyTorch3D's-differntiable-renderer">3. Render ShapeNetCore models with PyTorch3D's differntiable renderer<a class="anchor-link" href="#3.-Render-ShapeNetCore-models-with-PyTorch3D's-differntiable-renderer">¶</a></h2>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Both <code>ShapeNetCore</code> and <code>R2N2</code> dataloaders have customized <code>render</code> functions that support rendering models by specifying their model ids, categories or indices using PyTorch3D's differentiable renderer implementation.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Rendering settings.</span>
+<span class="n">R</span><span class="p">,</span> <span class="n">T</span> <span class="o">=</span> <span class="n">look_at_view_transform</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mi">90</span><span class="p">)</span>
+<span class="n">cameras</span> <span class="o">=</span> <span class="n">OpenGLPerspectiveCameras</span><span class="p">(</span><span class="n">R</span><span class="o">=</span><span class="n">R</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="n">T</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+<span class="n">raster_settings</span> <span class="o">=</span> <span class="n">RasterizationSettings</span><span class="p">(</span><span class="n">image_size</span><span class="o">=</span><span class="mi">512</span><span class="p">)</span>
+<span class="n">lights</span> <span class="o">=</span> <span class="n">PointLights</span><span class="p">(</span><span class="n">location</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">2.0</span><span class="p">],</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)[</span><span class="kc">None</span><span class="p">],</span><span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>First we will try to render three models by their model ids:</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">images_by_model_ids</span> <span class="o">=</span> <span class="n">shapenet_dataset</span><span class="o">.</span><span class="n">render</span><span class="p">(</span>
+    <span class="n">model_ids</span><span class="o">=</span><span class="p">[</span>
+        <span class="s2">"13394ca47c89f91525a3aaf903a41c90"</span><span class="p">,</span>
+        <span class="s2">"14755c2ee8e693aba508f621166382b0"</span><span class="p">,</span>
+        <span class="s2">"156c4207af6d2c8f1fdc97905708b8ea"</span><span class="p">,</span>
+    <span class="p">],</span>
+    <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
+    <span class="n">cameras</span><span class="o">=</span><span class="n">cameras</span><span class="p">,</span>
+    <span class="n">raster_settings</span><span class="o">=</span><span class="n">raster_settings</span><span class="p">,</span>
+    <span class="n">lights</span><span class="o">=</span><span class="n">lights</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">image_grid</span><span class="p">(</span><span class="n">images_by_model_ids</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">rows</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">cols</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">rgb</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Suppose we would like to render the first three models in the dataset, we can render models by their indices:</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">images_by_idxs</span> <span class="o">=</span> <span class="n">shapenet_dataset</span><span class="o">.</span><span class="n">render</span><span class="p">(</span>
+    <span class="n">idxs</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">)),</span>
+    <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
+    <span class="n">cameras</span><span class="o">=</span><span class="n">cameras</span><span class="p">,</span>
+    <span class="n">raster_settings</span><span class="o">=</span><span class="n">raster_settings</span><span class="p">,</span>
+    <span class="n">lights</span><span class="o">=</span><span class="n">lights</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">image_grid</span><span class="p">(</span><span class="n">images_by_idxs</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">rows</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">cols</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">rgb</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Alternatively, if we are not interested in any particular models but would like see random models from some specific categories, we can do that by specifying <code>categories</code> and <code>sample_nums</code>. For example, if we would like to render 2 models from the category "faucet" and 3 models from the category "chair", we can do the following:</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">images_by_categories</span> <span class="o">=</span> <span class="n">shapenet_dataset</span><span class="o">.</span><span class="n">render</span><span class="p">(</span>
+    <span class="n">categories</span><span class="o">=</span><span class="p">[</span><span class="s2">"faucet"</span><span class="p">,</span> <span class="s2">"chair"</span><span class="p">],</span>
+    <span class="n">sample_nums</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+    <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
+    <span class="n">cameras</span><span class="o">=</span><span class="n">cameras</span><span class="p">,</span>
+    <span class="n">raster_settings</span><span class="o">=</span><span class="n">raster_settings</span><span class="p">,</span>
+    <span class="n">lights</span><span class="o">=</span><span class="n">lights</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">image_grid</span><span class="p">(</span><span class="n">images_by_categories</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">rows</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">cols</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">rgb</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>If we are not interested in any particular categories and just would like to render some random models from the whole dataset, we can set the number of models to be rendered in <code>sample_nums</code> and not specify any <code>categories</code>:</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">random_model_images</span> <span class="o">=</span> <span class="n">shapenet_dataset</span><span class="o">.</span><span class="n">render</span><span class="p">(</span>
+    <span class="n">sample_nums</span><span class="o">=</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span>
+    <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
+    <span class="n">cameras</span><span class="o">=</span><span class="n">cameras</span><span class="p">,</span>
+    <span class="n">raster_settings</span><span class="o">=</span><span class="n">raster_settings</span><span class="p">,</span>
+    <span class="n">lights</span><span class="o">=</span><span class="n">lights</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">image_grid</span><span class="p">(</span><span class="n">random_model_images</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">rows</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">cols</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">rgb</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="4.-Render-R2N2-models-with-the-same-orientations-as-the-original-renderings-in-the-dataset">4. Render R2N2 models with the same orientations as the original renderings in the dataset<a class="anchor-link" href="#4.-Render-R2N2-models-with-the-same-orientations-as-the-original-renderings-in-the-dataset">¶</a></h2>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>We can render R2N2 models the same way as we rendered ShapeNetCore models above. In addition, we can also render R2N2 models with the same orientations as the original renderings in the dataset. For this we will use R2N2's customized <code>render</code> function and a different type of PyTorch3D camera called <code>BlenderCamera</code>.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>In this example, we will render the seventh model with the same orientations as its second and third views. First we will retrieve R2N2's original renderings to compare with the result.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">original_rendering</span> <span class="o">=</span> <span class="n">r2n2_dataset</span><span class="p">[</span><span class="mi">6</span><span class="p">,[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">]][</span><span class="s2">"images"</span><span class="p">]</span>
+<span class="n">image_grid</span><span class="p">(</span><span class="n">original_rendering</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">rows</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">cols</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">rgb</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Next, we will visualize PyTorch3d's renderings:</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">r2n2_oriented_images</span> <span class="o">=</span> <span class="n">r2n2_dataset</span><span class="o">.</span><span class="n">render</span><span class="p">(</span>
+    <span class="n">idxs</span><span class="o">=</span><span class="p">[</span><span class="mi">6</span><span class="p">],</span>
+    <span class="n">view_idxs</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span>
+    <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
+    <span class="n">raster_settings</span><span class="o">=</span><span class="n">raster_settings</span><span class="p">,</span>
+    <span class="n">lights</span><span class="o">=</span><span class="n">lights</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">image_grid</span><span class="p">(</span><span class="n">r2n2_oriented_images</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">rows</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">cols</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">rgb</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="5.-Visualize-R2N2-models'-voxels">5. Visualize R2N2 models' voxels<a class="anchor-link" href="#5.-Visualize-R2N2-models'-voxels">¶</a></h2>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>R2N2 dataloader also returns models' voxels. We can visualize them by utilizing R2N2's <code>render_vox_to_mesh</code> function. This will cubify the voxels to a Meshes object, which will then be rendered.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>In this example we will visualize the tenth model in the dataset with the same orientation of its second and third views. First we will retrieve R2N2's original renderings to compare with the result.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">r2n2_model</span> <span class="o">=</span> <span class="n">r2n2_dataset</span><span class="p">[</span><span class="mi">9</span><span class="p">,[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">]]</span>
+<span class="n">original_rendering</span> <span class="o">=</span> <span class="n">r2n2_model</span><span class="p">[</span><span class="s2">"images"</span><span class="p">]</span>
+<span class="n">image_grid</span><span class="p">(</span><span class="n">original_rendering</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">rows</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">cols</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">rgb</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Next, we will pass the voxels to <code>render_vox_to_mesh</code>:</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">vox_render</span> <span class="o">=</span> <span class="n">render_cubified_voxels</span><span class="p">(</span><span class="n">r2n2_model</span><span class="p">[</span><span class="s2">"voxels"</span><span class="p">],</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+<span class="n">image_grid</span><span class="p">(</span><span class="n">vox_render</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">rows</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">cols</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">rgb</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div></div></div></div></div><footer class="nav-footer" id="footer"><section class="sitemap"><div class="footerSection"><div class="social"><a class="github-button" href="https://github.com/facebookresearch/pytorch3d" data-count-href="https://github.com/facebookresearch/pytorch3d/stargazers" data-show-count="true" data-count-aria-label="# stargazers on GitHub" aria-label="Star PyTorch3D on GitHub">pytorch3d</a></div></div></section><a href="https://opensource.facebook.com/" target="_blank" rel="noreferrer noopener" class="fbOpenSource"><img src="/img/oss_logo.png" alt="Facebook Open Source" width="170" height="45"/></a><section class="copyright">Copyright © 2020 Facebook Inc<br/>Legal:<a href="https://opensource.facebook.com/legal/privacy/" target="_blank" rel="noreferrer noopener">Privacy</a><a href="https://opensource.facebook.com/legal/terms/" target="_blank" rel="noreferrer noopener">Terms</a></section></footer></div></body></html>

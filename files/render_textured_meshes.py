@@ -1,4 +1,4 @@
-
+#!/usr/bin/env python
 # coding: utf-8
 
 # In[ ]:
@@ -20,14 +20,19 @@
 
 # If `torch`, `torchvision` and `pytorch3d` are not installed, run the following cell:
 
-# In[1]:
+# In[ ]:
 
 
 get_ipython().system('pip install torch torchvision')
-get_ipython().system("pip install 'git+https://github.com/facebookresearch/pytorch3d.git@stable'")
+import sys
+import torch
+if torch.__version__=='1.6.0+cu101' and sys.platform.startswith('linux'):
+    get_ipython().system('pip install pytorch3d')
+else:
+    get_ipython().system("pip install 'git+https://github.com/facebookresearch/pytorch3d.git@stable'")
 
 
-# In[1]:
+# In[ ]:
 
 
 import os
@@ -36,20 +41,21 @@ import matplotlib.pyplot as plt
 from skimage.io import imread
 
 # Util function for loading meshes
-from pytorch3d.io import load_objs_as_meshes
+from pytorch3d.io import load_objs_as_meshes, load_obj
 
 # Data structures and functions for rendering
-from pytorch3d.structures import Meshes, Textures
+from pytorch3d.structures import Meshes
 from pytorch3d.renderer import (
     look_at_view_transform,
-    OpenGLPerspectiveCameras, 
+    FoVPerspectiveCameras, 
     PointLights, 
     DirectionalLights, 
     Materials, 
     RasterizationSettings, 
     MeshRenderer, 
     MeshRasterizer,  
-    TexturedSoftPhongShader
+    SoftPhongShader,
+    TexturesUV
 )
 
 # add path for demo utils functions 
@@ -60,7 +66,7 @@ sys.path.append(os.path.abspath(''))
 
 # If using **Google Colab**, fetch the utils file for plotting image grids:
 
-# In[2]:
+# In[ ]:
 
 
 get_ipython().system('wget https://raw.githubusercontent.com/facebookresearch/pytorch3d/master/docs/tutorials/utils/plot_image_grid.py')
@@ -69,7 +75,7 @@ from plot_image_grid import image_grid
 
 # OR if running **locally** uncomment and run the following cell:
 
-# In[13]:
+# In[ ]:
 
 
 # from utils import image_grid
@@ -81,14 +87,14 @@ from plot_image_grid import image_grid
 # 
 # **Meshes** is a unique datastructure provided in PyTorch3D for working with batches of meshes of different sizes. 
 # 
-# **Textures** is an auxillary datastructure for storing texture information about meshes. 
+# **TexturesUV** is an auxillary datastructure for storing vertex uv and texture maps for meshes. 
 # 
 # **Meshes** has several class methods which are used throughout the rendering pipeline.
 
 # If running this notebook using **Google Colab**, run the following cell to fetch the mesh obj and texture files and save it at the path `data/cow_mesh`:
 # If running locally, the data is already available at the correct path. 
 
-# In[3]:
+# In[ ]:
 
 
 get_ipython().system('mkdir -p data/cow_mesh')
@@ -97,12 +103,15 @@ get_ipython().system('wget -P data/cow_mesh https://dl.fbaipublicfiles.com/pytor
 get_ipython().system('wget -P data/cow_mesh https://dl.fbaipublicfiles.com/pytorch3d/data/cow_mesh/cow_texture.png')
 
 
-# In[2]:
+# In[ ]:
 
 
 # Setup
-device = torch.device("cuda:0")
-torch.cuda.set_device(device)
+if torch.cuda.is_available():
+    device = torch.device("cuda:0")
+    torch.cuda.set_device(device)
+else:
+    device = torch.device("cpu")
 
 # Set paths
 DATA_DIR = "./data"
@@ -115,7 +124,7 @@ texture_image=mesh.textures.maps_padded()
 
 # #### Let's visualize the texture map
 
-# In[3]:
+# In[ ]:
 
 
 plt.figure(figsize=(7,7))
@@ -130,14 +139,14 @@ plt.axis('off');
 # 
 # In this example we will first create a **renderer** which uses a **perspective camera**, a **point light** and applies **phong shading**. Then we learn how to vary different components using the modular API.  
 
-# In[4]:
+# In[ ]:
 
 
-# Initialize an OpenGL perspective camera.
+# Initialize a camera.
 # With world coordinates +Y up, +X left and +Z in, the front of the cow is facing the -Z direction. 
 # So we move the camera by 180 in the azimuth direction so it is facing the front of the cow. 
 R, T = look_at_view_transform(2.7, 0, 180) 
-cameras = OpenGLPerspectiveCameras(device=device, R=R, T=T)
+cameras = FoVPerspectiveCameras(device=device, R=R, T=T)
 
 # Define the settings for rasterization and shading. Here we set the output image to be of size
 # 512x512. As we are rendering images for visualization purposes only we will set faces_per_pixel=1
@@ -149,8 +158,6 @@ raster_settings = RasterizationSettings(
     image_size=512, 
     blur_radius=0.0, 
     faces_per_pixel=1, 
-    bin_size = None,  # this setting controls whether naive or coarse-to-fine rasterization is used
-    max_faces_per_bin = None  # this setting is for coarse rasterization
 )
 
 # Place a point light in front of the object. As mentioned above, the front of the cow is facing the 
@@ -165,7 +172,7 @@ renderer = MeshRenderer(
         cameras=cameras, 
         raster_settings=raster_settings
     ),
-    shader=TexturedSoftPhongShader(
+    shader=SoftPhongShader(
         device=device, 
         cameras=cameras,
         lights=lights
@@ -177,7 +184,7 @@ renderer = MeshRenderer(
 
 # The light is in front of the object so it is bright and the image has specular highlights.
 
-# In[5]:
+# In[ ]:
 
 
 images = renderer(mesh)
@@ -195,7 +202,7 @@ plt.axis("off");
 # 
 # The image is now dark as there is only ambient lighting, and there are no specular highlights.
 
-# In[6]:
+# In[ ]:
 
 
 # Now move the light so it is on the +Z axis which will be behind the cow. 
@@ -203,7 +210,7 @@ lights.location = torch.tensor([0.0, 0.0, +1.0], device=device)[None]
 images = renderer(mesh, lights=lights)
 
 
-# In[7]:
+# In[ ]:
 
 
 plt.figure(figsize=(10, 10))
@@ -220,12 +227,12 @@ plt.axis("off");
 # - change the **position** of the point light
 # - change the **material reflectance** properties of the mesh
 
-# In[8]:
+# In[ ]:
 
 
 # Rotate the object by increasing the elevation and azimuth angles
 R, T = look_at_view_transform(dist=2.7, elev=10, azim=-150)
-cameras = OpenGLPerspectiveCameras(device=device, R=R, T=T)
+cameras = FoVPerspectiveCameras(device=device, R=R, T=T)
 
 # Move the light location so the light is shining on the cow's face.  
 lights.location = torch.tensor([[2.0, 2.0, -2.0]], device=device)
@@ -241,7 +248,7 @@ materials = Materials(
 images = renderer(mesh, lights=lights, materials=materials, cameras=cameras)
 
 
-# In[9]:
+# In[ ]:
 
 
 plt.figure(figsize=(10, 10))
@@ -256,7 +263,7 @@ plt.axis("off");
 # The renderer and associated components can take batched inputs and **render a batch of output images in one forward pass**. We will now use this feature to render the mesh from many different viewpoints.
 # 
 
-# In[10]:
+# In[ ]:
 
 
 # Set batch size - this is the number of different viewpoints from which we want to render the mesh.
@@ -275,13 +282,13 @@ azim = torch.linspace(-180, 180, batch_size)
 # view the camera from the same distance and specify dist=2.7 as a float,
 # and then specify elevation and azimuth angles for each viewpoint as tensors. 
 R, T = look_at_view_transform(dist=2.7, elev=elev, azim=azim)
-cameras = OpenGLPerspectiveCameras(device=device, R=R, T=T)
+cameras = FoVPerspectiveCameras(device=device, R=R, T=T)
 
 # Move the light back in front of the cow which is facing the -z direction.
 lights.location = torch.tensor([[0.0, 0.0, -3.0]], device=device)
 
 
-# In[11]:
+# In[ ]:
 
 
 # We can pass arbirary keyword arguments to the rasterizer/shader via the renderer
@@ -289,7 +296,7 @@ lights.location = torch.tensor([[0.0, 0.0, -3.0]], device=device)
 images = renderer(meshes, cameras=cameras, lights=lights)
 
 
-# In[14]:
+# In[ ]:
 
 
 image_grid(images.cpu().numpy(), rows=4, cols=5, rgb=True)
