@@ -8,9 +8,9 @@
 The core library is written in PyTorch. Several components have underlying implementation in CUDA for improved performance. A subset of these components have CPU implementations in C++/Pytorch. It is advised to use PyTorch3D with GPU support in order to use all the features.
 
 - Linux or macOS or Windows
-- Python ≥ 3.6
-- PyTorch 1.4 or 1.5
-- torchvision that matches the PyTorch installation. You can install them together at pytorch.org to make sure of this.
+- Python 3.6, 3.7 or 3.8
+- PyTorch 1.4, 1.5.0, 1.5.1 or 1.6.0
+- torchvision that matches the PyTorch installation. You can install them together as explained at pytorch.org to make sure of this.
 - gcc & g++ ≥ 4.9
 - [fvcore](https://github.com/facebookresearch/fvcore)
 - If CUDA is to be used, use at least version 9.2.
@@ -19,7 +19,7 @@ These can be installed by running:
 ```
 conda create -n pytorch3d python=3.8
 conda activate pytorch3d
-conda install -c pytorch pytorch torchvision cudatoolkit=10.2
+conda install -c pytorch pytorch=1.6.0 torchvision cudatoolkit=10.2
 conda install -c conda-forge -c fvcore fvcore
 ```
 
@@ -42,7 +42,7 @@ conda install jupyter
 pip install scikit-image matplotlib imageio
 
 # Tests/Linting
-pip install black isort flake8 flake8-bugbear flake8-comprehensions
+pip install black 'isort<5' flake8 flake8-bugbear flake8-comprehensions
 ```
 
 ## Installing prebuilt binaries for PyTorch3D
@@ -60,21 +60,28 @@ Or, to install a nightly (non-official, alpha) build:
 # Anaconda Cloud
 conda install pytorch3d -c pytorch3d-nightly
 ```
-### 2. Install without CUDA support from PyPI, on Linux and Mac
+### 2. Install from PyPI, on Linux and Mac
+This works with pytorch 1.6.0 only.
 ```
 pip install pytorch3d
 ```
+On Linux this has support for CUDA 10.1. On Mac this is CPU-only.
 
 ## Building / installing from source.
-CUDA support will be included if CUDA is enabled or if the environment variable
+CUDA support will be included if CUDA is available in pytorch or if the environment variable
 `FORCE_CUDA` is set to `1`.
 
 ### 1. Install from GitHub
 ```
 pip install 'git+https://github.com/facebookresearch/pytorch3d.git'
 ```
+To install using the code of the released version instead of from the main branch, use the following instead.
+```
+pip install 'git+https://github.com/facebookresearch/pytorch3d.git@stable'
+```
 
 **Install from Github on macOS:**
+Some environment variables should be provided, like this.
 ```
 MACOSX_DEPLOYMENT_TARGET=10.14 CC=clang CXX=clang++ pip install 'git+https://github.com/facebookresearch/pytorch3d.git'
 ```
