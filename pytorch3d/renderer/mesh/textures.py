@@ -52,7 +52,6 @@ def _list_to_padded_wrapper(
       x_padded: tensor consisting of padded input tensors
     """
     N = len(x)
-    # pyre-fixme[16]: `Tensor` has no attribute `ndim`.
     dims = x[0].ndim
     reshape_dims = x[0].shape[1:]
     D = torch.prod(torch.tensor(reshape_dims)).item()
@@ -598,7 +597,6 @@ class TexturesUV(TexturesBase):
         self.align_corners = align_corners
         if isinstance(faces_uvs, (list, tuple)):
             for fv in faces_uvs:
-                # pyre-fixme[16]: `Tensor` has no attribute `ndim`.
                 if fv.ndim != 2 or fv.shape[-1] != 3:
                     msg = "Expected faces_uvs to be of shape (F, 3); got %r"
                     raise ValueError(msg % repr(fv.shape))
@@ -1129,9 +1127,7 @@ class TexturesVertex(TexturesBase):
         """
         if isinstance(verts_features, (tuple, list)):
             correct_shape = all(
-                # pyre-fixme[16]: `Tensor` has no attribute `ndim`.
-                (torch.is_tensor(v) and v.ndim == 2)
-                for v in verts_features
+                (torch.is_tensor(v) and v.ndim == 2) for v in verts_features
             )
             if not correct_shape:
                 raise ValueError(

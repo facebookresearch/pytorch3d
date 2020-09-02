@@ -48,7 +48,6 @@ def list_to_padded(
     )
     for i, y in enumerate(x):
         if len(y) > 0:
-            # pyre-fixme[16]: `Tensor` has no attribute `ndim`.
             if y.ndim != 2:
                 raise ValueError("Supports only 2-dimensional tensor items")
             x_padded[i, : y.shape[0], : y.shape[1]] = y
@@ -70,7 +69,6 @@ def padded_to_list(x: torch.Tensor, split_size: Union[list, tuple, None] = None)
     Returns:
       x_list: a list of tensors
     """
-    # pyre-fixme[16]: `Tensor` has no attribute `ndim`.
     if x.ndim != 3:
         raise ValueError("Supports only 3-dimensional input tensors")
 
@@ -178,7 +176,6 @@ def padded_to_packed(
     Returns:
       x_packed: a packed tensor.
     """
-    # pyre-fixme[16]: `Tensor` has no attribute `ndim`.
     if x.ndim != 3:
         raise ValueError("Supports only 3-dimensional input tensors")
 

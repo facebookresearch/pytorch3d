@@ -41,7 +41,6 @@ def _handle_pointcloud_input(
         lengths = points.num_points_per_cloud()
         normals = points.normals_padded()  # either a tensor or None
     elif torch.is_tensor(points):
-        # pyre-fixme[16]: `Tensor` has no attribute `ndim`.
         if points.ndim != 3:
             raise ValueError("Expected points to be of shape (N, P, D)")
         X = points
