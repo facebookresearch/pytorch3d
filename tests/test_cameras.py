@@ -26,6 +26,7 @@
 # SOFTWARE.
 
 import math
+import typing
 import unittest
 
 import numpy as np
@@ -47,6 +48,7 @@ from pytorch3d.renderer.cameras import (
     look_at_view_transform,
 )
 from pytorch3d.transforms import Transform3d
+from pytorch3d.transforms.rotation_conversions import random_rotations
 from pytorch3d.transforms.so3 import so3_exponential_map
 
 
@@ -130,6 +132,51 @@ def ndc_to_screen_points_naive(points, imsize):
     x = (1.0 - x) * (imwidth - 1) / 2.0
     y = (1.0 - y) * (imheight - 1) / 2.0
     return torch.stack((x, y, z), dim=2)
+
+
+def init_random_cameras(
+    cam_type: typing.Type[CamerasBase], batch_size: int, random_z: bool = False
+):
+    cam_params = {}
+    T = torch.randn(batch_size, 3) * 0.03
+    if not random_z:
+        T[:, 2] = 4
+    R = so3_exponential_map(torch.randn(batch_size, 3) * 3.0)
+    cam_params = {"R": R, "T": T}
+    if cam_type in (OpenGLPerspectiveCameras, OpenGLOrthographicCameras):
+        cam_params["znear"] = torch.rand(batch_size) * 10 + 0.1
+        cam_params["zfar"] = torch.rand(batch_size) * 4 + 1 + cam_params["znear"]
+        if cam_type == OpenGLPerspectiveCameras:
+            cam_params["fov"] = torch.rand(batch_size) * 60 + 30
+            cam_params["aspect_ratio"] = torch.rand(batch_size) * 0.5 + 0.5
+        else:
+            cam_params["top"] = torch.rand(batch_size) * 0.2 + 0.9
+            cam_params["bottom"] = -(torch.rand(batch_size)) * 0.2 - 0.9
+            cam_params["left"] = -(torch.rand(batch_size)) * 0.2 - 0.9
+            cam_params["right"] = torch.rand(batch_size) * 0.2 + 0.9
+    elif cam_type in (FoVPerspectiveCameras, FoVOrthographicCameras):
+        cam_params["znear"] = torch.rand(batch_size) * 10 + 0.1
+        cam_params["zfar"] = torch.rand(batch_size) * 4 + 1 + cam_params["znear"]
+        if cam_type == FoVPerspectiveCameras:
+            cam_params["fov"] = torch.rand(batch_size) * 60 + 30
+            cam_params["aspect_ratio"] = torch.rand(batch_size) * 0.5 + 0.5
+        else:
+            cam_params["max_y"] = torch.rand(batch_size) * 0.2 + 0.9
+            cam_params["min_y"] = -(torch.rand(batch_size)) * 0.2 - 0.9
+            cam_params["min_x"] = -(torch.rand(batch_size)) * 0.2 - 0.9
+            cam_params["max_x"] = torch.rand(batch_size) * 0.2 + 0.9
+    elif cam_type in (
+        SfMOrthographicCameras,
+        SfMPerspectiveCameras,
+        OrthographicCameras,
+        PerspectiveCameras,
+    ):
+        cam_params["focal_length"] = torch.rand(batch_size) * 10 + 0.1
+        cam_params["principal_point"] = torch.randn((batch_size, 2))
+
+    else:
+        raise ValueError(str(cam_type))
+    return cam_type(**cam_params)
 
 
 class TestCameraHelpers(TestCaseMixin, unittest.TestCase):
@@ -410,7 +457,7 @@ class TestCamerasCommon(TestCaseMixin, unittest.TestCase):
 
     def test_get_camera_center(self, batch_size=10):
         T = torch.randn(batch_size, 3)
-        R = so3_exponential_map(torch.randn(batch_size, 3) * 3.0)
+        R = random_rotations(batch_size)
         for cam_type in (
             OpenGLPerspectiveCameras,
             OpenGLOrthographicCameras,
@@ -425,48 +472,6 @@ class TestCamerasCommon(TestCaseMixin, unittest.TestCase):
             C = cam.get_camera_center()
             C_ = -torch.bmm(R, T[:, :, None])[:, :, 0]
             self.assertTrue(torch.allclose(C, C_, atol=1e-05))
-
-    @staticmethod
-    def init_random_cameras(cam_type: CamerasBase, batch_size: int):
-        cam_params = {}
-        T = torch.randn(batch_size, 3) * 0.03
-        T[:, 2] = 4
-        R = so3_exponential_map(torch.randn(batch_size, 3) * 3.0)
-        cam_params = {"R": R, "T": T}
-        if cam_type in (OpenGLPerspectiveCameras, OpenGLOrthographicCameras):
-            cam_params["znear"] = torch.rand(batch_size) * 10 + 0.1
-            cam_params["zfar"] = torch.rand(batch_size) * 4 + 1 + cam_params["znear"]
-            if cam_type == OpenGLPerspectiveCameras:
-                cam_params["fov"] = torch.rand(batch_size) * 60 + 30
-                cam_params["aspect_ratio"] = torch.rand(batch_size) * 0.5 + 0.5
-            else:
-                cam_params["top"] = torch.rand(batch_size) * 0.2 + 0.9
-                cam_params["bottom"] = -(torch.rand(batch_size)) * 0.2 - 0.9
-                cam_params["left"] = -(torch.rand(batch_size)) * 0.2 - 0.9
-                cam_params["right"] = torch.rand(batch_size) * 0.2 + 0.9
-        elif cam_type in (FoVPerspectiveCameras, FoVOrthographicCameras):
-            cam_params["znear"] = torch.rand(batch_size) * 10 + 0.1
-            cam_params["zfar"] = torch.rand(batch_size) * 4 + 1 + cam_params["znear"]
-            if cam_type == FoVPerspectiveCameras:
-                cam_params["fov"] = torch.rand(batch_size) * 60 + 30
-                cam_params["aspect_ratio"] = torch.rand(batch_size) * 0.5 + 0.5
-            else:
-                cam_params["max_y"] = torch.rand(batch_size) * 0.2 + 0.9
-                cam_params["min_y"] = -(torch.rand(batch_size)) * 0.2 - 0.9
-                cam_params["min_x"] = -(torch.rand(batch_size)) * 0.2 - 0.9
-                cam_params["max_x"] = torch.rand(batch_size) * 0.2 + 0.9
-        elif cam_type in (
-            SfMOrthographicCameras,
-            SfMPerspectiveCameras,
-            OrthographicCameras,
-            PerspectiveCameras,
-        ):
-            cam_params["focal_length"] = torch.rand(batch_size) * 10 + 0.1
-            cam_params["principal_point"] = torch.randn((batch_size, 2))
-
-        else:
-            raise ValueError(str(cam_type))
-        return cam_type(**cam_params)
 
     @staticmethod
     def init_equiv_cameras_ndc_screen(cam_type: CamerasBase, batch_size: int):
@@ -508,7 +513,7 @@ class TestCamerasCommon(TestCaseMixin, unittest.TestCase):
             PerspectiveCameras,
         ):
             # init the cameras
-            cameras = TestCamerasCommon.init_random_cameras(cam_type, batch_size)
+            cameras = init_random_cameras(cam_type, batch_size)
             # xyz - the ground truth point cloud
             xyz = torch.randn(batch_size, num_points, 3) * 0.3
             # xyz in camera coordinates
@@ -572,7 +577,7 @@ class TestCamerasCommon(TestCaseMixin, unittest.TestCase):
         ):
 
             # init the cameras
-            cameras = TestCamerasCommon.init_random_cameras(cam_type, batch_size)
+            cameras = init_random_cameras(cam_type, batch_size)
             # xyz - the ground truth point cloud
             xyz = torch.randn(batch_size, num_points, 3) * 0.3
             # image size
@@ -618,7 +623,7 @@ class TestCamerasCommon(TestCaseMixin, unittest.TestCase):
             OrthographicCameras,
             PerspectiveCameras,
         ):
-            cameras = TestCamerasCommon.init_random_cameras(cam_type, batch_size)
+            cameras = init_random_cameras(cam_type, batch_size)
             cameras = cameras.to(torch.device("cpu"))
             cameras_clone = cameras.clone()
 

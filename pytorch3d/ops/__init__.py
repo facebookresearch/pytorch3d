@@ -1,6 +1,6 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
-
+from .cameras_alignment import corresponding_cameras_alignment
 from .cubify import cubify
 from .graph_conv import GraphConv
 from .interp_face_attrs import interpolate_face_attributes

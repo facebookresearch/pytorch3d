@@ -13,8 +13,8 @@ from .utils import TensorProperties, convert_to_tensors_and_broadcast
 
 
 # Default values for rotation and translation matrices.
-r = np.expand_dims(np.eye(3), axis=0)  # (1, 3, 3)
-t = np.expand_dims(np.zeros(3), axis=0)  # (1, 3)
+_R = torch.eye(3)[None]  # (1, 3, 3)
+_T = torch.zeros(1, 3)  # (1, 3)
 
 
 class CamerasBase(TensorProperties):
@@ -280,8 +280,8 @@ def OpenGLPerspectiveCameras(
     aspect_ratio=1.0,
     fov=60.0,
     degrees: bool = True,
-    R=r,
-    T=t,
+    R=_R,
+    T=_T,
     device="cpu",
 ):
     """
@@ -331,8 +331,8 @@ class FoVPerspectiveCameras(CamerasBase):
         aspect_ratio=1.0,
         fov=60.0,
         degrees: bool = True,
-        R=r,
-        T=t,
+        R=_R,
+        T=_T,
         device="cpu",
     ):
         """
@@ -436,7 +436,7 @@ class FoVPerspectiveCameras(CamerasBase):
         P[:, 2, 2] = z_sign * zfar / (zfar - znear)
         P[:, 2, 3] = -(zfar * znear) / (zfar - znear)
 
-        # Transpose the projection matrix as PyTorch3d transforms use row vectors.
+        # Transpose the projection matrix as PyTorch3D transforms use row vectors.
         transform = Transform3d(device=self.device)
         transform._matrix = P.transpose(1, 2).contiguous()
         return transform
@@ -494,8 +494,8 @@ def OpenGLOrthographicCameras(
     left=-1.0,
     right=1.0,
     scale_xyz=((1.0, 1.0, 1.0),),  # (1, 3)
-    R=r,
-    T=t,
+    R=_R,
+    T=_T,
     device="cpu",
 ):
     """
@@ -540,8 +540,8 @@ class FoVOrthographicCameras(CamerasBase):
         max_x=1.0,
         min_x=-1.0,
         scale_xyz=((1.0, 1.0, 1.0),),  # (1, 3)
-        R=r,
-        T=t,
+        R=_R,
+        T=_T,
         device="cpu",
     ):
         """
@@ -688,7 +688,7 @@ we assume the parameters are in screen space.
 
 
 def SfMPerspectiveCameras(
-    focal_length=1.0, principal_point=((0.0, 0.0),), R=r, T=t, device="cpu"
+    focal_length=1.0, principal_point=((0.0, 0.0),), R=_R, T=_R, device="cpu"
 ):
     """
     SfMPerspectiveCameras has been DEPRECATED. Use PerspectiveCameras instead.
@@ -747,8 +747,8 @@ class PerspectiveCameras(CamerasBase):
         self,
         focal_length=1.0,
         principal_point=((0.0, 0.0),),
-        R=r,
-        T=t,
+        R=_R,
+        T=_T,
         device="cpu",
         image_size=((-1, -1),),
     ):
@@ -848,7 +848,7 @@ class PerspectiveCameras(CamerasBase):
 
 
 def SfMOrthographicCameras(
-    focal_length=1.0, principal_point=((0.0, 0.0),), R=r, T=t, device="cpu"
+    focal_length=1.0, principal_point=((0.0, 0.0),), R=_R, T=_T, device="cpu"
 ):
     """
     SfMOrthographicCameras has been DEPRECATED. Use OrthographicCameras instead.
@@ -906,8 +906,8 @@ class OrthographicCameras(CamerasBase):
         self,
         focal_length=1.0,
         principal_point=((0.0, 0.0),),
-        R=r,
-        T=t,
+        R=_R,
+        T=_T,
         device="cpu",
         image_size=((-1, -1),),
     ):
@@ -1109,7 +1109,7 @@ def _get_sfm_calibration_matrix(
 ################################################
 
 
-def get_world_to_view_transform(R=r, T=t) -> Transform3d:
+def get_world_to_view_transform(R=_R, T=_T) -> Transform3d:
     """
     This function returns a Transform3d representing the transformation
     matrix to go from world space to view space by applying a rotation and
