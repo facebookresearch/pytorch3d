@@ -30,6 +30,7 @@ from pytorch3d.renderer.mesh.shader import (
     HardFlatShader,
     HardGouraudShader,
     HardPhongShader,
+    SoftPhongShader,
     SoftSilhouetteShader,
     TexturedSoftPhongShader,
 )
@@ -981,3 +982,63 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
             )
 
         self.assertClose(rgb, image_ref, atol=0.05)
+
+    def test_simple_sphere_outside_zfar(self):
+        """
+        Test output when rendering a sphere that is beyond zfar with a SoftPhongShader.
+        This renders a sphere of radius 500, with the camera at x=1500 for different
+        settings of zfar.  This is intended to check 1) setting cameras.zfar propagates
+        to the blender and that the rendered sphere is (soft) clipped if it is beyond
+        zfar, 2) make sure there are no numerical precision/overflow errors associated
+        with larger world coordinates
+        """
+        device = torch.device("cuda:0")
+
+        # Init mesh
+        sphere_mesh = ico_sphere(5, device)
+        verts_padded = sphere_mesh.verts_padded() * 500
+        faces_padded = sphere_mesh.faces_padded()
+        feats = torch.ones_like(verts_padded, device=device)
+        textures = TexturesVertex(verts_features=feats)
+        sphere_mesh = Meshes(verts=verts_padded, faces=faces_padded, textures=textures)
+
+        R, T = look_at_view_transform(1500, 0.0, 0.0)
+
+        # Init shader settings
+        materials = Materials(device=device)
+        lights = PointLights(device=device)
+        lights.location = torch.tensor([0.0, 0.0, +1000.0], device=device)[None]
+
+        raster_settings = RasterizationSettings(
+            image_size=256, blur_radius=0.0, faces_per_pixel=1
+        )
+        for zfar in (10000.0, 100.0):
+            cameras = FoVPerspectiveCameras(
+                device=device, R=R, T=T, aspect_ratio=1.0, fov=60.0, zfar=zfar
+            )
+            rasterizer = MeshRasterizer(
+                cameras=cameras, raster_settings=raster_settings
+            )
+            blend_params = BlendParams(1e-4, 1e-4, (0, 0, 1.0))
+
+            shader = SoftPhongShader(
+                lights=lights,
+                cameras=cameras,
+                materials=materials,
+                blend_params=blend_params,
+            )
+            renderer = MeshRenderer(rasterizer=rasterizer, shader=shader)
+            images = renderer(sphere_mesh)
+            rgb = images[0, ..., :3].squeeze().cpu()
+
+            filename = "test_simple_sphere_outside_zfar_%d.png" % int(zfar)
+
+            # Load reference image
+            image_ref = load_rgb_image(filename, DATA_DIR)
+
+            if DEBUG:
+                Image.fromarray((rgb.numpy() * 255).astype(np.uint8)).save(
+                    DATA_DIR / ("DEBUG_" + filename)
+                )
+
+            self.assertClose(rgb, image_ref, atol=0.05)

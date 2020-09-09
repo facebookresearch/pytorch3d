@@ -117,7 +117,11 @@ class SoftPhongShader(nn.Module):
             cameras=cameras,
             materials=materials,
         )
-        images = softmax_rgb_blend(colors, fragments, blend_params)
+        znear = kwargs.get("znear", getattr(cameras, "znear", 1.0))
+        zfar = kwargs.get("zfar", getattr(cameras, "zfar", 100.0))
+        images = softmax_rgb_blend(
+            colors, fragments, blend_params, znear=znear, zfar=zfar
+        )
         return images
 
 
@@ -214,7 +218,11 @@ class SoftGouraudShader(nn.Module):
             cameras=cameras,
             materials=materials,
         )
-        images = softmax_rgb_blend(pixel_colors, fragments, self.blend_params)
+        znear = kwargs.get("znear", getattr(cameras, "znear", 1.0))
+        zfar = kwargs.get("zfar", getattr(cameras, "zfar", 100.0))
+        images = softmax_rgb_blend(
+            pixel_colors, fragments, self.blend_params, znear=znear, zfar=zfar
+        )
         return images
 
 
