@@ -433,6 +433,20 @@ class TestCameraHelpers(TestCaseMixin, unittest.TestCase):
         RT = get_world_to_view_transform(R=R, T=T)
         self.assertTrue(isinstance(RT, Transform3d))
 
+    def test_look_at_view_transform_corner_case(self):
+        dist = 2.7
+        elev = 90
+        azim = 90
+        expected_position = torch.tensor([0.0, 2.7, 0.0], dtype=torch.float32).view(
+            1, 3
+        )
+        position = camera_position_from_spherical_angles(dist, elev, azim)
+        self.assertClose(position, expected_position, atol=2e-7)
+        R, _ = look_at_view_transform(eye=position)
+        x_axis = R[:, :, 0]
+        expected_x_axis = torch.tensor([0.0, 0.0, -1.0], dtype=torch.float32).view(1, 3)
+        self.assertClose(x_axis, expected_x_axis, atol=5e-3)
+
 
 class TestCamerasCommon(TestCaseMixin, unittest.TestCase):
     def test_view_transform_class_method(self):
