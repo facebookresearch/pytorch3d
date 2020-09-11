@@ -688,7 +688,7 @@ we assume the parameters are in screen space.
 
 
 def SfMPerspectiveCameras(
-    focal_length=1.0, principal_point=((0.0, 0.0),), R=_R, T=_R, device="cpu"
+    focal_length=1.0, principal_point=((0.0, 0.0),), R=_R, T=_T, device="cpu"
 ):
     """
     SfMPerspectiveCameras has been DEPRECATED. Use PerspectiveCameras instead.
