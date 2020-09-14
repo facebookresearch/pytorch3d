@@ -18,6 +18,7 @@ from pytorch3d.renderer.cameras import (
     FoVPerspectiveCameras,
     look_at_view_transform,
 )
+from pytorch3d.renderer.compositing import alpha_composite, norm_weighted_sum
 from pytorch3d.renderer.points import (
     AlphaCompositor,
     NormWeightedCompositor,
@@ -171,3 +172,54 @@ class TestRenderPoints(TestCaseMixin, unittest.TestCase):
                     DATA_DIR / filename
                 )
             self.assertClose(rgb, image_ref)
+
+    def test_compositor_background_color(self):
+
+        N, H, W, K, C, P = 1, 15, 15, 20, 4, 225
+        ptclds = torch.randn((C, P))
+        alphas = torch.rand((N, K, H, W))
+        pix_idxs = torch.randint(-1, 20, (N, K, H, W))  # 20 < P, large amount of -1
+        background_color = [0.5, 0, 1]
+
+        compositor_funcs = [
+            (NormWeightedCompositor, norm_weighted_sum),
+            (AlphaCompositor, alpha_composite),
+        ]
+
+        for (compositor_class, composite_func) in compositor_funcs:
+
+            compositor = compositor_class(background_color)
+
+            # run the forward method to generate masked images
+            masked_images = compositor.forward(pix_idxs, alphas, ptclds)
+
+            # generate unmasked images for testing purposes
+            images = composite_func(pix_idxs, alphas, ptclds)
+
+            is_foreground = pix_idxs[:, 0] >= 0
+
+            # make sure foreground values are unchanged
+            self.assertClose(
+                torch.masked_select(masked_images, is_foreground[:, None]),
+                torch.masked_select(images, is_foreground[:, None]),
+            )
+
+            is_background = ~is_foreground[..., None].expand(-1, -1, -1, 4)
+
+            # permute masked_images to correctly get rgb values
+            masked_images = masked_images.permute(0, 2, 3, 1)
+            for i in range(3):
+                channel_color = background_color[i]
+
+                # check if background colors are properly changed
+                self.assertTrue(
+                    masked_images[is_background]
+                    .view(-1, 4)[..., i]
+                    .eq(channel_color)
+                    .all()
+                )
+
+            # check background color alpha values
+            self.assertTrue(
+                masked_images[is_background].view(-1, 4)[..., 3].eq(1).all()
+            )
