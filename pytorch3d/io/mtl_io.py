@@ -423,7 +423,7 @@ def load_mtl(f, material_names: List, data_dir: str, device="cpu"):
                     material_colors[material_name] = {}
                 if line.split()[0] == "map_Kd":
                     # Texture map.
-                    texture_files[material_name] = line.split()[1]
+                    texture_files[material_name] = line[7:]
                 if line.split()[0] == "Kd":
                     # RGB diffuse reflectivity
                     kd = np.array(list(line.split()[1:4])).astype(np.float32)
