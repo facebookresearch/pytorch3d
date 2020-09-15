@@ -136,8 +136,8 @@ RasterizeMeshesNaive(
 torch::Tensor RasterizeMeshesBackwardCpu(
     const torch::Tensor& face_verts,
     const torch::Tensor& pix_to_face,
-    const torch::Tensor& grad_bary,
     const torch::Tensor& grad_zbuf,
+    const torch::Tensor& grad_bary,
     const torch::Tensor& grad_dists,
     const bool perspective_correct,
     const bool clip_barycentric_coords);
@@ -146,8 +146,8 @@ torch::Tensor RasterizeMeshesBackwardCpu(
 torch::Tensor RasterizeMeshesBackwardCuda(
     const torch::Tensor& face_verts,
     const torch::Tensor& pix_to_face,
-    const torch::Tensor& grad_bary,
     const torch::Tensor& grad_zbuf,
+    const torch::Tensor& grad_bary,
     const torch::Tensor& grad_dists,
     const bool perspective_correct,
     const bool clip_barycentric_coords);
