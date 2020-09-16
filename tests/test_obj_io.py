@@ -442,6 +442,41 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
                     torch.allclose(materials[n1][k1], expected_materials[n2][k2])
                 )
 
+    def test_load_mtl_with_spaces_in_resource_filename(self):
+        DATA_DIR = Path(__file__).resolve().parent / "data"
+        obj_filename = "obj_with_spaces_in_res_filename/model.obj"
+        filename = os.path.join(DATA_DIR, obj_filename)
+        verts, faces, aux = load_obj(filename)
+        materials = aux.material_colors
+        tex_maps = aux.texture_images
+
+        dtype = torch.float32
+        expected_materials = {
+            "material_1": {
+                "ambient_color": torch.tensor([1.0, 1.0, 1.0], dtype=dtype),
+                "diffuse_color": torch.tensor([1.0, 1.0, 1.0], dtype=dtype),
+                "specular_color": torch.tensor([0.0, 0.0, 0.0], dtype=dtype),
+                "shininess": torch.tensor([10.0], dtype=dtype),
+            }
+        }
+        # Texture atlas is not created as `create_texture_atlas=True` was
+        # not set in the load_obj args
+        self.assertTrue(aux.texture_atlas is None)
+        # Check that there is an image with material name material_1.
+        self.assertTrue(tuple(tex_maps.keys()) == ("material_1",))
+        self.assertTrue(torch.is_tensor(tuple(tex_maps.values())[0]))
+        self.assertTrue(
+            torch.all(faces.materials_idx == torch.zeros(len(faces.verts_idx)))
+        )
+
+        # Check all keys and values in dictionary are the same.
+        for n1, n2 in zip(materials.keys(), expected_materials.keys()):
+            self.assertTrue(n1 == n2)
+            for k1, k2 in zip(materials[n1].keys(), expected_materials[n2].keys()):
+                self.assertTrue(
+                    torch.allclose(materials[n1][k1], expected_materials[n2][k2])
+                )
+
     def test_load_mtl_texture_atlas_compare_softras(self):
         # Load saved texture atlas created with SoftRas.
         device = torch.device("cuda:0")
