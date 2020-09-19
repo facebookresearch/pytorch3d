@@ -1,6 +1,7 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
 import itertools
+
 from fvcore.common.benchmark import benchmark
 from test_cameras_alignment import TestCamerasAlignment
 

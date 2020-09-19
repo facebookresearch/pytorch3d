@@ -17,7 +17,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> RasterizePointsNaiveCpu(
     const torch::Tensor& cloud_to_packed_first_idx, // (N)
     const torch::Tensor& num_points_per_cloud, // (N)
     const int image_size,
-    const float radius,
+    const torch::Tensor& radius,
     const int points_per_pixel) {
   const int32_t N = cloud_to_packed_first_idx.size(0); // batch_size.
 
@@ -35,8 +35,8 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> RasterizePointsNaiveCpu(
   auto point_idxs_a = point_idxs.accessor<int32_t, 4>();
   auto zbuf_a = zbuf.accessor<float, 4>();
   auto pix_dists_a = pix_dists.accessor<float, 4>();
+  auto radius_a = radius.accessor<float, 1>();
 
-  const float radius2 = radius * radius;
   for (int n = 0; n < N; ++n) {
     // Loop through each pointcloud in the batch.
     // Get the start index of the points in points_packed and the num points
@@ -63,6 +63,8 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> RasterizePointsNaiveCpu(
           const float px = points_a[p][0];
           const float py = points_a[p][1];
           const float pz = points_a[p][2];
+          const float p_radius = radius_a[p];
+          const float radius2 = p_radius * p_radius;
           if (pz < 0) {
             continue;
           }
@@ -98,7 +100,7 @@ torch::Tensor RasterizePointsCoarseCpu(
     const torch::Tensor& cloud_to_packed_first_idx, // (N)
     const torch::Tensor& num_points_per_cloud, // (N)
     const int image_size,
-    const float radius,
+    const torch::Tensor& radius,
     const int bin_size,
     const int max_points_per_bin) {
   const int32_t N = cloud_to_packed_first_idx.size(0); // batch_size.
@@ -112,6 +114,7 @@ torch::Tensor RasterizePointsCoarseCpu(
   auto points_a = points.accessor<float, 2>();
   auto points_per_bin_a = points_per_bin.accessor<int32_t, 3>();
   auto bin_points_a = bin_points.accessor<int32_t, 4>();
+  auto radius_a = radius.accessor<float, 1>();
 
   const float pixel_width = 2.0f / image_size;
   const float bin_width = pixel_width * bin_size;
@@ -140,13 +143,14 @@ torch::Tensor RasterizePointsCoarseCpu(
           float px = points_a[p][0];
           float py = points_a[p][1];
           float pz = points_a[p][2];
+          const float p_radius = radius_a[p];
           if (pz < 0) {
             continue;
           }
-          float point_x_min = px - radius;
-          float point_x_max = px + radius;
-          float point_y_min = py - radius;
-          float point_y_max = py + radius;
+          float point_x_min = px - p_radius;
+          float point_x_max = px + p_radius;
+          float point_y_min = py - p_radius;
+          float point_y_max = py + p_radius;
 
           // Use a half-open interval so that points exactly on the
           // boundary between bins will fall into exactly one bin.

@@ -38,13 +38,15 @@ __device__ void CheckPixelInsidePoint(
     float& q_max_z,
     int& q_max_idx,
     PointQ& q,
-    const float radius2,
+    const float* radius,
     const float xf,
     const float yf,
     const int K) {
   const float px = points[p_idx * 3 + 0];
   const float py = points[p_idx * 3 + 1];
   const float pz = points[p_idx * 3 + 2];
+  const float p_radius = radius[p_idx];
+  const float radius2 = p_radius * p_radius;
   if (pz < 0)
     return; // Don't render points behind the camera
   const float dx = xf - px;
@@ -81,7 +83,7 @@ __global__ void RasterizePointsNaiveCudaKernel(
     const float* points, // (P, 3)
     const int64_t* cloud_to_packed_first_idx, // (N)
     const int64_t* num_points_per_cloud, // (N)
-    const float radius,
+    const float* radius,
     const int N,
     const int S,
     const int K,
@@ -91,7 +93,6 @@ __global__ void RasterizePointsNaiveCudaKernel(
   // Simple version: One thread per output pixel
   const int num_threads = gridDim.x * blockDim.x;
   const int tid = blockDim.x * blockIdx.x + threadIdx.x;
-  const float radius2 = radius * radius;
   for (int i = tid; i < N * S * S; i += num_threads) {
     // Convert linear index to 3D index
     const int n = i / (S * S); // Batch index
@@ -128,7 +129,7 @@ __global__ void RasterizePointsNaiveCudaKernel(
 
     for (int p_idx = point_start_idx; p_idx < point_stop_idx; ++p_idx) {
       CheckPixelInsidePoint(
-          points, p_idx, q_size, q_max_z, q_max_idx, q, radius2, xf, yf, K);
+          points, p_idx, q_size, q_max_z, q_max_idx, q, radius, xf, yf, K);
     }
     BubbleSort(q, q_size);
     int idx = n * S * S * K + pix_idx * K;
@@ -145,7 +146,7 @@ std::tuple<at::Tensor, at::Tensor, at::Tensor> RasterizePointsNaiveCuda(
     const at::Tensor& cloud_to_packed_first_idx, // (N)
     const at::Tensor& num_points_per_cloud, // (N)
     const int image_size,
-    const float radius,
+    const at::Tensor& radius,
     const int points_per_pixel) {
   // Check inputs are on the same device
   at::TensorArg points_t{points, "points", 1},
@@ -194,7 +195,7 @@ std::tuple<at::Tensor, at::Tensor, at::Tensor> RasterizePointsNaiveCuda(
       points.contiguous().data_ptr<float>(),
       cloud_to_packed_first_idx.contiguous().data_ptr<int64_t>(),
       num_points_per_cloud.contiguous().data_ptr<int64_t>(),
-      radius,
+      radius.contiguous().data_ptr<float>(),
       N,
       S,
       K,
@@ -214,7 +215,7 @@ __global__ void RasterizePointsCoarseCudaKernel(
     const float* points, // (P, 3)
     const int64_t* cloud_to_packed_first_idx, // (N)
     const int64_t* num_points_per_cloud, // (N)
-    const float radius,
+    const float* radius,
     const int N,
     const int P,
     const int S,
@@ -266,12 +267,13 @@ __global__ void RasterizePointsCoarseCudaKernel(
       const float px = points[p_idx * 3 + 0];
       const float py = points[p_idx * 3 + 1];
       const float pz = points[p_idx * 3 + 2];
+      const float p_radius = radius[p_idx];
       if (pz < 0)
         continue; // Don't render points behind the camera.
-      const float px0 = px - radius;
-      const float px1 = px + radius;
-      const float py0 = py - radius;
-      const float py1 = py + radius;
+      const float px0 = px - p_radius;
+      const float px1 = px + p_radius;
+      const float py0 = py - p_radius;
+      const float py1 = py + p_radius;
 
       // Brute-force search over all bins; TODO something smarter?
       // For example we could compute the exact bin where the point falls,
@@ -341,7 +343,7 @@ at::Tensor RasterizePointsCoarseCuda(
     const at::Tensor& cloud_to_packed_first_idx, // (N)
     const at::Tensor& num_points_per_cloud, // (N)
     const int image_size,
-    const float radius,
+    const at::Tensor& radius,
     const int bin_size,
     const int max_points_per_bin) {
   TORCH_CHECK(
@@ -390,7 +392,7 @@ at::Tensor RasterizePointsCoarseCuda(
       points.contiguous().data_ptr<float>(),
       cloud_to_packed_first_idx.contiguous().data_ptr<int64_t>(),
       num_points_per_cloud.contiguous().data_ptr<int64_t>(),
-      radius,
+      radius.contiguous().data_ptr<float>(),
       N,
       P,
       image_size,
@@ -411,7 +413,7 @@ at::Tensor RasterizePointsCoarseCuda(
 __global__ void RasterizePointsFineCudaKernel(
     const float* points, // (P, 3)
     const int32_t* bin_points, // (N, B, B, T)
-    const float radius,
+    const float* radius,
     const int bin_size,
     const int N,
     const int B, // num_bins
@@ -425,7 +427,6 @@ __global__ void RasterizePointsFineCudaKernel(
   const int num_pixels = N * B * B * bin_size * bin_size;
   const int num_threads = gridDim.x * blockDim.x;
   const int tid = blockIdx.x * blockDim.x + threadIdx.x;
-  const float radius2 = radius * radius;
 
   for (int pid = tid; pid < num_pixels; pid += num_threads) {
     // Convert linear index into bin and pixel indices. We make the within
@@ -464,7 +465,7 @@ __global__ void RasterizePointsFineCudaKernel(
         continue;
       }
       CheckPixelInsidePoint(
-          points, p, q_size, q_max_z, q_max_idx, q, radius2, xf, yf, K);
+          points, p, q_size, q_max_z, q_max_idx, q, radius, xf, yf, K);
     }
     // Now we've looked at all the points for this bin, so we can write
     // output for the current pixel.
@@ -488,7 +489,7 @@ std::tuple<at::Tensor, at::Tensor, at::Tensor> RasterizePointsFineCuda(
     const at::Tensor& points, // (P, 3)
     const at::Tensor& bin_points,
     const int image_size,
-    const float radius,
+    const at::Tensor& radius,
     const int bin_size,
     const int points_per_pixel) {
   // Check inputs are on the same device
@@ -525,7 +526,7 @@ std::tuple<at::Tensor, at::Tensor, at::Tensor> RasterizePointsFineCuda(
   RasterizePointsFineCudaKernel<<<blocks, threads, 0, stream>>>(
       points.contiguous().data_ptr<float>(),
       bin_points.contiguous().data_ptr<int32_t>(),
-      radius,
+      radius.contiguous().data_ptr<float>(),
       bin_size,
       N,
       B,
