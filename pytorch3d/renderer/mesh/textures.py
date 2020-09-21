@@ -574,7 +574,7 @@ class TexturesUV(TexturesBase):
 
         An example of how the indexing into the maps, with align_corners=True,
         works is as follows.
-        If maps[i] has shape [101, 1001] and the value of verts_uvs[i][j]
+        If maps[i] has shape [1001, 101] and the value of verts_uvs[i][j]
         is [0.4, 0.3], then a value of j in faces_uvs[i] means a vertex
         whose color is given by maps[i][700, 40]. padding_mode affects what
         happens if a value in verts_uvs is less than 0 or greater than 1.
@@ -583,7 +583,7 @@ class TexturesUV(TexturesBase):
         an _earlier_ index in maps.
 
         If align_corners=False, an example would be as follows.
-        If maps[i] has shape [100, 1000] and the value of verts_uvs[i][j]
+        If maps[i] has shape [1000, 100] and the value of verts_uvs[i][j]
         is [0.405, 0.2995], then a value of j in faces_uvs[i] means a vertex
         whose color is given by maps[i][700, 40].
         When align_corners=False, padding_mode even matters for values in
