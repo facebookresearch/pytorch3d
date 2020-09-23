@@ -12,6 +12,7 @@ from pytorch3d.io import load_obj, load_objs_as_meshes, save_obj
 from pytorch3d.io.mtl_io import (
     _bilinear_interpolation_grid_sample,
     _bilinear_interpolation_vectorized,
+    _parse_mtl,
 )
 from pytorch3d.renderer import TexturesAtlas, TexturesUV, TexturesVertex
 from pytorch3d.structures import Meshes, join_meshes_as_batch
@@ -440,6 +441,51 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
             for k1, k2 in zip(materials[n1].keys(), expected_materials[n2].keys()):
                 self.assertTrue(
                     torch.allclose(materials[n1][k1], expected_materials[n2][k2])
+                )
+
+    def test_load_mtl_with_spaces_in_resource_filename(self):
+        """
+        Check that the texture image for materials in mtl files
+        is loaded correctly even if there is a space in the file name
+        e.g. material 1.png
+        """
+        mtl_file = "\n".join(
+            [
+                "newmtl material_1",
+                "map_Kd material 1.png",
+                "Ka 1.000 1.000 1.000",  # white
+                "Kd 1.000 1.000 1.000",  # white
+                "Ks 0.000 0.000 0.000",  # black
+                "Ns 10.0",
+            ]
+        )
+        mtl_file = StringIO(mtl_file)
+        material_properties, texture_files = _parse_mtl(mtl_file, device="cpu")
+
+        dtype = torch.float32
+        expected_materials = {
+            "material_1": {
+                "ambient_color": torch.tensor([1.0, 1.0, 1.0], dtype=dtype),
+                "diffuse_color": torch.tensor([1.0, 1.0, 1.0], dtype=dtype),
+                "specular_color": torch.tensor([0.0, 0.0, 0.0], dtype=dtype),
+                "shininess": torch.tensor([10.0], dtype=dtype),
+            }
+        }
+        # Check that there is a material with name material_1
+        self.assertTrue(tuple(texture_files.keys()) == ("material_1",))
+        # Check that there is an image with name material 1.png
+        self.assertTrue(texture_files["material_1"] == "material 1.png")
+
+        # Check all keys and values in dictionary are the same.
+        for n1, n2 in zip(material_properties.keys(), expected_materials.keys()):
+            self.assertTrue(n1 == n2)
+            for k1, k2 in zip(
+                material_properties[n1].keys(), expected_materials[n2].keys()
+            ):
+                self.assertTrue(
+                    torch.allclose(
+                        material_properties[n1][k1], expected_materials[n2][k2]
+                    )
                 )
 
     def test_load_mtl_texture_atlas_compare_softras(self):

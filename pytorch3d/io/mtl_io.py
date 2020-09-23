@@ -399,7 +399,9 @@ def _parse_mtl(f, device="cpu") -> Tuple[MaterialProperties, TextureFiles]:
                 material_properties[material_name] = {}
             elif tokens[0] == "map_Kd":
                 # Diffuse texture map
-                texture_files[material_name] = tokens[1]
+                # Account for the case where filenames might have spaces
+                filename = line.strip()[7:]
+                texture_files[material_name] = filename
             elif tokens[0] == "Kd":
                 # RGB diffuse reflectivity
                 kd = np.array(tokens[1:4]).astype(np.float32)
