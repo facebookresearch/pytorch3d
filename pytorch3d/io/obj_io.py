@@ -276,13 +276,14 @@ def load_objs_as_meshes(
 
 def _parse_face(
     line,
+    tokens,
     material_idx,
     faces_verts_idx,
     faces_normals_idx,
     faces_textures_idx,
     faces_materials_idx,
 ):
-    face = line.split()[1:]
+    face = tokens[1:]
     face_list = [f.split("/") for f in face]
     face_verts = []
     face_normals = []
@@ -381,15 +382,16 @@ def _load_obj(
         lines = [el.decode("utf-8") for el in lines]
 
     for line in lines:
+        tokens = line.strip().split()
         if line.startswith("mtllib"):
-            if len(line.split()) < 2:
+            if len(tokens) < 2:
                 raise ValueError("material file name is not specified")
             # NOTE: only allow one .mtl file per .obj.
             # Definitions for multiple materials can be included
             # in this one .mtl file.
             f_mtl = os.path.join(data_dir, line.split()[1])
-        elif len(line.split()) != 0 and line.split()[0] == "usemtl":
-            material_name = line.split()[1]
+        elif len(tokens) and tokens[0] == "usemtl":
+            material_name = tokens[1]
             # materials are often repeated for different parts
             # of a mesh.
             if material_name not in material_names:
@@ -397,32 +399,30 @@ def _load_obj(
                 materials_idx = len(material_names) - 1
             else:
                 materials_idx = material_names.index(material_name)
-        elif line.startswith("v "):
-            # Line is a vertex.
-            vert = [float(x) for x in line.split()[1:4]]
+        elif line.startswith("v "):  # Line is a vertex.
+            vert = [float(x) for x in tokens[1:4]]
             if len(vert) != 3:
                 msg = "Vertex %s does not have 3 values. Line: %s"
                 raise ValueError(msg % (str(vert), str(line)))
             verts.append(vert)
-        elif line.startswith("vt "):
-            # Line is a texture.
-            tx = [float(x) for x in line.split()[1:3]]
+        elif line.startswith("vt "):  # Line is a texture.
+            tx = [float(x) for x in tokens[1:3]]
             if len(tx) != 2:
                 raise ValueError(
                     "Texture %s does not have 2 values. Line: %s" % (str(tx), str(line))
                 )
             verts_uvs.append(tx)
-        elif line.startswith("vn "):
-            # Line is a normal.
-            norm = [float(x) for x in line.split()[1:4]]
+        elif line.startswith("vn "):  # Line is a normal.
+            norm = [float(x) for x in tokens[1:4]]
             if len(norm) != 3:
                 msg = "Normal %s does not have 3 values. Line: %s"
                 raise ValueError(msg % (str(norm), str(line)))
             normals.append(norm)
-        elif line.startswith("f "):
-            # Line is a face update face properties info.
+        elif line.startswith("f "):  # Line is a face.
+            # Update face properties info.
             _parse_face(
                 line,
+                tokens,
                 materials_idx,
                 faces_verts_idx,
                 faces_normals_idx,

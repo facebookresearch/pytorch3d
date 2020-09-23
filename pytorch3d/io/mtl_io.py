@@ -3,7 +3,7 @@
 """This module implements utility functions for loading .mtl files and textures."""
 import os
 import warnings
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import torch
@@ -379,7 +379,84 @@ def _bilinear_interpolation_grid_sample(
     return out.permute(0, 2, 3, 1)
 
 
-def load_mtl(f, material_names: List, data_dir: str, device="cpu"):
+MaterialProperties = Dict[str, Dict[str, torch.Tensor]]
+TextureFiles = Dict[str, str]
+TextureImages = Dict[str, torch.Tensor]
+
+
+def _parse_mtl(f, device="cpu") -> Tuple[MaterialProperties, TextureFiles]:
+    material_properties = {}
+    texture_files = {}
+    material_name = ""
+
+    with _open_file(f, "r") as f:
+        for line in f:
+            tokens = line.strip().split()
+            if not tokens:
+                continue
+            if tokens[0] == "newmtl":
+                material_name = tokens[1]
+                material_properties[material_name] = {}
+            elif tokens[0] == "map_Kd":
+                # Diffuse texture map
+                texture_files[material_name] = tokens[1]
+            elif tokens[0] == "Kd":
+                # RGB diffuse reflectivity
+                kd = np.array(tokens[1:4]).astype(np.float32)
+                kd = torch.from_numpy(kd).to(device)
+                material_properties[material_name]["diffuse_color"] = kd
+            elif tokens[0] == "Ka":
+                # RGB ambient reflectivity
+                ka = np.array(tokens[1:4]).astype(np.float32)
+                ka = torch.from_numpy(ka).to(device)
+                material_properties[material_name]["ambient_color"] = ka
+            elif tokens[0] == "Ks":
+                # RGB specular reflectivity
+                ks = np.array(tokens[1:4]).astype(np.float32)
+                ks = torch.from_numpy(ks).to(device)
+                material_properties[material_name]["specular_color"] = ks
+            elif tokens[0] == "Ns":
+                # Specular exponent
+                ns = np.array(tokens[1:4]).astype(np.float32)
+                ns = torch.from_numpy(ns).to(device)
+                material_properties[material_name]["shininess"] = ns
+
+    return material_properties, texture_files
+
+
+def _load_texture_images(
+    material_names: List[str],
+    data_dir: str,
+    material_properties: MaterialProperties,
+    texture_files: TextureFiles,
+) -> Tuple[MaterialProperties, TextureImages]:
+    final_material_properties = {}
+    texture_images = {}
+
+    # Only keep the materials referenced in the obj.
+    for material_name in material_names:
+        if material_name in texture_files:
+            # Load the texture image.
+            path = os.path.join(data_dir, texture_files[material_name])
+            if os.path.isfile(path):
+                image = _read_image(path, format="RGB") / 255.0
+                image = torch.from_numpy(image)
+                texture_images[material_name] = image
+            else:
+                msg = f"Texture file does not exist: {path}"
+                warnings.warn(msg)
+
+        if material_name in material_properties:
+            final_material_properties[material_name] = material_properties[
+                material_name
+            ]
+
+    return final_material_properties, texture_images
+
+
+def load_mtl(
+    f, material_names: List[str], data_dir: str, device="cpu"
+) -> Tuple[MaterialProperties, TextureImages]:
     """
     Load texture images and material reflectivity values for ambient, diffuse
     and specular light (Ka, Kd, Ks, Ns).
@@ -390,8 +467,8 @@ def load_mtl(f, material_names: List, data_dir: str, device="cpu"):
         data_dir: the directory where the material texture files are located.
 
     Returns:
-        material_colors: dict of properties for each material. If a material
-                does not have any properties it will have an emtpy dict.
+        material_properties: dict of properties for each material. If a material
+                does not have any properties it will have an empty dict.
                 {
                     material_name_1:  {
                         "ambient_color": tensor of shape (1, 3),
@@ -408,58 +485,7 @@ def load_mtl(f, material_names: List, data_dir: str, device="cpu"):
                     ...
                 }
     """
-    texture_files = {}
-    material_colors = {}
-    material_properties = {}
-    texture_images = {}
-    material_name = ""
-
-    with _open_file(f) as f:
-        lines = [line.strip() for line in f]
-        for line in lines:
-            if len(line.split()) != 0:
-                if line.split()[0] == "newmtl":
-                    material_name = line.split()[1]
-                    material_colors[material_name] = {}
-                if line.split()[0] == "map_Kd":
-                    # Texture map.
-                    texture_files[material_name] = line.split()[1]
-                if line.split()[0] == "Kd":
-                    # RGB diffuse reflectivity
-                    kd = np.array(list(line.split()[1:4])).astype(np.float32)
-                    kd = torch.from_numpy(kd).to(device)
-                    material_colors[material_name]["diffuse_color"] = kd
-                if line.split()[0] == "Ka":
-                    # RGB ambient reflectivity
-                    ka = np.array(list(line.split()[1:4])).astype(np.float32)
-                    ka = torch.from_numpy(ka).to(device)
-                    material_colors[material_name]["ambient_color"] = ka
-                if line.split()[0] == "Ks":
-                    # RGB specular reflectivity
-                    ks = np.array(list(line.split()[1:4])).astype(np.float32)
-                    ks = torch.from_numpy(ks).to(device)
-                    material_colors[material_name]["specular_color"] = ks
-                if line.split()[0] == "Ns":
-                    # Specular exponent
-                    ns = np.array(list(line.split()[1:4])).astype(np.float32)
-                    ns = torch.from_numpy(ns).to(device)
-                    material_colors[material_name]["shininess"] = ns
-
-    # Only keep the materials referenced in the obj.
-    for name in material_names:
-        if name in texture_files:
-            # Load the texture image.
-            filename = texture_files[name]
-            filename_texture = os.path.join(data_dir, filename)
-            if os.path.isfile(filename_texture):
-                image = _read_image(filename_texture, format="RGB") / 255.0
-                image = torch.from_numpy(image)
-                texture_images[name] = image
-            else:
-                msg = f"Texture file does not exist: {filename_texture}"
-                warnings.warn(msg)
-
-        if name in material_colors:
-            material_properties[name] = material_colors[name]
-
-    return material_properties, texture_images
+    material_properties, texture_files = _parse_mtl(f, device)
+    return _load_texture_images(
+        material_names, data_dir, material_properties, texture_files
+    )
