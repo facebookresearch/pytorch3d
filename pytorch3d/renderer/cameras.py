@@ -381,14 +381,17 @@ class FoVPerspectiveCameras(CamerasBase):
 
         .. code-block:: python
 
-            f1 = -(far + near)/(far−near)
-            f2 = -2*far*near/(far-near)
             h1 = (max_y + min_y)/(max_y - min_y)
             w1 = (max_x + min_x)/(max_x - min_x)
             tanhalffov = tan((fov/2))
             s1 = 1/tanhalffov
             s2 = 1/(tanhalffov * (aspect_ratio))
 
+            # To map z to the range [0, 1] use:
+            f1 =  far / (far - near)
+            f2 = -(far * near) / (far - near)
+
+            # Projection matrix
             P = [
                     [s1,   0,   w1,   0],
                     [0,   s2,   h1,   0],
