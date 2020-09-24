@@ -46,7 +46,7 @@ def hard_rgb_blend(colors, fragments, blend_params) -> torch.Tensor:
     is_background = fragments.pix_to_face[..., 0] < 0  # (N, H, W)
 
     if torch.is_tensor(blend_params.background_color):
-        background_color = blend_params.background_color
+        background_color = blend_params.background_color.to(device)
     else:
         background_color = colors.new_tensor(blend_params.background_color)  # (3)
 
@@ -163,6 +163,8 @@ def softmax_rgb_blend(
     background = blend_params.background_color
     if not torch.is_tensor(background):
         background = torch.tensor(background, dtype=torch.float32, device=device)
+    else:
+        background = background.to(device)
 
     # Weight for background color
     eps = 1e-10

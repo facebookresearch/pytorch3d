@@ -33,6 +33,11 @@ class MeshRenderer(nn.Module):
         self.rasterizer = rasterizer
         self.shader = shader
 
+    def to(self, device):
+        # Rasterizer and shader have submodules which are not of type nn.Module
+        self.rasterizer.to(device)
+        self.shader.to(device)
+
     def forward(self, meshes_world, **kwargs) -> torch.Tensor:
         """
         Render a batch of images from a batch of meshes by rasterizing and then
@@ -44,6 +49,7 @@ class MeshRenderer(nn.Module):
         face f, clipping is required before interpolating the texture uv
         coordinates and z buffer so that the colors and depths are limited to
         the range for the corresponding face.
+        For this set rasterizer.raster_settings.clip_barycentric_coords=True
         """
         fragments = self.rasterizer(meshes_world, **kwargs)
         images = self.shader(fragments, meshes_world, **kwargs)

@@ -76,6 +76,10 @@ class MeshRasterizer(nn.Module):
         self.cameras = cameras
         self.raster_settings = raster_settings
 
+    def to(self, device):
+        # Manually move to device cameras as it is not a subclass of nn.Module
+        self.cameras = self.cameras.to(device)
+
     def transform(self, meshes_world, **kwargs) -> torch.Tensor:
         """
         Args:
