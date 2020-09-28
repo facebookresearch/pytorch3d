@@ -211,7 +211,6 @@ class TexturesBase:
             index = torch.tensor(index)
         if isinstance(index, torch.Tensor):
             if index.dtype == torch.bool:
-                # pyre-fixme[16]: `Tensor` has no attribute `nonzero`.
                 index = index.nonzero()
                 index = index.squeeze(1) if index.numel() > 0 else index
                 index = index.tolist()

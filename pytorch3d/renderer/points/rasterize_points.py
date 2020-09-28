@@ -95,7 +95,8 @@ def rasterize_points(
 
     if bin_size != 0:
         # There is a limit on the number of points per bin in the cuda kernel.
-        # pyre-fixme[6]: Expected `int` for 1st param but got `Union[int, None, int]`.
+        # pyre-fixme[58]: `//` is not supported for operand types `int` and
+        #  `Union[int, None, int]`.
         points_per_bin = 1 + (image_size - 1) // bin_size
         if points_per_bin >= kMaxPointsPerBin:
             raise ValueError(

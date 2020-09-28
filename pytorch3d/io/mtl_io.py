@@ -70,7 +70,7 @@ def make_mesh_texture_atlas(
                 The integer part will be ignored to form a repeating pattern."
             warnings.warn(msg)
             # pyre-fixme[9]: faces_verts_uvs has type `Tensor`; used as `int`.
-            # pyre-fixme[6]: Expected `int` for 1st param but got `Tensor`.
+            # pyre-fixme[58]: `%` is not supported for operand types `Tensor` and `int`.
             faces_verts_uvs = faces_verts_uvs % 1
     elif texture_wrap == "clamp":
         # Clamp uv coordinates to the [0, 1] range.
