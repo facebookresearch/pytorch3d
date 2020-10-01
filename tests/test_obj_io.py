@@ -498,10 +498,13 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
         # Note, the reference texture atlas generated using SoftRas load_obj function
         # is too large to check in to the repo. Download the file to run the test locally.
         if not os.path.exists(expected_atlas_fname):
-            url = "https://dl.fbaipublicfiles.com/pytorch3d/data/tests/cow_texture_atlas_softras.pt"
+            url = (
+                "https://dl.fbaipublicfiles.com/pytorch3d/data/"
+                "tests/cow_texture_atlas_softras.pt"
+            )
             msg = (
-                "cow_texture_atlas_softras.pt not found, download from %s, save it at the path %s, and rerun"
-                % (url, expected_atlas_fname)
+                "cow_texture_atlas_softras.pt not found, download from %s, "
+                "save it at the path %s, and rerun" % (url, expected_atlas_fname)
             )
             warnings.warn(msg)
             return True

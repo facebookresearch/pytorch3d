@@ -657,10 +657,6 @@ class TexturesUV(TexturesBase):
 
             if verts_uvs.device != self.device:
                 raise ValueError("verts_uvs and faces_uvs must be on the same device")
-
-            # These values may be overridden when textures is
-            # passed into the Meshes constructor.
-            max_V = verts_uvs.shape[1]
         else:
             raise ValueError("Expected verts_uvs to be a tensor or list")
 

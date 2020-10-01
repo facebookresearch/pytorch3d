@@ -80,7 +80,10 @@ class TestRenderPoints(TestCaseMixin, unittest.TestCase):
         # Note, this file is too large to check in to the repo.
         # Download the file to run the test locally.
         if not path.exists(pointcloud_filename):
-            url = "https://dl.fbaipublicfiles.com/pytorch3d/data/PittsburghBridge/pointcloud.npz"
+            url = (
+                "https://dl.fbaipublicfiles.com/pytorch3d/data/"
+                "PittsburghBridge/pointcloud.npz"
+            )
             msg = (
                 "pointcloud.npz not found, download from %s, save it at the path %s, and rerun"
                 % (url, pointcloud_filename)

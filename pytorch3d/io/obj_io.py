@@ -5,7 +5,7 @@
 import os
 import warnings
 from collections import namedtuple
-from typing import Optional
+from typing import List, Optional
 
 import numpy as np
 import torch
@@ -345,41 +345,25 @@ def _parse_face(
         faces_materials_idx.append(material_idx)
 
 
-def _load_obj(
-    f_obj,
-    data_dir,
-    load_textures: bool = True,
-    create_texture_atlas: bool = False,
-    texture_atlas_size: int = 4,
-    texture_wrap: Optional[str] = "repeat",
-    device="cpu",
-):
+def _parse_obj(f, data_dir: str):
     """
-    Load a mesh from a file-like object. See load_obj function more details.
-    Any material files associated with the obj are expected to be in the
-    directory given by data_dir.
+    Load a mesh from a file-like object. See load_obj function for more details
+    about the return values.
     """
-
-    if texture_wrap is not None and texture_wrap not in ["repeat", "clamp"]:
-        msg = "texture_wrap must be one of ['repeat', 'clamp'] or None, got %s"
-        raise ValueError(msg % texture_wrap)
-
-    lines = [line.strip() for line in f_obj]
-    verts = []
-    normals = []
-    verts_uvs = []
-    faces_verts_idx = []
-    faces_normals_idx = []
-    faces_textures_idx = []
-    material_names = []
+    verts, normals, verts_uvs = [], [], []
+    faces_verts_idx, faces_normals_idx, faces_textures_idx = [], [], []
     faces_materials_idx = []
-    f_mtl = None
-    materials_idx = -1
+    material_names = []
+    mtl_path = None
+
+    lines = [line.strip() for line in f]
 
     # startswith expects each line to be a string. If the file is read in as
     # bytes then first decode to strings.
     if lines and isinstance(lines[0], bytes):
         lines = [el.decode("utf-8") for el in lines]
+
+    materials_idx = -1
 
     for line in lines:
         tokens = line.strip().split()
@@ -389,7 +373,8 @@ def _load_obj(
             # NOTE: only allow one .mtl file per .obj.
             # Definitions for multiple materials can be included
             # in this one .mtl file.
-            f_mtl = os.path.join(data_dir, line.split()[1])
+            mtl_path = line[len(tokens[0]) :].strip()  # Take the remainder of the line
+            mtl_path = os.path.join(data_dir, mtl_path)
         elif len(tokens) and tokens[0] == "usemtl":
             material_name = tokens[1]
             # materials are often repeated for different parts
@@ -430,6 +415,83 @@ def _load_obj(
                 faces_materials_idx,
             )
 
+    return (
+        verts,
+        normals,
+        verts_uvs,
+        faces_verts_idx,
+        faces_normals_idx,
+        faces_textures_idx,
+        faces_materials_idx,
+        material_names,
+        mtl_path,
+    )
+
+
+def _load_materials(
+    material_names: List[str], f, data_dir: str, *, load_textures: bool, device
+):
+    """
+    Load materials and optionally textures from the specified path.
+
+    Args:
+        material_names: a list of the material names found in the .obj file.
+        f: a file-like object of the material information.
+        data_dir: the directory where the material texture files are located.
+        load_textures: whether textures should be loaded.
+        device: string or torch.device on which to return the new tensors.
+
+    Returns:
+        material_colors: dict of properties for each material.
+        texture_images: dict of material names and texture images.
+    """
+    if not load_textures:
+        return None, None
+
+    if not material_names or f is None:
+        if material_names:
+            warnings.warn("No mtl file provided")
+        return None, None
+
+    if not os.path.isfile(f):
+        warnings.warn(f"Mtl file does not exist: {f}")
+        return None, None
+
+    # Texture mode uv wrap
+    return load_mtl(f, material_names, data_dir, device=device)
+
+
+def _load_obj(
+    f_obj,
+    data_dir,
+    load_textures: bool = True,
+    create_texture_atlas: bool = False,
+    texture_atlas_size: int = 4,
+    texture_wrap: Optional[str] = "repeat",
+    device="cpu",
+):
+    """
+    Load a mesh from a file-like object. See load_obj function more details.
+    Any material files associated with the obj are expected to be in the
+    directory given by data_dir.
+    """
+
+    if texture_wrap is not None and texture_wrap not in ["repeat", "clamp"]:
+        msg = "texture_wrap must be one of ['repeat', 'clamp'] or None, got %s"
+        raise ValueError(msg % texture_wrap)
+
+    (
+        verts,
+        normals,
+        verts_uvs,
+        faces_verts_idx,
+        faces_normals_idx,
+        faces_textures_idx,
+        faces_materials_idx,
+        material_names,
+        mtl_path,
+    ) = _parse_obj(f_obj, data_dir)
+
     verts = _make_tensor(verts, cols=3, dtype=torch.float32, device=device)  # (V, 3)
     normals = _make_tensor(
         normals, cols=3, dtype=torch.float32, device=device
@@ -443,58 +505,47 @@ def _load_obj(
     )
 
     # Repeat for normals and textures if present.
-    if len(faces_normals_idx) > 0:
+    if len(faces_normals_idx):
         faces_normals_idx = _format_faces_indices(
             faces_normals_idx, normals.shape[0], device=device, pad_value=-1
         )
-    if len(faces_textures_idx) > 0:
+    if len(faces_textures_idx):
         faces_textures_idx = _format_faces_indices(
             faces_textures_idx, verts_uvs.shape[0], device=device, pad_value=-1
         )
-    if len(faces_materials_idx) > 0:
+    if len(faces_materials_idx):
         faces_materials_idx = torch.tensor(
             faces_materials_idx, dtype=torch.int64, device=device
         )
 
-    # Load materials
-    material_colors, texture_images, texture_atlas = None, None, None
-    if load_textures:
-        if (len(material_names) > 0) and (f_mtl is not None):
-            # pyre-fixme[6]: Expected `Union[_PathLike[typing.Any], bytes, str]` for
-            #  1st param but got `Optional[str]`.
-            if os.path.isfile(f_mtl):
-                # Texture mode uv wrap
-                material_colors, texture_images = load_mtl(
-                    f_mtl, material_names, data_dir, device=device
-                )
-                if create_texture_atlas:
-                    # Using the images and properties from the
-                    # material file make a per face texture map.
+    texture_atlas = None
+    material_colors, texture_images = _load_materials(
+        material_names, mtl_path, data_dir, load_textures=load_textures, device=device
+    )
 
-                    # Create an array of strings of material names for each face.
-                    # If faces_materials_idx == -1 then that face doesn't have a material.
-                    idx = faces_materials_idx.cpu().numpy()
-                    face_material_names = np.array(material_names)[idx]  # (F,)
-                    face_material_names[idx == -1] = ""
+    if create_texture_atlas:
+        # Using the images and properties from the
+        # material file make a per face texture map.
 
-                    texture_atlas = None
-                    if len(verts_uvs) > 0:
-                        # Get the uv coords for each vert in each face
-                        faces_verts_uvs = verts_uvs[faces_textures_idx]  # (F, 3, 2)
+        # Create an array of strings of material names for each face.
+        # If faces_materials_idx == -1 then that face doesn't have a material.
+        idx = faces_materials_idx.cpu().numpy()
+        face_material_names = np.array(material_names)[idx]  # (F,)
+        face_material_names[idx == -1] = ""
 
-                        # Construct the atlas.
-                        texture_atlas = make_mesh_texture_atlas(
-                            material_colors,
-                            texture_images,
-                            face_material_names,
-                            faces_verts_uvs,
-                            texture_atlas_size,
-                            texture_wrap,
-                        )
-            else:
-                warnings.warn(f"Mtl file does not exist: {f_mtl}")
-        elif len(material_names) > 0:
-            warnings.warn("No mtl file provided")
+        if len(verts_uvs) > 0:
+            # Get the uv coords for each vert in each face
+            faces_verts_uvs = verts_uvs[faces_textures_idx]  # (F, 3, 2)
+
+            # Construct the atlas.
+            texture_atlas = make_mesh_texture_atlas(
+                material_colors,
+                texture_images,
+                face_material_names,
+                faces_verts_uvs,
+                texture_atlas_size,
+                texture_wrap,
+            )
 
     faces = _Faces(
         verts_idx=faces_verts_idx,
@@ -502,10 +553,9 @@ def _load_obj(
         textures_idx=faces_textures_idx,
         materials_idx=faces_materials_idx,
     )
-
     aux = _Aux(
-        normals=normals if len(normals) > 0 else None,
-        verts_uvs=verts_uvs if len(verts_uvs) > 0 else None,
+        normals=normals if len(normals) else None,
+        verts_uvs=verts_uvs if len(verts_uvs) else None,
         material_colors=material_colors,
         texture_images=texture_images,
         texture_atlas=texture_atlas,

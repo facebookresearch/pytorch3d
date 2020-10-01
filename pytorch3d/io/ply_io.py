@@ -282,7 +282,7 @@ def _try_read_ply_constant_list_ascii(f, definition: _PlyElementType):
         return None
     if not len(data):  # np.loadtxt() seeks even on empty data
         f.seek(old_offset)
-    if (data.shape[1] - 1 != data[:, 0]).any():
+    if (data[:, 0] != data.shape[1] - 1).any():
         msg = "A line of %s data did not have the specified length."
         raise ValueError(msg % definition.name)
     if data.shape[0] != definition.count:
