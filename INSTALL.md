@@ -34,12 +34,13 @@ For developing on top of PyTorch3D or contributing, you will need to run the lin
 - tdqm
 - jupyter
 - imageio
+- plotly
 
 These can be installed by running:
 ```
 # Demos
 conda install jupyter
-pip install scikit-image matplotlib imageio
+pip install scikit-image matplotlib imageio plotly
 
 # Tests/Linting
 pip install black 'isort<5' flake8 flake8-bugbear flake8-comprehensions
