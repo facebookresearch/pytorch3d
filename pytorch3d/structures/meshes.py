@@ -355,6 +355,10 @@ class Meshes(object):
             self._N = self._verts_padded.shape[0]
             self._V = self._verts_padded.shape[1]
 
+            
+            if verts.device != faces.device:
+                raise ValueError("Verts and Faces tensors should be on same device."
+                                 "Got {} and {}.".format(verts.device, faces.device)
             self.device = self._verts_padded.device
             self.valid = torch.zeros((self._N,), dtype=torch.bool, device=self.device)
             if self._N > 0:
