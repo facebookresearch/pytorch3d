@@ -5,7 +5,7 @@ sidebar_label: Plotly Visualization
 
 # Overview
 
-PyTorch3D provides a modular differentiable renderer, but for instances where we want interactive plots or are not concerned with the differentiability of the rendering process, we provide [functions to render meshes and pointclouds in plotly](../../pytorch3d/visualization/plotly_vis.py). These plotly figures allow you to rotate and zoom the rendered images and support plotting batched data as multiple traces in a singular plot or divided into individual subplots.
+PyTorch3D provides a modular differentiable renderer, but for instances where we want interactive plots or are not concerned with the differentiability of the rendering process, we provide [functions to render meshes and pointclouds in plotly](../../pytorch3d/vis/plotly_vis.py). These plotly figures allow you to rotate and zoom the rendered images and support plotting batched data as multiple traces in a singular plot or divided into individual subplots.
 
 
 # Examples
