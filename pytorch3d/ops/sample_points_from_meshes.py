@@ -11,11 +11,19 @@ from typing import Tuple, Union
 import torch
 from pytorch3d.ops.mesh_face_areas_normals import mesh_face_areas_normals
 from pytorch3d.ops.packed_to_padded import packed_to_padded
+from pytorch3d.renderer.mesh.rasterizer import Fragments as MeshFragments
 
 
 def sample_points_from_meshes(
-    meshes, num_samples: int = 10000, return_normals: bool = False
-) -> Union[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
+    meshes,
+    num_samples: int = 10000,
+    return_normals: bool = False,
+    return_textures: bool = False,
+) -> Union[
+    torch.Tensor,
+    Tuple[torch.Tensor, torch.Tensor],
+    Tuple[torch.Tensor, torch.Tensor, torch.Tensor],
+]:
     """
     Convert a batch of meshes to a pointcloud by uniformly sampling points on
     the surface of the mesh with probability proportional to the face area.
@@ -24,10 +32,10 @@ def sample_points_from_meshes(
         meshes: A Meshes object with a batch of N meshes.
         num_samples: Integer giving the number of point samples per mesh.
         return_normals: If True, return normals for the sampled points.
-        eps: (float) used to clamp the norm of the normals to avoid dividing by 0.
+        return_textures: If True, return textures for the sampled points.
 
     Returns:
-        2-element tuple containing
+        3-element tuple containing
 
         - **samples**: FloatTensor of shape (N, num_samples, 3) giving the
           coordinates of sampled points for each mesh in the batch. For empty
@@ -36,6 +44,17 @@ def sample_points_from_meshes(
           to each sampled point. Only returned if return_normals is True.
           For empty meshes the corresponding row in the normals array will
           be filled with 0.
+        - **textures**: FloatTensor of shape (N, num_samples, C) giving a C-dimensional
+          texture vector to each sampled point. Only returned if return_textures is True.
+          For empty meshes the corresponding row in the textures array will
+          be filled with 0.
+
+        Note that in a future releases, we will replace the 3-element tuple output
+        with a `Pointclouds` datastructure, as follows
+
+        .. code-block:: python
+
+            Poinclouds(samples, normals=normals, features=textures)
     """
     if meshes.isempty():
         raise ValueError("Meshes are empty.")
@@ -43,6 +62,10 @@ def sample_points_from_meshes(
     verts = meshes.verts_packed()
     if not torch.isfinite(verts).all():
         raise ValueError("Meshes contain nan or inf.")
+
+    if return_textures and meshes.textures is None:
+        raise ValueError("Meshes do not contain textures.")
+
     faces = meshes.faces_packed()
     mesh_to_face = meshes.mesh_to_faces_packed_first_idx()
     num_meshes = len(meshes)
@@ -66,7 +89,7 @@ def sample_points_from_meshes(
         sample_face_idxs += mesh_to_face[meshes.valid].view(num_valid_meshes, 1)
 
     # Get the vertex coordinates of the sampled faces.
-    face_verts = verts[faces.long()]
+    face_verts = verts[faces]
     v0, v1, v2 = face_verts[:, 0], face_verts[:, 1], face_verts[:, 2]
 
     # Randomly generate barycentric coords.
@@ -92,9 +115,29 @@ def sample_points_from_meshes(
         vert_normals = vert_normals[sample_face_idxs]
         normals[meshes.valid] = vert_normals
 
+    if return_textures:
+        # fragment data are of shape NxHxWxK. Here H=S, W=1 & K=1.
+        pix_to_face = sample_face_idxs.view(len(meshes), num_samples, 1, 1)  # NxSx1x1
+        bary = torch.stack((w0, w1, w2), dim=2).unsqueeze(2).unsqueeze(2)  # NxSx1x1x3
+        # zbuf and dists are not used in `sample_textures` so we initialize them with dummy
+        dummy = torch.zeros(
+            (len(meshes), num_samples, 1, 1), device=meshes.device, dtype=torch.float32
+        )  # NxSx1x1
+        fragments = MeshFragments(
+            pix_to_face=pix_to_face, zbuf=dummy, bary_coords=bary, dists=dummy
+        )
+        textures = meshes.sample_textures(fragments)  # NxSx1x1xC
+        textures = textures[:, :, 0, 0, :]  # NxSxC
+
+    # return
+    # TODO(gkioxari) consider returning a Pointclouds instance [breaking]
+    if return_normals and return_textures:
+        return samples, normals, textures
+    if return_normals:  # return_textures is False
         return samples, normals
-    else:
-        return samples
+    if return_textures:  # return_normals is False
+        return samples, textures
+    return samples
 
 
 def _rand_barycentric_coords(

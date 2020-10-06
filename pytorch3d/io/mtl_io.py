@@ -129,7 +129,7 @@ def make_material_atlas(
     the formulation from [1].
 
     For a triangle with vertices (v0, v1, v2) we can create a barycentric coordinate system
-    with the x axis being the vector (v1 - v0) and the y axis being the vector (v2 - v0).
+    with the x axis being the vector (v0 - v2) and the y axis being the vector (v1 - v2).
     The barycentric coordinates range from [0, 1] in the +x and +y direction so this creates
     a triangular texture space with vertices at (0, 1), (0, 0) and (1, 0).
 

@@ -236,6 +236,17 @@ class TexturesBase:
         """
         raise NotImplementedError()
 
+    def faces_verts_textures_packed(self):
+        """
+        Returns the texture for each vertex for each face in the mesh.
+        For N meshes, this function returns sum(Fi)x3xC where Fi is the
+        number of faces in the i-th mesh and C is the dimensional of
+        the feature (C = 3 for RGB textures).
+        You can use the utils function in structures.utils to convert the
+        packed respresentation to a list or padded.
+        """
+        raise NotImplementedError()
+
     def clone(self):
         """
         Each texture class should implement a method
@@ -286,7 +297,7 @@ def Textures(
 
         Returns:
             a Textures class which is an instance of TexturesBase e.g. TexturesUV,
-            TexturesAtlas, TexturesVerte
+            TexturesAtlas, TexturesVertex
 
         """
 
@@ -507,6 +518,23 @@ class TexturesAtlas(TexturesBase):
 
         return texels
 
+    def faces_verts_textures_packed(self) -> torch.Tensor:
+        """
+        Samples texture from each vertex for each face in the mesh.
+        For N meshes with {Fi} number of faces, it returns a
+        tensor of shape sum(Fi)x3xD (D = 3 for RGB).
+        You can use the utils function in structures.utils to convert the
+        packed respresentation to a list or padded.
+        """
+        atlas_packed = self.atlas_packed()
+        # assume each face consists of (v0, v1, v2).
+        # to sample from the atlas we only need the first two barycentric coordinates.
+        # for details on how this texture sample works refer to the sample_textures function.
+        t0 = atlas_packed[:, 0, -1]  # corresponding to v0  with bary = (1, 0)
+        t1 = atlas_packed[:, -1, 0]  # corresponding to v1 with bary = (0, 1)
+        t2 = atlas_packed[:, 0, 0]  # corresponding to v2 with bary = (0, 0)
+        return torch.stack((t0, t1, t2), dim=1)
+
     def join_batch(self, textures: List["TexturesAtlas"]) -> "TexturesAtlas":
         """
         Join the list of textures given by `textures` to
@@ -514,10 +542,10 @@ class TexturesAtlas(TexturesBase):
         TexturesAtlas object with the combined textures.
 
         Args:
-            textures: List of TextureAtlas objects
+            textures: List of TexturesAtlas objects
 
         Returns:
-            new_tex: TextureAtlas object with the combined
+            new_tex: TexturesAtlas object with the combined
             textures from self and the list `textures`.
         """
         tex_types_same = all(isinstance(tex, TexturesAtlas) for tex in textures)
@@ -917,6 +945,46 @@ class TexturesUV(TexturesBase):
         texels = texels.reshape(N, K, C, H_out, W_out).permute(0, 3, 4, 1, 2)
         return texels
 
+    def faces_verts_textures_packed(self) -> torch.Tensor:
+        """
+        Samples texture from each vertex and for each face in the mesh.
+        For N meshes with {Fi} number of faces, it returns a
+        tensor of shape sum(Fi)x3xC (C = 3 for RGB).
+        You can use the utils function in structures.utils to convert the
+        packed representation to a list or padded.
+        """
+        if self.isempty():
+            return torch.zeros(
+                (0, 3, self.maps_padded().shape[-1]),
+                dtype=torch.float32,
+                device=self.device,
+            )
+        else:
+            packing_list = [
+                i[j] for i, j in zip(self.verts_uvs_list(), self.faces_uvs_list())
+            ]
+            faces_verts_uvs = _list_to_padded_wrapper(
+                packing_list, pad_value=0.0
+            )  # Nxmax(Fi)x3x2
+        texture_maps = self.maps_padded()  # NxHxWxC
+        texture_maps = texture_maps.permute(0, 3, 1, 2)  # NxCxHxW
+
+        faces_verts_uvs = faces_verts_uvs * 2.0 - 1.0
+        texture_maps = torch.flip(texture_maps, [2])  # flip y axis of the texture map
+
+        textures = F.grid_sample(
+            texture_maps,
+            faces_verts_uvs,
+            align_corners=self.align_corners,
+            padding_mode=self.padding_mode,
+        )  # NxCxmax(Fi)x3
+
+        textures = textures.permute(0, 2, 3, 1)  # Nxmax(Fi)x3xC
+        textures = _padded_to_list_wrapper(
+            textures, split_size=self._num_faces_per_mesh
+        )  # list of N {Fix3xC} tensors
+        return list_to_packed(textures)[0]
+
     def join_batch(self, textures: List["TexturesUV"]) -> "TexturesUV":
         """
         Join the list of textures given by `textures` to
@@ -1267,6 +1335,18 @@ class TexturesVertex(TexturesBase):
             fragments.pix_to_face, fragments.bary_coords, faces_verts_features
         )
         return texels
+
+    def faces_verts_textures_packed(self, faces_packed=None) -> torch.Tensor:
+        """
+        Samples texture from each vertex and for each face in the mesh.
+        For N meshes with {Fi} number of faces, it returns a
+        tensor of shape sum(Fi)x3xC (C = 3 for RGB).
+        You can use the utils function in structures.utils to convert the
+        packed respresentation to a list or padded.
+        """
+        verts_features_packed = self.verts_features_packed()
+        faces_verts_features = verts_features_packed[faces_packed]
+        return faces_verts_features
 
     def join_batch(self, textures: List["TexturesVertex"]) -> "TexturesVertex":
         """
