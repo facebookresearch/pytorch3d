@@ -533,19 +533,16 @@ def _load_obj(
         face_material_names = np.array(material_names)[idx]  # (F,)
         face_material_names[idx == -1] = ""
 
-        if len(verts_uvs) > 0:
-            # Get the uv coords for each vert in each face
-            faces_verts_uvs = verts_uvs[faces_textures_idx]  # (F, 3, 2)
-
-            # Construct the atlas.
-            texture_atlas = make_mesh_texture_atlas(
-                material_colors,
-                texture_images,
-                face_material_names,
-                faces_verts_uvs,
-                texture_atlas_size,
-                texture_wrap,
-            )
+        # Construct the atlas.
+        texture_atlas = make_mesh_texture_atlas(
+            material_colors,
+            texture_images,
+            face_material_names,
+            faces_textures_idx,
+            verts_uvs,
+            texture_atlas_size,
+            texture_wrap,
+        )
 
     faces = _Faces(
         verts_idx=faces_verts_idx,

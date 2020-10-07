@@ -15,7 +15,8 @@ def make_mesh_texture_atlas(
     material_properties: Dict,
     texture_images: Dict,
     face_material_names,
-    faces_verts_uvs: torch.Tensor,
+    faces_uvs: torch.Tensor,
+    verts_uvs: torch.Tensor,
     texture_size: int,
     texture_wrap: Optional[str],
 ) -> torch.Tensor:
@@ -31,8 +32,9 @@ def make_mesh_texture_atlas(
         face_material_names: numpy array of the material name corresponding to each
             face. Faces which don't have an associated material will be an empty string.
             For these faces, a uniform white texture is assigned.
-        faces_verts_uvs: LongTensor of shape (F, 3, 2) giving the uv coordinates for each
-            vertex in the face.
+        faces_uvs: LongTensor of shape (F, 3,) giving the index into the verts_uvs for
+            each face in the mesh.
+        verts_uvs: FloatTensor of shape (V, 2) giving the uv coordinates for each vertex.
         texture_size: the resolution of the per face texture map returned by this function.
             Each face will have a texture map of shape (texture_size, texture_size, 3).
         texture_wrap: string, one of ["repeat", "clamp", None]
@@ -47,15 +49,38 @@ def make_mesh_texture_atlas(
     """
     # Create an R x R texture map per face in the mesh
     R = texture_size
-    F = faces_verts_uvs.shape[0]
+    F = faces_uvs.shape[0]
 
     # Initialize the per face texture map to a white color.
     # TODO: allow customization of this base color?
-    # pyre-fixme[16]: `Tensor` has no attribute `new_ones`.
-    atlas = faces_verts_uvs.new_ones(size=(F, R, R, 3))
+    atlas = torch.ones(size=(F, R, R, 3), dtype=torch.float32, device=faces_uvs.device)
 
     # Check for empty materials.
     if not material_properties and not texture_images:
+        return atlas
+
+    # Iterate through the material properties - not
+    # all materials have texture images so this is
+    # done first separately to the texture interpolation.
+    for material_name, props in material_properties.items():
+        # Bool to indicate which faces use this texture map.
+        faces_material_ind = torch.from_numpy(face_material_names == material_name).to(
+            faces_uvs.device
+        )
+        if faces_material_ind.sum() > 0:
+            # For these faces, update the base color to the
+            # diffuse material color.
+            if "diffuse_color" not in props:
+                continue
+            atlas[faces_material_ind, ...] = props["diffuse_color"][None, :]
+
+    # If there are vertex texture coordinates, create an (F, 3, 2)
+    # tensor of the vertex textures per face.
+    faces_verts_uvs = verts_uvs[faces_uvs] if len(verts_uvs) > 0 else None
+
+    # Some meshes only have material properties and no texture image.
+    # In this case, return the atlas here.
+    if faces_verts_uvs is None:
         return atlas
 
     if texture_wrap == "repeat":
@@ -64,32 +89,14 @@ def make_mesh_texture_atlas(
         # will be ignored and a repeating pattern is formed.
         # Shapenet data uses this format see:
         # https://shapenet.org/qaforum/index.php?qa=15&qa_1=why-is-the-texture-coordinate-in-the-obj-file-not-in-the-range # noqa: B950
-        # pyre-fixme[16]: `ByteTensor` has no attribute `any`.
         if (faces_verts_uvs > 1).any() or (faces_verts_uvs < 0).any():
             msg = "Texture UV coordinates outside the range [0, 1]. \
                 The integer part will be ignored to form a repeating pattern."
             warnings.warn(msg)
-            # pyre-fixme[9]: faces_verts_uvs has type `Tensor`; used as `int`.
-            # pyre-fixme[58]: `%` is not supported for operand types `Tensor` and `int`.
             faces_verts_uvs = faces_verts_uvs % 1
     elif texture_wrap == "clamp":
         # Clamp uv coordinates to the [0, 1] range.
         faces_verts_uvs = faces_verts_uvs.clamp(0.0, 1.0)
-
-    # Iterate through the material properties - not
-    # all materials have texture images so this has to be
-    # done separately to the texture interpolation.
-    for material_name, props in material_properties.items():
-        # Bool to indicate which faces use this texture map.
-        faces_material_ind = torch.from_numpy(face_material_names == material_name).to(
-            faces_verts_uvs.device
-        )
-        if faces_material_ind.sum() > 0:
-            # For these faces, update the base color to the
-            # diffuse material color.
-            if "diffuse_color" not in props:
-                continue
-            atlas[faces_material_ind, ...] = props["diffuse_color"][None, :]
 
     # Iterate through the materials used in this mesh. Update the
     # texture atlas for the faces which use this material.

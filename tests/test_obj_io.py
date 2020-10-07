@@ -559,6 +559,35 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
         self.assertTrue(aux.normals is None)
         self.assertTrue(aux.verts_uvs is None)
 
+    def test_load_obj_mlt_no_image(self):
+        DATA_DIR = Path(__file__).resolve().parent / "data"
+        obj_filename = "obj_mtl_no_image/model.obj"
+        filename = os.path.join(DATA_DIR, obj_filename)
+        R = 8
+        verts, faces, aux = load_obj(
+            filename,
+            load_textures=True,
+            create_texture_atlas=True,
+            texture_atlas_size=R,
+            texture_wrap=None,
+        )
+
+        expected_verts = torch.tensor(
+            [[0.1, 0.2, 0.3], [0.2, 0.3, 0.4], [0.3, 0.4, 0.5], [0.4, 0.5, 0.6]],
+            dtype=torch.float32,
+        )
+        expected_faces = torch.tensor([[0, 1, 2], [0, 1, 3]], dtype=torch.int64)
+        self.assertTrue(torch.allclose(verts, expected_verts))
+        self.assertTrue(torch.allclose(faces.verts_idx, expected_faces))
+
+        # Check that the material diffuse color has been assigned to all the
+        # values in the texture atlas.
+        expected_atlas = torch.tensor([0.5, 0.0, 0.0], dtype=torch.float32)
+        expected_atlas = expected_atlas[None, None, None, :].expand(2, R, R, -1)
+        self.assertTrue(torch.allclose(aux.texture_atlas, expected_atlas))
+        self.assertEquals(len(aux.material_colors.keys()), 1)
+        self.assertEquals(list(aux.material_colors.keys()), ["material_1"])
+
     def test_load_obj_missing_texture(self):
         DATA_DIR = Path(__file__).resolve().parent / "data"
         obj_filename = "missing_files_obj/model.obj"
