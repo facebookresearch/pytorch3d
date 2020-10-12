@@ -11,6 +11,14 @@ from fvcore.common.file_io import PathManager
 from PIL import Image
 
 
+@contextlib.contextmanager
+def nullcontext(x):
+    """
+    This is just like contextlib.nullcontext but also works in Python 3.6.
+    """
+    yield x
+
+
 def _open_file(f, mode="r") -> ContextManager[IO]:
     if isinstance(f, str):
         f = open(f, mode)
@@ -19,7 +27,7 @@ def _open_file(f, mode="r") -> ContextManager[IO]:
         f = f.open(mode)
         return contextlib.closing(f)
     else:
-        return contextlib.nullcontext(f)
+        return nullcontext(f)
 
 
 def _make_tensor(
