@@ -145,6 +145,20 @@ class TestRotationConversion(TestCaseMixin, unittest.TestCase):
         self.assertEqual(ab.shape, ab_from_matrix.shape)
         self.assertTrue(torch.allclose(ab, ab_from_matrix))
 
+    def test_matrix_to_quaternion_corner_case(self):
+        """Check no bad gradients from sqrt(0)."""
+        matrix = torch.eye(3, requires_grad=True)
+        target = torch.Tensor([0.984808, 0, 0.174, 0])
+
+        optimizer = torch.optim.Adam([matrix], lr=0.05)
+        optimizer.zero_grad()
+        q = matrix_to_quaternion(matrix)
+        loss = torch.sum((q - target) ** 2)
+        loss.backward()
+        optimizer.step()
+
+        self.assertClose(matrix, 0.95 * torch.eye(3))
+
     def test_quaternion_application(self):
         """Applying a quaternion is the same as applying the matrix."""
         quaternions = random_quaternions(3, torch.float64, requires_grad=True)

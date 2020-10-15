@@ -82,6 +82,17 @@ def _copysign(a, b):
     return torch.where(signs_differ, -a, a)
 
 
+def _sqrt_positive_part(x):
+    """
+    Returns torch.sqrt(torch.max(0, x))
+    but with a zero subgradient where x is 0.
+    """
+    ret = torch.zeros_like(x)
+    positive_mask = x > 0
+    ret[positive_mask] = torch.sqrt(x[positive_mask])
+    return ret
+
+
 def matrix_to_quaternion(matrix):
     """
     Convert rotations given as rotation matrices to quaternions.
@@ -94,14 +105,13 @@ def matrix_to_quaternion(matrix):
     """
     if matrix.size(-1) != 3 or matrix.size(-2) != 3:
         raise ValueError(f"Invalid rotation matrix  shape f{matrix.shape}.")
-    zero = matrix.new_zeros((1,))
     m00 = matrix[..., 0, 0]
     m11 = matrix[..., 1, 1]
     m22 = matrix[..., 2, 2]
-    o0 = 0.5 * torch.sqrt(torch.max(zero, 1 + m00 + m11 + m22))
-    x = 0.5 * torch.sqrt(torch.max(zero, 1 + m00 - m11 - m22))
-    y = 0.5 * torch.sqrt(torch.max(zero, 1 - m00 + m11 - m22))
-    z = 0.5 * torch.sqrt(torch.max(zero, 1 - m00 - m11 + m22))
+    o0 = 0.5 * _sqrt_positive_part(1 + m00 + m11 + m22)
+    x = 0.5 * _sqrt_positive_part(1 + m00 - m11 - m22)
+    y = 0.5 * _sqrt_positive_part(1 - m00 + m11 - m22)
+    z = 0.5 * _sqrt_positive_part(1 - m00 - m11 + m22)
     o1 = _copysign(x, matrix[..., 2, 1] - matrix[..., 1, 2])
     o2 = _copysign(y, matrix[..., 0, 2] - matrix[..., 2, 0])
     o3 = _copysign(z, matrix[..., 1, 0] - matrix[..., 0, 1])
