@@ -410,8 +410,8 @@ class TestBlending(TestCaseMixin, unittest.TestCase):
 
     def test_blend_params(self):
         """Test color parameter of BlendParams().
-            Assert passed value overrides default value.
-            """
+        Assert passed value overrides default value.
+        """
         bp_default = BlendParams()
         bp_new = BlendParams(background_color=(0.5, 0.5, 0.5))
         self.assertEqual(bp_new.background_color, (0.5, 0.5, 0.5))

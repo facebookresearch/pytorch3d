@@ -94,7 +94,7 @@ def convert_pointclouds_to_tensor(pcl: Union[torch.Tensor, "Pointclouds"]):
 
 
 def is_pointclouds(pcl: Union[torch.Tensor, "Pointclouds"]):
-    """ Checks whether the input `pcl` is an instance of `Pointclouds`
+    """Checks whether the input `pcl` is an instance of `Pointclouds`
     by checking the existence of `points_padded` and `num_points_per_cloud`
     functions.
     """

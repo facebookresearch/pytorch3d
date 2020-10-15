@@ -9,177 +9,177 @@ from . import utils as struct_utils
 
 class Meshes(object):
     """
-    This class provides functions for working with batches of triangulated
-    meshes with varying numbers of faces and vertices, and converting between
-    representations.
+     This class provides functions for working with batches of triangulated
+     meshes with varying numbers of faces and vertices, and converting between
+     representations.
 
-    Within Meshes, there are three different representations of the faces and
-    verts data:
+     Within Meshes, there are three different representations of the faces and
+     verts data:
 
-    List
-      - only used for input as a starting point to convert to other representations.
-    Padded
-      - has specific batch dimension.
-    Packed
-      - no batch dimension.
-      - has auxillary variables used to index into the padded representation.
+     List
+       - only used for input as a starting point to convert to other representations.
+     Padded
+       - has specific batch dimension.
+     Packed
+       - no batch dimension.
+       - has auxillary variables used to index into the padded representation.
 
-    Example:
+     Example:
 
-    Input list of verts V_n = [[V_1], [V_2], ... , [V_N]]
-    where V_1, ... , V_N are the number of verts in each mesh and N is the
-    numer of meshes.
+     Input list of verts V_n = [[V_1], [V_2], ... , [V_N]]
+     where V_1, ... , V_N are the number of verts in each mesh and N is the
+     numer of meshes.
 
-    Input list of faces F_n = [[F_1], [F_2], ... , [F_N]]
-    where F_1, ... , F_N are the number of faces in each mesh.
+     Input list of faces F_n = [[F_1], [F_2], ... , [F_N]]
+     where F_1, ... , F_N are the number of faces in each mesh.
 
-    # SPHINX IGNORE
-     List                      | Padded                  | Packed
-    ---------------------------|-------------------------|------------------------
-    [[V_1], ... , [V_N]]       | size = (N, max(V_n), 3) |  size = (sum(V_n), 3)
-                               |                         |
-    Example for verts:         |                         |
-                               |                         |
-    V_1 = 3, V_2 = 4, V_3 = 5  | size = (3, 5, 3)        |  size = (12, 3)
-                               |                         |
-    List([                     | tensor([                |  tensor([
-      [                        |     [                   |    [0.1, 0.3, 0.5],
-        [0.1, 0.3, 0.5],       |       [0.1, 0.3, 0.5],  |    [0.5, 0.2, 0.1],
-        [0.5, 0.2, 0.1],       |       [0.5, 0.2, 0.1],  |    [0.6, 0.8, 0.7],
-        [0.6, 0.8, 0.7],       |       [0.6, 0.8, 0.7],  |    [0.1, 0.3, 0.3],
-      ],                       |       [0,    0,    0],  |    [0.6, 0.7, 0.8],
-      [                        |       [0,    0,    0],  |    [0.2, 0.3, 0.4],
-        [0.1, 0.3, 0.3],       |     ],                  |    [0.1, 0.5, 0.3],
-        [0.6, 0.7, 0.8],       |     [                   |    [0.7, 0.3, 0.6],
-        [0.2, 0.3, 0.4],       |       [0.1, 0.3, 0.3],  |    [0.2, 0.4, 0.8],
-        [0.1, 0.5, 0.3],       |       [0.6, 0.7, 0.8],  |    [0.9, 0.5, 0.2],
-      ],                       |       [0.2, 0.3, 0.4],  |    [0.2, 0.3, 0.4],
-      [                        |       [0.1, 0.5, 0.3],  |    [0.9, 0.3, 0.8],
-        [0.7, 0.3, 0.6],       |       [0,    0,    0],  |  ])
-        [0.2, 0.4, 0.8],       |     ],                  |
-        [0.9, 0.5, 0.2],       |     [                   |
-        [0.2, 0.3, 0.4],       |       [0.7, 0.3, 0.6],  |
-        [0.9, 0.3, 0.8],       |       [0.2, 0.4, 0.8],  |
-      ]                        |       [0.9, 0.5, 0.2],  |
-   ])                          |       [0.2, 0.3, 0.4],  |
-                               |       [0.9, 0.3, 0.8],  |
-                               |     ]                   |
-                               |  ])                     |
-    Example for faces:         |                         |
-                               |                         |
-    F_1 = 1, F_2 = 2, F_3 = 7  | size = (3, 7, 3)        | size = (10, 3)
-                               |                         |
-    List([                     | tensor([                | tensor([
-      [                        |     [                   |    [ 0,  1,  2],
-        [0, 1, 2],             |       [0,   1,  2],     |    [ 3,  4,  5],
-      ],                       |       [-1, -1, -1],     |    [ 4,  5,  6],
-      [                        |       [-1, -1, -1]      |    [ 8,  9,  7],
-        [0, 1, 2],             |       [-1, -1, -1]      |    [ 7,  8, 10],
-        [1, 2, 3],             |       [-1, -1, -1]      |    [ 9, 10,  8],
-      ],                       |       [-1, -1, -1],     |    [11, 10,  9],
-      [                        |       [-1, -1, -1],     |    [11,  7,  8],
-        [1, 2, 0],             |     ],                  |    [11, 10,  8],
-        [0, 1, 3],             |     [                   |    [11,  9,  8],
-        [2, 3, 1],             |       [0,   1,  2],     |  ])
-        [4, 3, 2],             |       [1,   2,  3],     |
-        [4, 0, 1],             |       [-1, -1, -1],     |
-        [4, 3, 1],             |       [-1, -1, -1],     |
-        [4, 2, 1],             |       [-1, -1, -1],     |
-      ],                       |       [-1, -1, -1],     |
-    ])                         |       [-1, -1, -1],     |
-                               |     ],                  |
-                               |     [                   |
-                               |       [1,   2,  0],     |
-                               |       [0,   1,  3],     |
-                               |       [2,   3,  1],     |
-                               |       [4,   3,  2],     |
-                               |       [4,   0,  1],     |
-                               |       [4,   3,  1],     |
-                               |       [4,   2,  1],     |
-                               |     ]                   |
-                               |   ])                    |
-    -----------------------------------------------------------------------------
+     # SPHINX IGNORE
+      List                      | Padded                  | Packed
+     ---------------------------|-------------------------|------------------------
+     [[V_1], ... , [V_N]]       | size = (N, max(V_n), 3) |  size = (sum(V_n), 3)
+                                |                         |
+     Example for verts:         |                         |
+                                |                         |
+     V_1 = 3, V_2 = 4, V_3 = 5  | size = (3, 5, 3)        |  size = (12, 3)
+                                |                         |
+     List([                     | tensor([                |  tensor([
+       [                        |     [                   |    [0.1, 0.3, 0.5],
+         [0.1, 0.3, 0.5],       |       [0.1, 0.3, 0.5],  |    [0.5, 0.2, 0.1],
+         [0.5, 0.2, 0.1],       |       [0.5, 0.2, 0.1],  |    [0.6, 0.8, 0.7],
+         [0.6, 0.8, 0.7],       |       [0.6, 0.8, 0.7],  |    [0.1, 0.3, 0.3],
+       ],                       |       [0,    0,    0],  |    [0.6, 0.7, 0.8],
+       [                        |       [0,    0,    0],  |    [0.2, 0.3, 0.4],
+         [0.1, 0.3, 0.3],       |     ],                  |    [0.1, 0.5, 0.3],
+         [0.6, 0.7, 0.8],       |     [                   |    [0.7, 0.3, 0.6],
+         [0.2, 0.3, 0.4],       |       [0.1, 0.3, 0.3],  |    [0.2, 0.4, 0.8],
+         [0.1, 0.5, 0.3],       |       [0.6, 0.7, 0.8],  |    [0.9, 0.5, 0.2],
+       ],                       |       [0.2, 0.3, 0.4],  |    [0.2, 0.3, 0.4],
+       [                        |       [0.1, 0.5, 0.3],  |    [0.9, 0.3, 0.8],
+         [0.7, 0.3, 0.6],       |       [0,    0,    0],  |  ])
+         [0.2, 0.4, 0.8],       |     ],                  |
+         [0.9, 0.5, 0.2],       |     [                   |
+         [0.2, 0.3, 0.4],       |       [0.7, 0.3, 0.6],  |
+         [0.9, 0.3, 0.8],       |       [0.2, 0.4, 0.8],  |
+       ]                        |       [0.9, 0.5, 0.2],  |
+    ])                          |       [0.2, 0.3, 0.4],  |
+                                |       [0.9, 0.3, 0.8],  |
+                                |     ]                   |
+                                |  ])                     |
+     Example for faces:         |                         |
+                                |                         |
+     F_1 = 1, F_2 = 2, F_3 = 7  | size = (3, 7, 3)        | size = (10, 3)
+                                |                         |
+     List([                     | tensor([                | tensor([
+       [                        |     [                   |    [ 0,  1,  2],
+         [0, 1, 2],             |       [0,   1,  2],     |    [ 3,  4,  5],
+       ],                       |       [-1, -1, -1],     |    [ 4,  5,  6],
+       [                        |       [-1, -1, -1]      |    [ 8,  9,  7],
+         [0, 1, 2],             |       [-1, -1, -1]      |    [ 7,  8, 10],
+         [1, 2, 3],             |       [-1, -1, -1]      |    [ 9, 10,  8],
+       ],                       |       [-1, -1, -1],     |    [11, 10,  9],
+       [                        |       [-1, -1, -1],     |    [11,  7,  8],
+         [1, 2, 0],             |     ],                  |    [11, 10,  8],
+         [0, 1, 3],             |     [                   |    [11,  9,  8],
+         [2, 3, 1],             |       [0,   1,  2],     |  ])
+         [4, 3, 2],             |       [1,   2,  3],     |
+         [4, 0, 1],             |       [-1, -1, -1],     |
+         [4, 3, 1],             |       [-1, -1, -1],     |
+         [4, 2, 1],             |       [-1, -1, -1],     |
+       ],                       |       [-1, -1, -1],     |
+     ])                         |       [-1, -1, -1],     |
+                                |     ],                  |
+                                |     [                   |
+                                |       [1,   2,  0],     |
+                                |       [0,   1,  3],     |
+                                |       [2,   3,  1],     |
+                                |       [4,   3,  2],     |
+                                |       [4,   0,  1],     |
+                                |       [4,   3,  1],     |
+                                |       [4,   2,  1],     |
+                                |     ]                   |
+                                |   ])                    |
+     -----------------------------------------------------------------------------
 
-    Auxillary variables for packed representation
+     Auxillary variables for packed representation
 
-    Name                           |   Size              |  Example from above
-    -------------------------------|---------------------|-----------------------
-                                   |                     |
-    verts_packed_to_mesh_idx       |  size = (sum(V_n))  |   tensor([
-                                   |                     |     0, 0, 0, 1, 1, 1,
-                                   |                     |     1, 2, 2, 2, 2, 2
-                                   |                     |   )]
-                                   |                     |   size = (12)
-                                   |                     |
-    mesh_to_verts_packed_first_idx |  size = (N)         |   tensor([0, 3, 7])
-                                   |                     |   size = (3)
-                                   |                     |
-    num_verts_per_mesh             |  size = (N)         |   tensor([3, 4, 5])
-                                   |                     |   size = (3)
-                                   |                     |
-    faces_packed_to_mesh_idx       |  size = (sum(F_n))  |   tensor([
-                                   |                     |     0, 1, 1, 2, 2, 2,
-                                   |                     |     2, 2, 2, 2
-                                   |                     |   )]
-                                   |                     |   size = (10)
-                                   |                     |
-    mesh_to_faces_packed_first_idx |  size = (N)         |   tensor([0, 1, 3])
-                                   |                     |   size = (3)
-                                   |                     |
-    num_faces_per_mesh             |  size = (N)         |   tensor([1, 2, 7])
-                                   |                     |   size = (3)
-                                   |                     |
-    verts_padded_to_packed_idx     |  size = (sum(V_n))  |  tensor([
-                                   |                     |     0, 1, 2, 5, 6, 7,
-                                   |                     |     8, 10, 11, 12, 13,
-                                   |                     |     14
-                                   |                     |  )]
-                                   |                     |  size = (12)
-    -----------------------------------------------------------------------------
-    # SPHINX IGNORE
+     Name                           |   Size              |  Example from above
+     -------------------------------|---------------------|-----------------------
+                                    |                     |
+     verts_packed_to_mesh_idx       |  size = (sum(V_n))  |   tensor([
+                                    |                     |     0, 0, 0, 1, 1, 1,
+                                    |                     |     1, 2, 2, 2, 2, 2
+                                    |                     |   )]
+                                    |                     |   size = (12)
+                                    |                     |
+     mesh_to_verts_packed_first_idx |  size = (N)         |   tensor([0, 3, 7])
+                                    |                     |   size = (3)
+                                    |                     |
+     num_verts_per_mesh             |  size = (N)         |   tensor([3, 4, 5])
+                                    |                     |   size = (3)
+                                    |                     |
+     faces_packed_to_mesh_idx       |  size = (sum(F_n))  |   tensor([
+                                    |                     |     0, 1, 1, 2, 2, 2,
+                                    |                     |     2, 2, 2, 2
+                                    |                     |   )]
+                                    |                     |   size = (10)
+                                    |                     |
+     mesh_to_faces_packed_first_idx |  size = (N)         |   tensor([0, 1, 3])
+                                    |                     |   size = (3)
+                                    |                     |
+     num_faces_per_mesh             |  size = (N)         |   tensor([1, 2, 7])
+                                    |                     |   size = (3)
+                                    |                     |
+     verts_padded_to_packed_idx     |  size = (sum(V_n))  |  tensor([
+                                    |                     |     0, 1, 2, 5, 6, 7,
+                                    |                     |     8, 10, 11, 12, 13,
+                                    |                     |     14
+                                    |                     |  )]
+                                    |                     |  size = (12)
+     -----------------------------------------------------------------------------
+     # SPHINX IGNORE
 
-    From the faces, edges are computed and have packed and padded
-    representations with auxillary variables.
+     From the faces, edges are computed and have packed and padded
+     representations with auxillary variables.
 
-    E_n = [[E_1], ... , [E_N]]
-    where E_1, ... , E_N are the number of unique edges in each mesh.
-    Total number of unique edges = sum(E_n)
+     E_n = [[E_1], ... , [E_N]]
+     where E_1, ... , E_N are the number of unique edges in each mesh.
+     Total number of unique edges = sum(E_n)
 
-    # SPHINX IGNORE
-    Name                           |   Size                  | Example from above
-    -------------------------------|-------------------------|----------------------
-                                   |                         |
-    edges_packed                   | size = (sum(E_n), 2)    |  tensor([
-                                   |                         |     [0, 1],
-                                   |                         |     [0, 2],
-                                   |                         |     [1, 2],
-                                   |                         |       ...
-                                   |                         |     [10, 11],
-                                   |                         |   )]
-                                   |                         |   size = (18, 2)
-                                   |                         |
-    num_edges_per_mesh             | size = (N)              |  tensor([3, 5, 10])
-                                   |                         |  size = (3)
-                                   |                         |
-    edges_packed_to_mesh_idx       | size = (sum(E_n))       |  tensor([
-                                   |                         |    0, 0, 0,
-                                   |                         |     . . .
-                                   |                         |    2, 2, 2
-                                   |                         |   ])
-                                   |                         |   size = (18)
-                                   |                         |
-    faces_packed_to_edges_packed   | size = (sum(F_n), 3)    |  tensor([
-                                   |                         |    [2,   1,  0],
-                                   |                         |    [5,   4,  3],
-                                   |                         |       .  .  .
-                                   |                         |    [12, 14, 16],
-                                   |                         |   ])
-                                   |                         |   size = (10, 3)
-                                   |                         |
-    mesh_to_edges_packed_first_idx | size = (N)              |  tensor([0, 3, 8])
-                                   |                         |  size = (3)
-    ----------------------------------------------------------------------------
-    # SPHINX IGNORE
+     # SPHINX IGNORE
+     Name                           |   Size                  | Example from above
+     -------------------------------|-------------------------|----------------------
+                                    |                         |
+     edges_packed                   | size = (sum(E_n), 2)    |  tensor([
+                                    |                         |     [0, 1],
+                                    |                         |     [0, 2],
+                                    |                         |     [1, 2],
+                                    |                         |       ...
+                                    |                         |     [10, 11],
+                                    |                         |   )]
+                                    |                         |   size = (18, 2)
+                                    |                         |
+     num_edges_per_mesh             | size = (N)              |  tensor([3, 5, 10])
+                                    |                         |  size = (3)
+                                    |                         |
+     edges_packed_to_mesh_idx       | size = (sum(E_n))       |  tensor([
+                                    |                         |    0, 0, 0,
+                                    |                         |     . . .
+                                    |                         |    2, 2, 2
+                                    |                         |   ])
+                                    |                         |   size = (18)
+                                    |                         |
+     faces_packed_to_edges_packed   | size = (sum(F_n), 3)    |  tensor([
+                                    |                         |    [2,   1,  0],
+                                    |                         |    [5,   4,  3],
+                                    |                         |       .  .  .
+                                    |                         |    [12, 14, 16],
+                                    |                         |   ])
+                                    |                         |   size = (10, 3)
+                                    |                         |
+     mesh_to_edges_packed_first_idx | size = (N)              |  tensor([0, 3, 8])
+                                    |                         |  size = (3)
+     ----------------------------------------------------------------------------
+     # SPHINX IGNORE
     """
 
     _INTERNAL_TENSORS = [

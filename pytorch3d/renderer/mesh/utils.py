@@ -78,68 +78,68 @@ def _try_place_rectangle(
     occupied: List[Tuple[int, int]],
 ) -> bool:
     """
-    Try to place rect within the current bounding box.
-    Part of the implementation of pack_rectangles.
+        Try to place rect within the current bounding box.
+        Part of the implementation of pack_rectangles.
 
-    Note that the arguments `placed_so_far` and `occupied` are modified.
+        Note that the arguments `placed_so_far` and `occupied` are modified.
 
-    Args:
-        rect: rectangle to place
-        placed_so_far: the locations decided upon so far - a list of
-                    (x, y, whether flipped). The nth element is the
-                    location of the nth rectangle if it has been decided.
-                    (modified in place)
-        occupied: the nodes of the graph of extents of rightmost placed
-                    rectangles - (modified in place)
+        Args:
+            rect: rectangle to place
+            placed_so_far: the locations decided upon so far - a list of
+                        (x, y, whether flipped). The nth element is the
+                        location of the nth rectangle if it has been decided.
+                        (modified in place)
+            occupied: the nodes of the graph of extents of rightmost placed
+                        rectangles - (modified in place)
 
-    Returns:
-        True on success.
+        Returns:
+            True on success.
 
-    Example:
-    (We always have placed the first rectangle horizontally and other
-    rectangles above it.)
-    Let's say the placed boxes 1-4 are layed out like this.
-    The coordinates of the points marked X are stored in occupied.
-    It is to the right of the X's that we seek to place rect.
+        Example:
+        (We always have placed the first rectangle horizontally and other
+        rectangles above it.)
+        Let's say the placed boxes 1-4 are layed out like this.
+        The coordinates of the points marked X are stored in occupied.
+        It is to the right of the X's that we seek to place rect.
 
-     +-----------------------X
-     |2                      |
-     |                       +---X
-     |                       |4  |
-     |                       |   |
-     |                       +---+X
-     |                       |3   |
-     |                       |    |
-     +-----------------------+----+------X
-y    |1                                  |
-^    |     --->x                         |
-|    +-----------------------------------+
+         +-----------------------X
+         |2                      |
+         |                       +---X
+         |                       |4  |
+         |                       |   |
+         |                       +---+X
+         |                       |3   |
+         |                       |    |
+         +-----------------------+----+------X
+    y    |1                                  |
+    ^    |     --->x                         |
+    |    +-----------------------------------+
 
-     We want to place this rectangle.
+         We want to place this rectangle.
 
-              +-+
-              |5|
-              | |
-              | |   = rect
-              | |
-              | |
-              | |
-              +-+
+                  +-+
+                  |5|
+                  | |
+                  | |   = rect
+                  | |
+                  | |
+                  | |
+                  +-+
 
-      The call will succeed, returning True, leaving us with
+          The call will succeed, returning True, leaving us with
 
-      +-----------------------X
-      |2                      |    +-X
-      |                       +---+|5|
-      |                       |4  || |
-      |                       |   || |
-      |                       +---++ |
-      |                       |3   | |
-      |                       |    | |
-      +-----------------------+----+-+----X
-      |1                                  |
-      |                                   |
-      +-----------------------------------+ .
+          +-----------------------X
+          |2                      |    +-X
+          |                       +---+|5|
+          |                       |4  || |
+          |                       |   || |
+          |                       +---++ |
+          |                       |3   | |
+          |                       |    | |
+          +-----------------------+----+-+----X
+          |1                                  |
+          |                                   |
+          +-----------------------------------+ .
 
     """
     total_width = occupied[0][0]

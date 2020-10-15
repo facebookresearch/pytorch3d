@@ -282,24 +282,24 @@ def Textures(
     verts_rgb: Optional[torch.Tensor] = None,
 ) -> TexturesBase:
     """
-        Textures class has been DEPRECATED.
-        Preserving Textures as a function for backwards compatibility.
+    Textures class has been DEPRECATED.
+    Preserving Textures as a function for backwards compatibility.
 
-        Args:
-            maps: texture map per mesh. This can either be a list of maps
-              [(H, W, 3)] or a padded tensor of shape (N, H, W, 3).
-            faces_uvs: (N, F, 3) tensor giving the index into verts_uvs for each
-                vertex in the face. Padding value is assumed to be -1.
-            verts_uvs: (N, V, 2) tensor giving the uv coordinate per vertex.
-            verts_rgb: (N, V, 3) tensor giving the rgb color per vertex. Padding
-                value is assumed to be -1.
+    Args:
+        maps: texture map per mesh. This can either be a list of maps
+          [(H, W, 3)] or a padded tensor of shape (N, H, W, 3).
+        faces_uvs: (N, F, 3) tensor giving the index into verts_uvs for each
+            vertex in the face. Padding value is assumed to be -1.
+        verts_uvs: (N, V, 2) tensor giving the uv coordinate per vertex.
+        verts_rgb: (N, V, 3) tensor giving the rgb color per vertex. Padding
+            value is assumed to be -1.
 
 
-        Returns:
-            a Textures class which is an instance of TexturesBase e.g. TexturesUV,
-            TexturesAtlas, TexturesVertex
+    Returns:
+        a Textures class which is an instance of TexturesBase e.g. TexturesUV,
+        TexturesAtlas, TexturesVertex
 
-        """
+    """
 
     warnings.warn(
         """Textures class is deprecated,
