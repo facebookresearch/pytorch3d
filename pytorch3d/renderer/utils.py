@@ -8,9 +8,10 @@ from typing import Any, Union
 
 import numpy as np
 import torch
+import torch.nn as nn
 
 
-class TensorAccessor(object):
+class TensorAccessor(nn.Module):
     """
     A helper class to be used with the __getitem__ method. This can be used for
     getting/setting the values for an attribute of a class at one particular
@@ -82,7 +83,7 @@ class TensorAccessor(object):
 BROADCAST_TYPES = (float, int, list, tuple, torch.Tensor, np.ndarray)
 
 
-class TensorProperties(object):
+class TensorProperties(nn.Module):
     """
     A mix-in class for storing tensors as properties with helper methods.
     """
