@@ -346,7 +346,7 @@ class SoftSilhouetteShader(nn.Module):
         self.blend_params = blend_params if blend_params is not None else BlendParams()
 
     def forward(self, fragments, meshes, **kwargs) -> torch.Tensor:
-        """ "
+        """
         Only want to render the silhouette so RGB values can be ones.
         There is no need for lighting or texturing
         """

@@ -8,85 +8,85 @@ from . import utils as struct_utils
 
 class Pointclouds(object):
     """
-     This class provides functions for working with batches of 3d point clouds,
-     and converting between representations.
+    This class provides functions for working with batches of 3d point clouds,
+    and converting between representations.
 
-     Within Pointclouds, there are three different representations of the data.
+    Within Pointclouds, there are three different representations of the data.
 
-     List
-        - only used for input as a starting point to convert to other representations.
-     Padded
-        - has specific batch dimension.
-     Packed
-        - no batch dimension.
-        - has auxillary variables used to index into the padded representation.
+    List
+       - only used for input as a starting point to convert to other representations.
+    Padded
+       - has specific batch dimension.
+    Packed
+       - no batch dimension.
+       - has auxillary variables used to index into the padded representation.
 
-     Example
+    Example
 
-     Input list of points = [[P_1], [P_2], ... , [P_N]]
-     where P_1, ... , P_N are the number of points in each cloud and N is the
-     number of clouds.
+    Input list of points = [[P_1], [P_2], ... , [P_N]]
+    where P_1, ... , P_N are the number of points in each cloud and N is the
+    number of clouds.
 
-     # SPHINX IGNORE
-      List                      | Padded                  | Packed
-     ---------------------------|-------------------------|------------------------
-     [[P_1], ... , [P_N]]       | size = (N, max(P_n), 3) |  size = (sum(P_n), 3)
-                                |                         |
-     Example for locations      |                         |
-     or colors:                 |                         |
-                                |                         |
-     P_1 = 3, P_2 = 4, P_3 = 5  | size = (3, 5, 3)        |  size = (12, 3)
-                                |                         |
-     List([                     | tensor([                |  tensor([
-       [                        |     [                   |    [0.1, 0.3, 0.5],
-         [0.1, 0.3, 0.5],       |       [0.1, 0.3, 0.5],  |    [0.5, 0.2, 0.1],
-         [0.5, 0.2, 0.1],       |       [0.5, 0.2, 0.1],  |    [0.6, 0.8, 0.7],
-         [0.6, 0.8, 0.7]        |       [0.6, 0.8, 0.7],  |    [0.1, 0.3, 0.3],
-       ],                       |       [0,    0,    0],  |    [0.6, 0.7, 0.8],
-       [                        |       [0,    0,    0]   |    [0.2, 0.3, 0.4],
-         [0.1, 0.3, 0.3],       |     ],                  |    [0.1, 0.5, 0.3],
-         [0.6, 0.7, 0.8],       |     [                   |    [0.7, 0.3, 0.6],
-         [0.2, 0.3, 0.4],       |       [0.1, 0.3, 0.3],  |    [0.2, 0.4, 0.8],
-         [0.1, 0.5, 0.3]        |       [0.6, 0.7, 0.8],  |    [0.9, 0.5, 0.2],
-       ],                       |       [0.2, 0.3, 0.4],  |    [0.2, 0.3, 0.4],
-       [                        |       [0.1, 0.5, 0.3],  |    [0.9, 0.3, 0.8],
-         [0.7, 0.3, 0.6],       |       [0,    0,    0]   |  ])
-         [0.2, 0.4, 0.8],       |     ],                  |
-         [0.9, 0.5, 0.2],       |     [                   |
-         [0.2, 0.3, 0.4],       |       [0.7, 0.3, 0.6],  |
-         [0.9, 0.3, 0.8],       |       [0.2, 0.4, 0.8],  |
-       ]                        |       [0.9, 0.5, 0.2],  |
-    ])                          |       [0.2, 0.3, 0.4],  |
-                                |       [0.9, 0.3, 0.8]   |
-                                |     ]                   |
-                                |  ])                     |
-     -----------------------------------------------------------------------------
+    # SPHINX IGNORE
+     List                      | Padded                  | Packed
+    ---------------------------|-------------------------|------------------------
+    [[P_1], ... , [P_N]]       | size = (N, max(P_n), 3) |  size = (sum(P_n), 3)
+                               |                         |
+    Example for locations      |                         |
+    or colors:                 |                         |
+                               |                         |
+    P_1 = 3, P_2 = 4, P_3 = 5  | size = (3, 5, 3)        |  size = (12, 3)
+                               |                         |
+    List([                     | tensor([                |  tensor([
+      [                        |     [                   |    [0.1, 0.3, 0.5],
+        [0.1, 0.3, 0.5],       |       [0.1, 0.3, 0.5],  |    [0.5, 0.2, 0.1],
+        [0.5, 0.2, 0.1],       |       [0.5, 0.2, 0.1],  |    [0.6, 0.8, 0.7],
+        [0.6, 0.8, 0.7]        |       [0.6, 0.8, 0.7],  |    [0.1, 0.3, 0.3],
+      ],                       |       [0,    0,    0],  |    [0.6, 0.7, 0.8],
+      [                        |       [0,    0,    0]   |    [0.2, 0.3, 0.4],
+        [0.1, 0.3, 0.3],       |     ],                  |    [0.1, 0.5, 0.3],
+        [0.6, 0.7, 0.8],       |     [                   |    [0.7, 0.3, 0.6],
+        [0.2, 0.3, 0.4],       |       [0.1, 0.3, 0.3],  |    [0.2, 0.4, 0.8],
+        [0.1, 0.5, 0.3]        |       [0.6, 0.7, 0.8],  |    [0.9, 0.5, 0.2],
+      ],                       |       [0.2, 0.3, 0.4],  |    [0.2, 0.3, 0.4],
+      [                        |       [0.1, 0.5, 0.3],  |    [0.9, 0.3, 0.8],
+        [0.7, 0.3, 0.6],       |       [0,    0,    0]   |  ])
+        [0.2, 0.4, 0.8],       |     ],                  |
+        [0.9, 0.5, 0.2],       |     [                   |
+        [0.2, 0.3, 0.4],       |       [0.7, 0.3, 0.6],  |
+        [0.9, 0.3, 0.8],       |       [0.2, 0.4, 0.8],  |
+      ]                        |       [0.9, 0.5, 0.2],  |
+    ])                         |       [0.2, 0.3, 0.4],  |
+                               |       [0.9, 0.3, 0.8]   |
+                               |     ]                   |
+                               |  ])                     |
+    -----------------------------------------------------------------------------
 
-     Auxillary variables for packed representation
+    Auxillary variables for packed representation
 
-     Name                           |   Size              |  Example from above
-     -------------------------------|---------------------|-----------------------
-                                    |                     |
-     packed_to_cloud_idx            |  size = (sum(P_n))  |   tensor([
-                                    |                     |     0, 0, 0, 1, 1, 1,
-                                    |                     |     1, 2, 2, 2, 2, 2
-                                    |                     |   )]
-                                    |                     |   size = (12)
-                                    |                     |
-     cloud_to_packed_first_idx      |  size = (N)         |   tensor([0, 3, 7])
-                                    |                     |   size = (3)
-                                    |                     |
-     num_points_per_cloud           |  size = (N)         |   tensor([3, 4, 5])
-                                    |                     |   size = (3)
-                                    |                     |
-     padded_to_packed_idx           |  size = (sum(P_n))  |  tensor([
-                                    |                     |     0, 1, 2, 5, 6, 7,
-                                    |                     |     8, 10, 11, 12, 13,
-                                    |                     |     14
-                                    |                     |  )]
-                                    |                     |  size = (12)
-     -----------------------------------------------------------------------------
-     # SPHINX IGNORE
+    Name                           |   Size              |  Example from above
+    -------------------------------|---------------------|-----------------------
+                                   |                     |
+    packed_to_cloud_idx            |  size = (sum(P_n))  |   tensor([
+                                   |                     |     0, 0, 0, 1, 1, 1,
+                                   |                     |     1, 2, 2, 2, 2, 2
+                                   |                     |   )]
+                                   |                     |   size = (12)
+                                   |                     |
+    cloud_to_packed_first_idx      |  size = (N)         |   tensor([0, 3, 7])
+                                   |                     |   size = (3)
+                                   |                     |
+    num_points_per_cloud           |  size = (N)         |   tensor([3, 4, 5])
+                                   |                     |   size = (3)
+                                   |                     |
+    padded_to_packed_idx           |  size = (sum(P_n))  |  tensor([
+                                   |                     |     0, 1, 2, 5, 6, 7,
+                                   |                     |     8, 10, 11, 12, 13,
+                                   |                     |     14
+                                   |                     |  )]
+                                   |                     |  size = (12)
+    -----------------------------------------------------------------------------
+    # SPHINX IGNORE
     """
 
     _INTERNAL_TENSORS = [
