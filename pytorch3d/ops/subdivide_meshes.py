@@ -103,8 +103,9 @@ class SubdivideMeshes(nn.Module):
         verts_packed = meshes.verts_packed()
         with torch.no_grad():
             faces_packed = meshes.faces_packed()
-            faces_packed_to_edges_packed = meshes.faces_packed_to_edges_packed()
-            faces_packed_to_edges_packed += verts_packed.shape[0]
+            faces_packed_to_edges_packed = (
+                meshes.faces_packed_to_edges_packed() + verts_packed.shape[0]
+            )
 
             f0 = torch.stack(
                 [
