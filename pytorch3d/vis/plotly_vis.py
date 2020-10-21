@@ -1,13 +1,14 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
 import warnings
-from typing import Dict, List, NamedTuple, Optional, Union
+from typing import Dict, List, NamedTuple, Optional, Tuple, Union
 
 import numpy as np
 import plotly.graph_objects as go
 import torch
 from plotly.subplots import make_subplots
 from pytorch3d.renderer import TexturesVertex
+from pytorch3d.renderer.cameras import CamerasBase
 from pytorch3d.structures import Meshes, Pointclouds, join_meshes_as_scene
 
 
@@ -34,6 +35,7 @@ class Lighting(NamedTuple):
 def plot_scene(
     plots: Dict[str, Dict[str, Union[Pointclouds, Meshes]]],
     *,
+    viewpoint_cameras: Optional[CamerasBase] = None,
     ncols: int = 1,
     pointcloud_max_points: int = 20000,
     pointcloud_marker_size: int = 1,
@@ -48,6 +50,12 @@ def plot_scene(
         plots: A dict containing subplot and trace names,
             as well as the Meshes and Pointclouds objects to be rendered.
             See below for examples of the format.
+        viewpoint_cameras: an instance of a Cameras object providing a location
+            to view the plotly plot from. If the batch size is equal
+            to the number of subplots, it is a one to one mapping.
+            If the batch size is 1, then that viewpoint will be used
+            for all the subplots will be viewed from that point.
+            Otherwise, the viewpoint_cameras will not be used.
         ncols: the number of subplots per row
         pointcloud_max_points: the maximum number of points to plot from
             a pointcloud. If more are present, a random sample of size
@@ -115,6 +123,27 @@ def plot_scene(
     instead of having them vertically stacked because the default is one subplot
     per row.
 
+    To view plotly plots from a PyTorch3D camera's point of view, we can use
+    viewpoint_cameras:
+    ..code-block::python
+        mesh = ... # batch size 2
+        R, T = look_at_view_transform(2.7, 0, [0, 180]) # 2 camera angles, front and back
+        # Any instance of CamerasBase works, here we use FoVPerspectiveCameras
+        cameras = FoVPerspectiveCameras(device=device, R=R, T=T)
+        fig = plot_scene({
+            "subplot1_title": {
+                "mesh_trace_title": mesh[0]
+            },
+            "subplot2_title": {
+                "mesh_trace_title": mesh[1]
+            }
+        },
+        viewpoint_cameras=cameras)
+        fig.show()
+
+    The above example will render the first subplot seen from the camera on the +z axis,
+    and the second subplot from the viewpoint of the camera on the -z axis.
+
     For an example of using kwargs, see below:
     ..code-block::python
         mesh = ...
@@ -133,6 +162,7 @@ def plot_scene(
     See the tutorials in pytorch3d/docs/tutorials for more examples
     (namely rendered_color_points.ipynb and rendered_textured_meshes.ipynb).
     """
+
     subplots = list(plots.keys())
     fig = _gen_fig_with_subplots(len(subplots), ncols, subplots)
     lighting = kwargs.get("lighting", Lighting())._asdict()
@@ -155,6 +185,31 @@ def plot_scene(
             "z": 0,
         }  # set the up vector to match PyTorch3D world coordinates conventions
     }
+    viewpoints_eye_at_up_world = None
+    if viewpoint_cameras:
+        if len(viewpoint_cameras) == len(subplots) or len(viewpoint_cameras) == 1:
+            # Calculate the vectors eye, at, up in world space
+            # to initialize the position of the camera in
+            # the plotly figure
+            # TODO(T77879494): correct the up vector calculation in the world space.
+            eye_at_up_view = (
+                torch.tensor([[0, 0, 0], [0, 0, 1], [0, 1, 0]])
+                .float()
+                .to(viewpoint_cameras.device)
+            )
+            viewpoints_eye_at_up_world = (
+                viewpoint_cameras.get_world_to_view_transform()
+                .inverse()
+                .transform_points(eye_at_up_view)
+            )
+            if len(viewpoints_eye_at_up_world.shape) < 3:
+                viewpoints_eye_at_up_world = viewpoints_eye_at_up_world.unsqueeze(0)
+        else:
+            msg = "Invalid number {} of viewpoint cameras were provided. Either 1 \
+            or {} cameras are required".format(
+                len(viewpoint_cameras), len(subplots)
+            )
+            warnings.warn(msg)
 
     for subplot_idx in range(len(subplots)):
         subplot_name = subplots[subplot_idx]
@@ -189,6 +244,33 @@ def plot_scene(
         yaxis.update(**y_settings)
         zaxis.update(**z_settings)
 
+        # update camera viewpoint if provided
+        if viewpoints_eye_at_up_world is not None:
+            # Use camera params for batch index or the first camera if only one provided.
+            viewpoint_idx = min(len(viewpoints_eye_at_up_world) - 1, subplot_idx)
+
+            eye, at, _up = viewpoints_eye_at_up_world[viewpoint_idx]
+
+            eye_x, eye_y, eye_z = eye.tolist()
+
+            at_x, at_y, at_z = at.tolist()
+
+            # scale camera eye to plotly [-1, 1] ranges
+            x_range = xaxis["range"]
+            y_range = yaxis["range"]
+            z_range = zaxis["range"]
+
+            eye_x = _scale_camera_to_bounds(eye_x, x_range)
+            eye_y = _scale_camera_to_bounds(eye_y, y_range)
+            eye_z = _scale_camera_to_bounds(eye_z, z_range)
+
+            at_x = _scale_camera_to_bounds(at_x, x_range)
+            at_y = _scale_camera_to_bounds(at_y, y_range)
+            at_z = _scale_camera_to_bounds(at_z, z_range)
+
+            camera["eye"] = {"x": eye_x, "y": eye_y, "z": eye_z}
+            camera["center"] = {"x": at_x, "y": at_y, "z": at_z}
+
         current_layout.update(
             {
                 "xaxis": xaxis,
@@ -205,6 +287,7 @@ def plot_scene(
 def plot_batch_individually(
     batched_structs: Union[List[Union[Meshes, Pointclouds]], Meshes, Pointclouds],
     *,
+    viewpoint_cameras: Optional[CamerasBase] = None,
     ncols: int = 1,
     extend_struct: bool = True,
     subplot_titles: Optional[List[str]] = None,
@@ -232,6 +315,12 @@ def plot_batch_individually(
             See extend_struct and the description above for how batch size 1 structs
             are handled. Also accepts a single Meshes or Pointclouds object, which will have
             each individual element plotted in its own subplot.
+        viewpoint_cameras: an instance of a Cameras object providing a location
+            to view the plotly plot from. If the batch size is equal
+            to the number of subplots, it is a one to one mapping.
+            If the batch size is 1, then that viewpoint will be used
+            for all the subplots will be viewed from that point.
+            Otherwise, the viewpoint_cameras will not be used.
         ncols: the number of subplots per row
         extend_struct: if True, indicates that structs of batch size 1
             should be plotted in every subplot.
@@ -313,7 +402,9 @@ def plot_batch_individually(
                 batched_structs, scene_num, subplot_title, scene_dictionary
             )
 
-    return plot_scene(scene_dictionary, ncols=ncols, **kwargs)
+    return plot_scene(
+        scene_dictionary, viewpoint_cameras=viewpoint_cameras, ncols=ncols, **kwargs
+    )
 
 
 def _add_struct_from_batch(
@@ -545,3 +636,20 @@ def _update_axes_bounds(
     yaxis = {"range": y_range}
     zaxis = {"range": z_range}
     current_layout.update({"xaxis": xaxis, "yaxis": yaxis, "zaxis": zaxis})
+
+
+def _scale_camera_to_bounds(coordinate: float, axis_bounds: Tuple[float, float]):
+    """
+    We set our plotly plot's axes' bounding box to [-1,1]x[-1,1]x[-1,1]. As such,
+    the plotly camera location has to be scaled accordingly to have its world coordinates
+    correspond to its relative plotted coordinates for viewing the plotly plot.
+    This function does the scaling and offset to transform the coordinates.
+
+    Args:
+        coordinate: the float value to be transformed
+        axis_bounds: the bounds of the plotly plot for the axis which
+            the coordinate argument refers to
+    """
+    scale = (axis_bounds[1] - axis_bounds[0]) / 2
+    offset = (axis_bounds[1] / scale) - 1
+    return coordinate / scale - offset
