@@ -1,23 +1,8 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
 import matplotlib.pyplot as plt
-import torch
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
-
-
-def get_camera_wireframe(scale: float = 0.3):
-    """
-    Returns a wireframe of a 3D line-plot of a camera symbol.
-    """
-    a = 0.5 * torch.tensor([-2, 1.5, 4])
-    b = 0.5 * torch.tensor([2, 1.5, 4])
-    c = 0.5 * torch.tensor([-2, -1.5, 4])
-    d = 0.5 * torch.tensor([2, -1.5, 4])
-    C = torch.zeros(3)
-    F = torch.tensor([0, 0, 3])
-    camera_points = [a, b, d, c, a, C, b, d, C, c, C, F]
-    lines = torch.stack([x.float() for x in camera_points]) * scale
-    return lines
+from pytorch3d.vis.plotly_vis import get_camera_wireframe
 
 
 def plot_cameras(ax, cameras, color: str = "blue"):

@@ -12,6 +12,23 @@ from pytorch3d.renderer.cameras import CamerasBase
 from pytorch3d.structures import Meshes, Pointclouds, join_meshes_as_scene
 
 
+def get_camera_wireframe(scale: float = 0.3):
+    """
+    Returns a wireframe of a 3D line-plot of a camera symbol.
+    """
+    a = 0.5 * torch.tensor([-2, 1.5, 4])
+    up1 = 0.5 * torch.tensor([0, 1.5, 4])
+    up2 = 0.5 * torch.tensor([0, 2, 4])
+    b = 0.5 * torch.tensor([2, 1.5, 4])
+    c = 0.5 * torch.tensor([-2, -1.5, 4])
+    d = 0.5 * torch.tensor([2, -1.5, 4])
+    C = torch.zeros(3)
+    F = torch.tensor([0, 0, 3])
+    camera_points = [a, up1, up2, up1, b, d, c, a, C, b, d, C, c, C, F]
+    lines = torch.stack([x.float() for x in camera_points]) * scale
+    return lines
+
+
 class AxisArgs(NamedTuple):
     showgrid: bool = False
     zeroline: bool = False
@@ -33,18 +50,20 @@ class Lighting(NamedTuple):
 
 
 def plot_scene(
-    plots: Dict[str, Dict[str, Union[Pointclouds, Meshes]]],
+    plots: Dict[str, Dict[str, Union[Pointclouds, Meshes, CamerasBase]]],
     *,
     viewpoint_cameras: Optional[CamerasBase] = None,
     ncols: int = 1,
+    camera_scale: float = 0.3,
     pointcloud_max_points: int = 20000,
     pointcloud_marker_size: int = 1,
     **kwargs,
 ):
     """
     Main function to visualize Meshes and Pointclouds.
-    Plots input Pointclouds and Meshes data into named subplots,
-    with named traces based on the dictionary keys.
+    Plots input Pointclouds, Meshes, and Cameras data into named subplots,
+    with named traces based on the dictionary keys. Cameras are
+    rendered at the camera center location using a wireframe.
 
     Args:
         plots: A dict containing subplot and trace names,
@@ -57,6 +76,7 @@ def plot_scene(
             for all the subplots will be viewed from that point.
             Otherwise, the viewpoint_cameras will not be used.
         ncols: the number of subplots per row
+        camera_scale: determines the size of the wireframe used to render cameras.
         pointcloud_max_points: the maximum number of points to plot from
             a pointcloud. If more are present, a random sample of size
             pointcloud_max_points is used.
@@ -84,7 +104,7 @@ def plot_scene(
 
     The above example will render one subplot which has both a mesh and pointcloud.
 
-    If the Meshes or Pointclouds objects are batched, then every object in that batch
+    If the Meshes, Pointclouds, or Cameras objects are batched, then every object in that batch
     will be plotted in a single trace.
 
     ..code-block::python
@@ -143,6 +163,23 @@ def plot_scene(
 
     The above example will render the first subplot seen from the camera on the +z axis,
     and the second subplot from the viewpoint of the camera on the -z axis.
+
+    We can visualize these cameras as well:
+    ..code-block::python
+        mesh = ...
+        R, T = look_at_view_transform(2.7, 0, [0, 180]) # 2 camera angles, front and back
+        # Any instance of CamerasBase works, here we use FoVPerspectiveCameras
+        cameras = FoVPerspectiveCameras(device=device, R=R, T=T)
+        fig = plot_scene({
+            "subplot1_title": {
+                "mesh_trace_title": mesh,
+                "cameras_trace_title": cameras,
+            },
+        })
+        fig.show()
+
+    The above example will render one subplot with the mesh object
+    and two cameras.
 
     For an example of using kwargs, see below:
     ..code-block::python
@@ -227,9 +264,15 @@ def plot_scene(
                     pointcloud_max_points,
                     pointcloud_marker_size,
                 )
+            elif isinstance(struct, CamerasBase):
+                _add_camera_trace(
+                    fig, struct, trace_name, subplot_idx, ncols, camera_scale
+                )
             else:
                 raise ValueError(
-                    "struct {} is not a Meshes or Pointclouds object".format(struct)
+                    "struct {} is not a Cameras, Meshes or Pointclouds object".format(
+                        struct
+                    )
                 )
 
         # Ensure update for every subplot.
@@ -285,7 +328,9 @@ def plot_scene(
 
 
 def plot_batch_individually(
-    batched_structs: Union[List[Union[Meshes, Pointclouds]], Meshes, Pointclouds],
+    batched_structs: Union[
+        List[Union[Meshes, Pointclouds, CamerasBase]], Meshes, Pointclouds, CamerasBase
+    ],
     *,
     viewpoint_cameras: Optional[CamerasBase] = None,
     ncols: int = 1,
@@ -295,26 +340,26 @@ def plot_batch_individually(
 ):
     """
     This is a higher level plotting function than plot_scene, for plotting
-    Meshes and Pointclouds in simple cases. The simplest use is to plot a
-    single Meshes or Pointclouds object, where you just pass it in as a
+    Cameras, Meshes and Pointclouds in simple cases. The simplest use is to plot a
+    single Cameras, Meshes or Pointclouds object, where you just pass it in as a
     one element list. This will plot each batch element in a separate subplot.
 
-    More generally, you can supply multiple Meshes or Pointclouds
+    More generally, you can supply multiple Cameras, Meshes or Pointclouds
     having the same batch size `n`. In this case, there will be `n` subplots,
     each depicting the corresponding batch element of all the inputs.
 
-    In addition, you can include Meshes and Pointclouds of size 1 in
+    In addition, you can include Cameras, Meshes and Pointclouds of size 1 in
     the input. These will either be rendered in the first subplot
     (if extend_struct is False), or in every subplot.
 
     Args:
-        batched_structs: a list of Meshes and/or Pointclouds to be rendered.
+        batched_structs: a list of Cameras, Meshes and/or Pointclouds to be rendered.
             Each structure's corresponding batch element will be plotted in
             a single subplot, resulting in n subplots for a batch of size n.
             Every struct should either have the same batch size or be of batch size 1.
             See extend_struct and the description above for how batch size 1 structs
-            are handled. Also accepts a single Meshes or Pointclouds object, which will have
-            each individual element plotted in its own subplot.
+            are handled. Also accepts a single Cameras, Meshes or Pointclouds object,
+            which will have each individual element plotted in its own subplot.
         viewpoint_cameras: an instance of a Cameras object providing a location
             to view the plotly plot from. If the batch size is equal
             to the number of subplots, it is a one to one mapping.
@@ -408,10 +453,10 @@ def plot_batch_individually(
 
 
 def _add_struct_from_batch(
-    batched_struct: Union[Meshes, Pointclouds],
+    batched_struct: Union[CamerasBase, Meshes, Pointclouds],
     scene_num: int,
     subplot_title: str,
-    scene_dictionary: Dict[str, Dict[str, Union[Meshes, Pointclouds]]],
+    scene_dictionary: Dict[str, Dict[str, Union[CamerasBase, Meshes, Pointclouds]]],
     trace_idx: int = 1,
 ):
     """
@@ -426,8 +471,18 @@ def _add_struct_from_batch(
         scene_dictionary: the dictionary to add the indexed struct to
         trace_idx: the trace number, starting at 1 for this struct's trace
     """
-    struct_idx = min(scene_num, len(batched_struct) - 1)
-    struct = batched_struct[struct_idx]
+    struct = None
+    if isinstance(batched_struct, CamerasBase):
+        # we can't index directly into camera batches
+        R, T = batched_struct.R, batched_struct.T  # pyre-ignore[16]
+        r_idx = min(scene_num, len(R) - 1)
+        t_idx = min(scene_num, len(T) - 1)
+        R = R[r_idx].unsqueeze(0)
+        T = T[t_idx].unsqueeze(0)
+        struct = CamerasBase(device=batched_struct.device, R=R, T=T)
+    else:  # batched meshes and pointclouds are indexable
+        struct_idx = min(scene_num, len(batched_struct) - 1)
+        struct = batched_struct[struct_idx]
     trace_name = "trace{}-{}".format(scene_num + 1, trace_idx)
     scene_dictionary[subplot_title][trace_name] = struct
 
@@ -565,6 +620,63 @@ def _add_pointcloud_trace(
     # update the bounds of the axes for the current trace
     verts_center = verts.mean(0)
     max_expand = (verts.max(0)[0] - verts.min(0)[0]).max()
+    _update_axes_bounds(verts_center, max_expand, current_layout)
+
+
+def _add_camera_trace(
+    fig: go.Figure,
+    cameras: CamerasBase,
+    trace_name: str,
+    subplot_idx: int,
+    ncols: int,
+    camera_scale: float,
+):
+    """
+    Adds a trace rendering a Cameras object to the passed in figure, with
+    a given name and in a specific subplot.
+
+    Args:
+        fig: plotly figure to add the trace within.
+        cameras: the Cameras object to render. It can be batched.
+        trace_name: name to label the trace with.
+        subplot_idx: identifies the subplot, with 0 being the top left.
+        ncols: the number of sublpots per row.
+        camera_scale: the size of the wireframe used to render the Cameras object.
+    """
+    cam_wires = get_camera_wireframe(camera_scale).to(cameras.device)
+    cam_trans = cameras.get_world_to_view_transform().inverse()
+    cam_wires_trans = cam_trans.transform_points(cam_wires).detach().cpu()
+    # if batch size is 1, unsqueeze to add dimension
+    if len(cam_wires_trans.shape) < 3:
+        cam_wires_trans = cam_wires_trans.unsqueeze(0)
+
+    nan_tensor = torch.Tensor([[float("NaN")] * 3])
+    all_cam_wires = cam_wires_trans[0]
+    for wire in cam_wires_trans[1:]:
+        # We combine camera points into a single tensor to plot them in a
+        # single trace. The NaNs are inserted between sets of camera
+        # points so that the lines drawn by Plotly are not drawn between
+        # points that belong to different cameras.
+        all_cam_wires = torch.cat((all_cam_wires, nan_tensor, wire))
+    x, y, z = all_cam_wires.detach().cpu().numpy().T.astype(float)
+
+    row, col = subplot_idx // ncols + 1, subplot_idx % ncols + 1
+    fig.add_trace(
+        go.Scatter3d(  # pyre-ignore [16]
+            x=x, y=y, z=z, marker={"size": 1}, name=trace_name
+        ),
+        row=row,
+        col=col,
+    )
+
+    # Access the current subplot's scene configuration
+    plot_scene = "scene" + str(subplot_idx + 1)
+    current_layout = fig["layout"][plot_scene]
+
+    # flatten for bounds calculations
+    flattened_wires = cam_wires_trans.flatten(0, 1)
+    verts_center = flattened_wires.mean(0)
+    max_expand = (flattened_wires.max(0)[0] - flattened_wires.min(0)[0]).max()
     _update_axes_bounds(verts_center, max_expand, current_layout)
 
 
