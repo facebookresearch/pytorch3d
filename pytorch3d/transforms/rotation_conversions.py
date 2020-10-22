@@ -469,7 +469,7 @@ def axis_angle_to_quaternion(axis_angle):
     # for x small, sin(x/2) is about x/2 - (x/2)^3/6
     # so sin(x/2)/x is about 1/2 - (x*x)/48
     sin_half_angles_over_angles[small_angles] = (
-        0.5 - torch.square(angles[small_angles]) / 48
+        0.5 - (angles[small_angles] * angles[small_angles]) / 48
     )
     quaternions = torch.cat(
         [torch.cos(half_angles), axis_angle * sin_half_angles_over_angles], dim=-1
@@ -503,7 +503,7 @@ def quaternion_to_axis_angle(quaternions):
     # for x small, sin(x/2) is about x/2 - (x/2)^3/6
     # so sin(x/2)/x is about 1/2 - (x*x)/48
     sin_half_angles_over_angles[small_angles] = (
-        0.5 - torch.square(angles[small_angles]) / 48
+        0.5 - (angles[small_angles] * angles[small_angles]) / 48
     )
     return quaternions[..., 1:] / sin_half_angles_over_angles
 
