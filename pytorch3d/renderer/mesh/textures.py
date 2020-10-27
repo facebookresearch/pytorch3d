@@ -1174,6 +1174,42 @@ class TexturesUV(TexturesBase):
             padding_mode=self.padding_mode,
         )
 
+    def centers_for_image(self, index):
+        """
+        Return the locations in the texture map which correspond to the given
+        verts_uvs, for one of the meshes. This is potentially useful for
+        visualizing the data. See the texturesuv_image_matplotlib and
+        texturesuv_image_PIL functions.
+
+        Args:
+            index: batch index of the mesh whose centers to return.
+
+        Returns:
+            centers: coordinates of points in the texture image
+                - a FloatTensor of shape (V,2)
+        """
+        if self._N != 1:
+            raise ValueError(
+                "This function only supports plotting textures for one mesh."
+            )
+        texture_image = self.maps_padded()
+        verts_uvs = self.verts_uvs_list()[index][None]
+        _, H, W, _3 = texture_image.shape
+        coord1 = torch.arange(W).expand(H, W)
+        coord2 = torch.arange(H)[:, None].expand(H, W)
+        coords = torch.stack([coord1, coord2])[None]
+        with torch.no_grad():
+            # Get xy cartesian coordinates based on the uv coordinates
+            centers = F.grid_sample(
+                torch.flip(coords.to(texture_image), [2]),
+                # Convert from [0, 1] -> [-1, 1] range expected by grid sample
+                verts_uvs[:, None] * 2.0 - 1,
+                align_corners=self.align_corners,
+                padding_mode=self.padding_mode,
+            ).cpu()
+            centers = centers[0, :, 0].T
+        return centers
+
 
 class TexturesVertex(TexturesBase):
     def __init__(
