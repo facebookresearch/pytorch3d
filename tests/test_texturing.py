@@ -2,13 +2,10 @@
 
 
 import unittest
-from pathlib import Path
 
-import numpy as np
 import torch
 import torch.nn.functional as F
 from common_testing import TestCaseMixin
-from PIL import Image
 from pytorch3d.renderer.mesh.rasterizer import Fragments
 from pytorch3d.renderer.mesh.textures import (
     TexturesAtlas,
@@ -18,12 +15,7 @@ from pytorch3d.renderer.mesh.textures import (
     pack_rectangles,
 )
 from pytorch3d.structures import Meshes, list_to_packed, packed_to_list
-from pytorch3d.vis import texturesuv_image_PIL
 from test_meshes import TestMeshes
-
-
-DEBUG = False
-DATA_DIR = Path(__file__).resolve().parent / "data"
 
 
 def tryindex(self, index, tex, meshes, source):
@@ -833,21 +825,14 @@ class TestTexturesUV(TestCaseMixin, unittest.TestCase):
         tryindex(self, index, tex, meshes, source)
         tryindex(self, [2, 4], tex, meshes, source)
 
-    def test_png_debug(self):
-        maps = torch.rand(size=(1, 256, 128, 3)) * torch.tensor([0.8, 1, 0.8])
-        verts_uvs = torch.rand(size=(1, 20, 2))
+    def test_centers_for_image(self):
+        maps = torch.rand(size=(1, 257, 129, 3))
+        verts_uvs = torch.FloatTensor([[[0.25, 0.125], [0.5, 0.625], [0.5, 0.5]]])
         faces_uvs = torch.zeros(size=(1, 0, 3), dtype=torch.int64)
         tex = TexturesUV(maps=maps, faces_uvs=faces_uvs, verts_uvs=verts_uvs)
 
-        image = texturesuv_image_PIL(tex, radius=3)
-        image_out = np.array(image)
-        if DEBUG:
-            image.save(DATA_DIR / "texturesuv_debug_.png")
-
-        with Image.open(DATA_DIR / "texturesuv_debug.png") as image_ref_file:
-            image_ref = np.array(image_ref_file)
-
-        self.assertClose(image_out, image_ref)
+        expected = torch.FloatTensor([[32, 224], [64, 96], [64, 128]])
+        self.assertClose(tex.centers_for_image(0), expected)
 
 
 class TestRectanglePacking(TestCaseMixin, unittest.TestCase):
