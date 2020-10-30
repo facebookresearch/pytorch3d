@@ -106,7 +106,7 @@ class TensorProperties(nn.Module):
             # set as attributes anything else e.g. strings, bools
             args_to_broadcast = {}
             for k, v in kwargs.items():
-                if isinstance(v, (str, bool)):
+                if v is None or isinstance(v, (str, bool)):
                     setattr(self, k, v)
                 elif isinstance(v, BROADCAST_TYPES):
                     args_to_broadcast[k] = v
