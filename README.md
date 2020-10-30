@@ -43,6 +43,14 @@ Get started with PyTorch3D by trying one of the tutorial notebooks.
 |:------------------------------------------------------------:|:--------------------------------------------------:|
 | [Render textured meshes](https://github.com/facebookresearch/pytorch3d/blob/master/docs/tutorials/render_textured_meshes.ipynb)| [Camera position optimization](https://github.com/facebookresearch/pytorch3d/blob/master/docs/tutorials/camera_position_optimization_with_differentiable_rendering.ipynb)|
 
+| <img src="https://raw.githubusercontent.com/facebookresearch/pytorch3d/master/.github/pointcloud_render.png" width="310"/> | <img src="https://raw.githubusercontent.com/facebookresearch/pytorch3d/master/.github/cow_deform.gif" width="310" height="310"/>
+|:------------------------------------------------------------:|:--------------------------------------------------:|
+| [Render textured pointclouds](https://github.com/facebookresearch/pytorch3d/blob/master/docs/tutorials/render_colored_points.ipynb)| [Fit a mesh with texture](https://github.com/facebookresearch/pytorch3d/blob/master/docs/tutorials/fit_textured_mesh.ipynb)|
+
+| <img src="https://raw.githubusercontent.com/facebookresearch/pytorch3d/master/.github/densepose_render.png" width="310"/> | <img src="https://raw.githubusercontent.com/facebookresearch/pytorch3d/master/.github/shapenet_render.png" width="310" height="310"/>
+|:------------------------------------------------------------:|:--------------------------------------------------:|
+| [Render DensePose data](https://github.com/facebookresearch/pytorch3d/blob/master/docs/tutorials/render_densepose.ipynb)| [Load & Render ShapeNet data](https://github.com/facebookresearch/pytorch3d/blob/master/docs/tutorials/dataloaders_ShapeNetCore_R2N2.ipynb)|
+
 ## Documentation
 
 Learn more about the API by reading the PyTorch3D [documentation](https://pytorch3d.readthedocs.org/).
@@ -67,6 +75,23 @@ We welcome new contributions to PyTorch3D and we will be actively maintaining th
 
 PyTorch3D is written and maintained by the Facebook AI Research Computer Vision Team.
 
+In alphabetical order:
+
+* Amitav Baruah
+* Luya Gao
+* Georgia Gkioxari
+* Taylor Gordon
+* Justin Johnson
+* Patrick Labtut
+* Christoph Lassner
+* Wan-Yen Lo
+* David Novotny
+* Nikhila Ravi
+* Jeremy Reizenstein
+* Dave Schnizlein
+* Roman Shapovalov
+* Olivia Wiles
+
 ## Citation
 
 If you find PyTorch3D useful in your research, please cite our tech report:
@@ -81,9 +106,12 @@ If you find PyTorch3D useful in your research, please cite our tech report:
 }
 ```
 
+
 ## News
 
 Please see below for a timeline of the codebase updates in reverse chronological order. We are sharing updates on the releases as well as research projects which are built with PyTorch3D. The changelogs for the releases are available under [`Releases`](https://github.com/facebookresearch/pytorch3d/releases),  and the builds can be installed using `conda` as per the instructions in [INSTALL.md](INSTALL.md).
+
+**[Aug 28th 2020]:**   PyTorch3D v0.2.5 released
 
 **[July 17th 2020]:**   PyTorch3D tech report published on ArXiv: https://arxiv.org/abs/2007.08501
 
