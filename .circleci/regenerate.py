@@ -109,6 +109,7 @@ def generate_base_workflow(
         "python_version": python_version,
         "cu_version": cu_version,
         "pytorch_version": pytorch_version,
+        "context": "DOCKERHUB_TOKEN",
     }
 
     if filter_branch is not None:

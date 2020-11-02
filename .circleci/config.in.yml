@@ -83,6 +83,9 @@ jobs:
     <<: *binary_common
     docker:
       - image: << parameters.wheel_docker_image >>
+        auth:
+          username: $DOCKERHUB_USERNAME
+          password: $DOCKERHUB_TOKEN
     resource_class: 2xlarge+
     steps:
       - checkout
@@ -98,6 +101,9 @@ jobs:
     <<: *binary_common
     docker:
       - image: "pytorch/conda-cuda"
+        auth:
+          username: $DOCKERHUB_USERNAME
+          password: $DOCKERHUB_TOKEN
     resource_class: 2xlarge+
     steps:
       - checkout
@@ -164,6 +170,9 @@ jobs:
         name: Pull docker image
         command: |
           set -e
+
+          { docker login -u="$DOCKERHUB_USERNAME" -p="$DOCKERHUB_TOKEN" ; } 2> /dev/null
+
           export DOCKER_IMAGE=pytorch/conda-cuda
           echo Pulling docker image $DOCKER_IMAGE
           docker pull $DOCKER_IMAGE >/dev/null
@@ -202,20 +211,24 @@ workflows:
   version: 2
   build_and_test:
     jobs:
-      - main
+      - main:
+          context: DOCKERHUB_TOKEN
       {{workflows()}}
       - binary_linux_conda_cuda:
           name: testrun_conda_cuda_py37_cu101_pyt14
+          context: DOCKERHUB_TOKEN
           python_version: "3.7"
           pytorch_version: "1.4"
           cu_version: "cu101"
       - binary_linux_conda_cuda:
           name: testrun_conda_cuda_py37_cu102_pyt160
+          context: DOCKERHUB_TOKEN
           python_version: "3.7"
           pytorch_version: '1.6.0'
           cu_version: "cu102"
       - binary_linux_conda_cuda:
           name: testrun_conda_cuda_py37_cu110_pyt170
+          context: DOCKERHUB_TOKEN
           python_version: "3.7"
           pytorch_version: '1.7.0'
           cu_version: "cu110"
