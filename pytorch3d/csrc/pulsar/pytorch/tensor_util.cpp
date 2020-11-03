@@ -1,6 +1,8 @@
 // Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
+#ifdef WITH_CUDA
 #include <ATen/cuda/CUDAContext.h>
 #include <cuda_runtime_api.h>
+#endif
 #include <torch/extension.h>
 
 #include "./tensor_util.h"
@@ -23,6 +25,7 @@ torch::Tensor sphere_ids_from_result_info_nograd(
               /*dim=*/3, /*start=*/3, /*end=*/forw_info.size(3), /*step=*/2)
           .contiguous();
   if (forw_info.device().type() == c10::DeviceType::CUDA) {
+#ifdef WITH_CUDA
     cudaMemcpyAsync(
         result.data_ptr(),
         tmp.data_ptr(),
@@ -30,6 +33,11 @@ torch::Tensor sphere_ids_from_result_info_nograd(
             tmp.size(3),
         cudaMemcpyDeviceToDevice,
         at::cuda::getCurrentCUDAStream());
+#else
+    throw std::runtime_error(
+        "Copy on CUDA device initiated but built "
+        "without CUDA support.");
+#endif
   } else {
     memcpy(
         result.data_ptr(),

@@ -38,9 +38,27 @@
 // Don't care about pytorch warnings; they shouldn't clutter our warnings.
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Weverything"
-#include <ATen/cuda/CUDAContext.h>
 #include <torch/extension.h>
 #pragma clang diagnostic pop
+#ifdef WITH_CUDA
+#include <ATen/cuda/CUDAContext.h>
+#else
+#ifndef cudaStream_t
+typedef void* cudaStream_t;
+#endif
+struct int2 {
+  int x, y;
+};
+struct ushort2 {
+  unsigned short x, y;
+};
+struct float2 {
+  float x, y;
+};
+struct float3 {
+  float x, y, z;
+};
+#endif
 namespace py = pybind11;
 inline float3 make_float3(const float& x, const float& y, const float& z) {
   float3 res;

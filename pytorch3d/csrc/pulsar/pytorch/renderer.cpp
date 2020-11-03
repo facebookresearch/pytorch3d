@@ -5,8 +5,10 @@
 #include "./util.h"
 
 #include <ATen/ATen.h>
+#ifdef WITH_CUDA
 #include <ATen/cuda/CUDAContext.h>
 #include <c10/cuda/CUDAGuard.h>
+#endif
 
 namespace PRE = ::pulsar::Renderer;
 
@@ -58,10 +60,13 @@ Renderer::Renderer(
 
 Renderer::~Renderer() {
   if (this->device_type == c10::DeviceType::CUDA) {
+// Can't happen in the case that not compiled with CUDA.
+#ifdef WITH_CUDA
     at::cuda::CUDAGuard device_guard(this->device_tracker.device());
     for (auto nrend : this->renderer_vec) {
       PRE::destruct<true>(&nrend);
     }
+#endif
   } else {
     for (auto nrend : this->renderer_vec) {
       PRE::destruct<false>(&nrend);
@@ -87,6 +92,7 @@ void Renderer::ensure_on_device(torch::Device device, bool /*non_blocking*/) {
       "Only CPU and CUDA device types are supported.");
   if (device.type() != this->device_type ||
       device.index() != this->device_index) {
+#ifdef WITH_CUDA
     LOG_IF(INFO, PULSAR_LOG_INIT)
         << "Transferring render buffers between devices.";
     int prev_active;
@@ -136,6 +142,11 @@ void Renderer::ensure_on_device(torch::Device device, bool /*non_blocking*/) {
     cudaSetDevice(prev_active);
     this->device_type = device.type();
     this->device_index = device.index();
+#else
+    throw std::runtime_error(
+        "pulsar was built without CUDA "
+        "but a device move to a CUDA device was initiated.");
+#endif
   }
 };
 
@@ -148,6 +159,7 @@ void Renderer::ensure_n_renderers_gte(const size_t& batch_size) {
     for (ptrdiff_t i = 0; i < diff; ++i) {
       this->renderer_vec.emplace_back();
       if (this->device_type == c10::DeviceType::CUDA) {
+#ifdef WITH_CUDA
         PRE::construct<true>(
             &this->renderer_vec[this->renderer_vec.size() - 1],
             this->max_num_balls(),
@@ -158,6 +170,7 @@ void Renderer::ensure_n_renderers_gte(const size_t& batch_size) {
             this->renderer_vec[0].cam.background_normalization_depth,
             this->renderer_vec[0].cam.n_channels,
             this->n_track());
+#endif
       } else {
         PRE::construct<false>(
             &this->renderer_vec[this->renderer_vec.size() - 1],
@@ -708,6 +721,10 @@ std::tuple<torch::Tensor, torch::Tensor> Renderer::forward(
     opacity_ptr = opacity_contiguous.data_ptr<float>();
   }
   if (this->device_type == c10::DeviceType::CUDA) {
+// No else check necessary - if not compiled with CUDA
+// we can't even reach this code (the renderer can't be
+// moved to a CUDA device).
+#ifdef WITH_CUDA
     int prev_active;
     cudaGetDevice(&prev_active);
     cudaSetDevice(this->device_index);
@@ -756,6 +773,7 @@ std::tuple<torch::Tensor, torch::Tensor> Renderer::forward(
               << time_ms / static_cast<float>(batch_size) << "ms" << std::endl;
 #endif
     cudaSetDevice(prev_active);
+#endif
   } else {
 #ifdef PULSAR_TIMINGS_BATCHED_ENABLED
     START_TIME(batch_forward);
@@ -816,7 +834,11 @@ std::tuple<torch::Tensor, torch::Tensor> Renderer::forward(
         this->device_index,
         torch::kFloat,
         this->device_type == c10::DeviceType::CUDA
+#ifdef WITH_CUDA
             ? at::cuda::getCurrentCUDAStream()
+#else
+            ? (cudaStream_t) nullptr
+#endif
             : (cudaStream_t) nullptr);
     if (mode == 1)
       results[batch_i] = results[batch_i].slice(2, 0, 1, 1);
@@ -829,7 +851,11 @@ std::tuple<torch::Tensor, torch::Tensor> Renderer::forward(
         this->device_index,
         torch::kFloat,
         this->device_type == c10::DeviceType::CUDA
+#ifdef WITH_CUDA
             ? at::cuda::getCurrentCUDAStream()
+#else
+            ? (cudaStream_t) nullptr
+#endif
             : (cudaStream_t) nullptr);
   }
   LOG_IF(INFO, PULSAR_LOG_FORWARD) << "Forward render complete.";
@@ -1048,6 +1074,9 @@ Renderer::backward(
     opacity_ptr = opacity_contiguous.data_ptr<float>();
   }
   if (this->device_type == c10::DeviceType::CUDA) {
+// No else check necessary - it's not possible to move
+// the renderer to a CUDA device if not built with CUDA.
+#ifdef WITH_CUDA
     int prev_active;
     cudaGetDevice(&prev_active);
     cudaSetDevice(this->device_index);
@@ -1162,6 +1191,7 @@ Renderer::backward(
     std::cout << "Backward render batched time per example: "
               << time_ms / static_cast<float>(batch_size) << "ms" << std::endl;
 #endif
+#endif // WITH_CUDA
   } else {
 #ifdef PULSAR_TIMINGS_BATCHED_ENABLED
     START_TIME(batch_backward);
@@ -1285,7 +1315,11 @@ Renderer::backward(
             this->device_index,
             torch::kFloat,
             this->device_type == c10::DeviceType::CUDA
+#ifdef WITH_CUDA
                 ? at::cuda::getCurrentCUDAStream()
+#else
+                ? (cudaStream_t) nullptr
+#endif
                 : (cudaStream_t) nullptr);
       }
       std::get<0>(ret) = torch::stack(results);
@@ -1297,7 +1331,11 @@ Renderer::backward(
           this->device_index,
           torch::kFloat,
           this->device_type == c10::DeviceType::CUDA
+#ifdef WITH_CUDA
               ? at::cuda::getCurrentCUDAStream()
+#else
+              ? (cudaStream_t) nullptr
+#endif
               : (cudaStream_t) nullptr);
     }
   }
@@ -1313,7 +1351,11 @@ Renderer::backward(
             this->device_index,
             torch::kFloat,
             this->device_type == c10::DeviceType::CUDA
+#ifdef WITH_CUDA
                 ? at::cuda::getCurrentCUDAStream()
+#else
+                ? (cudaStream_t) nullptr
+#endif
                 : (cudaStream_t) nullptr);
       }
       std::get<1>(ret) = torch::stack(results);
@@ -1326,7 +1368,11 @@ Renderer::backward(
           this->device_index,
           torch::kFloat,
           this->device_type == c10::DeviceType::CUDA
+#ifdef WITH_CUDA
               ? at::cuda::getCurrentCUDAStream()
+#else
+              ? (cudaStream_t) nullptr
+#endif
               : (cudaStream_t) nullptr);
     }
   }
@@ -1341,7 +1387,11 @@ Renderer::backward(
             this->device_index,
             torch::kFloat,
             this->device_type == c10::DeviceType::CUDA
+#ifdef WITH_CUDA
                 ? at::cuda::getCurrentCUDAStream()
+#else
+                ? (cudaStream_t) nullptr
+#endif
                 : (cudaStream_t) nullptr);
       }
       std::get<2>(ret) = torch::stack(results);
@@ -1353,7 +1403,11 @@ Renderer::backward(
           this->device_index,
           torch::kFloat,
           this->device_type == c10::DeviceType::CUDA
+#ifdef WITH_CUDA
               ? at::cuda::getCurrentCUDAStream()
+#else
+              ? (cudaStream_t) nullptr
+#endif
               : (cudaStream_t) nullptr);
     }
   }
@@ -1371,7 +1425,11 @@ Renderer::backward(
             this->device_index,
             torch::kFloat,
             this->device_type == c10::DeviceType::CUDA
+#ifdef WITH_CUDA
                 ? at::cuda::getCurrentCUDAStream()
+#else
+                ? (cudaStream_t) nullptr
+#endif
                 : (cudaStream_t) nullptr);
         res_p2[batch_i] = from_blob(
             reinterpret_cast<float*>(
@@ -1381,7 +1439,11 @@ Renderer::backward(
             this->device_index,
             torch::kFloat,
             this->device_type == c10::DeviceType::CUDA
+#ifdef WITH_CUDA
                 ? at::cuda::getCurrentCUDAStream()
+#else
+                ? (cudaStream_t) nullptr
+#endif
                 : (cudaStream_t) nullptr);
         res_p3[batch_i] = from_blob(
             reinterpret_cast<float*>(
@@ -1391,7 +1453,11 @@ Renderer::backward(
             this->device_index,
             torch::kFloat,
             this->device_type == c10::DeviceType::CUDA
+#ifdef WITH_CUDA
                 ? at::cuda::getCurrentCUDAStream()
+#else
+                ? (cudaStream_t) nullptr
+#endif
                 : (cudaStream_t) nullptr);
         res_p4[batch_i] = from_blob(
             reinterpret_cast<float*>(
@@ -1401,7 +1467,11 @@ Renderer::backward(
             this->device_index,
             torch::kFloat,
             this->device_type == c10::DeviceType::CUDA
+#ifdef WITH_CUDA
                 ? at::cuda::getCurrentCUDAStream()
+#else
+                ? (cudaStream_t) nullptr
+#endif
                 : (cudaStream_t) nullptr);
       }
       std::get<3>(ret) = torch::stack(res_p1);
@@ -1416,7 +1486,11 @@ Renderer::backward(
           this->device_index,
           torch::kFloat,
           this->device_type == c10::DeviceType::CUDA
+#ifdef WITH_CUDA
               ? at::cuda::getCurrentCUDAStream()
+#else
+              ? (cudaStream_t) nullptr
+#endif
               : (cudaStream_t) nullptr);
       std::get<4>(ret) = from_blob(
           reinterpret_cast<float*>(this->renderer_vec[0].grad_cam_d + 3),
@@ -1425,7 +1499,11 @@ Renderer::backward(
           this->device_index,
           torch::kFloat,
           this->device_type == c10::DeviceType::CUDA
+#ifdef WITH_CUDA
               ? at::cuda::getCurrentCUDAStream()
+#else
+              ? (cudaStream_t) nullptr
+#endif
               : (cudaStream_t) nullptr);
       std::get<5>(ret) = from_blob(
           reinterpret_cast<float*>(this->renderer_vec[0].grad_cam_d + 6),
@@ -1434,7 +1512,11 @@ Renderer::backward(
           this->device_index,
           torch::kFloat,
           this->device_type == c10::DeviceType::CUDA
+#ifdef WITH_CUDA
               ? at::cuda::getCurrentCUDAStream()
+#else
+              ? (cudaStream_t) nullptr
+#endif
               : (cudaStream_t) nullptr);
       std::get<6>(ret) = from_blob(
           reinterpret_cast<float*>(this->renderer_vec[0].grad_cam_d + 9),
@@ -1443,7 +1525,11 @@ Renderer::backward(
           this->device_index,
           torch::kFloat,
           this->device_type == c10::DeviceType::CUDA
+#ifdef WITH_CUDA
               ? at::cuda::getCurrentCUDAStream()
+#else
+              ? (cudaStream_t) nullptr
+#endif
               : (cudaStream_t) nullptr);
     }
   }
@@ -1458,7 +1544,11 @@ Renderer::backward(
             this->device_index,
             torch::kFloat,
             this->device_type == c10::DeviceType::CUDA
+#ifdef WITH_CUDA
                 ? at::cuda::getCurrentCUDAStream()
+#else
+                ? (cudaStream_t) nullptr
+#endif
                 : (cudaStream_t) nullptr);
       }
       std::get<7>(ret) = torch::stack(results);
@@ -1470,7 +1560,11 @@ Renderer::backward(
           this->device_index,
           torch::kFloat,
           this->device_type == c10::DeviceType::CUDA
+#ifdef WITH_CUDA
               ? at::cuda::getCurrentCUDAStream()
+#else
+              ? (cudaStream_t) nullptr
+#endif
               : (cudaStream_t) nullptr);
     }
   }

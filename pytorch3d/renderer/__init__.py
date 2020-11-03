@@ -46,6 +46,7 @@ from .points import (
     PointsRasterizationSettings,
     PointsRasterizer,
     PointsRenderer,
+    PulsarPointsRenderer,
     rasterize_points,
 )
 from .utils import TensorProperties, convert_to_tensors_and_broadcast

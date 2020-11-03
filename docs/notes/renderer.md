@@ -25,7 +25,7 @@ To learn about more the implementation and start using the renderer refer to [ge
 
 ## <u>Tech Report</u>
 
-For an in depth explanation of the renderer design, key features and benchmarks please refer to the PyTorch3D Technical Report on ArXiv: [Accelerating 3D Deep Learning with PyTorch3D](https://arxiv.org/abs/2007.08501)
+For an in depth explanation of the renderer design, key features and benchmarks please refer to the PyTorch3D Technical Report on ArXiv: [Accelerating 3D Deep Learning with PyTorch3D](https://arxiv.org/abs/2007.08501), for the pulsar backend see here: [Fast Differentiable Raycasting for Neural Rendering using Sphere-based Representations](https://arxiv.org/abs/2004.07484).
 
 ---
 

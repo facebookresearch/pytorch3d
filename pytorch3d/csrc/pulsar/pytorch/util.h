@@ -41,11 +41,16 @@ torch::Tensor from_blob(
   const int num_elements =
       std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<int>{});
   if (device_type == c10::DeviceType::CUDA) {
+#ifdef WITH_CUDA
     cudaDevToDev(
         ret.data_ptr(),
         static_cast<const void*>(ptr),
         sizeof(T) * num_elements,
         stream);
+#else
+    throw std::runtime_error(
+        "Initiating devToDev copy on a build without CUDA.");
+#endif
     // TODO: check for synchronization.
   } else {
     memcpy(ret.data_ptr(), ptr, sizeof(T) * num_elements);

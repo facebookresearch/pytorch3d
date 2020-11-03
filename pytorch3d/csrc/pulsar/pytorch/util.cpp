@@ -1,4 +1,5 @@
 // Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
+#ifdef WITH_CUDA
 #include <cuda_runtime_api.h>
 
 namespace pulsar {
@@ -22,3 +23,4 @@ void cudaDevToHost(
 
 } // namespace pytorch
 } // namespace pulsar
+#endif

@@ -4,6 +4,7 @@
 import glob
 import os
 import runpy
+import warnings
 
 import torch
 from setuptools import find_packages, setup
@@ -26,22 +27,25 @@ def get_extensions():
         sources += source_cuda
         define_macros += [("WITH_CUDA", None)]
         cub_home = os.environ.get("CUB_HOME", None)
-        if cub_home is None:
-            raise Exception(
-                "The environment variable `CUB_HOME` was not found. "
-                "NVIDIA CUB is required for compilation and can be downloaded "
-                "from `https://github.com/NVIDIA/cub/releases`. You can unpack "
-                "it to a location of your choice and set the environment variable "
-                "`CUB_HOME` to the folder containing the `CMakeListst.txt` file."
-            )
         nvcc_args = [
-            "-I%s" % (os.path.realpath(cub_home).replace("\\ ", " ")),
             "-std=c++14",
             "-DCUDA_HAS_FP16=1",
             "-D__CUDA_NO_HALF_OPERATORS__",
             "-D__CUDA_NO_HALF_CONVERSIONS__",
             "-D__CUDA_NO_HALF2_OPERATORS__",
         ]
+        if cub_home is None:
+            warnings.warn(
+                "The environment variable `CUB_HOME` was not found. "
+                "NVIDIA CUB is required for compilation and can be downloaded "
+                "from `https://github.com/NVIDIA/cub/releases`. You can unpack "
+                "it to a location of your choice and set the environment variable "
+                "`CUB_HOME` to the folder containing the `CMakeListst.txt` file."
+            )
+        else:
+            nvcc_args.insert(
+                0, "-I%s" % (os.path.realpath(cub_home).replace("\\ ", " "))
+            )
         nvcc_flags_env = os.getenv("NVCC_FLAGS", "")
         if nvcc_flags_env != "":
             nvcc_args.extend(nvcc_flags_env.split(" "))

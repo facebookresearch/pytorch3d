@@ -7,7 +7,12 @@ pulsar interface. For this, reference images have been pre-generated
 The camera parameters are assumed given. The scene is initialized with
 random spheres. Gradient-based optimization is used to optimize sphere
 parameters and prune spheres to converge to a 3D representation.
+
+This example is not available yet through the 'unified' interface,
+because opacity support has not landed in PyTorch3D for general data
+structures yet.
 """
+import math
 from os import path
 
 import cv2
@@ -77,7 +82,7 @@ class SceneModel(nn.Module):
                         0.0,
                         30.0 - np.cos(angle) * 35.0,
                         0.0,
-                        -angle,
+                        -angle + math.pi,
                         0.0,
                         5.0,
                         2.0,
@@ -87,7 +92,7 @@ class SceneModel(nn.Module):
                 dtype=torch.float32,
             ),
         )
-        self.renderer = Renderer(width, height, n_points)
+        self.renderer = Renderer(width, height, n_points, right_handed_system=True)
 
     def forward(self, cam=None):
         if cam is None:
@@ -184,7 +189,7 @@ for i in range(300):
                 0.0,
                 30.0 - np.cos(angle) * 35.0,
                 0.0,
-                -angle,
+                -angle + math.pi,
                 0.0,
                 5.0,
                 2.0,

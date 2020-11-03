@@ -7,7 +7,9 @@ pulsar interface. For this, a reference image has been pre-generated
 The same scene parameterization is loaded and the camera parameters
 distorted. Gradient-based optimization is used to converge towards the
 original camera parameters.
+Output: cam.gif.
 """
+import math
 from os import path
 
 import cv2
@@ -15,6 +17,7 @@ import imageio
 import numpy as np
 import torch
 from pytorch3d.renderer.points.pulsar import Renderer
+from pytorch3d.transforms import axis_angle_to_matrix, matrix_to_rotation_6d
 from torch import nn, optim
 
 
@@ -66,19 +69,18 @@ class SceneModel(nn.Module):
         )
         self.register_parameter(
             "cam_rot",
+            # We're using the 6D rot. representation for better gradients.
             nn.Parameter(
-                torch.tensor(
-                    [
-                        # We're using the 6D rot. representation for better gradients.
-                        0.9995,
-                        0.0300445,
-                        -0.0098482,
-                        -0.0299445,
-                        0.9995,
-                        0.0101482,
-                    ],
-                    dtype=torch.float32,
-                ),
+                matrix_to_rotation_6d(
+                    axis_angle_to_matrix(
+                        torch.tensor(
+                            [
+                                [0.02, math.pi + 0.02, 0.01],
+                            ],
+                            dtype=torch.float32,
+                        )
+                    )
+                )[0],
                 requires_grad=True,
             ),
         )
@@ -88,7 +90,7 @@ class SceneModel(nn.Module):
                 torch.tensor([4.8, 1.8], dtype=torch.float32), requires_grad=True
             ),
         )
-        self.renderer = Renderer(width, height, n_points)
+        self.renderer = Renderer(width, height, n_points, right_handed_system=True)
 
     def forward(self):
         return self.renderer.forward(
@@ -106,7 +108,7 @@ ref = (
     torch.from_numpy(
         imageio.imread(
             "../../tests/pulsar/reference/examples_TestRenderer_test_cam.png"
-        )
+        )[:, ::-1, :].copy()
     ).to(torch.float32)
     / 255.0
 ).to(device)

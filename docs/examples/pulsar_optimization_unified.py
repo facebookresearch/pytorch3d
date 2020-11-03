@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 """
-This example demonstrates scene optimization with the plain
+This example demonstrates scene optimization with the PyTorch3D
 pulsar interface. For this, a reference image has been pre-generated
 (you can find it at `../../tests/pulsar/reference/examples_TestRenderer_test_smallopt.png`).
 The scene is initialized with random spheres. Gradient-based
@@ -14,7 +14,13 @@ import cv2
 import imageio
 import numpy as np
 import torch
-from pytorch3d.renderer.points.pulsar import Renderer
+from pytorch3d.renderer.cameras import PerspectiveCameras  # , look_at_view_transform
+from pytorch3d.renderer.points import (
+    PointsRasterizationSettings,
+    PointsRasterizer,
+    PulsarPointsRenderer,
+)
+from pytorch3d.structures.pointclouds import Pointclouds
 from torch import nn, optim
 
 
@@ -42,14 +48,15 @@ class SceneModel(nn.Module):
         self.gamma = 1.0
         # Points.
         torch.manual_seed(1)
-        vert_pos = torch.rand(n_points, 3, dtype=torch.float32) * 10.0
+        vert_pos = torch.rand(n_points, 3, dtype=torch.float32, device=device) * 10.0
         vert_pos[:, 2] += 25.0
         vert_pos[:, :2] -= 5.0
         self.register_parameter("vert_pos", nn.Parameter(vert_pos, requires_grad=True))
         self.register_parameter(
             "vert_col",
             nn.Parameter(
-                torch.ones(n_points, 3, dtype=torch.float32) * 0.5, requires_grad=True
+                torch.ones(n_points, 3, dtype=torch.float32, device=device) * 0.5,
+                requires_grad=True,
             ),
         )
         self.register_parameter(
@@ -64,22 +71,40 @@ class SceneModel(nn.Module):
                 [0.0, 0.0, 0.0, 0.0, math.pi, 0.0, 5.0, 2.0], dtype=torch.float32
             ),
         )
-        # The volumetric optimization works better with a higher number of tracked
-        # intersections per ray.
-        self.renderer = Renderer(
-            width, height, n_points, n_track=32, right_handed_system=True
+        self.cameras = PerspectiveCameras(
+            # The focal length must be double the size for PyTorch3D because of the NDC
+            # coordinates spanning a range of two - and they must be normalized by the
+            # sensor width (see the pulsar example). This means we need here
+            # 5.0 * 2.0 / 2.0 to get the equivalent results as in pulsar.
+            focal_length=5.0,
+            R=torch.eye(3, dtype=torch.float32, device=device)[None, ...],
+            T=torch.zeros((1, 3), dtype=torch.float32, device=device),
+            image_size=((width, height),),
+            device=device,
         )
+        raster_settings = PointsRasterizationSettings(
+            image_size=(width, height),
+            radius=self.vert_rad,
+        )
+        rasterizer = PointsRasterizer(
+            cameras=self.cameras, raster_settings=raster_settings
+        )
+        self.renderer = PulsarPointsRenderer(rasterizer=rasterizer, n_track=32)
 
     def forward(self):
-        return self.renderer.forward(
-            self.vert_pos,
-            self.vert_col,
-            self.vert_rad,
-            self.cam_params,
-            self.gamma,
-            45.0,
-            return_forward_info=True,
+        # The Pointclouds object creates copies of it's arguments - that's why
+        # we have to create a new object in every forward step.
+        pcl = Pointclouds(
+            points=self.vert_pos[None, ...], features=self.vert_col[None, ...]
         )
+        return self.renderer(
+            pcl,
+            gamma=(self.gamma,),
+            zfar=(45.0,),
+            znear=(1.0,),
+            radius_world=True,
+            bg_col=torch.ones((3,), dtype=torch.float32, device=device),
+        )[0]
 
 
 # Load reference.
@@ -105,7 +130,7 @@ optimizer = optim.SGD(
 # Optimize.
 for i in range(500):
     optimizer.zero_grad()
-    result, result_info = model()
+    result = model()
     # Visualize.
     result_im = (result.cpu().detach().numpy() * 255).astype(np.uint8)
     cv2.imshow("opt", result_im[:, :, ::-1])

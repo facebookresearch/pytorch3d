@@ -55,6 +55,16 @@ While we tried to emulate several aspects of OpenGL, there are differences in th
 
 ---
 
+### The pulsar backend
+
+Since v0.3, [pulsar](https://arxiv.org/abs/2004.07484) can be used as a backend for point-rendering. It has a focus on efficiency, which comes with pros and cons: it is highly optimized and all rendering stages are integrated in the CUDA kernels. This leads to significantly higher speed and better scaling behavior. We use it at Facebook Reality Labs to render and optimize scenes with millions of spheres in resolutions up to 4K. You can find a runtime comparison plot below (settings: `bin_size=None`, `points_per_pixel=5`, `image_size=1024`, `radius=1e-2`, `composite_params.radius=1e-4`; benchmarked on an RTX 2070 GPU).
+
+<img align="center" src="assets/pulsar_bm.png" width="300">
+
+Pulsar's processing steps are tightly integrated CUDA kernels and do not work with custom `rasterizer` and `compositor` components. We provide two ways to use Pulsar: (1) there is a unified interface to match the PyTorch3D calling convention seamlessly. This is, for example, illustrated in the [point cloud tutorial](https://github.com/facebookresearch/pytorch3d/blob/master/docs/tutorials/render_colored_points.ipynb). (2) There is a direct interface available to the pulsar backend, which exposes the full functionality of the backend (including opacity, which is not yet available in PyTorch3D). Examples showing its use as well as the matching PyTorch3D interface code are available in [this folder](https://github.com/facebookresearch/pytorch3d/tree/master/docs/examples).
+
+---
+
 ### Texturing options
 
 For mesh texturing we offer several options (in `pytorch3d/renderer/mesh/texturing.py`):

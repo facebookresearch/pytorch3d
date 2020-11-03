@@ -106,10 +106,22 @@ If you find PyTorch3D useful in your research, please cite our tech report:
 }
 ```
 
+If you are using the pulsar backend for sphere-rendering (the `PulsarPointRenderer` or `pytorch3d.renderer.points.pulsar.Renderer`), please cite the tech report:
+
+```bibtex
+@article{lassner2020pulsar,
+    author = {Christoph Lassner},
+    title = {Fast Differentiable Raycasting for Neural Rendering using Sphere-based Representations},
+    journal = {arXiv:2004.07484},
+    year = {2020},
+}
+```
 
 ## News
 
 Please see below for a timeline of the codebase updates in reverse chronological order. We are sharing updates on the releases as well as research projects which are built with PyTorch3D. The changelogs for the releases are available under [`Releases`](https://github.com/facebookresearch/pytorch3d/releases),  and the builds can be installed using `conda` as per the instructions in [INSTALL.md](INSTALL.md).
+
+**[November 2nd 2020]:** PyTorch3D v0.3 released, integrating the pulsar backend.
 
 **[Aug 28th 2020]:**   PyTorch3D v0.2.5 released
 
