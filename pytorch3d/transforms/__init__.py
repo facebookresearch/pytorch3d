@@ -1,9 +1,7 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
-from .external.kornia_angle_axis_to_rotation_matrix import (
-    angle_axis_to_rotation_matrix as axis_angle_to_matrix,
-)
 from .rotation_conversions import (
+    axis_angle_to_matrix,
     euler_angles_to_matrix,
     matrix_to_euler_angles,
     matrix_to_quaternion,

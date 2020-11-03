@@ -369,6 +369,7 @@ class Renderer(torch.nn.Module):
         height: int,
         orthogonal: bool,
         right_handed: bool,
+        first_R_then_T: bool = False,
     ) -> Tuple[
         torch.Tensor,
         torch.Tensor,
@@ -401,6 +402,8 @@ class Renderer(torch.nn.Module):
                   (does not use focal length).
             * right_handed: bool, whether to use a right handed system
                   (negative z in camera direction).
+            * first_R_then_T: bool, whether to first rotate, then translate
+                  the camera (PyTorch3D convention).
 
         Returns:
             * pos_vec: the position vector in 3D,
@@ -460,16 +463,18 @@ class Renderer(torch.nn.Module):
         # Always get quadratic pixels.
         pixel_size_x = sensor_size_x / float(width)
         sensor_size_y = height * pixel_size_x
+        if continuous_rep:
+            rot_mat = rotation_6d_to_matrix(rot_vec)
+        else:
+            rot_mat = axis_angle_to_matrix(rot_vec)
+        if first_R_then_T:
+            pos_vec = torch.matmul(rot_mat, pos_vec[..., None])[:, :, 0]
         LOGGER.debug(
             "Camera position: %s, rotation: %s. Focal length: %s.",
             str(pos_vec),
             str(rot_vec),
             str(focal_length),
         )
-        if continuous_rep:
-            rot_mat = rotation_6d_to_matrix(rot_vec)
-        else:
-            rot_mat = axis_angle_to_matrix(rot_vec)
         sensor_dir_x = torch.matmul(
             rot_mat,
             torch.tensor(
@@ -576,6 +581,7 @@ class Renderer(torch.nn.Module):
         max_n_hits: int = _C.MAX_UINT,
         mode: int = 0,
         return_forward_info: bool = False,
+        first_R_then_T: bool = False,
     ) -> Union[torch.Tensor, Tuple[torch.Tensor, Optional[torch.Tensor]]]:
         """
         Rendering pass to create an image from the provided spheres and camera
@@ -616,6 +622,8 @@ class Renderer(torch.nn.Module):
                 the float encoded integer index of a sphere and its weight. They are the
                 five spheres with the highest color contribution to this pixel color,
                 ordered descending. Default: False.
+            * first_R_then_T: bool, whether to first apply rotation to the camera,
+                then translation (PyTorch3D convention). Default: False.
 
         Returns:
             * image: [Bx]HxWx3 float tensor with the resulting image.
@@ -638,6 +646,7 @@ class Renderer(torch.nn.Module):
             self._renderer.height,
             self._renderer.orthogonal,
             self._renderer.right_handed,
+            first_R_then_T=first_R_then_T,
         )
         if (
             focal_lengths.min().item() > 0.0

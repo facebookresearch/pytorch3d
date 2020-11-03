@@ -13,13 +13,8 @@ from torch.utils.cpp_extension import CUDA_HOME, CppExtension, CUDAExtension
 def get_extensions():
     this_dir = os.path.dirname(os.path.abspath(__file__))
     extensions_dir = os.path.join(this_dir, "pytorch3d", "csrc")
-
-    main_source = os.path.join(extensions_dir, "ext.cpp")
-    sources = glob.glob(os.path.join(extensions_dir, "**", "*.cpp"))
-    source_cuda = glob.glob(os.path.join(extensions_dir, "**", "*.cu"))
-
-    sources = [main_source] + sources
-
+    sources = glob.glob(os.path.join(extensions_dir, "**", "*.cpp"), recursive=True)
+    source_cuda = glob.glob(os.path.join(extensions_dir, "**", "*.cu"), recursive=True)
     extension = CppExtension
 
     extra_compile_args = {"cxx": ["-std=c++14"]}
@@ -30,7 +25,18 @@ def get_extensions():
         extension = CUDAExtension
         sources += source_cuda
         define_macros += [("WITH_CUDA", None)]
+        cub_home = os.environ.get("CUB_HOME", None)
+        if cub_home is None:
+            raise Exception(
+                "The environment variable `CUB_HOME` was not found. "
+                "NVIDIA CUB is required for compilation and can be downloaded "
+                "from `https://github.com/NVIDIA/cub/releases`. You can unpack "
+                "it to a location of your choice and set the environment variable "
+                "`CUB_HOME` to the folder containing the `CMakeListst.txt` file."
+            )
         nvcc_args = [
+            "-I%s" % (os.path.realpath(cub_home).replace("\\ ", " ")),
+            "-std=c++14",
             "-DCUDA_HAS_FP16=1",
             "-D__CUDA_NO_HALF_OPERATORS__",
             "-D__CUDA_NO_HALF_CONVERSIONS__",

@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
-
-
 import torch
 import torch.nn as nn
 
@@ -48,7 +46,7 @@ class PointsRenderer(nn.Module):
             fragments.idx.long().permute(0, 3, 1, 2),
             weights,
             point_clouds.features_packed().permute(1, 0),
-            **kwargs
+            **kwargs,
         )
 
         # permute so image comes at the end
