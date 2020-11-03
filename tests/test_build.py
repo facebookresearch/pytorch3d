@@ -28,28 +28,6 @@ class TestBuild(unittest.TestCase):
             self.assertEqual(v, 1, f"Too many files with stem {k}.")
 
     @unittest.skipIf(in_conda_build, "In conda build")
-    def test_deprecated_usage(self):
-        # Check certain expressions do not occur in the csrc code
-        test_dir = Path(__file__).resolve().parent
-        source_dir = test_dir.parent / "pytorch3d" / "csrc"
-
-        files = sorted(source_dir.glob("**/*.*"))
-        self.assertGreater(len(files), 4)
-
-        patterns = [".type()", ".data()"]
-
-        for file in files:
-            with open(file) as f:
-                text = f.read()
-                for pattern in patterns:
-                    found = pattern in text
-                    msg = (
-                        f"{pattern} found in {file.name}"
-                        + ", this has been deprecated."
-                    )
-                    self.assertFalse(found, msg)
-
-    @unittest.skipIf(in_conda_build, "In conda build")
     def test_copyright(self):
         test_dir = Path(__file__).resolve().parent
         root_dir = test_dir.parent
@@ -63,6 +41,13 @@ class TestBuild(unittest.TestCase):
 
         for extension in extensions:
             for i in root_dir.glob(f"**/*.{extension}"):
+                print(i)
+                if str(i).endswith(
+                    "pytorch3d/transforms/external/kornia_angle_axis_to_rotation_matrix.py"
+                ):
+                    continue
+                if str(i).endswith("pytorch3d/csrc/pulsar/include/fastermath.h"):
+                    continue
                 with open(i) as f:
                     firstline = f.readline()
                     if firstline.startswith(("# -*-", "#!")):

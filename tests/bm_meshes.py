@@ -33,3 +33,7 @@ def bm_compute_packed_padded_meshes() -> None:
         kwargs_list,
         warmup_iters=1,
     )
+
+
+if __name__ == "__main__":
+    bm_compute_packed_padded_meshes()

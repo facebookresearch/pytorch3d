@@ -80,3 +80,7 @@ def bm_python_vs_cpu_vs_cuda() -> None:
     benchmark(
         _bm_rasterize_points_with_init, "RASTERIZE_CUDA", kwargs_list, warmup_iters=1
     )
+
+
+if __name__ == "__main__":
+    bm_python_vs_cpu_vs_cuda()

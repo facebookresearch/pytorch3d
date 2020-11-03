@@ -11,3 +11,7 @@ def bm_cubify() -> None:
         {"batch_size": 16, "V": 32},
     ]
     benchmark(TestCubify.cubify_with_init, "CUBIFY", kwargs_list, warmup_iters=1)
+
+
+if __name__ == "__main__":
+    bm_cubify()

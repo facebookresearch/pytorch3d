@@ -27,3 +27,7 @@ def bm_mesh_normal_consistency() -> None:
         kwargs_list,
         warmup_iters=1,
     )
+
+
+if __name__ == "__main__":
+    bm_mesh_normal_consistency()

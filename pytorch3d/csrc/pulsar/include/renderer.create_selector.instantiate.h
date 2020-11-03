@@ -1,0 +1,23 @@
+// Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
+#ifndef PULSAR_NATIVE_INCLUDE_RENDERER_CREATE_SELECTOR_INSTANTIATE_H_
+#define PULSAR_NATIVE_INCLUDE_RENDERER_CREATE_SELECTOR_INSTANTIATE_H_
+
+#include "./renderer.create_selector.device.h"
+
+namespace pulsar {
+namespace Renderer {
+
+template GLOBAL void create_selector<ISONDEVICE>(
+    IntersectInfo const* const RESTRICT ii_sorted_d,
+    const uint num_balls,
+    const int min_x,
+    const int max_x,
+    const int min_y,
+    const int max_y,
+    /* Out variables. */
+    char* RESTRICT region_flags_d);
+
+}
+} // namespace pulsar
+
+#endif

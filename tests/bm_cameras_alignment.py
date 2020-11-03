@@ -22,3 +22,7 @@ def bm_cameras_alignment() -> None:
         kwargs_list,
         warmup_iters=1,
     )
+
+
+if __name__ == "__main__":
+    bm_cameras_alignment()

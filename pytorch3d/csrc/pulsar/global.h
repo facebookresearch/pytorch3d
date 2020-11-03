@@ -1,0 +1,85 @@
+// Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
+#ifndef PULSAR_GLOBAL_H
+#define PULSAR_GLOBAL_H
+
+#include "./constants.h"
+#ifndef WIN32
+#include <csignal>
+#endif
+
+#if defined(_WIN64) || defined(_WIN32)
+#define uint unsigned int
+#define ushort unsigned short
+#endif
+
+#include "./logging.h" // <- include before torch/extension.h
+
+#define MAX_GRAD_SPHERES 128
+
+#ifdef __CUDACC__
+#define INLINE __forceinline__
+#define HOST __host__
+#define DEVICE __device__
+#define GLOBAL __global__
+#define RESTRICT __restrict__
+#define DEBUGBREAK()
+#pragma diag_suppress = attribute_not_allowed
+#pragma diag_suppress = 1866
+#pragma diag_suppress = 2941
+#pragma diag_suppress = 2951
+#pragma diag_suppress = 2967
+#else // __CUDACC__
+#define INLINE inline
+#define HOST
+#define DEVICE
+#define GLOBAL
+#define RESTRICT
+#define DEBUGBREAK() std::raise(SIGINT)
+// Don't care about pytorch warnings; they shouldn't clutter our warnings.
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Weverything"
+#include <ATen/cuda/CUDAContext.h>
+#include <torch/extension.h>
+#pragma clang diagnostic pop
+namespace py = pybind11;
+inline float3 make_float3(const float& x, const float& y, const float& z) {
+  float3 res;
+  res.x = x;
+  res.y = y;
+  res.z = z;
+  return res;
+}
+
+inline bool operator==(const float3& a, const float3& b) {
+  return a.x == b.x && a.y == b.y && a.z == b.z;
+}
+#endif // __CUDACC__
+#define IHD INLINE HOST DEVICE
+
+// An assertion command that can be used on host and device.
+#ifdef PULSAR_ASSERTIONS
+#ifdef __CUDACC__
+#define PASSERT(VAL)                                     \
+  if (!(VAL)) {                                          \
+    printf(                                              \
+        "Pulsar assertion failed in %s, line %d: %s.\n", \
+        __FILE__,                                        \
+        __LINE__,                                        \
+        #VAL);                                           \
+  }
+#else
+#define PASSERT(VAL)                                     \
+  if (!(VAL)) {                                          \
+    printf(                                              \
+        "Pulsar assertion failed in %s, line %d: %s.\n", \
+        __FILE__,                                        \
+        __LINE__,                                        \
+        #VAL);                                           \
+    std::raise(SIGINT);                                  \
+  }
+#endif
+#else
+#define PASSERT(VAL)
+#endif
+
+#endif

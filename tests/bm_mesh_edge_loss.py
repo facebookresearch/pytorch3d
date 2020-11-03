@@ -19,3 +19,7 @@ def bm_mesh_edge_loss() -> None:
     benchmark(
         TestMeshEdgeLoss.mesh_edge_loss, "MESH_EDGE_LOSS", kwargs_list, warmup_iters=1
     )
+
+
+if __name__ == "__main__":
+    bm_mesh_edge_loss()

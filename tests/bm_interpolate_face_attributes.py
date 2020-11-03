@@ -74,3 +74,7 @@ def bm_interpolate_face_attribues() -> None:
         kwargs_list.append({"N": N, "S": S, "K": K, "F": F, "D": D, "impl": impl})
     benchmark(_bm_forward, "FORWARD", kwargs_list, warmup_iters=3)
     benchmark(_bm_forward_backward, "FORWARD+BACKWARD", kwargs_list, warmup_iters=3)
+
+
+if __name__ == "__main__":
+    bm_interpolate_face_attribues()

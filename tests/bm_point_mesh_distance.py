@@ -34,3 +34,7 @@ def bm_point_mesh_distance() -> None:
         kwargs_list,
         warmup_iters=1,
     )
+
+
+if __name__ == "__main__":
+    bm_point_mesh_distance()

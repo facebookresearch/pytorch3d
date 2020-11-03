@@ -37,3 +37,7 @@ def bm_face_areas_normals() -> None:
         kwargs_list,
         warmup_iters=1,
     )
+
+
+if __name__ == "__main__":
+    bm_face_areas_normals()

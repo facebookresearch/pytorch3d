@@ -110,3 +110,7 @@ def bm_barycentric_clip() -> None:
 
         benchmark(baryclip_cuda, "BARY_CLIP_CUDA", kwargs_list, warmup_iters=1)
         benchmark(baryclip_pytorch, "BARY_CLIP_PYTORCH", kwargs_list, warmup_iters=1)
+
+
+if __name__ == "__main__":
+    bm_barycentric_clip()

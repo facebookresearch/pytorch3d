@@ -38,3 +38,7 @@ def bm_packed_to_padded() -> None:
         kwargs_list,
         warmup_iters=1,
     )
+
+
+if __name__ == "__main__":
+    bm_packed_to_padded()

@@ -45,3 +45,7 @@ def bm_lighting() -> None:
         kwargs_list.append({"N": N, "S": S, "K": K})
     benchmark(_bm_diffuse_cuda_with_init, "DIFFUSE", kwargs_list, warmup_iters=3)
     benchmark(_bm_specular_cuda_with_init, "SPECULAR", kwargs_list, warmup_iters=3)
+
+
+if __name__ == "__main__":
+    bm_lighting()

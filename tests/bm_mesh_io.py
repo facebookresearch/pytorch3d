@@ -95,3 +95,7 @@ def bm_save_load() -> None:
         kwargs_list,
         warmup_iters=1,
     )
+
+
+if __name__ == "__main__":
+    bm_save_load()

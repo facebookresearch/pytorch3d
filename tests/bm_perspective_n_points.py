@@ -23,3 +23,7 @@ def bm_perspective_n_points() -> None:
         kwargs_list,
         warmup_iters=1,
     )
+
+
+if __name__ == "__main__":
+    bm_perspective_n_points()

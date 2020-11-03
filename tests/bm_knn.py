@@ -24,3 +24,7 @@ def bm_knn() -> None:
     benchmark(TestKNN.knn_square, "KNN_SQUARE", kwargs_list, warmup_iters=1)
 
     benchmark(TestKNN.knn_ragged, "KNN_RAGGED", kwargs_list, warmup_iters=1)
+
+
+if __name__ == "__main__":
+    bm_knn()

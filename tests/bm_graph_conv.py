@@ -40,3 +40,7 @@ def bm_graph_conv() -> None:
         kwargs_list,
         warmup_iters=1,
     )
+
+
+if __name__ == "__main__":
+    bm_graph_conv()
