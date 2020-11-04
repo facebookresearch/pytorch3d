@@ -20,7 +20,7 @@ def estimate_pointcloud_normals(
     Estimates the normals of a batch of `pointclouds`.
 
     The function uses `estimate_pointcloud_local_coord_frames` to estimate
-    the normals. Please refer to this function for more detailed information.
+    the normals. Please refer to that function for more detailed information.
 
     Args:
       **pointclouds**: Batch of 3-dimensional points of shape

@@ -2,7 +2,6 @@
 
 import torch
 
-from .. import ops
 from . import utils as struct_utils
 
 
@@ -890,7 +889,7 @@ class Pointclouds(object):
         them to the internal tensors `self._normals_list` and `self._normals_padded`
 
         The function uses `ops.estimate_pointcloud_local_coord_frames`
-        to estimate the normals. Please refer to this function for more
+        to estimate the normals. Please refer to that function for more
         detailed information about the implemented algorithm.
 
         Args:
@@ -908,6 +907,7 @@ class Pointclouds(object):
           [1] Tombari, Salti, Di Stefano: Unique Signatures of Histograms for
           Local Surface Description, ECCV 2010.
         """
+        from .. import ops
 
         # estimate the normals
         normals_est = ops.estimate_pointcloud_normals(
