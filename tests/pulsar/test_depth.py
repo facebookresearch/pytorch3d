@@ -44,6 +44,8 @@ class TestDepth(TestCaseMixin, unittest.TestCase):
                 n_channels=1,
             ).to(device)
             data = torch.load(IN_REF_FP, map_location="cpu")
+            # For creating the reference files.
+            # Use in case of updates.
             # data["pos"] = torch.rand_like(data["pos"])
             # data["pos"][:, 0] = data["pos"][:, 0] * 2. - 1.
             # data["pos"][:, 1] = data["pos"][:, 1] * 2. - 1.
@@ -74,6 +76,8 @@ class TestDepth(TestCaseMixin, unittest.TestCase):
                     ),
                     depth_vis.cpu().numpy().astype(np.uint8),
                 )
+            # For creating the reference files.
+            # Use in case of updates.
             # torch.save(
             #     data, path.join(path.dirname(__file__), "reference", "nr0000-in.pth")
             # )

@@ -9,6 +9,7 @@ distorted. Gradient-based optimization is used to converge towards the
 original camera parameters.
 Output: cam.gif.
 """
+import logging
 import math
 from os import path
 
@@ -21,10 +22,11 @@ from pytorch3d.transforms import axis_angle_to_matrix, matrix_to_rotation_6d
 from torch import nn, optim
 
 
-n_points = 20
-width = 1_000
-height = 1_000
-device = torch.device("cuda")
+LOGGER = logging.getLogger(__name__)
+N_POINTS = 20
+WIDTH = 1_000
+HEIGHT = 1_000
+DEVICE = torch.device("cuda")
 
 
 class SceneModel(nn.Module):
@@ -45,20 +47,20 @@ class SceneModel(nn.Module):
         self.gamma = 0.1
         # Points.
         torch.manual_seed(1)
-        vert_pos = torch.rand(n_points, 3, dtype=torch.float32) * 10.0
+        vert_pos = torch.rand(N_POINTS, 3, dtype=torch.float32) * 10.0
         vert_pos[:, 2] += 25.0
         vert_pos[:, :2] -= 5.0
         self.register_parameter("vert_pos", nn.Parameter(vert_pos, requires_grad=False))
         self.register_parameter(
             "vert_col",
             nn.Parameter(
-                torch.rand(n_points, 3, dtype=torch.float32), requires_grad=False
+                torch.rand(N_POINTS, 3, dtype=torch.float32), requires_grad=False
             ),
         )
         self.register_parameter(
             "vert_rad",
             nn.Parameter(
-                torch.rand(n_points, dtype=torch.float32), requires_grad=False
+                torch.rand(N_POINTS, dtype=torch.float32), requires_grad=False
             ),
         )
         self.register_parameter(
@@ -90,7 +92,7 @@ class SceneModel(nn.Module):
                 torch.tensor([4.8, 1.8], dtype=torch.float32), requires_grad=True
             ),
         )
-        self.renderer = Renderer(width, height, n_points, right_handed_system=True)
+        self.renderer = Renderer(WIDTH, HEIGHT, N_POINTS, right_handed_system=True)
 
     def forward(self):
         return self.renderer.forward(
@@ -103,58 +105,71 @@ class SceneModel(nn.Module):
         )
 
 
-# Load reference.
-ref = (
-    torch.from_numpy(
-        imageio.imread(
-            "../../tests/pulsar/reference/examples_TestRenderer_test_cam.png"
-        )[:, ::-1, :].copy()
-    ).to(torch.float32)
-    / 255.0
-).to(device)
-# Set up model.
-model = SceneModel().to(device)
-# Optimizer.
-optimizer = optim.SGD(
-    [
-        {"params": [model.cam_pos], "lr": 1e-4},  # 1e-3
-        {"params": [model.cam_rot], "lr": 5e-6},
-        {"params": [model.cam_sensor], "lr": 1e-4},
-    ]
-)
+def cli():
+    """
+    Camera optimization example using pulsar.
 
-print("Writing video to `%s`." % (path.abspath("cam.gif")))
-writer = imageio.get_writer("cam.gif", format="gif", fps=25)
-
-# Optimize.
-for i in range(300):
-    optimizer.zero_grad()
-    result = model()
-    # Visualize.
-    result_im = (result.cpu().detach().numpy() * 255).astype(np.uint8)
-    cv2.imshow("opt", result_im[:, :, ::-1])
-    writer.append_data(result_im)
-    overlay_img = np.ascontiguousarray(
-        ((result * 0.5 + ref * 0.5).cpu().detach().numpy() * 255).astype(np.uint8)[
-            :, :, ::-1
+    Writes to `cam.gif`.
+    """
+    LOGGER.info("Loading reference...")
+    # Load reference.
+    ref = (
+        torch.from_numpy(
+            imageio.imread(
+                "../../tests/pulsar/reference/examples_TestRenderer_test_cam.png"
+            )[:, ::-1, :].copy()
+        ).to(torch.float32)
+        / 255.0
+    ).to(DEVICE)
+    # Set up model.
+    model = SceneModel().to(DEVICE)
+    # Optimizer.
+    optimizer = optim.SGD(
+        [
+            {"params": [model.cam_pos], "lr": 1e-4},  # 1e-3
+            {"params": [model.cam_rot], "lr": 5e-6},
+            {"params": [model.cam_sensor], "lr": 1e-4},
         ]
     )
-    overlay_img = cv2.putText(
-        overlay_img,
-        "Step %d" % (i),
-        (10, 40),
-        cv2.FONT_HERSHEY_SIMPLEX,
-        1,
-        (0, 0, 0),
-        2,
-        cv2.LINE_AA,
-        False,
-    )
-    cv2.imshow("overlay", overlay_img)
-    cv2.waitKey(1)
-    # Update.
-    loss = ((result - ref) ** 2).sum()
-    print("loss {}: {}".format(i, loss.item()))
-    loss.backward()
-    optimizer.step()
-writer.close()
+
+    LOGGER.info("Writing video to `%s`.", path.abspath("cam.gif"))
+    writer = imageio.get_writer("cam.gif", format="gif", fps=25)
+
+    # Optimize.
+    for i in range(300):
+        optimizer.zero_grad()
+        result = model()
+        # Visualize.
+        result_im = (result.cpu().detach().numpy() * 255).astype(np.uint8)
+        cv2.imshow("opt", result_im[:, :, ::-1])
+        writer.append_data(result_im)
+        overlay_img = np.ascontiguousarray(
+            ((result * 0.5 + ref * 0.5).cpu().detach().numpy() * 255).astype(np.uint8)[
+                :, :, ::-1
+            ]
+        )
+        overlay_img = cv2.putText(
+            overlay_img,
+            "Step %d" % (i),
+            (10, 40),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            1,
+            (0, 0, 0),
+            2,
+            cv2.LINE_AA,
+            False,
+        )
+        cv2.imshow("overlay", overlay_img)
+        cv2.waitKey(1)
+        # Update.
+        loss = ((result - ref) ** 2).sum()
+        LOGGER.info("loss %d: %f", i, loss.item())
+        loss.backward()
+        optimizer.step()
+    writer.close()
+    LOGGER.info("Done.")
+
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+    cli()

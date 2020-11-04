@@ -123,7 +123,7 @@ class TestSmallSpheres(unittest.TestCase):
                     self.assertTrue(
                         (sphere_ids == idx).sum() > 0, "Sphere ID %d missing!" % (idx)
                     )
-                # Visualize.
+                # Visualization code. Activate for debugging.
                 # result_im = (result.cpu().detach().numpy() * 255).astype(np.uint8)
                 # cv2.imshow("res", result_im[0, :, :, ::-1])
                 # cv2.waitKey(0)

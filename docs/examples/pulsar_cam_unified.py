@@ -10,11 +10,15 @@ original camera parameters.
 Output: cam-pt3d.gif
 """
 from os import path
+import logging
 
 import cv2
 import imageio
 import numpy as np
 import torch
+
+# Import `look_at_view_transform` as needed in the suggestion later in the
+# example.
 from pytorch3d.renderer.cameras import PerspectiveCameras  # , look_at_view_transform
 from pytorch3d.renderer.points import (
     PointsRasterizationSettings,
@@ -26,10 +30,11 @@ from pytorch3d.transforms import axis_angle_to_matrix
 from torch import nn, optim
 
 
-n_points = 20
-width = 1_000
-height = 1_000
-device = torch.device("cuda")
+LOGGER = logging.getLogger(__name__)
+N_POINTS = 20
+WIDTH = 1_000
+HEIGHT = 1_000
+DEVICE = torch.device("cuda")
 
 
 class SceneModel(nn.Module):
@@ -50,21 +55,21 @@ class SceneModel(nn.Module):
         self.gamma = 0.1
         # Points.
         torch.manual_seed(1)
-        vert_pos = torch.rand(n_points, 3, dtype=torch.float32) * 10.0
+        vert_pos = torch.rand(N_POINTS, 3, dtype=torch.float32) * 10.0
         vert_pos[:, 2] += 25.0
         vert_pos[:, :2] -= 5.0
         self.register_parameter("vert_pos", nn.Parameter(vert_pos, requires_grad=False))
         self.register_parameter(
             "vert_col",
             nn.Parameter(
-                torch.rand(n_points, 3, dtype=torch.float32),
+                torch.rand(N_POINTS, 3, dtype=torch.float32),
                 requires_grad=False,
             ),
         )
         self.register_parameter(
             "vert_rad",
             nn.Parameter(
-                torch.rand(n_points, dtype=torch.float32),
+                torch.rand(N_POINTS, dtype=torch.float32),
                 requires_grad=False,
             ),
         )
@@ -118,11 +123,11 @@ class SceneModel(nn.Module):
             focal_length=self.focal_length,
             R=self.cam_rot[None, ...],
             T=self.cam_pos[None, ...],
-            image_size=((width, height),),
-            device=device,
+            image_size=((WIDTH, HEIGHT),),
+            device=DEVICE,
         )
         raster_settings = PointsRasterizationSettings(
-            image_size=(width, height),
+            image_size=(WIDTH, HEIGHT),
             radius=self.vert_rad,
         )
         rasterizer = PointsRasterizer(
@@ -142,7 +147,7 @@ class SceneModel(nn.Module):
             zfar=(45.0,),
             znear=(1.0,),
             radius_world=True,
-            bg_col=torch.ones((3,), dtype=torch.float32, device=device),
+            bg_col=torch.ones((3,), dtype=torch.float32, device=DEVICE),
             # As mentioned above: workaround for device placement of gradients for
             # camera parameters.
             focal_length=self.focal_length,
@@ -151,60 +156,73 @@ class SceneModel(nn.Module):
         )[0]
 
 
-# Load reference.
-ref = (
-    torch.from_numpy(
-        imageio.imread(
-            "../../tests/pulsar/reference/examples_TestRenderer_test_cam.png"
-        )[:, ::-1, :].copy()
-    ).to(torch.float32)
-    / 255.0
-).to(device)
-# Set up model.
-model = SceneModel().to(device)
-# Optimizer.
-optimizer = optim.SGD(
-    [
-        {"params": [model.cam_pos], "lr": 1e-4},
-        {"params": [model.cam_rot], "lr": 5e-6},
-        # Using a higher lr for the focal length here, because
-        # the sensor width can not be optimized directly.
-        {"params": [model.focal_length], "lr": 1e-3},
-    ]
-)
+def cli():
+    """
+    Camera optimization example using pulsar.
 
-print("Writing video to `%s`." % (path.abspath("cam-pt3d.gif")))
-writer = imageio.get_writer("cam-pt3d.gif", format="gif", fps=25)
-
-# Optimize.
-for i in range(300):
-    optimizer.zero_grad()
-    result = model()
-    # Visualize.
-    result_im = (result.cpu().detach().numpy() * 255).astype(np.uint8)
-    cv2.imshow("opt", result_im[:, :, ::-1])
-    writer.append_data(result_im)
-    overlay_img = np.ascontiguousarray(
-        ((result * 0.5 + ref * 0.5).cpu().detach().numpy() * 255).astype(np.uint8)[
-            :, :, ::-1
+    Writes to `cam.gif`.
+    """
+    LOGGER.info("Loading reference...")
+    # Load reference.
+    ref = (
+        torch.from_numpy(
+            imageio.imread(
+                "../../tests/pulsar/reference/examples_TestRenderer_test_cam.png"
+            )[:, ::-1, :].copy()
+        ).to(torch.float32)
+        / 255.0
+    ).to(DEVICE)
+    # Set up model.
+    model = SceneModel().to(DEVICE)
+    # Optimizer.
+    optimizer = optim.SGD(
+        [
+            {"params": [model.cam_pos], "lr": 1e-4},
+            {"params": [model.cam_rot], "lr": 5e-6},
+            # Using a higher lr for the focal length here, because
+            # the sensor width can not be optimized directly.
+            {"params": [model.focal_length], "lr": 1e-3},
         ]
     )
-    overlay_img = cv2.putText(
-        overlay_img,
-        "Step %d" % (i),
-        (10, 40),
-        cv2.FONT_HERSHEY_SIMPLEX,
-        1,
-        (0, 0, 0),
-        2,
-        cv2.LINE_AA,
-        False,
-    )
-    cv2.imshow("overlay", overlay_img)
-    cv2.waitKey(1)
-    # Update.
-    loss = ((result - ref) ** 2).sum()
-    print("loss {}: {}".format(i, loss.item()))
-    loss.backward()
-    optimizer.step()
-writer.close()
+
+    LOGGER.info("Writing video to `%s`.", path.abspath("cam-pt3d.gif"))
+    writer = imageio.get_writer("cam-pt3d.gif", format="gif", fps=25)
+
+    # Optimize.
+    for i in range(300):
+        optimizer.zero_grad()
+        result = model()
+        # Visualize.
+        result_im = (result.cpu().detach().numpy() * 255).astype(np.uint8)
+        cv2.imshow("opt", result_im[:, :, ::-1])
+        writer.append_data(result_im)
+        overlay_img = np.ascontiguousarray(
+            ((result * 0.5 + ref * 0.5).cpu().detach().numpy() * 255).astype(np.uint8)[
+                :, :, ::-1
+            ]
+        )
+        overlay_img = cv2.putText(
+            overlay_img,
+            "Step %d" % (i),
+            (10, 40),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            1,
+            (0, 0, 0),
+            2,
+            cv2.LINE_AA,
+            False,
+        )
+        cv2.imshow("overlay", overlay_img)
+        cv2.waitKey(1)
+        # Update.
+        loss = ((result - ref) ** 2).sum()
+        LOGGER.info("loss %d: %f", i, loss.item())
+        loss.backward()
+        optimizer.step()
+    writer.close()
+    LOGGER.info("Done.")
+
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+    cli()
