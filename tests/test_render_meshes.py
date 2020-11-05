@@ -24,7 +24,7 @@ from pytorch3d.renderer.lighting import PointLights
 from pytorch3d.renderer.materials import Materials
 from pytorch3d.renderer.mesh import TexturesAtlas, TexturesUV, TexturesVertex
 from pytorch3d.renderer.mesh.rasterizer import MeshRasterizer, RasterizationSettings
-from pytorch3d.renderer.mesh.renderer import MeshRenderer
+from pytorch3d.renderer.mesh.renderer import MeshRenderer, MeshRendererWithFragments
 from pytorch3d.renderer.mesh.shader import (
     BlendParams,
     HardFlatShader,
@@ -50,7 +50,7 @@ DATA_DIR = Path(__file__).resolve().parent / "data"
 
 
 class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
-    def test_simple_sphere(self, elevated_camera=False):
+    def test_simple_sphere(self, elevated_camera=False, check_depth=False):
         """
         Test output of phong and gouraud shading matches a reference image using
         the default values for the light sources.
@@ -114,8 +114,16 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
                     materials=materials,
                     blend_params=blend_params,
                 )
-                renderer = MeshRenderer(rasterizer=rasterizer, shader=shader)
-                images = renderer(sphere_mesh)
+                if check_depth:
+                    renderer = MeshRendererWithFragments(
+                        rasterizer=rasterizer, shader=shader
+                    )
+                    images, fragments = renderer(sphere_mesh)
+                    self.assertClose(fragments.zbuf, rasterizer(sphere_mesh).zbuf)
+                else:
+                    renderer = MeshRenderer(rasterizer=rasterizer, shader=shader)
+                    images = renderer(sphere_mesh)
+
                 rgb = images[0, ..., :3].squeeze().cpu()
                 filename = "simple_sphere_light_%s%s%s.png" % (
                     name,
@@ -144,8 +152,19 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
                 materials=materials,
                 blend_params=blend_params,
             )
-            phong_renderer = MeshRenderer(rasterizer=rasterizer, shader=phong_shader)
-            images = phong_renderer(sphere_mesh, lights=lights)
+            if check_depth:
+                phong_renderer = MeshRendererWithFragments(
+                    rasterizer=rasterizer, shader=phong_shader
+                )
+                images, fragments = phong_renderer(sphere_mesh, lights=lights)
+                self.assertClose(
+                    fragments.zbuf, rasterizer(sphere_mesh, lights=lights).zbuf
+                )
+            else:
+                phong_renderer = MeshRenderer(
+                    rasterizer=rasterizer, shader=phong_shader
+                )
+                images = phong_renderer(sphere_mesh, lights=lights)
             rgb = images[0, ..., :3].squeeze().cpu()
             if DEBUG:
                 filename = "DEBUG_simple_sphere_dark%s%s.png" % (
@@ -170,6 +189,15 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
         The rendering is performed with a camera that has non-zero elevation.
         """
         self.test_simple_sphere(elevated_camera=True)
+
+    def test_simple_sphere_depth(self):
+        """
+        Test output of phong and gouraud shading matches a reference image using
+        the default values for the light sources.
+
+        The rendering is performed with a camera that has non-zero elevation.
+        """
+        self.test_simple_sphere(check_depth=True)
 
     def test_simple_sphere_screen(self):
 
