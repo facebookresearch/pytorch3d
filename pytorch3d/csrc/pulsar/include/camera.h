@@ -2,6 +2,7 @@
 #ifndef PULSAR_NATIVE_INCLUDE_CAMERA_H_
 #define PULSAR_NATIVE_INCLUDE_CAMERA_H_
 
+#include <stdint.h>
 #include "../global.h"
 
 namespace pulsar {

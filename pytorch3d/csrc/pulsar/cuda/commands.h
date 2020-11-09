@@ -209,10 +209,6 @@ __device__ static float atomicMin(float* address, float val) {
 #define RNORM3DF(x, y, z) rnorm3df(x, y, z)
 
 // High level.
-INLINE DEVICE void prefetch_l1(unsigned long addr) {
-  asm(" prefetch.global.L1 [ %1 ];" : "=l"(addr) : "l"(addr));
-}
-#define PREFETCH(PTR) prefetch_l1((unsigned long)(PTR))
 #define GET_SORT_WS_SIZE(RES_PTR, KEY_TYPE, VAL_TYPE, NUM_OBJECTS) \
   cub::DeviceRadixSort::SortPairsDescending(                       \
       (void*)NULL,                                                 \
