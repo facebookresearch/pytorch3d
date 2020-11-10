@@ -68,14 +68,26 @@ jobs:
     steps:
       - checkout
       - <<: *setupcuda
-      - run: pip3 install --progress-bar off wheel matplotlib 'pillow<7'
+      - run: pip3 install --progress-bar off imageio wheel matplotlib 'pillow<7'
       - run: pip3 install --progress-bar off torch torchvision
       # - run: conda create -p ~/conda_env python=3.7 numpy
       # - run: conda activate ~/conda_env
       # - run: conda install -c pytorch pytorch torchvision
 
       - run: pip3 install --progress-bar off 'git+https://github.com/facebookresearch/fvcore'
-      - run: LD_LIBRARY_PATH=$LD_LIBARY_PATH:/usr/local/cuda-10.2/lib64 python3 setup.py build_ext --inplace
+      - run:
+          name: get cub
+          command: |
+            cd ..
+            wget --no-verbose https://github.com/NVIDIA/cub/archive/1.10.0.tar.gz
+            tar xzf 1.10.0.tar.gz
+            # This expands to a directory called cub-1.10.0
+      - run:
+          name: build
+          command: |
+            export LD_LIBRARY_PATH=$LD_LIBARY_PATH:/usr/local/cuda-10.2/lib64
+            export CUB_HOME=$(realpath ../cub-1.10.0)
+            python3 setup.py build_ext --inplace
       - run: LD_LIBRARY_PATH=$LD_LIBARY_PATH:/usr/local/cuda-10.2/lib64 python -m unittest discover -v -s tests
       - run: python3 setup.py bdist_wheel
 
@@ -89,7 +101,7 @@ jobs:
     resource_class: 2xlarge+
     steps:
       - checkout
-      - run: packaging/build_wheel.sh
+      - run: MAX_JOBS=15 packaging/build_wheel.sh
       - store_artifacts:
           path: dist
       - persist_to_workspace:
@@ -109,7 +121,7 @@ jobs:
       - checkout
       # This is building with cuda but no gpu present,
       # so we aren't running the tests.
-      - run: TEST_FLAG=--no-test packaging/build_conda.sh
+      - run: MAX_JOBS=15 TEST_FLAG=--no-test packaging/build_conda.sh
       - store_artifacts:
           path: /opt/conda/conda-bld/linux-64
       - persist_to_workspace:
@@ -489,6 +501,12 @@ workflows:
           python_version: "3.6"
           pytorch_version: "1.4"
           cu_version: "cu101"
+      - binary_linux_conda_cuda:
+          name: testrun_conda_cuda_py37_cu102_pyt160
+          context: DOCKERHUB_TOKEN
+          python_version: "3.7"
+          pytorch_version: '1.6.0'
+          cu_version: "cu102"
       - binary_linux_conda_cuda:
           name: testrun_conda_cuda_py37_cu110_pyt170
           context: DOCKERHUB_TOKEN

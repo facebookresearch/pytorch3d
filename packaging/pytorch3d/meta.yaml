@@ -8,6 +8,7 @@ source:
 requirements:
   build:
     - {{ compiler('c') }} # [win]
+    {{ environ.get('CONDA_CUB_CONSTRAINT') }}
 
   host:
     - python
@@ -31,6 +32,7 @@ build:
     - CUDA_HOME
     - FORCE_CUDA
     - NVCC_FLAGS
+    - MAX_JOBS
   features:
     {{ environ.get('CONDA_CPUONLY_FEATURE') }}
 
@@ -41,7 +43,7 @@ test:
     - tests
     - docs
   requires:
-    - ca-certificates
+    - imageio
   commands:
     #pytest .
     python -m unittest discover -v -s tests

@@ -41,7 +41,6 @@ class TestBuild(unittest.TestCase):
 
         for extension in extensions:
             for i in root_dir.glob(f"**/*.{extension}"):
-                print(i)
                 if str(i).endswith(
                     "pytorch3d/transforms/external/kornia_angle_axis_to_rotation_matrix.py"
                 ):

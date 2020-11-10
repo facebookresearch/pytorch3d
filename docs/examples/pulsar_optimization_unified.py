@@ -8,8 +8,8 @@ The scene is initialized with random spheres. Gradient-based
 optimization is used to converge towards a faithful
 scene representation.
 """
-import math
 import logging
+import math
 
 import cv2
 import imageio

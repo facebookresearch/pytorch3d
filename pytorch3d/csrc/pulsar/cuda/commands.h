@@ -186,7 +186,7 @@ __device__ static float atomicMin(float* address, float val) {
   ATOMICADD(&((PTR)->x), VAL.x); \
   ATOMICADD(&((PTR)->y), VAL.y); \
   ATOMICADD(&((PTR)->z), VAL.z);
-#if (CUDART_VERSION >= 10000)
+#if (CUDART_VERSION >= 10000) && (__CUDA_ARCH__ >= 600)
 #define ATOMICADD_B(PTR, VAL) atomicAdd_block((PTR), (VAL))
 #else
 #define ATOMICADD_B(PTR, VAL) ATOMICADD(PTR, VAL)
