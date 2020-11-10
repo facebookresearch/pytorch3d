@@ -15,8 +15,7 @@
 #include "interp_face_attrs/interp_face_attrs.h"
 #include "knn/knn.h"
 #include "packed_to_padded_tensor/packed_to_padded_tensor.h"
-#include "point_mesh/point_mesh_edge.h"
-#include "point_mesh/point_mesh_face.h"
+#include "point_mesh/point_mesh_cuda.h"
 #include "rasterize_meshes/rasterize_meshes.h"
 #include "rasterize_points/rasterize_points.h"
 

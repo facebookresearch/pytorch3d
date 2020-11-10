@@ -12,7 +12,7 @@
 #include "utils/warp_reduce.cuh"
 
 // ****************************************************************************
-// *                          PointFaceDistance                               *
+// *                   Generic Forward/Backward Kernels                       *
 // ****************************************************************************
 
 __global__ void DistanceForwardKernel(
@@ -202,16 +202,6 @@ std::tuple<at::Tensor, at::Tensor> DistanceForwardCuda(
   return std::make_tuple(dists, idxs);
 }
 
-std::tuple<at::Tensor, at::Tensor> PointFaceDistanceForwardCuda(
-    const at::Tensor& points,
-    const at::Tensor& points_first_idx,
-    const at::Tensor& tris,
-    const at::Tensor& tris_first_idx,
-    const int64_t max_points) {
-  return DistanceForwardCuda(
-      points, 1, points_first_idx, tris, 3, tris_first_idx, max_points);
-}
-
 __global__ void DistanceBackwardKernel(
     const float* __restrict__ objects, // (O * oD * 3)
     const size_t objects_size, // O
@@ -365,6 +355,20 @@ std::tuple<at::Tensor, at::Tensor> DistanceBackwardCuda(
   return std::make_tuple(grad_points, grad_tris);
 }
 
+// ****************************************************************************
+// *                          PointFaceDistance                               *
+// ****************************************************************************
+
+std::tuple<at::Tensor, at::Tensor> PointFaceDistanceForwardCuda(
+    const at::Tensor& points,
+    const at::Tensor& points_first_idx,
+    const at::Tensor& tris,
+    const at::Tensor& tris_first_idx,
+    const int64_t max_points) {
+  return DistanceForwardCuda(
+      points, 1, points_first_idx, tris, 3, tris_first_idx, max_points);
+}
+
 std::tuple<at::Tensor, at::Tensor> PointFaceDistanceBackwardCuda(
     const at::Tensor& points,
     const at::Tensor& tris,
@@ -396,8 +400,53 @@ std::tuple<at::Tensor, at::Tensor> FacePointDistanceBackwardCuda(
 }
 
 // ****************************************************************************
+// *                          PointEdgeDistance                               *
+// ****************************************************************************
+
+std::tuple<at::Tensor, at::Tensor> PointEdgeDistanceForwardCuda(
+    const at::Tensor& points,
+    const at::Tensor& points_first_idx,
+    const at::Tensor& segms,
+    const at::Tensor& segms_first_idx,
+    const int64_t max_points) {
+  return DistanceForwardCuda(
+      points, 1, points_first_idx, segms, 2, segms_first_idx, max_points);
+}
+
+std::tuple<at::Tensor, at::Tensor> PointEdgeDistanceBackwardCuda(
+    const at::Tensor& points,
+    const at::Tensor& segms,
+    const at::Tensor& idx_points,
+    const at::Tensor& grad_dists) {
+  return DistanceBackwardCuda(points, 1, segms, 2, idx_points, grad_dists);
+}
+
+// ****************************************************************************
+// *                          EdgePointDistance                               *
+// ****************************************************************************
+
+std::tuple<at::Tensor, at::Tensor> EdgePointDistanceForwardCuda(
+    const at::Tensor& points,
+    const at::Tensor& points_first_idx,
+    const at::Tensor& segms,
+    const at::Tensor& segms_first_idx,
+    const int64_t max_segms) {
+  return DistanceForwardCuda(
+      segms, 2, segms_first_idx, points, 1, points_first_idx, max_segms);
+}
+
+std::tuple<at::Tensor, at::Tensor> EdgePointDistanceBackwardCuda(
+    const at::Tensor& points,
+    const at::Tensor& segms,
+    const at::Tensor& idx_segms,
+    const at::Tensor& grad_dists) {
+  return DistanceBackwardCuda(segms, 2, points, 1, idx_segms, grad_dists);
+}
+
+// ****************************************************************************
 // *                     PointFaceArrayDistance                               *
 // ****************************************************************************
+// TODO: Create wrapper function and merge kernel with other array kernel
 
 __global__ void PointFaceArrayForwardKernel(
     const float* __restrict__ points, // (P, 3)
@@ -564,4 +613,165 @@ std::tuple<at::Tensor, at::Tensor> PointFaceArrayDistanceBackwardCuda(
 
   AT_CUDA_CHECK(cudaGetLastError());
   return std::make_tuple(grad_points, grad_tris);
+}
+
+// ****************************************************************************
+// *                     PointEdgeArrayDistance                               *
+// ****************************************************************************
+// TODO: Create wrapper function and merge kernel with other array kernel
+
+__global__ void PointEdgeArrayForwardKernel(
+    const float* __restrict__ points, // (P, 3)
+    const float* __restrict__ segms, // (S, 2, 3)
+    float* __restrict__ dists, // (P, S)
+    const size_t P,
+    const size_t S) {
+  float3* points_f3 = (float3*)points;
+  float3* segms_f3 = (float3*)segms;
+
+  // Parallelize over P * S computations
+  const int num_threads = gridDim.x * blockDim.x;
+  const int tid = blockIdx.x * blockDim.x + threadIdx.x;
+
+  for (int t_i = tid; t_i < P * S; t_i += num_threads) {
+    const int s = t_i / P; // segment index.
+    const int p = t_i % P; // point index
+    float3 a = segms_f3[s * 2 + 0];
+    float3 b = segms_f3[s * 2 + 1];
+
+    float3 point = points_f3[p];
+    float dist = PointLine3DistanceForward(point, a, b);
+    dists[p * S + s] = dist;
+  }
+}
+
+at::Tensor PointEdgeArrayDistanceForwardCuda(
+    const at::Tensor& points,
+    const at::Tensor& segms) {
+  // Check inputs are on the same device
+  at::TensorArg points_t{points, "points", 1}, segms_t{segms, "segms", 2};
+  at::CheckedFrom c = "PointEdgeArrayDistanceForwardCuda";
+  at::checkAllSameGPU(c, {points_t, segms_t});
+  at::checkAllSameType(c, {points_t, segms_t});
+
+  // Set the device for the kernel launch based on the device of the input
+  at::cuda::CUDAGuard device_guard(points.device());
+  cudaStream_t stream = at::cuda::getCurrentCUDAStream();
+
+  const int64_t P = points.size(0);
+  const int64_t S = segms.size(0);
+
+  TORCH_CHECK(points.size(1) == 3, "points must be of shape Px3");
+  TORCH_CHECK(
+      (segms.size(1) == 2) && (segms.size(2) == 3),
+      "segms must be of shape Sx2x3");
+
+  at::Tensor dists = at::zeros({P, S}, points.options());
+
+  if (dists.numel() == 0) {
+    AT_CUDA_CHECK(cudaGetLastError());
+    return dists;
+  }
+
+  const size_t blocks = 1024;
+  const size_t threads = 64;
+
+  PointEdgeArrayForwardKernel<<<blocks, threads, 0, stream>>>(
+      points.contiguous().data_ptr<float>(),
+      segms.contiguous().data_ptr<float>(),
+      dists.data_ptr<float>(),
+      P,
+      S);
+
+  AT_CUDA_CHECK(cudaGetLastError());
+  return dists;
+}
+
+__global__ void PointEdgeArrayBackwardKernel(
+    const float* __restrict__ points, // (P, 3)
+    const float* __restrict__ segms, // (S, 2, 3)
+    const float* __restrict__ grad_dists, // (P, S)
+    float* __restrict__ grad_points, // (P, 3)
+    float* __restrict__ grad_segms, // (S, 2, 3)
+    const size_t P,
+    const size_t S) {
+  float3* points_f3 = (float3*)points;
+  float3* segms_f3 = (float3*)segms;
+
+  // Parallelize over P * S computations
+  const int num_threads = gridDim.x * blockDim.x;
+  const int tid = blockIdx.x * blockDim.x + threadIdx.x;
+
+  for (int t_i = tid; t_i < P * S; t_i += num_threads) {
+    const int s = t_i / P; // segment index.
+    const int p = t_i % P; // point index
+    const float3 a = segms_f3[s * 2 + 0];
+    const float3 b = segms_f3[s * 2 + 1];
+
+    const float3 point = points_f3[p];
+    const float grad_dist = grad_dists[p * S + s];
+    const auto grads = PointLine3DistanceBackward(point, a, b, grad_dist);
+    const float3 grad_point = thrust::get<0>(grads);
+    const float3 grad_a = thrust::get<1>(grads);
+    const float3 grad_b = thrust::get<2>(grads);
+
+    atomicAdd(grad_points + p * 3 + 0, grad_point.x);
+    atomicAdd(grad_points + p * 3 + 1, grad_point.y);
+    atomicAdd(grad_points + p * 3 + 2, grad_point.z);
+
+    atomicAdd(grad_segms + s * 2 * 3 + 0 * 3 + 0, grad_a.x);
+    atomicAdd(grad_segms + s * 2 * 3 + 0 * 3 + 1, grad_a.y);
+    atomicAdd(grad_segms + s * 2 * 3 + 0 * 3 + 2, grad_a.z);
+
+    atomicAdd(grad_segms + s * 2 * 3 + 1 * 3 + 0, grad_b.x);
+    atomicAdd(grad_segms + s * 2 * 3 + 1 * 3 + 1, grad_b.y);
+    atomicAdd(grad_segms + s * 2 * 3 + 1 * 3 + 2, grad_b.z);
+  }
+}
+
+std::tuple<at::Tensor, at::Tensor> PointEdgeArrayDistanceBackwardCuda(
+    const at::Tensor& points,
+    const at::Tensor& segms,
+    const at::Tensor& grad_dists) {
+  // Check inputs are on the same device
+  at::TensorArg points_t{points, "points", 1}, segms_t{segms, "segms", 2},
+      grad_dists_t{grad_dists, "grad_dists", 3};
+  at::CheckedFrom c = "PointEdgeArrayDistanceBackwardCuda";
+  at::checkAllSameGPU(c, {points_t, segms_t, grad_dists_t});
+  at::checkAllSameType(c, {points_t, segms_t, grad_dists_t});
+
+  // Set the device for the kernel launch based on the device of the input
+  at::cuda::CUDAGuard device_guard(points.device());
+  cudaStream_t stream = at::cuda::getCurrentCUDAStream();
+
+  const int64_t P = points.size(0);
+  const int64_t S = segms.size(0);
+
+  TORCH_CHECK(points.size(1) == 3, "points must be of shape Px3");
+  TORCH_CHECK(
+      (segms.size(1) == 2) && (segms.size(2) == 3),
+      "segms must be of shape Sx2x3");
+  TORCH_CHECK((grad_dists.size(0) == P) && (grad_dists.size(1) == S));
+
+  at::Tensor grad_points = at::zeros({P, 3}, points.options());
+  at::Tensor grad_segms = at::zeros({S, 2, 3}, segms.options());
+
+  if (grad_points.numel() == 0 || grad_segms.numel() == 0) {
+    AT_CUDA_CHECK(cudaGetLastError());
+    return std::make_tuple(grad_points, grad_segms);
+  }
+
+  const size_t blocks = 1024;
+  const size_t threads = 64;
+
+  PointEdgeArrayBackwardKernel<<<blocks, threads, 0, stream>>>(
+      points.contiguous().data_ptr<float>(),
+      segms.contiguous().data_ptr<float>(),
+      grad_dists.contiguous().data_ptr<float>(),
+      grad_points.data_ptr<float>(),
+      grad_segms.data_ptr<float>(),
+      P,
+      S);
+  AT_CUDA_CHECK(cudaGetLastError());
+  return std::make_tuple(grad_points, grad_segms);
 }
