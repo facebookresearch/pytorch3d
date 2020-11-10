@@ -9,20 +9,32 @@ The core library is written in PyTorch. Several components have underlying imple
 
 - Linux or macOS or Windows
 - Python 3.6, 3.7 or 3.8
-- PyTorch 1.4, 1.5.0, 1.5.1 or 1.6.0
+- PyTorch 1.4, 1.5.0, 1.5.1, 1.6.0, or 1.7.0.
 - torchvision that matches the PyTorch installation. You can install them together as explained at pytorch.org to make sure of this.
 - gcc & g++ ≥ 4.9
 - [fvcore](https://github.com/facebookresearch/fvcore)
-- If CUDA is to be used, use at least version 9.2.
-- If CUDA is to be used, the CUB library must be available. Starting from CUDA 11, CUB is part of CUDA. If you're using an earlier CUDA version and are not using conda, download the CUB library from https://github.com/NVIDIA/cub/releases and unpack it to a folder of your choice. Define the environment variable CUB_HOME before building and point it to the directory that contains `CMakeLists.txt` for CUB.
+- If CUDA is to be used, use a version which is supported by the corresponding pytorch version and at least version 9.2.
+- If CUDA is to be used and you are building from source, the CUB library must be available. We recommend version 1.10.0.
 
-The dependencies can be installed by running:
+The runtime dependencies can be installed by running:
 ```
 conda create -n pytorch3d python=3.8
 conda activate pytorch3d
-conda install -c pytorch pytorch=1.6.0 torchvision cudatoolkit=10.2
+conda install -c pytorch pytorch=1.7.0 torchvision cudatoolkit=10.2
 conda install -c conda-forge -c fvcore fvcore
-conda install -c cub
+```
+
+For the CUB build time dependency, if you are using conda, you can continue with
+```
+conda install -c bottler nvidiacub
+```
+Otherwise download the CUB library from https://github.com/NVIDIA/cub/releases and unpack it to a folder of your choice.
+Define the environment variable CUB_HOME before building and point it to the directory that contains `CMakeLists.txt` for CUB.
+For example on Linux/Mac,
+```
+curl -O https://github.com/NVIDIA/cub/archive/1.10.0.tar.gz
+tar xzf 1.10.0.tar.gz
+export CUB_HOME=$PWD/cub-1.10.0
 ```
 
 ### Tests/Linting and Demos
