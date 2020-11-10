@@ -62,7 +62,6 @@ class TestDepth(TestCaseMixin, unittest.TestCase):
                 bg_col=torch.zeros(1, device=device, dtype=torch.float32),
                 percent_allowed_difference=0.01,
             )
-            sphere_ids = Renderer.sphere_ids_from_result_info_nograd(result_info)
             depth_map = Renderer.depth_map_from_result_info_nograd(result_info)
             depth_vis = (depth_map - depth_map[depth_map > 0].min()) * 200 / (
                 depth_map.max() - depth_map[depth_map > 0.0].min()
@@ -87,12 +86,6 @@ class TestDepth(TestCaseMixin, unittest.TestCase):
             # )
             # sys.exit(0)
             reference = torch.load(OUT_REF_FP, map_location="cpu")
-            self.assertTrue(
-                torch.sum(
-                    reference["sphere_ids"][..., 0].to(device) == sphere_ids[..., 0]
-                )
-                > 65530
-            )
             self.assertClose(reference["depth_map"].to(device), depth_map)
 
 
