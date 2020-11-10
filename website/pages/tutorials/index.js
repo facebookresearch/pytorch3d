@@ -58,12 +58,10 @@ class TutorialHome extends React.Component {
             <p>
               {' '}
               You can modify the code and experiment with varying different
-              settings. Remember to install pytorch, torchvision, fvcore and
-              pytorch3d in the first cell of the colab notebook by running:{' '}
+              settings. Remember to install the latest stable version of
+              pytorch3d and its dependencies. Code to do this with pip is
+              provided in each notebook.{' '}
             </p>
-            <MarkdownBlock>{bash`!pip install torch torchvision
-!pip install 'git+https://github.com/facebookresearch/pytorch3d.git@stable'`}</MarkdownBlock>
-            This installs the latest stable version of PyTorch3D from github.
             <h3> Run locally </h3>
             <p>
               {' '}
