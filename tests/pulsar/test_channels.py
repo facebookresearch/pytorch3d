@@ -24,8 +24,8 @@ class TestChannels(TestCaseMixin, unittest.TestCase):
 
     def test_basic(self):
         """Basic forward test."""
-        from pytorch3d.renderer.points.pulsar import Renderer
         import torch
+        from pytorch3d.renderer.points.pulsar import Renderer
 
         n_points = 10
         width = 1_000

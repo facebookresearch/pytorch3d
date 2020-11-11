@@ -11,15 +11,15 @@ sys.path.insert(0, path.join(path.dirname(__file__), "..", ".."))
 
 def create_multiview():
     """Test multiview optimization."""
-    from pytorch3d.renderer.points.pulsar import Renderer
-    import torch
-    from torch import nn
     import imageio
-    from torch.autograd import Variable
 
     # import cv2
     # import skvideo.io
     import numpy as np
+    import torch
+    from pytorch3d.renderer.points.pulsar import Renderer
+    from torch import nn
+    from torch.autograd import Variable
 
     # Constructor.
     n_points = 10

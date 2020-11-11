@@ -32,10 +32,6 @@ import unittest
 import numpy as np
 import torch
 from common_testing import TestCaseMixin
-from pytorch3d.renderer.cameras import OpenGLOrthographicCameras  # deprecated
-from pytorch3d.renderer.cameras import OpenGLPerspectiveCameras  # deprecated
-from pytorch3d.renderer.cameras import SfMOrthographicCameras  # deprecated
-from pytorch3d.renderer.cameras import SfMPerspectiveCameras  # deprecated
 from pytorch3d.renderer.cameras import (
     CamerasBase,
     FoVOrthographicCameras,
@@ -47,6 +43,10 @@ from pytorch3d.renderer.cameras import (
     look_at_rotation,
     look_at_view_transform,
 )
+from pytorch3d.renderer.cameras import OpenGLOrthographicCameras  # deprecated
+from pytorch3d.renderer.cameras import OpenGLPerspectiveCameras  # deprecated
+from pytorch3d.renderer.cameras import SfMOrthographicCameras  # deprecated
+from pytorch3d.renderer.cameras import SfMPerspectiveCameras  # deprecated
 from pytorch3d.transforms import Transform3d
 from pytorch3d.transforms.rotation_conversions import random_rotations
 from pytorch3d.transforms.so3 import so3_exponential_map
