@@ -24,12 +24,22 @@
 
 
 get_ipython().system('pip install torch torchvision')
+import os
 import sys
 import torch
 if torch.__version__=='1.6.0+cu101' and sys.platform.startswith('linux'):
     get_ipython().system('pip install pytorch3d')
 else:
-    get_ipython().system("pip install 'git+https://github.com/facebookresearch/pytorch3d.git@stable'")
+    need_pytorch3d=False
+    try:
+        import pytorch3d
+    except ModuleNotFoundError:
+        need_pytorch3d=True
+    if need_pytorch3d:
+        get_ipython().system('curl -LO https://github.com/NVIDIA/cub/archive/1.10.0.tar.gz')
+        get_ipython().system('tar xzf 1.10.0.tar.gz')
+        os.environ["CUB_HOME"] = os.getcwd() + "/cub-1.10.0"
+        get_ipython().system("pip install 'git+https://github.com/facebookresearch/pytorch3d.git@stable'")
 
 
 # In[ ]:
@@ -45,6 +55,8 @@ from pytorch3d.io import load_objs_as_meshes, load_obj
 
 # Data structures and functions for rendering
 from pytorch3d.structures import Meshes
+from pytorch3d.vis.plotly_vis import AxisArgs, plot_batch_individually, plot_scene
+from pytorch3d.vis.texture_vis import texturesuv_image_matplotlib
 from pytorch3d.renderer import (
     look_at_view_transform,
     FoVPerspectiveCameras, 
@@ -55,7 +67,8 @@ from pytorch3d.renderer import (
     MeshRenderer, 
     MeshRasterizer,  
     SoftPhongShader,
-    TexturesUV
+    TexturesUV,
+    TexturesVertex
 )
 
 # add path for demo utils functions 
@@ -119,7 +132,6 @@ obj_filename = os.path.join(DATA_DIR, "cow_mesh/cow.obj")
 
 # Load obj file
 mesh = load_objs_as_meshes([obj_filename], device=device)
-texture_image=mesh.textures.maps_padded()
 
 
 # #### Let's visualize the texture map
@@ -128,9 +140,21 @@ texture_image=mesh.textures.maps_padded()
 
 
 plt.figure(figsize=(7,7))
+texture_image=mesh.textures.maps_padded()
 plt.imshow(texture_image.squeeze().cpu().numpy())
 plt.grid("off");
-plt.axis('off');
+plt.axis("off");
+
+
+# PyTorch3D has a built-in way to view the texture map with matplotlib along with the points on the map corresponding to vertices. There is also a method, texturesuv_image_PIL, to get a similar image which can be saved to a file.
+
+# In[ ]:
+
+
+plt.figure(figsize=(7,7))
+texturesuv_image_matplotlib(mesh.textures, subsample=None)
+plt.grid("off");
+plt.axis("off");
 
 
 # ## 2. Create a renderer
@@ -302,5 +326,145 @@ images = renderer(meshes, cameras=cameras, lights=lights)
 image_grid(images.cpu().numpy(), rows=4, cols=5, rgb=True)
 
 
-# ## 7. Conclusion
-# In this tutorial we learnt how to **load** a textured mesh from an obj file, initialize a PyTorch3D datastructure called **Meshes**, set up an **Renderer** consisting of a **Rasterizer** and a **Shader**, and modify several components of the rendering pipeline. 
+# ## 7. Plotly visualization 
+# If you only want to visualize a mesh, you don't really need to use a differentiable renderer - instead we support plotting of Meshes with plotly. For these Meshes, we use TexturesVertex to define a texture for the rendering.
+# `plot_meshes` creates a Plotly figure with a trace for each Meshes object. 
+
+# In[ ]:
+
+
+verts, faces_idx, _ = load_obj(obj_filename)
+faces = faces_idx.verts_idx
+
+# Initialize each vertex to be white in color.
+verts_rgb = torch.ones_like(verts)[None]  # (1, V, 3)
+textures = TexturesVertex(verts_features=verts_rgb.to(device))
+
+# Create a Meshes object
+mesh = Meshes(
+    verts=[verts.to(device)],   
+    faces=[faces.to(device)],
+    textures=textures
+)
+
+# Render the plotly figure
+fig = plot_scene({
+    "subplot1": {
+        "cow_mesh": mesh
+    }
+})
+fig.show()
+
+
+# In[ ]:
+
+
+# use Plotly's default colors (no texture)
+mesh = Meshes(
+    verts=[verts.to(device)],   
+    faces=[faces.to(device)]
+)
+
+# Render the plotly figure
+fig = plot_scene({
+    "subplot1": {
+        "cow_mesh": mesh
+    }
+})
+fig.show()
+
+
+# In[ ]:
+
+
+# create a batch of meshes, and offset one to prevent overlap
+mesh_batch = Meshes(
+    verts=[verts.to(device), (verts + 2).to(device)],   
+    faces=[faces.to(device), faces.to(device)]
+)
+
+# plot mesh batch in the same trace
+fig = plot_scene({
+    "subplot1": {
+        "cow_mesh_batch": mesh_batch
+    }
+})
+fig.show()
+
+
+# In[ ]:
+
+
+# plot batch of meshes in different traces
+fig = plot_scene({
+    "subplot1": {
+        "cow_mesh1": mesh_batch[0],
+        "cow_mesh2": mesh_batch[1]
+    }
+})
+fig.show()
+
+
+# In[ ]:
+
+
+# plot batch of meshes in different subplots
+fig = plot_scene({
+    "subplot1": {
+        "cow_mesh1": mesh_batch[0]
+    },
+    "subplot2":{
+        "cow_mesh2": mesh_batch[1]
+    }
+})
+fig.show()
+
+
+# For batches, we can also use `plot_batch_individually` to avoid constructing the scene dictionary ourselves.
+
+# In[ ]:
+
+
+# extend the batch to have 4 meshes
+mesh_4 = mesh_batch.extend(2)
+
+# visualize the batch in different subplots, 2 per row
+fig = plot_batch_individually(mesh_4)
+# we can update the figure height and width
+fig.update_layout(height=1000, width=500)
+fig.show()
+
+
+# We can also modify the axis arguments and axis backgrounds in both functions. 
+
+# In[ ]:
+
+
+fig2 = plot_scene({
+    "cow_plot1": {
+        "cows": mesh_batch
+    }
+},
+    xaxis={"backgroundcolor":"rgb(200, 200, 230)"},
+    yaxis={"backgroundcolor":"rgb(230, 200, 200)"},
+    zaxis={"backgroundcolor":"rgb(200, 230, 200)"}, 
+    axis_args=AxisArgs(showgrid=True))
+fig2.show()
+
+
+# In[ ]:
+
+
+fig3 = plot_batch_individually(
+    mesh_4, 
+    ncols=2,
+    subplot_titles = ["cow1", "cow2", "cow3", "cow4"], # customize subplot titles
+    xaxis={"backgroundcolor":"rgb(200, 200, 230)"},
+    yaxis={"backgroundcolor":"rgb(230, 200, 200)"},
+    zaxis={"backgroundcolor":"rgb(200, 230, 200)"}, 
+    axis_args=AxisArgs(showgrid=True))
+fig3.show()
+
+
+# ## 8. Conclusion
+# In this tutorial we learnt how to **load** a textured mesh from an obj file, initialize a PyTorch3D datastructure called **Meshes**, set up an **Renderer** consisting of a **Rasterizer** and a **Shader**, and modify several components of the rendering pipeline. We also learned how to render Meshes in Plotly figures.

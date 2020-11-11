@@ -41,12 +41,22 @@
 
 
 get_ipython().system('pip install torch torchvision')
+import os
 import sys
 import torch
 if torch.__version__=='1.6.0+cu101' and sys.platform.startswith('linux'):
     get_ipython().system('pip install pytorch3d')
 else:
-    get_ipython().system("pip install 'git+https://github.com/facebookresearch/pytorch3d.git@stable'")
+    need_pytorch3d=False
+    try:
+        import pytorch3d
+    except ModuleNotFoundError:
+        need_pytorch3d=True
+    if need_pytorch3d:
+        get_ipython().system('curl -LO https://github.com/NVIDIA/cub/archive/1.10.0.tar.gz')
+        get_ipython().system('tar xzf 1.10.0.tar.gz')
+        os.environ["CUB_HOME"] = os.getcwd() + "/cub-1.10.0"
+        get_ipython().system("pip install 'git+https://github.com/facebookresearch/pytorch3d.git@stable'")
 
 
 # In[ ]:

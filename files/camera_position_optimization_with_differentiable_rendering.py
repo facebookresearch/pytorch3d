@@ -28,12 +28,22 @@
 
 
 get_ipython().system('pip install torch torchvision')
+import os
 import sys
 import torch
 if torch.__version__=='1.6.0+cu101' and sys.platform.startswith('linux'):
     get_ipython().system('pip install pytorch3d')
 else:
-    get_ipython().system("pip install 'git+https://github.com/facebookresearch/pytorch3d.git@stable'")
+    need_pytorch3d=False
+    try:
+        import pytorch3d
+    except ModuleNotFoundError:
+        need_pytorch3d=True
+    if need_pytorch3d:
+        get_ipython().system('curl -LO https://github.com/NVIDIA/cub/archive/1.10.0.tar.gz')
+        get_ipython().system('tar xzf 1.10.0.tar.gz')
+        os.environ["CUB_HOME"] = os.getcwd() + "/cub-1.10.0"
+        get_ipython().system("pip install 'git+https://github.com/facebookresearch/pytorch3d.git@stable'")
 
 
 # In[ ]:
@@ -212,8 +222,8 @@ class Model(nn.Module):
         self.device = meshes.device
         self.renderer = renderer
         
-        # Get the silhouette of the reference RGB image by finding all the non zero values. 
-        image_ref = torch.from_numpy((image_ref[..., :3].max(-1) != 0).astype(np.float32))
+        # Get the silhouette of the reference RGB image by finding all non-white pixel values. 
+        image_ref = torch.from_numpy((image_ref[..., :3].max(-1) != 1).astype(np.float32))
         self.register_buffer('image_ref', image_ref)
         
         # Create an optimizable parameter for the x, y, z position of the camera. 

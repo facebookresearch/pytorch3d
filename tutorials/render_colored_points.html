@@ -1,0 +1,543 @@
+<!DOCTYPE html><html lang=""><head><meta charSet="utf-8"/><meta http-equiv="X-UA-Compatible" content="IE=edge"/><title>PyTorch3D · A library for deep learning with 3D data</title><meta name="viewport" content="width=device-width"/><meta name="generator" content="Docusaurus"/><meta name="description" content="A library for deep learning with 3D data"/><meta property="og:title" content="PyTorch3D · A library for deep learning with 3D data"/><meta property="og:type" content="website"/><meta property="og:url" content="https://pytorch3d.org/"/><meta property="og:description" content="A library for deep learning with 3D data"/><meta property="og:image" content="https://pytorch3d.org/img/pytorch3dlogoicon.svg"/><meta name="twitter:card" content="summary"/><meta name="twitter:image" content="https://pytorch3d.org/img/pytorch3dlogoicon.svg"/><link rel="shortcut icon" href="/img/pytorch3dfavicon.png"/><link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css"/><script>
+              (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+              (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+              m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+              })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+              ga('create', 'UA-157376881-1', 'auto');
+              ga('send', 'pageview');
+            </script><script type="text/javascript" src="https://buttons.github.io/buttons.js"></script><script src="/js/scrollSpy.js"></script><link rel="stylesheet" href="/css/main.css"/><script src="/js/codetabs.js"></script></head><body><div class="fixedHeaderContainer"><div class="headerWrapper wrapper"><header><a href="/"><img class="logo" src="/img/pytorch3dfavicon.png" alt="PyTorch3D"/><h2 class="headerTitleWithLogo">PyTorch3D</h2></a><div class="navigationWrapper navigationSlider"><nav class="slidingNav"><ul class="nav-site nav-site-internal"><li class=""><a href="/docs/why_pytorch3d" target="_self">Docs</a></li><li class=""><a href="/tutorials" target="_self">Tutorials</a></li><li class=""><a href="https://pytorch3d.readthedocs.io/" target="_self">API</a></li><li class=""><a href="https://github.com/facebookresearch/pytorch3d" target="_self">GitHub</a></li></ul></nav></div></header></div></div><div class="navPusher"><div class="docMainWrapper wrapper"><div class="container docsNavContainer" id="docsNav"><nav class="toc"><div class="toggleNav"><section class="navWrapper wrapper"><div class="navBreadcrumb wrapper"><div class="navToggle" id="navToggler"><div class="hamburger-menu"><div class="line1"></div><div class="line2"></div><div class="line3"></div></div></div><h2><i>›</i><span></span></h2><div class="tocToggler" id="tocToggler"><i class="icon-toc"></i></div></div><div class="navGroups"><div class="navGroup"><h3 class="navGroupCategoryTitle">Tutorials</h3><ul class=""><li class="navListItem"><a class="navItem" href="/tutorials/">Overview</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">3D operators</h3><ul class=""><li class="navListItem"><a class="navItem" href="/tutorials/deform_source_mesh_to_target_mesh">Fit Mesh</a></li><li class="navListItem"><a class="navItem" href="/tutorials/bundle_adjustment">Bundle Adjustment</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Rendering</h3><ul class=""><li class="navListItem"><a class="navItem" href="/tutorials/render_textured_meshes">Render Textured Meshes</a></li><li class="navListItem"><a class="navItem" href="/tutorials/render_densepose">Render DensePose Meshes</a></li><li class="navListItem navListItemActive"><a class="navItem" href="/tutorials/render_colored_points">Render Colored Pointclouds</a></li><li class="navListItem"><a class="navItem" href="/tutorials/fit_textured_mesh">Fit a Mesh with Texture via Rendering</a></li><li class="navListItem"><a class="navItem" href="/tutorials/camera_position_optimization_with_differentiable_rendering">Camera Position Optimization with Differentiable Rendering</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Dataloaders</h3><ul class=""><li class="navListItem"><a class="navItem" href="/tutorials/dataloaders_ShapeNetCore_R2N2">Data loaders for ShapeNetCore and R2N2</a></li></ul></div></div></section></div><script>
+            var coll = document.getElementsByClassName('collapsible');
+            var checkActiveCategory = true;
+            for (var i = 0; i < coll.length; i++) {
+              var links = coll[i].nextElementSibling.getElementsByTagName('*');
+              if (checkActiveCategory){
+                for (var j = 0; j < links.length; j++) {
+                  if (links[j].classList.contains('navListItemActive')){
+                    coll[i].nextElementSibling.classList.toggle('hide');
+                    coll[i].childNodes[1].classList.toggle('rotate');
+                    checkActiveCategory = false;
+                    break;
+                  }
+                }
+              }
+
+              coll[i].addEventListener('click', function() {
+                var arrow = this.childNodes[1];
+                arrow.classList.toggle('rotate');
+                var content = this.nextElementSibling;
+                content.classList.toggle('hide');
+              });
+            }
+
+            document.addEventListener('DOMContentLoaded', function() {
+              createToggler('#navToggler', '#docsNav', 'docsSliderActive');
+              createToggler('#tocToggler', 'body', 'tocActive');
+
+              var headings = document.querySelector('.toc-headings');
+              headings && headings.addEventListener('click', function(event) {
+                var el = event.target;
+                while(el !== headings){
+                  if (el.tagName === 'A') {
+                    document.body.classList.remove('tocActive');
+                    break;
+                  } else{
+                    el = el.parentNode;
+                  }
+                }
+              }, false);
+
+              function createToggler(togglerSelector, targetSelector, className) {
+                var toggler = document.querySelector(togglerSelector);
+                var target = document.querySelector(targetSelector);
+
+                if (!toggler) {
+                  return;
+                }
+
+                toggler.onclick = function(event) {
+                  event.preventDefault();
+
+                  target.classList.toggle(className);
+                };
+              }
+            });
+        </script></nav></div><div class="container mainContainer"><div class="wrapper"><div class="tutorialButtonsWrapper"><div class="tutorialButtonWrapper buttonWrapper"><a class="tutorialButton button" download="" href="https://colab.research.google.com/github/facebookresearch/pytorch3d/blob/stable/docs/tutorials/render_colored_points.ipynb" target="_blank"><img class="colabButton" align="left" src="/img/colab_icon.png"/>Run in Google Colab</a></div><div class="tutorialButtonWrapper buttonWrapper"><a class="tutorialButton button" download="" href="/files/render_colored_points.ipynb" target="_blank"><svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="file-download" class="svg-inline--fa fa-file-download fa-w-12" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path fill="currentColor" d="M224 136V0H24C10.7 0 0 10.7 0 24v464c0 13.3 10.7 24 24 24h336c13.3 0 24-10.7 24-24V160H248c-13.2 0-24-10.8-24-24zm76.45 211.36l-96.42 95.7c-6.65 6.61-17.39 6.61-24.04 0l-96.42-95.7C73.42 337.29 80.54 320 94.82 320H160v-80c0-8.84 7.16-16 16-16h32c8.84 0 16 7.16 16 16v80h65.18c14.28 0 21.4 17.29 11.27 27.36zM377 105L279.1 7c-4.5-4.5-10.6-7-17-7H256v128h128v-6.1c0-6.3-2.5-12.4-7-16.9z"></path></svg>Download Tutorial Jupyter Notebook</a></div><div class="tutorialButtonWrapper buttonWrapper"><a class="tutorialButton button" download="" href="/files/render_colored_points.py" target="_blank"><svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="file-download" class="svg-inline--fa fa-file-download fa-w-12" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path fill="currentColor" d="M224 136V0H24C10.7 0 0 10.7 0 24v464c0 13.3 10.7 24 24 24h336c13.3 0 24-10.7 24-24V160H248c-13.2 0-24-10.8-24-24zm76.45 211.36l-96.42 95.7c-6.65 6.61-17.39 6.61-24.04 0l-96.42-95.7C73.42 337.29 80.54 320 94.82 320H160v-80c0-8.84 7.16-16 16-16h32c8.84 0 16 7.16 16 16v80h65.18c14.28 0 21.4 17.29 11.27 27.36zM377 105L279.1 7c-4.5-4.5-10.6-7-17-7H256v128h128v-6.1c0-6.3-2.5-12.4-7-16.9z"></path></svg>Download Tutorial Source Code</a></div></div><div class="tutorialBody">
+<script
+  src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js">
+</script>
+<script
+  src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js">
+</script>
+<div class="notebook">
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h1 id="Render-a-colored-point-cloud">Render a colored point cloud<a class="anchor-link" href="#Render-a-colored-point-cloud">¶</a></h1><p>This tutorial shows how to:</p>
+<ul>
+<li>set up a renderer </li>
+<li>render the point cloud </li>
+<li>vary the rendering settings such as compositing and camera position</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Import-modules">Import modules<a class="anchor-link" href="#Import-modules">¶</a></h2>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>If <code>torch</code>, <code>torchvision</code> and <code>pytorch3d</code> are not installed, run the following cell:</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="o">!</span>pip install torch torchvision
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">__version__</span><span class="o">==</span><span class="s1">'1.6.0+cu101'</span> <span class="ow">and</span> <span class="n">sys</span><span class="o">.</span><span class="n">platform</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">'linux'</span><span class="p">):</span>
+    <span class="o">!</span>pip install pytorch3d
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">need_pytorch3d</span><span class="o">=</span><span class="kc">False</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">pytorch3d</span>
+    <span class="k">except</span> <span class="n">ModuleNotFoundError</span><span class="p">:</span>
+        <span class="n">need_pytorch3d</span><span class="o">=</span><span class="kc">True</span>
+    <span class="k">if</span> <span class="n">need_pytorch3d</span><span class="p">:</span>
+        <span class="o">!</span>curl -LO https://github.com/NVIDIA/cub/archive/1.10.0.tar.gz
+        <span class="o">!</span>tar xzf <span class="m">1</span>.10.0.tar.gz
+        <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">"CUB_HOME"</span><span class="p">]</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span> <span class="o">+</span> <span class="s2">"/cub-1.10.0"</span>
+        <span class="o">!</span>pip install <span class="s1">'git+https://github.com/facebookresearch/pytorch3d.git@stable'</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">torch.nn.functional</span> <span class="k">as</span> <span class="nn">F</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">from</span> <span class="nn">skimage.io</span> <span class="k">import</span> <span class="n">imread</span>
+
+<span class="c1"># Util function for loading point clouds|</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="c1"># Data structures and functions for rendering</span>
+<span class="kn">from</span> <span class="nn">pytorch3d.structures</span> <span class="k">import</span> <span class="n">Pointclouds</span>
+<span class="kn">from</span> <span class="nn">pytorch3d.vis.plotly_vis</span> <span class="k">import</span> <span class="n">AxisArgs</span><span class="p">,</span> <span class="n">plot_batch_individually</span><span class="p">,</span> <span class="n">plot_scene</span>
+<span class="kn">from</span> <span class="nn">pytorch3d.renderer</span> <span class="k">import</span> <span class="p">(</span>
+    <span class="n">look_at_view_transform</span><span class="p">,</span>
+    <span class="n">FoVOrthographicCameras</span><span class="p">,</span> 
+    <span class="n">PointsRasterizationSettings</span><span class="p">,</span>
+    <span class="n">PointsRenderer</span><span class="p">,</span>
+    <span class="n">PulsarPointsRenderer</span><span class="p">,</span>
+    <span class="n">PointsRasterizer</span><span class="p">,</span>
+    <span class="n">AlphaCompositor</span><span class="p">,</span>
+    <span class="n">NormWeightedCompositor</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Load-a-point-cloud-and-corresponding-colors">Load a point cloud and corresponding colors<a class="anchor-link" href="#Load-a-point-cloud-and-corresponding-colors">¶</a></h3><p>Load and create a <strong>Point Cloud</strong> object.</p>
+<p><strong>Pointclouds</strong> is a unique datastructure provided in PyTorch3D for working with batches of point clouds of different sizes.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>If running this notebook using <strong>Google Colab</strong>, run the following cell to fetch the pointcloud data and save it at the path <code>data/PittsburghBridge</code>:
+If running locally, the data is already available at the correct path.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="o">!</span>mkdir -p data/PittsburghBridge
+<span class="o">!</span>wget -P data/PittsburghBridge https://dl.fbaipublicfiles.com/pytorch3d/data/PittsburghBridge/pointcloud.npz
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Setup</span>
+<span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">():</span>
+    <span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">"cuda:0"</span><span class="p">)</span>
+    <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">set_device</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">"cpu"</span><span class="p">)</span>
+
+<span class="c1"># Set paths</span>
+<span class="n">DATA_DIR</span> <span class="o">=</span> <span class="s2">"./data"</span>
+<span class="n">obj_filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">DATA_DIR</span><span class="p">,</span> <span class="s2">"PittsburghBridge/pointcloud.npz"</span><span class="p">)</span>
+
+<span class="c1"># Load point cloud</span>
+<span class="n">pointcloud</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">obj_filename</span><span class="p">)</span>
+<span class="n">verts</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="n">pointcloud</span><span class="p">[</span><span class="s1">'verts'</span><span class="p">])</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+        
+<span class="n">rgb</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="n">pointcloud</span><span class="p">[</span><span class="s1">'rgb'</span><span class="p">])</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+
+<span class="n">point_cloud</span> <span class="o">=</span> <span class="n">Pointclouds</span><span class="p">(</span><span class="n">points</span><span class="o">=</span><span class="p">[</span><span class="n">verts</span><span class="p">],</span> <span class="n">features</span><span class="o">=</span><span class="p">[</span><span class="n">rgb</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Create-a-renderer">Create a renderer<a class="anchor-link" href="#Create-a-renderer">¶</a></h2><p>A renderer in PyTorch3D is composed of a <strong>rasterizer</strong> and a <strong>shader</strong> which each have a number of subcomponents such as a <strong>camera</strong> (orthgraphic/perspective). Here we initialize some of these components and use default values for the rest.</p>
+<p>In this example we will first create a <strong>renderer</strong> which uses an <strong>orthographic camera</strong>, and applies <strong>alpha compositing</strong>. Then we learn how to vary different components using the modular API.</p>
+<p>[1] <a href="https://arxiv.org/abs/1912.08804">SynSin: End to end View Synthesis from a Single Image.</a> Olivia Wiles, Georgia Gkioxari, Richard Szeliski, Justin Johnson. CVPR 2020.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Initialize a camera.</span>
+<span class="n">R</span><span class="p">,</span> <span class="n">T</span> <span class="o">=</span> <span class="n">look_at_view_transform</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">cameras</span> <span class="o">=</span> <span class="n">FoVOrthographicCameras</span><span class="p">(</span><span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">R</span><span class="o">=</span><span class="n">R</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="n">T</span><span class="p">,</span> <span class="n">znear</span><span class="o">=</span><span class="mf">0.01</span><span class="p">)</span>
+
+<span class="c1"># Define the settings for rasterization and shading. Here we set the output image to be of size</span>
+<span class="c1"># 512x512. As we are rendering images for visualization purposes only we will set faces_per_pixel=1</span>
+<span class="c1"># and blur_radius=0.0. Refer to raster_points.py for explanations of these parameters. </span>
+<span class="n">raster_settings</span> <span class="o">=</span> <span class="n">PointsRasterizationSettings</span><span class="p">(</span>
+    <span class="n">image_size</span><span class="o">=</span><span class="mi">512</span><span class="p">,</span> 
+    <span class="n">radius</span> <span class="o">=</span> <span class="mf">0.003</span><span class="p">,</span>
+    <span class="n">points_per_pixel</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="p">)</span>
+
+
+<span class="c1"># Create a points renderer by compositing points using an alpha compositor (nearer points</span>
+<span class="c1"># are weighted more heavily). See [1] for an explanation.</span>
+<span class="n">rasterizer</span> <span class="o">=</span> <span class="n">PointsRasterizer</span><span class="p">(</span><span class="n">cameras</span><span class="o">=</span><span class="n">cameras</span><span class="p">,</span> <span class="n">raster_settings</span><span class="o">=</span><span class="n">raster_settings</span><span class="p">)</span>
+<span class="n">renderer</span> <span class="o">=</span> <span class="n">PointsRenderer</span><span class="p">(</span>
+    <span class="n">rasterizer</span><span class="o">=</span><span class="n">rasterizer</span><span class="p">,</span>
+    <span class="n">compositor</span><span class="o">=</span><span class="n">AlphaCompositor</span><span class="p">()</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">images</span> <span class="o">=</span> <span class="n">renderer</span><span class="p">(</span><span class="n">point_cloud</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">images</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="s2">"off"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">"off"</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>We will now modify the <strong>renderer</strong> to use <strong>alpha compositing</strong> with a set background color.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">renderer</span> <span class="o">=</span> <span class="n">PointsRenderer</span><span class="p">(</span>
+    <span class="n">rasterizer</span><span class="o">=</span><span class="n">rasterizer</span><span class="p">,</span>
+    <span class="c1"># Pass in background_color to the alpha compositor, setting the background color </span>
+    <span class="c1"># to the 3 item tuple, representing rgb on a scale of 0 -&gt; 1, in this case blue</span>
+    <span class="n">compositor</span><span class="o">=</span><span class="n">AlphaCompositor</span><span class="p">(</span><span class="n">background_color</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+<span class="p">)</span>
+<span class="n">images</span> <span class="o">=</span> <span class="n">renderer</span><span class="p">(</span><span class="n">point_cloud</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">images</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="s2">"off"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">"off"</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>In this example we will first create a <strong>renderer</strong> which uses an <strong>orthographic camera</strong>, and applies <strong>weighted compositing</strong>.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Initialize a camera.</span>
+<span class="n">R</span><span class="p">,</span> <span class="n">T</span> <span class="o">=</span> <span class="n">look_at_view_transform</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">cameras</span> <span class="o">=</span> <span class="n">FoVOrthographicCameras</span><span class="p">(</span><span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">R</span><span class="o">=</span><span class="n">R</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="n">T</span><span class="p">,</span> <span class="n">znear</span><span class="o">=</span><span class="mf">0.01</span><span class="p">)</span>
+
+<span class="c1"># Define the settings for rasterization and shading. Here we set the output image to be of size</span>
+<span class="c1"># 512x512. As we are rendering images for visualization purposes only we will set faces_per_pixel=1</span>
+<span class="c1"># and blur_radius=0.0. Refer to rasterize_points.py for explanations of these parameters. </span>
+<span class="n">raster_settings</span> <span class="o">=</span> <span class="n">PointsRasterizationSettings</span><span class="p">(</span>
+    <span class="n">image_size</span><span class="o">=</span><span class="mi">512</span><span class="p">,</span> 
+    <span class="n">radius</span> <span class="o">=</span> <span class="mf">0.003</span><span class="p">,</span>
+    <span class="n">points_per_pixel</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="p">)</span>
+
+
+<span class="c1"># Create a points renderer by compositing points using an weighted compositor (3D points are</span>
+<span class="c1"># weighted according to their distance to a pixel and accumulated using a weighted sum)</span>
+<span class="n">renderer</span> <span class="o">=</span> <span class="n">PointsRenderer</span><span class="p">(</span>
+    <span class="n">rasterizer</span><span class="o">=</span><span class="n">PointsRasterizer</span><span class="p">(</span><span class="n">cameras</span><span class="o">=</span><span class="n">cameras</span><span class="p">,</span> <span class="n">raster_settings</span><span class="o">=</span><span class="n">raster_settings</span><span class="p">),</span>
+    <span class="n">compositor</span><span class="o">=</span><span class="n">NormWeightedCompositor</span><span class="p">()</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">images</span> <span class="o">=</span> <span class="n">renderer</span><span class="p">(</span><span class="n">point_cloud</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">images</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="s2">"off"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">"off"</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>We will now modify the <strong>renderer</strong> to use <strong>weighted compositing</strong> with a set background color.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">renderer</span> <span class="o">=</span> <span class="n">PointsRenderer</span><span class="p">(</span>
+    <span class="n">rasterizer</span><span class="o">=</span><span class="n">PointsRasterizer</span><span class="p">(</span><span class="n">cameras</span><span class="o">=</span><span class="n">cameras</span><span class="p">,</span> <span class="n">raster_settings</span><span class="o">=</span><span class="n">raster_settings</span><span class="p">),</span>
+    <span class="c1"># Pass in background_color to the norm weighted compositor, setting the background color </span>
+    <span class="c1"># to the 3 item tuple, representing rgb on a scale of 0 -&gt; 1, in this case red</span>
+    <span class="n">compositor</span><span class="o">=</span><span class="n">NormWeightedCompositor</span><span class="p">(</span><span class="n">background_color</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span>
+<span class="p">)</span>
+<span class="n">images</span> <span class="o">=</span> <span class="n">renderer</span><span class="p">(</span><span class="n">point_cloud</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">images</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="s2">"off"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">"off"</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Using-the-pulsar-backend">Using the pulsar backend<a class="anchor-link" href="#Using-the-pulsar-backend">¶</a></h2><p>Switching to the pulsar backend is easy! The pulsar backend has a compositor built-in, so the <code>compositor</code> argument is not required when creating it (a warning will be displayed if you provide it nevertheless). It pre-allocates memory on the rendering device, that's why it needs the <code>n_channels</code> at construction time.</p>
+<p>All parameters for the renderer forward function are batch-wise except the background color (in this example, <code>gamma</code>) and you have to provide as many values as you have examples in your batch. The background color is optional and by default set to all zeros. You can find a detailed explanation of how gamma influences the rendering function here in the paper <a href="https://arxiv.org/pdf/2004.07484.pdf">Fast Differentiable Raycasting for Neural Rendering using
+Sphere-based Representations</a>.</p>
+<p>You can also use the <code>native</code> backend for the pulsar backend which already provides access to point opacity. The native backend can be imported from <code>pytorch3d.renderer.points.pulsar</code>; you can find examples for this in the folder <code>docs/examples</code>.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">renderer</span> <span class="o">=</span> <span class="n">PulsarPointsRenderer</span><span class="p">(</span>
+    <span class="n">rasterizer</span><span class="o">=</span><span class="n">PointsRasterizer</span><span class="p">(</span><span class="n">cameras</span><span class="o">=</span><span class="n">cameras</span><span class="p">,</span> <span class="n">raster_settings</span><span class="o">=</span><span class="n">raster_settings</span><span class="p">),</span>
+    <span class="n">n_channels</span><span class="o">=</span><span class="mi">4</span>
+<span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+
+<span class="n">images</span> <span class="o">=</span> <span class="n">renderer</span><span class="p">(</span><span class="n">point_cloud</span><span class="p">,</span> <span class="n">gamma</span><span class="o">=</span><span class="p">(</span><span class="mf">1e-4</span><span class="p">,),</span>
+                  <span class="n">bg_col</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">images</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="s2">"off"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">"off"</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="View-pointclouds-in-Plotly-figures">View pointclouds in Plotly figures<a class="anchor-link" href="#View-pointclouds-in-Plotly-figures">¶</a></h3><p>Here we use the PyTorch3D function <code>plot_scene</code> to render the pointcloud in a Plotly figure. <code>plot_scene</code> returns a plotly figure with trace and subplots defined by the input.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">plot_scene</span><span class="p">({</span>
+    <span class="s2">"Pointcloud"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"person"</span><span class="p">:</span> <span class="n">point_cloud</span>
+    <span class="p">}</span>
+<span class="p">})</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>We will now render a batch of pointclouds. The first pointcloud is the same as above, and the second is all-black and offset by 2 in all dimensions so we can see them on the same plot.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">point_cloud_batch</span> <span class="o">=</span> <span class="n">Pointclouds</span><span class="p">(</span><span class="n">points</span><span class="o">=</span><span class="p">[</span><span class="n">verts</span><span class="p">,</span> <span class="n">verts</span> <span class="o">+</span> <span class="mi">2</span><span class="p">],</span> <span class="n">features</span><span class="o">=</span><span class="p">[</span><span class="n">rgb</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">rgb</span><span class="p">)])</span>
+<span class="c1"># render both in the same plot in different traces</span>
+<span class="n">fig</span> <span class="o">=</span> <span class="n">plot_scene</span><span class="p">({</span>
+    <span class="s2">"Pointcloud"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"person"</span><span class="p">:</span> <span class="n">point_cloud_batch</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+        <span class="s2">"person2"</span><span class="p">:</span> <span class="n">point_cloud_batch</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="p">}</span>
+<span class="p">})</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># render both in the same plot in one trace</span>
+<span class="n">fig</span> <span class="o">=</span> <span class="n">plot_scene</span><span class="p">({</span>
+    <span class="s2">"Pointcloud"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"2 people"</span><span class="p">:</span> <span class="n">point_cloud_batch</span>
+    <span class="p">}</span>
+<span class="p">})</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>For batches, we can also use <code>plot_batch_individually</code> to avoid constructing the scene dictionary ourselves.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># render both in 1 row in different subplots</span>
+<span class="n">fig2</span> <span class="o">=</span> <span class="n">plot_batch_individually</span><span class="p">(</span><span class="n">point_cloud_batch</span><span class="p">,</span> <span class="n">ncols</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">fig2</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># modify the plotly figure height and width</span>
+<span class="n">fig2</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">height</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">500</span><span class="p">)</span>
+<span class="n">fig2</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>We can also modify the axis arguments and axis backgrounds for either function, and title our plots in <code>plot_batch_individually</code>.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">fig3</span> <span class="o">=</span> <span class="n">plot_batch_individually</span><span class="p">(</span>
+    <span class="n">point_cloud_batch</span><span class="p">,</span> 
+    <span class="n">xaxis</span><span class="o">=</span><span class="p">{</span><span class="s2">"backgroundcolor"</span><span class="p">:</span><span class="s2">"rgb(200, 200, 230)"</span><span class="p">},</span>
+    <span class="n">yaxis</span><span class="o">=</span><span class="p">{</span><span class="s2">"backgroundcolor"</span><span class="p">:</span><span class="s2">"rgb(230, 200, 200)"</span><span class="p">},</span>
+    <span class="n">zaxis</span><span class="o">=</span><span class="p">{</span><span class="s2">"backgroundcolor"</span><span class="p">:</span><span class="s2">"rgb(200, 230, 200)"</span><span class="p">},</span> 
+    <span class="n">subplot_titles</span><span class="o">=</span><span class="p">[</span><span class="s2">"Pointcloud1"</span><span class="p">,</span> <span class="s2">"Pointcloud2"</span><span class="p">],</span> <span class="c1"># this should have a title for each subplot, titles can be ""</span>
+    <span class="n">axis_args</span><span class="o">=</span><span class="n">AxisArgs</span><span class="p">(</span><span class="n">showgrid</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+<span class="n">fig3</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div></div></div></div></div><footer class="nav-footer" id="footer"><section class="sitemap"><div class="footerSection"><div class="social"><a class="github-button" href="https://github.com/facebookresearch/pytorch3d" data-count-href="https://github.com/facebookresearch/pytorch3d/stargazers" data-show-count="true" data-count-aria-label="# stargazers on GitHub" aria-label="Star PyTorch3D on GitHub">pytorch3d</a></div></div></section><a href="https://opensource.facebook.com/" target="_blank" rel="noreferrer noopener" class="fbOpenSource"><img src="/img/oss_logo.png" alt="Facebook Open Source" width="170" height="45"/></a><section class="copyright">Copyright © 2020 Facebook Inc<br/>Legal:<a href="https://opensource.facebook.com/legal/privacy/" target="_blank" rel="noreferrer noopener">Privacy</a><a href="https://opensource.facebook.com/legal/terms/" target="_blank" rel="noreferrer noopener">Terms</a></section></footer></div></body></html>
