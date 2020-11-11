@@ -87,7 +87,7 @@ IHD float3 operator*(const float& a, const float3& b) {
   return b * a;
 }
 
-IHD float length(const float3& v) {
+INLINE DEVICE float length(const float3& v) {
   // TODO: benchmark what's faster.
   return NORM3DF(v.x, v.y, v.z);
   // return __fsqrt_rn(v.x * v.x + v.y * v.y + v.z * v.z);
@@ -107,7 +107,7 @@ IHD float3 rotate(
       dir_z.x * v.x + dir_z.y * v.y + dir_z.z * v.z);
 }
 
-IHD float3 normalize(const float3& v) {
+INLINE DEVICE float3 normalize(const float3& v) {
   return v * RNORM3DF(v.x, v.y, v.z);
 }
 
