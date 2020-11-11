@@ -11,7 +11,7 @@ with the CUDA 10.1 inside a GPU colab notebook. If you need to install
 PyTorch3D from source inside colab, you can use
 ```
 import os
-!curl -O https://github.com/NVIDIA/cub/archive/1.10.0.tar.gz
+!curl -LO https://github.com/NVIDIA/cub/archive/1.10.0.tar.gz
 !tar xzf 1.10.0.tar.gz
 os.environ["CUB_HOME"] = os.getcwd() + "/cub-1.10.0"
 !pip install 'git+https://github.com/facebookresearch/pytorch3d.git@stable'`

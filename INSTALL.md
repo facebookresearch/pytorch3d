@@ -32,7 +32,7 @@ Otherwise download the CUB library from https://github.com/NVIDIA/cub/releases a
 Define the environment variable CUB_HOME before building and point it to the directory that contains `CMakeLists.txt` for CUB.
 For example on Linux/Mac,
 ```
-curl -O https://github.com/NVIDIA/cub/archive/1.10.0.tar.gz
+curl -LO https://github.com/NVIDIA/cub/archive/1.10.0.tar.gz
 tar xzf 1.10.0.tar.gz
 export CUB_HOME=$PWD/cub-1.10.0
 ```
