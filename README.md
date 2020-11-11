@@ -78,6 +78,7 @@ PyTorch3D is written and maintained by the Facebook AI Research Computer Vision 
 In alphabetical order:
 
 * Amitav Baruah
+* Steve Branson
 * Luya Gao
 * Georgia Gkioxari
 * Taylor Gordon

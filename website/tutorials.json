@@ -1,29 +1,35 @@
 {
-  "3D operators": [
-     {
-      "id": "deform_source_mesh_to_target_mesh",
-      "title": "Fit Mesh"
-     },{
-      "id": "bundle_adjustment",
-      "title": "Bundle Adjustment"
-     }
-  ],
-  "Rendering": [
-     {
-      "id": "render_textured_meshes",
-      "title": "Render Textured Meshes"
-     },{
-      "id": "fit_textured_mesh",
-      "title": "Fit a mesh with texture via rendering"
-     }, {
-      "id": "camera_position_optimization_with_differentiable_rendering",
-      "title": "Camera Position Optimization"
-     }
-  ],
-  "Dataloaders": [
+   "3D operators": [
       {
-         "id": "dataloaders_ShapeNetCore_R2N2",
-         "title": "Data loaders for ShapeNetCore and R2N2"
+       "id": "deform_source_mesh_to_target_mesh",
+       "title": "Fit Mesh"
+      },{
+       "id": "bundle_adjustment",
+       "title": "Bundle Adjustment"
       }
-   ]
-}
+   ],
+   "Rendering": [
+      {
+       "id": "render_textured_meshes",
+       "title": "Render Textured Meshes"
+      },{
+       "id": "render_densepose",
+       "title": "Render DensePose Meshes"
+      }, {
+       "id": "render_colored_points",
+       "title": "Render Colored Pointclouds"
+      },{
+       "id": "fit_textured_mesh",
+       "title": "Fit a Mesh with Texture via Rendering"
+      }, {
+       "id": "camera_position_optimization_with_differentiable_rendering",
+       "title": "Camera Position Optimization with Differentiable Rendering"
+      }
+   ],
+   "Dataloaders": [
+       {
+          "id": "dataloaders_ShapeNetCore_R2N2",
+          "title": "Data loaders for ShapeNetCore and R2N2"
+       }
+    ]
+ }

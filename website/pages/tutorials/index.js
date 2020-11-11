@@ -59,7 +59,7 @@ class TutorialHome extends React.Component {
               {' '}
               You can modify the code and experiment with varying different
               settings. Remember to install the latest stable version of
-              pytorch3d and its dependencies. Code to do this with pip is
+              PyTorch3D and its dependencies. Code to do this with pip is
               provided in each notebook.{' '}
             </p>
             <h3> Run locally </h3>
