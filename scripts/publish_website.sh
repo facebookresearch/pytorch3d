@@ -27,7 +27,7 @@ yarn
 yarn run build
 
 cd .. || exit
-./scripts/build_website.sh -b
+bash ./scripts/build_website.sh -b
 
 cd "${WORK_DIR}" || exit
 rm -rf pytorch3d-gh-pages/*
