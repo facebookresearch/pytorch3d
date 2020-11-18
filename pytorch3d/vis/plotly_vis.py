@@ -692,10 +692,9 @@ def _gen_fig_with_subplots(batch_size: int, ncols: int, subplot_titles: List[str
     Returns:
         Plotly figure with ncols subplots per row, and batch_size subplots.
     """
-    if batch_size % ncols != 0:
-        msg = "ncols is invalid for the given mesh batch size."
-        warnings.warn(msg)
     fig_rows = batch_size // ncols
+    if batch_size % ncols != 0:
+        fig_rows += 1  # allow for non-uniform rows
     fig_cols = ncols
     fig_type = [{"type": "scene"}]
     specs = [fig_type * fig_cols] * fig_rows
