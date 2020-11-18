@@ -40,7 +40,7 @@ class TestICP(TestCaseMixin, unittest.TestCase):
         super().setUp()
         torch.manual_seed(42)
         np.random.seed(42)
-        trimesh_results_path = Path(__file__).resolve().parent / "icp_data.pth"
+        trimesh_results_path = Path(__file__).resolve().parent / "data/icp_data.pth"
         self.trimesh_results = torch.load(trimesh_results_path)
 
     @staticmethod
