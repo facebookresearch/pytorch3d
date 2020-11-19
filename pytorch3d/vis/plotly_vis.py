@@ -587,7 +587,9 @@ def _add_pointcloud_trace(
 
     color = None
     if features is not None:
-        features = features[indices]
+        if indices is not None:
+            # Only select features if we selected vertices above
+            features = features[indices]
         if features.shape[1] == 4:  # rgba
             template = "rgb(%d, %d, %d, %f)"
             rgb = (features[:, :3].clamp(0.0, 1.0) * 255).int()
