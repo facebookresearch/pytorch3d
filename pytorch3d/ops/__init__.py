@@ -23,6 +23,7 @@ from .utils import (
     wmean,
 )
 from .vert_align import vert_align
+from .mesh_filtering import taubin_smoothing
 
 
 __all__ = [k for k in globals().keys() if not k.startswith("_")]
