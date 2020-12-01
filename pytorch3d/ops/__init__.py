@@ -6,6 +6,7 @@ from .graph_conv import GraphConv
 from .interp_face_attrs import interpolate_face_attributes
 from .knn import knn_gather, knn_points
 from .mesh_face_areas_normals import mesh_face_areas_normals
+from .mesh_filtering import taubin_smoothing
 from .packed_to_padded import packed_to_padded, padded_to_packed
 from .perspective_n_points import efficient_pnp
 from .points_alignment import corresponding_points_alignment, iterative_closest_point
@@ -23,7 +24,6 @@ from .utils import (
     wmean,
 )
 from .vert_align import vert_align
-from .mesh_filtering import taubin_smoothing
 
 
 __all__ = [k for k in globals().keys() if not k.startswith("_")]
