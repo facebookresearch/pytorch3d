@@ -15,7 +15,7 @@ RasterizeMeshesNaiveCpu(
     const torch::Tensor& face_verts,
     const torch::Tensor& mesh_to_face_first_idx,
     const torch::Tensor& num_faces_per_mesh,
-    const int image_size,
+    const std::tuple<int, int> image_size,
     const float blur_radius,
     const int faces_per_pixel,
     const bool perspective_correct,
@@ -28,7 +28,7 @@ RasterizeMeshesNaiveCuda(
     const at::Tensor& face_verts,
     const at::Tensor& mesh_to_face_first_idx,
     const at::Tensor& num_faces_per_mesh,
-    const int image_size,
+    const std::tuple<int, int> image_size,
     const float blur_radius,
     const int num_closest,
     const bool perspective_correct,
@@ -48,8 +48,8 @@ RasterizeMeshesNaiveCuda(
 //                            the batch where N is the batch size.
 //    num_faces_per_mesh: LongTensor of shape (N) giving the number of faces
 //                        for each mesh in the batch.
-//    image_size: Size in pixels of the output image to be rasterized.
-//                Assume square images only.
+//    image_size: Tuple (H, W) giving the size in pixels of the output
+//                image to be rasterized.
 //    blur_radius: float distance in NDC coordinates uses to expand the face
 //                 bounding boxes for the rasterization. Set to 0.0 if no blur
 //                 is required.
@@ -90,7 +90,7 @@ RasterizeMeshesNaive(
     const torch::Tensor& face_verts,
     const torch::Tensor& mesh_to_face_first_idx,
     const torch::Tensor& num_faces_per_mesh,
-    const int image_size,
+    const std::tuple<int, int> image_size,
     const float blur_radius,
     const int faces_per_pixel,
     const bool perspective_correct,
@@ -223,7 +223,7 @@ torch::Tensor RasterizeMeshesCoarseCpu(
     const torch::Tensor& face_verts,
     const at::Tensor& mesh_to_face_first_idx,
     const at::Tensor& num_faces_per_mesh,
-    const int image_size,
+    const std::tuple<int, int> image_size,
     const float blur_radius,
     const int bin_size,
     const int max_faces_per_bin);
@@ -233,7 +233,7 @@ torch::Tensor RasterizeMeshesCoarseCuda(
     const torch::Tensor& face_verts,
     const torch::Tensor& mesh_to_face_first_idx,
     const torch::Tensor& num_faces_per_mesh,
-    const int image_size,
+    const std::tuple<int, int> image_size,
     const float blur_radius,
     const int bin_size,
     const int max_faces_per_bin);
@@ -249,7 +249,8 @@ torch::Tensor RasterizeMeshesCoarseCuda(
 //                            the batch where N is the batch size.
 //    num_faces_per_mesh: LongTensor of shape (N) giving the number of faces
 //                        for each mesh in the batch.
-//    image_size: Size in pixels of the output image to be rasterized.
+//    image_size: Tuple (H, W) giving the size in pixels of the output
+//                image to be rasterized.
 //    blur_radius: float distance in NDC coordinates uses to expand the face
 //                 bounding boxes for the rasterization. Set to 0.0 if no blur
 //                 is required.
@@ -264,7 +265,7 @@ torch::Tensor RasterizeMeshesCoarse(
     const torch::Tensor& face_verts,
     const torch::Tensor& mesh_to_face_first_idx,
     const torch::Tensor& num_faces_per_mesh,
-    const int image_size,
+    const std::tuple<int, int> image_size,
     const float blur_radius,
     const int bin_size,
     const int max_faces_per_bin) {
@@ -305,7 +306,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>
 RasterizeMeshesFineCuda(
     const torch::Tensor& face_verts,
     const torch::Tensor& bin_faces,
-    const int image_size,
+    const std::tuple<int, int> image_size,
     const float blur_radius,
     const int bin_size,
     const int faces_per_pixel,
@@ -321,7 +322,8 @@ RasterizeMeshesFineCuda(
 //                in NDC coordinates in the range [-1, 1].
 //    bin_faces: int32 Tensor of shape (N, B, B, M) giving the indices of faces
 //               that fall into each bin (output from coarse rasterization).
-//    image_size: Size in pixels of the output image to be rasterized.
+//    image_size: Tuple (H, W) giving the size in pixels of the output
+//                image to be rasterized.
 //    blur_radius: float distance in NDC coordinates uses to expand the face
 //                 bounding boxes for the rasterization. Set to 0.0 if no blur
 //                 is required.
@@ -362,7 +364,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>
 RasterizeMeshesFine(
     const torch::Tensor& face_verts,
     const torch::Tensor& bin_faces,
-    const int image_size,
+    const std::tuple<int, int> image_size,
     const float blur_radius,
     const int bin_size,
     const int faces_per_pixel,
@@ -409,7 +411,8 @@ RasterizeMeshesFine(
 //                            the batch where N is the batch size.
 //    num_faces_per_mesh: LongTensor of shape (N) giving the number of faces
 //                        for each mesh in the batch.
-//    image_size: Size in pixels of the output image to be rasterized.
+//    image_size: Tuple (H, W) giving the size in pixels of the output
+//                image to be rasterized.
 //    blur_radius: float distance in NDC coordinates uses to expand the face
 //                 bounding boxes for the rasterization. Set to 0.0 if no blur
 //                 is required.
@@ -453,7 +456,7 @@ RasterizeMeshes(
     const torch::Tensor& face_verts,
     const torch::Tensor& mesh_to_face_first_idx,
     const torch::Tensor& num_faces_per_mesh,
-    const int image_size,
+    const std::tuple<int, int> image_size,
     const float blur_radius,
     const int faces_per_pixel,
     const int bin_size,

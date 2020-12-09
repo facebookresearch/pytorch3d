@@ -1,6 +1,6 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
-from typing import NamedTuple, Optional
+from typing import NamedTuple, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
@@ -31,7 +31,7 @@ class RasterizationSettings:
 
     def __init__(
         self,
-        image_size: int = 256,
+        image_size: Union[int, Tuple[int, int]] = 256,
         blur_radius: float = 0.0,
         faces_per_pixel: int = 1,
         bin_size: Optional[int] = None,

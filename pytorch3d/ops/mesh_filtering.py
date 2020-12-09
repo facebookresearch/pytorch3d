@@ -2,6 +2,7 @@
 import torch
 from pytorch3d.structures import Meshes, utils as struct_utils
 
+
 # ------------------------ Mesh Smoothing ------------------------ #
 # This file contains differentiable operators to filter meshes
 # The ops include

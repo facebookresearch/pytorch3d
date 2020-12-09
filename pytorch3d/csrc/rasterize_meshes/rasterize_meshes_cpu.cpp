@@ -9,9 +9,35 @@
 #include "utils/vec2.h"
 #include "utils/vec3.h"
 
-float PixToNdc(int i, int S) {
-  // NDC x-offset + (i * pixel_width + half_pixel_width)
-  return -1 + (2 * i + 1.0f) / S;
+// The default value of the NDC range is [-1, 1], however in the case that
+// H != W, the NDC range is set such that the shorter side has range [-1, 1] and
+// the longer side is scaled by the ratio of H:W. S1 is the dimension for which
+// the NDC range is calculated and S2 is the other image dimension.
+// e.g. to get the NDC x range S1 = W and S2 = H
+float NonSquareNdcRange(int S1, int S2) {
+  float range = 2.0f;
+  if (S1 > S2) {
+    range = ((S1 / S2) * range);
+  }
+  return range;
+}
+
+// Given a pixel coordinate 0 <= i < S1, convert it to a normalized device
+// coordinates. We divide the NDC range into S1 evenly-sized
+// pixels, and assume that each pixel falls in the *center* of its range.
+// The default value of the NDC range is [-1, 1], however in the case that
+// H != W, the NDC range is set such that the shorter side has range [-1, 1] and
+// the longer side is scaled by the ratio of H:W. The dimension of i should be
+// S1 and the other image dimension is S2 For example, to get the x and y NDC
+// coordinates or a given pixel i:
+//     x = PixToNonSquareNdc(i, W, H)
+//     y = PixToNonSquareNdc(i, H, W)
+float PixToNonSquareNdc(int i, int S1, int S2) {
+  float range = NonSquareNdcRange(S1, S2);
+  // NDC: offset + (i * pixel_width + half_pixel_width)
+  // The NDC range is [-range/2, range/2].
+  const float offset = (range / 2.0f);
+  return -offset + (range * i + offset) / S1;
 }
 
 // Get (x, y, z) values for vertex from (3, 3) tensor face.
@@ -108,7 +134,7 @@ RasterizeMeshesNaiveCpu(
     const torch::Tensor& face_verts,
     const torch::Tensor& mesh_to_face_first_idx,
     const torch::Tensor& num_faces_per_mesh,
-    int image_size,
+    const std::tuple<int, int> image_size,
     const float blur_radius,
     const int faces_per_pixel,
     const bool perspective_correct,
@@ -124,8 +150,8 @@ RasterizeMeshesNaiveCpu(
   }
 
   const int32_t N = mesh_to_face_first_idx.size(0); // batch_size.
-  const int H = image_size;
-  const int W = image_size;
+  const int H = std::get<0>(image_size);
+  const int W = std::get<1>(image_size);
   const int K = faces_per_pixel;
 
   auto long_opts = num_faces_per_mesh.options().dtype(torch::kInt64);
@@ -163,7 +189,7 @@ RasterizeMeshesNaiveCpu(
       const int yidx = H - 1 - yi;
 
       // Y coordinate of the top of the pixel.
-      const float yf = PixToNdc(yidx, H);
+      const float yf = PixToNonSquareNdc(yidx, H, W);
       // Iterate through pixels on this horizontal line, left to right.
       for (int xi = 0; xi < W; ++xi) {
         // Reverse the order of xi so that +X is pointing to the left in the
@@ -171,7 +197,7 @@ RasterizeMeshesNaiveCpu(
         const int xidx = W - 1 - xi;
 
         // X coordinate of the left of the pixel.
-        const float xf = PixToNdc(xidx, W);
+        const float xf = PixToNonSquareNdc(xidx, W, H);
         // Use a priority queue to hold values:
         // (z, idx, r, bary.x, bary.y. bary.z)
         std::priority_queue<std::tuple<float, int, float, float, float, float>>
@@ -295,7 +321,7 @@ torch::Tensor RasterizeMeshesBackwardCpu(
       const int yidx = H - 1 - y;
 
       // Y coordinate of the top of the pixel.
-      const float yf = PixToNdc(yidx, H);
+      const float yf = PixToNonSquareNdc(yidx, H, W);
       // Iterate through pixels on this horizontal line, left to right.
       for (int x = 0; x < W; ++x) {
         // Reverse the order of xi so that +X is pointing to the left in the
@@ -303,7 +329,7 @@ torch::Tensor RasterizeMeshesBackwardCpu(
         const int xidx = W - 1 - x;
 
         // X coordinate of the left of the pixel.
-        const float xf = PixToNdc(xidx, W);
+        const float xf = PixToNonSquareNdc(xidx, W, H);
         const vec2<float> pxy(xf, yf);
 
         // Iterate through the faces that hit this pixel.
@@ -353,7 +379,6 @@ torch::Tensor RasterizeMeshesBackwardCpu(
           const bool inside = bary.x > 0.0f && bary.y > 0.0f && bary.z > 0.0f;
           const float sign = inside ? -1.0f : 1.0f;
 
-          // TODO(T52813608) Add support for non-square images.
           const auto grad_dist_f = PointTriangleDistanceBackward(
               pxy, v0xy, v1xy, v2xy, sign * grad_dist_upstream);
           const auto ddist_d_v0 = std::get<1>(grad_dist_f);
@@ -415,7 +440,7 @@ torch::Tensor RasterizeMeshesCoarseCpu(
     const torch::Tensor& face_verts,
     const torch::Tensor& mesh_to_face_first_idx,
     const torch::Tensor& num_faces_per_mesh,
-    const int image_size,
+    const std::tuple<int, int> image_size,
     const float blur_radius,
     const int bin_size,
     const int max_faces_per_bin) {
@@ -430,11 +455,12 @@ torch::Tensor RasterizeMeshesCoarseCpu(
   const int N = num_faces_per_mesh.size(0); // batch size.
   const int M = max_faces_per_bin;
 
-  // Assume square images. TODO(T52813608) Support non square images.
-  const float height = image_size;
-  const float width = image_size;
-  const int BH = 1 + (height - 1) / bin_size; // Integer division round up.
-  const int BW = 1 + (width - 1) / bin_size; // Integer division round up.
+  const float H = std::get<0>(image_size);
+  const float W = std::get<1>(image_size);
+
+  // Integer division round up.
+  const int BH = 1 + (H - 1) / bin_size;
+  const int BW = 1 + (W - 1) / bin_size;
 
   auto opts = num_faces_per_mesh.options().dtype(torch::kInt32);
   torch::Tensor faces_per_bin = torch::zeros({N, BH, BW}, opts);
@@ -445,8 +471,13 @@ torch::Tensor RasterizeMeshesCoarseCpu(
   auto face_bboxes = ComputeFaceBoundingBoxes(face_verts);
   auto face_bboxes_a = face_bboxes.accessor<float, 2>();
 
-  const float pixel_width = 2.0f / image_size;
-  const float bin_width = pixel_width * bin_size;
+  const float ndc_x_range = NonSquareNdcRange(W, H);
+  const float pixel_width_x = ndc_x_range / W;
+  const float bin_width_x = pixel_width_x * bin_size;
+
+  const float ndc_y_range = NonSquareNdcRange(H, W);
+  const float pixel_width_y = ndc_y_range / H;
+  const float bin_width_y = pixel_width_y * bin_size;
 
   // Iterate through the meshes in the batch.
   for (int n = 0; n < N; ++n) {
@@ -455,12 +486,12 @@ torch::Tensor RasterizeMeshesCoarseCpu(
         (face_start_idx + num_faces_per_mesh[n].item().to<int32_t>());
 
     float bin_y_min = -1.0f;
-    float bin_y_max = bin_y_min + bin_width;
+    float bin_y_max = bin_y_min + bin_width_y;
 
     // Iterate through the horizontal bins from top to bottom.
     for (int by = 0; by < BH; ++by) {
       float bin_x_min = -1.0f;
-      float bin_x_max = bin_x_min + bin_width;
+      float bin_x_max = bin_x_min + bin_width_x;
 
       // Iterate through bins on this horizontal line, left to right.
       for (int bx = 0; bx < BW; ++bx) {
@@ -502,11 +533,11 @@ torch::Tensor RasterizeMeshesCoarseCpu(
 
         // Shift the bin to the right for the next loop iteration
         bin_x_min = bin_x_max;
-        bin_x_max = bin_x_min + bin_width;
+        bin_x_max = bin_x_min + bin_width_x;
       }
       // Shift the bin down for the next loop iteration
       bin_y_min = bin_y_max;
-      bin_y_max = bin_y_min + bin_width;
+      bin_y_max = bin_y_min + bin_width_y;
     }
   }
   return bin_faces;

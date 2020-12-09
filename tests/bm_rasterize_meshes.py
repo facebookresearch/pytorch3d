@@ -63,7 +63,8 @@ def bm_rasterize_meshes() -> None:
         kwargs_list = []
         num_meshes = [8, 16]
         ico_level = [4, 5, 6]
-        image_size = [64, 128, 512]
+        # Square and non square cases
+        image_size = [64, 128, 512, (512, 256), (256, 512)]
         blur = [1e-6]
         faces_per_pixel = [50]
         test_cases = product(num_meshes, ico_level, image_size, blur, faces_per_pixel)

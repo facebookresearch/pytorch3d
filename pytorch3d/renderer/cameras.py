@@ -322,6 +322,22 @@ class FoVPerspectiveCameras(CamerasBase):
     and then applies it to the input points.
 
     The transforms can also be returned separately as Transform3d objects.
+
+    * Setting the Aspect Ratio for Non Square Images *
+
+    If the desired output image size is non square (i.e. a tuple of (H, W) where H != W)
+    the aspect ratio needs special consideration: There are two aspect ratios
+    to be aware of:
+        - the aspect ratio of each pixel
+        - the aspect ratio of the output image
+    The `aspect_ratio` setting in the FoVPerspectiveCameras sets the
+    pixel aspect ratio. When using this camera with the differentiable rasterizer
+    be aware that in the rasterizer we assume square pixels, but allow
+    variable image aspect ratio (i.e rectangle images).
+
+    In most cases you will want to set the camera `aspect_ratio=1.0`
+    (i.e. square pixels) and only vary the output image dimensions in pixels
+    for rasterization.
     """
 
     def __init__(
@@ -341,7 +357,8 @@ class FoVPerspectiveCameras(CamerasBase):
         Args:
             znear: near clipping plane of the view frustrum.
             zfar: far clipping plane of the view frustrum.
-            aspect_ratio: ratio of screen_width/screen_height.
+            aspect_ratio: aspect ratio of the image pixels.
+                1.0 indicates square pixels.
             fov: field of view angle of the camera.
             degrees: bool, set to True if fov is specified in degrees.
             R: Rotation matrix of shape (N, 3, 3)
@@ -376,7 +393,8 @@ class FoVPerspectiveCameras(CamerasBase):
             znear: near clipping plane of the view frustrum.
             zfar: far clipping plane of the view frustrum.
             fov: field of view angle of the camera.
-            aspect_ratio: ratio of screen_width/screen_height.
+            aspect_ratio: aspect ratio of the image pixels.
+                1.0 indicates square pixels.
             degrees: bool, set to True if fov is specified in degrees.
 
         Returns:

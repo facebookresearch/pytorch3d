@@ -1,7 +1,7 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
 
-from typing import Optional
+from typing import Optional, Tuple, Union
 
 import numpy as np
 import torch
@@ -20,7 +20,7 @@ kMaxFacesPerBin = 22
 
 def rasterize_meshes(
     meshes,
-    image_size: int = 256,
+    image_size: Union[int, Tuple[int, int]] = 256,
     blur_radius: float = 0.0,
     faces_per_pixel: int = 8,
     bin_size: Optional[int] = None,
@@ -32,12 +32,25 @@ def rasterize_meshes(
     """
     Rasterize a batch of meshes given the shape of the desired output image.
     Each mesh is rasterized onto a separate image of shape
-    (image_size, image_size).
+    (H, W) if `image_size` is a tuple or (image_size, image_size) if it
+    is an int.
+
+    If the desired image size is non square (i.e. a tuple of (H, W) where H != W)
+    the aspect ratio needs special consideration. There are two aspect ratios
+    to be aware of:
+        - the aspect ratio of each pixel
+        - the aspect ratio of the output image
+    The camera can be used to set the pixel aspect ratio. In the rasterizer,
+    we assume square pixels, but variable image aspect ratio (i.e rectangle images).
+
+    In most cases you will want to set the camera aspect ratio to
+    1.0 (i.e. square pixels) and only vary the
+    `image_size` (i.e. the output image dimensions in pixels).
 
     Args:
         meshes: A Meshes object representing a batch of meshes, batch size N.
-        image_size: Size in pixels of the output raster image for each mesh
-            in the batch. Assumes square images.
+        image_size: Size in pixels of the output image to be rasterized.
+            Can optionally be a tuple of (H, W) in the case of non square images.
         blur_radius: Float distance in the range [0, 2] used to expand the face
             bounding boxes for rasterization. Setting blur radius
             results in blurred edges around the shape instead of a
@@ -98,12 +111,35 @@ def rasterize_meshes(
           squared distance between the pixel (y, x) and the face given
           by vertices ``face_verts[f]``. Pixels hit with fewer than
           ``faces_per_pixel`` are padded with -1.
+
+        In the case that image_size is a tuple of (H, W) then the outputs
+        will be of shape `(N, H, W, ...)`.
     """
     verts_packed = meshes.verts_packed()
     faces_packed = meshes.faces_packed()
     face_verts = verts_packed[faces_packed]
     mesh_to_face_first_idx = meshes.mesh_to_faces_packed_first_idx()
     num_faces_per_mesh = meshes.num_faces_per_mesh()
+
+    # In the case that H != W use the max image size to set the bin_size
+    # to accommodate the num bins constraint in the coarse rasteizer.
+    # If the ratio of H:W is large this might cause issues as the smaller
+    # dimension will have fewer bins.
+    # TODO: consider a better way of setting the bin size.
+    if isinstance(image_size, (tuple, list)):
+        if len(image_size) != 2:
+            raise ValueError("Image size can only be a tuple/list of (H, W)")
+        if not all(i > 0 for i in image_size):
+            raise ValueError(
+                "Image sizes must be greater than 0; got %d, %d" % image_size
+            )
+        if not all(type(i) == int for i in image_size):
+            raise ValueError("Image sizes must be integers; got %f, %f" % image_size)
+        max_image_size = max(*image_size)
+        im_size = image_size
+    else:
+        im_size = (image_size, image_size)
+        max_image_size = image_size
 
     # TODO: Choose naive vs coarse-to-fine based on mesh size and image size.
     if bin_size is None:
@@ -112,20 +148,20 @@ def rasterize_meshes(
             bin_size = 0
         else:
             # TODO better heuristics for bin size.
-            if image_size <= 64:
+            if max_image_size <= 64:
                 bin_size = 8
             else:
-                # Heuristic based formula maps image_size -> bin_size as follows:
-                # image_size < 64 -> 8
-                # 16 < image_size < 256 -> 16
-                # 256 < image_size < 512 -> 32
-                # 512 < image_size < 1024 -> 64
-                # 1024 < image_size < 2048 -> 128
-                bin_size = int(2 ** max(np.ceil(np.log2(image_size)) - 4, 4))
+                # Heuristic based formula maps max_image_size -> bin_size as follows:
+                # max_image_size < 64 -> 8
+                # 16 < max_image_size < 256 -> 16
+                # 256 < max_image_size < 512 -> 32
+                # 512 < max_image_size < 1024 -> 64
+                # 1024 < max_image_size < 2048 -> 128
+                bin_size = int(2 ** max(np.ceil(np.log2(max_image_size)) - 4, 4))
 
     if bin_size != 0:
         # There is a limit on the number of faces per bin in the cuda kernel.
-        faces_per_bin = 1 + (image_size - 1) // bin_size
+        faces_per_bin = 1 + (max_image_size - 1) // bin_size
         if faces_per_bin >= kMaxFacesPerBin:
             raise ValueError(
                 "bin_size too small, number of faces per bin must be less than %d; got %d"
@@ -140,7 +176,7 @@ def rasterize_meshes(
         face_verts,
         mesh_to_face_first_idx,
         num_faces_per_mesh,
-        image_size,
+        im_size,
         blur_radius,
         faces_per_pixel,
         bin_size,
@@ -181,7 +217,7 @@ class _RasterizeFaceVerts(torch.autograd.Function):
         face_verts,
         mesh_to_face_first_idx,
         num_faces_per_mesh,
-        image_size: int = 256,
+        image_size: Tuple[int, int] = (256, 256),
         blur_radius: float = 0.01,
         faces_per_pixel: int = 0,
         bin_size: int = 0,
@@ -254,9 +290,53 @@ def pix_to_ndc(i, S):
     return -1 + (2 * i + 1.0) / S
 
 
+def non_square_ndc_range(S1, S2):
+    """
+    In the case of non square images, we scale the NDC range
+    to maintain the aspect ratio. The smaller dimension has NDC
+    range of 2.0.
+
+    Args:
+        S1: dimension along with the NDC range is needed
+        S2: the other image dimension
+
+    Returns:
+        ndc_range: NDC range for dimension S1
+    """
+    ndc_range = 2.0
+    if S1 > S2:
+        ndc_range = (S1 / S2) * ndc_range
+    return ndc_range
+
+
+def pix_to_non_square_ndc(i, S1, S2):
+    """
+    The default value of the NDC range is [-1, 1].
+    However in the case of non square images, we scale the NDC range
+    to maintain the aspect ratio. The smaller dimension has NDC
+    range from [-1, 1] and the other dimension is scaled by
+    the ratio of H:W.
+    e.g. for image size (H, W) = (64, 128)
+       Height NDC range: [-1, 1]
+       Width NDC range: [-2, 2]
+
+    Args:
+        i: pixel position on axes S1
+        S1: dimension along with i is given
+        S2: the other image dimension
+
+    Returns:
+        pixel: NDC coordinate of point i for dimension S1
+    """
+    # NDC: x-offset + (i * pixel_width + half_pixel_width)
+    ndc_range = non_square_ndc_range(S1, S2)
+    offset = ndc_range / 2.0
+    return -offset + (ndc_range * i + offset) / S1
+
+
 def rasterize_meshes_python(
     meshes,
-    image_size: int = 256,
+    image_size: Union[int, Tuple[int, int]] = 256,
     blur_radius: float = 0.0,
     faces_per_pixel: int = 8,
     perspective_correct: bool = False,
@@ -271,9 +351,8 @@ def rasterize_meshes_python(
     C++/CUDA implementations.
     """
     N = len(meshes)
-    # Assume only square images.
-    # TODO(T52813608) extend support for non-square images.
-    H, W = image_size, image_size
+    H, W = image_size if isinstance(image_size, tuple) else (image_size, image_size)
+
     K = faces_per_pixel
     device = meshes.device
 
@@ -319,14 +398,14 @@ def rasterize_meshes_python(
             # Y coordinate of one end of the image. Reverse the ordering
             # of yi so that +Y is pointing up in the image.
             yfix = H - 1 - yi
-            yf = pix_to_ndc(yfix, H)
+            yf = pix_to_non_square_ndc(yfix, H, W)
 
             # Iterate through pixels on this horizontal line, left to right.
             for xi in range(W):
                 # X coordinate of one end of the image. Reverse the ordering
                 # of xi so that +X is pointing to the left in the image.
                 xfix = W - 1 - xi
-                xf = pix_to_ndc(xfix, W)
+                xf = pix_to_non_square_ndc(xfix, W, H)
                 top_k_points = []
 
                 # Check whether each face in the mesh affects this pixel.
