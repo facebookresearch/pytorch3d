@@ -1,0 +1,12 @@
+package:
+  name: nvidiacub
+  version: 1.10.0
+source:
+  url: https://github.com/NVIDIA/cub/archive/1.10.0.tar.gz
+  folder: source
+build:
+  script: mkdir $PREFIX/include && cp -r source/cub $PREFIX/include/cub
+
+about:
+  home: https://github.com/NVIDIA/cub
+  summary: CUB provides state-of-the-art, reusable software components for every layer of the CUDA programming model.
