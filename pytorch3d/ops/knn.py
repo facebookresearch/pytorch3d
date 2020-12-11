@@ -20,6 +20,8 @@ class _knn_points(Function):
     """
 
     @staticmethod
+    # pyre-fixme[14]: `forward` overrides method defined in `Function` inconsistently.
+    # pyre-fixme[14]: `forward` overrides method defined in `Function` inconsistently.
     def forward(
         ctx, p1, p2, lengths1, lengths2, K, version, return_sorted: bool = True
     ):
