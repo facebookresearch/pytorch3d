@@ -6,18 +6,22 @@ import torch
 import torch.nn as nn
 from common_testing import TestCaseMixin, get_random_cuda_device
 from pytorch3d.renderer import (
+    AlphaCompositor,
     BlendParams,
     HardGouraudShader,
     Materials,
     MeshRasterizer,
     MeshRenderer,
     PointLights,
+    PointsRasterizationSettings,
+    PointsRasterizer,
+    PointsRenderer,
     RasterizationSettings,
     SoftPhongShader,
     TexturesVertex,
 )
 from pytorch3d.renderer.cameras import FoVPerspectiveCameras, look_at_view_transform
-from pytorch3d.structures.meshes import Meshes
+from pytorch3d.structures import Meshes, Pointclouds
 from pytorch3d.utils.ico_sphere import ico_sphere
 
 
@@ -27,7 +31,7 @@ GPU_LIST = list({get_random_cuda_device() for _ in range(NUM_GPUS)})
 print("GPUs: %s" % ", ".join(GPU_LIST))
 
 
-class TestRenderMultiGPU(TestCaseMixin, unittest.TestCase):
+class TestRenderMeshesMultiGPU(TestCaseMixin, unittest.TestCase):
     def _check_mesh_renderer_props_on_device(self, renderer, device):
         """
         Helper function to check that all the properties of the mesh
@@ -99,7 +103,7 @@ class TestRenderMultiGPU(TestCaseMixin, unittest.TestCase):
         # This also tests that background_color is correctly moved to
         # the new device
         device2 = torch.device("cuda:0")
-        renderer.to(device2)
+        renderer = renderer.to(device2)
         mesh = mesh.to(device2)
         self._check_mesh_renderer_props_on_device(renderer, device2)
         output_images = renderer(mesh)
@@ -137,7 +141,7 @@ class TestRenderMultiGPU(TestCaseMixin, unittest.TestCase):
 
             def forward(self, verts, texs):
                 batch_size = verts.size(0)
-                self.renderer.to(verts.device)
+                self.renderer = self.renderer.to(verts.device)
                 tex = TexturesVertex(verts_features=texs)
                 faces = self.faces.expand(batch_size, -1, -1).to(verts.device)
                 mesh = Meshes(verts, faces, tex).to(verts.device)
@@ -157,3 +161,53 @@ class TestRenderMultiGPU(TestCaseMixin, unittest.TestCase):
         # Test a few iterations
         for _ in range(100):
             model(verts, texs)
+
+
+class TestRenderPointssMultiGPU(TestCaseMixin, unittest.TestCase):
+    def _check_points_renderer_props_on_device(self, renderer, device):
+        """
+        Helper function to check that all the properties have
+        been moved to the correct device.
+        """
+        # Cameras
+        self.assertEqual(renderer.rasterizer.cameras.device, device)
+        self.assertEqual(renderer.rasterizer.cameras.R.device, device)
+        self.assertEqual(renderer.rasterizer.cameras.T.device, device)
+
+    def test_points_renderer_to(self):
+        """
+        Test moving all the tensors in the points renderer to a new device.
+        """
+
+        device1 = torch.device("cpu")
+
+        R, T = look_at_view_transform(1500, 0.0, 0.0)
+
+        raster_settings = PointsRasterizationSettings(
+            image_size=256, radius=0.001, points_per_pixel=1
+        )
+        cameras = FoVPerspectiveCameras(
+            device=device1, R=R, T=T, aspect_ratio=1.0, fov=60.0, zfar=100
+        )
+        rasterizer = PointsRasterizer(cameras=cameras, raster_settings=raster_settings)
+
+        renderer = PointsRenderer(rasterizer=rasterizer, compositor=AlphaCompositor())
+
+        mesh = ico_sphere(2, device1)
+        verts_padded = mesh.verts_padded()
+        pointclouds = Pointclouds(
+            points=verts_padded, features=torch.randn_like(verts_padded)
+        )
+        self._check_points_renderer_props_on_device(renderer, device1)
+
+        # Test rendering on cpu
+        output_images = renderer(pointclouds)
+        self.assertEqual(output_images.device, device1)
+
+        # Move renderer and pointclouds to another device and re render
+        device2 = torch.device("cuda:0")
+        renderer = renderer.to(device2)
+        pointclouds = pointclouds.to(device2)
+        self._check_points_renderer_props_on_device(renderer, device2)
+        output_images = renderer(pointclouds)
+        self.assertEqual(output_images.device, device2)

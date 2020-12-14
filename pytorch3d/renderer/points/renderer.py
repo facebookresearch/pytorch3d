@@ -32,6 +32,13 @@ class PointsRenderer(nn.Module):
         self.rasterizer = rasterizer
         self.compositor = compositor
 
+    def to(self, device):
+        # Manually move to device rasterizer as the cameras
+        # within the class are not of type nn.Module
+        self.rasterizer = self.rasterizer.to(device)
+        self.compositor = self.compositor.to(device)
+        return self
+
     def forward(self, point_clouds, **kwargs) -> torch.Tensor:
         fragments = self.rasterizer(point_clouds, **kwargs)
 

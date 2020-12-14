@@ -55,6 +55,7 @@ class HardPhongShader(nn.Module):
         self.cameras = self.cameras.to(device)
         self.materials = self.materials.to(device)
         self.lights = self.lights.to(device)
+        return self
 
     def forward(self, fragments, meshes, **kwargs) -> torch.Tensor:
         cameras = kwargs.get("cameras", self.cameras)
@@ -109,6 +110,7 @@ class SoftPhongShader(nn.Module):
         self.cameras = self.cameras.to(device)
         self.materials = self.materials.to(device)
         self.lights = self.lights.to(device)
+        return self
 
     def forward(self, fragments, meshes, **kwargs) -> torch.Tensor:
         cameras = kwargs.get("cameras", self.cameras)
@@ -168,6 +170,7 @@ class HardGouraudShader(nn.Module):
         self.cameras = self.cameras.to(device)
         self.materials = self.materials.to(device)
         self.lights = self.lights.to(device)
+        return self
 
     def forward(self, fragments, meshes, **kwargs) -> torch.Tensor:
         cameras = kwargs.get("cameras", self.cameras)
@@ -226,6 +229,7 @@ class SoftGouraudShader(nn.Module):
         self.cameras = self.cameras.to(device)
         self.materials = self.materials.to(device)
         self.lights = self.lights.to(device)
+        return self
 
     def forward(self, fragments, meshes, **kwargs) -> torch.Tensor:
         cameras = kwargs.get("cameras", self.cameras)
@@ -301,6 +305,7 @@ class HardFlatShader(nn.Module):
         self.cameras = self.cameras.to(device)
         self.materials = self.materials.to(device)
         self.lights = self.lights.to(device)
+        return self
 
     def forward(self, fragments, meshes, **kwargs) -> torch.Tensor:
         cameras = kwargs.get("cameras", self.cameras)

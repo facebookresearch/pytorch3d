@@ -99,6 +99,11 @@ class PointsRasterizer(nn.Module):
         point_clouds = point_clouds.update_padded(pts_screen)
         return point_clouds
 
+    def to(self, device):
+        # Manually move to device cameras as it is not a subclass of nn.Module
+        self.cameras = self.cameras.to(device)
+        return self
+
     def forward(self, point_clouds, **kwargs) -> PointFragments:
         """
         Args:

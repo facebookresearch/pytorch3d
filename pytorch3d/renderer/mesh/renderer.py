@@ -37,6 +37,7 @@ class MeshRenderer(nn.Module):
         # Rasterizer and shader have submodules which are not of type nn.Module
         self.rasterizer.to(device)
         self.shader.to(device)
+        return self
 
     def forward(self, meshes_world, **kwargs) -> torch.Tensor:
         """
