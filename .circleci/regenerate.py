@@ -20,14 +20,22 @@ CONDA_CUDA_VERSIONS = {
     "1.5.1": ["cu92", "cu101", "cu102"],
     "1.6.0": ["cu92", "cu101", "cu102"],
     "1.7.0": ["cu101", "cu102", "cu110"],
+    "1.7.1": ["cu101", "cu102", "cu110"],
 }
+
+
+def pytorch_versions_for_python(python_version):
+    if python_version in ["3.6", "3.7", "3.8"]:
+        return list(CONDA_CUDA_VERSIONS)
+    pytorch_without_py39 = ["1.4", "1.5.0", "1.5.1", "1.6.0", "1.7.0"]
+    return [i for i in CONDA_CUDA_VERSIONS if i not in pytorch_without_py39]
 
 
 def workflows(prefix="", filter_branch=None, upload=False, indentation=6):
     w = []
     for btype in ["conda"]:
-        for python_version in ["3.6", "3.7", "3.8"]:
-            for pytorch_version in ["1.4", "1.5.0", "1.5.1", "1.6.0", "1.7.0"]:
+        for python_version in ["3.6", "3.7", "3.8", "3.9"]:
+            for pytorch_version in pytorch_versions_for_python(python_version):
                 for cu_version in CONDA_CUDA_VERSIONS[pytorch_version]:
                     w += workflow_pair(
                         btype=btype,
