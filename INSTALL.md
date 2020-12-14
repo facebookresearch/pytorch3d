@@ -89,11 +89,11 @@ CUDA support will be included if CUDA is available in pytorch or if the environm
 
 ### 1. Install from GitHub
 ```
-pip install 'git+https://github.com/facebookresearch/pytorch3d.git'
+pip install "git+https://github.com/facebookresearch/pytorch3d.git"
 ```
 To install using the code of the released version instead of from the main branch, use the following instead.
 ```
-pip install 'git+https://github.com/facebookresearch/pytorch3d.git@stable'
+pip install "git+https://github.com/facebookresearch/pytorch3d.git@stable"
 ```
 
 For CUDA builds with versions earlier than CUDA 11, set `CUB_HOME` before building as described above.
@@ -101,7 +101,7 @@ For CUDA builds with versions earlier than CUDA 11, set `CUB_HOME` before buildi
 **Install from Github on macOS:**
 Some environment variables should be provided, like this.
 ```
-MACOSX_DEPLOYMENT_TARGET=10.14 CC=clang CXX=clang++ pip install 'git+https://github.com/facebookresearch/pytorch3d.git'
+MACOSX_DEPLOYMENT_TARGET=10.14 CC=clang CXX=clang++ pip install "git+https://github.com/facebookresearch/pytorch3d.git"
 ```
 
 ### 2. Install from a local clone
