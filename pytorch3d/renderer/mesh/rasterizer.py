@@ -109,11 +109,12 @@ class MeshRasterizer(nn.Module):
         # NOTE: Retaining view space z coordinate for now.
         # TODO: Revisit whether or not to transform z coordinate to [-1, 1] or
         # [0, 1] range.
+        eps = kwargs.get("eps", None)
         verts_view = cameras.get_world_to_view_transform(**kwargs).transform_points(
-            verts_world
+            verts_world, eps=eps
         )
         verts_screen = cameras.get_projection_transform(**kwargs).transform_points(
-            verts_view
+            verts_view, eps=eps
         )
         verts_screen[..., 2] = verts_view[..., 2]
         meshes_screen = meshes_world.update_padded(new_verts_padded=verts_screen)
