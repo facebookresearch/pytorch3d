@@ -11,13 +11,13 @@
 //    features: FloatTensor of shape (C, P) which gives the features
 //            of each point where C is the size of the feature and
 //            P the number of points.
-//    alphas: FloatTensor of shape (N, points_per_pixel, W, W) where
+//    alphas: FloatTensor of shape (N, points_per_pixel, H, W) where
 //            points_per_pixel is the number of points in the z-buffer
-//            sorted in z-order, and W is the image size.
-//    points_idx: IntTensor of shape (N, points_per_pixel, W, W) giving the
+//            sorted in z-order, and (H, W) is the image size.
+//    points_idx: IntTensor of shape (N, points_per_pixel, H, W) giving the
 //            indices of the nearest points at each pixel, sorted in z-order.
 // Returns:
-//    weighted_fs: FloatTensor of shape (N, C, W, W) giving the accumulated
+//    weighted_fs: FloatTensor of shape (N, C, H, W) giving the accumulated
 //            feature for each point. Concretely, it gives:
 //                 weighted_fs[b,c,i,j] = sum_k cum_alpha_k *
 //                   features[c,points_idx[b,k,i,j]]

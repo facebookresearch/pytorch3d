@@ -404,7 +404,7 @@ class TestRasterizePoints(TestCaseMixin, unittest.TestCase):
         torch.manual_seed(231)
         N = 3
         max_P = 1000
-        image_size = 64
+        image_size = (64, 64)
         radius = 0.1
         bin_size = 16
         max_points_per_bin = 500
@@ -501,7 +501,7 @@ class TestRasterizePoints(TestCaseMixin, unittest.TestCase):
             device=device
         )
         # fmt: on
-        image_size = 16
+        image_size = (16, 16)
         radius = 0.2
         bin_size = 8
         max_points_per_bin = 5

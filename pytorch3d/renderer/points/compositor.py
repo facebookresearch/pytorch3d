@@ -75,7 +75,7 @@ def _add_background_color_to_images(pix_idxs, images, background_color):
             pixels with accumulated features have unchanged values.
     """
     # Initialize background mask
-    background_mask = pix_idxs[:, 0] < 0  # (N, image_size, image_size)
+    background_mask = pix_idxs[:, 0] < 0  # (N, H, W)
 
     # Convert background_color to an appropriate tensor and check shape
     if not torch.is_tensor(background_color):

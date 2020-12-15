@@ -1,7 +1,7 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
 
-from typing import Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 import numpy as np
 import torch
@@ -20,7 +20,7 @@ kMaxFacesPerBin = 22
 
 def rasterize_meshes(
     meshes,
-    image_size: Union[int, Tuple[int, int]] = 256,
+    image_size: Union[int, List[int], Tuple[int, int]] = 256,
     blur_radius: float = 0.0,
     faces_per_pixel: int = 8,
     bin_size: Optional[int] = None,
@@ -219,7 +219,7 @@ class _RasterizeFaceVerts(torch.autograd.Function):
         face_verts,
         mesh_to_face_first_idx,
         num_faces_per_mesh,
-        image_size: Tuple[int, int] = (256, 256),
+        image_size: Union[List[int], Tuple[int, int]] = (256, 256),
         blur_radius: float = 0.01,
         faces_per_pixel: int = 0,
         bin_size: int = 0,
@@ -285,11 +285,6 @@ class _RasterizeFaceVerts(torch.autograd.Function):
             grad_cull_backfaces,
         )
         return grads
-
-
-def pix_to_ndc(i, S):
-    # NDC x-offset + (i * pixel_width + half_pixel_width)
-    return -1 + (2 * i + 1.0) / S
 
 
 def non_square_ndc_range(S1, S2):

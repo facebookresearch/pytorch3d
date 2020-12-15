@@ -6,6 +6,7 @@ from .rasterizer import MeshRasterizer, RasterizationSettings
 from .renderer import MeshRenderer
 from .shader import TexturedSoftPhongShader  # DEPRECATED
 from .shader import (
+    BlendParams,
     HardFlatShader,
     HardGouraudShader,
     HardPhongShader,

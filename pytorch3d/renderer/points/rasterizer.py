@@ -2,7 +2,7 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
 
-from typing import NamedTuple, Optional, Union
+from typing import NamedTuple, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
@@ -29,7 +29,7 @@ class PointsRasterizationSettings:
 
     def __init__(
         self,
-        image_size: int = 256,
+        image_size: Union[int, Tuple[int, int]] = 256,
         radius: Union[float, torch.Tensor] = 0.01,
         points_per_pixel: int = 8,
         bin_size: Optional[int] = None,

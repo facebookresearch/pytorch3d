@@ -85,26 +85,28 @@ __global__ void RasterizePointsNaiveCudaKernel(
     const int64_t* num_points_per_cloud, // (N)
     const float* radius,
     const int N,
-    const int S,
+    const int H,
+    const int W,
     const int K,
-    int32_t* point_idxs, // (N, S, S, K)
-    float* zbuf, // (N, S, S, K)
-    float* pix_dists) { // (N, S, S, K)
+    int32_t* point_idxs, // (N, H, W, K)
+    float* zbuf, // (N, H, W, K)
+    float* pix_dists) { // (N, H, W, K)
   // Simple version: One thread per output pixel
   const int num_threads = gridDim.x * blockDim.x;
   const int tid = blockDim.x * blockIdx.x + threadIdx.x;
-  for (int i = tid; i < N * S * S; i += num_threads) {
+  for (int i = tid; i < N * H * W; i += num_threads) {
     // Convert linear index to 3D index
-    const int n = i / (S * S); // Batch index
-    const int pix_idx = i % (S * S);
+    const int n = i / (H * W); // Batch index
+    const int pix_idx = i % (H * W);
 
     // Reverse ordering of the X and Y axis as the camera coordinates
     // assume that +Y is pointing up and +X is pointing left.
-    const int yi = S - 1 - pix_idx / S;
-    const int xi = S - 1 - pix_idx % S;
+    const int yi = H - 1 - pix_idx / W;
+    const int xi = W - 1 - pix_idx % W;
 
-    const float xf = PixToNdc(xi, S);
-    const float yf = PixToNdc(yi, S);
+    // screen coordinates to ndc coordiantes of pixel.
+    const float xf = PixToNonSquareNdc(xi, W, H);
+    const float yf = PixToNonSquareNdc(yi, H, W);
 
     // For keeping track of the K closest points we want a data structure
     // that (1) gives O(1) access to the closest point for easy comparisons,
@@ -132,7 +134,7 @@ __global__ void RasterizePointsNaiveCudaKernel(
           points, p_idx, q_size, q_max_z, q_max_idx, q, radius, xf, yf, K);
     }
     BubbleSort(q, q_size);
-    int idx = n * S * S * K + pix_idx * K;
+    int idx = n * H * W * K + pix_idx * K;
     for (int k = 0; k < q_size; ++k) {
       point_idxs[idx + k] = q[k].idx;
       zbuf[idx + k] = q[k].z;
@@ -145,7 +147,7 @@ std::tuple<at::Tensor, at::Tensor, at::Tensor> RasterizePointsNaiveCuda(
     const at::Tensor& points, // (P. 3)
     const at::Tensor& cloud_to_packed_first_idx, // (N)
     const at::Tensor& num_points_per_cloud, // (N)
-    const int image_size,
+    const std::tuple<int, int> image_size,
     const at::Tensor& radius,
     const int points_per_pixel) {
   // Check inputs are on the same device
@@ -169,7 +171,8 @@ std::tuple<at::Tensor, at::Tensor, at::Tensor> RasterizePointsNaiveCuda(
       "num_points_per_cloud must have same size first dimension as cloud_to_packed_first_idx");
 
   const int N = num_points_per_cloud.size(0); // batch size.
-  const int S = image_size;
+  const int H = std::get<0>(image_size);
+  const int W = std::get<1>(image_size);
   const int K = points_per_pixel;
 
   if (K > kMaxPointsPerPixel) {
@@ -180,9 +183,9 @@ std::tuple<at::Tensor, at::Tensor, at::Tensor> RasterizePointsNaiveCuda(
 
   auto int_opts = num_points_per_cloud.options().dtype(at::kInt);
   auto float_opts = points.options().dtype(at::kFloat);
-  at::Tensor point_idxs = at::full({N, S, S, K}, -1, int_opts);
-  at::Tensor zbuf = at::full({N, S, S, K}, -1, float_opts);
-  at::Tensor pix_dists = at::full({N, S, S, K}, -1, float_opts);
+  at::Tensor point_idxs = at::full({N, H, W, K}, -1, int_opts);
+  at::Tensor zbuf = at::full({N, H, W, K}, -1, float_opts);
+  at::Tensor pix_dists = at::full({N, H, W, K}, -1, float_opts);
 
   if (point_idxs.numel() == 0) {
     AT_CUDA_CHECK(cudaGetLastError());
@@ -197,7 +200,8 @@ std::tuple<at::Tensor, at::Tensor, at::Tensor> RasterizePointsNaiveCuda(
       num_points_per_cloud.contiguous().data_ptr<int64_t>(),
       radius.contiguous().data_ptr<float>(),
       N,
-      S,
+      H,
+      W,
       K,
       point_idxs.contiguous().data_ptr<int32_t>(),
       zbuf.contiguous().data_ptr<float>(),
@@ -218,7 +222,8 @@ __global__ void RasterizePointsCoarseCudaKernel(
     const float* radius,
     const int N,
     const int P,
-    const int S,
+    const int H,
+    const int W,
     const int bin_size,
     const int chunk_size,
     const int max_points_per_bin,
@@ -226,13 +231,26 @@ __global__ void RasterizePointsCoarseCudaKernel(
     int* bin_points) {
   extern __shared__ char sbuf[];
   const int M = max_points_per_bin;
-  const int num_bins = 1 + (S - 1) / bin_size; // Integer divide round up
-  const float half_pix = 1.0f / S; // Size of half a pixel in NDC units
 
-  // This is a boolean array of shape (num_bins, num_bins, chunk_size)
+  // Integer divide round up
+  const int num_bins_x = 1 + (W - 1) / bin_size;
+  const int num_bins_y = 1 + (H - 1) / bin_size;
+
+  // NDC range depends on the ratio of W/H
+  // The shorter side from (H, W) is given an NDC range of 2.0 and
+  // the other side is scaled by the ratio of H:W.
+  const float NDC_x_half_range = NonSquareNdcRange(W, H) / 2.0f;
+  const float NDC_y_half_range = NonSquareNdcRange(H, W) / 2.0f;
+
+  // Size of half a pixel in NDC units is the NDC half range
+  // divided by the corresponding image dimension
+  const float half_pix_x = NDC_x_half_range / W;
+  const float half_pix_y = NDC_y_half_range / H;
+
+  // This is a boolean array of shape (num_bins_y, num_bins_x, chunk_size)
   // stored in shared memory that will track whether each point in the chunk
   // falls into each bin of the image.
-  BitMask binmask((unsigned int*)sbuf, num_bins, num_bins, chunk_size);
+  BitMask binmask((unsigned int*)sbuf, num_bins_y, num_bins_x, chunk_size);
 
   // Have each block handle a chunk of points and build a 3D bitmask in
   // shared memory to mark which points hit which bins.  In this first phase,
@@ -279,22 +297,24 @@ __global__ void RasterizePointsCoarseCudaKernel(
       // For example we could compute the exact bin where the point falls,
       // then check neighboring bins. This way we wouldn't have to check
       // all bins (however then we might have more warp divergence?)
-      for (int by = 0; by < num_bins; ++by) {
-        // Get y extent for the bin. PixToNdc gives us the location of
+      for (int by = 0; by < num_bins_y; ++by) {
+        // Get y extent for the bin. PixToNonSquareNdc gives us the location of
         // the center of each pixel, so we need to add/subtract a half
         // pixel to get the true extent of the bin.
-        const float by0 = PixToNdc(by * bin_size, S) - half_pix;
-        const float by1 = PixToNdc((by + 1) * bin_size - 1, S) + half_pix;
+        const float by0 = PixToNonSquareNdc(by * bin_size, H, W) - half_pix_y;
+        const float by1 =
+            PixToNonSquareNdc((by + 1) * bin_size - 1, H, W) + half_pix_y;
         const bool y_overlap = (py0 <= by1) && (by0 <= py1);
 
         if (!y_overlap) {
           continue;
         }
-        for (int bx = 0; bx < num_bins; ++bx) {
+        for (int bx = 0; bx < num_bins_x; ++bx) {
           // Get x extent for the bin; again we need to adjust the
-          // output of PixToNdc by half a pixel.
-          const float bx0 = PixToNdc(bx * bin_size, S) - half_pix;
-          const float bx1 = PixToNdc((bx + 1) * bin_size - 1, S) + half_pix;
+          // output of PixToNonSquareNdc by half a pixel.
+          const float bx0 = PixToNonSquareNdc(bx * bin_size, W, H) - half_pix_x;
+          const float bx1 =
+              PixToNonSquareNdc((bx + 1) * bin_size - 1, W, H) + half_pix_x;
           const bool x_overlap = (px0 <= bx1) && (bx0 <= px1);
 
           if (x_overlap) {
@@ -307,12 +327,13 @@ __global__ void RasterizePointsCoarseCudaKernel(
     // Now we have processed every point in the current chunk. We need to
     // count the number of points in each bin so we can write the indices
     // out to global memory. We have each thread handle a different bin.
-    for (int byx = threadIdx.x; byx < num_bins * num_bins; byx += blockDim.x) {
-      const int by = byx / num_bins;
-      const int bx = byx % num_bins;
+    for (int byx = threadIdx.x; byx < num_bins_y * num_bins_x;
+         byx += blockDim.x) {
+      const int by = byx / num_bins_x;
+      const int bx = byx % num_bins_x;
       const int count = binmask.count(by, bx);
       const int points_per_bin_idx =
-          batch_idx * num_bins * num_bins + by * num_bins + bx;
+          batch_idx * num_bins_y * num_bins_x + by * num_bins_x + bx;
 
       // This atomically increments the (global) number of points found
       // in the current bin, and gets the previous value of the counter;
@@ -322,8 +343,8 @@ __global__ void RasterizePointsCoarseCudaKernel(
 
       // Now loop over the binmask and write the active bits for this bin
       // out to bin_points.
-      int next_idx = batch_idx * num_bins * num_bins * M + by * num_bins * M +
-          bx * M + start;
+      int next_idx = batch_idx * num_bins_y * num_bins_x * M +
+          by * num_bins_x * M + bx * M + start;
       for (int p = 0; p < chunk_size; ++p) {
         if (binmask.get(by, bx, p)) {
           // TODO: Throw an error if next_idx >= M -- this means that
@@ -342,7 +363,7 @@ at::Tensor RasterizePointsCoarseCuda(
     const at::Tensor& points, // (P, 3)
     const at::Tensor& cloud_to_packed_first_idx, // (N)
     const at::Tensor& num_points_per_cloud, // (N)
-    const int image_size,
+    const std::tuple<int, int> image_size,
     const at::Tensor& radius,
     const int bin_size,
     const int max_points_per_bin) {
@@ -363,20 +384,28 @@ at::Tensor RasterizePointsCoarseCuda(
   at::cuda::CUDAGuard device_guard(points.device());
   cudaStream_t stream = at::cuda::getCurrentCUDAStream();
 
+  const int H = std::get<0>(image_size);
+  const int W = std::get<1>(image_size);
+
   const int P = points.size(0);
   const int N = num_points_per_cloud.size(0);
-  const int num_bins = 1 + (image_size - 1) / bin_size; // divide round up
   const int M = max_points_per_bin;
 
-  if (num_bins >= 22) {
+  // Integer divide round up.
+  const int num_bins_y = 1 + (H - 1) / bin_size;
+  const int num_bins_x = 1 + (W - 1) / bin_size;
+
+  if (num_bins_y >= kMaxItemsPerBin || num_bins_x >= kMaxItemsPerBin) {
     // Make sure we do not use too much shared memory.
     std::stringstream ss;
-    ss << "Got " << num_bins << "; that's too many!";
+    ss << "In Coarse Rasterizer got num_bins_y: " << num_bins_y
+       << ", num_bins_x: " << num_bins_x << ", "
+       << "; that's too many!";
     AT_ERROR(ss.str());
   }
   auto opts = num_points_per_cloud.options().dtype(at::kInt);
-  at::Tensor points_per_bin = at::zeros({N, num_bins, num_bins}, opts);
-  at::Tensor bin_points = at::full({N, num_bins, num_bins, M}, -1, opts);
+  at::Tensor points_per_bin = at::zeros({N, num_bins_y, num_bins_x}, opts);
+  at::Tensor bin_points = at::full({N, num_bins_y, num_bins_x, M}, -1, opts);
 
   if (bin_points.numel() == 0) {
     AT_CUDA_CHECK(cudaGetLastError());
@@ -384,7 +413,7 @@ at::Tensor RasterizePointsCoarseCuda(
   }
 
   const int chunk_size = 512;
-  const size_t shared_size = num_bins * num_bins * chunk_size / 8;
+  const size_t shared_size = num_bins_y * num_bins_x * chunk_size / 8;
   const size_t blocks = 64;
   const size_t threads = 512;
 
@@ -395,7 +424,8 @@ at::Tensor RasterizePointsCoarseCuda(
       radius.contiguous().data_ptr<float>(),
       N,
       P,
-      image_size,
+      H,
+      W,
       bin_size,
       chunk_size,
       M,
@@ -412,19 +442,21 @@ at::Tensor RasterizePointsCoarseCuda(
 
 __global__ void RasterizePointsFineCudaKernel(
     const float* points, // (P, 3)
-    const int32_t* bin_points, // (N, B, B, T)
+    const int32_t* bin_points, // (N, BH, BW, T)
     const float* radius,
     const int bin_size,
     const int N,
-    const int B, // num_bins
+    const int BH, // num_bins y
+    const int BW, // num_bins x
     const int M,
-    const int S,
+    const int H,
+    const int W,
     const int K,
-    int32_t* point_idxs, // (N, S, S, K)
-    float* zbuf, // (N, S, S, K)
-    float* pix_dists) { // (N, S, S, K)
-  // This can be more than S^2 if S is not dividable by bin_size.
-  const int num_pixels = N * B * B * bin_size * bin_size;
+    int32_t* point_idxs, // (N, H, W, K)
+    float* zbuf, // (N, H, W, K)
+    float* pix_dists) { // (N, H, W, K)
+  // This can be more than H * W if H or W are not divisible by bin_size.
+  const int num_pixels = N * BH * BW * bin_size * bin_size;
   const int num_threads = gridDim.x * blockDim.x;
   const int tid = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -434,21 +466,21 @@ __global__ void RasterizePointsFineCudaKernel(
     // into the same bin; this should give them coalesced memory reads when
     // they read from points and bin_points.
     int i = pid;
-    const int n = i / (B * B * bin_size * bin_size);
-    i %= B * B * bin_size * bin_size;
-    const int by = i / (B * bin_size * bin_size);
-    i %= B * bin_size * bin_size;
+    const int n = i / (BH * BW * bin_size * bin_size);
+    i %= BH * BW * bin_size * bin_size;
+    const int by = i / (BW * bin_size * bin_size);
+    i %= BW * bin_size * bin_size;
     const int bx = i / (bin_size * bin_size);
     i %= bin_size * bin_size;
 
     const int yi = i / bin_size + by * bin_size;
     const int xi = i % bin_size + bx * bin_size;
 
-    if (yi >= S || xi >= S)
+    if (yi >= H || xi >= W)
       continue;
 
-    const float xf = PixToNdc(xi, S);
-    const float yf = PixToNdc(yi, S);
+    const float xf = PixToNonSquareNdc(xi, W, H);
+    const float yf = PixToNonSquareNdc(yi, H, W);
 
     // This part looks like the naive rasterization kernel, except we use
     // bin_points to only look at a subset of points already known to fall
@@ -459,7 +491,7 @@ __global__ void RasterizePointsFineCudaKernel(
     float q_max_z = -1000;
     int q_max_idx = -1;
     for (int m = 0; m < M; ++m) {
-      const int p = bin_points[n * B * B * M + by * B * M + bx * M + m];
+      const int p = bin_points[n * BH * BW * M + by * BW * M + bx * M + m];
       if (p < 0) {
         // bin_points uses -1 as a sentinal value
         continue;
@@ -473,10 +505,10 @@ __global__ void RasterizePointsFineCudaKernel(
 
     // Reverse ordering of the X and Y axis as the camera coordinates
     // assume that +Y is pointing up and +X is pointing left.
-    const int yidx = S - 1 - yi;
-    const int xidx = S - 1 - xi;
+    const int yidx = H - 1 - yi;
+    const int xidx = W - 1 - xi;
 
-    const int pix_idx = n * S * S * K + yidx * S * K + xidx * K;
+    const int pix_idx = n * H * W * K + yidx * W * K + xidx * K;
     for (int k = 0; k < q_size; ++k) {
       point_idxs[pix_idx + k] = q[k].idx;
       zbuf[pix_idx + k] = q[k].z;
@@ -488,7 +520,7 @@ __global__ void RasterizePointsFineCudaKernel(
 std::tuple<at::Tensor, at::Tensor, at::Tensor> RasterizePointsFineCuda(
     const at::Tensor& points, // (P, 3)
     const at::Tensor& bin_points,
-    const int image_size,
+    const std::tuple<int, int> image_size,
     const at::Tensor& radius,
     const int bin_size,
     const int points_per_pixel) {
@@ -503,18 +535,22 @@ std::tuple<at::Tensor, at::Tensor, at::Tensor> RasterizePointsFineCuda(
   cudaStream_t stream = at::cuda::getCurrentCUDAStream();
 
   const int N = bin_points.size(0);
-  const int B = bin_points.size(1); // num_bins
+  const int BH = bin_points.size(1);
+  const int BW = bin_points.size(2);
   const int M = bin_points.size(3);
-  const int S = image_size;
   const int K = points_per_pixel;
+
+  const int H = std::get<0>(image_size);
+  const int W = std::get<1>(image_size);
+
   if (K > kMaxPointsPerPixel) {
     AT_ERROR("Must have num_closest <= 150");
   }
   auto int_opts = bin_points.options().dtype(at::kInt);
   auto float_opts = points.options().dtype(at::kFloat);
-  at::Tensor point_idxs = at::full({N, S, S, K}, -1, int_opts);
-  at::Tensor zbuf = at::full({N, S, S, K}, -1, float_opts);
-  at::Tensor pix_dists = at::full({N, S, S, K}, -1, float_opts);
+  at::Tensor point_idxs = at::full({N, H, W, K}, -1, int_opts);
+  at::Tensor zbuf = at::full({N, H, W, K}, -1, float_opts);
+  at::Tensor pix_dists = at::full({N, H, W, K}, -1, float_opts);
 
   if (point_idxs.numel() == 0) {
     AT_CUDA_CHECK(cudaGetLastError());
@@ -529,9 +565,11 @@ std::tuple<at::Tensor, at::Tensor, at::Tensor> RasterizePointsFineCuda(
       radius.contiguous().data_ptr<float>(),
       bin_size,
       N,
-      B,
+      BH,
+      BW,
       M,
-      S,
+      H,
+      W,
       K,
       point_idxs.contiguous().data_ptr<int32_t>(),
       zbuf.contiguous().data_ptr<float>(),
@@ -571,8 +609,8 @@ __global__ void RasterizePointsBackwardCudaKernel(
     const int yidx = H - 1 - yi;
     const int xidx = W - 1 - xi;
 
-    const float xf = PixToNdc(xidx, W);
-    const float yf = PixToNdc(yidx, H);
+    const float xf = PixToNonSquareNdc(xidx, W, H);
+    const float yf = PixToNonSquareNdc(yidx, H, W);
 
     const int p = idxs[i];
     if (p < 0)

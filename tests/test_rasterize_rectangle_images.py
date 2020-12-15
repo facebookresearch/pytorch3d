@@ -12,19 +12,33 @@ from pytorch3d.io import load_obj
 from pytorch3d.renderer.cameras import FoVPerspectiveCameras, look_at_view_transform
 from pytorch3d.renderer.lighting import PointLights
 from pytorch3d.renderer.materials import Materials
-from pytorch3d.renderer.mesh import TexturesUV
+from pytorch3d.renderer.mesh import (
+    BlendParams,
+    MeshRasterizer,
+    MeshRenderer,
+    RasterizationSettings,
+    SoftPhongShader,
+    TexturesUV,
+)
 from pytorch3d.renderer.mesh.rasterize_meshes import (
     rasterize_meshes,
     rasterize_meshes_python,
 )
-from pytorch3d.renderer.mesh.rasterizer import (
-    Fragments,
-    MeshRasterizer,
-    RasterizationSettings,
+from pytorch3d.renderer.mesh.rasterizer import Fragments
+from pytorch3d.renderer.points import (
+    AlphaCompositor,
+    PointsRasterizationSettings,
+    PointsRasterizer,
+    PointsRenderer,
 )
-from pytorch3d.renderer.mesh.renderer import MeshRenderer
-from pytorch3d.renderer.mesh.shader import BlendParams, SoftPhongShader
-from pytorch3d.structures import Meshes
+from pytorch3d.renderer.points.rasterize_points import (
+    rasterize_points,
+    rasterize_points_python,
+)
+from pytorch3d.renderer.points.rasterizer import PointFragments
+from pytorch3d.structures import Meshes, Pointclouds
+from pytorch3d.transforms.transform3d import Transform3d
+from pytorch3d.utils import torus
 
 
 DEBUG = False
@@ -44,9 +58,36 @@ verts0 = torch.tensor(
 )
 faces0 = torch.tensor([[1, 0, 2], [4, 3, 5]], dtype=torch.int64)
 
+# Points for a simple pointcloud. Get the vertices from a
+# torus and apply rotations such that the points are no longer
+# symmerical in X/Y.
+torus_mesh = torus(r=0.25, R=1.0, sides=5, rings=2 * 5)
+t = (
+    Transform3d()
+    .rotate_axis_angle(angle=90, axis="Y")
+    .rotate_axis_angle(angle=45, axis="Z")
+    .scale(0.3)
+)
+torus_points = t.transform_points(torus_mesh.verts_padded()).squeeze()
 
-class TestRasterizeRectanglesErrors(TestCaseMixin, unittest.TestCase):
-    def test_image_size_arg(self):
+
+def _save_debug_image(idx, image_size, bin_size, blur):
+    """
+    Save a mask image from the rasterization output for debugging.
+    """
+    H, W = image_size
+    # Save out the last image for debugging
+    rgb = (idx[-1, ..., :3].cpu() > -1).squeeze()
+    suffix = "square" if H == W else "non_square"
+    filename = "%s_bin_size_%s_blur_%.3f_%dx%d.png"
+    filename = filename % (suffix, str(bin_size), blur, H, W)
+    if DEBUG:
+        filename = "DEBUG_%s" % filename
+        Image.fromarray((rgb.numpy() * 255).astype(np.uint8)).save(DATA_DIR / filename)
+
+
+class TestRasterizeRectangleImagesErrors(TestCaseMixin, unittest.TestCase):
+    def test_mesh_image_size_arg(self):
         meshes = Meshes(verts=[verts0], faces=[faces0])
 
         with self.assertRaises(ValueError) as cm:
@@ -76,8 +117,38 @@ class TestRasterizeRectanglesErrors(TestCaseMixin, unittest.TestCase):
             )
             self.assertTrue("sizes must be integers" in cm.msg)
 
+    def test_points_image_size_arg(self):
+        points = Pointclouds([verts0])
 
-class TestRasterizeRectangles(TestCaseMixin, unittest.TestCase):
+        with self.assertRaises(ValueError) as cm:
+            rasterize_points(
+                points,
+                (100, 200, 3),
+                0.0001,
+                points_per_pixel=1,
+            )
+            self.assertTrue("tuple/list of (H, W)" in cm.msg)
+
+        with self.assertRaises(ValueError) as cm:
+            rasterize_points(
+                points,
+                (0, 10),
+                0.0001,
+                points_per_pixel=1,
+            )
+            self.assertTrue("sizes must be positive" in cm.msg)
+
+        with self.assertRaises(ValueError) as cm:
+            rasterize_points(
+                points,
+                (100.5, 120.5),
+                0.0001,
+                points_per_pixel=1,
+            )
+            self.assertTrue("sizes must be integers" in cm.msg)
+
+
+class TestRasterizeRectangleImagesMeshes(TestCaseMixin, unittest.TestCase):
     @staticmethod
     def _clone_mesh(verts0, faces0, device, batch_size):
         """
@@ -164,7 +235,7 @@ class TestRasterizeRectangles(TestCaseMixin, unittest.TestCase):
             meshes_sq, image_size=(S, S), bin_size=0, blur=blur
         )
         # Save debug image
-        self._save_debug_image(square_fragments, (S, S), 0, blur)
+        _save_debug_image(square_fragments.pix_to_face, (S, S), 0, blur)
 
         # Extract the values in the square image which are non zero.
         square_mask = square_fragments.pix_to_face > -1
@@ -284,8 +355,8 @@ class TestRasterizeRectangles(TestCaseMixin, unittest.TestCase):
             )
 
             # Save out debug images if needed
-            self._save_debug_image(fragments_naive, image_size, 0, blur)
-            self._save_debug_image(fragments_binned, image_size, None, blur)
+            _save_debug_image(fragments_naive.pix_to_face, image_size, 0, blur)
+            _save_debug_image(fragments_binned.pix_to_face, image_size, None, blur)
 
             # Check naive and binned fragments give the same outputs
             self._check_fragments(fragments_naive, fragments_binned)
@@ -354,8 +425,8 @@ class TestRasterizeRectangles(TestCaseMixin, unittest.TestCase):
             )
 
             # Save debug images if DEBUG is set to true at the top of the file.
-            self._save_debug_image(fragments_naive, image_size, 0, blur)
-            self._save_debug_image(fragments_python, image_size, "python", blur)
+            _save_debug_image(fragments_naive.pix_to_face, image_size, 0, blur)
+            _save_debug_image(fragments_python.pix_to_face, image_size, "python", blur)
 
             # List of non square outputs to compare with the square output
             nonsq_fragment_gradtensor_list = [
@@ -432,6 +503,296 @@ class TestRasterizeRectangles(TestCaseMixin, unittest.TestCase):
             if DEBUG:
                 Image.fromarray((rgb.numpy() * 255).astype(np.uint8)).save(
                     DATA_DIR / "DEBUG_cow_image_rectangle.png"
+                )
+
+            # NOTE some pixels can be flaky
+            cond1 = torch.allclose(rgb, image_ref, atol=0.05)
+            self.assertTrue(cond1)
+
+
+class TestRasterizeRectangleImagesPointclouds(TestCaseMixin, unittest.TestCase):
+    @staticmethod
+    def _clone_pointcloud(verts0, device, batch_size):
+        """
+        Helper function to detach and clone the verts.
+        This is needed in order to set up the tensors for
+        gradient computation in different tests.
+        """
+        verts = verts0.detach().clone()
+        verts.requires_grad = True
+        pointclouds = Pointclouds(points=[verts])
+        pointclouds = pointclouds.to(device).extend(batch_size)
+        return verts, pointclouds
+
+    def _rasterize(self, meshes, image_size, bin_size, blur):
+        """
+        Simple wrapper around the rasterize function to return
+        the fragment data.
+        """
+        idxs, zbuf, dists = rasterize_points(
+            meshes,
+            image_size,
+            blur,
+            points_per_pixel=1,
+            bin_size=bin_size,
+        )
+        return PointFragments(
+            idx=idxs,
+            zbuf=zbuf,
+            dists=dists,
+        )
+
+    def _check_fragments(self, frag_1, frag_2):
+        """
+        Helper function to check that the tensors in
+        the Fragments frag_1 and frag_2 are the same.
+        """
+        self.assertClose(frag_1.idx, frag_2.idx)
+        self.assertClose(frag_1.dists, frag_2.dists)
+        self.assertClose(frag_1.zbuf, frag_2.zbuf)
+
+    def _compare_square_with_nonsq(
+        self,
+        image_size,
+        blur,
+        device,
+        points,
+        nonsq_fragment_gradtensor_list,
+        batch_size=1,
+    ):
+        """
+        Calculate the output from rasterizing a square image with the minimum of (H, W).
+        Then compare this with the same square region in the non square image.
+        The input points are contained within the [-1, 1] range of the image
+        so all the relevant pixels will be within the square region.
+
+        `nonsq_fragment_gradtensor_list` is a list of fragments and verts grad tensors
+        from rasterizing non square images.
+        """
+        # Rasterize the square version of the image
+        H, W = image_size
+        S = min(H, W)
+        points_square, pointclouds_sq = self._clone_pointcloud(
+            points, device, batch_size
+        )
+        square_fragments = self._rasterize(
+            pointclouds_sq, image_size=(S, S), bin_size=0, blur=blur
+        )
+        # Save debug image
+        _save_debug_image(square_fragments.idx, (S, S), 0, blur)
+
+        # Extract the values in the square image which are non zero.
+        square_mask = square_fragments.idx > -1
+        square_dists = square_fragments.dists[square_mask]
+        square_zbuf = square_fragments.zbuf[square_mask]
+
+        # Retain gradients on the output of fragments to check
+        # intermediate values with the non square outputs.
+        square_fragments.dists.retain_grad()
+        square_fragments.zbuf.retain_grad()
+
+        # Calculate gradient for the square image
+        torch.manual_seed(231)
+        grad_zbuf = torch.randn_like(square_zbuf)
+        grad_dist = torch.randn_like(square_dists)
+        loss0 = (grad_dist * square_dists).sum() + (grad_zbuf * square_zbuf).sum()
+        loss0.backward()
+
+        # Now compare against the non square outputs provided
+        # in the nonsq_fragment_gradtensor_list list
+        for fragments, grad_tensor, _name in nonsq_fragment_gradtensor_list:
+            # Check that there are the same number of non zero pixels
+            # in both the square and non square images.
+            non_square_mask = fragments.idx > -1
+            self.assertEqual(non_square_mask.sum().item(), square_mask.sum().item())
+
+            # Check dists, zbuf and bary match the square image
+            non_square_dists = fragments.dists[non_square_mask]
+            non_square_zbuf = fragments.zbuf[non_square_mask]
+            self.assertClose(square_dists, non_square_dists)
+            self.assertClose(square_zbuf, non_square_zbuf)
+
+            # Retain gradients to compare values with outputs from
+            # square image
+            fragments.dists.retain_grad()
+            fragments.zbuf.retain_grad()
+            loss1 = (grad_dist * non_square_dists).sum() + (
+                grad_zbuf * non_square_zbuf
+            ).sum()
+            loss1.sum().backward()
+
+            # Get the non zero values in the intermediate gradients
+            # and compare with the values from the square image
+            non_square_grad_dists = fragments.dists.grad[non_square_mask]
+            non_square_grad_zbuf = fragments.zbuf.grad[non_square_mask]
+
+            self.assertClose(
+                non_square_grad_dists,
+                square_fragments.dists.grad[square_mask],
+            )
+            self.assertClose(
+                non_square_grad_zbuf,
+                square_fragments.zbuf.grad[square_mask],
+            )
+
+            # Finally check the gradients of the input vertices for
+            # the square and non square case
+            self.assertClose(points_square.grad, grad_tensor.grad, rtol=2e-4)
+
+    def test_gpu(self):
+        """
+        Test that the output of rendering non square images
+        gives the same result as square images. i.e. the
+        dists, zbuf, idx are all the same for the square
+        region which is present in both images.
+        """
+        # Test both cases: (W > H), (H > W)
+        image_sizes = [(64, 128), (128, 64), (128, 256), (256, 128)]
+
+        devices = ["cuda:0"]
+        blurs = [5e-2]
+        batch_sizes = [1, 4]
+        test_cases = product(image_sizes, blurs, devices, batch_sizes)
+
+        for image_size, blur, device, batch_size in test_cases:
+            # Initialize the verts grad tensor and the meshes objects
+            verts_nonsq_naive, pointcloud_nonsq_naive = self._clone_pointcloud(
+                torus_points, device, batch_size
+            )
+            verts_nonsq_binned, pointcloud_nonsq_binned = self._clone_pointcloud(
+                torus_points, device, batch_size
+            )
+
+            # Get the outputs for both naive and coarse to fine rasterization
+            fragments_naive = self._rasterize(
+                pointcloud_nonsq_naive,
+                image_size,
+                blur=blur,
+                bin_size=0,
+            )
+            fragments_binned = self._rasterize(
+                pointcloud_nonsq_binned,
+                image_size,
+                blur=blur,
+                bin_size=None,
+            )
+
+            # Save out debug images if needed
+            _save_debug_image(fragments_naive.idx, image_size, 0, blur)
+            _save_debug_image(fragments_binned.idx, image_size, None, blur)
+
+            # Check naive and binned fragments give the same outputs
+            self._check_fragments(fragments_naive, fragments_binned)
+
+            # Here we want to compare the square image with the naive and the
+            # coarse to fine methods outputs
+            nonsq_fragment_gradtensor_list = [
+                (fragments_naive, verts_nonsq_naive, "naive"),
+                (fragments_binned, verts_nonsq_binned, "coarse-to-fine"),
+            ]
+
+            self._compare_square_with_nonsq(
+                image_size,
+                blur,
+                device,
+                torus_points,
+                nonsq_fragment_gradtensor_list,
+                batch_size,
+            )
+
+    def test_cpu(self):
+        """
+        Test that the output of rendering non square images
+        gives the same result as square images. i.e. the
+        dists, zbuf, idx are all the same for the square
+        region which is present in both images.
+
+        In this test we compare between the naive C++ implementation
+        and the naive python implementation as the Coarse/Fine
+        method is not fully implemented in C++
+        """
+        # Test both when (W > H) and (H > W).
+        # Using smaller image sizes here as the Python rasterizer is really slow.
+        image_sizes = [(32, 64), (64, 32)]
+        devices = ["cpu"]
+        blurs = [5e-2]
+        batch_sizes = [1]
+        test_cases = product(image_sizes, blurs, devices, batch_sizes)
+
+        for image_size, blur, device, batch_size in test_cases:
+            # Initialize the verts grad tensor and the meshes objects
+            verts_nonsq_naive, pointcloud_nonsq_naive = self._clone_pointcloud(
+                torus_points, device, batch_size
+            )
+            verts_nonsq_python, pointcloud_nonsq_python = self._clone_pointcloud(
+                torus_points, device, batch_size
+            )
+
+            # Compare Naive CPU with Python as Coarse/Fine rasteriztation
+            # is not implemented for CPU
+            fragments_naive = self._rasterize(
+                pointcloud_nonsq_naive, image_size, bin_size=0, blur=blur
+            )
+            idxs, zbuf, pix_dists = rasterize_points_python(
+                pointcloud_nonsq_python,
+                image_size,
+                blur,
+                points_per_pixel=1,
+            )
+            fragments_python = PointFragments(
+                idx=idxs,
+                zbuf=zbuf,
+                dists=pix_dists,
+            )
+
+            # Save debug images if DEBUG is set to true at the top of the file.
+            _save_debug_image(fragments_naive.idx, image_size, 0, blur)
+            _save_debug_image(fragments_python.idx, image_size, "python", blur)
+
+            # List of non square outputs to compare with the square output
+            nonsq_fragment_gradtensor_list = [
+                (fragments_naive, verts_nonsq_naive, "naive"),
+                (fragments_python, verts_nonsq_python, "python"),
+            ]
+            self._compare_square_with_nonsq(
+                image_size,
+                blur,
+                device,
+                torus_points,
+                nonsq_fragment_gradtensor_list,
+                batch_size,
+            )
+
+    def test_render_pointcloud(self):
+        """
+        Test a textured poincloud is rendered correctly in a non square image.
+        """
+        device = torch.device("cuda:0")
+        pointclouds = Pointclouds(
+            points=[torus_points * 2.0],
+            features=torch.ones_like(torus_points[None, ...]),
+        ).to(device)
+        R, T = look_at_view_transform(2.7, 0.0, 0.0)
+        cameras = FoVPerspectiveCameras(device=device, R=R, T=T)
+        raster_settings = PointsRasterizationSettings(
+            image_size=(512, 1024), radius=5e-2, points_per_pixel=1
+        )
+        rasterizer = PointsRasterizer(cameras=cameras, raster_settings=raster_settings)
+        compositor = AlphaCompositor()
+        renderer = PointsRenderer(rasterizer=rasterizer, compositor=compositor)
+
+        # Load reference image
+        image_ref = load_rgb_image("test_pointcloud_rectangle_image.png", DATA_DIR)
+
+        for bin_size in [0, None]:
+            # Check both naive and coarse to fine produce the same output.
+            renderer.rasterizer.raster_settings.bin_size = bin_size
+            images = renderer(pointclouds)
+            rgb = images[0, ..., :3].squeeze().cpu()
+
+            if DEBUG:
+                Image.fromarray((rgb.numpy() * 255).astype(np.uint8)).save(
+                    DATA_DIR / "DEBUG_pointcloud_rectangle_image.png"
                 )
 
             # NOTE some pixels can be flaky

@@ -74,6 +74,21 @@ def bm_python_vs_cpu_vs_cuda() -> None:
     kwargs_list += [
         {"N": 32, "P": 100000, "img_size": 128, "radius": 0.01, "pts_per_pxl": 50},
         {"N": 8, "P": 200000, "img_size": 512, "radius": 0.01, "pts_per_pxl": 50},
+        {"N": 8, "P": 200000, "img_size": 256, "radius": 0.01, "pts_per_pxl": 50},
+        {
+            "N": 8,
+            "P": 200000,
+            "img_size": (512, 256),
+            "radius": 0.01,
+            "pts_per_pxl": 50,
+        },
+        {
+            "N": 8,
+            "P": 200000,
+            "img_size": (256, 512),
+            "radius": 0.01,
+            "pts_per_pxl": 50,
+        },
     ]
     for k in kwargs_list:
         k["device"] = "cuda"

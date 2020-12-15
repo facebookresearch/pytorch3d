@@ -28,16 +28,16 @@ __global__ void weightedSumCudaForwardKernel(
   // Get the batch and index
   const int batch = blockIdx.x;
 
-  const int num_pixels = C * W * H;
+  const int num_pixels = C * H * W;
   const int num_threads = gridDim.y * blockDim.x;
   const int tid = blockIdx.y * blockDim.x + threadIdx.x;
 
   // Parallelize over each feature in each pixel in images of size H * W,
   // for each image in the batch of size batch_size
   for (int pid = tid; pid < num_pixels; pid += num_threads) {
-    int ch = pid / (W * H);
-    int j = (pid % (W * H)) / H;
-    int i = (pid % (W * H)) % H;
+    int ch = pid / (H * W);
+    int j = (pid % (H * W)) / W;
+    int i = (pid % (H * W)) % W;
 
     // Iterate through the closest K points for this pixel
     for (int k = 0; k < points_idx.size(1); ++k) {
@@ -76,16 +76,16 @@ __global__ void weightedSumCudaBackwardKernel(
   // Get the batch and index
   const int batch = blockIdx.x;
 
-  const int num_pixels = C * W * H;
+  const int num_pixels = C * H * W;
   const int num_threads = gridDim.y * blockDim.x;
   const int tid = blockIdx.y * blockDim.x + threadIdx.x;
 
   // Iterate over each pixel to compute the contribution to the
   // gradient for the features and weights
   for (int pid = tid; pid < num_pixels; pid += num_threads) {
-    int ch = pid / (W * H);
-    int j = (pid % (W * H)) / H;
-    int i = (pid % (W * H)) % H;
+    int ch = pid / (H * W);
+    int j = (pid % (H * W)) / W;
+    int i = (pid % (H * W)) % W;
 
     // Iterate through the closest K points for this pixel
     for (int k = 0; k < points_idx.size(1); ++k) {
