@@ -1,6 +1,7 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
 
+import random
 import unittest
 
 import numpy as np
@@ -125,6 +126,44 @@ class TestPointclouds(TestCaseMixin, unittest.TestCase):
             clouds.padded_to_packed_idx().cpu(),
             torch.tensor([0, 1, 2, 5, 6, 7, 8, 10, 11, 12, 13, 14]),
         )
+
+    def test_init_error(self):
+        # Check if correct errors are raised when verts/faces are on
+        # different devices
+
+        clouds = self.init_cloud(10, 100, 5)
+        points_list = clouds.points_list()  # all tensors on cuda:0
+        points_list = [
+            p.to("cpu") if random.uniform(0, 1) > 0.5 else p for p in points_list
+        ]
+        features_list = clouds.features_list()
+        normals_list = clouds.normals_list()
+
+        with self.assertRaises(ValueError) as cm:
+            Pointclouds(
+                points=points_list, features=features_list, normals=normals_list
+            )
+            self.assertTrue("same device" in cm.msg)
+
+        points_list = clouds.points_list()
+        features_list = [
+            f.to("cpu") if random.uniform(0, 1) > 0.2 else f for f in features_list
+        ]
+        with self.assertRaises(ValueError) as cm:
+            Pointclouds(
+                points=points_list, features=features_list, normals=normals_list
+            )
+            self.assertTrue("same device" in cm.msg)
+
+        points_padded = clouds.points_padded()  # on cuda:0
+        features_padded = clouds.features_padded().to("cpu")
+        normals_padded = clouds.normals_padded()
+
+        with self.assertRaises(ValueError) as cm:
+            Pointclouds(
+                points=points_padded, features=features_padded, normals=normals_padded
+            )
+            self.assertTrue("same device" in cm.msg)
 
     def test_all_constructions(self):
         public_getters = [

@@ -1,5 +1,6 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
+import random
 import unittest
 
 import numpy as np
@@ -161,6 +162,29 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
             mesh.mesh_to_edges_packed_first_idx().cpu(),
             torch.tensor([0, 3, 8], dtype=torch.int64),
         )
+
+    def test_init_error(self):
+        # Check if correct errors are raised when verts/faces are on
+        # different devices
+
+        mesh = TestMeshes.init_mesh(10, 10, 100)
+        verts_list = mesh.verts_list()  # all tensors on cpu
+        verts_list = [
+            v.to("cuda:0") if random.uniform(0, 1) > 0.5 else v for v in verts_list
+        ]
+        faces_list = mesh.faces_list()
+
+        with self.assertRaises(ValueError) as cm:
+            Meshes(verts=verts_list, faces=faces_list)
+            self.assertTrue("same device" in cm.msg)
+
+        verts_padded = mesh.verts_padded()  # on cpu
+        verts_padded = verts_padded.to("cuda:0")
+        faces_padded = mesh.faces_padded()
+
+        with self.assertRaises(ValueError) as cm:
+            Meshes(verts=verts_padded, faces=faces_padded)
+            self.assertTrue("same device" in cm.msg)
 
     def test_simple_random_meshes(self):
 

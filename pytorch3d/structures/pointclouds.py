@@ -180,11 +180,13 @@ class Pointclouds(object):
             self._num_points_per_cloud = []
 
             if self._N > 0:
+                self.device = self._points_list[0].device
                 for p in self._points_list:
                     if len(p) > 0 and (p.dim() != 2 or p.shape[1] != 3):
                         raise ValueError("Clouds in list must be of shape Px3 or empty")
+                    if p.device != self.device:
+                        raise ValueError("All points must be on the same device")
 
-                self.device = self._points_list[0].device
                 num_points_per_cloud = torch.tensor(
                     [len(p) for p in self._points_list], device=self.device
                 )
@@ -261,6 +263,10 @@ class Pointclouds(object):
                     raise ValueError(
                         "A cloud has mismatched numbers of points and inputs"
                     )
+                if d.device != self.device:
+                    raise ValueError(
+                        "All auxillary inputs must be on the same device as the points."
+                    )
                 if p > 0:
                     if d.dim() != 2:
                         raise ValueError(
@@ -282,6 +288,10 @@ class Pointclouds(object):
                 raise ValueError(
                     "Inputs tensor must have the right maximum \
                     number of points in each cloud."
+                )
+            if aux_input.device != self.device:
+                raise ValueError(
+                    "All auxillary inputs must be on the same device as the points."
                 )
             aux_input_C = aux_input.shape[2]
             return None, aux_input, aux_input_C

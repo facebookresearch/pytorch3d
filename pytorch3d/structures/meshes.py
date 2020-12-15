@@ -325,6 +325,13 @@ class Meshes(object):
             self.valid = torch.zeros((self._N,), dtype=torch.bool, device=self.device)
             if self._N > 0:
                 self.device = self._verts_list[0].device
+                if not (
+                    all(v.device == self.device for v in verts)
+                    and all(f.device == self.device for f in faces)
+                ):
+                    raise ValueError(
+                        "All Verts and Faces tensors should be on same device."
+                    )
                 self._num_verts_per_mesh = torch.tensor(
                     [len(v) for v in self._verts_list], device=self.device
                 )
@@ -341,7 +348,6 @@ class Meshes(object):
                     dtype=torch.bool,
                     device=self.device,
                 )
-
                 if (len(self._num_verts_per_mesh.unique()) == 1) and (
                     len(self._num_faces_per_mesh.unique()) == 1
                 ):
@@ -354,6 +360,10 @@ class Meshes(object):
             self._faces_padded = faces.to(torch.int64)
             self._N = self._verts_padded.shape[0]
             self._V = self._verts_padded.shape[1]
+
+            if verts.device != faces.device:
+                msg = "Verts and Faces tensors should be on same device. \n Got {} and {}."
+                raise ValueError(msg.format(verts.device, faces.device))
 
             self.device = self._verts_padded.device
             self.valid = torch.zeros((self._N,), dtype=torch.bool, device=self.device)
