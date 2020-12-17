@@ -479,6 +479,18 @@ class TexturesAtlas(TexturesBase):
 
     def sample_textures(self, fragments, **kwargs) -> torch.Tensor:
         """
+        This is similar to a nearest neighbor sampling and involves a
+        discretization step. The barycentric coordinates from
+        rasterization are used to find the nearest grid cell in the texture
+        atlas and the RGB is returned as the color.
+        This means that this step is differentiable with respect to the RGB
+        values of the texture atlas but not differentiable with respect to the
+        barycentric coordinates.
+
+        TODO: Add a different sampling mode which interpolates the barycentric
+        coordinates to sample the texture and will be differentiable w.r.t
+        the barycentric coordinates.
+
         Args:
             fragments:
                 The outputs of rasterization. From this we use
@@ -504,7 +516,10 @@ class TexturesAtlas(TexturesBase):
         # pyre-fixme[16]: `bool` has no attribute `__getitem__`.
         mask = (pix_to_face < 0)[..., None]
         bary_w01 = torch.where(mask, torch.zeros_like(bary_w01), bary_w01)
-        w_xy = (bary_w01 * R).to(torch.int64)  # (N, H, W, K, 2)
+        # If barycentric coordinates are > 1.0 (in the case of
+        # blur_radius > 0.0), wxy might be > R. We need to clamp this
+        # index to R-1 to index into the texture atlas.
+        w_xy = (bary_w01 * R).to(torch.int64).clamp(max=R - 1)  # (N, H, W, K, 2)
 
         below_diag = (
             bary_w01.sum(dim=-1) * R - w_xy.float().sum(dim=-1)

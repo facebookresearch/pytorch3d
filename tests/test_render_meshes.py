@@ -956,6 +956,7 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
     def test_texture_map_atlas(self):
         """
         Test a mesh with a texture map as a per face atlas is loaded and rendered correctly.
+        Also check that the backward pass for texture atlas rendering is differentiable.
         """
         device = torch.device("cuda:0")
         obj_dir = Path(__file__).resolve().parent.parent / "docs/tutorials/data"
@@ -970,10 +971,11 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
             texture_atlas_size=8,
             texture_wrap=None,
         )
+        atlas = aux.texture_atlas
         mesh = Meshes(
             verts=[verts],
             faces=[faces.verts_idx],
-            textures=TexturesAtlas(atlas=[aux.texture_atlas]),
+            textures=TexturesAtlas(atlas=[atlas]),
         )
 
         # Init rasterizer settings
@@ -981,7 +983,10 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
         cameras = FoVPerspectiveCameras(device=device, R=R, T=T)
 
         raster_settings = RasterizationSettings(
-            image_size=512, blur_radius=0.0, faces_per_pixel=1, cull_backfaces=True
+            image_size=512,
+            blur_radius=0.0,
+            faces_per_pixel=1,
+            cull_backfaces=True,
         )
 
         # Init shader settings
@@ -993,23 +998,52 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
         lights.location = torch.tensor([0.0, 0.0, 2.0], device=device)[None]
 
         # The HardPhongShader can be used directly with atlas textures.
+        rasterizer = MeshRasterizer(cameras=cameras, raster_settings=raster_settings)
         renderer = MeshRenderer(
-            rasterizer=MeshRasterizer(cameras=cameras, raster_settings=raster_settings),
+            rasterizer=rasterizer,
             shader=HardPhongShader(lights=lights, cameras=cameras, materials=materials),
         )
 
         images = renderer(mesh)
-        rgb = images[0, ..., :3].squeeze().cpu()
+        rgb = images[0, ..., :3].squeeze()
 
         # Load reference image
         image_ref = load_rgb_image("test_texture_atlas_8x8_back.png", DATA_DIR)
 
         if DEBUG:
-            Image.fromarray((rgb.numpy() * 255).astype(np.uint8)).save(
+            Image.fromarray((rgb.detach().cpu().numpy() * 255).astype(np.uint8)).save(
                 DATA_DIR / "DEBUG_texture_atlas_8x8_back.png"
             )
 
-        self.assertClose(rgb, image_ref, atol=0.05)
+        self.assertClose(rgb.cpu(), image_ref, atol=0.05)
+
+        # Check gradients are propagated
+        # correctly back to the texture atlas.
+        # Because of how texture sampling is implemented
+        # for the texture atlas it is not possible to get
+        # gradients back to the vertices.
+        atlas.requires_grad = True
+        mesh = Meshes(
+            verts=[verts],
+            faces=[faces.verts_idx],
+            textures=TexturesAtlas(atlas=[atlas]),
+        )
+        raster_settings = RasterizationSettings(
+            image_size=512,
+            blur_radius=0.0001,
+            faces_per_pixel=5,
+            cull_backfaces=True,
+            clip_barycentric_coords=True,
+        )
+        images = renderer(mesh, raster_settings=raster_settings)
+        images[0, ...].sum().backward()
+
+        fragments = rasterizer(mesh, raster_settings=raster_settings)
+        # Some of the bary coordinates are outisde the
+        # [0, 1] range as expected because the blur is > 0
+        self.assertTrue(fragments.bary_coords.ge(1.0).any())
+        self.assertIsNotNone(atlas.grad)
+        self.assertTrue(atlas.grad.sum().abs() > 0.0)
 
     def test_simple_sphere_outside_zfar(self):
         """
