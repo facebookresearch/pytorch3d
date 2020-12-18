@@ -414,7 +414,7 @@ class Transform3d:
 
 
 class Translate(Transform3d):
-    def __init__(self, x, y=None, z=None, dtype=torch.float32, device: str = "cpu"):
+    def __init__(self, x, y=None, z=None, dtype=torch.float32, device="cpu"):
         """
         Create a new Transform3d representing 3D translations.
 
@@ -448,7 +448,7 @@ class Translate(Transform3d):
 
 
 class Scale(Transform3d):
-    def __init__(self, x, y=None, z=None, dtype=torch.float32, device: str = "cpu"):
+    def __init__(self, x, y=None, z=None, dtype=torch.float32, device="cpu"):
         """
         A Transform3d representing a scaling operation, with different scale
         factors along each coordinate axis.
@@ -489,7 +489,7 @@ class Scale(Transform3d):
 
 class Rotate(Transform3d):
     def __init__(
-        self, R, dtype=torch.float32, device: str = "cpu", orthogonal_tol: float = 1e-5
+        self, R, dtype=torch.float32, device="cpu", orthogonal_tol: float = 1e-5
     ):
         """
         Create a new Transform3d representing 3D rotation using a rotation
@@ -528,7 +528,7 @@ class RotateAxisAngle(Rotate):
         axis: str = "X",
         degrees: bool = True,
         dtype=torch.float64,
-        device: str = "cpu",
+        device="cpu",
     ):
         """
         Create a new Transform3d representing 3D rotation about an axis
@@ -635,7 +635,7 @@ def _handle_input(x, y, z, dtype, device, name: str, allow_singleton: bool = Fal
     return xyz
 
 
-def _handle_angle_input(x, dtype, device: str, name: str):
+def _handle_angle_input(x, dtype, device, name: str):
     """
     Helper function for building a rotation function using angles.
     The output is always of shape (N,).
