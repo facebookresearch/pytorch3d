@@ -399,7 +399,11 @@ class PulsarPointsRenderer(nn.Module):
         raster_rad = self.rasterizer.raster_settings.radius
         if kwargs.get("radius_world", False):
             return raster_rad
-        if isinstance(raster_rad, torch.Tensor) and raster_rad.numel() > 1:
+        if (
+            isinstance(raster_rad, torch.Tensor)
+            and raster_rad.numel() > 1
+            and raster_rad.ndim > 1
+        ):
             # In this case it must be a batched torch tensor.
             raster_rad = raster_rad[cloud_idx]
         if orthogonal_projection:
