@@ -13,6 +13,7 @@ from typing import Optional, Tuple
 
 import numpy as np
 import torch
+from iopath.common.file_io import PathManager
 from pytorch3d.io.utils import _check_faces_indices, _make_tensor, _open_file
 
 
@@ -585,7 +586,7 @@ def _load_ply_raw_stream(f) -> Tuple[_PlyHeader, dict]:
     return header, elements
 
 
-def _load_ply_raw(f) -> Tuple[_PlyHeader, dict]:
+def _load_ply_raw(f, path_manager: PathManager) -> Tuple[_PlyHeader, dict]:
     """
     Load the data from a .ply file.
 
@@ -594,6 +595,7 @@ def _load_ply_raw(f) -> Tuple[_PlyHeader, dict]:
             tell and seek), a pathlib path or a string containing a file name.
             If the ply file is binary, a text stream is not supported.
             It is recommended to use a binary stream.
+        path_manager: PathManager for loading if f is a str.
 
     Returns:
         header: A _PlyHeader object describing the metadata in the ply file.
@@ -602,12 +604,12 @@ def _load_ply_raw(f) -> Tuple[_PlyHeader, dict]:
                   uniformly-sized list, then the value will be a 2D numpy array.
                   If not, it is a list of the relevant property values.
     """
-    with _open_file(f, "rb") as f:
+    with _open_file(f, path_manager, "rb") as f:
         header, elements = _load_ply_raw_stream(f)
     return header, elements
 
 
-def load_ply(f):
+def load_ply(f, path_manager: Optional[PathManager] = None):
     """
     Load the data from a .ply file.
 
@@ -645,12 +647,16 @@ def load_ply(f):
             If the ply file is in the binary ply format rather than the text
             ply format, then a text stream is not supported.
             It is easiest to use a binary stream in all cases.
+        path_manager: PathManager for loading if f is a str.
+
 
     Returns:
         verts: FloatTensor of shape (V, 3).
         faces: LongTensor of vertex indices, shape (F, 3).
     """
-    header, elements = _load_ply_raw(f)
+    if path_manager is None:
+        path_manager = PathManager()
+    header, elements = _load_ply_raw(f, path_manager=path_manager)
 
     vertex = elements.get("vertex", None)
     if vertex is None:
@@ -780,6 +786,7 @@ def save_ply(
     verts_normals: Optional[torch.Tensor] = None,
     ascii: bool = False,
     decimal_places: Optional[int] = None,
+    path_manager: Optional[PathManager] = None,
 ) -> None:
     """
     Save a mesh to a .ply file.
@@ -791,6 +798,8 @@ def save_ply(
         verts_normals: FloatTensor of shape (V, 3) giving vertex normals.
         ascii: (bool) whether to use the ascii ply format.
         decimal_places: Number of decimal places for saving if ascii=True.
+        path_manager: PathManager for interpreting f if it is a str.
+
     """
 
     verts_normals = (
@@ -816,5 +825,7 @@ def save_ply(
         message = "Argument 'verts_normals' should either be empty or of shape (num_verts, 3)."
         raise ValueError(message)
 
-    with _open_file(f, "wb") as f:
+    if path_manager is None:
+        path_manager = PathManager()
+    with _open_file(f, path_manager, "wb") as f:
         _save_ply(f, verts, faces, verts_normals, ascii, decimal_places)

@@ -8,6 +8,7 @@ from typing import Dict, List, Optional, Tuple
 import numpy as np
 import torch
 import torch.nn.functional as F
+from iopath.common.file_io import PathManager
 from pytorch3d.io.utils import _open_file, _read_image
 
 
@@ -391,12 +392,14 @@ TextureFiles = Dict[str, str]
 TextureImages = Dict[str, torch.Tensor]
 
 
-def _parse_mtl(f, device="cpu") -> Tuple[MaterialProperties, TextureFiles]:
+def _parse_mtl(
+    f, path_manager: PathManager, device="cpu"
+) -> Tuple[MaterialProperties, TextureFiles]:
     material_properties = {}
     texture_files = {}
     material_name = ""
 
-    with _open_file(f, "r") as f:
+    with _open_file(f, path_manager, "r") as f:
         for line in f:
             tokens = line.strip().split()
             if not tokens:
@@ -438,6 +441,7 @@ def _load_texture_images(
     data_dir: str,
     material_properties: MaterialProperties,
     texture_files: TextureFiles,
+    path_manager: PathManager,
 ) -> Tuple[MaterialProperties, TextureImages]:
     final_material_properties = {}
     texture_images = {}
@@ -448,7 +452,9 @@ def _load_texture_images(
             # Load the texture image.
             path = os.path.join(data_dir, texture_files[material_name])
             if os.path.isfile(path):
-                image = _read_image(path, format="RGB") / 255.0
+                image = (
+                    _read_image(path, path_manager=path_manager, format="RGB") / 255.0
+                )
                 image = torch.from_numpy(image)
                 texture_images[material_name] = image
             else:
@@ -464,7 +470,12 @@ def _load_texture_images(
 
 
 def load_mtl(
-    f, material_names: List[str], data_dir: str, device="cpu"
+    f,
+    *,
+    material_names: List[str],
+    data_dir: str,
+    device="cpu",
+    path_manager: PathManager,
 ) -> Tuple[MaterialProperties, TextureImages]:
     """
     Load texture images and material reflectivity values for ambient, diffuse
@@ -474,6 +485,7 @@ def load_mtl(
         f: a file-like object of the material information.
         material_names: a list of the material names found in the .obj file.
         data_dir: the directory where the material texture files are located.
+        path_manager: PathManager for interpreting both f and material_names.
 
     Returns:
         material_properties: dict of properties for each material. If a material
@@ -494,7 +506,11 @@ def load_mtl(
                     ...
                 }
     """
-    material_properties, texture_files = _parse_mtl(f, device)
+    material_properties, texture_files = _parse_mtl(f, path_manager, device)
     return _load_texture_images(
-        material_names, data_dir, material_properties, texture_files
+        material_names,
+        data_dir,
+        material_properties,
+        texture_files,
+        path_manager=path_manager,
     )

@@ -8,6 +8,7 @@ from pathlib import Path
 
 import torch
 from common_testing import TestCaseMixin
+from iopath.common.file_io import PathManager
 from pytorch3d.io import load_obj, load_objs_as_meshes, save_obj
 from pytorch3d.io.mtl_io import (
     _bilinear_interpolation_grid_sample,
@@ -460,7 +461,9 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
             ]
         )
         mtl_file = StringIO(mtl_file)
-        material_properties, texture_files = _parse_mtl(mtl_file, device="cpu")
+        material_properties, texture_files = _parse_mtl(
+            mtl_file, path_manager=PathManager(), device="cpu"
+        )
 
         dtype = torch.float32
         expected_materials = {

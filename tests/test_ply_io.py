@@ -5,10 +5,19 @@ import unittest
 from io import BytesIO, StringIO
 from tempfile import TemporaryFile
 
+import pytorch3d.io.ply_io
 import torch
 from common_testing import TestCaseMixin
-from pytorch3d.io.ply_io import _load_ply_raw, load_ply, save_ply
+from iopath.common.file_io import PathManager
+from pytorch3d.io.ply_io import load_ply, save_ply
 from pytorch3d.utils import torus
+
+
+global_path_manager = PathManager()
+
+
+def _load_ply_raw(stream):
+    return pytorch3d.io.ply_io._load_ply_raw(stream, global_path_manager)
 
 
 class TestMeshPlyIO(TestCaseMixin, unittest.TestCase):
