@@ -36,17 +36,17 @@ from pytorch3d.renderer.cameras import (
     CamerasBase,
     FoVOrthographicCameras,
     FoVPerspectiveCameras,
+    OpenGLOrthographicCameras,
+    OpenGLPerspectiveCameras,
     OrthographicCameras,
     PerspectiveCameras,
+    SfMOrthographicCameras,
+    SfMPerspectiveCameras,
     camera_position_from_spherical_angles,
     get_world_to_view_transform,
     look_at_rotation,
     look_at_view_transform,
 )
-from pytorch3d.renderer.cameras import OpenGLOrthographicCameras  # deprecated
-from pytorch3d.renderer.cameras import OpenGLPerspectiveCameras  # deprecated
-from pytorch3d.renderer.cameras import SfMOrthographicCameras  # deprecated
-from pytorch3d.renderer.cameras import SfMPerspectiveCameras  # deprecated
 from pytorch3d.transforms import Transform3d
 from pytorch3d.transforms.rotation_conversions import random_rotations
 from pytorch3d.transforms.so3 import so3_exponential_map
