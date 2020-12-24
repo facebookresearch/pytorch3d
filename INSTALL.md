@@ -13,6 +13,7 @@ The core library is written in PyTorch. Several components have underlying imple
 - torchvision that matches the PyTorch installation. You can install them together as explained at pytorch.org to make sure of this.
 - gcc & g++ ≥ 4.9
 - [fvcore](https://github.com/facebookresearch/fvcore)
+- [ioPath](https://github.com/facebookresearch/iopath)
 - If CUDA is to be used, use a version which is supported by the corresponding pytorch version and at least version 9.2.
 - If CUDA is to be used and you are building from source, the CUB library must be available. We recommend version 1.10.0.
 
@@ -21,7 +22,7 @@ The runtime dependencies can be installed by running:
 conda create -n pytorch3d python=3.8
 conda activate pytorch3d
 conda install -c pytorch pytorch=1.7.0 torchvision cudatoolkit=10.2
-conda install -c conda-forge -c fvcore fvcore
+conda install -c conda-forge fvcore iopath
 ```
 
 For the CUB build time dependency, if you are using conda, you can continue with

@@ -75,6 +75,7 @@ jobs:
       # - run: conda install -c pytorch pytorch torchvision
 
       - run: pip3 install --progress-bar off 'git+https://github.com/facebookresearch/fvcore'
+      - run: pip3 install --progress-bar off 'git+https://github.com/facebookresearch/iopath'
       - run:
           name: get cub
           command: |

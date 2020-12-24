@@ -22,6 +22,7 @@ requirements:
     - numpy >=1.11
     - torchvision >=0.5
     - fvcore
+    - iopath
     {{ environ.get('CONDA_PYTORCH_CONSTRAINT') }}
     {{ environ.get('CONDA_CUDATOOLKIT_CONSTRAINT') }}
 
