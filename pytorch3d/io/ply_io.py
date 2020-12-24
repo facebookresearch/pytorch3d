@@ -679,6 +679,7 @@ def load_ply(f, path_manager: Optional[PathManager] = None):
     # but we don't need to enforce this.
 
     if not len(face):
+        # pyre-fixme[28]: Unexpected keyword argument `size`.
         faces = torch.zeros(size=(0, 3), dtype=torch.int64)
     elif isinstance(face, np.ndarray) and face.ndim == 2:  # Homogeneous elements
         if face.shape[1] < 3:
@@ -694,6 +695,7 @@ def load_ply(f, path_manager: Optional[PathManager] = None):
                 raise ValueError("Faces must have at least 3 vertices.")
             for i in range(face_item.shape[0] - 2):
                 face_list.append([face_item[0], face_item[i + 1], face_item[i + 2]])
+        # pyre-fixme[6]: Expected `dtype` for 3rd param but got `Type[torch.int64]`.
         faces = _make_tensor(face_list, cols=3, dtype=torch.int64)
 
     _check_faces_indices(faces, max_index=verts.shape[0])
