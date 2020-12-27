@@ -17,4 +17,4 @@ setup_conda_pytorch_constraint
 setup_conda_cudatoolkit_constraint
 setup_visual_studio_constraint
 # shellcheck disable=SC2086
-conda build $CONDA_CHANNEL_FLAGS ${TEST_FLAG:-} -c bottler -c defaults -c conda-forge --no-anaconda-upload --python "$PYTHON_VERSION" packaging/pytorch3d
+conda build $CONDA_CHANNEL_FLAGS ${TEST_FLAG:-} -c bottler -c defaults -c conda-forge -c fvcore -c iopath --no-anaconda-upload --python "$PYTHON_VERSION" packaging/pytorch3d
