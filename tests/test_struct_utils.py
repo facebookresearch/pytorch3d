@@ -9,42 +9,74 @@ from pytorch3d.structures import utils as struct_utils
 
 
 class TestStructUtils(TestCaseMixin, unittest.TestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        torch.manual_seed(43)
+
+    def _check_list_to_padded_slices(self, x, x_padded, ndim):
+        N = len(x)
+        for i in range(N):
+            slices = [i]
+            for dim in range(ndim):
+                if x[i].nelement() == 0 and x[i].ndim == 1:
+                    slice_ = slice(0, 0, 1)
+                else:
+                    slice_ = slice(0, x[i].shape[dim], 1)
+                slices.append(slice_)
+            if x[i].nelement() == 0 and x[i].ndim == 1:
+                x_correct = x[i].new_zeros(*[[0] * ndim])
+            else:
+                x_correct = x[i]
+            self.assertClose(x_padded[slices], x_correct)
+
     def test_list_to_padded(self):
         device = torch.device("cuda:0")
         N = 5
         K = 20
-        ndim = 2
-        x = []
-        for _ in range(N):
-            dims = torch.randint(K, size=(ndim,)).tolist()
-            x.append(torch.rand(dims, device=device))
-        pad_size = [K] * ndim
-        x_padded = struct_utils.list_to_padded(
-            x, pad_size=pad_size, pad_value=0.0, equisized=False
-        )
+        for ndim in [1, 2, 3, 4]:
+            x = []
+            for _ in range(N):
+                dims = torch.randint(K, size=(ndim,)).tolist()
+                x.append(torch.rand(dims, device=device))
 
-        self.assertEqual(x_padded.shape[1], K)
-        self.assertEqual(x_padded.shape[2], K)
-        for i in range(N):
-            self.assertClose(x_padded[i, : x[i].shape[0], : x[i].shape[1]], x[i])
+            # set 0th element to an empty 1D tensor
+            x[0] = torch.tensor([], dtype=x[0].dtype, device=device)
 
-        # check for no pad size (defaults to max dimension)
-        x_padded = struct_utils.list_to_padded(x, pad_value=0.0, equisized=False)
-        max_size0 = max(y.shape[0] for y in x)
-        max_size1 = max(y.shape[1] for y in x)
-        self.assertEqual(x_padded.shape[1], max_size0)
-        self.assertEqual(x_padded.shape[2], max_size1)
-        for i in range(N):
-            self.assertClose(x_padded[i, : x[i].shape[0], : x[i].shape[1]], x[i])
+            # set 1st element to an empty tensor with correct number of dims
+            x[1] = x[1].new_zeros(*[[0] * ndim])
 
-        # check for equisized
-        x = [torch.rand((K, 10), device=device) for _ in range(N)]
-        x_padded = struct_utils.list_to_padded(x, equisized=True)
-        self.assertClose(x_padded, torch.stack(x, 0))
+            pad_size = [K] * ndim
+            x_padded = struct_utils.list_to_padded(
+                x, pad_size=pad_size, pad_value=0.0, equisized=False
+            )
+
+            for dim in range(ndim):
+                self.assertEqual(x_padded.shape[dim + 1], K)
+
+            self._check_list_to_padded_slices(x, x_padded, ndim)
+
+            # check for no pad size (defaults to max dimension)
+            x_padded = struct_utils.list_to_padded(x, pad_value=0.0, equisized=False)
+            max_sizes = (
+                max(
+                    (0 if (y.nelement() == 0 and y.ndim == 1) else y.shape[dim])
+                    for y in x
+                )
+                for dim in range(ndim)
+            )
+            for dim, max_size in enumerate(max_sizes):
+                self.assertEqual(x_padded.shape[dim + 1], max_size)
+
+            self._check_list_to_padded_slices(x, x_padded, ndim)
+
+            # check for equisized
+            x = [torch.rand((K, *([10] * (ndim - 1))), device=device) for _ in range(N)]
+            x_padded = struct_utils.list_to_padded(x, equisized=True)
+            self.assertClose(x_padded, torch.stack(x, 0))
 
         # catch ValueError for invalid dimensions
         with self.assertRaisesRegex(ValueError, "Pad size must"):
-            pad_size = [K] * 4
+            pad_size = [K] * (ndim + 1)
             struct_utils.list_to_padded(
                 x, pad_size=pad_size, pad_value=0.0, equisized=False
             )
@@ -56,7 +88,7 @@ class TestStructUtils(TestCaseMixin, unittest.TestCase):
             dims = torch.randint(K, size=(ndim,)).tolist()
             x.append(torch.rand(dims, device=device))
         pad_size = [K] * 2
-        with self.assertRaisesRegex(ValueError, "Supports only"):
+        with self.assertRaisesRegex(ValueError, "Pad size must"):
             x_padded = struct_utils.list_to_padded(
                 x, pad_size=pad_size, pad_value=0.0, equisized=False
             )
@@ -66,27 +98,29 @@ class TestStructUtils(TestCaseMixin, unittest.TestCase):
         N = 5
         K = 20
         ndim = 2
-        dims = [K] * ndim
-        x = torch.rand([N] + dims, device=device)
 
-        x_list = struct_utils.padded_to_list(x)
-        for i in range(N):
-            self.assertClose(x_list[i], x[i])
+        for ndim in (2, 3, 4):
 
-        split_size = torch.randint(1, K, size=(N,)).tolist()
-        x_list = struct_utils.padded_to_list(x, split_size)
-        for i in range(N):
-            self.assertClose(x_list[i], x[i, : split_size[i]])
+            dims = [K] * ndim
+            x = torch.rand([N] + dims, device=device)
 
-        split_size = torch.randint(1, K, size=(2 * N,)).view(N, 2).unbind(0)
-        x_list = struct_utils.padded_to_list(x, split_size)
-        for i in range(N):
-            self.assertClose(x_list[i], x[i, : split_size[i][0], : split_size[i][1]])
+            x_list = struct_utils.padded_to_list(x)
+            for i in range(N):
+                self.assertClose(x_list[i], x[i])
 
-        with self.assertRaisesRegex(ValueError, "Supports only"):
-            x = torch.rand((N, K, K, K, K), device=device)
-            split_size = torch.randint(1, K, size=(N,)).tolist()
-            struct_utils.padded_to_list(x, split_size)
+            split_size = torch.randint(1, K, size=(N, ndim)).unbind(0)
+            x_list = struct_utils.padded_to_list(x, split_size)
+            for i in range(N):
+                slices = [i]
+                for dim in range(ndim):
+                    slices.append(slice(0, split_size[i][dim], 1))
+                self.assertClose(x_list[i], x[slices])
+
+            # split size is a list of ints
+            split_size = [int(z) for z in torch.randint(1, K, size=(N,)).unbind(0)]
+            x_list = struct_utils.padded_to_list(x, split_size)
+            for i in range(N):
+                self.assertClose(x_list[i], x[i][: split_size[i]])
 
     def test_padded_to_packed(self):
         device = torch.device("cuda:0")
@@ -160,7 +194,7 @@ class TestStructUtils(TestCaseMixin, unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Supports only"):
             x = torch.rand((N, K, K, K, K), device=device)
             split_size = torch.randint(1, K, size=(N,)).tolist()
-            struct_utils.padded_to_list(x, split_size)
+            struct_utils.padded_to_packed(x, split_size=split_size)
 
     def test_list_to_packed(self):
         device = torch.device("cuda:0")
