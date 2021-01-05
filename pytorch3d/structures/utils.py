@@ -48,9 +48,10 @@ def list_to_padded(
 
     # replace empty 1D tensors with empty tensors with a correct number of dimensions
     x = [
+        # pyre-fixme[16]: `Tensor` has no attribute `new_zeros`.
         (y.new_zeros([0] * element_ndim) if (y.ndim == 1 and y.nelement() == 0) else y)
         for y in x
-    ]  # pyre-ignore
+    ]
 
     if any(y.ndim != x[0].ndim for y in x):
         raise ValueError("All items have to have the same number of dimensions!")
@@ -65,6 +66,7 @@ def list_to_padded(
         pad_dims = pad_size
 
     N = len(x)
+    # pyre-fixme[16]: `Tensor` has no attribute `new_full`.
     x_padded = x[0].new_full((N, *pad_dims), pad_value)
     for i, y in enumerate(x):
         if len(y) > 0:
