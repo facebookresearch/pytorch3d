@@ -2,7 +2,7 @@
 
 import math
 import warnings
-from typing import Optional
+from typing import List, Optional, Union
 
 import torch
 
@@ -171,6 +171,22 @@ class Transform3d:
 
     def __len__(self):
         return self.get_matrix().shape[0]
+
+    def __getitem__(
+        self, index: Union[int, List[int], slice, torch.Tensor]
+    ) -> "Transform3d":
+        """
+        Args:
+            index: Specifying the index of the transform to retrieve.
+                Can be an int, slice, list of ints, boolean, long tensor.
+                Supports negative indices.
+
+        Returns:
+            Transform3d object with selected transforms. The tensors are not cloned.
+        """
+        if isinstance(index, int):
+            index = [index]
+        return self.__class__(matrix=self.get_matrix()[index])
 
     def compose(self, *others):
         """
@@ -360,6 +376,9 @@ class Transform3d:
 
     def scale(self, *args, **kwargs):
         return self.compose(Scale(device=self.device, *args, **kwargs))
+
+    def rotate(self, *args, **kwargs):
+        return self.compose(Rotate(device=self.device, *args, **kwargs))
 
     def rotate_axis_angle(self, *args, **kwargs):
         return self.compose(RotateAxisAngle(device=self.device, *args, **kwargs))
