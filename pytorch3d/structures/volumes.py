@@ -473,6 +473,7 @@ class Volumes(object):
         )
 
     def __len__(self) -> int:
+        # pyre-fixme[16]: `List` has no attribute `shape`.
         return self._densities.shape[0]
 
     def __getitem__(
@@ -497,6 +498,7 @@ class Volumes(object):
             raise IndexError(index)
 
         new = self.__class__(
+            # pyre-fixme[16]: `Optional` has no attribute `__getitem__`.
             features=self.features()[index] if self._features is not None else None,
             densities=self.densities()[index],
         )
@@ -521,6 +523,8 @@ class Volumes(object):
         Returns:
             **densities**: The tensor of volume densities.
         """
+        # pyre-fixme[7]: Expected `Tensor` but got `Union[List[torch.Tensor],
+        #  torch.Tensor]`.
         return self._densities
 
     def densities_list(self) -> List[torch.Tensor]:
@@ -542,6 +546,7 @@ class Volumes(object):
         """
         if self._features is None:
             # No features provided so return None
+            # pyre-fixme[7]: Expected `List[torch.Tensor]` but got `None`.
             return None
         return self._features_densities_list(self.features())
 
@@ -687,8 +692,10 @@ class Volumes(object):
         other = self.clone()
         if self.device != device:
             other.device = device
+            # pyre-fixme[16]: `List` has no attribute `to`.
             other._densities = self._densities.to(device)
             if self._features is not None:
+                # pyre-fixme[16]: `Optional` has no attribute `to`.
                 other._features = self.features().to(device)
             other._local_to_world_transform = (
                 self.get_local_to_world_coords_transform().to(device)

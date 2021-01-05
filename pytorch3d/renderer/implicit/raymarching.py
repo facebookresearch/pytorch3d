@@ -153,6 +153,7 @@ class AbsorptionOnlyRaymarcher(torch.nn.Module):
         _check_density_bounds(rays_densities)
         total_transmission = torch.prod(1 - rays_densities, dim=-1, keepdim=True)
         opacities = 1.0 - total_transmission
+        # pyre-fixme[7]: Expected `Optional[torch.Tensor]` but got `float`.
         return opacities
 
 
@@ -176,6 +177,7 @@ def _check_density_bounds(
     Checks whether the elements of `rays_densities` range within `bounds`.
     If not issues a warning.
     """
+    # pyre-fixme[16]: `ByteTensor` has no attribute `any`.
     if ((rays_densities > bounds[1]) | (rays_densities < bounds[0])).any():
         warnings.warn(
             "One or more elements of rays_densities are outside of valid"
@@ -213,6 +215,7 @@ def _check_raymarcher_inputs(
 
     rays_shape = rays_densities.shape[:-1]
 
+    # pyre-fixme[16]: `Optional` has no attribute `shape`.
     if not z_can_be_none and rays_z.shape != rays_shape:
         raise ValueError("rays_z have to be of the same shape as rays_densities.")
 
