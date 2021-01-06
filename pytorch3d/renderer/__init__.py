@@ -24,9 +24,12 @@ from .implicit import (
     AbsorptionOnlyRaymarcher,
     EmissionAbsorptionRaymarcher,
     GridRaysampler,
+    ImplicitRenderer,
     MonteCarloRaysampler,
     NDCGridRaysampler,
     RayBundle,
+    VolumeRenderer,
+    VolumeSampler,
     ray_bundle_to_ray_points,
     ray_bundle_variables_to_ray_points,
 )

@@ -53,12 +53,12 @@ def ray_bundle_variables_to_ray_points(
     rays_lengths: torch.Tensor,
 ) -> torch.Tensor:
     """
-    Converts rays parametrized with origins, directions
+    Converts rays parametrized with origins and directions
     to 3D points by extending each ray according to the corresponding
-    ray_length:
+    ray length:
 
     E.g. for 2 dimensional input tensors `rays_origins`, `rays_directions`
-        and `rays_lengths`, the ray point at position `[i, j]` is:
+    and `rays_lengths`, the ray point at position `[i, j]` is:
         ```
             rays_points[i, j, :] = (
                 rays_origins[i, :]
@@ -80,3 +80,39 @@ def ray_bundle_variables_to_ray_points(
         + rays_lengths[..., :, None] * rays_directions[..., None, :]
     )
     return rays_points
+
+
+def _validate_ray_bundle_variables(
+    rays_origins: torch.Tensor,
+    rays_directions: torch.Tensor,
+    rays_lengths: torch.Tensor,
+):
+    """
+    Validate the shapes of RayBundle variables
+    `rays_origins`, `rays_directions`, and `rays_lengths`.
+    """
+    ndim = rays_origins.ndim
+    if any(r.ndim != ndim for r in (rays_directions, rays_lengths)):
+        raise ValueError(
+            "rays_origins, rays_directions and rays_lengths"
+            + " have to have the same number of dimensions."
+        )
+
+    if ndim <= 2:
+        raise ValueError(
+            "rays_origins, rays_directions and rays_lengths"
+            + " have to have at least 3 dimensions."
+        )
+
+    spatial_size = rays_origins.shape[:-1]
+    if any(spatial_size != r.shape[:-1] for r in (rays_directions, rays_lengths)):
+        raise ValueError(
+            "The shapes of rays_origins, rays_directions and rays_lengths"
+            + " may differ only in the last dimension."
+        )
+
+    if any(r.shape[-1] != 3 for r in (rays_origins, rays_directions)):
+        raise ValueError(
+            "The size of the last dimension of rays_origins/rays_directions"
+            + "has to be 3."
+        )

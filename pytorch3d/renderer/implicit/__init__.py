@@ -2,6 +2,7 @@
 
 from .raymarching import AbsorptionOnlyRaymarcher, EmissionAbsorptionRaymarcher
 from .raysampling import GridRaysampler, MonteCarloRaysampler, NDCGridRaysampler
+from .renderer import ImplicitRenderer, VolumeRenderer, VolumeSampler
 from .utils import (
     RayBundle,
     ray_bundle_to_ray_points,
