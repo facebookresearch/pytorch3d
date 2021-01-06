@@ -17,6 +17,7 @@ DEBUG = False
 if DEBUG:
     import os
     import tempfile
+
     from PIL import Image
 
 
