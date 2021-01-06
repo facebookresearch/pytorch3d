@@ -19,12 +19,15 @@ from pytorch3d.renderer import (
     look_at_view_transform,
 )
 
+
 # create the default data directory
 current_dir = os.path.dirname(os.path.realpath(__file__))
 DATA_DIR = os.path.join(current_dir, "..", "data", "cow_mesh")
 
 
-def generate_cow_renders(num_views: int = 40, data_dir: str = DATA_DIR):
+def generate_cow_renders(
+    num_views: int = 40, data_dir: str = DATA_DIR, azimuth_range: float = 180
+):
     """
     This function generates `num_views` renders of a cow mesh.
     The renders are generated from viewpoints sampled at uniformly distributed
@@ -94,7 +97,7 @@ def generate_cow_renders(num_views: int = 40, data_dir: str = DATA_DIR):
 
     # Get a batch of viewing angles.
     elev = torch.linspace(0, 0, num_views)  # keep constant
-    azim = torch.linspace(-180, 180, num_views)
+    azim = torch.linspace(-azimuth_range, azimuth_range, num_views) + 180.0
 
     # Place a point light in front of the object. As mentioned above, the front of
     # the cow is facing the -z direction.
