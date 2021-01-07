@@ -4,6 +4,7 @@
 
 
 """This module implements utility functions for loading and saving meshes."""
+import itertools
 import struct
 import sys
 import warnings
@@ -232,13 +233,20 @@ def _read_ply_fixed_size_element_ascii(f, definition: _PlyElementType):
     Given an element which has no lists and one type, read the
     corresponding data.
 
+    For example
+
+        element vertex 8
+        property float x
+        property float y
+        property float z
+
     Args:
         f: file-like object being read.
         definition: The element object which describes what we are reading.
 
     Returns:
-        2D numpy array corresponding to the data. The rows are the different
-        values. There is one column for each property.
+        1-element list containing a 2D numpy array corresponding to the data.
+        The rows are the different values. There is one column for each property.
     """
     np_type = _PLY_TYPES[definition.properties[0].data_type].np_type
     old_offset = f.tell()
@@ -251,11 +259,62 @@ def _read_ply_fixed_size_element_ascii(f, definition: _PlyElementType):
         )
     if not len(data):  # np.loadtxt() seeks even on empty data
         f.seek(old_offset)
-    if definition.count and data.shape[1] != len(definition.properties):
+    if data.shape[1] != len(definition.properties):
         raise ValueError("Inconsistent data for %s." % definition.name)
     if data.shape[0] != definition.count:
         raise ValueError("Not enough data for %s." % definition.name)
-    return data
+    return [data]
+
+
+def _read_ply_nolist_element_ascii(f, definition: _PlyElementType):
+    """
+    Given an element which has no lists and multiple types, read the
+    corresponding data, by loading all the data as float64 and converting
+    the relevant parts later.
+
+    For example, given
+
+        element vertex 8
+        property float x
+        property float y
+        property float z
+        property uchar red
+        property uchar green
+        property uchar blue
+
+    the output will have two arrays, the first containing (x,y,z)
+    and the second (red,green,blue).
+
+    Args:
+        f: file-like object being read.
+        definition: The element object which describes what we are reading.
+
+    Returns:
+        List of 2D numpy arrays corresponding to the data.
+    """
+    old_offset = f.tell()
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore", message=".* Empty input file.*", category=UserWarning
+        )
+        data = np.loadtxt(
+            f, dtype=np.float64, comments=None, ndmin=2, max_rows=definition.count
+        )
+    if not len(data):  # np.loadtxt() seeks even on empty data
+        f.seek(old_offset)
+    if data.shape[1] != len(definition.properties):
+        raise ValueError("Inconsistent data for %s." % definition.name)
+    if data.shape[0] != definition.count:
+        raise ValueError("Not enough data for %s." % definition.name)
+    pieces = []
+    offset = 0
+    for dtype, it in itertools.groupby(p.data_type for p in definition.properties):
+        count = sum(1 for _ in it)
+        end_offset = offset + count
+        piece = data[:, offset:end_offset].astype(_PLY_TYPES[dtype].np_type)
+        pieces.append(piece)
+        offset = end_offset
+    return pieces
 
 
 def _try_read_ply_constant_list_ascii(f, definition: _PlyElementType):
@@ -263,6 +322,28 @@ def _try_read_ply_constant_list_ascii(f, definition: _PlyElementType):
     If definition is an element which is a single list, attempt to read the
     corresponding data assuming every value has the same length.
     If the data is ragged, return None and leave f undisturbed.
+
+    For example, if the element is
+
+        element face 2
+        property list uchar int vertex_index
+
+    and the data is
+
+        4 0 1 2 3
+        4 7 6 5 4
+
+    then the function will return
+
+        [[0, 1, 2, 3],
+         [7, 6, 5, 4]]
+
+    but if the data is
+
+        4 0 1 2 3
+        3 6 5 4
+
+    then the function will return None.
 
     Args:
         f: file-like object being read.
@@ -349,8 +430,12 @@ def _read_ply_element_ascii(f, definition: _PlyElementType):
         each occurence of the element, and the inner lists have one value per
         property.
     """
+    if not definition.count:
+        return []
     if definition.is_constant_type_fixed_size():
         return _read_ply_fixed_size_element_ascii(f, definition)
+    if definition.is_fixed_size():
+        return _read_ply_nolist_element_ascii(f, definition)
     if definition.try_constant_list():
         data = _try_read_ply_constant_list_ascii(f, definition)
         if data is not None:
@@ -372,6 +457,36 @@ def _read_ply_element_ascii(f, definition: _PlyElementType):
     return data
 
 
+def _read_raw_array(f, aim: str, length: int, dtype=np.uint8, dtype_size=1):
+    """
+    Read [length] elements from a file.
+
+    Args:
+        f: file object
+        aim: name of target for error message
+        length: number of elements
+        dtype: numpy type
+        dtype_size: number of bytes per element.
+
+    Returns:
+        new numpy array
+    """
+
+    if isinstance(f, BytesIO):
+        # np.fromfile is faster but won't work on a BytesIO
+        needed_bytes = length * dtype_size
+        bytes_data = bytearray(needed_bytes)
+        n_bytes_read = f.readinto(bytes_data)
+        if n_bytes_read != needed_bytes:
+            raise ValueError("Not enough data for %s." % aim)
+        data = np.frombuffer(bytes_data, dtype=dtype)
+    else:
+        data = np.fromfile(f, dtype=dtype, count=length)
+        if data.shape[0] != length:
+            raise ValueError("Not enough data for %s." % aim)
+    return data
+
+
 def _read_ply_fixed_size_element_binary(
     f, definition: _PlyElementType, big_endian: bool
 ):
@@ -379,68 +494,86 @@ def _read_ply_fixed_size_element_binary(
     Given an element which has no lists and one type, read the
     corresponding data.
 
+    For example
+
+        element vertex 8
+        property float x
+        property float y
+        property float z
+
+
     Args:
         f: file-like object being read.
         definition: The element object which describes what we are reading.
         big_endian: (bool) whether the document is encoded as big endian.
 
     Returns:
-        2D numpy array corresponding to the data. The rows are the different
-        values. There is one column for each property.
+        1-element list containing a 2D numpy array corresponding to the data.
+        The rows are the different values. There is one column for each property.
     """
     ply_type = _PLY_TYPES[definition.properties[0].data_type]
     np_type = ply_type.np_type
     type_size = ply_type.size
     needed_length = definition.count * len(definition.properties)
-    if isinstance(f, BytesIO):
-        # np.fromfile is faster but won't work on a BytesIO
-        needed_bytes = needed_length * type_size
-        bytes_data = bytearray(needed_bytes)
-        n_bytes_read = f.readinto(bytes_data)
-        if n_bytes_read != needed_bytes:
-            raise ValueError("Not enough data for %s." % definition.name)
-        data = np.frombuffer(bytes_data, dtype=np_type)
-    else:
-        data = np.fromfile(f, dtype=np_type, count=needed_length)
-        if data.shape[0] != needed_length:
-            raise ValueError("Not enough data for %s." % definition.name)
+    data = _read_raw_array(f, definition.name, needed_length, np_type, type_size)
 
     if (sys.byteorder == "big") != big_endian:
         data = data.byteswap()
-    return data.reshape(definition.count, len(definition.properties))
+    return [data.reshape(definition.count, len(definition.properties))]
 
 
-def _read_ply_element_struct(f, definition: _PlyElementType, endian_str: str):
+def _read_ply_element_binary_nolists(f, definition: _PlyElementType, big_endian: bool):
     """
-    Given an element which has no lists, read the corresponding data. Uses the
-    struct library.
+    Given an element which has no lists, read the corresponding data as tuple
+    of numpy arrays, one for each set of adjacent columns with the same type.
 
-    Note: It looks like struct would also support lists where
-    type=size_type=char, but it is hard to know how much data to read in that
-    case.
+    For example, given
+
+        element vertex 8
+        property float x
+        property float y
+        property float z
+        property uchar red
+        property uchar green
+        property uchar blue
+
+    the output will have two arrays, the first containing (x,y,z)
+    and the second (red,green,blue).
 
     Args:
         f: file-like object being read.
         definition: The element object which describes what we are reading.
-        endian_str: ">" or "<" according to whether the document is big or
-                    little endian.
+        big_endian: (bool) whether the document is encoded as big endian.
 
     Returns:
-        2D numpy array corresponding to the data. The rows are the different
-        values. There is one column for each property.
+        List of 2D numpy arrays corresponding to the data. The rows are the different
+        values.
     """
-    format = "".join(
-        _PLY_TYPES[property.data_type].struct_char for property in definition.properties
-    )
-    format = endian_str + format
-    pattern = struct.Struct(format)
-    size = pattern.size
+    size = sum(_PLY_TYPES[prop.data_type].size for prop in definition.properties)
     needed_bytes = size * definition.count
-    bytes_data = f.read(needed_bytes)
-    if len(bytes_data) != needed_bytes:
-        raise ValueError("Not enough data for %s." % definition.name)
-    data = [pattern.unpack_from(bytes_data, i * size) for i in range(definition.count)]
-    return data
+    data = _read_raw_array(f, definition.name, needed_bytes).reshape(-1, size)
+    offset = 0
+    pieces = []
+    for dtype, it in itertools.groupby(p.data_type for p in definition.properties):
+        count = sum(1 for _ in it)
+        bytes_each = count * _PLY_TYPES[dtype].size
+        end_offset = offset + bytes_each
+
+        # what we want to do is
+        # piece = data[:, offset:end_offset].view(_PLY_TYPES[dtype].np_type)
+        # but it fails in the general case
+        # because of https://github.com/numpy/numpy/issues/9496.
+        piece = np.lib.stride_tricks.as_strided(
+            data[:1, offset:end_offset].view(_PLY_TYPES[dtype].np_type),
+            shape=(definition.count, count),
+            strides=(data.strides[0], _PLY_TYPES[dtype].size),
+        )
+
+        if (sys.byteorder == "big") != big_endian:
+            piece = piece.byteswap()
+        pieces.append(piece)
+        offset = end_offset
+    return pieces
 
 
 def _try_read_ply_constant_list_binary(
@@ -451,6 +584,28 @@ def _try_read_ply_constant_list_binary(
     corresponding data assuming every value has the same length.
     If the data is ragged, return None and leave f undisturbed.
 
+    For example, if the element is
+
+        element face 2
+        property list uchar int vertex_index
+
+    and the data is
+
+        4 0 1 2 3
+        4 7 6 5 4
+
+    then the function will return
+
+        [[0, 1, 2, 3],
+         [7, 6, 5, 4]]
+
+    but if the data is
+
+        4 0 1 2 3
+        3 6 5 4
+
+    then the function will return None.
+
     Args:
         f: file-like object being read.
         definition: The element object which describes what we are reading.
@@ -460,8 +615,6 @@ def _try_read_ply_constant_list_binary(
         If every element has the same size, 2D numpy array corresponding to the
         data. The rows are the different values. Otherwise None.
     """
-    if definition.count == 0:
-        return []
     property = definition.properties[0]
     endian_str = ">" if big_endian else "<"
     length_format = endian_str + _PLY_TYPES[property.list_size_type].struct_char
@@ -515,18 +668,20 @@ def _read_ply_element_binary(f, definition: _PlyElementType, big_endian: bool) -
         each occurence of the element, and the inner lists have one value per
         property.
     """
-    endian_str = ">" if big_endian else "<"
+    if not definition.count:
+        return []
 
     if definition.is_constant_type_fixed_size():
         return _read_ply_fixed_size_element_binary(f, definition, big_endian)
     if definition.is_fixed_size():
-        return _read_ply_element_struct(f, definition, endian_str)
+        return _read_ply_element_binary_nolists(f, definition, big_endian)
     if definition.try_constant_list():
         data = _try_read_ply_constant_list_binary(f, definition, big_endian)
         if data is not None:
             return data
 
     # We failed to read the element as a lump, must process each line manually.
+    endian_str = ">" if big_endian else "<"
     property_structs = []
     for property in definition.properties:
         initial_type = property.list_size_type or property.data_type
@@ -606,6 +761,7 @@ def _load_ply_raw(f, path_manager: PathManager) -> Tuple[_PlyHeader, dict]:
         elements: A dictionary of element names to values. If an element is
                   regular, in the sense of having no lists or being one
                   uniformly-sized list, then the value will be a 2D numpy array.
+                  If it has no lists but more than one type, it will be a list of arrays.
                   If not, it is a list of the relevant property values.
     """
     with _open_file(f, path_manager, "rb") as f:
@@ -670,11 +826,20 @@ def load_ply(f, path_manager: Optional[PathManager] = None):
     if face is None:
         raise ValueError("The ply file has no face element.")
 
-    if len(vertex) and (
-        not isinstance(vertex, np.ndarray) or vertex.ndim != 2 or vertex.shape[1] != 3
-    ):
+    if not isinstance(vertex, list) or len(vertex) > 1:
         raise ValueError("Invalid vertices in file.")
-    verts = _make_tensor(vertex, cols=3, dtype=torch.float32)
+
+    if len(vertex):
+        vertex0 = vertex[0]
+        if len(vertex0) and (
+            not isinstance(vertex0, np.ndarray)
+            or vertex0.ndim != 2
+            or vertex0.shape[1] != 3
+        ):
+            raise ValueError("Invalid vertices in file.")
+    else:
+        vertex0 = []
+    verts = _make_tensor(vertex0, cols=3, dtype=torch.float32)
 
     face_head = next(head for head in header.elements if head.name == "face")
     if len(face_head.properties) != 1 or face_head.properties[0].list_size_type is None:

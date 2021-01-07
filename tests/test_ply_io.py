@@ -5,6 +5,7 @@ import unittest
 from io import BytesIO, StringIO
 from tempfile import NamedTemporaryFile, TemporaryFile
 
+import numpy as np
 import pytorch3d.io.ply_io
 import torch
 from common_testing import TestCaseMixin
@@ -125,7 +126,8 @@ class TestMeshPlyIO(TestCaseMixin, unittest.TestCase):
             self.assertTupleEqual(data["face"].shape, (6, 4))
             self.assertClose([0, 1, 2, 3], data["face"][0])
             self.assertClose([3, 7, 4, 0], data["face"][5])
-            self.assertTupleEqual(data["vertex"].shape, (8, 3))
+            [vertex0] = data["vertex"]
+            self.assertTupleEqual(vertex0.shape, (8, 3))
             irregular = data["irregular_list"]
             self.assertEqual(len(irregular), 3)
             self.assertEqual(type(irregular), list)
@@ -309,6 +311,49 @@ class TestMeshPlyIO(TestCaseMixin, unittest.TestCase):
                     file.close()
             self.assertLess(lengths[False], lengths[True], "ascii should be longer")
 
+    def test_heterogenous_property(self):
+        ply_file_ascii = "\n".join(
+            [
+                "ply",
+                "format ascii 1.0",
+                "element vertex 8",
+                "property float x",
+                "property int y",
+                "property int z",
+                "end_header",
+                "0 0 0",
+                "0 0 1",
+                "0 1 1",
+                "0 1 0",
+                "1 0 0",
+                "1 0 1",
+                "1 1 1",
+                "1 1 0",
+            ]
+        )
+        ply_file_binary = "\n".join(
+            [
+                "ply",
+                "format binary_little_endian 1.0",
+                "element vertex 8",
+                "property uchar x",
+                "property char y",
+                "property char z",
+                "end_header",
+                "",
+            ]
+        )
+        data = [0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 0]
+        stream_ascii = StringIO(ply_file_ascii)
+        stream_binary = BytesIO(ply_file_binary.encode("ascii") + bytes(data))
+        X = np.array([[0, 0, 0, 0, 1, 1, 1, 1]]).T
+        YZ = np.array([0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0])
+        for stream in (stream_ascii, stream_binary):
+            header, elements = _load_ply_raw(stream)
+            [x, yz] = elements["vertex"]
+            self.assertClose(x, X)
+            self.assertClose(yz, YZ.reshape(8, 2))
+
     def test_load_simple_binary(self):
         for big_endian in [True, False]:
             verts = (
@@ -386,10 +431,11 @@ class TestMeshPlyIO(TestCaseMixin, unittest.TestCase):
             self.assertClose([0, 1, 2, 3], data["face"][0])
             self.assertClose([3, 7, 4, 0], data["face"][5])
 
-            self.assertTupleEqual(data["vertex"].shape, (8, 3))
-            self.assertEqual(len(data["vertex1"]), 8)
-            self.assertClose(data["vertex"], data["vertex1"])
-            self.assertClose(data["vertex"].flatten(), list(map(float, verts)))
+            [vertex0] = data["vertex"]
+            self.assertTupleEqual(vertex0.shape, (8, 3))
+            self.assertEqual(len(data["vertex1"]), 3)
+            self.assertClose(vertex0, np.column_stack(data["vertex1"]))
+            self.assertClose(vertex0.flatten(), list(map(float, verts)))
 
             irregular = data["irregular_list"]
             self.assertEqual(len(irregular), 3)
@@ -413,7 +459,7 @@ class TestMeshPlyIO(TestCaseMixin, unittest.TestCase):
             self.assertEqual(mixed[1][0][0], base if big_endian else 256 * base)
 
             self.assertListEqual(
-                data["minus_ones"], [(-1, 255, -1, 65535, -1, 4294967295)]
+                data["minus_ones"], [-1, 255, -1, 65535, -1, 4294967295]
             )
 
     def test_bad_ply_syntax(self):
@@ -513,14 +559,14 @@ class TestMeshPlyIO(TestCaseMixin, unittest.TestCase):
         lines2 = lines.copy()
         lines2.insert(4, "property double y")
 
-        with self.assertRaisesRegex(ValueError, "Too little data for an element."):
+        with self.assertRaisesRegex(ValueError, "Inconsistent data for vertex."):
             _load_ply_raw(StringIO("\n".join(lines2)))
 
         lines2[-2] = "3.3 4.2"
         _load_ply_raw(StringIO("\n".join(lines2)))
 
         lines2[-2] = "3.3 4.3 2"
-        with self.assertRaisesRegex(ValueError, "Too much data for an element."):
+        with self.assertRaisesRegex(ValueError, "Inconsistent data for vertex."):
             _load_ply_raw(StringIO("\n".join(lines2)))
 
         # Now make the ply file actually be readable as a Mesh
