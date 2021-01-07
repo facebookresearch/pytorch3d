@@ -12,6 +12,7 @@ from common_testing import TestCaseMixin
 from iopath.common.file_io import PathManager
 from pytorch3d.io import IO
 from pytorch3d.io.ply_io import load_ply, save_ply
+from pytorch3d.structures import Pointclouds
 from pytorch3d.utils import torus
 
 
@@ -229,9 +230,13 @@ class TestMeshPlyIO(TestCaseMixin, unittest.TestCase):
             expected_verts = torch.zeros(size=(0, 3), dtype=torch.float32)
         if not len(expected_faces):  # Always compare with an (F, 3) tensor
             expected_faces = torch.zeros(size=(0, 3), dtype=torch.int64)
+
         actual_verts, actual_faces = load_ply(f)
         self.assertClose(expected_verts, actual_verts)
-        self.assertClose(expected_faces, actual_faces)
+        if len(actual_verts):
+            self.assertClose(expected_faces, actual_faces)
+        else:
+            self.assertEqual(actual_faces.numel(), 0)
 
     def test_normals_save(self):
         verts = torch.tensor(
@@ -255,9 +260,10 @@ class TestMeshPlyIO(TestCaseMixin, unittest.TestCase):
         self._test_save_load(verts, faces)
 
         # Faces + empty vertices
-        message_regex = "Faces have invalid indices"
+        # => We don't save the faces
         verts = torch.FloatTensor([])
         faces = torch.LongTensor([[0, 1, 2]])
+        message_regex = "Empty 'verts' provided"
         with self.assertWarnsRegex(UserWarning, message_regex):
             self._test_save_load(verts, faces)
 
@@ -266,7 +272,6 @@ class TestMeshPlyIO(TestCaseMixin, unittest.TestCase):
             self._test_save_load(verts, faces)
 
         # Empty vertices + empty faces
-        message_regex = "Empty 'verts' and 'faces' arguments provided"
         verts0 = torch.FloatTensor([])
         faces0 = torch.LongTensor([])
         with self.assertWarnsRegex(UserWarning, message_regex):
@@ -353,6 +358,115 @@ class TestMeshPlyIO(TestCaseMixin, unittest.TestCase):
             [x, yz] = elements["vertex"]
             self.assertClose(x, X)
             self.assertClose(yz, YZ.reshape(8, 2))
+
+    def test_load_cloudcompare_pointcloud(self):
+        """
+        Test loading a pointcloud styled like some cloudcompare output.
+        cloudcompare is an open source 3D point cloud processing software.
+        """
+        header = "\n".join(
+            [
+                "ply",
+                "format binary_little_endian 1.0",
+                "obj_info Not a key-value pair!",
+                "element vertex 8",
+                "property double x",
+                "property double y",
+                "property double z",
+                "property uchar red",
+                "property uchar green",
+                "property uchar blue",
+                "property float my_Favorite",
+                "end_header",
+                "",
+            ]
+        ).encode("ascii")
+        data = struct.pack("<" + "dddBBBf" * 8, *range(56))
+        io = IO()
+        with NamedTemporaryFile(mode="wb", suffix=".ply") as f:
+            f.write(header)
+            f.write(data)
+            f.flush()
+            pointcloud = io.load_pointcloud(f.name)
+
+        self.assertClose(
+            pointcloud.points_padded()[0],
+            torch.FloatTensor([0, 1, 2]) + 7 * torch.arange(8)[:, None],
+        )
+        self.assertClose(
+            pointcloud.features_padded()[0],
+            torch.FloatTensor([3, 4, 5]) + 7 * torch.arange(8)[:, None],
+        )
+
+    def test_save_pointcloud(self):
+        header = "\n".join(
+            [
+                "ply",
+                "format binary_little_endian 1.0",
+                "element vertex 8",
+                "property float x",
+                "property float y",
+                "property float z",
+                "property float red",
+                "property float green",
+                "property float blue",
+                "end_header",
+                "",
+            ]
+        ).encode("ascii")
+        data = struct.pack("<" + "f" * 48, *range(48))
+        points = torch.FloatTensor([0, 1, 2]) + 6 * torch.arange(8)[:, None]
+        features = torch.FloatTensor([3, 4, 5]) + 6 * torch.arange(8)[:, None]
+        pointcloud = Pointclouds(points=[points], features=[features])
+
+        io = IO()
+        with NamedTemporaryFile(mode="rb", suffix=".ply") as f:
+            io.save_pointcloud(data=pointcloud, path=f.name)
+            f.flush()
+            f.seek(0)
+            actual_data = f.read()
+            reloaded_pointcloud = io.load_pointcloud(f.name)
+
+        self.assertEqual(header + data, actual_data)
+        self.assertClose(reloaded_pointcloud.points_list()[0], points)
+        self.assertClose(reloaded_pointcloud.features_list()[0], features)
+
+        with NamedTemporaryFile(mode="r", suffix=".ply") as f:
+            io.save_pointcloud(data=pointcloud, path=f.name, binary=False)
+            reloaded_pointcloud2 = io.load_pointcloud(f.name)
+            self.assertEqual(f.readline(), "ply\n")
+            self.assertEqual(f.readline(), "format ascii 1.0\n")
+        self.assertClose(reloaded_pointcloud2.points_list()[0], points)
+        self.assertClose(reloaded_pointcloud2.features_list()[0], features)
+
+    def test_load_pointcloud_bad_order(self):
+        """
+        Ply file with a strange property order
+        """
+        file = "\n".join(
+            [
+                "ply",
+                "format ascii 1.0",
+                "element vertex 1",
+                "property uchar green",
+                "property float x",
+                "property float z",
+                "property uchar red",
+                "property float y",
+                "property uchar blue",
+                "end_header",
+                "1 2 3 4 5 6",
+            ]
+        )
+
+        io = IO()
+        pointcloud_gpu = io.load_pointcloud(StringIO(file), device="cuda:0")
+        self.assertEqual(pointcloud_gpu.device, torch.device("cuda:0"))
+        pointcloud = pointcloud_gpu.to(torch.device("cpu"))
+        expected_points = torch.tensor([[[2, 5, 3]]], dtype=torch.float32)
+        expected_features = torch.tensor([[[4, 1, 6]]], dtype=torch.float32)
+        self.assertClose(pointcloud.points_padded(), expected_points)
+        self.assertClose(pointcloud.features_padded(), expected_features)
 
     def test_load_simple_binary(self):
         for big_endian in [True, False]:
@@ -569,9 +683,7 @@ class TestMeshPlyIO(TestCaseMixin, unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Inconsistent data for vertex."):
             _load_ply_raw(StringIO("\n".join(lines2)))
 
-        # Now make the ply file actually be readable as a Mesh
-
-        with self.assertRaisesRegex(ValueError, "The ply file has no face element."):
+        with self.assertRaisesRegex(ValueError, "Invalid vertices in file."):
             load_ply(StringIO("\n".join(lines)))
 
         lines2 = lines.copy()

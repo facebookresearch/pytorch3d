@@ -12,7 +12,7 @@ from pytorch3d.structures import Meshes, Pointclouds
 
 from .obj_io import MeshObjFormat
 from .pluggable_formats import MeshFormatInterpreter, PointcloudFormatInterpreter
-from .ply_io import MeshPlyFormat
+from .ply_io import MeshPlyFormat, PointcloudPlyFormat
 
 
 """
@@ -74,6 +74,7 @@ class IO:
     def register_default_formats(self) -> None:
         self.register_meshes_format(MeshObjFormat())
         self.register_meshes_format(MeshPlyFormat())
+        self.register_pointcloud_format(PointcloudPlyFormat())
 
     def register_meshes_format(self, interpreter: MeshFormatInterpreter) -> None:
         """
