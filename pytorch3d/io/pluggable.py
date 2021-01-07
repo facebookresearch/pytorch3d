@@ -10,7 +10,9 @@ from typing import Deque, Optional, Union
 from iopath.common.file_io import PathManager
 from pytorch3d.structures import Meshes, Pointclouds
 
+from .obj_io import MeshObjFormat
 from .pluggable_formats import MeshFormatInterpreter, PointcloudFormatInterpreter
+from .ply_io import MeshPlyFormat
 
 
 """
@@ -70,8 +72,8 @@ class IO:
             self.register_default_formats()
 
     def register_default_formats(self) -> None:
-        # This will be populated in later diffs
-        pass
+        self.register_meshes_format(MeshObjFormat())
+        self.register_meshes_format(MeshPlyFormat())
 
     def register_meshes_format(self, interpreter: MeshFormatInterpreter) -> None:
         """

@@ -5,7 +5,8 @@
 import os
 import warnings
 from collections import namedtuple
-from typing import List, Optional
+from pathlib import Path
+from typing import List, Optional, Union
 
 import numpy as np
 import torch
@@ -14,6 +15,8 @@ from pytorch3d.io.mtl_io import load_mtl, make_mesh_texture_atlas
 from pytorch3d.io.utils import _check_faces_indices, _make_tensor, _open_file
 from pytorch3d.renderer import TexturesAtlas, TexturesUV
 from pytorch3d.structures import Meshes, join_meshes_as_batch
+
+from .pluggable_formats import MeshFormatInterpreter, endswith
 
 
 # Faces & Aux type returned from load_obj function.
@@ -284,6 +287,58 @@ def load_objs_as_meshes(
     if len(mesh_list) == 1:
         return mesh_list[0]
     return join_meshes_as_batch(mesh_list)
+
+
+class MeshObjFormat(MeshFormatInterpreter):
+    def __init__(self):
+        self.known_suffixes = (".obj",)
+
+    def read(
+        self,
+        path: Union[str, Path],
+        include_textures: bool,
+        device,
+        path_manager: PathManager,
+        create_texture_atlas: bool = False,
+        texture_atlas_size: int = 4,
+        texture_wrap: Optional[str] = "repeat",
+        **kwargs,
+    ) -> Optional[Meshes]:
+        if not endswith(path, self.known_suffixes):
+            return None
+        mesh = load_objs_as_meshes(
+            files=[path],
+            device=device,
+            load_textures=include_textures,
+            create_texture_atlas=create_texture_atlas,
+            texture_atlas_size=texture_atlas_size,
+            texture_wrap=texture_wrap,
+            path_manager=path_manager,
+        )
+        return mesh
+
+    def save(
+        self,
+        data: Meshes,
+        path: Union[str, Path],
+        path_manager: PathManager,
+        binary: Optional[bool],
+        decimal_places: Optional[int] = None,
+        **kwargs,
+    ) -> bool:
+        if not endswith(path, self.known_suffixes):
+            return False
+
+        verts = data.verts_list()[0]
+        faces = data.faces_list()[0]
+        save_obj(
+            f=path,
+            verts=verts,
+            faces=faces,
+            decimal_places=decimal_places,
+            path_manager=path_manager,
+        )
+        return True
 
 
 def _parse_face(

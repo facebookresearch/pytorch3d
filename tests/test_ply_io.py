@@ -3,12 +3,13 @@
 import struct
 import unittest
 from io import BytesIO, StringIO
-from tempfile import TemporaryFile
+from tempfile import NamedTemporaryFile, TemporaryFile
 
 import pytorch3d.io.ply_io
 import torch
 from common_testing import TestCaseMixin
 from iopath.common.file_io import PathManager
+from pytorch3d.io import IO
 from pytorch3d.io.ply_io import load_ply, save_ply
 from pytorch3d.utils import torus
 
@@ -18,6 +19,60 @@ global_path_manager = PathManager()
 
 def _load_ply_raw(stream):
     return pytorch3d.io.ply_io._load_ply_raw(stream, global_path_manager)
+
+
+CUBE_PLY_LINES = [
+    "ply",
+    "format ascii 1.0",
+    "comment made by Greg Turk",
+    "comment this file is a cube",
+    "element vertex 8",
+    "property float x",
+    "property float y",
+    "property float z",
+    "element face 6",
+    "property list uchar int vertex_index",
+    "end_header",
+    "0 0 0",
+    "0 0 1",
+    "0 1 1",
+    "0 1 0",
+    "1 0 0",
+    "1 0 1",
+    "1 1 1",
+    "1 1 0",
+    "4 0 1 2 3",
+    "4 7 6 5 4",
+    "4 0 4 5 1",
+    "4 1 5 6 2",
+    "4 2 6 7 3",
+    "4 3 7 4 0",
+]
+
+CUBE_VERTS = [
+    [0, 0, 0],
+    [0, 0, 1],
+    [0, 1, 1],
+    [0, 1, 0],
+    [1, 0, 0],
+    [1, 0, 1],
+    [1, 1, 1],
+    [1, 1, 0],
+]
+CUBE_FACES = [
+    [0, 1, 2],
+    [7, 6, 5],
+    [0, 4, 5],
+    [1, 5, 6],
+    [2, 6, 7],
+    [3, 7, 4],
+    [0, 2, 3],
+    [7, 5, 4],
+    [0, 5, 1],
+    [1, 6, 2],
+    [2, 7, 3],
+    [3, 4, 0],
+]
 
 
 class TestMeshPlyIO(TestCaseMixin, unittest.TestCase):
@@ -82,35 +137,7 @@ class TestMeshPlyIO(TestCaseMixin, unittest.TestCase):
             self.assertClose(x, [4, 5, 1])
 
     def test_load_simple_ascii(self):
-        ply_file = "\n".join(
-            [
-                "ply",
-                "format ascii 1.0",
-                "comment made by Greg Turk",
-                "comment this file is a cube",
-                "element vertex 8",
-                "property float x",
-                "property float y",
-                "property float z",
-                "element face 6",
-                "property list uchar int vertex_index",
-                "end_header",
-                "0 0 0",
-                "0 0 1",
-                "0 1 1",
-                "0 1 0",
-                "1 0 0",
-                "1 0 1",
-                "1 1 1",
-                "1 1 0",
-                "4 0 1 2 3",
-                "4 7 6 5 4",
-                "4 0 4 5 1",
-                "4 1 5 6 2",
-                "4 2 6 7 3",
-                "4 3 7 4 0",
-            ]
-        )
+        ply_file = "\n".join(CUBE_PLY_LINES)
         for line_ending in [None, "\n", "\r\n"]:
             if line_ending is None:
                 stream = StringIO(ply_file)
@@ -122,32 +149,41 @@ class TestMeshPlyIO(TestCaseMixin, unittest.TestCase):
             verts, faces = load_ply(stream)
             self.assertEqual(verts.shape, (8, 3))
             self.assertEqual(faces.shape, (12, 3))
-            verts_expected = [
-                [0, 0, 0],
-                [0, 0, 1],
-                [0, 1, 1],
-                [0, 1, 0],
-                [1, 0, 0],
-                [1, 0, 1],
-                [1, 1, 1],
-                [1, 1, 0],
-            ]
-            self.assertClose(verts, torch.FloatTensor(verts_expected))
-            faces_expected = [
-                [0, 1, 2],
-                [7, 6, 5],
-                [0, 4, 5],
-                [1, 5, 6],
-                [2, 6, 7],
-                [3, 7, 4],
-                [0, 2, 3],
-                [7, 5, 4],
-                [0, 5, 1],
-                [1, 6, 2],
-                [2, 7, 3],
-                [3, 4, 0],
-            ]
-            self.assertClose(faces, torch.LongTensor(faces_expected))
+            self.assertClose(verts, torch.FloatTensor(CUBE_VERTS))
+            self.assertClose(faces, torch.LongTensor(CUBE_FACES))
+
+    def test_pluggable_load_cube(self):
+        """
+        This won't work on Windows due to NamedTemporaryFile being reopened.
+        """
+        ply_file = "\n".join(CUBE_PLY_LINES)
+        io = IO()
+        with NamedTemporaryFile(mode="w", suffix=".ply") as f:
+            f.write(ply_file)
+            f.flush()
+            mesh = io.load_mesh(f.name)
+        self.assertClose(mesh.verts_padded(), torch.FloatTensor(CUBE_VERTS)[None])
+        self.assertClose(mesh.faces_padded(), torch.LongTensor(CUBE_FACES)[None])
+
+        device = torch.device("cuda:0")
+
+        with NamedTemporaryFile(mode="w", suffix=".ply") as f2:
+            io.save_mesh(mesh, f2.name)
+            f2.flush()
+            mesh2 = io.load_mesh(f2.name, device=device)
+        self.assertEqual(mesh2.verts_padded().device, device)
+        self.assertClose(mesh2.verts_padded().cpu(), mesh.verts_padded())
+        self.assertClose(mesh2.faces_padded().cpu(), mesh.faces_padded())
+
+        with NamedTemporaryFile(mode="w") as f3:
+            with self.assertRaisesRegex(
+                ValueError, "No mesh interpreter found to write to"
+            ):
+                io.save_mesh(mesh, f3.name)
+            with self.assertRaisesRegex(
+                ValueError, "No mesh interpreter found to read "
+            ):
+                io.load_mesh(f3.name)
 
     def test_save_ply_invalid_shapes(self):
         # Invalid vertices shape

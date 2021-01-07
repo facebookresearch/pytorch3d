@@ -5,11 +5,12 @@ import unittest
 import warnings
 from io import StringIO
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 
 import torch
 from common_testing import TestCaseMixin
 from iopath.common.file_io import PathManager
-from pytorch3d.io import load_obj, load_objs_as_meshes, save_obj
+from pytorch3d.io import IO, load_obj, load_objs_as_meshes, save_obj
 from pytorch3d.io.mtl_io import (
     _bilinear_interpolation_grid_sample,
     _bilinear_interpolation_vectorized,
@@ -144,6 +145,70 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
         self.assertClose(faces.textures_idx, expected_faces_textures_idx)
         self.assertTrue(materials is None)
         self.assertTrue(tex_maps is None)
+
+    def test_load_obj_complex_pluggable(self):
+        """
+        This won't work on Windows due to the behavior of NamedTemporaryFile
+        """
+        obj_file = "\n".join(
+            [
+                "# this is a comment",  # Comments should be ignored.
+                "v 0.1 0.2 0.3",
+                "v 0.2 0.3 0.4",
+                "v 0.3 0.4 0.5",
+                "v 0.4 0.5 0.6",
+                "vn 0.000000 0.000000 -1.000000",
+                "vn -1.000000 -0.000000 -0.000000",
+                "vn -0.000000 -0.000000 1.000000",  # Normals should not be ignored.
+                "v 0.5 0.6 0.7",
+                "vt 0.749279 0.501284 0.0",  # Some files add 0.0 - ignore this.
+                "vt 0.999110 0.501077",
+                "vt 0.999455 0.750380",
+                "f 1 2 3",
+                "f 1 2 4 3 5",  # Polygons should be split into triangles
+                "f 2/1/2 3/1/2 4/2/2",  # Texture/normals are loaded correctly.
+                "f -1 -2 1",  # Negative indexing counts from the end.
+            ]
+        )
+        io = IO()
+        with NamedTemporaryFile(mode="w", suffix=".obj") as f:
+            f.write(obj_file)
+            f.flush()
+            mesh = io.load_mesh(f.name)
+            mesh_from_path = io.load_mesh(Path(f.name))
+
+        with NamedTemporaryFile(mode="w", suffix=".ply") as f:
+            f.write(obj_file)
+            f.flush()
+            with self.assertRaisesRegex(ValueError, "Invalid file header."):
+                io.load_mesh(f.name)
+
+        expected_verts = torch.tensor(
+            [
+                [0.1, 0.2, 0.3],
+                [0.2, 0.3, 0.4],
+                [0.3, 0.4, 0.5],
+                [0.4, 0.5, 0.6],
+                [0.5, 0.6, 0.7],
+            ],
+            dtype=torch.float32,
+        )
+        expected_faces = torch.tensor(
+            [
+                [0, 1, 2],  # First face
+                [0, 1, 3],  # Second face (polygon)
+                [0, 3, 2],  # Second face (polygon)
+                [0, 2, 4],  # Second face (polygon)
+                [1, 2, 3],  # Third face (normals / texture)
+                [4, 3, 0],  # Fourth face (negative indices)
+            ],
+            dtype=torch.int64,
+        )
+        self.assertClose(mesh.verts_padded(), expected_verts[None])
+        self.assertClose(mesh.faces_padded(), expected_faces[None])
+        self.assertClose(mesh_from_path.verts_padded(), expected_verts[None])
+        self.assertClose(mesh_from_path.faces_padded(), expected_faces[None])
+        self.assertIsNone(mesh.textures)
 
     def test_load_obj_normals_only(self):
         obj_file = "\n".join(
@@ -588,8 +653,8 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
         expected_atlas = torch.tensor([0.5, 0.0, 0.0], dtype=torch.float32)
         expected_atlas = expected_atlas[None, None, None, :].expand(2, R, R, -1)
         self.assertTrue(torch.allclose(aux.texture_atlas, expected_atlas))
-        self.assertEquals(len(aux.material_colors.keys()), 1)
-        self.assertEquals(list(aux.material_colors.keys()), ["material_1"])
+        self.assertEqual(len(aux.material_colors.keys()), 1)
+        self.assertEqual(list(aux.material_colors.keys()), ["material_1"])
 
     def test_load_obj_missing_texture(self):
         DATA_DIR = Path(__file__).resolve().parent / "data"

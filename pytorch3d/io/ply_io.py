@@ -9,12 +9,16 @@ import sys
 import warnings
 from collections import namedtuple
 from io import BytesIO
-from typing import Optional, Tuple
+from pathlib import Path
+from typing import Optional, Tuple, Union
 
 import numpy as np
 import torch
 from iopath.common.file_io import PathManager
 from pytorch3d.io.utils import _check_faces_indices, _make_tensor, _open_file
+from pytorch3d.structures import Meshes
+
+from .pluggable_formats import MeshFormatInterpreter, endswith
 
 
 _PlyTypeData = namedtuple("_PlyTypeData", "size struct_char np_type")
@@ -679,8 +683,7 @@ def load_ply(f, path_manager: Optional[PathManager] = None):
     # but we don't need to enforce this.
 
     if not len(face):
-        # pyre-fixme[28]: Unexpected keyword argument `size`.
-        faces = torch.zeros(size=(0, 3), dtype=torch.int64)
+        faces = torch.zeros((0, 3), dtype=torch.int64)
     elif isinstance(face, np.ndarray) and face.ndim == 2:  # Homogeneous elements
         if face.shape[1] < 3:
             raise ValueError("Faces must have at least 3 vertices.")
@@ -831,3 +834,48 @@ def save_ply(
         path_manager = PathManager()
     with _open_file(f, path_manager, "wb") as f:
         _save_ply(f, verts, faces, verts_normals, ascii, decimal_places)
+
+
+class MeshPlyFormat(MeshFormatInterpreter):
+    def __init__(self):
+        self.known_suffixes = (".ply",)
+
+    def read(
+        self,
+        path: Union[str, Path],
+        include_textures: bool,
+        device,
+        path_manager: PathManager,
+        **kwargs,
+    ) -> Optional[Meshes]:
+        if not endswith(path, self.known_suffixes):
+            return None
+
+        verts, faces = load_ply(f=path, path_manager=path_manager)
+        mesh = Meshes(verts=[verts.to(device)], faces=[faces.to(device)])
+        return mesh
+
+    def save(
+        self,
+        data: Meshes,
+        path: Union[str, Path],
+        path_manager: PathManager,
+        binary: Optional[bool],
+        decimal_places: Optional[int] = None,
+        **kwargs,
+    ) -> bool:
+        if not endswith(path, self.known_suffixes):
+            return False
+
+        # TODO: normals are not saved. We only want to save them if they already exist.
+        verts = data.verts_list()[0]
+        faces = data.faces_list()[0]
+        save_ply(
+            f=path,
+            verts=verts,
+            faces=faces,
+            ascii=binary is False,
+            decimal_places=decimal_places,
+            path_manager=path_manager,
+        )
+        return True
