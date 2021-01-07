@@ -2,6 +2,7 @@
 
 
 from .obj_io import load_obj, load_objs_as_meshes, save_obj
+from .pluggable import IO
 from .ply_io import load_ply, save_ply
 
 

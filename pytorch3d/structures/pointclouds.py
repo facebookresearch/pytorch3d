@@ -777,7 +777,7 @@ class Pointclouds(object):
             returned.
 
         Returns:
-            list[PointClouds].
+            list[Pointclouds].
         """
         if not all(isinstance(x, int) for x in split_sizes):
             raise ValueError("Value of split_sizes must be a list of integers.")
