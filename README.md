@@ -51,6 +51,13 @@ Get started with PyTorch3D by trying one of the tutorial notebooks.
 |:------------------------------------------------------------:|:--------------------------------------------------:|
 | [Render DensePose data](https://github.com/facebookresearch/pytorch3d/blob/master/docs/tutorials/render_densepose.ipynb)| [Load & Render ShapeNet data](https://github.com/facebookresearch/pytorch3d/blob/master/docs/tutorials/dataloaders_ShapeNetCore_R2N2.ipynb)|
 
+| <img src="https://raw.githubusercontent.com/facebookresearch/pytorch3d/master/.github/fit_textured_volume.gif" width="310"/> | <img src="https://raw.githubusercontent.com/facebookresearch/pytorch3d/master/.github/fit_nerf.gif" width="310" height="310"/>
+|:------------------------------------------------------------:|:--------------------------------------------------:|
+| [Fit Textured Volume](https://github.com/facebookresearch/pytorch3d/blob/master/docs/tutorials/fit_textured_volume.ipynb)| [Fit A Simple Neural Radiance Field](https://github.com/facebookresearch/pytorch3d/blob/master/docs/tutorials/fit_simple_neural_radiance_field.ipynb)|
+
+
+
+
 ## Documentation
 
 Learn more about the API by reading the PyTorch3D [documentation](https://pytorch3d.readthedocs.org/).
