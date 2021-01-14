@@ -42,9 +42,9 @@ def opencv2pulsar(
 
     device = K.device
 
-    # We test if the data is batched or not using `K`
-    # and we assume that all passed parameters are either
-    # all batched or all NOT batched.
+    # test if the data is batched or not using `K`
+    # assume that all passed parameters are either
+    # all batched or NOT batched at all.
     input_is_not_batched = len(K.size()) == 2
     if input_is_not_batched:
         K = K.unsqueeze(0)
@@ -92,14 +92,6 @@ def opencv2pulsar(
     # transfer principal point offset into centered offset
     cx = -(cx - w / 2)
     cy = cy - h / 2
-    # cy = -(cy + h / 2)
-    # cx = cx - w
-    # cy = cy - h / 4
-    # cy = cy + h / 4
-
-    print("cx,cy", cx, cy)
-    # cx -= 1024
-    # cy -= 256
 
     param = torch.cat([focal_length, sensor_width, cx, cy], dim=1)
 
