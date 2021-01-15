@@ -18,8 +18,11 @@ def opencv2pulsar(
     Convert OpenCV style camera parameters to Pulsar style cameras.
 
     !!IMPORTANT!!
-    Pulsar does NOT support different focal lengths for x and y yet so
-    we simply take the average of fx and fy.
+    * Pulsar does NOT support different focal lengths for x and y yet so
+      we simply take the average of fx and fy.
+    * The Pulsar renderer MUST use a left-handed coordinate system
+    * The resulting image will be horizontally flipped - which has to be
+      addressed AFTER rendering by the user
 
     Args:
         * K: intrinsic camera parameters. [Bx]3x3.
