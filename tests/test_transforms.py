@@ -20,13 +20,17 @@ class TestTransform(TestCaseMixin, unittest.TestCase):
     def test_to(self):
         tr = Translate(torch.FloatTensor([[1.0, 2.0, 3.0]]))
         R = torch.FloatTensor([[0.0, 1.0, 0.0], [0.0, 0.0, 1.0], [1.0, 0.0, 0.0]])
+        cpu_points = torch.rand(9, 3)
+        cuda_points = cpu_points.cuda()
         R = Rotate(R)
         t = Transform3d().compose(R, tr)
         for _ in range(3):
-            t.cpu()
-            t.cuda()
-            t.cuda()
-            t.cpu()
+            t = t.cpu()
+            t.transform_points(cpu_points)
+            t = t.cuda()
+            t.transform_points(cuda_points)
+            t = t.cuda()
+            t = t.cpu()
 
     def test_clone(self):
         """
