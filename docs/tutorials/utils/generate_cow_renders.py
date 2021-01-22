@@ -59,7 +59,7 @@ def generate_cow_renders(
         os.path.join(data_dir, fl) for fl in ("cow.obj", "cow.mtl", "cow_texture.png")
     ]
     if any(not os.path.isfile(f) for f in cow_mesh_files):
-        os.makedirs(data_dir, exis_ok=True)
+        os.makedirs(data_dir, exist_ok=True)
         os.system(
             f"wget -P {data_dir} "
             + "https://dl.fbaipublicfiles.com/pytorch3d/data/cow_mesh/cow.obj"
