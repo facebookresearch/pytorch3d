@@ -793,12 +793,16 @@ class Pointclouds(object):
         Translate the point clouds by an offset. In place operation.
 
         Args:
-            offsets_packed: A Tensor of the same shape as self.points_packed
-                giving offsets to be added to all points.
+            offsets_packed: A Tensor of shape (3,) or the same shape
+                as self.points_packed giving offsets to be added to
+                all points.
+
         Returns:
             self.
         """
         points_packed = self.points_packed()
+        if offsets_packed.shape == (3,):
+            offsets_packed = offsets_packed.expand_as(points_packed)
         if offsets_packed.shape != points_packed.shape:
             raise ValueError("Offsets must have dimension (all_p, 3).")
         self._points_packed = points_packed + offsets_packed

@@ -1255,12 +1255,15 @@ class Meshes(object):
         Add an offset to the vertices of this Meshes. In place operation.
 
         Args:
-            vert_offsets_packed: A Tensor of the same shape as self.verts_packed
-                               giving offsets to be added to all vertices.
+            vert_offsets_packed: A Tensor of shape (3,) or the same shape as
+                                self.verts_packed, giving offsets to be added
+                                to all vertices.
         Returns:
             self.
         """
         verts_packed = self.verts_packed()
+        if vert_offsets_packed.shape == (3,):
+            vert_offsets_packed = vert_offsets_packed.expand_as(verts_packed)
         if vert_offsets_packed.shape != verts_packed.shape:
             raise ValueError("Verts offsets must have dimension (all_v, 3).")
         # update verts packed
@@ -1581,6 +1584,12 @@ def join_meshes_as_scene(
     Returns:
         new Meshes object containing a single mesh
     """
+    if not isinstance(include_textures, (bool, int)):
+        # We want to avoid letting join_meshes_as_scene(mesh1, mesh2) silently
+        # do the wrong thing.
+        raise ValueError(
+            f"include_textures argument cannot be {type(include_textures)}"
+        )
     if isinstance(meshes, List):
         meshes = join_meshes_as_batch(meshes, include_textures=include_textures)
 
