@@ -1197,7 +1197,7 @@ class Meshes(object):
                 if torch.is_tensor(v):
                     setattr(other, k, v.to(device))
             if self.textures is not None:
-                other.textures = self.textures.to(device)
+                other.textures = other.textures.to(device)
         return other
 
     def cpu(self):
