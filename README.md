@@ -118,8 +118,8 @@ If you are using the pulsar backend for sphere-rendering (the `PulsarPointRender
 
 ```bibtex
 @article{lassner2020pulsar,
-    author = {Christoph Lassner},
-    title = {Fast Differentiable Raycasting for Neural Rendering using Sphere-based Representations},
+    author = {Christoph Lassner and Michael Zollh\"ofer},
+    title = {Pulsar: Efficient Sphere-based Neural Rendering},
     journal = {arXiv:2004.07484},
     year = {2020},
 }
