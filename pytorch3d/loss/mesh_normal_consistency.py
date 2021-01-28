@@ -108,7 +108,7 @@ def mesh_normal_consistency(meshes):
             for e in vert_edge_pair_idx
             for i in range(len(e) - 1)
             for j in range(1, len(e))
-            if i != j
+            if i < j
         ]
         vert_edge_pair_idx = torch.tensor(
             vert_edge_pair_idx, device=meshes.device, dtype=torch.int64
