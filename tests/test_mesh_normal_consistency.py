@@ -218,6 +218,17 @@ class TestMeshNormalConsistency(unittest.TestCase):
 
         self.assertTrue(torch.allclose(out1, out2))
 
+    def test_no_intersection(self):
+        """
+        Test Mesh Normal Consistency for a mesh known to have no
+        intersecting faces.
+        """
+        verts = torch.rand(1, 6, 2)
+        faces = torch.arange(6).reshape(1, 2, 3)
+        meshes = Meshes(verts=verts, faces=faces)
+        out = mesh_normal_consistency(meshes)
+        self.assertEqual(out.item(), 0)
+
     @staticmethod
     def mesh_normal_consistency_with_ico(
         num_meshes: int, level: int = 3, device: str = "cpu"

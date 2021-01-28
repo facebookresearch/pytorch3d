@@ -114,6 +114,11 @@ def mesh_normal_consistency(meshes):
             vert_edge_pair_idx, device=meshes.device, dtype=torch.int64
         )
 
+    if vert_edge_pair_idx.shape[0] == 0:
+        return torch.tensor(
+            [0.0], dtype=torch.float32, device=meshes.device, requires_grad=True
+        )
+
     v0_idx = edges_packed[edge_idx, 0]
     v0 = verts_packed[v0_idx]
     v1_idx = edges_packed[edge_idx, 1]
