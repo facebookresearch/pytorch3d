@@ -907,14 +907,14 @@ class Pointclouds(object):
         detailed information about the implemented algorithm.
 
         Args:
-        **neighborhood_size**: The size of the neighborhood used to estimate the
+          **neighborhood_size**: The size of the neighborhood used to estimate the
             geometry around each point.
-        **disambiguate_directions**: If `True`, uses the algorithm from [1] to
+          **disambiguate_directions**: If `True`, uses the algorithm from [1] to
             ensure sign consistency of the normals of neigboring points.
-        **normals**: A tensor of normals for each input point
+          **normals**: A tensor of normals for each input point
             of shape `(minibatch, num_point, 3)`.
             If `pointclouds` are of `Pointclouds` class, returns a padded tensor.
-        **assign_to_self**: If `True`, assigns the computed normals to the
+          **assign_to_self**: If `True`, assigns the computed normals to the
             internal buffers overwriting any previously stored normals.
 
         References:
