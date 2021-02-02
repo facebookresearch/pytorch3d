@@ -1,6 +1,6 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 import os
-from typing import Tuple, Optional, List
+from typing import List, Optional, Tuple
 
 import numpy as np
 import requests
@@ -8,6 +8,7 @@ import torch
 from PIL import Image
 from pytorch3d.renderer import PerspectiveCameras
 from torch.utils.data import Dataset
+
 
 DEFAULT_DATA_ROOT = os.path.join(
     os.path.dirname(os.path.realpath(__file__)), "..", "data"

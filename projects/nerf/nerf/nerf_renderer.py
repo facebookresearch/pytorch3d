@@ -1,5 +1,5 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
-from typing import Tuple, List, Optional
+from typing import List, Optional, Tuple
 
 import torch
 from pytorch3d.renderer import ImplicitRenderer, ray_bundle_to_ray_points
@@ -11,7 +11,7 @@ from visdom import Visdom
 from .implicit_function import NeuralRadianceField
 from .raymarcher import EmissionAbsorptionNeRFRaymarcher
 from .raysampler import NeRFRaysampler, ProbabilisticRaysampler
-from .utils import sample_images_at_mc_locs, calc_psnr, calc_mse
+from .utils import calc_mse, calc_psnr, sample_images_at_mc_locs
 
 
 class RadianceFieldRenderer(torch.nn.Module):

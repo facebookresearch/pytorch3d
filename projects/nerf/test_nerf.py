@@ -13,6 +13,7 @@ from nerf.stats import Stats
 from omegaconf import DictConfig
 from PIL import Image
 
+
 CONFIG_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "configs")
 
 

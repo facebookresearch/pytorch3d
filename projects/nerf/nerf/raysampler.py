@@ -3,7 +3,7 @@ import math
 from typing import List
 
 import torch
-from pytorch3d.renderer import RayBundle, NDCGridRaysampler, MonteCarloRaysampler
+from pytorch3d.renderer import MonteCarloRaysampler, NDCGridRaysampler, RayBundle
 from pytorch3d.renderer.cameras import CamerasBase
 
 from .utils import sample_pdf
