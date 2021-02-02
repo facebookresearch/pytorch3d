@@ -15,6 +15,7 @@ test:
   scene_center: [0.0, 0.0, -2.0]
   n_frames: 100
   fps: 20
+  trajectory_scale: 1.0
 optimizer:
   max_epochs: 37500
   lr: 0.0005
