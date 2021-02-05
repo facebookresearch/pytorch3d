@@ -6,9 +6,8 @@ https://github.com/facebookresearch/pytorch3d/tree/stable/docs/tutorials .
 
 There are links at the project homepage for opening these directly in colab.
 
-They install torch, torchvision and PyTorch3D from pip, which should work
-with the CUDA 10.1 inside a GPU colab notebook. If you need to install
-PyTorch3D from source inside colab, you can use
+They install PyTorch3D from pip, which should work inside a GPU colab notebook.
+If you need to install PyTorch3D from source inside colab, you can use
 ```
 import os
 !curl -LO https://github.com/NVIDIA/cub/archive/1.10.0.tar.gz
