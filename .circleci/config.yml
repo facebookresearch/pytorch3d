@@ -549,24 +549,6 @@ workflows:
           name: linux_conda_py39_cu110_pyt171
           python_version: '3.9'
           pytorch_version: 1.7.1
-      - binary_linux_wheel:
-          context: DOCKERHUB_TOKEN
-          cu_version: cu101
-          name: linux_wheel_py36_cu101_pyt160
-          python_version: '3.6'
-          pytorch_version: 1.6.0
-      - binary_linux_wheel:
-          context: DOCKERHUB_TOKEN
-          cu_version: cu101
-          name: linux_wheel_py37_cu101_pyt160
-          python_version: '3.7'
-          pytorch_version: 1.6.0
-      - binary_linux_wheel:
-          context: DOCKERHUB_TOKEN
-          cu_version: cu101
-          name: linux_wheel_py38_cu101_pyt160
-          python_version: '3.8'
-          pytorch_version: 1.6.0
       - binary_linux_conda_cuda:
           name: testrun_conda_cuda_py36_cu101_pyt14
           context: DOCKERHUB_TOKEN
@@ -589,14 +571,19 @@ workflows:
           cu_version: cpu
           name: macos_wheel_py36_cpu
           python_version: '3.6'
-          pytorch_version: '1.6.0'
+          pytorch_version: '1.7.1'
       - binary_macos_wheel:
           cu_version: cpu
           name: macos_wheel_py37_cpu
           python_version: '3.7'
-          pytorch_version: '1.6.0'
+          pytorch_version: '1.7.1'
       - binary_macos_wheel:
           cu_version: cpu
           name: macos_wheel_py38_cpu
           python_version: '3.8'
-          pytorch_version: '1.6.0'
+          pytorch_version: '1.7.1'
+      - binary_macos_wheel:
+          cu_version: cpu
+          name: macos_wheel_py39_cpu
+          python_version: '3.9'
+          pytorch_version: '1.7.1'

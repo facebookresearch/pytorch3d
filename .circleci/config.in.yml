@@ -248,14 +248,19 @@ workflows:
           cu_version: cpu
           name: macos_wheel_py36_cpu
           python_version: '3.6'
-          pytorch_version: '1.6.0'
+          pytorch_version: '1.7.1'
       - binary_macos_wheel:
           cu_version: cpu
           name: macos_wheel_py37_cpu
           python_version: '3.7'
-          pytorch_version: '1.6.0'
+          pytorch_version: '1.7.1'
       - binary_macos_wheel:
           cu_version: cpu
           name: macos_wheel_py38_cpu
           python_version: '3.8'
-          pytorch_version: '1.6.0'
+          pytorch_version: '1.7.1'
+      - binary_macos_wheel:
+          cu_version: cpu
+          name: macos_wheel_py39_cpu
+          python_version: '3.9'
+          pytorch_version: '1.7.1'

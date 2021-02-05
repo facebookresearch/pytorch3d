@@ -9,7 +9,7 @@ The core library is written in PyTorch. Several components have underlying imple
 
 - Linux or macOS or Windows
 - Python 3.6, 3.7 or 3.8
-- PyTorch 1.4, 1.5.0, 1.5.1, 1.6.0, or 1.7.0.
+- PyTorch 1.4, 1.5.0, 1.5.1, 1.6.0, 1.7.0, or 1.7.1.
 - torchvision that matches the PyTorch installation. You can install them together as explained at pytorch.org to make sure of this.
 - gcc & g++ ≥ 4.9
 - [fvcore](https://github.com/facebookresearch/fvcore)
@@ -21,8 +21,8 @@ The runtime dependencies can be installed by running:
 ```
 conda create -n pytorch3d python=3.8
 conda activate pytorch3d
-conda install -c pytorch pytorch=1.7.0 torchvision cudatoolkit=10.2
-conda install -c conda-forge fvcore iopath
+conda install -c pytorch pytorch=1.7.1 torchvision cudatoolkit=10.2
+conda install -c conda-forge -c fvcore -c iopath fvcore iopath
 ```
 
 For the CUB build time dependency, if you are using conda, you can continue with
@@ -77,12 +77,31 @@ Or, to install a nightly (non-official, alpha) build:
 # Anaconda Cloud
 conda install pytorch3d -c pytorch3d-nightly
 ```
-### 2. Install from PyPI, on Linux and Mac
-This works with pytorch 1.6.0 only.
+### 2. Install from PyPI, on Mac only.
+This works with pytorch 1.7.1 only. The build is CPU only.
 ```
 pip install pytorch3d
 ```
-On Linux this has support for CUDA 10.1. On Mac this is CPU-only.
+
+### 3. Install wheels for Linux
+We have prebuilt wheels with CUDA for Linux for PyTorch 1.7.0 and 1.7.1, for each of the CUDA versions that they support.
+These are installed in a special way.
+For example, to install for Python 3.6, PyTorch 1.7.0 and CUDA 10.1
+```
+pip install pytorch3d -f https://dl.fbaipublicfiles.com/pytorch3d/packaging/wheels/py36_cu101_pyt170/download.html
+```
+
+In general, from inside IPython, or in Google Colab or a jupyter notebook, you can install with
+```
+import sys
+import torch
+version_str="".join([
+    f"py3{sys.version_info.minor}_cu",
+    torch.version.cuda.replace(".",""),
+    f"_pyt{torch.__version__[0:5:2]}"
+])
+!pip install pytorch3d -f https://dl.fbaipublicfiles.com/pytorch3d/packaging/wheels/{version_str}/download.html
+```
 
 ## Building / installing from source.
 CUDA support will be included if CUDA is available in pytorch or if the environment variable
