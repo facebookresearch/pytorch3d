@@ -139,8 +139,13 @@ class MeshRasterizer(nn.Module):
         if clip_barycentric_coords is None:
             clip_barycentric_coords = raster_settings.blur_radius > 0.0
 
-        # TODO(jcjohns): Should we try to set perspective_correct automatically
-        # based on the type of the camera?
+        # If not specified, infer perspective_correct from the camera
+        cameras = kwargs.get("cameras", self.cameras)
+        if raster_settings.perspective_correct is not None:
+            perspective_correct = raster_settings.perspective_correct
+        else:
+            perspective_correct = cameras.is_perspective()
+
         pix_to_face, zbuf, bary_coords, dists = rasterize_meshes(
             meshes_screen,
             image_size=raster_settings.image_size,
@@ -148,7 +153,7 @@ class MeshRasterizer(nn.Module):
             faces_per_pixel=raster_settings.faces_per_pixel,
             bin_size=raster_settings.bin_size,
             max_faces_per_bin=raster_settings.max_faces_per_bin,
-            perspective_correct=raster_settings.perspective_correct,
+            perspective_correct=perspective_correct,
             clip_barycentric_coords=clip_barycentric_coords,
             cull_backfaces=raster_settings.cull_backfaces,
         )
