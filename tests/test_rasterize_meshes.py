@@ -6,6 +6,8 @@ import unittest
 import torch
 from common_testing import TestCaseMixin, get_random_cuda_device
 from pytorch3d import _C
+from pytorch3d.renderer import FoVPerspectiveCameras, look_at_view_transform
+from pytorch3d.renderer.mesh import MeshRasterizer, RasterizationSettings
 from pytorch3d.renderer.mesh.rasterize_meshes import (
     rasterize_meshes,
     rasterize_meshes_python,
@@ -1201,6 +1203,53 @@ class TestRasterizeMeshes(TestCaseMixin, unittest.TestCase):
 
         def rasterize():
             rasterize_meshes(meshes_batch, image_size, blur_radius, faces_per_pixel)
+            torch.cuda.synchronize(device)
+
+        return rasterize
+
+    @staticmethod
+    def bm_rasterize_meshes_with_clipping(
+        num_meshes: int,
+        ico_level: int,
+        image_size: int,
+        blur_radius: float,
+        faces_per_pixel: int,
+        dist: float,
+    ):
+        device = get_random_cuda_device()
+        meshes = ico_sphere(ico_level, device)
+        meshes_batch = meshes.extend(num_meshes)
+
+        settings = RasterizationSettings(
+            image_size=image_size,
+            blur_radius=blur_radius,
+            faces_per_pixel=faces_per_pixel,
+            z_clip_value=1e-2,
+            perspective_correct=True,
+            cull_to_frustum=True,
+        )
+
+        # The camera is positioned so that the image plane intersects
+        # the mesh and some faces are partially behind the image plane.
+        R, T = look_at_view_transform(dist, 0, 0)
+        cameras = FoVPerspectiveCameras(device=device, R=R, T=T, fov=90)
+        rasterizer = MeshRasterizer(raster_settings=settings, cameras=cameras)
+
+        # Transform the meshes to projec them onto the image plane
+        meshes_screen = rasterizer.transform(meshes_batch)
+        torch.cuda.synchronize(device)
+
+        def rasterize():
+            # Only measure rasterization speed (including clipping)
+            rasterize_meshes(
+                meshes_screen,
+                image_size,
+                blur_radius,
+                faces_per_pixel,
+                z_clip_value=1e-2,
+                perspective_correct=True,
+                cull_to_frustum=True,
+            )
             torch.cuda.synchronize(device)
 
         return rasterize

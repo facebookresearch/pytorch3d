@@ -994,6 +994,7 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
             blur_radius=0.0,
             faces_per_pixel=1,
             cull_backfaces=True,
+            perspective_correct=False,
         )
 
         # Init shader settings
