@@ -910,14 +910,23 @@ class PerspectiveCameras(CamerasBase):
         else:
             # pyre-ignore[16]
             image_size = kwargs.get("image_size", self.image_size)
+            focal_length = kwargs.get("focal_length", self.focal_length)
+            principal_point = kwargs.get("principal_point", self.principal_point)
+
             # if imwidth > 0, parameters are in screen space
-            image_size = image_size if image_size[0][0] > 0 else None
+            if image_size[0][0] > 0:
+                image_size_square = torch.min(image_size, dim=-1, keepdim=True).values.expand([-1, 2])
+                principal_point = principal_point - (image_size - image_size_square) / 2
+                image_size = image_size_square
+
+            else:
+                image_size = None
 
             K = _get_sfm_calibration_matrix(
                 self._N,
                 self.device,
-                kwargs.get("focal_length", self.focal_length),  # pyre-ignore[16]
-                kwargs.get("principal_point", self.principal_point),  # pyre-ignore[16]
+                focal_length=focal_length,
+                principal_point=principal_point,
                 orthographic=False,
                 image_size=image_size,
             )
