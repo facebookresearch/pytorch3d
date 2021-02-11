@@ -1,9 +1,9 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
-
-from itertools import islice
-
 import torch
+
+# pyre-fixme[21]: Could not find name `_C` in `pytorch3d`.
+from pytorch3d import _C
 
 
 def mesh_normal_consistency(meshes):
@@ -71,9 +71,9 @@ def mesh_normal_consistency(meshes):
     F = faces_packed.shape[0]  # sum(F_n)
 
     # We don't want gradients for the following operation. The goal is to
-    # find for each edge e all the vertices associated with e. In the example above,
-    # the vertices associated with e are (v0, v1, a, b), i.e. points on e (=v0, v1)
-    # and points connected on faces to e (=a, b).
+    # find for each edge e all the vertices associated with e. In the example
+    # above, the vertices associated with e are (a, b), i.e. the points connected
+    # on faces to e.
     with torch.no_grad():
         edge_idx = face_to_edge.reshape(F * 3)  # (3 * F,) indexes into edges
         vert_idx = (
@@ -95,23 +95,10 @@ def mesh_normal_consistency(meshes):
         # the number of vertices which are associated with each edge.
         # There can be a different number for each edge.
         edge_num = edge_idx.bincount(minlength=E)
-        # Create pairs of vertices associated to e. We generate a list of lists:
-        # each list has the indices of the vertices which are opposite to one edge.
-        # The length of the list for each edge will vary.
-        vert_edge_pair_idx = split_list(
-            list(range(edge_idx.shape[0])), edge_num.tolist()
-        )
-        # For each list find all combinations of pairs in the list. This represents
-        # all pairs of vertices which are opposite to the same edge.
-        vert_edge_pair_idx = [
-            [e[i], e[j]]
-            for e in vert_edge_pair_idx
-            for i in range(len(e) - 1)
-            for j in range(1, len(e))
-            if i < j
-        ]
-        vert_edge_pair_idx = torch.tensor(
-            vert_edge_pair_idx, device=meshes.device, dtype=torch.int64
+
+        # This calculates all pairs of vertices which are opposite to the same edge.
+        vert_edge_pair_idx = _C.mesh_normal_consistency_find_verts(edge_num.cpu()).to(
+            edge_num.device
         )
 
     if vert_edge_pair_idx.shape[0] == 0:
@@ -141,8 +128,3 @@ def mesh_normal_consistency(meshes):
 
     loss = loss * weights
     return loss.sum() / N
-
-
-def split_list(input, length_to_split):
-    inputt = iter(input)
-    return [list(islice(inputt, elem)) for elem in length_to_split]
