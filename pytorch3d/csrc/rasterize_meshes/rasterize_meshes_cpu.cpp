@@ -291,8 +291,8 @@ RasterizeMeshesNaiveCpu(
             const float dist_neighbor = std::abs(std::get<2>(neighbor));
             if (dist < dist_neighbor) {
               // Overwrite the neighbor face values.
-              q[idx_top_k] = {
-                  pz, f, signed_dist, bary_clip.x, bary_clip.y, bary_clip.z};
+              q[idx_top_k] = std::make_tuple(
+                  pz, f, signed_dist, bary_clip.x, bary_clip.y, bary_clip.z);
             }
           } else {
             // Handle as a normal face.
