@@ -11,6 +11,7 @@ from iopath.common.file_io import PathManager
 from pytorch3d.structures import Meshes, Pointclouds
 
 from .obj_io import MeshObjFormat
+from .off_io import MeshOffFormat
 from .pluggable_formats import MeshFormatInterpreter, PointcloudFormatInterpreter
 from .ply_io import MeshPlyFormat, PointcloudPlyFormat
 
@@ -73,6 +74,7 @@ class IO:
 
     def register_default_formats(self) -> None:
         self.register_meshes_format(MeshObjFormat())
+        self.register_meshes_format(MeshOffFormat())
         self.register_meshes_format(MeshPlyFormat())
         self.register_pointcloud_format(PointcloudPlyFormat())
 

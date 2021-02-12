@@ -5,7 +5,7 @@
 
 """
 This module implements utility functions for loading and saving
-meshes and point clouds from PLY files.
+meshes and point clouds as PLY files.
 """
 import itertools
 import struct

@@ -3,8 +3,8 @@
 from itertools import product
 
 from fvcore.common.benchmark import benchmark
-from test_obj_io import TestMeshObjIO
-from test_ply_io import TestMeshPlyIO
+from test_io_obj import TestMeshObjIO
+from test_io_ply import TestMeshPlyIO
 
 
 def bm_save_load() -> None:
