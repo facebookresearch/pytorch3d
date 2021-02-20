@@ -140,10 +140,6 @@ def _pad_texture_maps(
 # we can allow the input textures to be any texture
 # type which is an instance of the base class.
 class TexturesBase:
-    def __init__(self):
-        self._N = 0
-        self.valid = None
-
     def isempty(self):
         if self._N is not None and self.valid is not None:
             return self._N == 0 or self.valid.eq(False).all()
@@ -159,6 +155,7 @@ class TexturesBase:
                 setattr(self, k, v)
             if torch.is_tensor(v) and v.device != device:
                 setattr(self, k, v.to(device))
+        self.device = device
         return self
 
     def _extend(self, N: int, props: List[str]) -> Dict[str, Union[torch.Tensor, List]]:
@@ -634,7 +631,6 @@ class TexturesUV(TexturesBase):
         [0.0005, 0.9995] or if the second is outside the interval
         [0.005, 0.995].
         """
-        super().__init__()
         self.padding_mode = padding_mode
         self.align_corners = align_corners
         if isinstance(faces_uvs, (list, tuple)):

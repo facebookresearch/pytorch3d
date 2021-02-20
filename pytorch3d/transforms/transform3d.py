@@ -421,8 +421,9 @@ class Transform3d:
         if self.device != device:
             other.device = device
             other._matrix = self._matrix.to(device=device, dtype=dtype)
-            for t in other._transforms:
-                t.to(device, copy=copy, dtype=dtype)
+            other._transforms = [
+                t.to(device, copy=copy, dtype=dtype) for t in other._transforms
+            ]
         return other
 
     def cpu(self):

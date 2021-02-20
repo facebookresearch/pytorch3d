@@ -42,15 +42,16 @@ class CamerasBase(TensorProperties):
 
     It defines methods that are common to all camera models:
         - `get_camera_center` that returns the optical center of the camera in
-    world coordinates
+            world coordinates
         - `get_world_to_view_transform` which returns a 3D transform from
-    world coordinates to the camera view coordinates (R, T)
+            world coordinates to the camera view coordinates (R, T)
         - `get_full_projection_transform` which composes the projection
-    transform (P) with the world-to-view transform (R, T)
+            transform (P) with the world-to-view transform (R, T)
         - `transform_points` which takes a set of input points in world coordinates and
-    projects to NDC coordinates ranging from [-1, -1, znear] to [+1, +1, zfar].
+            projects to NDC coordinates ranging from [-1, -1, znear] to [+1, +1, zfar].
         - `transform_points_screen` which takes a set of input points in world coordinates and
-    projects them to the screen coordinates ranging from [0, 0, znear] to [W-1, H-1, zfar]
+            projects them to the screen coordinates ranging from
+            [0, 0, znear] to [W-1, H-1, zfar]
 
     For each new camera, one should implement the `get_projection_transform`
     routine that returns the mapping from camera view coordinates to NDC coordinates.
@@ -267,6 +268,12 @@ class CamerasBase(TensorProperties):
         cam_type = type(self)
         other = cam_type(device=self.device)
         return super().clone(other)
+
+    def is_perspective(self):
+        raise NotImplementedError()
+
+    def get_znear(self):
+        return self.znear if hasattr(self, "znear") else None
 
 
 ############################################################
@@ -534,6 +541,9 @@ class FoVPerspectiveCameras(CamerasBase):
         unprojection_transform = to_ndc_transform.inverse()
         return unprojection_transform.transform_points(xy_sdepth)
 
+    def is_perspective(self):
+        return True
+
 
 def OpenGLOrthographicCameras(
     znear=1.0,
@@ -752,6 +762,9 @@ class FoVOrthographicCameras(CamerasBase):
         unprojection_transform = to_ndc_transform.inverse()
         return unprojection_transform.transform_points(xy_sdepth)
 
+    def is_perspective(self):
+        return False
+
 
 ############################################################
 #             MultiView Camera Classes                     #
@@ -927,6 +940,9 @@ class PerspectiveCameras(CamerasBase):
         )
         return unprojection_transform.transform_points(xy_inv_depth)
 
+    def is_perspective(self):
+        return True
+
 
 def SfMOrthographicCameras(
     focal_length=1.0, principal_point=((0.0, 0.0),), R=_R, T=_T, device="cpu"
@@ -1085,6 +1101,9 @@ class OrthographicCameras(CamerasBase):
 
         unprojection_transform = to_ndc_transform.inverse()
         return unprojection_transform.transform_points(xy_depth)
+
+    def is_perspective(self):
+        return False
 
 
 ################################################

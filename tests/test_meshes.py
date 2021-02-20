@@ -1,5 +1,6 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
+import itertools
 import random
 import unittest
 
@@ -445,7 +446,7 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
         mesh = TestMeshes.init_mesh(N, 10, 100)
         all_v = mesh.verts_packed().size(0)
         verts_per_mesh = mesh.num_verts_per_mesh()
-        for force in [0, 1]:
+        for force, deform_shape in itertools.product([0, 1], [(all_v, 3), 3]):
             if force:
                 # force mesh to have computed attributes
                 mesh._compute_packed(refresh=True)
@@ -455,7 +456,7 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
                 mesh._compute_face_areas_normals(refresh=True)
                 mesh._compute_vertex_normals(refresh=True)
 
-            deform = torch.rand((all_v, 3), dtype=torch.float32, device=mesh.device)
+            deform = torch.rand(deform_shape, dtype=torch.float32, device=mesh.device)
             # new meshes class to hold the deformed mesh
             new_mesh_naive = naive_offset_verts(mesh, deform)
 
@@ -465,10 +466,14 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
             verts_cumsum = torch.cumsum(verts_per_mesh, 0).tolist()
             verts_cumsum.insert(0, 0)
             for i in range(N):
+                item_offset = (
+                    deform
+                    if deform.ndim == 1
+                    else deform[verts_cumsum[i] : verts_cumsum[i + 1]]
+                )
                 self.assertClose(
                     new_mesh.verts_list()[i],
-                    mesh.verts_list()[i]
-                    + deform[verts_cumsum[i] : verts_cumsum[i + 1]],
+                    mesh.verts_list()[i] + item_offset,
                 )
                 self.assertClose(
                     new_mesh.verts_list()[i], new_mesh_naive.verts_list()[i]

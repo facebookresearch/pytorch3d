@@ -238,8 +238,9 @@ class _Render(torch.autograd.Function):
                 ctx.needs_input_grad[3]
                 or ctx.needs_input_grad[4]
                 or ctx.needs_input_grad[5]
-                or ctx.needs_input_grad[6],
-                ctx.needs_input_grad[13],
+                or ctx.needs_input_grad[6]
+                or ctx.needs_input_grad[7],
+                ctx.needs_input_grad[14],
                 None,  # No debug information provided.
             )
         else:

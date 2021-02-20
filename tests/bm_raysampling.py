@@ -4,11 +4,11 @@ import itertools
 
 from fvcore.common.benchmark import benchmark
 from pytorch3d.renderer import (
+    FoVOrthographicCameras,
+    FoVPerspectiveCameras,
     GridRaysampler,
     MonteCarloRaysampler,
     NDCGridRaysampler,
-    FoVOrthographicCameras,
-    FoVPerspectiveCameras,
     OrthographicCameras,
     PerspectiveCameras,
 )

@@ -793,12 +793,16 @@ class Pointclouds(object):
         Translate the point clouds by an offset. In place operation.
 
         Args:
-            offsets_packed: A Tensor of the same shape as self.points_packed
-                giving offsets to be added to all points.
+            offsets_packed: A Tensor of shape (3,) or the same shape
+                as self.points_packed giving offsets to be added to
+                all points.
+
         Returns:
             self.
         """
         points_packed = self.points_packed()
+        if offsets_packed.shape == (3,):
+            offsets_packed = offsets_packed.expand_as(points_packed)
         if offsets_packed.shape != points_packed.shape:
             raise ValueError("Offsets must have dimension (all_p, 3).")
         self._points_packed = points_packed + offsets_packed
@@ -903,14 +907,14 @@ class Pointclouds(object):
         detailed information about the implemented algorithm.
 
         Args:
-        **neighborhood_size**: The size of the neighborhood used to estimate the
+          **neighborhood_size**: The size of the neighborhood used to estimate the
             geometry around each point.
-        **disambiguate_directions**: If `True`, uses the algorithm from [1] to
+          **disambiguate_directions**: If `True`, uses the algorithm from [1] to
             ensure sign consistency of the normals of neigboring points.
-        **normals**: A tensor of normals for each input point
+          **normals**: A tensor of normals for each input point
             of shape `(minibatch, num_point, 3)`.
             If `pointclouds` are of `Pointclouds` class, returns a padded tensor.
-        **assign_to_self**: If `True`, assigns the computed normals to the
+          **assign_to_self**: If `True`, assigns the computed normals to the
             internal buffers overwriting any previously stored normals.
 
         References:

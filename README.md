@@ -118,8 +118,8 @@ If you are using the pulsar backend for sphere-rendering (the `PulsarPointRender
 
 ```bibtex
 @article{lassner2020pulsar,
-    author = {Christoph Lassner},
-    title = {Fast Differentiable Raycasting for Neural Rendering using Sphere-based Representations},
+    author = {Christoph Lassner and Michael Zollh\"ofer},
+    title = {Pulsar: Efficient Sphere-based Neural Rendering},
     journal = {arXiv:2004.07484},
     year = {2020},
 }
@@ -129,16 +129,18 @@ If you are using the pulsar backend for sphere-rendering (the `PulsarPointRender
 
 Please see below for a timeline of the codebase updates in reverse chronological order. We are sharing updates on the releases as well as research projects which are built with PyTorch3D. The changelogs for the releases are available under [`Releases`](https://github.com/facebookresearch/pytorch3d/releases),  and the builds can be installed using `conda` as per the instructions in [INSTALL.md](INSTALL.md).
 
-**[November 2nd 2020]:** PyTorch3D v0.3 released, integrating the pulsar backend.
+**[Feb 9th 2021]:** PyTorch3D [v0.4.0](https://github.com/facebookresearch/pytorch3d/releases/tag/v0.4.0) released with support for implicit functions, volume rendering and a [reimplementation of NeRF](https://github.com/facebookresearch/pytorch3d/tree/master/projects/nerf).
 
-**[Aug 28th 2020]:**   PyTorch3D v0.2.5 released
+**[November 2nd 2020]:** PyTorch3D [v0.3.0](https://github.com/facebookresearch/pytorch3d/releases/tag/v0.3.0) released, integrating the pulsar backend.
+
+**[Aug 28th 2020]:**   PyTorch3D [v0.2.5](https://github.com/facebookresearch/pytorch3d/releases/tag/v0.2.5) released
 
 **[July 17th 2020]:**   PyTorch3D tech report published on ArXiv: https://arxiv.org/abs/2007.08501
 
-**[April 24th 2020]:**   PyTorch3D v0.2 released
+**[April 24th 2020]:**   PyTorch3D [v0.2.0](https://github.com/facebookresearch/pytorch3d/releases/tag/v0.2.0) released
 
 **[March 25th 2020]:**   [SynSin](https://arxiv.org/abs/1912.08804) codebase released using PyTorch3D: https://github.com/facebookresearch/synsin
 
-**[March 8th 2020]:**   PyTorch3D v0.1.1 bug fix release
+**[March 8th 2020]:**   PyTorch3D [v0.1.1](https://github.com/facebookresearch/pytorch3d/releases/tag/v0.1.1) bug fix release
 
-**[Jan 23rd 2020]:**   PyTorch3D v0.1 released. [Mesh R-CNN](https://arxiv.org/abs/1906.02739) codebase released: https://github.com/facebookresearch/meshrcnn
+**[Jan 23rd 2020]:**   PyTorch3D [v0.1.0](https://github.com/facebookresearch/pytorch3d/releases/tag/v0.1.0) released. [Mesh R-CNN](https://arxiv.org/abs/1906.02739) codebase released: https://github.com/facebookresearch/meshrcnn

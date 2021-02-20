@@ -500,6 +500,7 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
             blur_radius=np.log(1.0 / 1e-4 - 1.0) * blend_params.sigma,
             faces_per_pixel=100,
             clip_barycentric_coords=True,
+            perspective_correct=False,
         )
 
         # Load reference image
@@ -844,7 +845,10 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
         cameras = FoVPerspectiveCameras(device=device, R=R, T=T)
 
         raster_settings = RasterizationSettings(
-            image_size=512, blur_radius=0.0, faces_per_pixel=1
+            image_size=512,
+            blur_radius=0.0,
+            faces_per_pixel=1,
+            perspective_correct=False,
         )
 
         lights = PointLights(
@@ -919,7 +923,10 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
         R, T = look_at_view_transform(2.7, 0.0, 0.0)
         cameras = FoVPerspectiveCameras(device=device, R=R, T=T)
         raster_settings = RasterizationSettings(
-            image_size=512, blur_radius=0.0, faces_per_pixel=1
+            image_size=512,
+            blur_radius=0.0,
+            faces_per_pixel=1,
+            perspective_correct=False,
         )
 
         # Init shader settings
@@ -987,6 +994,7 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
             blur_radius=0.0,
             faces_per_pixel=1,
             cull_backfaces=True,
+            perspective_correct=False,
         )
 
         # Init shader settings

@@ -10,6 +10,9 @@ from pytorch3d.utils.ico_sphere import ico_sphere
 
 
 class TestMeshNormalConsistency(unittest.TestCase):
+    def setUp(self) -> None:
+        torch.manual_seed(42)
+
     @staticmethod
     def init_faces(num_verts: int = 1000):
         faces = []
@@ -95,17 +98,16 @@ class TestMeshNormalConsistency(unittest.TestCase):
                 v2 = verts_packed[v2]
                 normals.append((v1 - v0).view(-1).cross((v2 - v0).view(-1)))
             for i in range(len(normals) - 1):
-                for j in range(1, len(normals)):
-                    if i != j:
-                        mesh_idx.append(edges_packed_to_mesh_idx[e])
-                        loss.append(
-                            (
-                                1
-                                - torch.cosine_similarity(
-                                    normals[i].view(1, 3), -normals[j].view(1, 3)
-                                )
+                for j in range(i + 1, len(normals)):
+                    mesh_idx.append(edges_packed_to_mesh_idx[e])
+                    loss.append(
+                        (
+                            1
+                            - torch.cosine_similarity(
+                                normals[i].view(1, 3), -normals[j].view(1, 3)
                             )
                         )
+                    )
 
         mesh_idx = torch.tensor(mesh_idx, device=meshes.device)
         num = mesh_idx.bincount(minlength=N)
@@ -215,6 +217,17 @@ class TestMeshNormalConsistency(unittest.TestCase):
         out2 = TestMeshNormalConsistency.mesh_normal_consistency_naive(meshes)
 
         self.assertTrue(torch.allclose(out1, out2))
+
+    def test_no_intersection(self):
+        """
+        Test Mesh Normal Consistency for a mesh known to have no
+        intersecting faces.
+        """
+        verts = torch.rand(1, 6, 2)
+        faces = torch.arange(6).reshape(1, 2, 3)
+        meshes = Meshes(verts=verts, faces=faces)
+        out = mesh_normal_consistency(meshes)
+        self.assertEqual(out.item(), 0)
 
     @staticmethod
     def mesh_normal_consistency_with_ico(

@@ -1,6 +1,12 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
 
+from .clip import (
+    ClipFrustum,
+    ClippedFaces,
+    clip_faces,
+    convert_clipped_rasterization_to_original_faces,
+)
 from .rasterize_meshes import rasterize_meshes
 from .rasterizer import MeshRasterizer, RasterizationSettings
 from .renderer import MeshRenderer

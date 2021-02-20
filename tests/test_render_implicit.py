@@ -242,7 +242,11 @@ class TestRenderImplicit(TestCaseMixin, unittest.TestCase):
             rasterizer=MeshRasterizer(
                 cameras=cameras_randomized,
                 raster_settings=RasterizationSettings(
-                    image_size=image_size, blur_radius=1e-3, faces_per_pixel=10
+                    image_size=image_size,
+                    blur_radius=1e-3,
+                    faces_per_pixel=10,
+                    z_clip_value=None,
+                    perspective_correct=False,
                 ),
             ),
             shader=SoftPhongShader(

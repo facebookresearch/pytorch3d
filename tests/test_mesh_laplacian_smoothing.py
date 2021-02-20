@@ -89,11 +89,12 @@ class TestLaplacianSmoothing(unittest.TestCase):
         inv_areas[idx] = 1.0 / inv_areas[idx]
 
         norm_w = L.sum(dim=1, keepdims=True)
+        L_sum = norm_w.clone()
         idx = norm_w > 0
         norm_w[idx] = 1.0 / norm_w[idx]
 
         if method == "cotcurv":
-            loss = (L.mm(verts_packed) - verts_packed) * inv_areas * 0.25
+            loss = (L.mm(verts_packed) - L_sum * verts_packed) * inv_areas * 0.25
             loss = loss.norm(dim=1)
         else:
             loss = L.mm(verts_packed) * norm_w - verts_packed
@@ -147,7 +148,7 @@ class TestLaplacianSmoothing(unittest.TestCase):
 
     def test_laplacian_smoothing_cot(self):
         """
-        Test Laplacian Smoothing with uniform weights.
+        Test Laplacian Smoothing with cot weights.
         """
         meshes = TestLaplacianSmoothing.init_meshes(10, 100, 300)
 
@@ -161,7 +162,7 @@ class TestLaplacianSmoothing(unittest.TestCase):
 
     def test_laplacian_smoothing_cotcurv(self):
         """
-        Test Laplacian Smoothing with uniform weights.
+        Test Laplacian Smoothing with cotcurv weights.
         """
         meshes = TestLaplacianSmoothing.init_meshes(10, 100, 300)
 

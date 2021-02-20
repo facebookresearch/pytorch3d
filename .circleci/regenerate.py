@@ -46,18 +46,6 @@ def workflows(prefix="", filter_branch=None, upload=False, indentation=6):
                         upload=upload,
                         filter_branch=filter_branch,
                     )
-    for btype in ["wheel"]:
-        for python_version in ["3.6", "3.7", "3.8"]:
-            for cu_version in ["cu101"]:
-                w += workflow_pair(
-                    btype=btype,
-                    python_version=python_version,
-                    pytorch_version="1.6.0",
-                    cu_version=cu_version,
-                    prefix=prefix,
-                    upload=upload,
-                    filter_branch=filter_branch,
-                )
 
     return indent(indentation, w)
 

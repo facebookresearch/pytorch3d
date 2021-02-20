@@ -9,6 +9,12 @@ import torch
 # pyre-fixme[21]: Could not find name `_C` in `pytorch3d`.
 from pytorch3d import _C
 
+from .clip import (
+    ClipFrustum,
+    clip_faces,
+    convert_clipped_rasterization_to_original_faces,
+)
+
 
 # TODO make the epsilon user configurable
 kEpsilon = 1e-8
@@ -28,6 +34,8 @@ def rasterize_meshes(
     perspective_correct: bool = False,
     clip_barycentric_coords: bool = False,
     cull_backfaces: bool = False,
+    z_clip_value: Optional[float] = None,
+    cull_to_frustum: bool = False,
 ):
     """
     Rasterize a batch of meshes given the shape of the desired output image.
@@ -67,7 +75,8 @@ def rasterize_meshes(
             will be raised. This should not affect the output values, but can affect
             the memory usage in the forward pass.
         perspective_correct: Bool, Whether to apply perspective correction when computing
-            barycentric coordinates for pixels.
+            barycentric coordinates for pixels. This should be set to True if a perspective
+            camera is used.
         cull_backfaces: Bool, Whether to only rasterize mesh faces which are
             visible to the camera.  This assumes that vertices of
             front-facing triangles are ordered in an anti-clockwise
@@ -76,6 +85,15 @@ def rasterize_meshes(
             direction. NOTE: This will only work if the mesh faces are
             consistently defined with counter-clockwise ordering when
             viewed from the outside.
+        z_clip_value: if not None, then triangles will be clipped (and possibly
+            subdivided into smaller triangles) such that z >= z_clip_value.
+            This avoids camera projections that go to infinity as z->0.
+            Default is None as clipping affects rasterization speed and
+            should only be turned on if explicitly needed.
+            See clip.py for all the extra computation that is required.
+        cull_to_frustum: if True, triangles outside the view frustum will be culled.
+            Culling involves removing all faces which fall outside view frustum.
+            Default is False so that it is turned on only when needed.
 
     Returns:
         4-element tuple containing
@@ -141,6 +159,42 @@ def rasterize_meshes(
         im_size = (image_size, image_size)
         max_image_size = image_size
 
+    clipped_faces_neighbor_idx = None
+
+    if z_clip_value is not None or cull_to_frustum:
+        # Cull faces outside the view frustum, and clip faces that are partially
+        # behind the camera into the portion of the triangle in front of the
+        # camera.  This may change the number of faces
+        frustum = ClipFrustum(
+            left=-1,
+            right=1,
+            top=-1,
+            bottom=1,
+            perspective_correct=perspective_correct,
+            z_clip_value=z_clip_value,
+            cull=cull_to_frustum,
+        )
+        clipped_faces = clip_faces(
+            face_verts, mesh_to_face_first_idx, num_faces_per_mesh, frustum=frustum
+        )
+        face_verts = clipped_faces.face_verts
+        mesh_to_face_first_idx = clipped_faces.mesh_to_face_first_idx
+        num_faces_per_mesh = clipped_faces.num_faces_per_mesh
+
+        # For case 4 clipped triangles (where a big triangle is split in two smaller triangles),
+        # need the index of the neighboring clipped triangle as only one can be in
+        # in the top K closest faces in the rasterization step.
+        clipped_faces_neighbor_idx = clipped_faces.clipped_faces_neighbor_idx
+
+    if clipped_faces_neighbor_idx is None:
+        # Set to the default which is all -1s.
+        clipped_faces_neighbor_idx = torch.full(
+            size=(face_verts.shape[0],),
+            fill_value=-1,
+            device=meshes.device,
+            dtype=torch.int64,
+        )
+
     # TODO: Choose naive vs coarse-to-fine based on mesh size and image size.
     if bin_size is None:
         if not verts_packed.is_cuda:
@@ -172,10 +226,11 @@ def rasterize_meshes(
         max_faces_per_bin = int(max(10000, meshes._F / 5))
 
     # pyre-fixme[16]: `_RasterizeFaceVerts` has no attribute `apply`.
-    return _RasterizeFaceVerts.apply(
+    pix_to_face, zbuf, barycentric_coords, dists = _RasterizeFaceVerts.apply(
         face_verts,
         mesh_to_face_first_idx,
         num_faces_per_mesh,
+        clipped_faces_neighbor_idx,
         im_size,
         blur_radius,
         faces_per_pixel,
@@ -185,6 +240,17 @@ def rasterize_meshes(
         clip_barycentric_coords,
         cull_backfaces,
     )
+
+    if z_clip_value is not None or cull_to_frustum:
+        # If faces were clipped, map the rasterization result to be in terms of the
+        # original unclipped faces.  This may involve converting barycentric
+        # coordinates
+        outputs = convert_clipped_rasterization_to_original_faces(
+            pix_to_face, barycentric_coords, clipped_faces
+        )
+        pix_to_face, barycentric_coords = outputs
+
+    return pix_to_face, zbuf, barycentric_coords, dists
 
 
 class _RasterizeFaceVerts(torch.autograd.Function):
@@ -216,9 +282,10 @@ class _RasterizeFaceVerts(torch.autograd.Function):
     # pyre-fixme[14]: `forward` overrides method defined in `Function` inconsistently.
     def forward(
         ctx,
-        face_verts,
-        mesh_to_face_first_idx,
-        num_faces_per_mesh,
+        face_verts: torch.Tensor,
+        mesh_to_face_first_idx: torch.Tensor,
+        num_faces_per_mesh: torch.Tensor,
+        clipped_faces_neighbor_idx: torch.Tensor,
         image_size: Union[List[int], Tuple[int, int]] = (256, 256),
         blur_radius: float = 0.01,
         faces_per_pixel: int = 0,
@@ -227,12 +294,15 @@ class _RasterizeFaceVerts(torch.autograd.Function):
         perspective_correct: bool = False,
         clip_barycentric_coords: bool = False,
         cull_backfaces: bool = False,
+        z_clip_value: Optional[float] = None,
+        cull_to_frustum: bool = True,
     ):
         # pyre-fixme[16]: Module `pytorch3d` has no attribute `_C`.
         pix_to_face, zbuf, barycentric_coords, dists = _C.rasterize_meshes(
             face_verts,
             mesh_to_face_first_idx,
             num_faces_per_mesh,
+            clipped_faces_neighbor_idx,
             image_size,
             blur_radius,
             faces_per_pixel,
@@ -242,6 +312,7 @@ class _RasterizeFaceVerts(torch.autograd.Function):
             clip_barycentric_coords,
             cull_backfaces,
         )
+
         ctx.save_for_backward(face_verts, pix_to_face)
         ctx.mark_non_differentiable(pix_to_face)
         ctx.perspective_correct = perspective_correct
@@ -253,6 +324,7 @@ class _RasterizeFaceVerts(torch.autograd.Function):
         grad_face_verts = None
         grad_mesh_to_face_first_idx = None
         grad_num_faces_per_mesh = None
+        grad_clipped_faces_neighbor_idx = None
         grad_image_size = None
         grad_radius = None
         grad_faces_per_pixel = None
@@ -275,6 +347,7 @@ class _RasterizeFaceVerts(torch.autograd.Function):
             grad_face_verts,
             grad_mesh_to_face_first_idx,
             grad_num_faces_per_mesh,
+            grad_clipped_faces_neighbor_idx,
             grad_image_size,
             grad_radius,
             grad_faces_per_pixel,
@@ -339,6 +412,9 @@ def rasterize_meshes_python(
     perspective_correct: bool = False,
     clip_barycentric_coords: bool = False,
     cull_backfaces: bool = False,
+    z_clip_value: Optional[float] = None,
+    cull_to_frustum: bool = True,
+    clipped_faces_neighbor_idx: Optional[torch.Tensor] = None,
 ):
     """
     Naive PyTorch implementation of mesh rasterization with the same inputs and
@@ -358,6 +434,26 @@ def rasterize_meshes_python(
     faces_verts = verts_packed[faces_packed]
     mesh_to_face_first_idx = meshes.mesh_to_faces_packed_first_idx()
     num_faces_per_mesh = meshes.num_faces_per_mesh()
+
+    if z_clip_value is not None or cull_to_frustum:
+        # Cull faces outside the view frustum, and clip faces that are partially
+        # behind the camera into the portion of the triangle in front of the
+        # camera.  This may change the number of faces
+        frustum = ClipFrustum(
+            left=-1,
+            right=1,
+            top=-1,
+            bottom=1,
+            perspective_correct=perspective_correct,
+            z_clip_value=z_clip_value,
+            cull=cull_to_frustum,
+        )
+        clipped_faces = clip_faces(
+            faces_verts, mesh_to_face_first_idx, num_faces_per_mesh, frustum=frustum
+        )
+        faces_verts = clipped_faces.face_verts
+        mesh_to_face_first_idx = clipped_faces.mesh_to_face_first_idx
+        num_faces_per_mesh = clipped_faces.num_faces_per_mesh
 
     # Intialize output tensors.
     face_idxs = torch.full(
@@ -468,26 +564,55 @@ def rasterize_meshes_python(
                     # Points inside the triangle have negative distance.
                     dist = point_triangle_distance(pxy, v0[:2], v1[:2], v2[:2])
 
-                    signed_dist = dist * -1.0 if inside else dist
-
                     # Add an epsilon to prevent errors when comparing distance
                     # to blur radius.
                     if not inside and dist >= blur_radius:
                         continue
 
-                    top_k_points.append((pz, f, bary, signed_dist))
+                    # Handle the case where a face (f) partially behind the image plane is
+                    # clipped to a quadrilateral and then split into two faces (t1, t2).
+                    top_k_idx = -1
+                    if (
+                        clipped_faces_neighbor_idx is not None
+                        and clipped_faces_neighbor_idx[f] != -1
+                    ):
+                        neighbor_idx = clipped_faces_neighbor_idx[f]
+                        # See if neighbor_idx is in top_k and find index
+                        top_k_idx = [
+                            i
+                            for i, val in enumerate(top_k_points)
+                            if val[1] == neighbor_idx
+                        ]
+                        top_k_idx = top_k_idx[0] if len(top_k_idx) > 0 else -1
+
+                    if top_k_idx != -1 and dist < top_k_points[top_k_idx][3]:
+                        # Overwrite the neighbor with current face info
+                        top_k_points[top_k_idx] = (pz, f, bary, dist, inside)
+                    else:
+                        # Handle as a normal face
+                        top_k_points.append((pz, f, bary, dist, inside))
+
                     top_k_points.sort()
                     if len(top_k_points) > K:
                         top_k_points = top_k_points[:K]
 
                 # Save to output tensors.
-                for k, (pz, f, bary, dist) in enumerate(top_k_points):
+                for k, (pz, f, bary, dist, inside) in enumerate(top_k_points):
                     zbuf[n, yi, xi, k] = pz
                     face_idxs[n, yi, xi, k] = f
                     bary_coords[n, yi, xi, k, 0] = bary[0]
                     bary_coords[n, yi, xi, k, 1] = bary[1]
                     bary_coords[n, yi, xi, k, 2] = bary[2]
-                    pix_dists[n, yi, xi, k] = dist
+                    # Write the signed distance
+                    pix_dists[n, yi, xi, k] = -dist if inside else dist
+
+    if z_clip_value is not None or cull_to_frustum:
+        # If faces were clipped, map the rasterization result to be in terms of the
+        # original unclipped faces.  This may involve converting barycentric
+        # coordinates
+        (face_idxs, bary_coords,) = convert_clipped_rasterization_to_original_faces(
+            face_idxs, bary_coords, clipped_faces
+        )
 
     return face_idxs, zbuf, bary_coords, pix_dists
 

@@ -1,0 +1,45 @@
+seed: 3
+resume: True
+stats_print_interval: 10
+validation_epoch_interval: 150
+checkpoint_epoch_interval: 150
+checkpoint_path: 'checkpoints/fern_pt3d.pth'
+data:
+  dataset_name: 'fern'
+  image_size: [378, 504] # [height, width]
+  precache_rays: True
+test:
+  mode: 'evaluation'
+  trajectory_type: 'figure_eight'
+  up: [0.0, 1.0, 0.0]
+  scene_center: [0.0, 0.0, -2.0]
+  n_frames: 100
+  fps: 20
+  trajectory_scale: 1.0
+optimizer:
+  max_epochs: 37500
+  lr: 0.0005
+  lr_scheduler_step_size: 12500
+  lr_scheduler_gamma: 0.1
+visualization:
+  history_size: 10
+  visdom: True
+  visdom_server: 'localhost'
+  visdom_port: 8097
+  visdom_env: 'nerf_pytorch3d'
+raysampler:
+  n_pts_per_ray: 64
+  n_pts_per_ray_fine: 64
+  n_rays_per_image: 1024
+  min_depth: 1.2
+  max_depth: 6.28
+  stratified: True
+  stratified_test: False
+  chunk_size_test: 6000
+implicit_function:
+  n_harmonic_functions_xyz: 10
+  n_harmonic_functions_dir: 4
+  n_hidden_neurons_xyz: 256
+  n_hidden_neurons_dir: 128
+  density_noise_std: 0.0
+  n_layers_xyz: 8

@@ -15,6 +15,7 @@ RasterizeMeshesNaiveCpu(
     const torch::Tensor& face_verts,
     const torch::Tensor& mesh_to_face_first_idx,
     const torch::Tensor& num_faces_per_mesh,
+    const torch::Tensor& clipped_faces_neighbor_idx,
     const std::tuple<int, int> image_size,
     const float blur_radius,
     const int faces_per_pixel,
@@ -28,6 +29,7 @@ RasterizeMeshesNaiveCuda(
     const at::Tensor& face_verts,
     const at::Tensor& mesh_to_face_first_idx,
     const at::Tensor& num_faces_per_mesh,
+    const torch::Tensor& clipped_faces_neighbor_idx,
     const std::tuple<int, int> image_size,
     const float blur_radius,
     const int num_closest,
@@ -48,6 +50,12 @@ RasterizeMeshesNaiveCuda(
 //                            the batch where N is the batch size.
 //    num_faces_per_mesh: LongTensor of shape (N) giving the number of faces
 //                        for each mesh in the batch.
+//    clipped_faces_neighbor_idx: LongTensor of shape (F,) giving the
+//        index of the neighboring face for each face which was clipped to a
+//        quadrilateral and then divided into two triangles.
+//        e.g. for a face f partially behind the image plane which is split into
+//        two triangles (t1, t2): clipped_faces_neighbor_idx[t1_idx] = t2_idx
+//        Faces which are not clipped and subdivided are set to -1.
 //    image_size: Tuple (H, W) giving the size in pixels of the output
 //                image to be rasterized.
 //    blur_radius: float distance in NDC coordinates uses to expand the face
@@ -90,6 +98,7 @@ RasterizeMeshesNaive(
     const torch::Tensor& face_verts,
     const torch::Tensor& mesh_to_face_first_idx,
     const torch::Tensor& num_faces_per_mesh,
+    const torch::Tensor& clipped_faces_neighbor_idx,
     const std::tuple<int, int> image_size,
     const float blur_radius,
     const int faces_per_pixel,
@@ -106,6 +115,7 @@ RasterizeMeshesNaive(
         face_verts,
         mesh_to_face_first_idx,
         num_faces_per_mesh,
+        clipped_faces_neighbor_idx,
         image_size,
         blur_radius,
         faces_per_pixel,
@@ -120,6 +130,7 @@ RasterizeMeshesNaive(
         face_verts,
         mesh_to_face_first_idx,
         num_faces_per_mesh,
+        clipped_faces_neighbor_idx,
         image_size,
         blur_radius,
         faces_per_pixel,
@@ -306,6 +317,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>
 RasterizeMeshesFineCuda(
     const torch::Tensor& face_verts,
     const torch::Tensor& bin_faces,
+    const torch::Tensor& clipped_faces_neighbor_idx,
     const std::tuple<int, int> image_size,
     const float blur_radius,
     const int bin_size,
@@ -322,6 +334,12 @@ RasterizeMeshesFineCuda(
 //                in NDC coordinates in the range [-1, 1].
 //    bin_faces: int32 Tensor of shape (N, B, B, M) giving the indices of faces
 //               that fall into each bin (output from coarse rasterization).
+//    clipped_faces_neighbor_idx: LongTensor of shape (F,) giving the
+//        index of the neighboring face for each face which was clipped to a
+//        quadrilateral and then divided into two triangles.
+//        e.g. for a face f partially behind the image plane which is split into
+//        two triangles (t1, t2): clipped_faces_neighbor_idx[t1_idx] = t2_idx
+//        Faces which are not clipped and subdivided are set to -1.
 //    image_size: Tuple (H, W) giving the size in pixels of the output
 //                image to be rasterized.
 //    blur_radius: float distance in NDC coordinates uses to expand the face
@@ -364,6 +382,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>
 RasterizeMeshesFine(
     const torch::Tensor& face_verts,
     const torch::Tensor& bin_faces,
+    const torch::Tensor& clipped_faces_neighbor_idx,
     const std::tuple<int, int> image_size,
     const float blur_radius,
     const int bin_size,
@@ -378,6 +397,7 @@ RasterizeMeshesFine(
     return RasterizeMeshesFineCuda(
         face_verts,
         bin_faces,
+        clipped_faces_neighbor_idx,
         image_size,
         blur_radius,
         bin_size,
@@ -411,6 +431,12 @@ RasterizeMeshesFine(
 //                            the batch where N is the batch size.
 //    num_faces_per_mesh: LongTensor of shape (N) giving the number of faces
 //                        for each mesh in the batch.
+//    clipped_faces_neighbor_idx: LongTensor of shape (F,) giving the
+//        index of the neighboring face for each face which was clipped to a
+//        quadrilateral and then divided into two triangles.
+//        e.g. for a face f partially behind the image plane which is split into
+//        two triangles (t1, t2): clipped_faces_neighbor_idx[t1_idx] = t2_idx
+//        Faces which are not clipped and subdivided are set to -1.
 //    image_size: Tuple (H, W) giving the size in pixels of the output
 //                image to be rasterized.
 //    blur_radius: float distance in NDC coordinates uses to expand the face
@@ -456,6 +482,7 @@ RasterizeMeshes(
     const torch::Tensor& face_verts,
     const torch::Tensor& mesh_to_face_first_idx,
     const torch::Tensor& num_faces_per_mesh,
+    const torch::Tensor& clipped_faces_neighbor_idx,
     const std::tuple<int, int> image_size,
     const float blur_radius,
     const int faces_per_pixel,
@@ -477,6 +504,7 @@ RasterizeMeshes(
     return RasterizeMeshesFine(
         face_verts,
         bin_faces,
+        clipped_faces_neighbor_idx,
         image_size,
         blur_radius,
         bin_size,
@@ -490,6 +518,7 @@ RasterizeMeshes(
         face_verts,
         mesh_to_face_first_idx,
         num_faces_per_mesh,
+        clipped_faces_neighbor_idx,
         image_size,
         blur_radius,
         faces_per_pixel,

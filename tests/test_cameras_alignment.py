@@ -27,6 +27,7 @@ class TestCamerasAlignment(TestCaseMixin, unittest.TestCase):
         """
         Checks the corresponding_cameras_alignment function.
         """
+        self.skipTest("Temporarily disabled pending investigation")
         device = torch.device("cuda:0")
 
         # try few different random setups

@@ -214,57 +214,63 @@ std::tuple<size_t, size_t, bool, torch::Tensor> Renderer::arg_check(
     batch_processing = true;
     batch_size = vert_pos.size(0);
     THArgCheck(
-        vert_col.ndimension() == 3 && vert_col.size(0) == batch_size,
+        vert_col.ndimension() == 3 &&
+            vert_col.size(0) == static_cast<int64_t>(batch_size),
         2,
         "vert_col needs to have batch size.");
     THArgCheck(
-        vert_radii.ndimension() == 2 && vert_radii.size(0) == batch_size,
+        vert_radii.ndimension() == 2 &&
+            vert_radii.size(0) == static_cast<int64_t>(batch_size),
         3,
         "vert_radii must be specified per batch.");
     THArgCheck(
-        cam_pos.ndimension() == 2 && cam_pos.size(0) == batch_size,
+        cam_pos.ndimension() == 2 &&
+            cam_pos.size(0) == static_cast<int64_t>(batch_size),
         4,
         "cam_pos must be specified per batch and have the correct batch size.");
     THArgCheck(
         pixel_0_0_center.ndimension() == 2 &&
-            pixel_0_0_center.size(0) == batch_size,
+            pixel_0_0_center.size(0) == static_cast<int64_t>(batch_size),
         5,
         "pixel_0_0_center must be specified per batch.");
     THArgCheck(
-        pixel_vec_x.ndimension() == 2 && pixel_vec_x.size(0) == batch_size,
+        pixel_vec_x.ndimension() == 2 &&
+            pixel_vec_x.size(0) == static_cast<int64_t>(batch_size),
         6,
         "pixel_vec_x must be specified per batch.");
     THArgCheck(
-        pixel_vec_y.ndimension() == 2 && pixel_vec_y.size(0) == batch_size,
+        pixel_vec_y.ndimension() == 2 &&
+            pixel_vec_y.size(0) == static_cast<int64_t>(batch_size),
         7,
         "pixel_vec_y must be specified per batch.");
     THArgCheck(
-        focal_length.ndimension() == 1 && focal_length.size(0) == batch_size,
+        focal_length.ndimension() == 1 &&
+            focal_length.size(0) == static_cast<int64_t>(batch_size),
         8,
         "focal_length must be specified per batch.");
     THArgCheck(
         principal_point_offsets.ndimension() == 2 &&
-            principal_point_offsets.size(0) == batch_size,
+            principal_point_offsets.size(0) == static_cast<int64_t>(batch_size),
         9,
         "principal_point_offsets must be specified per batch.");
     if (opacity.has_value()) {
       THArgCheck(
           opacity.value().ndimension() == 2 &&
-              opacity.value().size(0) == batch_size,
+              opacity.value().size(0) == static_cast<int64_t>(batch_size),
           13,
           "Opacity needs to be specified batch-wise.");
     }
     // Check all parameters are for a matching number of points.
     n_points = vert_pos.size(1);
     THArgCheck(
-        vert_col.size(1) == n_points,
+        vert_col.size(1) == static_cast<int64_t>(n_points),
         2,
         ("The number of points for vertex positions (" +
          std::to_string(n_points) + ") and vertex colors (" +
          std::to_string(vert_col.size(1)) + ") doesn't agree.")
             .c_str());
     THArgCheck(
-        vert_radii.size(1) == n_points,
+        vert_radii.size(1) == static_cast<int64_t>(n_points),
         3,
         ("The number of points for vertex positions (" +
          std::to_string(n_points) + ") and vertex radii (" +
@@ -272,7 +278,7 @@ std::tuple<size_t, size_t, bool, torch::Tensor> Renderer::arg_check(
             .c_str());
     if (opacity.has_value()) {
       THArgCheck(
-          opacity.value().size(1) == n_points,
+          opacity.value().size(1) == static_cast<int64_t>(n_points),
           13,
           "Opacity needs to be specified per point.");
     }
@@ -352,14 +358,14 @@ std::tuple<size_t, size_t, bool, torch::Tensor> Renderer::arg_check(
     // Check each.
     n_points = vert_pos.size(0);
     THArgCheck(
-        vert_col.size(0) == n_points,
+        vert_col.size(0) == static_cast<int64_t>(n_points),
         2,
         ("The number of points for vertex positions (" +
          std::to_string(n_points) + ") and vertex colors (" +
          std::to_string(vert_col.size(0)) + ") doesn't agree.")
             .c_str());
     THArgCheck(
-        vert_radii.size(0) == n_points,
+        vert_radii.size(0) == static_cast<int64_t>(n_points),
         3,
         ("The number of points for vertex positions (" +
          std::to_string(n_points) + ") and vertex radii (" +
@@ -367,7 +373,7 @@ std::tuple<size_t, size_t, bool, torch::Tensor> Renderer::arg_check(
             .c_str());
     if (opacity.has_value()) {
       THArgCheck(
-          opacity.value().size(0) == n_points,
+          opacity.value().size(0) == static_cast<int64_t>(n_points),
           12,
           "Opacity needs to be specified per point.");
     }
@@ -958,12 +964,15 @@ Renderer::backward(
   }
   if (batch_processing) {
     THArgCheck(
-        grad_im.size(0) == batch_size,
+        grad_im.size(0) == static_cast<int64_t>(batch_size),
         1,
         "Gradient image batch size must agree.");
-    THArgCheck(image.size(0) == batch_size, 2, "Image batch size must agree.");
     THArgCheck(
-        forw_info.size(0) == batch_size,
+        image.size(0) == static_cast<int64_t>(batch_size),
+        2,
+        "Image batch size must agree.");
+    THArgCheck(
+        forw_info.size(0) == static_cast<int64_t>(batch_size),
         3,
         "forward info must have batch size.");
   }

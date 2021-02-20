@@ -27,6 +27,8 @@ class RasterizationSettings:
         "perspective_correct",
         "clip_barycentric_coords",
         "cull_backfaces",
+        "z_clip_value",
+        "cull_to_frustum",
     ]
 
     def __init__(
@@ -36,9 +38,13 @@ class RasterizationSettings:
         faces_per_pixel: int = 1,
         bin_size: Optional[int] = None,
         max_faces_per_bin: Optional[int] = None,
-        perspective_correct: bool = False,
+        # set perspective_correct = None so that the
+        # value can be inferred correctly from the Camera type
+        perspective_correct: Optional[bool] = None,
         clip_barycentric_coords: Optional[bool] = None,
         cull_backfaces: bool = False,
+        z_clip_value: Optional[float] = None,
+        cull_to_frustum: bool = False,
     ):
         self.image_size = image_size
         self.blur_radius = blur_radius
@@ -48,6 +54,8 @@ class RasterizationSettings:
         self.perspective_correct = perspective_correct
         self.clip_barycentric_coords = clip_barycentric_coords
         self.cull_backfaces = cull_backfaces
+        self.z_clip_value = z_clip_value
+        self.cull_to_frustum = cull_to_frustum
 
 
 class MeshRasterizer(nn.Module):
@@ -139,8 +147,20 @@ class MeshRasterizer(nn.Module):
         if clip_barycentric_coords is None:
             clip_barycentric_coords = raster_settings.blur_radius > 0.0
 
-        # TODO(jcjohns): Should we try to set perspective_correct automatically
-        # based on the type of the camera?
+        # If not specified, infer perspective_correct and z_clip_value from the camera
+        cameras = kwargs.get("cameras", self.cameras)
+        if raster_settings.perspective_correct is not None:
+            perspective_correct = raster_settings.perspective_correct
+        else:
+            perspective_correct = cameras.is_perspective()
+        if raster_settings.z_clip_value is not None:
+            z_clip = raster_settings.z_clip_value
+        else:
+            znear = cameras.get_znear()
+            if isinstance(znear, torch.Tensor):
+                znear = znear.min().item()
+            z_clip = None if not perspective_correct or znear is None else znear / 2
+
         pix_to_face, zbuf, bary_coords, dists = rasterize_meshes(
             meshes_screen,
             image_size=raster_settings.image_size,
@@ -148,9 +168,11 @@ class MeshRasterizer(nn.Module):
             faces_per_pixel=raster_settings.faces_per_pixel,
             bin_size=raster_settings.bin_size,
             max_faces_per_bin=raster_settings.max_faces_per_bin,
-            perspective_correct=raster_settings.perspective_correct,
             clip_barycentric_coords=clip_barycentric_coords,
+            perspective_correct=perspective_correct,
             cull_backfaces=raster_settings.cull_backfaces,
+            z_clip_value=z_clip,
+            cull_to_frustum=raster_settings.cull_to_frustum,
         )
         return Fragments(
             pix_to_face=pix_to_face, zbuf=zbuf, bary_coords=bary_coords, dists=dists

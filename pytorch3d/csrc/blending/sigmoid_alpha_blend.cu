@@ -9,9 +9,9 @@
 template <typename scalar_t>
 __global__ void SigmoidAlphaBlendForwardKernel(
     // clang-format off
-    const torch::PackedTensorAccessor<scalar_t, 4, torch::RestrictPtrTraits, size_t> distances, // (N, H, W, K)
-    const torch::PackedTensorAccessor<int64_t, 4, torch::RestrictPtrTraits, size_t> pix_to_face, // (N, H, W, K)
-    torch::PackedTensorAccessor<scalar_t, 3, torch::RestrictPtrTraits, size_t> alphas, // (N, H, W)
+    const torch::PackedTensorAccessor64<scalar_t, 4, torch::RestrictPtrTraits> distances, // (N, H, W, K)
+    const torch::PackedTensorAccessor64<int64_t, 4, torch::RestrictPtrTraits> pix_to_face, // (N, H, W, K)
+    torch::PackedTensorAccessor64<scalar_t, 3, torch::RestrictPtrTraits> alphas, // (N, H, W)
     // clang-format on
     const scalar_t sigma,
     const int N,
@@ -93,9 +93,9 @@ torch::Tensor SigmoidAlphaBlendForwardCuda(
       distances.scalar_type(), "sigmoid_alpha_blend_kernel", ([&] {
         // clang-format off
       SigmoidAlphaBlendForwardKernel<scalar_t><<<blocks, threads, 0, stream>>>(
-      distances.packed_accessor<scalar_t, 4, torch::RestrictPtrTraits, size_t>(),
-      pix_to_face.packed_accessor<int64_t, 4, torch::RestrictPtrTraits, size_t>(),
-      alphas.packed_accessor<scalar_t, 3, torch::RestrictPtrTraits, size_t>(),
+      distances.packed_accessor64<scalar_t, 4, torch::RestrictPtrTraits>(),
+      pix_to_face.packed_accessor64<int64_t, 4, torch::RestrictPtrTraits>(),
+      alphas.packed_accessor64<scalar_t, 3, torch::RestrictPtrTraits>(),
       sigma,
       N,
       H,
@@ -111,11 +111,11 @@ torch::Tensor SigmoidAlphaBlendForwardCuda(
 template <typename scalar_t>
 __global__ void SigmoidAlphaBlendBackwardKernel(
     // clang-format off
-    const torch::PackedTensorAccessor<scalar_t, 3, torch::RestrictPtrTraits, size_t> grad_alphas, // (N, H, W)
-    const torch::PackedTensorAccessor<scalar_t, 3, torch::RestrictPtrTraits, size_t> alphas, // (N, H, W)
-    const torch::PackedTensorAccessor<scalar_t, 4, torch::RestrictPtrTraits, size_t> distances, // (N, H, W, K)
-    const torch::PackedTensorAccessor<int64_t, 4, torch::RestrictPtrTraits, size_t> pix_to_face, // (N, H, W, K)
-    torch::PackedTensorAccessor<scalar_t, 4, torch::RestrictPtrTraits, size_t> grad_distances, // (N, H, W)
+    const torch::PackedTensorAccessor64<scalar_t, 3, torch::RestrictPtrTraits> grad_alphas, // (N, H, W)
+    const torch::PackedTensorAccessor64<scalar_t, 3, torch::RestrictPtrTraits> alphas, // (N, H, W)
+    const torch::PackedTensorAccessor64<scalar_t, 4, torch::RestrictPtrTraits> distances, // (N, H, W, K)
+    const torch::PackedTensorAccessor64<int64_t, 4, torch::RestrictPtrTraits> pix_to_face, // (N, H, W, K)
+    torch::PackedTensorAccessor64<scalar_t, 4, torch::RestrictPtrTraits> grad_distances, // (N, H, W)
     // clang-format on
     const scalar_t sigma,
     const int N,
@@ -192,11 +192,11 @@ torch::Tensor SigmoidAlphaBlendBackwardCuda(
         SigmoidAlphaBlendBackwardKernel<scalar_t>
             <<<blocks, threads, 0, stream>>>(
                 // clang-format off
-            grad_alphas.packed_accessor<scalar_t, 3, torch::RestrictPtrTraits, size_t>(),
-            alphas.packed_accessor<scalar_t, 3, torch::RestrictPtrTraits, size_t>(),
-            distances.packed_accessor<scalar_t, 4, torch::RestrictPtrTraits, size_t>(),
-            pix_to_face.packed_accessor<int64_t, 4, torch::RestrictPtrTraits, size_t>(),
-            grad_distances.packed_accessor<scalar_t, 4, torch::RestrictPtrTraits, size_t>(),
+            grad_alphas.packed_accessor64<scalar_t, 3, torch::RestrictPtrTraits>(),
+            alphas.packed_accessor64<scalar_t, 3, torch::RestrictPtrTraits>(),
+            distances.packed_accessor64<scalar_t, 4, torch::RestrictPtrTraits>(),
+            pix_to_face.packed_accessor64<int64_t, 4, torch::RestrictPtrTraits>(),
+            grad_distances.packed_accessor64<scalar_t, 4, torch::RestrictPtrTraits>(),
                 // clang-format on
                 sigma,
                 N,

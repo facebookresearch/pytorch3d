@@ -1,6 +1,6 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
-
+import itertools
 import random
 import unittest
 
@@ -516,13 +516,13 @@ class TestPointclouds(TestCaseMixin, unittest.TestCase):
         clouds = self.init_cloud(N, 100, 10)
         all_p = clouds.points_packed().size(0)
         points_per_cloud = clouds.num_points_per_cloud()
-        for force in (False, True):
+        for force, deform_shape in itertools.product((0, 1), [(all_p, 3), 3]):
             if force:
                 clouds._compute_packed(refresh=True)
                 clouds._compute_padded()
                 clouds.padded_to_packed_idx()
 
-            deform = torch.rand((all_p, 3), dtype=torch.float32, device=clouds.device)
+            deform = torch.rand(deform_shape, dtype=torch.float32, device=clouds.device)
             new_clouds_naive = naive_offset(clouds, deform)
 
             new_clouds = clouds.offset(deform)
@@ -530,10 +530,14 @@ class TestPointclouds(TestCaseMixin, unittest.TestCase):
             points_cumsum = torch.cumsum(points_per_cloud, 0).tolist()
             points_cumsum.insert(0, 0)
             for i in range(N):
+                item_offset = (
+                    deform
+                    if deform.ndim == 1
+                    else deform[points_cumsum[i] : points_cumsum[i + 1]]
+                )
                 self.assertClose(
                     new_clouds.points_list()[i],
-                    clouds.points_list()[i]
-                    + deform[points_cumsum[i] : points_cumsum[i + 1]],
+                    clouds.points_list()[i] + item_offset,
                 )
                 self.assertClose(
                     clouds.normals_list()[i], new_clouds_naive.normals_list()[i]

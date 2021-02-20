@@ -794,6 +794,11 @@ class TestFoVPerspectiveProjection(TestCaseMixin, unittest.TestCase):
         new_points = cam.transform_points(points)
         self.assertClose(new_points, projected_points)
 
+    def test_perspective_type(self):
+        cam = FoVPerspectiveCameras(znear=1.0, zfar=10.0, fov=60.0)
+        self.assertTrue(cam.is_perspective())
+        self.assertEquals(cam.get_znear(), 1.0)
+
 
 ############################################################
 #                FoVOrthographic Camera                    #
@@ -885,6 +890,11 @@ class TestFoVOrthographicProjection(TestCaseMixin, unittest.TestCase):
         )
         self.assertClose(scale_grad, grad_scale)
 
+    def test_perspective_type(self):
+        cam = FoVOrthographicCameras(znear=1.0, zfar=10.0)
+        self.assertFalse(cam.is_perspective())
+        self.assertEquals(cam.get_znear(), 1.0)
+
 
 ############################################################
 #                Orthographic Camera                       #
@@ -937,6 +947,11 @@ class TestOrthographicProjection(TestCaseMixin, unittest.TestCase):
         v1 = P.transform_points(vertices)
         self.assertClose(v1, projected_verts)
 
+    def test_perspective_type(self):
+        cam = OrthographicCameras(focal_length=5.0, principal_point=((2.5, 2.5),))
+        self.assertFalse(cam.is_perspective())
+        self.assertEquals(cam.get_znear(), None)
+
 
 ############################################################
 #                Perspective Camera                        #
@@ -983,3 +998,8 @@ class TestPerspectiveProjection(TestCaseMixin, unittest.TestCase):
         v1 = P.transform_points(vertices)
         v2 = sfm_perspective_project_naive(vertices, fx=2.0, fy=2.0, p0x=2.5, p0y=3.5)
         self.assertClose(v1, v2, atol=1e-6)
+
+    def test_perspective_type(self):
+        cam = PerspectiveCameras(focal_length=5.0, principal_point=((2.5, 2.5),))
+        self.assertTrue(cam.is_perspective())
+        self.assertEquals(cam.get_znear(), None)

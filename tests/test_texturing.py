@@ -793,9 +793,29 @@ class TestTexturesUV(TestCaseMixin, unittest.TestCase):
         )
         device = torch.device("cuda:0")
         tex = tex.to(device)
-        self.assertTrue(tex._faces_uvs_padded.device == device)
-        self.assertTrue(tex._verts_uvs_padded.device == device)
-        self.assertTrue(tex._maps_padded.device == device)
+        self.assertEqual(tex._faces_uvs_padded.device, device)
+        self.assertEqual(tex._verts_uvs_padded.device, device)
+        self.assertEqual(tex._maps_padded.device, device)
+
+    def test_mesh_to(self):
+        tex_cpu = TexturesUV(
+            maps=torch.ones((5, 16, 16, 3)),
+            faces_uvs=torch.randint(size=(5, 10, 3), high=15),
+            verts_uvs=torch.rand(size=(5, 15, 2)),
+        )
+        verts = torch.rand(size=(5, 15, 3))
+        faces = torch.randint(size=(5, 10, 3), high=15)
+        mesh_cpu = Meshes(faces=faces, verts=verts, textures=tex_cpu)
+        cpu = torch.device("cpu")
+        device = torch.device("cuda:0")
+        tex = mesh_cpu.to(device).textures
+        self.assertEqual(tex._faces_uvs_padded.device, device)
+        self.assertEqual(tex._verts_uvs_padded.device, device)
+        self.assertEqual(tex._maps_padded.device, device)
+        self.assertEqual(tex_cpu._verts_uvs_padded.device, cpu)
+
+        self.assertEqual(tex_cpu.device, cpu)
+        self.assertEqual(tex.device, device)
 
     def test_getitem(self):
         N = 5

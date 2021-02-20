@@ -99,12 +99,9 @@ class TestCaseMixin(unittest.TestCase):
         #    all(|norm_fn(input - other)| <= atol + rtol * |norm_fn(other)|) ==
         #    all(norm_fn(input - other) <= atol + rtol * norm_fn(other)).
 
-        backend = torch if torch.is_tensor(input) else np
-        close = backend.allclose(
+        self.assertClose(
             diff + other_, other_, rtol=rtol, atol=atol, equal_nan=equal_nan
         )
-
-        self.assertTrue(close, msg)
 
     def assertClose(
         self,

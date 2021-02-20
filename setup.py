@@ -132,8 +132,10 @@ setup(
     url="https://github.com/facebookresearch/pytorch3d",
     description="PyTorch3D is FAIR's library of reusable components "
     "for deep Learning with 3D data.",
-    packages=find_packages(exclude=("configs", "tests", "tests.*")),
-    install_requires=["torchvision>=0.4", "fvcore", "iopath"],
+    packages=find_packages(
+        exclude=("configs", "tests", "tests.*", "docs.*", "projects.*")
+    ),
+    install_requires=["fvcore", "iopath"],
     extras_require={
         "all": ["matplotlib", "tqdm>4.29.0", "imageio", "ipywidgets"],
         "dev": ["flake8", "isort", "black==19.3b0"],

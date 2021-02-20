@@ -99,11 +99,31 @@ auto ComputeFaceAreas(const torch::Tensor& face_verts) {
   return face_areas;
 }
 
+// Helper function to use with std::find_if to find the index of any
+// values in the top k struct which match a given idx.
+struct IsNeighbor {
+  IsNeighbor(int neighbor_idx) {
+    this->neighbor_idx = neighbor_idx;
+  }
+  bool operator()(std::tuple<float, int, float, float, float, float> elem) {
+    return (std::get<1>(elem) == neighbor_idx);
+  }
+  int neighbor_idx;
+};
+
+// Function to sort based on the z distance in the top K queue
+bool SortTopKByZdist(
+    std::tuple<float, int, float, float, float, float> a,
+    std::tuple<float, int, float, float, float, float> b) {
+  return std::get<0>(a) < std::get<0>(b);
+}
+
 std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>
 RasterizeMeshesNaiveCpu(
     const torch::Tensor& face_verts,
     const torch::Tensor& mesh_to_face_first_idx,
     const torch::Tensor& num_faces_per_mesh,
+    const torch::Tensor& clipped_faces_neighbor_idx,
     const std::tuple<int, int> image_size,
     const float blur_radius,
     const int faces_per_pixel,
@@ -139,6 +159,7 @@ RasterizeMeshesNaiveCpu(
   auto zbuf_a = zbuf.accessor<float, 4>();
   auto pix_dists_a = pix_dists.accessor<float, 4>();
   auto barycentric_coords_a = barycentric_coords.accessor<float, 5>();
+  auto neighbor_idx_a = clipped_faces_neighbor_idx.accessor<int64_t, 1>();
 
   auto face_bboxes = ComputeFaceBoundingBoxes(face_verts);
   auto face_bboxes_a = face_bboxes.accessor<float, 2>();
@@ -168,10 +189,11 @@ RasterizeMeshesNaiveCpu(
 
         // X coordinate of the left of the pixel.
         const float xf = PixToNonSquareNdc(xidx, W, H);
-        // Use a priority queue to hold values:
+
+        // Use a deque to hold values:
         // (z, idx, r, bary.x, bary.y. bary.z)
-        std::priority_queue<std::tuple<float, int, float, float, float, float>>
-            q;
+        // Sort the deque as needed to mimic a priority queue.
+        std::deque<std::tuple<float, int, float, float, float, float>> q;
 
         // Loop through the faces in the mesh.
         for (int f = face_start_idx; f < face_stop_idx; ++f) {
@@ -240,15 +262,58 @@ RasterizeMeshesNaiveCpu(
           if (!inside && dist >= blur_radius) {
             continue;
           }
-          // The current pixel lies inside the current face.
-          q.emplace(pz, f, signed_dist, bary_clip.x, bary_clip.y, bary_clip.z);
+
+          // Handle the case where a face (f) partially behind the image plane
+          // is clipped to a quadrilateral and then split into two faces (t1,
+          // t2). In this case we:
+          // 1. Find the index of the neighbor (e.g. for t1 need index of t2)
+          // 2. Check if the neighbor (t2) is already in the top K faces
+          // 3. If yes, compare the distance of the pixel to t1 with the
+          // distance to t2.
+          // 4. If dist_t1 < dist_t2, overwrite the values for t2 in the top K
+          // faces.
+          const int neighbor_idx = neighbor_idx_a[f];
+          int idx_top_k = -1;
+
+          // Check if neighboring face is already in the top K.
+          if (neighbor_idx != -1) {
+            const auto it =
+                std::find_if(q.begin(), q.end(), IsNeighbor(neighbor_idx));
+            // Get the index of the element from the iterator
+            idx_top_k = (it != q.end()) ? it - q.begin() : idx_top_k;
+          }
+
+          // If idx_top_k idx is not -1 then it is in the top K struct.
+          if (idx_top_k != -1) {
+            // If dist of current face is less than neighbor, overwrite
+            // the neighbor face values in the top K struct.
+            const auto neighbor = q[idx_top_k];
+            const float dist_neighbor = std::abs(std::get<2>(neighbor));
+            if (dist < dist_neighbor) {
+              // Overwrite the neighbor face values.
+              q[idx_top_k] = std::make_tuple(
+                  pz, f, signed_dist, bary_clip.x, bary_clip.y, bary_clip.z);
+            }
+          } else {
+            // Handle as a normal face.
+            // The current pixel lies inside the current face.
+            // Add at the end of the deque.
+            q.emplace_back(
+                pz, f, signed_dist, bary_clip.x, bary_clip.y, bary_clip.z);
+          }
+
+          // Sort the deque inplace based on the z distance
+          // to mimic using a priority queue.
+          std::sort(q.begin(), q.end(), SortTopKByZdist);
           if (static_cast<int>(q.size()) > K) {
-            q.pop();
+            // remove the last value
+            q.pop_back();
           }
         }
         while (!q.empty()) {
-          auto t = q.top();
-          q.pop();
+          // Loop through and add values to the output tensors
+          auto t = q.back();
+          q.pop_back();
           const int i = q.size();
           zbuf_a[n][yi][xi][i] = std::get<0>(t);
           face_idxs_a[n][yi][xi][i] = std::get<1>(t);
