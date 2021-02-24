@@ -2,6 +2,7 @@
 
 from typing import List, Optional, Tuple, Union
 
+import numpy as np
 import torch
 
 # pyre-fixme[21]: Could not find name `_C` in `pytorch3d`.
@@ -120,15 +121,7 @@ def rasterize_points(
             # Binned CPU rasterization not fully implemented
             bin_size = 0
         else:
-            # TODO: These heuristics are not well-thought out!
-            if max_image_size <= 64:
-                bin_size = 8
-            elif max_image_size <= 256:
-                bin_size = 16
-            elif max_image_size <= 512:
-                bin_size = 32
-            elif max_image_size <= 1024:
-                bin_size = 64
+            bin_size = int(2 ** max(np.ceil(np.log2(max_image_size)) - 4, 4))
 
     if bin_size != 0:
         # There is a limit on the number of points per bin in the cuda kernel.

@@ -10,7 +10,7 @@
 inline float NonSquareNdcRange(int S1, int S2) {
   float range = 2.0f;
   if (S1 > S2) {
-    range = ((S1 / S2) * range);
+    range = (S1 * range) / S2;
   }
   return range;
 }

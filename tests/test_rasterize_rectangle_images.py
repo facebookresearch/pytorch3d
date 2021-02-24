@@ -314,7 +314,7 @@ class TestRasterizeRectangleImagesMeshes(TestCaseMixin, unittest.TestCase):
 
             # Finally check the gradients of the input vertices for
             # the square and non square case
-            self.assertClose(verts_square.grad, grad_tensor.grad, rtol=2e-4)
+            self.assertClose(verts_square.grad, grad_tensor.grad, rtol=3e-4)
 
     def test_gpu(self):
         """
@@ -323,8 +323,9 @@ class TestRasterizeRectangleImagesMeshes(TestCaseMixin, unittest.TestCase):
         dists, zbuf, bary are all the same for the square
         region which is present in both images.
         """
-        # Test both cases: (W > H), (H > W)
-        image_sizes = [(64, 128), (128, 64), (128, 256), (256, 128)]
+        # Test both cases: (W > H), (H > W) as well as the case where
+        # H and W are not integer multiples of each other (i.e. float aspect ratio)
+        image_sizes = [(64, 128), (128, 64), (128, 256), (256, 128), (600, 1110)]
 
         devices = ["cuda:0"]
         blurs = [0.0, 0.001]
@@ -391,7 +392,7 @@ class TestRasterizeRectangleImagesMeshes(TestCaseMixin, unittest.TestCase):
         """
         # Test both when (W > H) and (H > W).
         # Using smaller image sizes here as the Python rasterizer is really slow.
-        image_sizes = [(32, 64), (64, 32)]
+        image_sizes = [(32, 64), (64, 32), (60, 110)]
         devices = ["cpu"]
         blurs = [0.0, 0.001]
         batch_sizes = [1]
@@ -646,8 +647,9 @@ class TestRasterizeRectangleImagesPointclouds(TestCaseMixin, unittest.TestCase):
         dists, zbuf, idx are all the same for the square
         region which is present in both images.
         """
-        # Test both cases: (W > H), (H > W)
-        image_sizes = [(64, 128), (128, 64), (128, 256), (256, 128)]
+        # Test both cases: (W > H), (H > W) as well as the case where
+        # H and W are not integer multiples of each other (i.e. float aspect ratio)
+        image_sizes = [(64, 128), (128, 64), (128, 256), (256, 128), (600, 1110)]
 
         devices = ["cuda:0"]
         blurs = [5e-2]
@@ -713,7 +715,7 @@ class TestRasterizeRectangleImagesPointclouds(TestCaseMixin, unittest.TestCase):
         """
         # Test both when (W > H) and (H > W).
         # Using smaller image sizes here as the Python rasterizer is really slow.
-        image_sizes = [(32, 64), (64, 32)]
+        image_sizes = [(32, 64), (64, 32), (60, 110)]
         devices = ["cpu"]
         blurs = [5e-2]
         batch_sizes = [1]
