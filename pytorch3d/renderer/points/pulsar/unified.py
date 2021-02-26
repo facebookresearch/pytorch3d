@@ -80,7 +80,7 @@ class PulsarPointsRenderer(nn.Module):
                 "by the pulsar backend."
             )
         if isinstance(rasterizer.raster_settings.image_size, tuple):
-            width, height = rasterizer.raster_settings.image_size
+            height, width = rasterizer.raster_settings.image_size
         else:
             width = rasterizer.raster_settings.image_size
             height = rasterizer.raster_settings.image_size

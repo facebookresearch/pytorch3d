@@ -123,11 +123,11 @@ class SceneModel(nn.Module):
             focal_length=self.focal_length,
             R=self.cam_rot[None, ...],
             T=self.cam_pos[None, ...],
-            image_size=((WIDTH, HEIGHT),),
+            image_size=((HEIGHT, WIDTH),),
             device=DEVICE,
         )
         raster_settings = PointsRasterizationSettings(
-            image_size=(WIDTH, HEIGHT),
+            image_size=(HEIGHT, WIDTH),
             radius=self.vert_rad,
         )
         rasterizer = PointsRasterizer(

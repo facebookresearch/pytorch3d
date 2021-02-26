@@ -56,12 +56,12 @@ def cli():
         focal_length=(5.0 * 2.0 / 2.0,),
         R=torch.eye(3, dtype=torch.float32, device=device)[None, ...],
         T=torch.zeros((1, 3), dtype=torch.float32, device=device),
-        image_size=((width, height),),
+        image_size=((height, width),),
         device=device,
     )
     vert_rad = torch.rand(n_points, dtype=torch.float32, device=device)
     raster_settings = PointsRasterizationSettings(
-        image_size=(width, height),
+        image_size=(height, width),
         radius=vert_rad,
     )
     rasterizer = PointsRasterizer(cameras=cameras, raster_settings=raster_settings)

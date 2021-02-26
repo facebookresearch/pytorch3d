@@ -84,11 +84,11 @@ class SceneModel(nn.Module):
             focal_length=5.0,
             R=torch.eye(3, dtype=torch.float32, device=DEVICE)[None, ...],
             T=torch.zeros((1, 3), dtype=torch.float32, device=DEVICE),
-            image_size=((WIDTH, HEIGHT),),
+            image_size=((HEIGHT, WIDTH),),
             device=DEVICE,
         )
         raster_settings = PointsRasterizationSettings(
-            image_size=(WIDTH, HEIGHT),
+            image_size=(HEIGHT, WIDTH),
             radius=self.vert_rad,
         )
         rasterizer = PointsRasterizer(
