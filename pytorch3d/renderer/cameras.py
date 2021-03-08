@@ -8,6 +8,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from pytorch3d.transforms import Rotate, Transform3d, Translate
+from pytorch3d.renderer.mesh.rasterize_meshes import non_square_ndc_range
 
 from .utils import TensorProperties, convert_to_tensors_and_broadcast
 
@@ -255,9 +256,14 @@ class CamerasBase(TensorProperties):
         image_width = image_width.view(-1, 1)  # (N, 1)
         image_height = image_height.view(-1, 1)  # (N, 1)
 
+        ndc_range_y = non_square_ndc_range(image_height, image_width)
+        offset_y = ndc_range_y / 2.0
+        ndc_range_x = non_square_ndc_range(image_width, image_height)
+        offset_x = ndc_range_x / 2.0
+
         ndc_z = ndc_points[..., 2]
-        screen_x = (image_width - 1.0) / 2.0 * (1.0 - ndc_points[..., 0])
-        screen_y = (image_height - 1.0) / 2.0 * (1.0 - ndc_points[..., 1])
+        screen_x = (image_width - 1) * (offset_x - ndc_points[..., 0]) / ndc_range_x
+        screen_y = (image_height - 1) * (offset_y - ndc_points[..., 1]) / ndc_range_y
 
         return torch.stack((screen_x, screen_y, ndc_z), dim=2)
 
