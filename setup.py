@@ -142,4 +142,5 @@ setup(
     },
     ext_modules=get_extensions(),
     cmdclass={"build_ext": BuildExtension},
+    include_package_data=True,
 )
