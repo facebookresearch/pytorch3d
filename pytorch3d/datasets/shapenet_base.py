@@ -95,6 +95,8 @@ class ShapeNetBase(torch.utils.data.Dataset):
                     self.texture_resolution,
                     3,
                 )
+        else:
+            textures = None
 
         return verts, faces.verts_idx, textures
 
