@@ -283,3 +283,10 @@ class TestShapenetCore(TestCaseMixin, unittest.TestCase):
                 "test_shapenet_core_render_without_sample_nums_%s.png" % idx, DATA_DIR
             )
             self.assertClose(mixed_rgb_2, image_ref, atol=0.05)
+
+    def test_not_loading_textures(self):
+        shapenet_dataset = ShapeNetCore(
+            SHAPENET_PATH, load_textures=False, version=VERSION
+        )
+        obj = shapenet_dataset[0]
+        self.assertEqual(obj["textures"], None)
