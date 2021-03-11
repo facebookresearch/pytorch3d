@@ -1,3 +1,4 @@
+recursive-exclude * *.cpp
 include pytorch3d/datasets/shapenet/shapenet_synset_dict_v1.json
 include pytorch3d/datasets/shapenet/shapenet_synset_dict_v2.json
 include pytorch3d/datasets/r2n2/r2n2_synset_dict.json
