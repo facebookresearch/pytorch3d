@@ -163,7 +163,7 @@ class TestRaymarching(TestCaseMixin, unittest.TestCase):
         loss = features_render.mean()
         loss.backward()
         for field in (rays_densities, rays_features):
-            self.assertTrue(field.grad.data.isfinite().all())
+            self.assertTrue(torch.isfinite(field.grad.data).all())
 
     def test_absorption_only(self):
         """
@@ -193,4 +193,4 @@ class TestRaymarching(TestCaseMixin, unittest.TestCase):
         # check differentiability
         loss = opacities_render.mean()
         loss.backward()
-        self.assertTrue(rays_densities.grad.data.isfinite().all())
+        self.assertTrue(torch.isfinite(rays_densities.grad.data).all())

@@ -354,7 +354,7 @@ class TestPointsToVolumes(TestCaseMixin, unittest.TestCase):
                         # this does not produce grads w.r.t. xyz
                         self.assertIsNone(field.grad)
                     else:
-                        self.assertTrue(field.grad.data.isfinite().all())
+                        self.assertTrue(torch.isfinite(field.grad.data).all())
 
     def _check_volume_slice_color_density(
         self, V, split_dim, interp_mode, clr_gt, slice_type, border=3
