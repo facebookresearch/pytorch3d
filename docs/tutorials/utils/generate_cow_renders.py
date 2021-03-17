@@ -4,8 +4,6 @@ import os
 
 import numpy as np
 import torch
-
-# Util function for loading meshes
 from pytorch3d.io import load_objs_as_meshes
 from pytorch3d.renderer import (
     BlendParams,

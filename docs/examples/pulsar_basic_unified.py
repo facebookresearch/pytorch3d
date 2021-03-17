@@ -11,11 +11,8 @@ from os import path
 
 import imageio
 import torch
-
-# Import `look_at_view_transform` as needed in the suggestion later in the
-# example.
-from pytorch3d.renderer import PerspectiveCameras  # , look_at_view_transform
 from pytorch3d.renderer import (
+    PerspectiveCameras,
     PointsRasterizationSettings,
     PointsRasterizer,
     PulsarPointsRenderer,

@@ -11,9 +11,7 @@ import warnings
 from typing import Optional, Tuple, Union
 
 import torch
-
-# pyre-fixme[21]: Could not find a name `_C` defined in module `pytorch3d`.
-from pytorch3d import _C
+from pytorch3d import _C  # pyre-fixme[21]: Could not find name `_C` in `pytorch3d`.
 from pytorch3d.transforms import axis_angle_to_matrix, rotation_6d_to_matrix
 
 

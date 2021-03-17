@@ -1,9 +1,7 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
 import torch
-
-# pyre-fixme[21]: Could not find name `_C` in `pytorch3d`.
-from pytorch3d import _C
+from pytorch3d import _C  # pyre-fixme[21]: Could not find name `_C` in `pytorch3d`.
 
 
 # Example functions for blending the top K features per pixel using the outputs
