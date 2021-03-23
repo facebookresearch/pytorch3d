@@ -131,6 +131,8 @@ def generate_upload_workflow(*, base_workflow_name, btype, cu_version, filter_br
 
 
 def indent(indentation, data_list):
+    if len(data_list) == 0:
+        return ""
     return ("\n" + " " * indentation).join(
         yaml.dump(data_list, default_flow_style=False).splitlines()
     )

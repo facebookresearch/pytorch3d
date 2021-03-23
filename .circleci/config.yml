@@ -18,12 +18,12 @@ setupcuda: &setupcuda
     working_directory: ~/
     command: |
       # download and install nvidia drivers, cuda, etc
-      wget --no-verbose --no-clobber -P ~/nvidia-downloads http://developer.download.nvidia.com/compute/cuda/10.2/Prod/local_installers/cuda_10.2.89_440.33.01_linux.run
-      sudo sh ~/nvidia-downloads/cuda_10.2.89_440.33.01_linux.run --silent
+      wget --no-verbose --no-clobber -P ~/nvidia-downloads https://developer.download.nvidia.com/compute/cuda/11.2.2/local_installers/cuda_11.2.2_460.32.03_linux.run
+      sudo sh ~/nvidia-downloads/cuda_11.2.2_460.32.03_linux.run --silent
       echo "Done installing CUDA."
       pyenv versions
       nvidia-smi
-      pyenv global 3.7.0
+      pyenv global 3.9.1
 
 gpu: &gpu
   environment:
@@ -64,7 +64,7 @@ jobs:
   main:
     <<: *gpu
     machine:
-      image: ubuntu-1604:201903-01
+      image: ubuntu-2004:202101-01
     steps:
       - checkout
       - <<: *setupcuda
@@ -86,10 +86,10 @@ jobs:
       - run:
           name: build
           command: |
-            export LD_LIBRARY_PATH=$LD_LIBARY_PATH:/usr/local/cuda-10.2/lib64
+            export LD_LIBRARY_PATH=$LD_LIBARY_PATH:/usr/local/cuda-11.2/lib64
             export CUB_HOME=$(realpath ../cub-1.10.0)
             python3 setup.py build_ext --inplace
-      - run: LD_LIBRARY_PATH=$LD_LIBARY_PATH:/usr/local/cuda-10.2/lib64 python -m unittest discover -v -s tests
+      - run: LD_LIBRARY_PATH=$LD_LIBARY_PATH:/usr/local/cuda-11.2/lib64 python -m unittest discover -v -s tests
       - run: python3 setup.py bdist_wheel
 
   binary_linux_wheel:
@@ -186,7 +186,7 @@ jobs:
 
           { docker login -u="$DOCKERHUB_USERNAME" -p="$DOCKERHUB_TOKEN" ; } 2> /dev/null
 
-          export DOCKER_IMAGE=pytorch/conda-cuda
+          DOCKER_IMAGE=pytorch/conda-cuda
           echo Pulling docker image $DOCKER_IMAGE
           docker pull $DOCKER_IMAGE
     - run:
@@ -196,8 +196,9 @@ jobs:
 
           cd ${HOME}/project/
 
-          export DOCKER_IMAGE=pytorch/conda-cuda
-          export VARS_TO_PASS="-e PYTHON_VERSION -e BUILD_VERSION -e PYTORCH_VERSION -e CU_VERSION"
+          DOCKER_IMAGE=pytorch/conda-cuda
+          export JUST_TESTRUN=1
+          VARS_TO_PASS="-e PYTHON_VERSION -e BUILD_VERSION -e PYTORCH_VERSION -e CU_VERSION -e JUST_TESTRUN"
 
           docker run --gpus all  --ipc=host -v $(pwd):/remote -w /remote ${VARS_TO_PASS} ${DOCKER_IMAGE} ./packaging/build_conda.sh
 

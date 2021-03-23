@@ -158,6 +158,7 @@ class TestMeshPlyIO(TestCaseMixin, unittest.TestCase):
     def test_pluggable_load_cube(self):
         """
         This won't work on Windows due to NamedTemporaryFile being reopened.
+        Use the testpath package instead?
         """
         ply_file = "\n".join(CUBE_PLY_LINES)
         io = IO()
