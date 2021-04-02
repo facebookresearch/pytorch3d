@@ -1286,7 +1286,7 @@ class TexturesVertex(TexturesBase):
         num_verts = (
             self._num_verts_per_mesh.clone()
             if torch.is_tensor(self._num_verts_per_mesh)
-            else self._num_verts_per_mesh
+            else self._num_verts_per_mesh.copy()
         )
         tex._num_verts_per_mesh = num_verts
         tex.valid = self.valid.clone()
@@ -1299,7 +1299,7 @@ class TexturesVertex(TexturesBase):
         num_verts = (
             self._num_verts_per_mesh.detach()
             if torch.is_tensor(self._num_verts_per_mesh)
-            else self._num_verts_per_mesh
+            else self._num_verts_per_mesh.copy()
         )
         tex._num_verts_per_mesh = num_verts
         tex.valid = self.valid.detach()
@@ -1414,7 +1414,7 @@ class TexturesVertex(TexturesBase):
 
         verts_features_list = []
         verts_features_list += self.verts_features_list()
-        num_faces_per_mesh = self._num_verts_per_mesh
+        num_faces_per_mesh = self._num_verts_per_mesh.copy()
         for tex in textures:
             verts_features_list += tex.verts_features_list()
             num_faces_per_mesh += tex._num_verts_per_mesh
