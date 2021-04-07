@@ -475,7 +475,7 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
         self.assertEqual(actual_file, expected_file)
 
     def test_load_mtl(self):
-        DATA_DIR = Path(__file__).resolve().parent.parent / "docs/tutorials/data"
+        DATA_DIR = Path(__file__).resolve().parent / "docs/tutorials/data"
         obj_filename = "cow_mesh/cow.obj"
         filename = os.path.join(DATA_DIR, obj_filename)
         verts, faces, aux = load_obj(filename)
@@ -559,7 +559,7 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
     def test_load_mtl_texture_atlas_compare_softras(self):
         # Load saved texture atlas created with SoftRas.
         device = torch.device("cuda:0")
-        DATA_DIR = Path(__file__).resolve().parent.parent
+        DATA_DIR = Path(__file__).resolve().parent
         obj_filename = DATA_DIR / "docs/tutorials/data/cow_mesh/cow.obj"
         expected_atlas_fname = DATA_DIR / "tests/data/cow_texture_atlas_softras.pt"
 
@@ -590,7 +590,7 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
         self.assertClose(expected_atlas, aux.texture_atlas, atol=5e-5)
 
     def test_load_mtl_noload(self):
-        DATA_DIR = Path(__file__).resolve().parent.parent / "docs/tutorials/data"
+        DATA_DIR = Path(__file__).resolve().parent / "docs/tutorials/data"
         obj_filename = "cow_mesh/cow.obj"
         filename = os.path.join(DATA_DIR, obj_filename)
         verts, faces, aux = load_obj(filename, load_textures=False)
@@ -760,7 +760,7 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
                         mesh.textures.atlas_padded(), mesh3.textures.atlas_padded()
                     )
 
-        DATA_DIR = Path(__file__).resolve().parent.parent / "docs/tutorials/data"
+        DATA_DIR = Path(__file__).resolve().parent / "docs/tutorials/data"
         obj_filename = DATA_DIR / "cow_mesh/cow.obj"
 
         mesh = load_objs_as_meshes([obj_filename])

@@ -378,7 +378,7 @@ class TestSamplePoints(TestCaseMixin, unittest.TestCase):
         # the cow mesh and its texture uv to a pointcloud with texture
 
         device = torch.device("cuda:0")
-        obj_dir = Path(__file__).resolve().parent.parent / "docs/tutorials/data"
+        obj_dir = Path(__file__).resolve().parent / "docs/tutorials/data"
         obj_filename = obj_dir / "cow_mesh/cow.obj"
 
         for text_type in ("uv", "atlas"):

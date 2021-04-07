@@ -384,7 +384,7 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
         The pupils in the eyes of the cow should always be looking to the left.
         """
         device = torch.device("cuda:0")
-        obj_dir = Path(__file__).resolve().parent.parent / "docs/tutorials/data"
+        obj_dir = Path(__file__).resolve().parent / "docs/tutorials/data"
         obj_filename = obj_dir / "cow_mesh/cow.obj"
 
         # Load mesh + texture
@@ -966,7 +966,7 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
         Also check that the backward pass for texture atlas rendering is differentiable.
         """
         device = torch.device("cuda:0")
-        obj_dir = Path(__file__).resolve().parent.parent / "docs/tutorials/data"
+        obj_dir = Path(__file__).resolve().parent / "docs/tutorials/data"
         obj_filename = obj_dir / "cow_mesh/cow.obj"
 
         # Load mesh and texture as a per face texture atlas.

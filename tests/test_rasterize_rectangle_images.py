@@ -449,7 +449,7 @@ class TestRasterizeRectangleImagesMeshes(TestCaseMixin, unittest.TestCase):
         Test a larger textured mesh is rendered correctly in a non square image.
         """
         device = torch.device("cuda:0")
-        obj_dir = Path(__file__).resolve().parent.parent / "docs/tutorials/data"
+        obj_dir = Path(__file__).resolve().parent / "docs/tutorials/data"
         obj_filename = obj_dir / "cow_mesh/cow.obj"
 
         # Load mesh + texture

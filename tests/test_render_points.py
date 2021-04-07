@@ -216,7 +216,7 @@ class TestRenderPoints(TestCaseMixin, unittest.TestCase):
 
     def test_pointcloud_with_features(self):
         device = torch.device("cuda:0")
-        file_dir = Path(__file__).resolve().parent.parent / "docs/tutorials/data"
+        file_dir = Path(__file__).resolve().parent / "docs/tutorials/data"
         pointcloud_filename = file_dir / "PittsburghBridge/pointcloud.npz"
 
         # Note, this file is too large to check in to the repo.
