@@ -109,13 +109,13 @@ def load_obj(
 
     Faces are interpreted as follows:
     ::
-        5/2/1 describes the first vertex of the first triange
+        5/2/1 describes the first vertex of the first triangle
         - 5: index of vertex [1.000000 1.000000 -1.000000]
         - 2: index of texture coordinate [0.749279 0.501284]
         - 1: index of normal [0.000000 0.000000 -1.000000]
 
     If there are faces with more than 3 vertices
-    they are subdivided into triangles. Polygonal faces are assummed to have
+    they are subdivided into triangles. Polygonal faces are assumed to have
     vertices ordered counter-clockwise so the (right-handed) normal points
     out of the screen e.g. a proper rectangular face would be specified like this:
     ::
@@ -368,7 +368,7 @@ def _parse_face(
                 face_normals.append(int(vert_props[2]))
             if len(vert_props) > 3:
                 raise ValueError(
-                    "Face vertices can ony have 3 properties. \
+                    "Face vertices can only have 3 properties. \
                                 Face vert %s, Line: %s"
                     % (str(vert_props), str(line))
                 )

@@ -155,7 +155,7 @@ class TestICP(TestCaseMixin, unittest.TestCase):
                     self.assertClose(s_init, s, atol=atol)
                     self.assertClose(Xt_init, Xt, atol=atol)
 
-    def test_heterogenous_inputs(self, batch_size=10):
+    def test_heterogeneous_inputs(self, batch_size=10):
         """
         Tests whether we get the same result when running ICP on
         a set of randomly-sized Pointclouds and on their padded versions.

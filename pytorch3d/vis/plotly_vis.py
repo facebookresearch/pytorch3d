@@ -567,7 +567,7 @@ def _add_pointcloud_trace(
         pointclouds: Pointclouds object to render. It can be batched.
         trace_name: name to label the trace with.
         subplot_idx: identifies the subplot, with 0 being the top left.
-        ncols: the number of sublpots per row.
+        ncols: the number of subplots per row.
         max_points_per_pointcloud: the number of points to render, which are randomly sampled.
         marker_size: the size of the rendered points
     """
@@ -648,7 +648,7 @@ def _add_camera_trace(
         cameras: the Cameras object to render. It can be batched.
         trace_name: name to label the trace with.
         subplot_idx: identifies the subplot, with 0 being the top left.
-        ncols: the number of sublpots per row.
+        ncols: the number of subplots per row.
         camera_scale: the size of the wireframe used to render the Cameras object.
     """
     cam_wires = get_camera_wireframe(camera_scale).to(cameras.device)

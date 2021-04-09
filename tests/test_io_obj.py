@@ -328,7 +328,9 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
 
         with self.assertRaises(ValueError) as err:
             load_obj(obj_file)
-        self.assertTrue("Face vertices can ony have 3 properties" in str(err.exception))
+        self.assertTrue(
+            "Face vertices can only have 3 properties" in str(err.exception)
+        )
 
     def test_load_obj_error_invalid_vertex_indices(self):
         obj_file = "\n".join(
@@ -631,7 +633,7 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
         self.assertTrue(aux.normals is None)
         self.assertTrue(aux.verts_uvs is None)
 
-    def test_load_obj_mlt_no_image(self):
+    def test_load_obj_mtl_no_image(self):
         obj_filename = "obj_mtl_no_image/model.obj"
         filename = os.path.join(DATA_DIR, obj_filename)
         R = 8

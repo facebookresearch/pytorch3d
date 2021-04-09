@@ -147,7 +147,7 @@ def knn_points(
                 p2_nn = knn_gather(p2, p1_idx, lengths2)
 
             which is a helper function that allows indexing any tensor of shape (N, P2, U) with
-            the indices `p1_idx` returned by `knn_points`. The outout is a tensor
+            the indices `p1_idx` returned by `knn_points`. The output is a tensor
             of shape (N, P1, K, U).
 
     """

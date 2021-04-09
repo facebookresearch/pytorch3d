@@ -17,7 +17,7 @@ from .clip import (
 # TODO make the epsilon user configurable
 kEpsilon = 1e-8
 
-# Maxinum number of faces per bins for
+# Maximum number of faces per bins for
 # coarse-to-fine rasterization
 kMaxFacesPerBin = 22
 
@@ -68,7 +68,7 @@ def rasterize_meshes(
             set it heuristically based on the shape of the input. This should not
             affect the output, but can affect the speed of the forward pass.
         faces_per_bin: Only applicable when using coarse-to-fine rasterization
-            (bin_size > 0); this is the maxiumum number of faces allowed within each
+            (bin_size > 0); this is the maximum number of faces allowed within each
             bin. If more than this many faces actually fall into a bin, an error
             will be raised. This should not affect the output values, but can affect
             the memory usage in the forward pass.
@@ -138,7 +138,7 @@ def rasterize_meshes(
     num_faces_per_mesh = meshes.num_faces_per_mesh()
 
     # In the case that H != W use the max image size to set the bin_size
-    # to accommodate the num bins constraint in the coarse rasteizer.
+    # to accommodate the num bins constraint in the coarse rasterizer.
     # If the ratio of H:W is large this might cause issues as the smaller
     # dimension will have fewer bins.
     # TODO: consider a better way of setting the bin size.
@@ -453,7 +453,7 @@ def rasterize_meshes_python(
         mesh_to_face_first_idx = clipped_faces.mesh_to_face_first_idx
         num_faces_per_mesh = clipped_faces.num_faces_per_mesh
 
-    # Intialize output tensors.
+    # Initialize output tensors.
     face_idxs = torch.full(
         (N, H, W, K), fill_value=-1, dtype=torch.int64, device=device
     )
@@ -662,7 +662,7 @@ def barycentric_coordinates_clip(bary):
     Clip negative barycentric coordinates to 0.0 and renormalize so
     the barycentric coordinates for a point sum to 1. When the blur_radius
     is greater than 0, a face will still be recorded as overlapping a pixel
-    if the pixel is outisde the face. In this case at least one of the
+    if the pixel is outside the face. In this case at least one of the
     barycentric coordinates for the pixel relative to the face will be negative.
     Clipping will ensure that the texture and z buffer are interpolated correctly.
 

@@ -27,7 +27,7 @@ def wmean(
             the last (spatial) dimension are assumed same;
         dim: dimension(s) in `x` to average over;
         keepdim: tells whether to keep the resulting singleton dimension.
-        eps: minumum clamping value in the denominator.
+        eps: minimum clamping value in the denominator.
     Returns:
         the mean tensor:
         * if `weights` is None => `mean(x, dim)`,

@@ -27,7 +27,7 @@ __device__ inline bool operator<(const Pix& a, const Pix& b) {
 // which contains Pixel structs with the indices of the points which intersect
 // with this pixel sorted by closest z distance. If the pixel pxy lies in the
 // point, the list (q) is updated and re-orderered in place. In addition
-// the auxillary variables q_size, q_max_z and q_max_idx are also modified.
+// the auxiliary variables q_size, q_max_z and q_max_idx are also modified.
 // This code is shared between RasterizePointsNaiveCudaKernel and
 // RasterizePointsFineCudaKernel.
 template <typename PointQ>
@@ -104,7 +104,7 @@ __global__ void RasterizePointsNaiveCudaKernel(
     const int yi = H - 1 - pix_idx / W;
     const int xi = W - 1 - pix_idx % W;
 
-    // screen coordinates to ndc coordiantes of pixel.
+    // screen coordinates to ndc coordinates of pixel.
     const float xf = PixToNonSquareNdc(xi, W, H);
     const float yf = PixToNonSquareNdc(yi, H, W);
 

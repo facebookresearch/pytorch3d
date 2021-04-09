@@ -511,7 +511,7 @@ class TestRasterizePoints(TestCaseMixin, unittest.TestCase):
         )
         # Note that the order is only deterministic here for CUDA if all points
         # fit in one chunk. This will the the case for this small example, but
-        # to properly exercise coordianted writes among multiple chunks we need
+        # to properly exercise coordinated writes among multiple chunks we need
         # to use a bigger test case.
         bin_points_expected[0, 0, 1, :2] = torch.tensor([0, 3])
         bin_points_expected[0, 1, 0, 0] = torch.tensor([2])

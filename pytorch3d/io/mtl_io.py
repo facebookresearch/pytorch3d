@@ -28,7 +28,7 @@ def make_mesh_texture_atlas(
 
     Args:
         material_properties: dict of properties for each material. If a material
-                does not have any properties it will have an emtpy dict.
+                does not have any properties it will have an empty dict.
         texture_images: dict of material names and texture images
         face_material_names: numpy array of the material name corresponding to each
             face. Faces which don't have an associated material will be an empty string.
@@ -220,13 +220,13 @@ def make_material_atlas(
 
     For each grid cell we can now calculate the centroid `(c_y, c_x)`
     of the corresponding texture triangle:
-        - if `(x + y) < R`, then offsett the centroid of
+        - if `(x + y) < R`, then offset the centroid of
             triangle 0 by `(y, x) * (1/R)`
         - if `(x + y) > R`, then offset the centroid of
             triangle 8 by `((R-1-y), (R-1-x)) * (1/R)`.
 
     This is equivalent to updating the portion of Grid 1
-    above the diagnonal, replacing `(y, x)` with `((R-1-y), (R-1-x))`:
+    above the diagonal, replacing `(y, x)` with `((R-1-y), (R-1-x))`:
 
     ..code-block::python
 

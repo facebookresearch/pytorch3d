@@ -97,8 +97,8 @@ def compute_extrinsic_matrix(azimuth, elevation, distance):
     Copied from meshrcnn codebase:
     https://github.com/facebookresearch/meshrcnn/blob/master/shapenet/utils/coords.py#L96
 
-    Compute 4x4 extrinsic matrix that converts from homogenous world coordinates
-    to homogenous camera coordinates. We assume that the camera is looking at the
+    Compute 4x4 extrinsic matrix that converts from homogeneous world coordinates
+    to homogeneous camera coordinates. We assume that the camera is looking at the
     origin.
     Used in R2N2 Dataset when computing calibration matrices.
 
@@ -189,7 +189,7 @@ def _compute_idxs(vals, counts):
 
     Args:
         vals: tensor of binary values indicating voxel presence in a dense format.
-        counts: tensor of number of occurence of each value in vals.
+        counts: tensor of number of occurrence of each value in vals.
 
     Returns:
         idxs: A tensor of shape (N), where N is the number of nonzero voxels.
@@ -379,7 +379,7 @@ def project_verts(verts, P, eps=1e-1):
     Copied from meshrcnn codebase:
     https://github.com/facebookresearch/meshrcnn/blob/master/shapenet/utils/coords.py#L159
 
-    Project verticies using a 4x4 transformation matrix.
+    Project vertices using a 4x4 transformation matrix.
 
     Args:
         verts: FloatTensor of shape (N, V, 3) giving a batch of vertex positions or of
@@ -403,7 +403,7 @@ def project_verts(verts, P, eps=1e-1):
 
     # Add an extra row of ones to the world-space coordinates of verts before
     # multiplying by the projection matrix. We could avoid this allocation by
-    # instead multiplying by a 4x3 submatrix of the projectio matrix, then
+    # instead multiplying by a 4x3 submatrix of the projection matrix, then
     # adding the remaining 4x1 vector. Not sure whether there will be much
     # performance difference between the two.
     ones = torch.ones(N, V, 1, dtype=dtype, device=device)

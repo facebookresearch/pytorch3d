@@ -240,7 +240,7 @@ class TexturesBase:
         number of faces in the i-th mesh and C is the dimensional of
         the feature (C = 3 for RGB textures).
         You can use the utils function in structures.utils to convert the
-        packed respresentation to a list or padded.
+        packed representation to a list or padded.
         """
         raise NotImplementedError()
 
@@ -261,10 +261,10 @@ class TexturesBase:
     def __getitem__(self, index):
         """
         Each texture class should implement a method
-        to get the texture properites for the
+        to get the texture properties for the
         specified elements in the batch.
         The TexturesBase._getitem(i) method
-        can be used as a helper funtion to retrieve the
+        can be used as a helper function to retrieve the
         class attributes for item i. Then, a new
         instance of the child class can be created with
         the attributes.
@@ -496,7 +496,7 @@ class TexturesAtlas(TexturesBase):
                 of the faces (in the packed representation) which
                 overlap each pixel in the image.
                 - barycentric_coords: FloatTensor of shape (N, H, W, K, 3) specifying
-                the barycentric coordianates of each pixel
+                the barycentric coordinates of each pixel
                 relative to the faces (in the packed
                 representation) which overlap the pixel.
 
@@ -536,7 +536,7 @@ class TexturesAtlas(TexturesBase):
         For N meshes with {Fi} number of faces, it returns a
         tensor of shape sum(Fi)x3xD (D = 3 for RGB).
         You can use the utils function in structures.utils to convert the
-        packed respresentation to a list or padded.
+        packed representation to a list or padded.
         """
         atlas_packed = self.atlas_packed()
         # assume each face consists of (v0, v1, v2).
@@ -892,7 +892,7 @@ class TexturesUV(TexturesBase):
                 of the faces (in the packed representation) which
                 overlap each pixel in the image.
                 - barycentric_coords: FloatTensor of shape (N, H, W, K, 3) specifying
-                the barycentric coordianates of each pixel
+                the barycentric coordinates of each pixel
                 relative to the faces (in the packed
                 representation) which overlap the pixel.
 
@@ -1233,7 +1233,7 @@ class TexturesVertex(TexturesBase):
 
         Args:
             verts_features: list of (Vi, D) or (N, V, D) tensor giving a feature
-                vector with artbitrary dimensions for each vertex.
+                vector with arbitrary dimensions for each vertex.
         """
         if isinstance(verts_features, (tuple, list)):
             correct_shape = all(
@@ -1356,7 +1356,7 @@ class TexturesVertex(TexturesBase):
 
     def sample_textures(self, fragments, faces_packed=None) -> torch.Tensor:
         """
-        Detemine the color for each rasterized face. Interpolate the colors for
+        Determine the color for each rasterized face. Interpolate the colors for
         vertices which form the face using the barycentric coordinates.
         Args:
             fragments:
@@ -1366,7 +1366,7 @@ class TexturesVertex(TexturesBase):
                 of the faces (in the packed representation) which
                 overlap each pixel in the image.
                 - barycentric_coords: FloatTensor of shape (N, H, W, K, 3) specifying
-                the barycentric coordianates of each pixel
+                the barycentric coordinates of each pixel
                 relative to the faces (in the packed
                 representation) which overlap the pixel.
 
@@ -1389,7 +1389,7 @@ class TexturesVertex(TexturesBase):
         For N meshes with {Fi} number of faces, it returns a
         tensor of shape sum(Fi)x3xC (C = 3 for RGB).
         You can use the utils function in structures.utils to convert the
-        packed respresentation to a list or padded.
+        packed representation to a list or padded.
         """
         verts_features_packed = self.verts_features_packed()
         faces_verts_features = verts_features_packed[faces_packed]

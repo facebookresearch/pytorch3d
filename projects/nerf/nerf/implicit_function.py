@@ -169,7 +169,7 @@ class NeuralRadianceField(torch.nn.Module):
 
         Returns:
             rays_densities: A tensor of shape `(minibatch, ..., num_points_per_ray, 1)`
-                denoting the opacitiy of each ray point.
+                denoting the opacity of each ray point.
             rays_colors: A tensor of shape `(minibatch, ..., num_points_per_ray, 3)`
                 denoting the color of each ray point.
         """

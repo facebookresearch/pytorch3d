@@ -15,7 +15,7 @@ def vert_align(
 ) -> torch.Tensor:
     """
     Sample vertex features from a feature map. This operation is called
-    "perceptual feaure pooling" in [1] or "vert align" in [2].
+    "perceptual feature pooling" in [1] or "vert align" in [2].
 
     [1] Wang et al, "Pixel2Mesh: Generating 3D Mesh Models from Single
         RGB Images", ECCV 2018.
@@ -45,7 +45,7 @@ def vert_align(
 
     Returns:
         feats_sampled: FloatTensor of shape (N, V, C) giving sampled features for each
-            vertex. If feats is a list, we return concatentated features in axis=2 of
+            vertex. If feats is a list, we return concatenated features in axis=2 of
             shape (N, V, sum(C_n)) where C_n = feats[n].shape[1].
             If return_packed = True, the features are transformed to a packed
             representation of shape (sum(V), C)

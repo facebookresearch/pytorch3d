@@ -1052,7 +1052,7 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
         images[0, ...].sum().backward()
 
         fragments = rasterizer(mesh, raster_settings=raster_settings)
-        # Some of the bary coordinates are outisde the
+        # Some of the bary coordinates are outside the
         # [0, 1] range as expected because the blur is > 0
         self.assertTrue(fragments.bary_coords.ge(1.0).any())
         self.assertIsNotNone(atlas.grad)

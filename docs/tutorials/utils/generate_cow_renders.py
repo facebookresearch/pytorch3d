@@ -113,15 +113,15 @@ def generate_cow_renders(
     # purposes only we will set faces_per_pixel=1 and blur_radius=0.0. Refer to
     # rasterize_meshes.py for explanations of these parameters.  We also leave
     # bin_size and max_faces_per_bin to their default values of None, which sets
-    # their values using huristics and ensures that the faster coarse-to-fine
+    # their values using heuristics and ensures that the faster coarse-to-fine
     # rasterization method is used.  Refer to docs/notes/renderer.md for an
     # explanation of the difference between naive and coarse-to-fine rasterization.
     raster_settings = RasterizationSettings(
         image_size=128, blur_radius=0.0, faces_per_pixel=1
     )
 
-    # Create a phong renderer by composing a rasterizer and a shader. The textured
-    # phong shader will interpolate the texture uv coordinates for each vertex,
+    # Create a Phong renderer by composing a rasterizer and a shader. The textured
+    # Phong shader will interpolate the texture uv coordinates for each vertex,
     # sample from a texture image and apply the Phong lighting model
     blend_params = BlendParams(sigma=1e-4, gamma=1e-4, background_color=(0.0, 0.0, 0.0))
     renderer = MeshRenderer(

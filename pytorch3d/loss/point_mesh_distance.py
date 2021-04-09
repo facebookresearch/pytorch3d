@@ -91,7 +91,7 @@ class _FacePointDistance(Function):
             max_tris: Scalar equal to maximum number of faces in the batch
         Returns:
             dists: FloatTensor of shape `(T,)`, where `dists[t]` is the squared
-                euclidean distance of `t`-th trianguar face to the closest point in the
+                euclidean distance of `t`-th triangular face to the closest point in the
                 corresponding example in the batch
             idxs: LongTensor of shape `(T,)` indicating the closest point in the
                 corresponding example in the batch.

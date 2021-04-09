@@ -20,5 +20,5 @@ mesh = IO().load_mesh("mymesh.ply", device=device)
 and to save a pointcloud you might do
 ```
 pcl = Pointclouds(...)
-IO().save_point_cloud(pcl, "output_poincloud.obj")
+IO().save_point_cloud(pcl, "output_pointcloud.obj")
 ```

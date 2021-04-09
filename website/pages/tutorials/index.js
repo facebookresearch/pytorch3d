@@ -28,7 +28,7 @@ class TutorialHome extends React.Component {
             </header>
             <p>
               Here you can learn about the structure and applications of
-              Pytorch3D from examples which are in the form of ipython
+              PyTorch3D from examples which are in the form of ipython
               notebooks.
             </p>
             <h3> Run interactively </h3>

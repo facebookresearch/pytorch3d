@@ -250,7 +250,7 @@ class ShapeNetBase(torch.utils.data.Dataset):
         Helper function for sampling a number of indices from the given category.
 
         Args:
-            sample_num: number of indicies to be sampled from the given category.
+            sample_num: number of indices to be sampled from the given category.
             category: category synset of the category to be sampled from. If not
                 specified, sample from all models in the loaded dataset.
         """

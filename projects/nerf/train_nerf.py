@@ -31,7 +31,7 @@ def main(cfg: DictConfig):
     else:
         warnings.warn(
             "Please note that although executing on CPU is supported,"
-            + "the training is unlikely to finish in resonable time."
+            + "the training is unlikely to finish in reasonable time."
         )
         device = "cpu"
 
@@ -109,7 +109,7 @@ def main(cfg: DictConfig):
         optimizer, lr_lambda, last_epoch=start_epoch - 1, verbose=False
     )
 
-    # Initialize the cache for storing variables needed for visulization.
+    # Initialize the cache for storing variables needed for visualization.
     visuals_cache = collections.deque(maxlen=cfg.visualization.history_size)
 
     # Init the visualization visdom env.
@@ -194,7 +194,7 @@ def main(cfg: DictConfig):
             if iteration % cfg.stats_print_interval == 0:
                 stats.print(stat_set="train")
 
-            # Update the visualisatioon cache.
+            # Update the visualization cache.
             visuals_cache.append(
                 {
                     "camera": camera.cpu(),
@@ -219,7 +219,7 @@ def main(cfg: DictConfig):
             val_image = val_image.to(device)
             val_camera = val_camera.to(device)
 
-            # Activate eval mode of the model (allows to do a full rendering pass).
+            # Activate eval mode of the model (lets us do a full rendering pass).
             model.eval()
             with torch.no_grad():
                 val_nerf_out, val_metrics = model(

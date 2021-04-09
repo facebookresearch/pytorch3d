@@ -184,7 +184,7 @@ def _gen_pairs(input, dim=-2, reducer=lambda a, b: ((a - b) ** 2).sum(dim=-1)):
 
 
 def _kernel_vec_distances(v):
-    """Computes the coefficients for linearisation of the quadratic system
+    """Computes the coefficients for linearization of the quadratic system
         to match all pairwise distances between 4 control points (dim=1).
         The last dimension corresponds to the coefficients for quadratic terms
         Bij = Bi * Bj, where Bi and Bj correspond to kernel vectors.

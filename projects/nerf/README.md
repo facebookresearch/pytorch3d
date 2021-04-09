@@ -50,7 +50,7 @@ python ./test_nerf.py --config-name lego
 ```
 Will load a trained model from the `./checkpoints` directory and evaluate it on the test split of the corresponding dataset (Lego in the case above).
 
-### Exporting multi-view video of the radience field
+### Exporting multi-view video of the radiance field
 Furthermore, the codebase supports generating videos of the neural radiance field.
 The following generates a turntable video of the Lego scene:
 ```

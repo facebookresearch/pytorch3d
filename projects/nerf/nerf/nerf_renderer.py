@@ -266,7 +266,7 @@ class RadianceFieldRenderer(torch.nn.Module):
         image: torch.Tensor,
     ) -> Tuple[dict, dict]:
         """
-        Performs the coarse and fine rendering passees of the radiance field
+        Performs the coarse and fine rendering passes of the radiance field
         from the viewpoint of the input `camera`.
         Afterwards, both renders are compared to the input ground truth `image`
         by evaluating the peak signal-to-noise ratio and the mean-squared error.

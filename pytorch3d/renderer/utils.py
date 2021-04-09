@@ -76,7 +76,7 @@ class TensorAccessor(nn.Module):
         if hasattr(self.class_object, name):
             return self.class_object.__dict__[name][self.index]
         else:
-            msg = "Attribue %s not found on %r"
+            msg = "Attribute %s not found on %r"
             return AttributeError(msg % (name, self.class_object.__name__))
 
 

@@ -380,7 +380,7 @@ def _try_read_ply_constant_list_ascii(f, definition: _PlyElementType):
     return data[:, 1:]
 
 
-def _parse_heterogenous_property_ascii(datum, line_iter, property: _Property):
+def _parse_heterogeneous_property_ascii(datum, line_iter, property: _Property):
     """
     Read a general data property from an ascii .ply file.
 
@@ -431,7 +431,7 @@ def _read_ply_element_ascii(f, definition: _PlyElementType):
         In simple cases where every element has the same size, 2D numpy array
         corresponding to the data. The rows are the different values.
         Otherwise a list of lists of values, where the outer list is
-        each occurence of the element, and the inner lists have one value per
+        each occurrence of the element, and the inner lists have one value per
         property.
     """
     if not definition.count:
@@ -454,7 +454,7 @@ def _read_ply_element_ascii(f, definition: _PlyElementType):
         datum = []
         line_iter = iter(line_string.strip().split())
         for property in definition.properties:
-            _parse_heterogenous_property_ascii(datum, line_iter, property)
+            _parse_heterogeneous_property_ascii(datum, line_iter, property)
         data.append(datum)
         if next(line_iter, None) is not None:
             raise ValueError("Too much data for an element.")
@@ -669,7 +669,7 @@ def _read_ply_element_binary(f, definition: _PlyElementType, big_endian: bool) -
         In simple cases where every element has the same size, 2D numpy array
         corresponding to the data. The rows are the different values.
         Otherwise a list of lists/tuples of values, where the outer list is
-        each occurence of the element, and the inner lists have one value per
+        each occurrence of the element, and the inner lists have one value per
         property.
     """
     if not definition.count:
@@ -1027,7 +1027,7 @@ def _save_ply(
     Args:
         f: File object to which the 3D data should be written.
         verts: FloatTensor of shape (V, 3) giving vertex coordinates.
-        faces: LongTensor of shsape (F, 3) giving faces.
+        faces: LongTensor of shape (F, 3) giving faces.
         verts_normals: FloatTensor of shape (V, 3) giving vertex normals.
         ascii: (bool) whether to use the ascii ply format.
         decimal_places: Number of decimal places for saving if ascii=True.

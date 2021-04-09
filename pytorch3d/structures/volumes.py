@@ -77,7 +77,7 @@ class Volumes(object):
         World coordinates:
             - These define the locations of the centers of the volume cells
               in the world coordinates.
-            - They are specifiied with the following mapping that converts
+            - They are specified with the following mapping that converts
               points `x_local` in the local coordinates to points `x_world`
               in the world coordinates:
                 ```

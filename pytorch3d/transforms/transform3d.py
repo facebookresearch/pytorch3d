@@ -190,7 +190,7 @@ class Transform3d:
 
     def compose(self, *others):
         """
-        Return a new Transform3d with the tranforms to compose stored as
+        Return a new Transform3d with the transforms to compose stored as
         an internal list.
 
         Args:
@@ -254,7 +254,7 @@ class Transform3d:
                   independently without composing them.
 
         Returns:
-            A new Transform3D object contaning the inverse of the original
+            A new Transform3D object containing the inverse of the original
             transformation.
         """
 
@@ -302,7 +302,7 @@ class Transform3d:
         Args:
             points: Tensor of shape (P, 3) or (N, P, 3)
             eps: If eps!=None, the argument is used to clamp the
-                last coordinate before peforming the final division.
+                last coordinate before performing the final division.
                 The clamping corresponds to:
                 last_coord := (last_coord.sign() + (last_coord==0)) *
                 torch.clamp(last_coord.abs(), eps),
@@ -681,7 +681,7 @@ def _broadcast_bmm(a, b):
         b: torch tensor of shape (N, K, K)
 
     Returns:
-        a and b broadcast multipled. The output batch dimension is max(N, M).
+        a and b broadcast multiplied. The output batch dimension is max(N, M).
 
     To broadcast transforms across a batch dimension if M != N then
     expect that either M = 1 or N = 1. The tensor with batch dimension 1 is

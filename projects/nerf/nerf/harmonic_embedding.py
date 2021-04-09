@@ -42,7 +42,7 @@ class HarmonicEmbedding(torch.nn.Module):
             )`
 
         Note that `x` is also premultiplied by the base frequency `omega0`
-        before evaluting the harmonic functions.
+        before evaluating the harmonic functions.
         """
         super().__init__()
 

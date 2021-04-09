@@ -44,7 +44,7 @@ def _interpolate_zbuf(
             of the faces (in the packed representation) which
             overlap each pixel in the image.
         barycentric_coords: FloatTensor of shape (N, H, W, K, 3) specifying
-            the barycentric coordianates of each pixel
+            the barycentric coordinates of each pixel
             relative to the faces (in the packed
             representation) which overlap the pixel.
         meshes: Meshes object representing a batch of meshes.
@@ -98,7 +98,7 @@ def _try_place_rectangle(
     Example:
     (We always have placed the first rectangle horizontally and other
     rectangles above it.)
-    Let's say the placed boxes 1-4 are layed out like this.
+    Let's say the placed boxes 1-4 are laid out like this.
     The coordinates of the points marked X are stored in occupied.
     It is to the right of the X's that we seek to place rect.
 

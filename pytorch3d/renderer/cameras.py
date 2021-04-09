@@ -30,7 +30,7 @@ class CamerasBase(TensorProperties):
         The transformation from world -> view happens after applying a rotation (R)
         and translation (T)
     - NDC coordinate system: This is the normalized coordinate system that confines
-        in a volume the renderered part of the object or scene. Also known as view volume.
+        in a volume the rendered part of the object or scene. Also known as view volume.
         Given the PyTorch3D convention, (+1, +1, znear) is the top left near corner,
         and (-1, -1, zfar) is the bottom right far corner of the volume.
         The transformation from view -> NDC happens after applying the camera
@@ -78,7 +78,7 @@ class CamerasBase(TensorProperties):
 
     def unproject_points(self):
         """
-        Transform input points from NDC coodinates
+        Transform input points from NDC coordinates
         to the world / camera coordinates.
 
         Each of the input points `xy_depth` of shape (..., 3) is
@@ -210,7 +210,7 @@ class CamerasBase(TensorProperties):
 
                 For `CamerasBase.transform_points`, setting `eps > 0`
                 stabilizes gradients since it leads to avoiding division
-                by excessivelly low numbers for points close to the
+                by excessively low numbers for points close to the
                 camera plane.
 
         Returns
@@ -235,7 +235,7 @@ class CamerasBase(TensorProperties):
 
                 For `CamerasBase.transform_points`, setting `eps > 0`
                 stabilizes gradients since it leads to avoiding division
-                by excessivelly low numbers for points close to the
+                by excessively low numbers for points close to the
                 camera plane.
 
         Returns
@@ -318,7 +318,7 @@ def OpenGLPerspectiveCameras(
 class FoVPerspectiveCameras(CamerasBase):
     """
     A class which stores a batch of parameters to generate a batch of
-    projection matrices by specifiying the field of view.
+    projection matrices by specifying the field of view.
     The definition of the parameters follow the OpenGL perspective camera.
 
     The extrinsics of the camera (R and T matrices) can also be set in the
@@ -405,7 +405,7 @@ class FoVPerspectiveCameras(CamerasBase):
             degrees: bool, set to True if fov is specified in degrees.
 
         Returns:
-            torch.floatTensor of the calibration matrix with shape (N, 4, 4)
+            torch.FloatTensor of the calibration matrix with shape (N, 4, 4)
         """
         K = torch.zeros((self._N, 4, 4), device=self.device, dtype=torch.float32)
         ones = torch.ones((self._N), dtype=torch.float32, device=self.device)
@@ -421,7 +421,7 @@ class FoVPerspectiveCameras(CamerasBase):
         min_x = -max_x
 
         # NOTE: In OpenGL the projection matrix changes the handedness of the
-        # coordinate frame. i.e the NDC space postive z direction is the
+        # coordinate frame. i.e the NDC space positive z direction is the
         # camera space negative z direction. This is because the sign of the z
         # in the projection matrix is set to -1.0.
         # In pytorch3d we maintain a right handed coordinate system throughout
@@ -444,7 +444,7 @@ class FoVPerspectiveCameras(CamerasBase):
 
     def get_projection_transform(self, **kwargs) -> Transform3d:
         """
-        Calculate the perpective projection matrix with a symmetric
+        Calculate the perspective projection matrix with a symmetric
         viewing frustrum. Use column major order.
         The viewing frustrum will be projected into ndc, s.t.
         (max_x, max_y) -> (+1, +1)
@@ -586,7 +586,7 @@ def OpenGLOrthographicCameras(
 class FoVOrthographicCameras(CamerasBase):
     """
     A class which stores a batch of parameters to generate a batch of
-    projection matrices by specifiying the field of view.
+    projection matrices by specifying the field of view.
     The definition of the parameters follow the OpenGL orthographic camera.
     """
 
@@ -612,7 +612,7 @@ class FoVOrthographicCameras(CamerasBase):
             max_y: maximum y coordinate of the frustrum.
             min_y: minimum y coordinate of the frustrum.
             max_x: maximum x coordinate of the frustrum.
-            min_x: minumum x coordinage of the frustrum
+            min_x: minimum x coordinate of the frustrum
             scale_xyz: scale factors for each axis of shape (N, 3).
             R: Rotation matrix of shape (N, 3, 3).
             T: Translation of shape (N, 3).
@@ -649,7 +649,7 @@ class FoVOrthographicCameras(CamerasBase):
             znear: near clipping plane of the view frustrum.
             zfar: far clipping plane of the view frustrum.
             max_x: maximum x coordinate of the frustrum.
-            min_x: minumum x coordinage of the frustrum
+            min_x: minimum x coordinate of the frustrum
             max_y: maximum y coordinate of the frustrum.
             min_y: minimum y coordinate of the frustrum.
             scale_xyz: scale factors for each axis of shape (N, 3).
@@ -693,7 +693,7 @@ class FoVOrthographicCameras(CamerasBase):
             scale_z = 2 / (far-near)
             mid_x = (max_x + min_x) / (max_x - min_x)
             mix_y = (max_y + min_y) / (max_y - min_y)
-            mid_z = (far + near) / (far−near)
+            mid_z = (far + near) / (far - near)
 
             K = [
                     [scale_x,        0,         0,  -mid_x],
@@ -811,7 +811,7 @@ class PerspectiveCameras(CamerasBase):
     If you wish to provide parameters in screen space, you NEED to provide
     the image_size = (imwidth, imheight).
     If you wish to provide parameters in NDC space, you should NOT provide
-    image_size. Providing valid image_size will triger a screen space to
+    image_size. Providing valid image_size will trigger a screen space to
     NDC space transformation in the camera.
 
     For example, here is how to define cameras on the two spaces.
@@ -978,7 +978,7 @@ class OrthographicCameras(CamerasBase):
     If you wish to provide parameters in screen space, you NEED to provide
     the image_size = (imwidth, imheight).
     If you wish to provide parameters in NDC space, you should NOT provide
-    image_size. Providing valid image_size will triger a screen space to
+    image_size. Providing valid image_size will trigger a screen space to
     NDC space transformation in the camera.
 
     For example, here is how to define cameras on the two spaces.
@@ -1120,7 +1120,7 @@ def _get_sfm_calibration_matrix(
     image_size=None,
 ) -> torch.Tensor:
     """
-    Returns a calibration matrix of a perspective/orthograpic camera.
+    Returns a calibration matrix of a perspective/orthographic camera.
 
     Args:
         N: Number of cameras.
@@ -1355,7 +1355,7 @@ def look_at_view_transform(
 
     Args:
         dist: distance of the camera from the object
-        elev: angle in degres or radians. This is the angle between the
+        elev: angle in degrees or radians. This is the angle between the
             vector from the object to the camera, and the horizontal plane y = 0 (xz-plane).
         azim: angle in degrees or radians. The vector from the object to
             the camera is projected onto a horizontal plane y = 0.
@@ -1365,7 +1365,7 @@ def look_at_view_transform(
         degrees: boolean flag to indicate if the elevation and azimuth
             angles are specified in degrees or radians.
         eye: the position of the camera(s) in world coordinates. If eye is not
-            None, it will overide the camera position derived from dist, elev, azim.
+            None, it will override the camera position derived from dist, elev, azim.
         up: the direction of the x axis in the world coordinate system.
         at: the position of the object(s) in world coordinates.
         eye, up and at can be of shape (1, 3) or (N, 3).

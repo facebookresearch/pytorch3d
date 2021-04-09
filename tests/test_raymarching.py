@@ -16,7 +16,7 @@ class TestRaymarching(TestCaseMixin, unittest.TestCase):
         n_rays=10, n_pts_per_ray=9, device="cuda", dtype=torch.float32
     ):
         """
-        Generate a batch of ray points with features, densities, and z-coodinates
+        Generate a batch of ray points with features, densities, and z-coordinates
         such that their EmissionAbsorption renderring results in
         feature renders `features_gt`, depth renders `depths_gt`,
         and opacity renders `opacities_gt`.

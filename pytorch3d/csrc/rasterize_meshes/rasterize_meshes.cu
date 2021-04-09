@@ -105,7 +105,7 @@ __device__ bool CheckPointOutsideBoundingBox(
 // which contains Pixel structs with the indices of the faces which intersect
 // with this pixel sorted by closest z distance. If the point pxy lies in the
 // face, the list (q) is updated and re-orderered in place. In addition
-// the auxillary variables q_size, q_max_z and q_max_idx are also modified.
+// the auxiliary variables q_size, q_max_z and q_max_idx are also modified.
 // This code is shared between RasterizeMeshesNaiveCudaKernel and
 // RasterizeMeshesFineCudaKernel.
 template <typename FaceQ>
@@ -275,7 +275,7 @@ __global__ void RasterizeMeshesNaiveCudaKernel(
     const int yi = H - 1 - pix_idx / W;
     const int xi = W - 1 - pix_idx % W;
 
-    // screen coordinates to ndc coordiantes of pixel.
+    // screen coordinates to ndc coordinates of pixel.
     const float xf = PixToNonSquareNdc(xi, W, H);
     const float yf = PixToNonSquareNdc(yi, H, W);
     const float2 pxy = make_float2(xf, yf);

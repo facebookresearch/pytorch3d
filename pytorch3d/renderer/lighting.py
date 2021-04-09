@@ -44,7 +44,7 @@ def diffuse(normals, color, direction) -> torch.Tensor:
         average/interpolated face coordinates.
     """
     # TODO: handle multiple directional lights per batch element.
-    # TODO: handle attentuation.
+    # TODO: handle attenuation.
 
     # Ensure color and location have same batch dimension as normals
     normals, color, direction = convert_to_tensors_and_broadcast(
@@ -107,7 +107,7 @@ def specular(
         meshes.verts_packed_to_mesh_idx() or meshes.faces_packed_to_mesh_idx().
     """
     # TODO: handle multiple directional lights
-    # TODO: attentuate based on inverse squared distance to the light source
+    # TODO: attenuate based on inverse squared distance to the light source
 
     if points.shape != normals.shape:
         msg = "Expected points and normals to have the same shape: got %r, %r"

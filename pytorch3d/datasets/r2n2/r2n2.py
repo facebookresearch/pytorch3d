@@ -99,7 +99,7 @@ class R2N2(ShapeNetBase):
             path.join(SYNSET_DICT_DIR, "r2n2_synset_dict.json"), "r"
         ) as read_dict:
             self.synset_dict = json.load(read_dict)
-        # Inverse dicitonary mapping synset labels to corresponding offsets.
+        # Inverse dictionary mapping synset labels to corresponding offsets.
         self.synset_inv = {label: offset for offset, label in self.synset_dict.items()}
 
         # Store synset and model ids of objects mentioned in the splits_file.
@@ -383,7 +383,7 @@ class R2N2(ShapeNetBase):
             view_idxs: each model will be rendered with the orientation(s) of the specified
                 views. Only render by view_idxs if no camera or args for BlenderCamera is
                 supplied.
-            Accepts any of the args of the render function in ShapnetBase:
+            Accepts any of the args of the render function in ShapeNetBase:
             model_ids: List[str] of model_ids of models intended to be rendered.
             categories: List[str] of categories intended to be rendered. categories
                 and sample_nums must be specified at the same time. categories can be given

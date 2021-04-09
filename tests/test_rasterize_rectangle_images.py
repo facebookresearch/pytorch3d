@@ -62,7 +62,7 @@ verts0 = torch.tensor(
 )
 faces0 = torch.tensor([[1, 0, 2], [4, 3, 5]], dtype=torch.int64)
 
-# Points for a simple pointcloud. Get the vertices from a
+# Points for a simple point cloud. Get the vertices from a
 # torus and apply rotations such that the points are no longer
 # symmerical in X/Y.
 torus_mesh = torus(r=0.25, R=1.0, sides=5, rings=2 * 5)
@@ -771,7 +771,7 @@ class TestRasterizeRectangleImagesPointclouds(TestCaseMixin, unittest.TestCase):
 
     def test_render_pointcloud(self):
         """
-        Test a textured poincloud is rendered correctly in a non square image.
+        Test a textured point cloud is rendered correctly in a non square image.
         """
         device = torch.device("cuda:0")
         pointclouds = Pointclouds(

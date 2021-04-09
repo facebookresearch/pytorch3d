@@ -25,8 +25,9 @@ def sample_points_from_meshes(
     Tuple[torch.Tensor, torch.Tensor, torch.Tensor],
 ]:
     """
-    Convert a batch of meshes to a pointcloud by uniformly sampling points on
-    the surface of the mesh with probability proportional to the face area.
+    Convert a batch of meshes to a batch of pointclouds by uniformly sampling
+    points on the surface of the mesh with probability proportional to the
+    face area.
 
     Args:
         meshes: A Meshes object with a batch of N meshes.
@@ -54,7 +55,7 @@ def sample_points_from_meshes(
 
         .. code-block:: python
 
-            Poinclouds(samples, normals=normals, features=textures)
+            Pointclouds(samples, normals=normals, features=textures)
     """
     if meshes.isempty():
         raise ValueError("Meshes are empty.")
@@ -71,7 +72,7 @@ def sample_points_from_meshes(
     num_meshes = len(meshes)
     num_valid_meshes = torch.sum(meshes.valid)  # Non empty meshes.
 
-    # Intialize samples tensor with fill value 0 for empty meshes.
+    # Initialize samples tensor with fill value 0 for empty meshes.
     samples = torch.zeros((num_meshes, num_samples, 3), device=meshes.device)
 
     # Only compute samples for non empty meshes
@@ -104,7 +105,7 @@ def sample_points_from_meshes(
     samples[meshes.valid] = w0[:, :, None] * a + w1[:, :, None] * b + w2[:, :, None] * c
 
     if return_normals:
-        # Intialize normals tensor with fill value 0 for empty meshes.
+        # Initialize normals tensor with fill value 0 for empty meshes.
         # Normals for the sampled points are face normals computed from
         # the vertices of the face in which the sampled point lies.
         normals = torch.zeros((num_meshes, num_samples, 3), device=meshes.device)

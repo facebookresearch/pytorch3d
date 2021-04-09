@@ -531,7 +531,7 @@ class TestRenderVolumes(TestCaseMixin, unittest.TestCase):
                 # get the EA raymarcher
                 raymarcher = EmissionAbsorptionRaymarcher()
 
-                # intialize the renderer
+                # initialize the renderer
                 renderer = VolumeRenderer(
                     raysampler=raysampler,
                     raymarcher=raymarcher,
@@ -574,8 +574,8 @@ class TestRenderVolumes(TestCaseMixin, unittest.TestCase):
     def test_rotating_cube_volume_render(self):
         """
         Generates 4 renders of 4 sides of a volume representing a 3D cube.
-        Since each side of the cube is homogenously colored with
-        a different color, this should result in 4 images of homogenous color
+        Since each side of the cube is homogeneously colored with
+        a different color, this should result in 4 images of homogeneous color
         with the depth of each pixel equal to a constant.
         """
 

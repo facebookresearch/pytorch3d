@@ -67,13 +67,13 @@ class EmissionAbsorptionRaymarcher(torch.nn.Module):
             rays_features: Per-ray feature values represented with a tensor
                 of shape `(..., n_points_per_ray, feature_dim)`.
             eps: A lower bound added to `rays_densities` before computing
-                the absorbtion function (cumprod of `1-rays_densities` along
+                the absorption function (cumprod of `1-rays_densities` along
                 each ray). This prevents the cumprod to yield exact 0
                 which would inhibit any gradient-based learning.
 
         Returns:
             features_opacities: A tensor of shape `(..., feature_dim+1)`
-                that concatenates two tensors alonng the last dimension:
+                that concatenates two tensors along the last dimension:
                     1) features: A tensor of per-ray renders
                         of shape `(..., feature_dim)`.
                     2) opacities: A tensor of per-ray opacity values

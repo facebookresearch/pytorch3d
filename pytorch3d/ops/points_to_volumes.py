@@ -140,7 +140,7 @@ def add_points_features_to_volume_densities_features(
         volume_features: Batch of input feature volumes of shape
             `(minibatch, feature_dim, D, H, W)`
             If set to `None`, the `volume_features` will be automatically
-            instantiatied with a correct size and filled with 0s.
+            instantiated with a correct size and filled with 0s.
         mode: The mode of the conversion of individual points into the volume.
             Set either to `nearest` or `trilinear`:
             `nearest`: Each 3D point is first rounded to the volumetric
@@ -310,7 +310,7 @@ def splat_points_to_volumes(
     # minibatch x n_points x feature_dim -> minibatch x feature_dim x n_points
     points_features = points_features.permute(0, 2, 1).contiguous()
 
-    # XYZ = the upper-left volume index of the 8-neigborhood of every point
+    # XYZ = the upper-left volume index of the 8-neighborhood of every point
     # grid_sizes is of the form (minibatch, depth-height-width)
     grid_sizes_xyz = grid_sizes[:, [2, 1, 0]]
 
