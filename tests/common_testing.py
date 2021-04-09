@@ -1,5 +1,6 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
+import os
 import unittest
 from pathlib import Path
 from typing import Callable, Optional, Union
@@ -19,8 +20,13 @@ def get_tests_dir() -> Path:
 def get_pytorch3d_dir() -> Path:
     """
     Returns Path for the root PyTorch3D directory.
+
+    Facebook internal systems need a special case here.
     """
-    return get_tests_dir().parent
+    if os.environ.get("INSIDE_RE_WORKER") is not None:
+        return Path(__file__).resolve().parent
+    else:
+        return Path(__file__).resolve().parent.parent
 
 
 def load_rgb_image(filename: str, data_dir: Union[str, Path]):
