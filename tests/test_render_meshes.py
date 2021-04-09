@@ -51,6 +51,7 @@ from pytorch3d.utils.torus import torus
 # All saved images have prefix DEBUG_
 DEBUG = False
 DATA_DIR = get_tests_dir() / "data"
+TUTORIAL_DATA_DIR = get_pytorch3d_dir() / "docs/tutorials/data"
 
 
 class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
@@ -388,8 +389,8 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
         The pupils in the eyes of the cow should always be looking to the left.
         """
         device = torch.device("cuda:0")
-        obj_dir = get_pytorch3d_dir() / "docs/tutorials/data"
-        obj_filename = obj_dir / "cow_mesh/cow.obj"
+
+        obj_filename = TUTORIAL_DATA_DIR / "cow_mesh/cow.obj"
 
         # Load mesh + texture
         verts, faces, aux = load_obj(
@@ -970,8 +971,8 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
         Also check that the backward pass for texture atlas rendering is differentiable.
         """
         device = torch.device("cuda:0")
-        obj_dir = get_pytorch3d_dir() / "docs/tutorials/data"
-        obj_filename = obj_dir / "cow_mesh/cow.obj"
+
+        obj_filename = TUTORIAL_DATA_DIR / "cow_mesh/cow.obj"
 
         # Load mesh and texture as a per face texture atlas.
         verts, faces, aux = load_obj(
