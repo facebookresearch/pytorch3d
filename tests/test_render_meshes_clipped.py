@@ -9,12 +9,11 @@ See pytorch3d/renderer/mesh/clip.py for more details about the
 clipping process.
 """
 import unittest
-from pathlib import Path
 
 import imageio
 import numpy as np
 import torch
-from common_testing import TestCaseMixin, load_rgb_image
+from common_testing import TestCaseMixin, load_rgb_image, get_tests_dir
 from pytorch3d.io import save_obj
 from pytorch3d.renderer.cameras import FoVPerspectiveCameras, look_at_view_transform
 from pytorch3d.renderer.lighting import PointLights
@@ -34,7 +33,7 @@ from pytorch3d.structures.meshes import Meshes
 # If DEBUG=True, save out images generated in the tests for debugging.
 # All saved images have prefix DEBUG_
 DEBUG = False
-DATA_DIR = Path(__file__).resolve().parent / "data"
+DATA_DIR = get_tests_dir() / "data"
 
 
 class TestRenderMeshesClipping(TestCaseMixin, unittest.TestCase):

@@ -9,6 +9,20 @@ import torch
 from PIL import Image
 
 
+def get_tests_dir() -> Path:
+    """
+    Returns Path for the directory containing this file.
+    """
+    return Path(__file__).resolve().parent
+
+
+def get_pytorch3d_dir() -> Path:
+    """
+    Returns Path for the root PyTorch3D directory.
+    """
+    return get_tests_dir().parent
+
+
 def load_rgb_image(filename: str, data_dir: Union[str, Path]):
     filepath = data_dir / filename
     with Image.open(filepath) as raw_image:

@@ -2,11 +2,15 @@
 
 import unittest
 from itertools import product
-from pathlib import Path
 
 import numpy as np
 import torch
-from common_testing import TestCaseMixin, load_rgb_image
+from common_testing import (
+    TestCaseMixin,
+    load_rgb_image,
+    get_pytorch3d_dir,
+    get_tests_dir,
+)
 from PIL import Image
 from pytorch3d.io import load_obj
 from pytorch3d.renderer.cameras import FoVPerspectiveCameras, look_at_view_transform
@@ -42,7 +46,7 @@ from pytorch3d.utils import torus
 
 
 DEBUG = False
-DATA_DIR = Path(__file__).resolve().parent / "data"
+DATA_DIR = get_tests_dir() / "data"
 
 # Verts/Faces for a simple mesh with two faces.
 verts0 = torch.tensor(
@@ -449,7 +453,7 @@ class TestRasterizeRectangleImagesMeshes(TestCaseMixin, unittest.TestCase):
         Test a larger textured mesh is rendered correctly in a non square image.
         """
         device = torch.device("cuda:0")
-        obj_dir = Path(__file__).resolve().parent.parent / "docs/tutorials/data"
+        obj_dir = get_pytorch3d_dir() / "docs/tutorials/data"
         obj_filename = obj_dir / "cow_mesh/cow.obj"
 
         # Load mesh + texture

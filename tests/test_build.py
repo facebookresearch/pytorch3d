@@ -3,7 +3,8 @@ import json
 import os
 import unittest
 from collections import Counter
-from pathlib import Path
+
+from common_testing import get_pytorch3d_dir, get_tests_dir
 
 
 # This file groups together tests which look at the code without running it.
@@ -16,7 +17,7 @@ class TestBuild(unittest.TestCase):
     def test_name_clash(self):
         # For setup.py, all translation units need distinct names, so we
         # cannot have foo.cu and foo.cpp, even in different directories.
-        test_dir = Path(__file__).resolve().parent
+        test_dir = get_tests_dir()
         source_dir = test_dir.parent / "pytorch3d"
 
         stems = []
@@ -30,7 +31,7 @@ class TestBuild(unittest.TestCase):
 
     @unittest.skipIf(in_conda_build, "In conda build")
     def test_copyright(self):
-        test_dir = Path(__file__).resolve().parent
+        test_dir = get_tests_dir()
         root_dir = test_dir.parent
 
         extensions = ("py", "cu", "cuh", "cpp", "h", "hpp", "sh")
@@ -63,8 +64,8 @@ class TestBuild(unittest.TestCase):
     @unittest.skipIf(in_conda_build, "In conda build")
     def test_valid_ipynbs(self):
         # Check that the ipython notebooks are valid json
-        test_dir = Path(__file__).resolve().parent
-        tutorials_dir = test_dir.parent / "docs" / "tutorials"
+        root_dir = get_pytorch3d_dir()
+        tutorials_dir = root_dir / "docs" / "tutorials"
         tutorials = sorted(tutorials_dir.glob("*.ipynb"))
 
         for tutorial in tutorials:

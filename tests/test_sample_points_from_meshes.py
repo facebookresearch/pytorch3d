@@ -2,11 +2,15 @@
 
 
 import unittest
-from pathlib import Path
 
 import numpy as np
 import torch
-from common_testing import TestCaseMixin, get_random_cuda_device
+from common_testing import (
+    TestCaseMixin,
+    get_random_cuda_device,
+    get_pytorch3d_dir,
+    get_tests_dir,
+)
 from PIL import Image
 from pytorch3d.io import load_objs_as_meshes
 from pytorch3d.ops import sample_points_from_meshes
@@ -26,7 +30,7 @@ from pytorch3d.utils.ico_sphere import ico_sphere
 # If DEBUG=True, save out images generated in the tests for debugging.
 # All saved images have prefix DEBUG_
 DEBUG = False
-DATA_DIR = Path(__file__).resolve().parent / "data"
+DATA_DIR = get_tests_dir() / "data"
 
 
 class TestSamplePoints(TestCaseMixin, unittest.TestCase):
@@ -261,7 +265,7 @@ class TestSamplePoints(TestCaseMixin, unittest.TestCase):
         Confirm that torch.multinomial does not sample elements which have
         zero probability using a real example of input from a training run.
         """
-        weights = torch.load(Path(__file__).resolve().parent / "weights.pt")
+        weights = torch.load(get_tests_dir() / "weights.pt")
         S = 4096
         num_trials = 100
         for _ in range(0, num_trials):
@@ -378,7 +382,7 @@ class TestSamplePoints(TestCaseMixin, unittest.TestCase):
         # the cow mesh and its texture uv to a pointcloud with texture
 
         device = torch.device("cuda:0")
-        obj_dir = Path(__file__).resolve().parent.parent / "docs/tutorials/data"
+        obj_dir = get_pytorch3d_dir() / "docs/tutorials/data"
         obj_filename = obj_dir / "cow_mesh/cow.obj"
 
         for text_type in ("uv", "atlas"):
