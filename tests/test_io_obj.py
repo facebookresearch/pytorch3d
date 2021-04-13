@@ -8,11 +8,7 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile
 
 import torch
-from common_testing import (
-    TestCaseMixin,
-    get_pytorch3d_dir,
-    get_tests_dir,
-)
+from common_testing import TestCaseMixin, get_pytorch3d_dir, get_tests_dir
 from iopath.common.file_io import PathManager
 from pytorch3d.io import IO, load_obj, load_objs_as_meshes, save_obj
 from pytorch3d.io.mtl_io import (
@@ -23,6 +19,7 @@ from pytorch3d.io.mtl_io import (
 from pytorch3d.renderer import TexturesAtlas, TexturesUV, TexturesVertex
 from pytorch3d.structures import Meshes, join_meshes_as_batch
 from pytorch3d.utils import torus
+
 
 DATA_DIR = get_tests_dir() / "data"
 TUTORIAL_DATA_DIR = get_pytorch3d_dir() / "docs/tutorials/data"

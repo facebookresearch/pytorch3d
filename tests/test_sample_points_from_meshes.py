@@ -7,8 +7,8 @@ import numpy as np
 import torch
 from common_testing import (
     TestCaseMixin,
-    get_random_cuda_device,
     get_pytorch3d_dir,
+    get_random_cuda_device,
     get_tests_dir,
 )
 from PIL import Image

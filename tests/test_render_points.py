@@ -12,9 +12,9 @@ import numpy as np
 import torch
 from common_testing import (
     TestCaseMixin,
-    load_rgb_image,
     get_pytorch3d_dir,
     get_tests_dir,
+    load_rgb_image,
 )
 from PIL import Image
 from pytorch3d.renderer.cameras import (

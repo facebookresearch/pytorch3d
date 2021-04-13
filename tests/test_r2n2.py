@@ -5,11 +5,10 @@ Sanity checks for loading R2N2.
 import json
 import os
 import unittest
-from pathlib import Path
 
 import numpy as np
 import torch
-from common_testing import TestCaseMixin, load_rgb_image, get_tests_dir
+from common_testing import TestCaseMixin, get_tests_dir, load_rgb_image
 from PIL import Image
 from pytorch3d.datasets import (
     R2N2,

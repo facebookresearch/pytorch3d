@@ -13,7 +13,7 @@ import unittest
 import imageio
 import numpy as np
 import torch
-from common_testing import TestCaseMixin, load_rgb_image, get_tests_dir
+from common_testing import TestCaseMixin, get_tests_dir, load_rgb_image
 from pytorch3d.io import save_obj
 from pytorch3d.renderer.cameras import FoVPerspectiveCameras, look_at_view_transform
 from pytorch3d.renderer.lighting import PointLights
