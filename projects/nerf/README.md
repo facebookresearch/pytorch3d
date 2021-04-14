@@ -3,7 +3,7 @@ Neural Radiance Fields in PyTorch3D
 
 This project implements the Neural Radiance Fields (NeRF) from [1].
 
-<img src="https://raw.githubusercontent.com/facebookresearch/pytorch3d/master/.github/nerf_project_logo.gif" width="600" height="300"/>
+<img src="https://raw.githubusercontent.com/facebookresearch/pytorch3d/master/.github/nerf_project_logo.gif" width="600" height="338"/>
 
 
 Installation
@@ -77,6 +77,16 @@ https://dl.fbaipublicfiles.com/pytorch3d_nerf_data
 
 Attribution: `lego` and `fern` are data from the original code release of [1] in https://drive.google.com/drive/folders/128yBriW1IG_3NJ5Rp7APSTZsJqdJdfc1, which are hosted under the CC-BY license (https://creativecommons.org/licenses/by/4.0/) The S3 bucket files contains the same images while the camera matrices have been adjusted to follow the PyTorch3D convention.
 
+#### Quantitative results
+Below are the comparisons between our implementation and the official [`TensorFlow code`](https://github.com/bmild/nerf). The speed is measured on NVidia Quadro GP100.
+```
++----------------+------------------+------------------+-----------------+
+| Implementation |  Lego: test PSNR |  Fern: test PSNR |  training speed |
++----------------+------------------+------------------+-----------------+
+| TF (official)  |             31.0 |             27.5 |  0.24 sec/it    |
+| PyTorch3D      |             32.7 |             27.9 |  0.18 sec/it    |
++----------------+------------------+------------------+-----------------+
+```
 
 #### References
 [1] Ben Mildenhall and Pratul P. Srinivasan and Matthew Tancik and Jonathan T. Barron and Ravi Ramamoorthi and Ren Ng, NeRF: Representing Scenes as Neural Radiance Fields for View Synthesis, ECCV2020
