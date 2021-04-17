@@ -323,14 +323,13 @@ def splat_points_to_volumes(
     rXYZ = points_3d_indices - XYZ.type_as(points_3d)  # remainder of floor
 
     # split into separate coordinate vectors
-    # pyre-fixme[16]: `LongTensor` has no attribute `split`.
     X, Y, Z = XYZ.split(1, dim=2)
     # rX = remainder after floor = 1-"the weight of each vote into
     #      the X coordinate of the 8-neighborhood"
-    # pyre-fixme[16]: `Tensor` has no attribute `split`.
     rX, rY, rZ = rXYZ.split(1, dim=2)
 
     # get random indices for the purpose of adding out-of-bounds values
+    # pyre-fixme[16]: `Tensor` has no attribute `new_zeros`.
     rand_idx = X.new_zeros(X.shape).random_(0, n_voxels)
 
     # iterate over the x, y, z indices of the 8-neighborhood (xdiff, ydiff, zdiff)
@@ -348,7 +347,6 @@ def splat_points_to_volumes(
                 w = wX * wY * wZ
 
                 # valid - binary indicators of votes that fall into the volume
-                # pyre-fixme[16]: `int` has no attribute `long`.
                 valid = (
                     (0 <= X_)
                     * (X_ < grid_sizes_xyz[:, None, 0:1])
@@ -367,8 +365,6 @@ def splat_points_to_volumes(
                 idx_valid = idx * valid + rand_idx * (1 - valid)
                 w_valid = w * valid.type_as(w)
                 if mask is not None:
-                    # pyre-fixme[6]: Expected `_OtherTensor` for 1st param but got
-                    #  `int`.
                     w_valid = w_valid * mask.type_as(w)[:, :, None]
 
                 # scatter add casts the votes into the weight accumulator
@@ -378,7 +374,6 @@ def splat_points_to_volumes(
 
                 # reshape idx_valid -> (minibatch, feature_dim, n_points)
                 idx_valid = idx_valid.view(ba, 1, n_points).expand_as(points_features)
-                # pyre-fixme[16]: `int` has no attribute `view`.
                 w_valid = w_valid.view(ba, 1, n_points)
 
                 # volume_features of shape (minibatch, feature_dim, n_voxels)

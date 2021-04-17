@@ -164,7 +164,6 @@ def packed_to_list(x: torch.Tensor, split_size: Union[list, int]):
     Returns:
       x_list: A list of Tensors
     """
-    # pyre-fixme[16]: `Tensor` has no attribute `split`.
     return x.split(split_size, dim=0)
 
 
