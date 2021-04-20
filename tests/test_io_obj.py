@@ -786,6 +786,11 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
         mesh_rgb = Meshes(verts=[verts], faces=[faces], textures=rgb_tex)
         mesh_rgb3 = join_meshes_as_batch([mesh_rgb, mesh_rgb, mesh_rgb])
         check_triple(mesh_rgb, mesh_rgb3)
+        nums_rgb = mesh_rgb.textures._num_verts_per_mesh
+        nums_rgb3 = mesh_rgb3.textures._num_verts_per_mesh
+        self.assertEqual(type(nums_rgb), list)
+        self.assertEqual(type(nums_rgb3), list)
+        self.assertListEqual(nums_rgb * 3, nums_rgb3)
 
         # meshes with texture atlas, join into a batch.
         device = "cuda:0"
