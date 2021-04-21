@@ -201,6 +201,7 @@ class Transform3d:
         """
         out = Transform3d(device=self.device)
         out._matrix = self._matrix.clone()
+        out.__class__ = self.__class__
         for other in others:
             if not isinstance(other, Transform3d):
                 msg = "Only possible to compose Transform3d objects; got %s"
@@ -279,11 +280,13 @@ class Transform3d:
                 tinv._transforms = [t.inverse() for t in reversed(self._transforms)]
                 last = Transform3d(device=self.device)
                 last._matrix = i_matrix
+                last.__class__ = self.__class__
                 tinv._transforms.append(last)
             else:
                 # b) Or there are no stored transformations
                 # we just set inverted matrix
                 tinv._matrix = i_matrix
+                tinv.__class__ = self.__class__
 
         return tinv
 
@@ -396,6 +399,7 @@ class Transform3d:
             other._lu = [elem.clone() for elem in self._lu]
         other._matrix = self._matrix.clone()
         other._transforms = [t.clone() for t in self._transforms]
+        other.__class__ = self.__class__
         return other
 
     def to(self, device, copy: bool = False, dtype=None):
