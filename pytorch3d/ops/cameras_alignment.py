@@ -97,7 +97,6 @@ def corresponding_cameras_alignment(
         cameras_src_aligned: `cameras_src` after applying the alignment transform.
     """
 
-    # pyre-fixme[16]: `CamerasBase` has no attribute `R`.
     if cameras_src.R.shape[0] != cameras_tgt.R.shape[0]:
         raise ValueError(
             "cameras_src and cameras_tgt have to contain the same number of cameras!"
@@ -121,7 +120,6 @@ def corresponding_cameras_alignment(
         torch.bmm(
             align_t_T[:, None].repeat(cameras_src.R.shape[0], 1, 1), cameras_src.R
         )[:, 0]
-        # pyre-fixme[16]: `CamerasBase` has no attribute `T`.
         + cameras_src.T * align_t_s
     )
 
@@ -169,7 +167,6 @@ def _align_camera_extrinsics(
         R_A = (U V^T)^T
         ```
     """
-    # pyre-fixme[16]: `CamerasBase` has no attribute `R`.
     RRcov = torch.bmm(cameras_src.R, cameras_tgt.R.transpose(2, 1)).mean(0)
     U, _, V = torch.svd(RRcov)
     align_t_R = V @ U.t()
@@ -199,8 +196,15 @@ def _align_camera_extrinsics(
         T_A = mean(B) - mean(A) * s_A
         ```
     """
-    # pyre-fixme[16]: `CamerasBase` has no attribute `T`.
+    # pyre-fixme[29]:
+    #  `Union[BoundMethod[typing.Callable(torch.Tensor.__getitem__)[[Named(self,
+    #  torch.Tensor), Named(item, typing.Any)], typing.Any], torch.Tensor],
+    #  torch.Tensor, torch.nn.Module]` is not a function.
     A = torch.bmm(cameras_src.R, cameras_src.T[:, :, None])[:, :, 0]
+    # pyre-fixme[29]:
+    #  `Union[BoundMethod[typing.Callable(torch.Tensor.__getitem__)[[Named(self,
+    #  torch.Tensor), Named(item, typing.Any)], typing.Any], torch.Tensor],
+    #  torch.Tensor, torch.nn.Module]` is not a function.
     B = torch.bmm(cameras_src.R, cameras_tgt.T[:, :, None])[:, :, 0]
     Amu = A.mean(0, keepdim=True)
     Bmu = B.mean(0, keepdim=True)

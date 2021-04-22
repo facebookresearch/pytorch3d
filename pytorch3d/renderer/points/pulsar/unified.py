@@ -189,17 +189,11 @@ class PulsarPointsRenderer(nn.Module):
         if orthogonal_projection:
             focal_length = torch.zeros((1,), dtype=torch.float32)
             if isinstance(cameras, FoVOrthographicCameras):
-                # pyre-fixme[16]: `FoVOrthographicCameras` has no attribute `znear`.
                 znear = kwargs.get("znear", cameras.znear)[cloud_idx]
-                # pyre-fixme[16]: `FoVOrthographicCameras` has no attribute `zfar`.
                 zfar = kwargs.get("zfar", cameras.zfar)[cloud_idx]
-                # pyre-fixme[16]: `FoVOrthographicCameras` has no attribute `max_y`.
                 max_y = kwargs.get("max_y", cameras.max_y)[cloud_idx]
-                # pyre-fixme[16]: `FoVOrthographicCameras` has no attribute `min_y`.
                 min_y = kwargs.get("min_y", cameras.min_y)[cloud_idx]
-                # pyre-fixme[16]: `FoVOrthographicCameras` has no attribute `max_x`.
                 max_x = kwargs.get("max_x", cameras.max_x)[cloud_idx]
-                # pyre-fixme[16]: `FoVOrthographicCameras` has no attribute `min_x`.
                 min_x = kwargs.get("min_x", cameras.min_x)[cloud_idx]
                 if max_y != -min_y:
                     raise ValueError(
@@ -212,9 +206,7 @@ class PulsarPointsRenderer(nn.Module):
                         f"Max is {max_x} and min is {min_x}."
                     )
                 if not torch.all(
-                    # pyre-fixme[16]: `FoVOrthographicCameras` has no attribute `scale_xyz`.
-                    kwargs.get("scale_xyz", cameras.scale_xyz)[cloud_idx]
-                    == 1.0
+                    kwargs.get("scale_xyz", cameras.scale_xyz)[cloud_idx] == 1.0
                 ):
                     raise ValueError(
                         "The orthographic camera scale must be ((1.0, 1.0, 1.0),). "
@@ -297,7 +289,6 @@ class PulsarPointsRenderer(nn.Module):
                     torch.zeros((1,), dtype=torch.float32),
                 )
             else:
-                # pyre-fixme[16]: `PerspectiveCameras` has no attribute `focal_length`.
                 focal_length_conf = kwargs.get("focal_length", cameras.focal_length)[
                     cloud_idx
                 ]
@@ -336,7 +327,6 @@ class PulsarPointsRenderer(nn.Module):
                 )
                 sensor_width = focal_length / focal_length_px * 2.0
                 principal_point_x = (
-                    # pyre-fixme[16]: `PerspectiveCameras` has no attribute `principal_point`.
                     kwargs.get("principal_point", cameras.principal_point)[cloud_idx][0]
                     * 0.5
                     * self.renderer._renderer.width

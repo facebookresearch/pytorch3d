@@ -478,17 +478,17 @@ class FoVPerspectiveCameras(CamerasBase):
                     [0,    0,    1,   0],
             ]
         """
-        K = kwargs.get("K", self.K)  # pyre-ignore[16]
+        K = kwargs.get("K", self.K)
         if K is not None:
             if K.shape != (self._N, 4, 4):
                 msg = "Expected K to have shape of (%r, 4, 4)"
                 raise ValueError(msg % (self._N))
         else:
             K = self.compute_projection_matrix(
-                kwargs.get("znear", self.znear),  # pyre-ignore[16]
-                kwargs.get("zfar", self.zfar),  # pyre-ignore[16]
-                kwargs.get("fov", self.fov),  # pyre-ignore[16]
-                kwargs.get("aspect_ratio", self.aspect_ratio),  # pyre-ignore[16]
+                kwargs.get("znear", self.znear),
+                kwargs.get("zfar", self.zfar),
+                kwargs.get("fov", self.fov),
+                kwargs.get("aspect_ratio", self.aspect_ratio),
                 kwargs.get("degrees", self.degrees),
             )
 
@@ -702,20 +702,20 @@ class FoVOrthographicCameras(CamerasBase):
                     [0,              0,         0,       1],
             ]
         """
-        K = kwargs.get("K", self.K)  # pyre-ignore[16]
+        K = kwargs.get("K", self.K)
         if K is not None:
             if K.shape != (self._N, 4, 4):
                 msg = "Expected K to have shape of (%r, 4, 4)"
                 raise ValueError(msg % (self._N))
         else:
             K = self.compute_projection_matrix(
-                kwargs.get("znear", self.znear),  # pyre-ignore[16]
-                kwargs.get("zfar", self.zfar),  # pyre-ignore[16]
-                kwargs.get("max_x", self.max_x),  # pyre-ignore[16]
-                kwargs.get("min_x", self.min_x),  # pyre-ignore[16]
-                kwargs.get("max_y", self.max_y),  # pyre-ignore[16]
-                kwargs.get("min_y", self.min_y),  # pyre-ignore[16]
-                kwargs.get("scale_xyz", self.scale_xyz),  # pyre-ignore[16]
+                kwargs.get("znear", self.znear),
+                kwargs.get("zfar", self.zfar),
+                kwargs.get("max_x", self.max_x),
+                kwargs.get("min_x", self.min_x),
+                kwargs.get("max_y", self.max_y),
+                kwargs.get("min_y", self.min_y),
+                kwargs.get("scale_xyz", self.scale_xyz),
             )
 
         transform = Transform3d(device=self.device)
@@ -902,13 +902,12 @@ class PerspectiveCameras(CamerasBase):
                     [0,    0,    1,   0],
             ]
         """
-        K = kwargs.get("K", self.K)  # pyre-ignore[16]
+        K = kwargs.get("K", self.K)
         if K is not None:
             if K.shape != (self._N, 4, 4):
                 msg = "Expected K to have shape of (%r, 4, 4)"
                 raise ValueError(msg % (self._N))
         else:
-            # pyre-ignore[16]
             image_size = kwargs.get("image_size", self.image_size)
             # if imwidth > 0, parameters are in screen space
             image_size = image_size if image_size[0][0] > 0 else None
@@ -916,8 +915,8 @@ class PerspectiveCameras(CamerasBase):
             K = _get_sfm_calibration_matrix(
                 self._N,
                 self.device,
-                kwargs.get("focal_length", self.focal_length),  # pyre-ignore[16]
-                kwargs.get("principal_point", self.principal_point),  # pyre-ignore[16]
+                kwargs.get("focal_length", self.focal_length),
+                kwargs.get("principal_point", self.principal_point),
                 orthographic=False,
                 image_size=image_size,
             )
@@ -1067,13 +1066,12 @@ class OrthographicCameras(CamerasBase):
                     [0,    0,    0,   1],
             ]
         """
-        K = kwargs.get("K", self.K)  # pyre-ignore[16]
+        K = kwargs.get("K", self.K)
         if K is not None:
             if K.shape != (self._N, 4, 4):
                 msg = "Expected K to have shape of (%r, 4, 4)"
                 raise ValueError(msg % (self._N))
         else:
-            # pyre-ignore[16]
             image_size = kwargs.get("image_size", self.image_size)
             # if imwidth > 0, parameters are in screen space
             image_size = image_size if image_size[0][0] > 0 else None
@@ -1081,8 +1079,8 @@ class OrthographicCameras(CamerasBase):
             K = _get_sfm_calibration_matrix(
                 self._N,
                 self.device,
-                kwargs.get("focal_length", self.focal_length),  # pyre-ignore[16]
-                kwargs.get("principal_point", self.principal_point),  # pyre-ignore[16]
+                kwargs.get("focal_length", self.focal_length),
+                kwargs.get("principal_point", self.principal_point),
                 orthographic=True,
                 image_size=image_size,
             )

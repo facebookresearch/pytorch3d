@@ -113,7 +113,7 @@ class GridRaysampler(torch.nn.Module):
                 containing the 2D image coordinates of each ray.
         """
 
-        batch_size = cameras.R.shape[0]  # pyre-ignore
+        batch_size = cameras.R.shape[0]
 
         device = cameras.device
 
@@ -229,7 +229,7 @@ class MonteCarloRaysampler(torch.nn.Module):
                 containing the 2D image coordinates of each ray.
         """
 
-        batch_size = cameras.R.shape[0]  # pyre-ignore
+        batch_size = cameras.R.shape[0]
 
         device = cameras.device
 

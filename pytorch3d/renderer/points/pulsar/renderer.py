@@ -632,7 +632,6 @@ class Renderer(torch.nn.Module):
                     enabled.
         """
         # The device tracker is registered as buffer.
-        # pyre-fixme[16]: `Renderer` has no attribute `device_tracker`.
         self._renderer.device_tracker = self.device_tracker
         (
             pos_vec,

@@ -443,7 +443,7 @@ class BlenderCamera(CamerasBase):
 
     def get_projection_transform(self, **kwargs) -> Transform3d:
         transform = Transform3d(device=self.device)
-        transform._matrix = self.K.transpose(1, 2).contiguous()  # pyre-ignore[16]
+        transform._matrix = self.K.transpose(1, 2).contiguous()
         return transform
 
 
