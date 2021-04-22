@@ -22,7 +22,7 @@ The runtime dependencies can be installed by running:
 conda create -n pytorch3d python=3.8
 conda activate pytorch3d
 conda install -c pytorch pytorch=1.7.1 torchvision cudatoolkit=10.2
-conda install -c conda-forge -c fvcore -c iopath fvcore iopath
+conda install -c fvcore -c iopath -c conda-forge fvcore iopath
 ```
 
 For the CUB build time dependency, if you are using conda, you can continue with

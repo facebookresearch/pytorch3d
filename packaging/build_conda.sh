@@ -26,4 +26,4 @@ then
 fi
 
 # shellcheck disable=SC2086
-conda build $CONDA_CHANNEL_FLAGS ${TEST_FLAG:-} -c bottler -c defaults -c conda-forge -c fvcore -c iopath --no-anaconda-upload --python "$PYTHON_VERSION" packaging/pytorch3d
+conda build $CONDA_CHANNEL_FLAGS ${TEST_FLAG:-} -c bottler -c defaults -c fvcore -c iopath -c conda-forge --no-anaconda-upload --python "$PYTHON_VERSION" packaging/pytorch3d
