@@ -177,12 +177,12 @@ def _check_density_bounds(
     Checks whether the elements of `rays_densities` range within `bounds`.
     If not issues a warning.
     """
-    # pyre-fixme[16]: `ByteTensor` has no attribute `any`.
-    if ((rays_densities > bounds[1]) | (rays_densities < bounds[0])).any():
-        warnings.warn(
-            "One or more elements of rays_densities are outside of valid"
-            + f"range {str(bounds)}"
-        )
+    with torch.no_grad():
+        if (rays_densities.max() > bounds[1]) or (rays_densities.min() < bounds[0]):
+            warnings.warn(
+                "One or more elements of rays_densities are outside of valid"
+                + f"range {str(bounds)}"
+            )
 
 
 def _check_raymarcher_inputs(
