@@ -323,3 +323,46 @@ class TestMeshOffIO(TestCaseMixin, unittest.TestCase):
         msg = "Faces colors ignored because vertex colors provided too."
         with self.assertWarnsRegex(UserWarning, msg):
             load(lines2)
+
+    def test_load_modelnet40_files(self):
+        # modelnet40's off file don't have newline or space after OFF
+        off_file_lines = [
+            "OFF8 6 12",
+            " 1.0  0.0 1.4142",
+            " 0.0  1.0 1.4142",
+            "-1.0  0.0 1.4142",
+            " 0.0 -1.0 1.4142",
+            " 1.0  0.0 0.0",
+            " 0.0  1.0 0.0",
+            "-1.0  0.0 0.0",
+            " 0.0 -1.0 0.0",
+            "4  0 1 2 3  255 0 0 #red",
+            "4  7 4 0 3  0 255 0 #green",
+            "4  4 5 1 0  0 0 255 #blue",
+            "4  5 6 2 1  0 255 0 ",
+            "4  3 2 6 7  0 0 255",
+            "4  6 5 4 7  255 0 0",
+        ]
+        off_file = "\n".join(off_file_lines)
+        io = IO()
+        with NamedTemporaryFile(mode="w", suffix=".off") as f:
+            f.write(off_file)
+            f.flush()
+            mesh = io.load_mesh(f.name)
+
+        self.assertEqual(mesh.verts_padded().shape, (1, 8, 3))
+        verts_str = " ".join(off_file_lines[5:13])
+        verts_data = torch.tensor([float(i) for i in verts_str.split()])
+        self.assertClose(mesh.verts_padded().flatten(), verts_data)
+        self.assertClose(mesh.faces_padded(), torch.tensor(CUBE_FACES)[None])
+
+        faces_colors_full = mesh.textures.atlas_padded()
+        self.assertEqual(faces_colors_full.shape, (1, 12, 1, 1, 3))
+        faces_colors = faces_colors_full[0, :, 0, 0]
+        max_color = faces_colors.max()
+        self.assertEqual(max_color, 1)
+
+        # Every face has one color 1, the rest 0.
+        total_color = faces_colors.sum(dim=1)
+        self.assertEqual(total_color.max(), max_color)
+        self.assertEqual(total_color.min(), max_color)

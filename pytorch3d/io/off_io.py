@@ -226,15 +226,17 @@ def _load_off_stream(file) -> dict:
         faces_colors: FloatTensor of shape (F, C), where C is 3 or 4.
     """
     header = file.readline()
-    if header.lower() in (b"off\n", b"off\r\n", "off\n"):
+
+    while _is_line_empty(header):
         header = file.readline()
+
+    if header[:3].lower() == b"off":
+        header = header[3:]
 
     while _is_line_empty(header):
         header = file.readline()
 
     items = header.split(b" ")
-    if len(items) and items[0].lower() in ("off", b"off"):
-        items = items[1:]
     if len(items) < 3:
         raise ValueError("Invalid counts line: %s" % header)
 
