@@ -486,6 +486,7 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
                 self.assertClose(
                     new_mesh.verts_normals_list()[i],
                     new_mesh_naive.verts_normals_list()[i],
+                    atol=1e-6,
                 )
                 self.assertClose(
                     new_mesh.faces_normals_list()[i],
@@ -533,10 +534,14 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
 
             # check face areas, normals and vertex normals
             self.assertClose(
-                new_mesh.verts_normals_packed(), new_mesh_naive.verts_normals_packed()
+                new_mesh.verts_normals_packed(),
+                new_mesh_naive.verts_normals_packed(),
+                atol=1e-6,
             )
             self.assertClose(
-                new_mesh.verts_normals_padded(), new_mesh_naive.verts_normals_padded()
+                new_mesh.verts_normals_padded(),
+                new_mesh_naive.verts_normals_padded(),
+                atol=1e-6,
             )
             self.assertClose(
                 new_mesh.faces_normals_packed(), new_mesh_naive.faces_normals_packed()

@@ -1263,7 +1263,10 @@ class Meshes(object):
         """
         verts_packed = self.verts_packed()
         if vert_offsets_packed.shape == (3,):
+            update_normals = False
             vert_offsets_packed = vert_offsets_packed.expand_as(verts_packed)
+        else:
+            update_normals = True
         if vert_offsets_packed.shape != verts_packed.shape:
             raise ValueError("Verts offsets must have dimension (all_v, 3).")
         # update verts packed
@@ -1284,12 +1287,12 @@ class Meshes(object):
 
         # update face areas and normals and vertex normals
         # only if the original attributes are computed
-        if any(
+        if update_normals and any(
             v is not None
             for v in [self._faces_areas_packed, self._faces_normals_packed]
         ):
             self._compute_face_areas_normals(refresh=True)
-        if self._verts_normals_packed is not None:
+        if update_normals and self._verts_normals_packed is not None:
             self._compute_vertex_normals(refresh=True)
 
         return self
