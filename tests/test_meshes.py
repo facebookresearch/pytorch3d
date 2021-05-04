@@ -1138,6 +1138,20 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
         self.assertEqual(meshes.faces_normals_padded().shape[0], 0)
         self.assertEqual(meshes.faces_normals_list(), [])
 
+    def test_assigned_normals(self):
+        verts = torch.rand(2, 6, 3)
+        faces = torch.randint(6, size=(2, 4, 3))
+
+        for verts_normals in [list(verts.unbind(0)), verts]:
+            yes_normals = Meshes(
+                verts=verts.clone(), faces=faces, verts_normals=verts_normals
+            )
+            self.assertClose(yes_normals.verts_normals_padded(), verts)
+            yes_normals.offset_verts_(torch.FloatTensor([1, 2, 3]))
+            self.assertClose(yes_normals.verts_normals_padded(), verts)
+            yes_normals.offset_verts_(torch.FloatTensor([1, 2, 3]).expand(12, 3))
+            self.assertFalse(torch.allclose(yes_normals.verts_normals_padded(), verts))
+
     def test_compute_faces_areas_cpu_cuda(self):
         num_meshes = 10
         max_v = 100

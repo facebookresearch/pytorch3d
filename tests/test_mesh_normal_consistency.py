@@ -223,7 +223,7 @@ class TestMeshNormalConsistency(unittest.TestCase):
         Test Mesh Normal Consistency for a mesh known to have no
         intersecting faces.
         """
-        verts = torch.rand(1, 6, 2)
+        verts = torch.rand(1, 6, 3)
         faces = torch.arange(6).reshape(1, 2, 3)
         meshes = Meshes(verts=verts, faces=faces)
         out = mesh_normal_consistency(meshes)
