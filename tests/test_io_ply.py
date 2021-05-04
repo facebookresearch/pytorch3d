@@ -448,7 +448,7 @@ class TestMeshPlyIO(TestCaseMixin, unittest.TestCase):
             torch.FloatTensor([0, 1, 2]) + 7 * torch.arange(8)[:, None],
         )
         self.assertClose(
-            pointcloud.features_padded()[0],
+            pointcloud.features_padded()[0] * 255,
             torch.FloatTensor([3, 4, 5]) + 7 * torch.arange(8)[:, None],
         )
 
@@ -518,7 +518,7 @@ class TestMeshPlyIO(TestCaseMixin, unittest.TestCase):
         self.assertEqual(pointcloud_gpu.device, torch.device("cuda:0"))
         pointcloud = pointcloud_gpu.to(torch.device("cpu"))
         expected_points = torch.tensor([[[2, 5, 3]]], dtype=torch.float32)
-        expected_features = torch.tensor([[[4, 1, 6]]], dtype=torch.float32)
+        expected_features = torch.tensor([[[4, 1, 6]]], dtype=torch.float32) / 255.0
         self.assertClose(pointcloud.points_padded(), expected_points)
         self.assertClose(pointcloud.features_padded(), expected_features)
 
