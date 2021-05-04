@@ -216,14 +216,18 @@ class TestMeshPlyIO(TestCaseMixin, unittest.TestCase):
             [[0, 0, 0], [0, 0, 1], [0, 1, 0], [1, 0, 0]], dtype=torch.float32
         )
         faces = torch.tensor([[0, 1, 2], [0, 2, 3]])
+        normals = torch.tensor(
+            [[0, 1, 0], [1, 0, 0], [1, 4, 1], [1, 0, 0]], dtype=torch.float32
+        )
         vert_colors = torch.rand_like(verts)
         texture = TexturesVertex(verts_features=[vert_colors])
 
-        for do_textures in itertools.product([True, False]):
+        for do_textures, do_normals in itertools.product([True, False], [True, False]):
             mesh = Meshes(
                 verts=[verts],
                 faces=[faces],
                 textures=texture if do_textures else None,
+                verts_normals=[normals] if do_normals else None,
             )
             device = torch.device("cuda:0")
 
@@ -236,11 +240,56 @@ class TestMeshPlyIO(TestCaseMixin, unittest.TestCase):
             mesh2 = mesh2.cpu()
             self.assertClose(mesh2.verts_padded(), mesh.verts_padded())
             self.assertClose(mesh2.faces_padded(), mesh.faces_padded())
+            if do_normals:
+                self.assertTrue(mesh.has_verts_normals())
+                self.assertTrue(mesh2.has_verts_normals())
+                self.assertClose(
+                    mesh2.verts_normals_padded(), mesh.verts_normals_padded()
+                )
+            else:
+                self.assertFalse(mesh.has_verts_normals())
+                self.assertFalse(mesh2.has_verts_normals())
+                self.assertFalse(torch.allclose(mesh2.verts_normals_padded(), normals))
             if do_textures:
                 self.assertIsInstance(mesh2.textures, TexturesVertex)
                 self.assertClose(mesh2.textures.verts_features_list()[0], vert_colors)
             else:
                 self.assertIsNone(mesh2.textures)
+
+    def test_save_load_with_normals(self):
+        points = torch.tensor(
+            [[0, 0, 0], [0, 0, 1], [0, 1, 0], [1, 0, 0]], dtype=torch.float32
+        )
+        normals = torch.tensor(
+            [[0, 1, 0], [1, 0, 0], [1, 4, 1], [1, 0, 0]], dtype=torch.float32
+        )
+        features = torch.rand_like(points)
+
+        for do_features, do_normals in itertools.product([True, False], [True, False]):
+            cloud = Pointclouds(
+                points=[points],
+                features=[features] if do_features else None,
+                normals=[normals] if do_normals else None,
+            )
+            device = torch.device("cuda:0")
+
+            io = IO()
+            with NamedTemporaryFile(mode="w", suffix=".ply") as f:
+                io.save_pointcloud(cloud.cuda(), f.name)
+                f.flush()
+                cloud2 = io.load_pointcloud(f.name, device=device)
+            self.assertEqual(cloud2.device, device)
+            cloud2 = cloud2.cpu()
+            self.assertClose(cloud2.points_padded(), cloud.points_padded())
+            if do_normals:
+                self.assertClose(cloud2.normals_padded(), cloud.normals_padded())
+            else:
+                self.assertIsNone(cloud.normals_padded())
+                self.assertIsNone(cloud2.normals_padded())
+            if do_features:
+                self.assertClose(cloud2.features_packed(), features)
+            else:
+                self.assertIsNone(cloud2.features_packed())
 
     def test_save_ply_invalid_shapes(self):
         # Invalid vertices shape
