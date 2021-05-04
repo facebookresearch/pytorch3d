@@ -732,6 +732,12 @@ class Meshes(object):
         )
         return self._verts_padded_to_packed_idx
 
+    def has_verts_normals(self) -> bool:
+        """
+        Check whether vertex normals are already present.
+        """
+        return self._verts_normals_packed is not None
+
     def verts_normals_packed(self):
         """
         Get the packed representation of the vertex normals.

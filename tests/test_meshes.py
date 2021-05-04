@@ -1003,7 +1003,7 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
             [[0, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10, 11]], dtype=torch.int64
         )
         mesh = Meshes(verts=[verts], faces=[faces])
-
+        self.assertFalse(mesh.has_verts_normals())
         verts_normals_expected = torch.tensor(
             [
                 [0.0, 0.0, 1.0],
@@ -1025,6 +1025,7 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
         self.assertTrue(
             torch.allclose(mesh.verts_normals_list()[0], verts_normals_expected)
         )
+        self.assertTrue(mesh.has_verts_normals())
         self.assertTrue(
             torch.allclose(mesh.faces_normals_list()[0], faces_normals_expected)
         )
@@ -1141,11 +1142,14 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
     def test_assigned_normals(self):
         verts = torch.rand(2, 6, 3)
         faces = torch.randint(6, size=(2, 4, 3))
+        no_normals = Meshes(verts=verts, faces=faces)
+        self.assertFalse(no_normals.has_verts_normals())
 
         for verts_normals in [list(verts.unbind(0)), verts]:
             yes_normals = Meshes(
                 verts=verts.clone(), faces=faces, verts_normals=verts_normals
             )
+            self.assertTrue(yes_normals.has_verts_normals())
             self.assertClose(yes_normals.verts_normals_padded(), verts)
             yes_normals.offset_verts_(torch.FloatTensor([1, 2, 3]))
             self.assertClose(yes_normals.verts_normals_padded(), verts)
