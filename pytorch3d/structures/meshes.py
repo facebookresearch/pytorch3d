@@ -1336,15 +1336,13 @@ class Meshes(object):
                 if len(verts) > 0:
                     self._verts_padded[i, : verts.shape[0], :] = verts
 
-        # update face areas and normals and vertex normals
+        # update face areas and normals
         # only if the original attributes are computed
         if any(
             v is not None
             for v in [self._faces_areas_packed, self._faces_normals_packed]
         ):
             self._compute_face_areas_normals(refresh=True)
-        if self._verts_normals_packed is not None:
-            self._compute_vertex_normals(refresh=True)
         return self
 
     def scale_verts(self, scale):
