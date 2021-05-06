@@ -648,11 +648,12 @@ def _load_obj(
 
 
 def save_obj(
-    f,
-    verts,
-    faces,
-    decimal_places: Optional[int] = None,
-    path_manager: Optional[PathManager] = None,
+        f,
+        verts,
+        faces,
+        normals: Optional[torch.FloatTensor] = None,
+        decimal_places: Optional[int] = None,
+        path_manager: Optional[PathManager] = None,
 ):
     """
     Save a mesh to an .obj file.
@@ -661,6 +662,7 @@ def save_obj(
         f: File (or path) to which the mesh should be written.
         verts: FloatTensor of shape (V, 3) giving vertex coordinates.
         faces: LongTensor of shape (F, 3) giving faces.
+        normals: FloatTensor of shape (N, 3) giving normals.
         decimal_places: Number of decimal places for saving.
         path_manager: Optional PathManager for interpreting f if
             it is a str.
@@ -677,44 +679,56 @@ def save_obj(
         path_manager = PathManager()
 
     with _open_file(f, path_manager, "w") as f:
-        return _save(f, verts, faces, decimal_places)
+        return _save(f, verts, faces, normals, decimal_places)
 
 
-# TODO (nikhilar) Speed up this function.
-def _save(f, verts, faces, decimal_places: Optional[int] = None) -> None:
+def _save(
+    f,
+    verts,
+    faces,
+    normals: Optional[torch.FloatTensor] = None,
+    decimal_places: Optional[int] = None,
+) -> None:
     assert not len(verts) or (verts.dim() == 2 and verts.size(1) == 3)
     assert not len(faces) or (faces.dim() == 2 and faces.size(1) == 3)
+    if normals is not None:
+        assert not len(normals) or (normals.dim() == 2 and normals.size(1) == 3)
+        assert len(normals) == len(faces) or len(normals) == len(verts)
 
     if not (len(verts) or len(faces)):
         warnings.warn("Empty 'verts' and 'faces' arguments provided")
         return
 
-    verts, faces = verts.cpu(), faces.cpu()
+    if torch.any(faces >= verts.shape[0]) or torch.any(faces < 0):
+        warnings.warn("Faces have invalid indices")
+
+    if decimal_places is None:
+        float_format = "{:f}".format
+    else:
+        float_format = ("{:.%df}" % decimal_places).format
+
+    float_format = np.vectorize(float_format)
+    verts, faces = verts.cpu().numpy(), faces.cpu().numpy()
 
     lines = ""
 
     if len(verts):
-        if decimal_places is None:
-            float_str = "%f"
-        else:
-            float_str = "%" + ".%df" % decimal_places
+        rows = np.apply_along_axis(" ".join, 1, float_format(verts))
+        lines += "v " + "\nv ".join(rows)
 
-        V, D = verts.shape
-        for i in range(V):
-            vert = [float_str % verts[i, j] for j in range(D)]
-            lines += "v %s\n" % " ".join(vert)
-
-    if torch.any(faces >= verts.shape[0]) or torch.any(faces < 0):
-        warnings.warn("Faces have invalid indices")
+    if normals is not None and len(normals):
+        normals = normals.cpu().numpy()
+        rows = np.apply_along_axis(" ".join, 1, float_format(normals))
+        lines += "\nvn " + "\nvn ".join(rows)
 
     if len(faces):
-        F, P = faces.shape
-        for i in range(F):
-            face = ["%d" % (faces[i, j] + 1) for j in range(P)]
-            if i + 1 < F:
-                lines += "f %s\n" % " ".join(face)
-            elif i + 1 == F:
-                # No newline at the end of the file.
-                lines += "f %s" % " ".join(face)
+        # faces start indexing with 1 and not 0
+        faces = (faces + 1).astype(int).astype(str)
+        if normals is not None:
+            normals_format = np.vectorize("{0}//{0}".format)
+            faces = normals_format(faces)
+        rows = np.apply_along_axis(" ".join, 1, faces)
+        lines += "\nf " + "\nf ".join(rows)
 
+    lines = lines.strip()
     f.write(lines)
