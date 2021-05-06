@@ -480,6 +480,39 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
         actual_file = obj_file.getvalue()
         self.assertEqual(actual_file, expected_file)
 
+    def test_save_obj_with_normals(self):
+        verts = torch.tensor(
+            [[0.01, 0.2, 0.301], [0.2, 0.03, 0.408], [0.3, 0.4, 0.05], [0.6, 0.7, 0.8]],
+            dtype=torch.float32,
+        )
+        faces = torch.tensor(
+            [[0, 2, 1], [0, 1, 2], [3, 2, 1], [3, 1, 0]], dtype=torch.int64
+        )
+        normals = torch.tensor(
+            [[0.01, 0.2, 0.301], [0.2, 0.03, 0.408], [0.3, 0.4, 0.05], [0.6, 0.7, 0.8]],
+            dtype=torch.float32,
+        )
+        obj_file = StringIO()
+        save_obj(obj_file, verts, faces, normals, decimal_places=2)
+        expected_file = "\n".join(
+            [
+                "v 0.01 0.20 0.30",
+                "v 0.20 0.03 0.41",
+                "v 0.30 0.40 0.05",
+                "v 0.60 0.70 0.80",
+                "vn 0.01 0.20 0.30",
+                "vn 0.20 0.03 0.41",
+                "vn 0.30 0.40 0.05",
+                "vn 0.60 0.70 0.80",
+                "f 1//1 3//3 2//2",
+                "f 1//1 2//2 3//3",
+                "f 4//4 3//3 2//2",
+                "f 4//4 2//2 1//1",
+            ]
+        )
+        actual_file = obj_file.getvalue()
+        self.assertEqual(actual_file, expected_file)
+
     def test_load_mtl(self):
         obj_filename = "cow_mesh/cow.obj"
         filename = os.path.join(TUTORIAL_DATA_DIR, obj_filename)
