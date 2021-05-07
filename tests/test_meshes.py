@@ -48,7 +48,7 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
         if lists_to_tensors:
             # If we define faces/verts with tensors, f/v has to be the
             # same for each mesh in the batch.
-            f = torch.randint(max_f, size=(1,), dtype=torch.int32)
+            f = torch.randint(1, max_f, size=(1,), dtype=torch.int32)
             v = torch.randint(3, high=max_v, size=(1,), dtype=torch.int32)
             f = f.repeat(num_meshes)
             v = v.repeat(num_meshes)
@@ -443,10 +443,10 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
             return Meshes(verts=new_verts_list, faces=new_faces_list)
 
         N = 5
-        mesh = TestMeshes.init_mesh(N, 10, 100)
+        mesh = TestMeshes.init_mesh(N, 30, 100, lists_to_tensors=True)
         all_v = mesh.verts_packed().size(0)
         verts_per_mesh = mesh.num_verts_per_mesh()
-        for force, deform_shape in itertools.product([0, 1], [(all_v, 3), 3]):
+        for force, deform_shape in itertools.product([False, True], [(all_v, 3), 3]):
             if force:
                 # force mesh to have computed attributes
                 mesh._compute_packed(refresh=True)
@@ -482,6 +482,7 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
                 self.assertClose(
                     new_mesh.faces_list()[i], new_mesh_naive.faces_list()[i]
                 )
+
                 # check faces and vertex normals
                 self.assertClose(
                     new_mesh.verts_normals_list()[i],
@@ -491,6 +492,7 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
                 self.assertClose(
                     new_mesh.faces_normals_list()[i],
                     new_mesh_naive.faces_normals_list()[i],
+                    atol=1e-6,
                 )
 
             # check padded & packed
@@ -544,10 +546,14 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
                 atol=1e-6,
             )
             self.assertClose(
-                new_mesh.faces_normals_packed(), new_mesh_naive.faces_normals_packed()
+                new_mesh.faces_normals_packed(),
+                new_mesh_naive.faces_normals_packed(),
+                atol=1e-6,
             )
             self.assertClose(
-                new_mesh.faces_normals_padded(), new_mesh_naive.faces_normals_padded()
+                new_mesh.faces_normals_padded(),
+                new_mesh_naive.faces_normals_padded(),
+                atol=1e-6,
             )
             self.assertClose(
                 new_mesh.faces_areas_packed(), new_mesh_naive.faces_areas_packed()
@@ -571,7 +577,7 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
         N = 5
         for test in ["tensor", "scalar"]:
             for force in (False, True):
-                mesh = TestMeshes.init_mesh(N, 10, 100)
+                mesh = TestMeshes.init_mesh(N, 10, 100, lists_to_tensors=True)
                 if force:
                     # force mesh to have computed attributes
                     mesh.verts_packed()
