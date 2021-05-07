@@ -397,14 +397,6 @@ class Meshes(object):
                        number of verts or faces respectively."
             )
 
-        if self.isempty():
-            self._num_verts_per_mesh = torch.zeros(
-                (0,), dtype=torch.int64, device=self.device
-            )
-            self._num_faces_per_mesh = torch.zeros(
-                (0,), dtype=torch.int64, device=self.device
-            )
-
         # Set the num verts/faces on the textures if present.
         if self.textures is not None:
             self.textures._num_faces_per_mesh = self._num_faces_per_mesh.tolist()
