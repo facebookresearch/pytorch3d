@@ -33,40 +33,40 @@ DEBUG = False
 DATA_DIR = get_tests_dir() / "data"
 
 
+def init_meshes(
+    num_meshes: int = 10,
+    num_verts: int = 1000,
+    num_faces: int = 3000,
+    device: str = "cpu",
+    add_texture: bool = False,
+):
+    device = torch.device(device)
+    verts_list = []
+    faces_list = []
+    texts_list = []
+    for _ in range(num_meshes):
+        verts = torch.rand((num_verts, 3), dtype=torch.float32, device=device)
+        faces = torch.randint(
+            num_verts, size=(num_faces, 3), dtype=torch.int64, device=device
+        )
+        texts = torch.rand((num_verts, 3), dtype=torch.float32, device=device)
+        verts_list.append(verts)
+        faces_list.append(faces)
+        texts_list.append(texts)
+
+    # create textures
+    textures = None
+    if add_texture:
+        textures = TexturesVertex(texts_list)
+    meshes = Meshes(verts=verts_list, faces=faces_list, textures=textures)
+
+    return meshes
+
+
 class TestSamplePoints(TestCaseMixin, unittest.TestCase):
     def setUp(self) -> None:
         super().setUp()
         torch.manual_seed(1)
-
-    @staticmethod
-    def init_meshes(
-        num_meshes: int = 10,
-        num_verts: int = 1000,
-        num_faces: int = 3000,
-        device: str = "cpu",
-        add_texture: bool = False,
-    ):
-        device = torch.device(device)
-        verts_list = []
-        faces_list = []
-        texts_list = []
-        for _ in range(num_meshes):
-            verts = torch.rand((num_verts, 3), dtype=torch.float32, device=device)
-            faces = torch.randint(
-                num_verts, size=(num_faces, 3), dtype=torch.int64, device=device
-            )
-            texts = torch.rand((num_verts, 3), dtype=torch.float32, device=device)
-            verts_list.append(verts)
-            faces_list.append(faces)
-            texts_list.append(texts)
-
-        # create textures
-        textures = None
-        if add_texture:
-            textures = TexturesVertex(texts_list)
-        meshes = Meshes(verts=verts_list, faces=faces_list, textures=textures)
-
-        return meshes
 
     def test_all_empty_meshes(self):
         """
@@ -298,9 +298,7 @@ class TestSamplePoints(TestCaseMixin, unittest.TestCase):
     def test_outputs(self):
 
         for add_texture in (True, False):
-            meshes = TestSamplePoints.init_meshes(
-                device=torch.device("cuda:0"), add_texture=add_texture
-            )
+            meshes = init_meshes(device=torch.device("cuda:0"), add_texture=add_texture)
             out1 = sample_points_from_meshes(meshes, num_samples=100)
             self.assertTrue(torch.is_tensor(out1))
 

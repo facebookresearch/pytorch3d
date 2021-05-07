@@ -15,7 +15,7 @@ from pytorch3d.renderer.mesh.textures import (
     pack_rectangles,
 )
 from pytorch3d.structures import Meshes, list_to_packed, packed_to_list
-from test_meshes import TestMeshes
+from test_meshes import init_mesh
 
 
 def tryindex(self, index, tex, meshes, source):
@@ -173,7 +173,7 @@ class TestTexturesVertex(TestCaseMixin, unittest.TestCase):
 
     def test_extend(self):
         B = 10
-        mesh = TestMeshes.init_mesh(B, 30, 50)
+        mesh = init_mesh(B, 30, 50)
         V = mesh._V
         tex_uv = TexturesVertex(verts_features=torch.randn((B, V, 3)))
         tex_mesh = Meshes(
@@ -379,7 +379,7 @@ class TestTexturesAtlas(TestCaseMixin, unittest.TestCase):
 
     def test_extend(self):
         B = 10
-        mesh = TestMeshes.init_mesh(B, 30, 50)
+        mesh = init_mesh(B, 30, 50)
         F = mesh._F
         tex_uv = TexturesAtlas(atlas=torch.randn((B, F, 2, 2, 3)))
         tex_mesh = Meshes(
@@ -667,7 +667,7 @@ class TestTexturesUV(TestCaseMixin, unittest.TestCase):
 
     def test_extend(self):
         B = 5
-        mesh = TestMeshes.init_mesh(B, 30, 50)
+        mesh = init_mesh(B, 30, 50)
         V = mesh._V
         num_faces = mesh.num_faces_per_mesh()
         num_verts = mesh.num_verts_per_mesh()
