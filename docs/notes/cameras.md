@@ -60,9 +60,9 @@ z_ndc = Z
 Commonly, users have access to the focal length (`fx_screen`, `fy_screen`) and the principal point (`px_screen`, `py_screen`) in screen space. In that case, to construct the camera the user needs to additionally provide the `image_size = ((image_width, image_height),)`. More precisely, `camera = PerspectiveCameras(focal_length=((fx_screen, fy_screen),), principal_point=((px_screen, py_screen),), image_size = ((image_width, image_height),))`. Internally, the camera parameters are converted from screen to NDC as follows:
 
 ```
-fx = fx_screen * 2.0 / image_width
+fx = fx_screen * 2.0 / image_height
 fy = fy_screen * 2.0 / image_height
 
-px = - (px_screen - image_width / 2.0) * 2.0 / image_width
+px = - (px_screen - image_width / 2.0) * 2.0 / image_height
 py = - (py_screen - image_height / 2.0) * 2.0/ image_height
 ```
