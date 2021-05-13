@@ -1,0 +1,5 @@
+checkpoints
+outputs
+data/*.png
+data/*.pth
+data/*_license.txt
