@@ -38,7 +38,8 @@ class CamerasBase(TensorProperties):
     - Screen coordinate system: This is another representation of the view volume with
         the XY coordinates defined in pixel space instead of a normalized space.
 
-    A better illustration of the coordinate systems can be found in pytorch3d/docs/notes/cameras.md.
+    A better illustration of the coordinate systems can be found in
+    pytorch3d/docs/notes/cameras.md.
 
     It defines methods that are common to all camera models:
         - `get_camera_center` that returns the optical center of the camera in

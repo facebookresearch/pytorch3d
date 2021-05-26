@@ -6,6 +6,7 @@ from .blending import (
     sigmoid_alpha_blend,
     softmax_rgb_blend,
 )
+from .camera_utils import rotate_on_spot
 from .cameras import OpenGLOrthographicCameras  # deprecated
 from .cameras import OpenGLPerspectiveCameras  # deprecated
 from .cameras import SfMOrthographicCameras  # deprecated
