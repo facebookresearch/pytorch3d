@@ -86,6 +86,8 @@ class IO:
             interpreter: the new interpreter to use, which must be an instance
                 of a class which inherits MeshFormatInterpreter.
         """
+        if not isinstance(interpreter, MeshFormatInterpreter):
+            raise ValueError("Invalid interpreter")
         self.mesh_interpreters.appendleft(interpreter)
 
     def register_pointcloud_format(
@@ -98,6 +100,8 @@ class IO:
             interpreter: the new interpreter to use, which must be an instance
                 of a class which inherits PointcloudFormatInterpreter.
         """
+        if not isinstance(interpreter, PointcloudFormatInterpreter):
+            raise ValueError("Invalid interpreter")
         self.pointcloud_interpreters.appendleft(interpreter)
 
     def load_mesh(

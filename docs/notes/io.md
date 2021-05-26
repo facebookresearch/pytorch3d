@@ -22,3 +22,13 @@ and to save a pointcloud you might do
 pcl = Pointclouds(...)
 IO().save_point_cloud(pcl, "output_pointcloud.obj")
 ```
+
+For meshes, this supports OBJ, PLY and OFF files.
+
+For pointclouds, this supports PLY files.
+
+In addition, there is experimental support for loading meshes from
+[glTF 2 assets](https://github.com/KhronosGroup/glTF/tree/master/specification/2.0)
+stored either in a GLB container file or a glTF JSON file with embedded binary data.
+This must be enabled explicitly, as described in
+`pytorch3d/io/experimental_gltf_io.ply`.

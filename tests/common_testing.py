@@ -155,7 +155,7 @@ class TestCaseMixin(unittest.TestCase):
         )
 
         if not close and msg is None:
-            diff = backend.abs(input - other) + 0.0
+            diff = backend.abs(input + 0.0 - other)
             ratio = diff / backend.abs(other)
             try_relative = (diff <= atol) | (backend.isfinite(ratio) & (ratio > 0))
             if try_relative.all():
@@ -167,7 +167,9 @@ class TestCaseMixin(unittest.TestCase):
             else:
                 extra = ""
             shape = tuple(input.shape)
+            loc = np.unravel_index(diff.argmax(), shape)
             max_diff = diff.max()
-            self.fail(f"Not close. Max diff {max_diff}.{extra} Shape {shape}.")
+            msg = f"Not close. Max diff {max_diff}.{extra} Shape {shape}. At {loc}."
+            self.fail(msg)
 
         self.assertTrue(close, msg)
