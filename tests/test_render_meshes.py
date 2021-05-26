@@ -652,6 +652,9 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
         verts_shifted2 = verts.clone()
         verts_shifted2 *= 0.5
         verts_shifted2[:, 1] -= 7
+        verts_shifted3 = verts.clone()
+        verts_shifted3 *= 0.5
+        verts_shifted3[:, 1] -= 700
 
         [faces] = plain_torus.faces_list()
         nocolor = torch.zeros((100, 100), device=device)
@@ -697,7 +700,11 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
             mesh1 = Meshes(verts=[verts], faces=[faces], textures=textures1)
             mesh2 = Meshes(verts=[verts_shifted1], faces=[faces], textures=textures2)
             mesh3 = Meshes(verts=[verts_shifted2], faces=[faces], textures=textures3)
-            mesh = join_meshes_as_scene([mesh1, mesh2, mesh3])
+            # mesh4 is like mesh1 but outside the field of view. It is here to test
+            # that having another texture with the same map doesn't produce
+            # two copies in the joined map.
+            mesh4 = Meshes(verts=[verts_shifted3], faces=[faces], textures=textures1)
+            mesh = join_meshes_as_scene([mesh1, mesh2, mesh3, mesh4])
 
             output = renderer(mesh)[0, ..., :3].cpu()
             output1 = renderer(mesh1)[0, ..., :3].cpu()

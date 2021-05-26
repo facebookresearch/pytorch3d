@@ -10,7 +10,7 @@ from pytorch3d.ops import interpolate_face_attributes
 from pytorch3d.structures.utils import list_to_packed, list_to_padded, padded_to_list
 from torch.nn.functional import interpolate
 
-from .utils import pack_rectangles
+from .utils import PackedRectangle, Rectangle, pack_unique_rectangles
 
 
 # This file contains classes and helper functions for texturing.
@@ -1028,14 +1028,13 @@ class TexturesUV(TexturesBase):
         maps_list = []
         faces_uvs_list += self.faces_uvs_list()
         verts_uvs_list += self.verts_uvs_list()
-        maps_list += list(self.maps_padded().unbind(0))
+        maps_list += self.maps_list()
         num_faces_per_mesh = self._num_faces_per_mesh
         for tex in textures:
             verts_uvs_list += tex.verts_uvs_list()
             faces_uvs_list += tex.faces_uvs_list()
             num_faces_per_mesh += tex._num_faces_per_mesh
-            tex_map_list = list(tex.maps_padded().unbind(0))
-            maps_list += tex_map_list
+            maps_list += tex.maps_list()
 
         new_tex = self.__class__(
             maps=maps_list,
@@ -1048,10 +1047,7 @@ class TexturesUV(TexturesBase):
         return new_tex
 
     def _place_map_into_single_map(
-        self,
-        single_map: torch.Tensor,
-        map_: torch.Tensor,
-        location: Tuple[int, int, bool],  # (x,y) and whether flipped
+        self, single_map: torch.Tensor, map_: torch.Tensor, location: PackedRectangle
     ) -> None:
         """
         Copy map into a larger tensor single_map at the destination specified by location.
@@ -1064,11 +1060,11 @@ class TexturesUV(TexturesBase):
             map_: (H, W, 3) source data
             location: where to place map
         """
-        do_flip = location[2]
+        do_flip = location.flipped
         source = map_.transpose(0, 1) if do_flip else map_
         border_width = 0 if self.align_corners else 1
-        lower_u = location[0] + border_width
-        lower_v = location[1] + border_width
+        lower_u = location.x + border_width
+        lower_v = location.y + border_width
         upper_u = lower_u + source.shape[0]
         upper_v = lower_v + source.shape[1]
         single_map[lower_u:upper_u, lower_v:upper_v] = source
@@ -1102,19 +1098,23 @@ class TexturesUV(TexturesBase):
         If align_corners=False, we need to add an artificial border around
         every map.
 
-        We use the function `pack_rectangles` to provide a layout for the
-        single map. _place_map_into_single_map is used to copy the maps
-        into the single map. The merging of verts_uvs and faces_uvs are
-        handled locally in this function.
+        We use the function `pack_unique_rectangles` to provide a layout for
+        the single map. This means that if self was created with a list of maps,
+        and to() has not been called, and there were two maps which were exactly
+        the same tensor object, then they will become the same data in the unified map.
+        _place_map_into_single_map is used to copy the maps into the single map.
+        The merging of verts_uvs and faces_uvs is handled locally in this function.
         """
         maps = self.maps_list()
         heights_and_widths = []
         extra_border = 0 if self.align_corners else 2
         for map_ in maps:
             heights_and_widths.append(
-                (map_.shape[0] + extra_border, map_.shape[1] + extra_border)
+                Rectangle(
+                    map_.shape[0] + extra_border, map_.shape[1] + extra_border, id(map_)
+                )
             )
-        merging_plan = pack_rectangles(heights_and_widths)
+        merging_plan = pack_unique_rectangles(heights_and_widths)
         # pyre-fixme[16]: `Tensor` has no attribute `new_zeros`.
         single_map = maps[0].new_zeros((*merging_plan.total_size, 3))
         verts_uvs = self.verts_uvs_list()
@@ -1122,8 +1122,9 @@ class TexturesUV(TexturesBase):
 
         for map_, loc, uvs in zip(maps, merging_plan.locations, verts_uvs):
             new_uvs = uvs.clone()
-            self._place_map_into_single_map(single_map, map_, loc)
-            do_flip = loc[2]
+            if loc.is_first:
+                self._place_map_into_single_map(single_map, map_, loc)
+            do_flip = loc.flipped
             x_shape = map_.shape[1] if do_flip else map_.shape[0]
             y_shape = map_.shape[0] if do_flip else map_.shape[1]
 
@@ -1164,9 +1165,9 @@ class TexturesUV(TexturesBase):
             denom_y = merging_plan.total_size[1] - one_if_align
             scale_y = y_shape - one_if_align
             new_uvs[:, 1] *= scale_x / denom_x
-            new_uvs[:, 1] += (loc[0] + one_if_not_align) / denom_x
+            new_uvs[:, 1] += (loc.x + one_if_not_align) / denom_x
             new_uvs[:, 0] *= scale_y / denom_y
-            new_uvs[:, 0] += (loc[1] + one_if_not_align) / denom_y
+            new_uvs[:, 0] += (loc.y + one_if_not_align) / denom_y
 
             verts_uvs_merged.append(new_uvs)
 

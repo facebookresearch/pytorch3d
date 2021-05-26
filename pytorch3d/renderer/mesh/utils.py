@@ -64,6 +64,25 @@ def _interpolate_zbuf(
 
 # -----------  Rectangle Packing  -------------------- #
 
+
+class Rectangle(NamedTuple):
+    xsize: int
+    ysize: int
+    identifier: int
+
+
+class PackedRectangle(NamedTuple):
+    x: int
+    y: int
+    flipped: bool
+    is_first: bool
+
+
+class PackedRectangles(NamedTuple):
+    total_size: Tuple[int, int]
+    locations: List[PackedRectangle]
+
+
 # Note the order of members matters here because it determines the queue order.
 # We want to place longer rectangles first.
 class _UnplacedRectangle(NamedTuple):
@@ -74,7 +93,7 @@ class _UnplacedRectangle(NamedTuple):
 
 def _try_place_rectangle(
     rect: _UnplacedRectangle,
-    placed_so_far: List[Tuple[int, int, bool]],
+    placed_so_far: List[PackedRectangle],
     occupied: List[Tuple[int, int]],
 ) -> bool:
     """
@@ -156,10 +175,11 @@ def _try_place_rectangle(
                 current_start_idx = idx
             if currently_packed >= needed_height:
                 current_max_width = max(interval[0], current_max_width)
-                placed_so_far[rect.ind] = (
+                placed_so_far[rect.ind] = PackedRectangle(
                     current_max_width,
                     occupied[current_start_idx - 1][1],
                     rect.flipped,
+                    True,
                 )
                 new_occupied = (
                     current_max_width + rect.size[0],
@@ -182,11 +202,6 @@ def _try_place_rectangle(
     return False
 
 
-class PackedRectangles(NamedTuple):
-    total_size: Tuple[int, int]
-    locations: List[Tuple[int, int, bool]]  # (x,y) and whether flipped
-
-
 def pack_rectangles(sizes: List[Tuple[int, int]]) -> PackedRectangles:
     """
     Naive rectangle packing in to a large rectangle. Flipping (i.e. rotating
@@ -200,7 +215,9 @@ def pack_rectangles(sizes: List[Tuple[int, int]]) -> PackedRectangles:
 
     Returns:
         total_size: size of total large rectangle
-        rectangles: location for each of the input rectangles
+        rectangles: location for each of the input rectangles.
+                    This includes whether they are flipped.
+                    The is_first field is always True.
     """
 
     if len(sizes) < 2:
@@ -213,14 +230,14 @@ def pack_rectangles(sizes: List[Tuple[int, int]]) -> PackedRectangles:
         else:
             queue.append(_UnplacedRectangle((size[0], size[1]), i, False))
     queue.sort()
-    placed_so_far = [(-1, -1, False)] * len(sizes)
+    placed_so_far = [PackedRectangle(-1, -1, False, False)] * len(sizes)
 
     biggest = queue.pop()
     total_width, current_height = biggest.size
-    placed_so_far[biggest.ind] = (0, 0, biggest.flipped)
+    placed_so_far[biggest.ind] = PackedRectangle(0, 0, biggest.flipped, True)
 
     second = queue.pop()
-    placed_so_far[second.ind] = (0, current_height, second.flipped)
+    placed_so_far[second.ind] = PackedRectangle(0, current_height, second.flipped, True)
     current_height += second.size[1]
     occupied = [biggest.size, (second.size[0], current_height)]
 
@@ -236,8 +253,63 @@ def pack_rectangles(sizes: List[Tuple[int, int]]) -> PackedRectangles:
 
         # rect wasn't placed in the current bounding box,
         # so we add extra space to fit it in.
-        placed_so_far[rect.ind] = (0, current_height, rect.flipped)
+        placed_so_far[rect.ind] = PackedRectangle(0, current_height, rect.flipped, True)
         current_height += rect.size[1]
         occupied.append((rect.size[0], current_height))
 
     return PackedRectangles((total_width, current_height), placed_so_far)
+
+
+def pack_unique_rectangles(rectangles: List[Rectangle]) -> PackedRectangles:
+    """
+    Naive rectangle packing in to a large rectangle. Flipping (i.e. rotating
+    a rectangle by 90 degrees) is allowed. Inputs are deduplicated by their
+    identifier.
+
+    This is a wrapper around pack_rectangles, where inputs come with an
+    identifier. In particular, it calls pack_rectangles for the deduplicated inputs,
+    then returns the values for all the inputs. The output for all rectangles with
+    the same identifier will be the same, except that only the first one will have
+    the is_first field True.
+
+    This is used to join several uv maps into a single scene, see
+    TexturesUV.join_scene.
+
+    Args:
+        rectangles: List of sizes of rectangles to pack
+
+    Returns:
+        total_size: size of total large rectangle
+        rectangles: location for each of the input rectangles.
+                    This includes whether they are flipped.
+                    The is_first field is true for the first rectangle
+                    with each identifier.
+    """
+
+    if len(rectangles) < 2:
+        raise ValueError("Cannot pack less than two boxes")
+
+    input_map = {}
+    input_indices: List[Tuple[int, bool]] = []
+    unique_input_sizes: List[Tuple[int, int]] = []
+    for rectangle in rectangles:
+        if rectangle.identifier not in input_map:
+            unique_index = len(unique_input_sizes)
+            unique_input_sizes.append((rectangle.xsize, rectangle.ysize))
+            input_map[rectangle.identifier] = unique_index
+            input_indices.append((unique_index, True))
+        else:
+            unique_index = input_map[rectangle.identifier]
+            input_indices.append((unique_index, False))
+
+    if len(unique_input_sizes) == 1:
+        first = [PackedRectangle(0, 0, False, True)]
+        rest = (len(rectangles) - 1) * [PackedRectangle(0, 0, False, False)]
+        return PackedRectangles(unique_input_sizes[0], first + rest)
+
+    total_size, unique_locations = pack_rectangles(unique_input_sizes)
+    full_locations = []
+    for input_index, first in input_indices:
+        full_locations.append(unique_locations[input_index]._replace(is_first=first))
+
+    return PackedRectangles(total_size, full_locations)

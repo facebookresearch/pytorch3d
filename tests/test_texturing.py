@@ -12,7 +12,11 @@ from pytorch3d.renderer.mesh.textures import (
     TexturesUV,
     TexturesVertex,
     _list_to_padded_wrapper,
+)
+from pytorch3d.renderer.mesh.utils import (
+    Rectangle,
     pack_rectangles,
+    pack_unique_rectangles,
 )
 from pytorch3d.structures import Meshes, list_to_packed, packed_to_list
 from test_meshes import init_mesh
@@ -873,21 +877,24 @@ class TestRectanglePacking(TestCaseMixin, unittest.TestCase):
         mask = torch.zeros(total, dtype=torch.bool)
         seen_x_bound = False
         seen_y_bound = False
-        for (in_x, in_y), loc in zip(sizes, res.locations):
-            self.assertGreaterEqual(loc[0], 0)
-            self.assertGreaterEqual(loc[1], 0)
-            placed_x, placed_y = (in_y, in_x) if loc[2] else (in_x, in_y)
-            upper_x = placed_x + loc[0]
-            upper_y = placed_y + loc[1]
+        for (in_x, in_y), (out_x, out_y, flipped, is_first) in zip(
+            sizes, res.locations
+        ):
+            self.assertTrue(is_first)
+            self.assertGreaterEqual(out_x, 0)
+            self.assertGreaterEqual(out_y, 0)
+            placed_x, placed_y = (in_y, in_x) if flipped else (in_x, in_y)
+            upper_x = placed_x + out_x
+            upper_y = placed_y + out_y
             self.assertGreaterEqual(total[0], upper_x)
             if total[0] == upper_x:
                 seen_x_bound = True
             self.assertGreaterEqual(total[1], upper_y)
             if total[1] == upper_y:
                 seen_y_bound = True
-            already_taken = torch.sum(mask[loc[0] : upper_x, loc[1] : upper_y])
+            already_taken = torch.sum(mask[out_x:upper_x, out_y:upper_y])
             self.assertEqual(already_taken, 0)
-            mask[loc[0] : upper_x, loc[1] : upper_y] = 1
+            mask[out_x:upper_x, out_y:upper_y] = 1
         self.assertTrue(seen_x_bound)
         self.assertTrue(seen_y_bound)
 
@@ -930,3 +937,29 @@ class TestRectanglePacking(TestCaseMixin, unittest.TestCase):
             for j in range(vals.shape[0]):
                 sizes.append((int(vals[j, 0]), int(vals[j, 1])))
             self.wrap_pack(sizes)
+
+    def test_all_identical(self):
+        sizes = [Rectangle(xsize=61, ysize=82, identifier=1729)] * 3
+        total_size, locations = pack_unique_rectangles(sizes)
+        self.assertEqual(total_size, (61, 82))
+        self.assertEqual(len(locations), 3)
+        for i, (x, y, is_flipped, is_first) in enumerate(locations):
+            self.assertEqual(x, 0)
+            self.assertEqual(y, 0)
+            self.assertFalse(is_flipped)
+            self.assertEqual(is_first, i == 0)
+
+    def test_one_different_id(self):
+        sizes = [Rectangle(xsize=61, ysize=82, identifier=220)] * 3
+        sizes.extend([Rectangle(xsize=61, ysize=82, identifier=284)] * 3)
+        total_size, locations = pack_unique_rectangles(sizes)
+        self.assertEqual(total_size, (82, 122))
+        self.assertEqual(len(locations), 6)
+        for i, (x, y, is_flipped, is_first) in enumerate(locations):
+            self.assertTrue(is_flipped)
+            self.assertEqual(is_first, i % 3 == 0)
+            self.assertEqual(x, 0)
+            if i < 3:
+                self.assertEqual(y, 61)
+            else:
+                self.assertEqual(y, 0)
