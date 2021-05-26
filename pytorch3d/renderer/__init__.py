@@ -34,7 +34,7 @@ from .implicit import (
     ray_bundle_to_ray_points,
     ray_bundle_variables_to_ray_points,
 )
-from .lighting import DirectionalLights, PointLights, diffuse, specular
+from .lighting import AmbientLights, DirectionalLights, PointLights, diffuse, specular
 from .materials import Materials
 from .mesh import (
     HardFlatShader,

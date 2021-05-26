@@ -24,7 +24,7 @@ from pytorch3d.renderer.cameras import (
     PerspectiveCameras,
     look_at_view_transform,
 )
-from pytorch3d.renderer.lighting import PointLights
+from pytorch3d.renderer.lighting import AmbientLights, PointLights
 from pytorch3d.renderer.materials import Materials
 from pytorch3d.renderer.mesh import TexturesAtlas, TexturesUV, TexturesVertex
 from pytorch3d.renderer.mesh.rasterizer import MeshRasterizer, RasterizationSettings
@@ -626,12 +626,7 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
             image_size=256, blur_radius=0.0, faces_per_pixel=1
         )
 
-        lights = PointLights(
-            device=device,
-            ambient_color=((1.0, 1.0, 1.0),),
-            diffuse_color=((0.0, 0.0, 0.0),),
-            specular_color=((0.0, 0.0, 0.0),),
-        )
+        lights = AmbientLights(device=device)
         blend_params = BlendParams(
             sigma=1e-1,
             gamma=1e-4,
@@ -780,12 +775,7 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
             image_size=256, blur_radius=0.0, faces_per_pixel=1
         )
 
-        lights = PointLights(
-            device=device,
-            ambient_color=((1.0, 1.0, 1.0),),
-            diffuse_color=((0.0, 0.0, 0.0),),
-            specular_color=((0.0, 0.0, 0.0),),
-        )
+        lights = AmbientLights(device=device)
         blend_params = BlendParams(
             sigma=1e-1,
             gamma=1e-4,
@@ -863,12 +853,7 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
             perspective_correct=False,
         )
 
-        lights = PointLights(
-            device=device,
-            ambient_color=((1.0, 1.0, 1.0),),
-            diffuse_color=((0.0, 0.0, 0.0),),
-            specular_color=((0.0, 0.0, 0.0),),
-        )
+        lights = AmbientLights(device=device)
         blend_params = BlendParams(
             sigma=1e-1,
             gamma=1e-4,
