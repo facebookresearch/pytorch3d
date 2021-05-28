@@ -537,7 +537,7 @@ def _add_mesh_trace(
 
     row, col = subplot_idx // ncols + 1, subplot_idx % ncols + 1
     fig.add_trace(
-        go.Mesh3d(  # pyre-ignore[16]
+        go.Mesh3d(
             x=verts[:, 0],
             y=verts[:, 1],
             z=verts[:, 2],
@@ -621,7 +621,7 @@ def _add_pointcloud_trace(
     row = subplot_idx // ncols + 1
     col = subplot_idx % ncols + 1
     fig.add_trace(
-        go.Scatter3d(  # pyre-ignore[16]
+        go.Scatter3d(
             x=verts[:, 0],
             y=verts[:, 1],
             z=verts[:, 2],
@@ -682,9 +682,7 @@ def _add_camera_trace(
 
     row, col = subplot_idx // ncols + 1, subplot_idx % ncols + 1
     fig.add_trace(
-        go.Scatter3d(  # pyre-ignore [16]
-            x=x, y=y, z=z, marker={"size": 1}, name=trace_name
-        ),
+        go.Scatter3d(x=x, y=y, z=z, marker={"size": 1}, name=trace_name),
         row=row,
         col=col,
     )
