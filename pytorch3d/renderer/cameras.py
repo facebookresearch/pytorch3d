@@ -1360,7 +1360,7 @@ def look_at_view_transform(
             the camera is projected onto a horizontal plane y = 0.
             azim is the angle between the projected vector and a
             reference vector at (0, 0, 1) on the reference plane (the horizontal plane).
-        dist, elem and azim can be of shape (1), (N).
+        dist, elev and azim can be of shape (1), (N).
         degrees: boolean flag to indicate if the elevation and azimuth
             angles are specified in degrees or radians.
         eye: the position of the camera(s) in world coordinates. If eye is not
