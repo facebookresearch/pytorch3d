@@ -5,6 +5,7 @@ import torch
 from pytorch3d.renderer import RayBundle, ray_bundle_to_ray_points
 
 from .harmonic_embedding import HarmonicEmbedding
+from .linear_with_repeat import LinearWithRepeat
 
 
 def _xavier_init(linear):
@@ -75,7 +76,7 @@ class NeuralRadianceField(torch.nn.Module):
         self.density_layer.bias.data[:] = 0.0  # fixme: Sometimes this is not enough
 
         self.color_layer = torch.nn.Sequential(
-            torch.nn.Linear(
+            LinearWithRepeat(
                 n_hidden_neurons_xyz + embedding_dim_dir, n_hidden_neurons_dir
             ),
             torch.nn.ReLU(True),
@@ -116,7 +117,6 @@ class NeuralRadianceField(torch.nn.Module):
         and evaluates the color model in order to attach to each
         point a 3D vector of its RGB color.
         """
-        spatial_size = features.shape[:-1]
         # Normalize the ray_directions to unit l2 norm.
         rays_directions_normed = torch.nn.functional.normalize(rays_directions, dim=-1)
 
@@ -129,18 +129,7 @@ class NeuralRadianceField(torch.nn.Module):
             dim=-1,
         )
 
-        # Expand the ray directions tensor so that its spatial size
-        # is equal to the size of features.
-        rays_embedding_expand = rays_embedding[..., None, :].expand(
-            *spatial_size, rays_embedding.shape[-1]
-        )
-
-        # Concatenate ray direction embeddings with
-        # features and evaluate the color model.
-        color_layer_input = torch.cat(
-            (self.intermediate_linear(features), rays_embedding_expand), dim=-1
-        )
-        return self.color_layer(color_layer_input)
+        return self.color_layer((self.intermediate_linear(features), rays_embedding))
 
     def forward(
         self,
