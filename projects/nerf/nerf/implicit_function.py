@@ -121,13 +121,7 @@ class NeuralRadianceField(torch.nn.Module):
         rays_directions_normed = torch.nn.functional.normalize(rays_directions, dim=-1)
 
         # Obtain the harmonic embedding of the normalized ray directions.
-        rays_embedding = torch.cat(
-            (
-                self.harmonic_embedding_dir(rays_directions_normed),
-                rays_directions_normed,
-            ),
-            dim=-1,
-        )
+        rays_embedding = self.harmonic_embedding_dir(rays_directions_normed)
 
         return self.color_layer((self.intermediate_linear(features), rays_embedding))
 
@@ -168,10 +162,7 @@ class NeuralRadianceField(torch.nn.Module):
         # rays_points_world.shape = [minibatch x ... x 3]
 
         # For each 3D world coordinate, we obtain its harmonic embedding.
-        embeds_xyz = torch.cat(
-            (self.harmonic_embedding_xyz(rays_points_world), rays_points_world),
-            dim=-1,
-        )
+        embeds_xyz = self.harmonic_embedding_xyz(rays_points_world)
         # embeds_xyz.shape = [minibatch x ... x self.n_harmonic_functions*6 + 3]
 
         # self.mlp maps each harmonic embedding to a latent feature space.
