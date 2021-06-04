@@ -36,7 +36,8 @@ class TestOpsUtils(TestCaseMixin, unittest.TestCase):
         self.assertClose(to_np(x), to_np(x_noise), atol=10 * noise_std)
         with self.assertRaises(AssertionError) as context:
             self.assertClose(to_np(x), to_np(x_noise), atol=0.1 * noise_std, msg=msg)
-        self.assertTrue(msg in str(context.exception))
+        self.assertIn(msg, str(context.exception))
+        self.assertIn("Not close", str(context.exception))
 
         # test relative tolerance
         assert torch.allclose(x, x_noise, rtol=100 * noise_std)
