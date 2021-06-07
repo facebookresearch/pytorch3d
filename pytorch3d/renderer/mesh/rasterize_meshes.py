@@ -277,7 +277,6 @@ class _RasterizeFaceVerts(torch.autograd.Function):
 
     @staticmethod
     # pyre-fixme[14]: `forward` overrides method defined in `Function` inconsistently.
-    # pyre-fixme[14]: `forward` overrides method defined in `Function` inconsistently.
     def forward(
         ctx,
         face_verts: torch.Tensor,
