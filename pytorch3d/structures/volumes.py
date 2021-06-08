@@ -8,7 +8,7 @@ from ..transforms import Scale, Transform3d
 from . import utils as struct_utils
 
 
-class Volumes(object):
+class Volumes:
     """
     This class provides functions for working with batches of volumetric grids
     of possibly varying spatial sizes.

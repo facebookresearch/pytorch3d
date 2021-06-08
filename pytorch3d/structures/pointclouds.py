@@ -5,7 +5,7 @@ import torch
 from . import utils as struct_utils
 
 
-class Pointclouds(object):
+class Pointclouds:
     """
     This class provides functions for working with batches of 3d point clouds,
     and converting between representations.

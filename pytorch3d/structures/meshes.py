@@ -7,7 +7,7 @@ import torch
 from . import utils as struct_utils
 
 
-class Meshes(object):
+class Meshes:
     """
     This class provides functions for working with batches of triangulated
     meshes with varying numbers of faces and vertices, and converting between
