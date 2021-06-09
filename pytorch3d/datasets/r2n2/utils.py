@@ -137,7 +137,9 @@ def compute_extrinsic_matrix(azimuth, elevation, distance):
     return RT
 
 
-def read_binvox_coords(f, integer_division=True, dtype=torch.float32):
+def read_binvox_coords(
+    f, integer_division: bool = True, dtype: torch.dtype = torch.float32
+):
     """
     Copied from meshrcnn codebase:
     https://github.com/facebookresearch/meshrcnn/blob/master/shapenet/utils/binvox_torch.py#L5
