@@ -4,6 +4,7 @@ from typing import Dict, List
 
 import numpy as np
 import torch
+from pytorch3d.common.types import Device
 from pytorch3d.datasets.utils import collate_batched_meshes
 from pytorch3d.ops import cubify
 from pytorch3d.renderer import (
@@ -431,13 +432,13 @@ class BlenderCamera(CamerasBase):
     (which uses Blender for rendering the views for each model).
     """
 
-    def __init__(self, R=r, T=t, K=k, device="cpu"):
+    def __init__(self, R=r, T=t, K=k, device: Device = "cpu"):
         """
         Args:
             R: Rotation matrix of shape (N, 3, 3).
             T: Translation matrix of shape (N, 3).
             K: Intrinsic matrix of shape (N, 4, 4).
-            device: torch.device or str.
+            device: Device (as str or torch.device).
         """
         # The initializer formats all inputs to torch tensors and broadcasts
         # all the inputs to have the same batch dimension where necessary.
@@ -450,7 +451,7 @@ class BlenderCamera(CamerasBase):
 
 
 def render_cubified_voxels(
-    voxels: torch.Tensor, shader_type=HardPhongShader, device="cpu", **kwargs
+    voxels: torch.Tensor, shader_type=HardPhongShader, device: Device = "cpu", **kwargs
 ):
     """
     Use the Cubify operator to convert inputs voxels to a mesh and then render that mesh.
@@ -461,7 +462,7 @@ def render_cubified_voxels(
         shader_type: shader_type: shader_type: Shader to use for rendering. Examples
             include HardPhongShader (default), SoftPhongShader etc or any other type
             of valid Shader class.
-        device: torch.device on which the tensors should be located.
+        device: Device (as str or torch.device) on which the tensors should be located.
         **kwargs: Accepts any of the kwargs that the renderer supports.
     Returns:
         Batch of rendered images of shape (N, H, W, 3).

@@ -10,6 +10,8 @@ import torch
 from iopath.common.file_io import PathManager
 from PIL import Image
 
+from ..common.types import Device
+
 
 @contextlib.contextmanager
 def nullcontext(x):
@@ -31,7 +33,7 @@ def _open_file(f, path_manager: PathManager, mode="r") -> ContextManager[IO]:
 
 
 def _make_tensor(
-    data, cols: int, dtype: torch.dtype, device: str = "cpu"
+    data, cols: int, dtype: torch.dtype, device: Device = "cpu"
 ) -> torch.Tensor:
     """
     Return a 2D tensor with the specified cols and dtype filled with data,

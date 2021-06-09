@@ -7,6 +7,7 @@ from typing import Optional, Sequence, Tuple
 import numpy as np
 import torch
 import torch.nn.functional as F
+from pytorch3d.common.types import Device
 from pytorch3d.transforms import Rotate, Transform3d, Translate
 
 from .utils import TensorProperties, convert_to_tensors_and_broadcast
@@ -290,7 +291,7 @@ def OpenGLPerspectiveCameras(
     degrees: bool = True,
     R=_R,
     T=_T,
-    device="cpu",
+    device: Device = "cpu",
 ):
     """
     OpenGLPerspectiveCameras has been DEPRECATED. Use FoVPerspectiveCameras instead.
@@ -358,7 +359,7 @@ class FoVPerspectiveCameras(CamerasBase):
         R=_R,
         T=_T,
         K=None,
-        device="cpu",
+        device: Device = "cpu",
     ):
         """
 
@@ -373,7 +374,7 @@ class FoVPerspectiveCameras(CamerasBase):
             T: Translation matrix of shape (N, 3)
             K: (optional) A calibration matrix of shape (N, 4, 4)
                 If provided, don't need znear, zfar, fov, aspect_ratio, degrees
-            device: torch.device or string
+            device: Device (as str or torch.device)
         """
         # The initializer formats all inputs to torch tensors and broadcasts
         # all the inputs to have the same batch dimension where necessary.

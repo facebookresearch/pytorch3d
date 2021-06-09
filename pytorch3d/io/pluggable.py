@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Deque, Optional, Union
 
 from iopath.common.file_io import PathManager
+from pytorch3d.common.types import Device
 from pytorch3d.structures import Meshes, Pointclouds
 
 from .obj_io import MeshObjFormat
@@ -108,7 +109,7 @@ class IO:
         self,
         path: Union[str, Path],
         include_textures: bool = True,
-        device="cpu",
+        device: Device = "cpu",
         **kwargs,
     ) -> Meshes:
         """
@@ -168,14 +169,14 @@ class IO:
         raise ValueError(f"No mesh interpreter found to write to {path}.")
 
     def load_pointcloud(
-        self, path: Union[str, Path], device="cpu", **kwargs
+        self, path: Union[str, Path], device: Device = "cpu", **kwargs
     ) -> Pointclouds:
         """
         Attempt to load a point cloud from the given file, using a registered format.
 
         Args:
             path: file to read
-            device: torch.device on which to load the data.
+            device: Device (as str or torch.device) on which to load the data.
 
         Returns:
             new Pointclouds object containing one mesh.

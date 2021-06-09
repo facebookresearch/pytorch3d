@@ -4,6 +4,7 @@
 import torch
 import torch.nn.functional as F
 
+from ..common.types import Device
 from .utils import TensorProperties, convert_to_tensors_and_broadcast
 
 
@@ -158,7 +159,7 @@ class DirectionalLights(TensorProperties):
         diffuse_color=((0.3, 0.3, 0.3),),
         specular_color=((0.2, 0.2, 0.2),),
         direction=((0, 1, 0),),
-        device="cpu",
+        device: Device = "cpu",
     ):
         """
         Args:
@@ -166,7 +167,7 @@ class DirectionalLights(TensorProperties):
             diffuse_color: RGB color of the diffuse component.
             specular_color: RGB color of the specular component.
             direction: (x, y, z) direction vector of the light.
-            device: torch.device on which the tensors should be located
+            device: Device (as str or torch.device) on which the tensors should be located
 
         The inputs can each be
             - 3 element tuple/list or list of lists
@@ -219,7 +220,7 @@ class PointLights(TensorProperties):
         diffuse_color=((0.3, 0.3, 0.3),),
         specular_color=((0.2, 0.2, 0.2),),
         location=((0, 1, 0),),
-        device="cpu",
+        device: Device = "cpu",
     ):
         """
         Args:
@@ -227,7 +228,7 @@ class PointLights(TensorProperties):
             diffuse_color: RGB color of the diffuse component
             specular_color: RGB color of the specular component
             location: xyz position of the light.
-            device: torch.device on which the tensors should be located
+            device: Device (as str or torch.device) on which the tensors should be located
 
         The inputs can each be
             - 3 element tuple/list or list of lists
@@ -275,14 +276,14 @@ class AmbientLights(TensorProperties):
     not used in rendering.
     """
 
-    def __init__(self, *, ambient_color=None, device="cpu"):
+    def __init__(self, *, ambient_color=None, device: Device = "cpu"):
         """
         If ambient_color is provided, it should be a sequence of
         triples of floats.
 
         Args:
             ambient_color: RGB color
-            device: torch.device on which the tensors should be located
+            device: Device (as str or torch.device) on which the tensors should be located
 
         The ambient_color if provided, should be
             - 3 element tuple/list or list of lists

@@ -4,6 +4,7 @@ import warnings
 from typing import Dict, List, Optional, Tuple
 
 import torch
+from pytorch3d.common.types import Device
 from pytorch3d.io import load_obj
 from pytorch3d.renderer import (
     FoVPerspectiveCameras,
@@ -105,7 +106,7 @@ class ShapeNetBase(torch.utils.data.Dataset):
         sample_nums: Optional[List[int]] = None,
         idxs: Optional[List[int]] = None,
         shader_type=HardPhongShader,
-        device="cpu",
+        device: Device = "cpu",
         **kwargs
     ) -> torch.Tensor:
         """
@@ -129,7 +130,7 @@ class ShapeNetBase(torch.utils.data.Dataset):
             shader_type: Select shading. Valid options include HardPhongShader (default),
                 SoftPhongShader, HardGouraudShader, SoftGouraudShader, HardFlatShader,
                 SoftSilhouetteShader.
-            device: torch.device on which the tensors should be located.
+            device: Device (as str or torch.device) on which the tensors should be located.
             **kwargs: Accepts any of the kwargs that the renderer supports.
 
         Returns:
