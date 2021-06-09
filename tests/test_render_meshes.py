@@ -125,6 +125,10 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
                     )
                     images, fragments = renderer(sphere_mesh)
                     self.assertClose(fragments.zbuf, rasterizer(sphere_mesh).zbuf)
+                    # Check the alpha channel is the mask
+                    self.assertClose(
+                        images[..., -1], (fragments.pix_to_face[..., 0] >= 0).float()
+                    )
                 else:
                     renderer = MeshRenderer(rasterizer=rasterizer, shader=shader)
                     images = renderer(sphere_mesh)
@@ -164,6 +168,10 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
                 images, fragments = phong_renderer(sphere_mesh, lights=lights)
                 self.assertClose(
                     fragments.zbuf, rasterizer(sphere_mesh, lights=lights).zbuf
+                )
+                # Check the alpha channel is the mask
+                self.assertClose(
+                    images[..., -1], (fragments.pix_to_face[..., 0] >= 0).float()
                 )
             else:
                 phong_renderer = MeshRenderer(

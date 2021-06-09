@@ -58,7 +58,8 @@ def hard_rgb_blend(colors, fragments, blend_params) -> torch.Tensor:
     )  # (N, H, W, 3)
 
     # Concat with the alpha channel.
-    alpha = torch.ones((N, H, W, 1), dtype=colors.dtype, device=device)
+    alpha = (~is_background).type_as(pixel_colors)[..., None]
+
     return torch.cat([pixel_colors, alpha], dim=-1)  # (N, H, W, 4)
 
 
