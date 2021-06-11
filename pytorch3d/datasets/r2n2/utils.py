@@ -33,7 +33,7 @@ t = np.expand_dims(np.zeros(3), axis=0)  # (1, 3)
 k = np.expand_dims(np.eye(4), axis=0)  # (1, 4, 4)
 
 
-def collate_batched_R2N2(batch: List[Dict]):
+def collate_batched_R2N2(batch: List[Dict]):  # pragma: no cover
     """
     Take a list of objects in the form of dictionaries and merge them
     into a single dictionary. This function can be used with a Dataset
@@ -93,7 +93,7 @@ def collate_batched_R2N2(batch: List[Dict]):
     return collated_dict
 
 
-def compute_extrinsic_matrix(azimuth, elevation, distance):
+def compute_extrinsic_matrix(azimuth, elevation, distance):  # pragma: no cover
     """
     Copied from meshrcnn codebase:
     https://github.com/facebookresearch/meshrcnn/blob/master/shapenet/utils/coords.py#L96
@@ -140,7 +140,7 @@ def compute_extrinsic_matrix(azimuth, elevation, distance):
 
 def read_binvox_coords(
     f, integer_division: bool = True, dtype: torch.dtype = torch.float32
-):
+):  # pragma: no cover
     """
     Copied from meshrcnn codebase:
     https://github.com/facebookresearch/meshrcnn/blob/master/shapenet/utils/binvox_torch.py#L5
@@ -183,7 +183,7 @@ def read_binvox_coords(
     return coords.to(dtype)
 
 
-def _compute_idxs(vals, counts):
+def _compute_idxs(vals, counts):  # pragma: no cover
     """
     Copied from meshrcnn codebase:
     https://github.com/facebookresearch/meshrcnn/blob/master/shapenet/utils/binvox_torch.py#L58
@@ -236,7 +236,7 @@ def _compute_idxs(vals, counts):
     return idxs
 
 
-def _read_binvox_header(f):
+def _read_binvox_header(f):  # pragma: no cover
     """
     Copied from meshrcnn codebase:
     https://github.com/facebookresearch/meshrcnn/blob/master/shapenet/utils/binvox_torch.py#L99
@@ -300,7 +300,7 @@ def _read_binvox_header(f):
     return size, translation, scale
 
 
-def align_bbox(src, tgt):
+def align_bbox(src, tgt):  # pragma: no cover
     """
     Copied from meshrcnn codebase:
     https://github.com/facebookresearch/meshrcnn/blob/master/tools/preprocess_shapenet.py#L263
@@ -330,7 +330,7 @@ def align_bbox(src, tgt):
     return out
 
 
-def voxelize(voxel_coords, P, V):
+def voxelize(voxel_coords, P, V):  # pragma: no cover
     """
     Copied from meshrcnn codebase:
     https://github.com/facebookresearch/meshrcnn/blob/master/tools/preprocess_shapenet.py#L284
@@ -377,7 +377,7 @@ def voxelize(voxel_coords, P, V):
     return voxels
 
 
-def project_verts(verts, P, eps=1e-1):
+def project_verts(verts, P, eps=1e-1):  # pragma: no cover
     """
     Copied from meshrcnn codebase:
     https://github.com/facebookresearch/meshrcnn/blob/master/shapenet/utils/coords.py#L159
@@ -426,7 +426,7 @@ def project_verts(verts, P, eps=1e-1):
     return verts_proj
 
 
-class BlenderCamera(CamerasBase):
+class BlenderCamera(CamerasBase):  # pragma: no cover
     """
     Camera for rendering objects with calibration matrices from the R2N2 dataset
     (which uses Blender for rendering the views for each model).
@@ -452,7 +452,7 @@ class BlenderCamera(CamerasBase):
 
 def render_cubified_voxels(
     voxels: torch.Tensor, shader_type=HardPhongShader, device: Device = "cpu", **kwargs
-):
+):  # pragma: no cover
     """
     Use the Cubify operator to convert inputs voxels to a mesh and then render that mesh.
 

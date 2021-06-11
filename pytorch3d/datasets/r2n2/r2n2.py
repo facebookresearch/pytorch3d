@@ -38,7 +38,7 @@ BLENDER_INTRINSIC = torch.tensor(
 )
 
 
-class R2N2(ShapeNetBase):
+class R2N2(ShapeNetBase):  # pragma: no cover
     """
     This class loads the R2N2 dataset from a given directory into a Dataset object.
     The R2N2 dataset contains 13 categories that are a subset of the ShapeNetCore v.1

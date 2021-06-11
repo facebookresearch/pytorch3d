@@ -13,7 +13,7 @@ from pytorch3d.datasets.shapenet_base import ShapeNetBase
 SYNSET_DICT_DIR = Path(__file__).resolve().parent
 
 
-class ShapeNetCore(ShapeNetBase):
+class ShapeNetCore(ShapeNetBase):  # pragma: no cover
     """
     This class loads ShapeNetCore from a given directory into a Dataset object.
     ShapeNetCore is a subset of the ShapeNet dataset and can be downloaded from

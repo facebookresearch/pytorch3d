@@ -5,7 +5,7 @@ from pytorch3d.renderer.mesh import TexturesAtlas
 from pytorch3d.structures import Meshes
 
 
-def collate_batched_meshes(batch: List[Dict]):
+def collate_batched_meshes(batch: List[Dict]):  # pragma: no cover
     """
     Take a list of objects in the form of dictionaries and merge them
     into a single dictionary. This function can be used with a Dataset

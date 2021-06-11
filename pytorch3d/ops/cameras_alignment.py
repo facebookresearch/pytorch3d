@@ -17,7 +17,7 @@ def corresponding_cameras_alignment(
     estimate_scale: bool = True,
     mode: str = "extrinsics",
     eps: float = 1e-9,
-) -> "CamerasBase":
+) -> "CamerasBase":  # pragma: no cover
     """
     .. warning::
         The `corresponding_cameras_alignment` API is experimental
@@ -131,7 +131,7 @@ def _align_camera_centers(
     cameras_tgt: "CamerasBase",
     estimate_scale: bool = True,
     eps: float = 1e-9,
-):
+):  # pragma: no cover
     """
     Use Umeyama's algorithm to align the camera centers.
     """
@@ -157,7 +157,7 @@ def _align_camera_extrinsics(
     cameras_tgt: "CamerasBase",
     estimate_scale: bool = True,
     eps: float = 1e-9,
-):
+):  # pragma: no cover
     """
     Get the global rotation R_A with svd of cov(RR^T):
         ```

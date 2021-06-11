@@ -26,7 +26,7 @@ from .shading import flat_shading, gouraud_shading, phong_shading
 #     - blend colors across top K faces per pixel.
 
 
-class HardPhongShader(nn.Module):
+class HardPhongShader(nn.Module):  # pragma: no cover
     """
     Per pixel lighting - the lighting model is applied using the interpolated
     coordinates and normals for each pixel. The blending function hard assigns
@@ -86,7 +86,7 @@ class HardPhongShader(nn.Module):
         return images
 
 
-class SoftPhongShader(nn.Module):
+class SoftPhongShader(nn.Module):  # pragma: no cover
     """
     Per pixel lighting - the lighting model is applied using the interpolated
     coordinates and normals for each pixel. The blending function returns the
@@ -150,7 +150,7 @@ class SoftPhongShader(nn.Module):
         return images
 
 
-class HardGouraudShader(nn.Module):
+class HardGouraudShader(nn.Module):  # pragma: no cover
     """
     Per vertex lighting - the lighting model is applied to the vertex colors and
     the colors are then interpolated using the barycentric coordinates to
@@ -214,7 +214,7 @@ class HardGouraudShader(nn.Module):
         return images
 
 
-class SoftGouraudShader(nn.Module):
+class SoftGouraudShader(nn.Module):  # pragma: no cover
     """
     Per vertex lighting - the lighting model is applied to the vertex colors and
     the colors are then interpolated using the barycentric coordinates to
@@ -277,7 +277,7 @@ class SoftGouraudShader(nn.Module):
 
 def TexturedSoftPhongShader(
     device: Device = "cpu", cameras=None, lights=None, materials=None, blend_params=None
-):
+):  # pragma: no cover
     """
     TexturedSoftPhongShader class has been DEPRECATED. Use SoftPhongShader instead.
     Preserving TexturedSoftPhongShader as a function for backwards compatibility.
@@ -296,7 +296,7 @@ def TexturedSoftPhongShader(
     )
 
 
-class HardFlatShader(nn.Module):
+class HardFlatShader(nn.Module):  # pragma: no cover
     """
     Per face lighting - the lighting model is applied using the average face
     position and the face normal. The blending function hard assigns
@@ -355,7 +355,7 @@ class HardFlatShader(nn.Module):
         return images
 
 
-class SoftSilhouetteShader(nn.Module):
+class SoftSilhouetteShader(nn.Module):  # pragma: no cover
     """
     Calculate the silhouette by blending the top K faces for each pixel based
     on the 2d euclidean distance of the center of the pixel to the mesh face.

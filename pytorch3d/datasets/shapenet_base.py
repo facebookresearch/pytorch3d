@@ -19,7 +19,7 @@ from pytorch3d.renderer import (
 from .utils import collate_batched_meshes
 
 
-class ShapeNetBase(torch.utils.data.Dataset):
+class ShapeNetBase(torch.utils.data.Dataset):  # pragma: no cover
     """
     'ShapeNetBase' implements a base Dataset for ShapeNet and R2N2 with helper methods.
     It is not intended to be used on its own as a Dataset for a Dataloader. Both __init__
