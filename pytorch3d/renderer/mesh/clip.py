@@ -372,7 +372,7 @@ def clip_faces(
         # (F) dim tensor containing the number of clipped vertices in each triangle
         faces_num_clipped_verts = faces_clipped_verts.sum(1)
     else:
-        faces_num_clipped_verts = torch.zeros([F, 3], device=device)
+        faces_num_clipped_verts = torch.zeros([F], device=device)
 
     # If no triangles need to be clipped or culled, avoid unnecessary computation
     # and return early
