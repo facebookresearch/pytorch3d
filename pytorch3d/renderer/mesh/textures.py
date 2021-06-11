@@ -574,6 +574,15 @@ class TexturesAtlas(TexturesBase):
         """
         return self.__class__(atlas=[torch.cat(self.atlas_list())])
 
+    def check_shapes(
+        self, batch_size: int, max_num_verts: int, max_num_faces: int
+    ) -> bool:
+        """
+        Check if the dimensions of the atlas match that of the mesh faces
+        """
+        # (N, F) should be the same
+        return self.atlas_padded().shape[0:2] == (batch_size, max_num_faces)
+
 
 class TexturesUV(TexturesBase):
     def __init__(
@@ -1213,6 +1222,18 @@ class TexturesUV(TexturesBase):
             centers = centers[0, :, 0].T
         return centers
 
+    def check_shapes(
+        self, batch_size: int, max_num_verts: int, max_num_faces: int
+    ) -> bool:
+        """
+        Check if the dimensions of the verts/faces uvs match that of the mesh
+        """
+        # (N, F) should be the same
+        # (N, V) is not guaranteed to be the same
+        return (self.faces_uvs_padded().shape[0:2] == (batch_size, max_num_faces)) and (
+            self.verts_uvs_padded().shape[0] == batch_size
+        )
+
 
 class TexturesVertex(TexturesBase):
     def __init__(
@@ -1292,6 +1313,13 @@ class TexturesVertex(TexturesBase):
         new_props = self._getitem(index, props)
         verts_features = new_props["verts_features_list"]
         if isinstance(verts_features, list):
+            # Handle the case of an empty list
+            if len(verts_features) == 0:
+                verts_features = torch.empty(
+                    size=(0, 0, 3),
+                    dtype=torch.float32,
+                    device=self.verts_features_padded().device,
+                )
             new_tex = self.__class__(verts_features=verts_features)
         elif torch.is_tensor(verts_features):
             new_tex = self.__class__(verts_features=[verts_features])
@@ -1410,3 +1438,12 @@ class TexturesVertex(TexturesBase):
         Return a new TexturesVertex amalgamating the batch.
         """
         return self.__class__(verts_features=[torch.cat(self.verts_features_list())])
+
+    def check_shapes(
+        self, batch_size: int, max_num_verts: int, max_num_faces: int
+    ) -> bool:
+        """
+        Check if the dimensions of the verts features match that of the mesh verts
+        """
+        # (N, V) should be the same
+        return self.verts_features_padded().shape[:-1] == (batch_size, max_num_verts)

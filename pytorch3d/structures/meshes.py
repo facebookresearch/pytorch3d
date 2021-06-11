@@ -255,6 +255,7 @@ class Meshes:
         if textures is not None and not hasattr(textures, "sample_textures"):
             msg = "Expected textures to be an instance of type TexturesBase; got %r"
             raise ValueError(msg % type(textures))
+
         self.textures = textures
 
         # Indicates whether the meshes in the list/batch have the same number
@@ -424,10 +425,14 @@ class Meshes:
             )
 
         # Set the num verts/faces on the textures if present.
-        if self.textures is not None:
+        if textures is not None:
+            shape_ok = self.textures.check_shapes(self._N, self._V, self._F)
+            if not shape_ok:
+                msg = "Textures do not match the dimensions of Meshes."
+                raise ValueError(msg)
+
             self.textures._num_faces_per_mesh = self._num_faces_per_mesh.tolist()
             self.textures._num_verts_per_mesh = self._num_verts_per_mesh.tolist()
-            self.textures._N = self._N
             self.textures.valid = self.valid
 
         if verts_normals is not None:
@@ -1560,6 +1565,13 @@ class Meshes:
 
     def sample_textures(self, fragments):
         if self.textures is not None:
+
+            # Check dimensions of textures match that of meshes
+            shape_ok = self.textures.check_shapes(self._N, self._V, self._F)
+            if not shape_ok:
+                msg = "Textures do not match the dimensions of Meshes."
+                raise ValueError(msg)
+
             # Pass in faces packed. If the textures are defined per
             # vertex, the face indices are needed in order to interpolate
             # the vertex attributes across the face.
