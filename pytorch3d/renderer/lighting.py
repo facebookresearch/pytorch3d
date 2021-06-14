@@ -253,12 +253,26 @@ class PointLights(TensorProperties):
         other = self.__class__(device=self.device)
         return super().clone(other)
 
+    def reshape_location(self, points) -> torch.Tensor:
+        """
+        Reshape the location tensor to have dimensions
+        compatible with the points which can either be of
+        shape (P, 3) or (N, H, W, K, 3).
+        """
+        if self.location.ndim == points.ndim:
+            # pyre-fixme[7]
+            return self.location
+        # pyre-fixme[29]
+        return self.location[:, None, None, None, :]
+
     def diffuse(self, normals, points) -> torch.Tensor:
-        direction = self.location - points
+        location = self.reshape_location(points)
+        direction = location - points
         return diffuse(normals=normals, color=self.diffuse_color, direction=direction)
 
     def specular(self, normals, points, camera_position, shininess) -> torch.Tensor:
-        direction = self.location - points
+        location = self.reshape_location(points)
+        direction = location - points
         return specular(
             points=points,
             normals=normals,
