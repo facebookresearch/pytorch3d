@@ -26,8 +26,10 @@ declare -A CONDA_CUDA_VERSIONS=(
 #    ["1.5.0"]="cu101 cu102"
 #    ["1.5.1"]="cu101 cu102"
 #    ["1.6.0"]="cu101 cu102"
-    ["1.7.0"]="cu101 cu102 cu110"
-    ["1.7.1"]="cu101 cu102 cu110"
+#    ["1.7.0"]="cu101 cu102 cu110"
+#    ["1.7.1"]="cu101 cu102 cu110"
+    ["1.8.0"]="cu101 cu102 cu111"
+    ["1.8.1"]="cu101 cu102 cu111"
 )
 
 
@@ -52,6 +54,11 @@ do
         for cu_version in ${CONDA_CUDA_VERSIONS[$pytorch_version]}
         do
             case "$cu_version" in
+                cu111)
+                    export CUDA_HOME=/usr/local/cuda-11.1/
+                    export CUDA_TAG=11.1
+                    export NVCC_FLAGS="-gencode=arch=compute_35,code=sm_35 -gencode=arch=compute_50,code=sm_50 -gencode=arch=compute_60,code=sm_60 -gencode=arch=compute_70,code=sm_70 -gencode=arch=compute_75,code=sm_75 -gencode=arch=compute_80,code=sm_80 -gencode=arch=compute_86,code=sm_86 -gencode=arch=compute_50,code=compute_50"
+                ;;
                 cu110)
                     export CUDA_HOME=/usr/local/cuda-11.0/
                     export CUDA_TAG=11.0

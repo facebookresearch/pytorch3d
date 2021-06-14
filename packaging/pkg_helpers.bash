@@ -51,6 +51,17 @@ setup_cuda() {
 
   # Now work out the CUDA settings
   case "$CU_VERSION" in
+    cu111)
+      if [[ "$OSTYPE" == "msys" ]]; then
+        export CUDA_HOME="C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.1"
+      else
+        export CUDA_HOME=/usr/local/cuda-11.1/
+      fi
+      export FORCE_CUDA=1
+      # Hard-coding gencode flags is temporary situation until
+      # https://github.com/pytorch/pytorch/pull/23408 lands
+      export NVCC_FLAGS="-gencode=arch=compute_35,code=sm_35 -gencode=arch=compute_50,code=sm_50 -gencode=arch=compute_60,code=sm_60 -gencode=arch=compute_70,code=sm_70 -gencode=arch=compute_75,code=sm_75 -gencode=arch=compute_80,code=sm_80 -gencode=arch=compute_86,code=sm_86 -gencode=arch=compute_50,code=compute_50"
+      ;;
     cu110)
       if [[ "$OSTYPE" == "msys" ]]; then
         export CUDA_HOME="C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.0"
@@ -236,7 +247,7 @@ setup_conda_pytorch_constraint() {
       exit 1
     fi
   else
-    export CONDA_CHANNEL_FLAGS="-c pytorch -c pytorch-nightly"
+    export CONDA_CHANNEL_FLAGS="-c pytorch"
   fi
   if [[ "$CU_VERSION" == cpu ]]; then
     export CONDA_PYTORCH_BUILD_CONSTRAINT="- pytorch==$PYTORCH_VERSION${PYTORCH_VERSION_SUFFIX}"
@@ -256,6 +267,10 @@ setup_conda_cudatoolkit_constraint() {
     export CONDA_CUDATOOLKIT_CONSTRAINT=""
   else
     case "$CU_VERSION" in
+      cu111)
+        export CONDA_CUDATOOLKIT_CONSTRAINT="- cudatoolkit >=11.1,<11.2 # [not osx]"
+        #export CONDA_CUB_CONSTRAINT="- nvidiacub"
+        ;;
       cu110)
         export CONDA_CUDATOOLKIT_CONSTRAINT="- cudatoolkit >=11.0,<11.1 # [not osx]"
         # Even though cudatoolkit 11.0 provides CUB we need our own, to control the

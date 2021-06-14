@@ -191,6 +191,7 @@ jobs:
           docker pull $DOCKER_IMAGE
     - run:
         name: Build and run tests
+        no_output_timeout: 20m
         command: |
           set -e
 
@@ -245,6 +246,12 @@ workflows:
           python_version: "3.7"
           pytorch_version: '1.7.0'
           cu_version: "cu110"
+      - binary_linux_conda_cuda:
+          name: testrun_conda_cuda_py39_cu111_pyt181
+          context: DOCKERHUB_TOKEN
+          python_version: "3.9"
+          pytorch_version: '1.8.1'
+          cu_version: "cu111"
       - binary_macos_wheel:
           cu_version: cpu
           name: macos_wheel_py36_cpu

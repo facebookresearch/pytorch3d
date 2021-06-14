@@ -191,6 +191,7 @@ jobs:
           docker pull $DOCKER_IMAGE
     - run:
         name: Build and run tests
+        no_output_timeout: 20m
         command: |
           set -e
 
@@ -330,6 +331,42 @@ workflows:
           pytorch_version: 1.7.1
       - binary_linux_conda:
           context: DOCKERHUB_TOKEN
+          cu_version: cu101
+          name: linux_conda_py36_cu101_pyt180
+          python_version: '3.6'
+          pytorch_version: 1.8.0
+      - binary_linux_conda:
+          context: DOCKERHUB_TOKEN
+          cu_version: cu102
+          name: linux_conda_py36_cu102_pyt180
+          python_version: '3.6'
+          pytorch_version: 1.8.0
+      - binary_linux_conda:
+          context: DOCKERHUB_TOKEN
+          cu_version: cu111
+          name: linux_conda_py36_cu111_pyt180
+          python_version: '3.6'
+          pytorch_version: 1.8.0
+      - binary_linux_conda:
+          context: DOCKERHUB_TOKEN
+          cu_version: cu101
+          name: linux_conda_py36_cu101_pyt181
+          python_version: '3.6'
+          pytorch_version: 1.8.1
+      - binary_linux_conda:
+          context: DOCKERHUB_TOKEN
+          cu_version: cu102
+          name: linux_conda_py36_cu102_pyt181
+          python_version: '3.6'
+          pytorch_version: 1.8.1
+      - binary_linux_conda:
+          context: DOCKERHUB_TOKEN
+          cu_version: cu111
+          name: linux_conda_py36_cu111_pyt181
+          python_version: '3.6'
+          pytorch_version: 1.8.1
+      - binary_linux_conda:
+          context: DOCKERHUB_TOKEN
           cu_version: cu92
           name: linux_conda_py37_cu92_pyt14
           python_version: '3.7'
@@ -430,6 +467,42 @@ workflows:
           name: linux_conda_py37_cu110_pyt171
           python_version: '3.7'
           pytorch_version: 1.7.1
+      - binary_linux_conda:
+          context: DOCKERHUB_TOKEN
+          cu_version: cu101
+          name: linux_conda_py37_cu101_pyt180
+          python_version: '3.7'
+          pytorch_version: 1.8.0
+      - binary_linux_conda:
+          context: DOCKERHUB_TOKEN
+          cu_version: cu102
+          name: linux_conda_py37_cu102_pyt180
+          python_version: '3.7'
+          pytorch_version: 1.8.0
+      - binary_linux_conda:
+          context: DOCKERHUB_TOKEN
+          cu_version: cu111
+          name: linux_conda_py37_cu111_pyt180
+          python_version: '3.7'
+          pytorch_version: 1.8.0
+      - binary_linux_conda:
+          context: DOCKERHUB_TOKEN
+          cu_version: cu101
+          name: linux_conda_py37_cu101_pyt181
+          python_version: '3.7'
+          pytorch_version: 1.8.1
+      - binary_linux_conda:
+          context: DOCKERHUB_TOKEN
+          cu_version: cu102
+          name: linux_conda_py37_cu102_pyt181
+          python_version: '3.7'
+          pytorch_version: 1.8.1
+      - binary_linux_conda:
+          context: DOCKERHUB_TOKEN
+          cu_version: cu111
+          name: linux_conda_py37_cu111_pyt181
+          python_version: '3.7'
+          pytorch_version: 1.8.1
       - binary_linux_conda:
           context: DOCKERHUB_TOKEN
           cu_version: cu92
@@ -535,6 +608,42 @@ workflows:
       - binary_linux_conda:
           context: DOCKERHUB_TOKEN
           cu_version: cu101
+          name: linux_conda_py38_cu101_pyt180
+          python_version: '3.8'
+          pytorch_version: 1.8.0
+      - binary_linux_conda:
+          context: DOCKERHUB_TOKEN
+          cu_version: cu102
+          name: linux_conda_py38_cu102_pyt180
+          python_version: '3.8'
+          pytorch_version: 1.8.0
+      - binary_linux_conda:
+          context: DOCKERHUB_TOKEN
+          cu_version: cu111
+          name: linux_conda_py38_cu111_pyt180
+          python_version: '3.8'
+          pytorch_version: 1.8.0
+      - binary_linux_conda:
+          context: DOCKERHUB_TOKEN
+          cu_version: cu101
+          name: linux_conda_py38_cu101_pyt181
+          python_version: '3.8'
+          pytorch_version: 1.8.1
+      - binary_linux_conda:
+          context: DOCKERHUB_TOKEN
+          cu_version: cu102
+          name: linux_conda_py38_cu102_pyt181
+          python_version: '3.8'
+          pytorch_version: 1.8.1
+      - binary_linux_conda:
+          context: DOCKERHUB_TOKEN
+          cu_version: cu111
+          name: linux_conda_py38_cu111_pyt181
+          python_version: '3.8'
+          pytorch_version: 1.8.1
+      - binary_linux_conda:
+          context: DOCKERHUB_TOKEN
+          cu_version: cu101
           name: linux_conda_py39_cu101_pyt171
           python_version: '3.9'
           pytorch_version: 1.7.1
@@ -550,6 +659,42 @@ workflows:
           name: linux_conda_py39_cu110_pyt171
           python_version: '3.9'
           pytorch_version: 1.7.1
+      - binary_linux_conda:
+          context: DOCKERHUB_TOKEN
+          cu_version: cu101
+          name: linux_conda_py39_cu101_pyt180
+          python_version: '3.9'
+          pytorch_version: 1.8.0
+      - binary_linux_conda:
+          context: DOCKERHUB_TOKEN
+          cu_version: cu102
+          name: linux_conda_py39_cu102_pyt180
+          python_version: '3.9'
+          pytorch_version: 1.8.0
+      - binary_linux_conda:
+          context: DOCKERHUB_TOKEN
+          cu_version: cu111
+          name: linux_conda_py39_cu111_pyt180
+          python_version: '3.9'
+          pytorch_version: 1.8.0
+      - binary_linux_conda:
+          context: DOCKERHUB_TOKEN
+          cu_version: cu101
+          name: linux_conda_py39_cu101_pyt181
+          python_version: '3.9'
+          pytorch_version: 1.8.1
+      - binary_linux_conda:
+          context: DOCKERHUB_TOKEN
+          cu_version: cu102
+          name: linux_conda_py39_cu102_pyt181
+          python_version: '3.9'
+          pytorch_version: 1.8.1
+      - binary_linux_conda:
+          context: DOCKERHUB_TOKEN
+          cu_version: cu111
+          name: linux_conda_py39_cu111_pyt181
+          python_version: '3.9'
+          pytorch_version: 1.8.1
       - binary_linux_conda_cuda:
           name: testrun_conda_cuda_py36_cu101_pyt14
           context: DOCKERHUB_TOKEN
@@ -568,6 +713,12 @@ workflows:
           python_version: "3.7"
           pytorch_version: '1.7.0'
           cu_version: "cu110"
+      - binary_linux_conda_cuda:
+          name: testrun_conda_cuda_py39_cu111_pyt181
+          context: DOCKERHUB_TOKEN
+          python_version: "3.9"
+          pytorch_version: '1.8.1'
+          cu_version: "cu111"
       - binary_macos_wheel:
           cu_version: cpu
           name: macos_wheel_py36_cpu
