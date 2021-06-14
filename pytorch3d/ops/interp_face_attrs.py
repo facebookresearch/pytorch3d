@@ -1,9 +1,7 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
 import torch
-
-# pyre-fixme[21]: Could not find name `_C` in `pytorch3d`.
-from pytorch3d import _C
+from pytorch3d import _C  # pyre-fixme[21]: Could not find name `_C` in `pytorch3d`.
 from torch.autograd import Function
 from torch.autograd.function import once_differentiable
 
@@ -23,7 +21,7 @@ def interpolate_face_attributes(
             pixel in the image. A value < 0 indicates that the pixel does not
             overlap any face and should be skipped.
         barycentric_coords: FloatTensor of shape (N, H, W, K, 3) specifying
-            the barycentric coordianates of each pixel
+            the barycentric coordinates of each pixel
             relative to the faces (in the packed
             representation) which overlap the pixel.
         face_attributes: packed attributes of shape (total_faces, 3, D),

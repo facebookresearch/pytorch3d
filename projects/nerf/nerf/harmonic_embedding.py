@@ -8,14 +8,16 @@ class HarmonicEmbedding(torch.nn.Module):
         n_harmonic_functions: int = 6,
         omega0: float = 1.0,
         logspace: bool = True,
+        include_input: bool = True,
     ):
         """
         Given an input tensor `x` of shape [minibatch, ... , dim],
         the harmonic embedding layer converts each feature
-        in `x` into a series of harmonic features `embedding`
-        as follows:
+        in `x` into a series of harmonic features `embedding`,
+        where for each i in range(dim) the following are present
+        in embedding[...]:
             ```
-            embedding[..., i*dim:(i+1)*dim] = [
+            [
                 sin(x[..., i]),
                 sin(f_1*x[..., i]),
                 sin(f_2*x[..., i]),
@@ -25,24 +27,27 @@ class HarmonicEmbedding(torch.nn.Module):
                 cos(f_1*x[..., i]),
                 cos(f_2*x[..., i]),
                 ...
-                cos(f_N * x[..., i])
+                cos(f_N * x[..., i]),
+                x[..., i]     # only present if include_input is True.
             ]
             ```
         where N corresponds to `n_harmonic_functions`, and f_i is a scalar
         denoting the i-th frequency of the harmonic embedding.
+        The shape of the output is [minibatch, ... , dim * (2 * N + 1)] if
+        include_input is True, otherwise [minibatch, ... , dim * (2 * N)].
 
         If `logspace==True`, the frequencies `[f_1, ..., f_N]` are
-        either powers of 2:
-            `f_1, ..., f_N = 2**torch.arange(n_harmonic_functions)`
+        powers of 2:
+            `f_1 = 1, ..., f_N = 2**torch.arange(n_harmonic_functions)`
 
-        If `logspace==False`, frequencies are linearly spaced  between
+        If `logspace==False`, frequencies are linearly spaced between
         `1.0` and `2**(n_harmonic_functions-1)`:
             `f_1, ..., f_N = torch.linspace(
                 1.0, 2**(n_harmonic_functions-1), n_harmonic_functions
             )`
 
         Note that `x` is also premultiplied by the base frequency `omega0`
-        before evaluting the harmonic functions.
+        before evaluating the harmonic functions.
         """
         super().__init__()
 
@@ -60,14 +65,19 @@ class HarmonicEmbedding(torch.nn.Module):
             )
 
         self.register_buffer("_frequencies", omega0 * frequencies)
+        self.include_input = include_input
 
     def forward(self, x: torch.Tensor):
         """
         Args:
             x: tensor of shape [..., dim]
         Returns:
-            embedding: a harmonic embedding of `x`
-                of shape [..., n_harmonic_functions * dim * 2]
+            embedding: a harmonic embedding of `x` of shape
+                [..., dim * (n_harmonic_functions * 2 + T)] where
+                T is 1 if include_input is True and 0 otherwise.
         """
         embed = (x[..., None] * self._frequencies).view(*x.shape[:-1], -1)
-        return torch.cat((embed.sin(), embed.cos()), dim=-1)
+        if self.include_input:
+            return torch.cat((embed.sin(), embed.cos(), x), dim=-1)
+        else:
+            return torch.cat((embed.sin(), embed.cos()), dim=-1)

@@ -1,5 +1,6 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
+import os
 import unittest
 from pathlib import Path
 from typing import Callable, Optional, Union
@@ -7,6 +8,25 @@ from typing import Callable, Optional, Union
 import numpy as np
 import torch
 from PIL import Image
+
+
+def get_tests_dir() -> Path:
+    """
+    Returns Path for the directory containing this file.
+    """
+    return Path(__file__).resolve().parent
+
+
+def get_pytorch3d_dir() -> Path:
+    """
+    Returns Path for the root PyTorch3D directory.
+
+    Facebook internal systems need a special case here.
+    """
+    if os.environ.get("INSIDE_RE_WORKER") is not None:
+        return Path(__file__).resolve().parent
+    else:
+        return Path(__file__).resolve().parent.parent
 
 
 def load_rgb_image(filename: str, data_dir: Union[str, Path]):
@@ -100,7 +120,7 @@ class TestCaseMixin(unittest.TestCase):
         #    all(norm_fn(input - other) <= atol + rtol * norm_fn(other)).
 
         self.assertClose(
-            diff + other_, other_, rtol=rtol, atol=atol, equal_nan=equal_nan
+            diff + other_, other_, rtol=rtol, atol=atol, equal_nan=equal_nan, msg=msg
         )
 
     def assertClose(
@@ -134,20 +154,24 @@ class TestCaseMixin(unittest.TestCase):
             input, other, rtol=rtol, atol=atol, equal_nan=equal_nan
         )
 
-        if not close and msg is None:
-            diff = backend.abs(input - other) + 0.0
-            ratio = diff / backend.abs(other)
-            try_relative = (diff <= atol) | (backend.isfinite(ratio) & (ratio > 0))
-            if try_relative.all():
-                if backend == np:
-                    # Avoid a weirdness with zero dimensional arrays.
-                    ratio = np.array(ratio)
-                ratio[diff <= atol] = 0
-                extra = f" Max relative diff {ratio.max()}"
-            else:
-                extra = ""
-            shape = tuple(input.shape)
-            max_diff = diff.max()
-            self.fail(f"Not close. Max diff {max_diff}.{extra} Shape {shape}.")
+        if close:
+            return
 
-        self.assertTrue(close, msg)
+        diff = backend.abs(input + 0.0 - other)
+        ratio = diff / backend.abs(other)
+        try_relative = (diff <= atol) | (backend.isfinite(ratio) & (ratio > 0))
+        if try_relative.all():
+            if backend == np:
+                # Avoid a weirdness with zero dimensional arrays.
+                ratio = np.array(ratio)
+            ratio[diff <= atol] = 0
+            extra = f" Max relative diff {ratio.max()}"
+        else:
+            extra = ""
+        shape = tuple(input.shape)
+        loc = np.unravel_index(int(diff.argmax()), shape)
+        max_diff = diff.max()
+        err = f"Not close. Max diff {max_diff}.{extra} Shape {shape}. At {loc}."
+        if msg is not None:
+            self.fail(f"{msg} {err}")
+        self.fail(err)

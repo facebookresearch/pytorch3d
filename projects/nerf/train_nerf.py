@@ -31,7 +31,7 @@ def main(cfg: DictConfig):
     else:
         warnings.warn(
             "Please note that although executing on CPU is supported,"
-            + "the training is unlikely to finish in resonable time."
+            + "the training is unlikely to finish in reasonable time."
         )
         device = "cpu"
 
@@ -52,6 +52,7 @@ def main(cfg: DictConfig):
         n_hidden_neurons_dir=cfg.implicit_function.n_hidden_neurons_dir,
         n_layers_xyz=cfg.implicit_function.n_layers_xyz,
         density_noise_std=cfg.implicit_function.density_noise_std,
+        visualization=cfg.visualization.visdom,
     )
 
     # Move the model to the relevant device.
@@ -109,7 +110,7 @@ def main(cfg: DictConfig):
         optimizer, lr_lambda, last_epoch=start_epoch - 1, verbose=False
     )
 
-    # Initialize the cache for storing variables needed for visulization.
+    # Initialize the cache for storing variables needed for visualization.
     visuals_cache = collections.deque(maxlen=cfg.visualization.history_size)
 
     # Init the visualization visdom env.
@@ -194,18 +195,19 @@ def main(cfg: DictConfig):
             if iteration % cfg.stats_print_interval == 0:
                 stats.print(stat_set="train")
 
-            # Update the visualisatioon cache.
-            visuals_cache.append(
-                {
-                    "camera": camera.cpu(),
-                    "camera_idx": camera_idx,
-                    "image": image.cpu().detach(),
-                    "rgb_fine": nerf_out["rgb_fine"].cpu().detach(),
-                    "rgb_coarse": nerf_out["rgb_coarse"].cpu().detach(),
-                    "rgb_gt": nerf_out["rgb_gt"].cpu().detach(),
-                    "coarse_ray_bundle": nerf_out["coarse_ray_bundle"],
-                }
-            )
+            # Update the visualization cache.
+            if viz is not None:
+                visuals_cache.append(
+                    {
+                        "camera": camera.cpu(),
+                        "camera_idx": camera_idx,
+                        "image": image.cpu().detach(),
+                        "rgb_fine": nerf_out["rgb_fine"].cpu().detach(),
+                        "rgb_coarse": nerf_out["rgb_coarse"].cpu().detach(),
+                        "rgb_gt": nerf_out["rgb_gt"].cpu().detach(),
+                        "coarse_ray_bundle": nerf_out["coarse_ray_bundle"],
+                    }
+                )
 
         # Adjust the learning rate.
         lr_scheduler.step()
@@ -219,7 +221,7 @@ def main(cfg: DictConfig):
             val_image = val_image.to(device)
             val_camera = val_camera.to(device)
 
-            # Activate eval mode of the model (allows to do a full rendering pass).
+            # Activate eval mode of the model (lets us do a full rendering pass).
             model.eval()
             with torch.no_grad():
                 val_nerf_out, val_metrics = model(

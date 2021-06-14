@@ -13,7 +13,7 @@ from pytorch3d.renderer.cameras import CamerasBase
 from pytorch3d.structures import Meshes, Pointclouds, join_meshes_as_scene
 
 
-def get_camera_wireframe(scale: float = 0.3):
+def get_camera_wireframe(scale: float = 0.3):  # pragma: no cover
     """
     Returns a wireframe of a 3D line-plot of a camera symbol.
     """
@@ -30,7 +30,7 @@ def get_camera_wireframe(scale: float = 0.3):
     return lines
 
 
-class AxisArgs(NamedTuple):
+class AxisArgs(NamedTuple):  # pragma: no cover
     showgrid: bool = False
     zeroline: bool = False
     showline: bool = False
@@ -40,7 +40,7 @@ class AxisArgs(NamedTuple):
     showaxeslabels: bool = False
 
 
-class Lighting(NamedTuple):
+class Lighting(NamedTuple):  # pragma: no cover
     ambient: float = 0.8
     diffuse: float = 1.0
     fresnel: float = 0.0
@@ -59,16 +59,16 @@ def plot_scene(
     pointcloud_max_points: int = 20000,
     pointcloud_marker_size: int = 1,
     **kwargs,
-):
+):  # pragma: no cover
     """
-    Main function to visualize Meshes and Pointclouds.
+    Main function to visualize Meshes, Cameras and Pointclouds.
     Plots input Pointclouds, Meshes, and Cameras data into named subplots,
     with named traces based on the dictionary keys. Cameras are
     rendered at the camera center location using a wireframe.
 
     Args:
         plots: A dict containing subplot and trace names,
-            as well as the Meshes and Pointclouds objects to be rendered.
+            as well as the Meshes, Cameras and Pointclouds objects to be rendered.
             See below for examples of the format.
         viewpoint_cameras: an instance of a Cameras object providing a location
             to view the plotly plot from. If the batch size is equal
@@ -333,7 +333,7 @@ def plot_batch_individually(
     extend_struct: bool = True,
     subplot_titles: Optional[List[str]] = None,
     **kwargs,
-):
+):  # pragma: no cover
     """
     This is a higher level plotting function than plot_scene, for plotting
     Cameras, Meshes and Pointclouds in simple cases. The simplest use is to plot a
@@ -454,7 +454,7 @@ def _add_struct_from_batch(
     subplot_title: str,
     scene_dictionary: Dict[str, Dict[str, Union[CamerasBase, Meshes, Pointclouds]]],
     trace_idx: int = 1,
-):
+):  # pragma: no cover
     """
     Adds the struct corresponding to the given scene_num index to
     a provided scene_dictionary to be passed in to plot_scene
@@ -470,10 +470,22 @@ def _add_struct_from_batch(
     struct = None
     if isinstance(batched_struct, CamerasBase):
         # we can't index directly into camera batches
-        R, T = batched_struct.R, batched_struct.T  # pyre-ignore[16]
+        R, T = batched_struct.R, batched_struct.T
+        # pyre-fixme[6]: Expected `Sized` for 1st param but got `Union[torch.Tensor,
+        #  torch.nn.Module]`.
         r_idx = min(scene_num, len(R) - 1)
+        # pyre-fixme[6]: Expected `Sized` for 1st param but got `Union[torch.Tensor,
+        #  torch.nn.Module]`.
         t_idx = min(scene_num, len(T) - 1)
+        # pyre-fixme[29]:
+        #  `Union[BoundMethod[typing.Callable(torch.Tensor.__getitem__)[[Named(self,
+        #  torch.Tensor), Named(item, typing.Any)], typing.Any], torch.Tensor],
+        #  torch.Tensor, torch.nn.Module]` is not a function.
         R = R[r_idx].unsqueeze(0)
+        # pyre-fixme[29]:
+        #  `Union[BoundMethod[typing.Callable(torch.Tensor.__getitem__)[[Named(self,
+        #  torch.Tensor), Named(item, typing.Any)], typing.Any], torch.Tensor],
+        #  torch.Tensor, torch.nn.Module]` is not a function.
         T = T[t_idx].unsqueeze(0)
         struct = CamerasBase(device=batched_struct.device, R=R, T=T)
     else:  # batched meshes and pointclouds are indexable
@@ -490,7 +502,7 @@ def _add_mesh_trace(
     subplot_idx: int,
     ncols: int,
     lighting: Lighting,
-):
+):  # pragma: no cover
     """
     Adds a trace rendering a Meshes object to the passed in figure, with
     a given name and in a specific subplot.
@@ -525,7 +537,7 @@ def _add_mesh_trace(
 
     row, col = subplot_idx // ncols + 1, subplot_idx % ncols + 1
     fig.add_trace(
-        go.Mesh3d(  # pyre-ignore[16]
+        go.Mesh3d(
             x=verts[:, 0],
             y=verts[:, 1],
             z=verts[:, 2],
@@ -557,7 +569,7 @@ def _add_pointcloud_trace(
     ncols: int,
     max_points_per_pointcloud: int,
     marker_size: int,
-):
+):  # pragma: no cover
     """
     Adds a trace rendering a Pointclouds object to the passed in figure, with
     a given name and in a specific subplot.
@@ -567,18 +579,28 @@ def _add_pointcloud_trace(
         pointclouds: Pointclouds object to render. It can be batched.
         trace_name: name to label the trace with.
         subplot_idx: identifies the subplot, with 0 being the top left.
-        ncols: the number of sublpots per row.
+        ncols: the number of subplots per row.
         max_points_per_pointcloud: the number of points to render, which are randomly sampled.
         marker_size: the size of the rendered points
     """
     pointclouds = pointclouds.detach().cpu()
     verts = pointclouds.points_packed()
     features = pointclouds.features_packed()
-    total_points_count = max_points_per_pointcloud * len(pointclouds)
 
     indices = None
-    if verts.shape[0] > total_points_count:
-        indices = np.random.choice(verts.shape[0], total_points_count, replace=False)
+    if pointclouds.num_points_per_cloud().max() > max_points_per_pointcloud:
+        start_index = 0
+        index_list = []
+        for num_points in pointclouds.num_points_per_cloud():
+            if num_points > max_points_per_pointcloud:
+                indices_cloud = np.random.choice(
+                    num_points, max_points_per_pointcloud, replace=False
+                )
+                index_list.append(start_index + indices_cloud)
+            else:
+                index_list.append(start_index + np.arange(num_points))
+            start_index += num_points
+        indices = np.concatenate(index_list)
         verts = verts[indices]
 
     color = None
@@ -599,7 +621,7 @@ def _add_pointcloud_trace(
     row = subplot_idx // ncols + 1
     col = subplot_idx % ncols + 1
     fig.add_trace(
-        go.Scatter3d(  # pyre-ignore[16]
+        go.Scatter3d(
             x=verts[:, 0],
             y=verts[:, 1],
             z=verts[:, 2],
@@ -628,7 +650,7 @@ def _add_camera_trace(
     subplot_idx: int,
     ncols: int,
     camera_scale: float,
-):
+):  # pragma: no cover
     """
     Adds a trace rendering a Cameras object to the passed in figure, with
     a given name and in a specific subplot.
@@ -638,7 +660,7 @@ def _add_camera_trace(
         cameras: the Cameras object to render. It can be batched.
         trace_name: name to label the trace with.
         subplot_idx: identifies the subplot, with 0 being the top left.
-        ncols: the number of sublpots per row.
+        ncols: the number of subplots per row.
         camera_scale: the size of the wireframe used to render the Cameras object.
     """
     cam_wires = get_camera_wireframe(camera_scale).to(cameras.device)
@@ -660,9 +682,7 @@ def _add_camera_trace(
 
     row, col = subplot_idx // ncols + 1, subplot_idx % ncols + 1
     fig.add_trace(
-        go.Scatter3d(  # pyre-ignore [16]
-            x=x, y=y, z=z, marker={"size": 1}, name=trace_name
-        ),
+        go.Scatter3d(x=x, y=y, z=z, marker={"size": 1}, name=trace_name),
         row=row,
         col=col,
     )
@@ -678,7 +698,9 @@ def _add_camera_trace(
     _update_axes_bounds(verts_center, max_expand, current_layout)
 
 
-def _gen_fig_with_subplots(batch_size: int, ncols: int, subplot_titles: List[str]):
+def _gen_fig_with_subplots(
+    batch_size: int, ncols: int, subplot_titles: List[str]
+):  # pragma: no cover
     """
     Takes in the number of objects to be plotted and generate a plotly figure
     with the appropriate number and orientation of titled subplots.
@@ -711,7 +733,7 @@ def _update_axes_bounds(
     verts_center: torch.Tensor,
     max_expand: float,
     current_layout: go.Scene,  # pyre-ignore[11]
-):
+):  # pragma: no cover
     """
     Takes in the vertices' center point and max spread, and the current plotly figure
     layout and updates the layout to have bounds that include all traces for that subplot.
@@ -749,7 +771,7 @@ def _update_axes_bounds(
 
 def _scale_camera_to_bounds(
     coordinate: float, axis_bounds: Tuple[float, float], is_position: bool
-):
+):  # pragma: no cover
     """
     We set our plotly plot's axes' bounding box to [-1,1]x[-1,1]x[-1,1]. As such,
     the plotly camera location has to be scaled accordingly to have its world coordinates

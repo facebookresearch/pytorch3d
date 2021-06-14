@@ -62,8 +62,9 @@ class RadianceFieldRenderer(torch.nn.Module):
         n_hidden_neurons_xyz: int = 256,
         n_hidden_neurons_dir: int = 128,
         n_layers_xyz: int = 8,
-        append_xyz: List[int] = (5,),
+        append_xyz: Tuple[int] = (5,),
         density_noise_std: float = 0.0,
+        visualization: bool = False,
     ):
         """
         Args:
@@ -102,6 +103,7 @@ class RadianceFieldRenderer(torch.nn.Module):
             density_noise_std: The standard deviation of the random normal noise
                 added to the output of the occupancy MLP.
                 Active only when `self.training==True`.
+            visualization: whether to store extra output for visualization.
         """
 
         super().__init__()
@@ -159,6 +161,7 @@ class RadianceFieldRenderer(torch.nn.Module):
         self._density_noise_std = density_noise_std
         self._chunk_size_test = chunk_size_test
         self._image_size = image_size
+        self.visualization = visualization
 
     def precache_rays(
         self,
@@ -248,16 +251,15 @@ class RadianceFieldRenderer(torch.nn.Module):
             else:
                 raise ValueError(f"No such rendering pass {renderer_pass}")
 
-        return {
-            "rgb_fine": rgb_fine,
-            "rgb_coarse": rgb_coarse,
-            "rgb_gt": rgb_gt,
+        out = {"rgb_fine": rgb_fine, "rgb_coarse": rgb_coarse, "rgb_gt": rgb_gt}
+        if self.visualization:
             # Store the coarse rays/weights only for visualization purposes.
-            "coarse_ray_bundle": type(coarse_ray_bundle)(
+            out["coarse_ray_bundle"] = type(coarse_ray_bundle)(
                 *[v.detach().cpu() for k, v in coarse_ray_bundle._asdict().items()]
-            ),
-            "coarse_weights": coarse_weights.detach().cpu(),
-        }
+            )
+            out["coarse_weights"] = coarse_weights.detach().cpu()
+
+        return out
 
     def forward(
         self,
@@ -266,7 +268,7 @@ class RadianceFieldRenderer(torch.nn.Module):
         image: torch.Tensor,
     ) -> Tuple[dict, dict]:
         """
-        Performs the coarse and fine rendering passees of the radiance field
+        Performs the coarse and fine rendering passes of the radiance field
         from the viewpoint of the input `camera`.
         Afterwards, both renders are compared to the input ground truth `image`
         by evaluating the peak signal-to-noise ratio and the mean-squared error.

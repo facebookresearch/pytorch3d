@@ -60,7 +60,7 @@ def main(cfg: DictConfig):
     print(f"Loading checkpoint {checkpoint_path}.")
     loaded_data = torch.load(checkpoint_path)
     # Do not load the cached xy grid.
-    # - this allows to set an arbitrary evaluation image size.
+    # - this allows setting an arbitrary evaluation image size.
     state_dict = {
         k: v
         for k, v in loaded_data["model"].items()
@@ -121,7 +121,7 @@ def main(cfg: DictConfig):
             test_image = test_image.to(device)
         test_camera = test_camera.to(device)
 
-        # Activate eval mode of the model (allows to do a full rendering pass).
+        # Activate eval mode of the model (lets us do a full rendering pass).
         model.eval()
         with torch.no_grad():
             test_nerf_out, test_metrics = model(

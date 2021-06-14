@@ -4,6 +4,7 @@ from typing import Dict, List
 
 import numpy as np
 import torch
+from pytorch3d.common.types import Device
 from pytorch3d.datasets.utils import collate_batched_meshes
 from pytorch3d.ops import cubify
 from pytorch3d.renderer import (
@@ -32,7 +33,7 @@ t = np.expand_dims(np.zeros(3), axis=0)  # (1, 3)
 k = np.expand_dims(np.eye(4), axis=0)  # (1, 4, 4)
 
 
-def collate_batched_R2N2(batch: List[Dict]):
+def collate_batched_R2N2(batch: List[Dict]):  # pragma: no cover
     """
     Take a list of objects in the form of dictionaries and merge them
     into a single dictionary. This function can be used with a Dataset
@@ -92,13 +93,13 @@ def collate_batched_R2N2(batch: List[Dict]):
     return collated_dict
 
 
-def compute_extrinsic_matrix(azimuth, elevation, distance):
+def compute_extrinsic_matrix(azimuth, elevation, distance):  # pragma: no cover
     """
     Copied from meshrcnn codebase:
     https://github.com/facebookresearch/meshrcnn/blob/master/shapenet/utils/coords.py#L96
 
-    Compute 4x4 extrinsic matrix that converts from homogenous world coordinates
-    to homogenous camera coordinates. We assume that the camera is looking at the
+    Compute 4x4 extrinsic matrix that converts from homogeneous world coordinates
+    to homogeneous camera coordinates. We assume that the camera is looking at the
     origin.
     Used in R2N2 Dataset when computing calibration matrices.
 
@@ -137,7 +138,9 @@ def compute_extrinsic_matrix(azimuth, elevation, distance):
     return RT
 
 
-def read_binvox_coords(f, integer_division=True, dtype=torch.float32):
+def read_binvox_coords(
+    f, integer_division: bool = True, dtype: torch.dtype = torch.float32
+):  # pragma: no cover
     """
     Copied from meshrcnn codebase:
     https://github.com/facebookresearch/meshrcnn/blob/master/shapenet/utils/binvox_torch.py#L5
@@ -180,7 +183,7 @@ def read_binvox_coords(f, integer_division=True, dtype=torch.float32):
     return coords.to(dtype)
 
 
-def _compute_idxs(vals, counts):
+def _compute_idxs(vals, counts):  # pragma: no cover
     """
     Copied from meshrcnn codebase:
     https://github.com/facebookresearch/meshrcnn/blob/master/shapenet/utils/binvox_torch.py#L58
@@ -189,7 +192,7 @@ def _compute_idxs(vals, counts):
 
     Args:
         vals: tensor of binary values indicating voxel presence in a dense format.
-        counts: tensor of number of occurence of each value in vals.
+        counts: tensor of number of occurrence of each value in vals.
 
     Returns:
         idxs: A tensor of shape (N), where N is the number of nonzero voxels.
@@ -233,7 +236,7 @@ def _compute_idxs(vals, counts):
     return idxs
 
 
-def _read_binvox_header(f):
+def _read_binvox_header(f):  # pragma: no cover
     """
     Copied from meshrcnn codebase:
     https://github.com/facebookresearch/meshrcnn/blob/master/shapenet/utils/binvox_torch.py#L99
@@ -297,7 +300,7 @@ def _read_binvox_header(f):
     return size, translation, scale
 
 
-def align_bbox(src, tgt):
+def align_bbox(src, tgt):  # pragma: no cover
     """
     Copied from meshrcnn codebase:
     https://github.com/facebookresearch/meshrcnn/blob/master/tools/preprocess_shapenet.py#L263
@@ -327,7 +330,7 @@ def align_bbox(src, tgt):
     return out
 
 
-def voxelize(voxel_coords, P, V):
+def voxelize(voxel_coords, P, V):  # pragma: no cover
     """
     Copied from meshrcnn codebase:
     https://github.com/facebookresearch/meshrcnn/blob/master/tools/preprocess_shapenet.py#L284
@@ -374,12 +377,12 @@ def voxelize(voxel_coords, P, V):
     return voxels
 
 
-def project_verts(verts, P, eps=1e-1):
+def project_verts(verts, P, eps=1e-1):  # pragma: no cover
     """
     Copied from meshrcnn codebase:
     https://github.com/facebookresearch/meshrcnn/blob/master/shapenet/utils/coords.py#L159
 
-    Project verticies using a 4x4 transformation matrix.
+    Project vertices using a 4x4 transformation matrix.
 
     Args:
         verts: FloatTensor of shape (N, V, 3) giving a batch of vertex positions or of
@@ -403,7 +406,7 @@ def project_verts(verts, P, eps=1e-1):
 
     # Add an extra row of ones to the world-space coordinates of verts before
     # multiplying by the projection matrix. We could avoid this allocation by
-    # instead multiplying by a 4x3 submatrix of the projectio matrix, then
+    # instead multiplying by a 4x3 submatrix of the projection matrix, then
     # adding the remaining 4x1 vector. Not sure whether there will be much
     # performance difference between the two.
     ones = torch.ones(N, V, 1, dtype=dtype, device=device)
@@ -423,19 +426,19 @@ def project_verts(verts, P, eps=1e-1):
     return verts_proj
 
 
-class BlenderCamera(CamerasBase):
+class BlenderCamera(CamerasBase):  # pragma: no cover
     """
     Camera for rendering objects with calibration matrices from the R2N2 dataset
     (which uses Blender for rendering the views for each model).
     """
 
-    def __init__(self, R=r, T=t, K=k, device="cpu"):
+    def __init__(self, R=r, T=t, K=k, device: Device = "cpu"):
         """
         Args:
             R: Rotation matrix of shape (N, 3, 3).
             T: Translation matrix of shape (N, 3).
             K: Intrinsic matrix of shape (N, 4, 4).
-            device: torch.device or str.
+            device: Device (as str or torch.device).
         """
         # The initializer formats all inputs to torch tensors and broadcasts
         # all the inputs to have the same batch dimension where necessary.
@@ -443,13 +446,13 @@ class BlenderCamera(CamerasBase):
 
     def get_projection_transform(self, **kwargs) -> Transform3d:
         transform = Transform3d(device=self.device)
-        transform._matrix = self.K.transpose(1, 2).contiguous()  # pyre-ignore[16]
+        transform._matrix = self.K.transpose(1, 2).contiguous()
         return transform
 
 
 def render_cubified_voxels(
-    voxels: torch.Tensor, shader_type=HardPhongShader, device="cpu", **kwargs
-):
+    voxels: torch.Tensor, shader_type=HardPhongShader, device: Device = "cpu", **kwargs
+):  # pragma: no cover
     """
     Use the Cubify operator to convert inputs voxels to a mesh and then render that mesh.
 
@@ -459,7 +462,7 @@ def render_cubified_voxels(
         shader_type: shader_type: shader_type: Shader to use for rendering. Examples
             include HardPhongShader (default), SoftPhongShader etc or any other type
             of valid Shader class.
-        device: torch.device on which the tensors should be located.
+        device: Device (as str or torch.device) on which the tensors should be located.
         **kwargs: Accepts any of the kwargs that the renderer supports.
     Returns:
         Batch of rendered images of shape (N, H, W, 3).

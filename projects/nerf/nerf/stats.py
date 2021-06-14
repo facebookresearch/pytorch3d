@@ -11,7 +11,7 @@ from matplotlib import colors as mcolors
 from visdom import Visdom
 
 
-class AverageMeter(object):
+class AverageMeter:
     """
     Computes and stores the average and current value.
     Tracks the exact history of the added values in every epoch.
@@ -65,7 +65,7 @@ class AverageMeter(object):
         ]
 
 
-class Stats(object):
+class Stats:
     """
     Stats logging object useful for gathering statistics of training
     a deep network in PyTorch.

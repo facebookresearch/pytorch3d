@@ -36,7 +36,7 @@ class EmissionAbsorptionNeRFRaymarcher(EmissionAbsorptionRaymarcher):
             rays_features: Per-ray feature values represented with a tensor
                 of shape `(..., n_points_per_ray, feature_dim)`.
             eps: A lower bound added to `rays_densities` before computing
-                the absorbtion function (cumprod of `1-rays_densities` along
+                the absorption function (cumprod of `1-rays_densities` along
                 each ray). This prevents the cumprod to yield exact 0
                 which would inhibit any gradient-based learning.
 
@@ -44,7 +44,7 @@ class EmissionAbsorptionNeRFRaymarcher(EmissionAbsorptionRaymarcher):
             features: A tensor of shape `(..., feature_dim)` containing
                 the rendered features for each ray.
             weights: A tensor of shape `(..., n_points_per_ray)` containing
-                the ray-specific emission-absorbtion distribution.
+                the ray-specific emission-absorption distribution.
                 Each ray distribution `(..., :)` is a valid probability
                 distribution, i.e. it contains non-negative values that integrate
                 to 1, such that `weights.sum(dim=-1)==1).all()` yields `True`.

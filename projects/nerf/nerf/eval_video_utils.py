@@ -77,7 +77,7 @@ def generate_eval_video_cameras(
         cam_centers_c = cam_centers - plane_mean[None]
 
         if up is not None:
-            # us the up vector instad of the plane through the camera centers
+            # us the up vector instead of the plane through the camera centers
             plane_normal = torch.FloatTensor(up)
         else:
             cov = (cam_centers_c.t() @ cam_centers_c) / cam_centers_c.shape[0]
@@ -99,7 +99,7 @@ def generate_eval_video_cameras(
         traj = traj @ e_vec.t() + plane_mean[None]
 
     else:
-        raise ValueError(f"Uknown trajectory_type {trajectory_type}.")
+        raise ValueError(f"Unknown trajectory_type {trajectory_type}.")
 
     # point all cameras towards the center of the scene
     R, T = look_at_view_transform(

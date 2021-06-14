@@ -70,7 +70,7 @@ class TestRaysampler(unittest.TestCase):
 
     def test_probabilistic_raysampler(self, batch_size=1, n_pts_per_ray=60):
         """
-        Check that the probabilisitc ray sampler does not crash for various
+        Check that the probabilistic ray sampler does not crash for various
         settings.
         """
 

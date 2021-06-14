@@ -22,14 +22,14 @@ echo "Running black..."
 black "${DIR}"
 
 echo "Running flake..."
-flake8 "${DIR}"
+flake8 "${DIR}" || true
 
 echo "Running clang-format ..."
 clangformat=$(command -v clang-format-8 || echo clang-format)
 find "${DIR}" -regex ".*\.\(cpp\|c\|cc\|cu\|cuh\|cxx\|h\|hh\|hpp\|hxx\|tcc\|mm\|m\)" -print0 | xargs -0 "${clangformat}" -i
 
 # Run arc and pyre internally only.
-if [[ -f tests/TARGETS ]]
+if [[ -f "${DIR}/tests/TARGETS" ]]
 then
   (cd "${DIR}"; command -v arc > /dev/null && arc lint) || true
 

@@ -1,11 +1,10 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
 import unittest
-from pathlib import Path
 
 import numpy as np
 import torch
-from common_testing import TestCaseMixin
+from common_testing import TestCaseMixin, get_tests_dir
 from pytorch3d.ops import points_alignment
 from pytorch3d.structures.pointclouds import Pointclouds
 from pytorch3d.transforms import rotation_conversions
@@ -40,7 +39,7 @@ class TestICP(TestCaseMixin, unittest.TestCase):
         super().setUp()
         torch.manual_seed(42)
         np.random.seed(42)
-        trimesh_results_path = Path(__file__).resolve().parent / "data/icp_data.pth"
+        trimesh_results_path = get_tests_dir() / "data/icp_data.pth"
         self.trimesh_results = torch.load(trimesh_results_path)
 
     @staticmethod
@@ -156,7 +155,7 @@ class TestICP(TestCaseMixin, unittest.TestCase):
                     self.assertClose(s_init, s, atol=atol)
                     self.assertClose(Xt_init, Xt, atol=atol)
 
-    def test_heterogenous_inputs(self, batch_size=10):
+    def test_heterogeneous_inputs(self, batch_size=10):
         """
         Tests whether we get the same result when running ICP on
         a set of randomly-sized Pointclouds and on their padded versions.

@@ -13,7 +13,7 @@ from pytorch3d.datasets.shapenet_base import ShapeNetBase
 SYNSET_DICT_DIR = Path(__file__).resolve().parent
 
 
-class ShapeNetCore(ShapeNetBase):
+class ShapeNetCore(ShapeNetBase):  # pragma: no cover
     """
     This class loads ShapeNetCore from a given directory into a Dataset object.
     ShapeNetCore is a subset of the ShapeNet dataset and can be downloaded from
@@ -37,7 +37,7 @@ class ShapeNetCore(ShapeNetBase):
                 synset offsets or labels. A combination of both is also accepted.
                 When no category is specified, all categories in data_dir are loaded.
             version: (int) version of ShapeNetCore data in data_dir, 1 or 2.
-                Default is set to be 1. Version 1 has 57 categories and verions 2 has 55
+                Default is set to be 1. Version 1 has 57 categories and version 2 has 55
                 categories.
                 Note: version 1 has two categories 02858304(boat) and 02992529(cellphone)
                 that are hyponyms of categories 04530566(watercraft) and 04401088(telephone)
@@ -63,7 +63,7 @@ class ShapeNetCore(ShapeNetBase):
         dict_file = "shapenet_synset_dict_v%d.json" % version
         with open(path.join(SYNSET_DICT_DIR, dict_file), "r") as read_dict:
             self.synset_dict = json.load(read_dict)
-        # Inverse dicitonary mapping synset labels to corresponding offsets.
+        # Inverse dictionary mapping synset labels to corresponding offsets.
         self.synset_inv = {label: offset for offset, label in self.synset_dict.items()}
 
         # If categories are specified, check if each category is in the form of either

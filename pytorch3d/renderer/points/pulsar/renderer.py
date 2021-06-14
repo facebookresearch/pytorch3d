@@ -11,9 +11,7 @@ import warnings
 from typing import Optional, Tuple, Union
 
 import torch
-
-# pyre-fixme[21]: Could not find a name `_C` defined in module `pytorch3d`.
-from pytorch3d import _C
+from pytorch3d import _C  # pyre-fixme[21]: Could not find name `_C` in `pytorch3d`.
 from pytorch3d.transforms import axis_angle_to_matrix, rotation_6d_to_matrix
 
 
@@ -85,7 +83,6 @@ class _Render(torch.autograd.Function):
     """
 
     @staticmethod
-    # pyre-fixme[14]: `forward` overrides method defined in `Function` inconsistently.
     # pyre-fixme[14]: `forward` overrides method defined in `Function` inconsistently.
     def forward(
         ctx,
@@ -634,7 +631,6 @@ class Renderer(torch.nn.Module):
                     enabled.
         """
         # The device tracker is registered as buffer.
-        # pyre-fixme[16]: `Renderer` has no attribute `device_tracker`.
         self._renderer.device_tracker = self.device_tracker
         (
             pos_vec,

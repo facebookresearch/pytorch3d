@@ -10,128 +10,126 @@ from common_testing import TestCaseMixin
 from pytorch3d.structures.meshes import Meshes
 
 
+def init_mesh(
+    num_meshes: int = 10,
+    max_v: int = 100,
+    max_f: int = 300,
+    lists_to_tensors: bool = False,
+    device: str = "cpu",
+    requires_grad: bool = False,
+):
+    """
+    Function to generate a Meshes object of N meshes with
+    random numbers of vertices and faces.
+
+    Args:
+        num_meshes: Number of meshes to generate.
+        max_v: Max number of vertices per mesh.
+        max_f: Max number of faces per mesh.
+        lists_to_tensors: Determines whether the generated meshes should be
+                            constructed from lists (=False) or
+                            a tensor (=True) of faces/verts.
+
+    Returns:
+        Meshes object.
+    """
+    device = torch.device(device)
+
+    verts_list = []
+    faces_list = []
+
+    # Randomly generate numbers of faces and vertices in each mesh.
+    if lists_to_tensors:
+        # If we define faces/verts with tensors, f/v has to be the
+        # same for each mesh in the batch.
+        f = torch.randint(1, max_f, size=(1,), dtype=torch.int32)
+        v = torch.randint(3, high=max_v, size=(1,), dtype=torch.int32)
+        f = f.repeat(num_meshes)
+        v = v.repeat(num_meshes)
+    else:
+        # For lists of faces and vertices, we can sample different v/f
+        # per mesh.
+        f = torch.randint(max_f, size=(num_meshes,), dtype=torch.int32)
+        v = torch.randint(3, high=max_v, size=(num_meshes,), dtype=torch.int32)
+
+    # Generate the actual vertices and faces.
+    for i in range(num_meshes):
+        verts = torch.rand(
+            (v[i], 3),
+            dtype=torch.float32,
+            device=device,
+            requires_grad=requires_grad,
+        )
+        faces = torch.randint(v[i], size=(f[i], 3), dtype=torch.int64, device=device)
+        verts_list.append(verts)
+        faces_list.append(faces)
+
+    if lists_to_tensors:
+        verts_list = torch.stack(verts_list)
+        faces_list = torch.stack(faces_list)
+
+    return Meshes(verts=verts_list, faces=faces_list)
+
+
+def init_simple_mesh(device: str = "cpu"):
+    """
+    Returns a Meshes data structure of simple mesh examples.
+
+    Returns:
+        Meshes object.
+    """
+    device = torch.device(device)
+
+    verts = [
+        torch.tensor(
+            [[0.1, 0.3, 0.5], [0.5, 0.2, 0.1], [0.6, 0.8, 0.7]],
+            dtype=torch.float32,
+            device=device,
+        ),
+        torch.tensor(
+            [[0.1, 0.3, 0.3], [0.6, 0.7, 0.8], [0.2, 0.3, 0.4], [0.1, 0.5, 0.3]],
+            dtype=torch.float32,
+            device=device,
+        ),
+        torch.tensor(
+            [
+                [0.7, 0.3, 0.6],
+                [0.2, 0.4, 0.8],
+                [0.9, 0.5, 0.2],
+                [0.2, 0.3, 0.4],
+                [0.9, 0.3, 0.8],
+            ],
+            dtype=torch.float32,
+            device=device,
+        ),
+    ]
+    faces = [
+        torch.tensor([[0, 1, 2]], dtype=torch.int64, device=device),
+        torch.tensor([[0, 1, 2], [1, 2, 3]], dtype=torch.int64, device=device),
+        torch.tensor(
+            [
+                [1, 2, 0],
+                [0, 1, 3],
+                [2, 3, 1],
+                [4, 3, 2],
+                [4, 0, 1],
+                [4, 3, 1],
+                [4, 2, 1],
+            ],
+            dtype=torch.int64,
+            device=device,
+        ),
+    ]
+    return Meshes(verts=verts, faces=faces)
+
+
 class TestMeshes(TestCaseMixin, unittest.TestCase):
     def setUp(self) -> None:
         np.random.seed(42)
         torch.manual_seed(42)
 
-    @staticmethod
-    def init_mesh(
-        num_meshes: int = 10,
-        max_v: int = 100,
-        max_f: int = 300,
-        lists_to_tensors: bool = False,
-        device: str = "cpu",
-        requires_grad: bool = False,
-    ):
-        """
-        Function to generate a Meshes object of N meshes with
-        random numbers of vertices and faces.
-
-        Args:
-            num_meshes: Number of meshes to generate.
-            max_v: Max number of vertices per mesh.
-            max_f: Max number of faces per mesh.
-            lists_to_tensors: Determines whether the generated meshes should be
-                              constructed from lists (=False) or
-                              a tensor (=True) of faces/verts.
-
-        Returns:
-            Meshes object.
-        """
-        device = torch.device(device)
-
-        verts_list = []
-        faces_list = []
-
-        # Randomly generate numbers of faces and vertices in each mesh.
-        if lists_to_tensors:
-            # If we define faces/verts with tensors, f/v has to be the
-            # same for each mesh in the batch.
-            f = torch.randint(max_f, size=(1,), dtype=torch.int32)
-            v = torch.randint(3, high=max_v, size=(1,), dtype=torch.int32)
-            f = f.repeat(num_meshes)
-            v = v.repeat(num_meshes)
-        else:
-            # For lists of faces and vertices, we can sample different v/f
-            # per mesh.
-            f = torch.randint(max_f, size=(num_meshes,), dtype=torch.int32)
-            v = torch.randint(3, high=max_v, size=(num_meshes,), dtype=torch.int32)
-
-        # Generate the actual vertices and faces.
-        for i in range(num_meshes):
-            verts = torch.rand(
-                (v[i], 3),
-                dtype=torch.float32,
-                device=device,
-                requires_grad=requires_grad,
-            )
-            faces = torch.randint(
-                v[i], size=(f[i], 3), dtype=torch.int64, device=device
-            )
-            verts_list.append(verts)
-            faces_list.append(faces)
-
-        if lists_to_tensors:
-            verts_list = torch.stack(verts_list)
-            faces_list = torch.stack(faces_list)
-
-        return Meshes(verts=verts_list, faces=faces_list)
-
-    @staticmethod
-    def init_simple_mesh(device: str = "cpu"):
-        """
-        Returns a Meshes data structure of simple mesh examples.
-
-        Returns:
-            Meshes object.
-        """
-        device = torch.device(device)
-
-        verts = [
-            torch.tensor(
-                [[0.1, 0.3, 0.5], [0.5, 0.2, 0.1], [0.6, 0.8, 0.7]],
-                dtype=torch.float32,
-                device=device,
-            ),
-            torch.tensor(
-                [[0.1, 0.3, 0.3], [0.6, 0.7, 0.8], [0.2, 0.3, 0.4], [0.1, 0.5, 0.3]],
-                dtype=torch.float32,
-                device=device,
-            ),
-            torch.tensor(
-                [
-                    [0.7, 0.3, 0.6],
-                    [0.2, 0.4, 0.8],
-                    [0.9, 0.5, 0.2],
-                    [0.2, 0.3, 0.4],
-                    [0.9, 0.3, 0.8],
-                ],
-                dtype=torch.float32,
-                device=device,
-            ),
-        ]
-        faces = [
-            torch.tensor([[0, 1, 2]], dtype=torch.int64, device=device),
-            torch.tensor([[0, 1, 2], [1, 2, 3]], dtype=torch.int64, device=device),
-            torch.tensor(
-                [
-                    [1, 2, 0],
-                    [0, 1, 3],
-                    [2, 3, 1],
-                    [4, 3, 2],
-                    [4, 0, 1],
-                    [4, 3, 1],
-                    [4, 2, 1],
-                ],
-                dtype=torch.int64,
-                device=device,
-            ),
-        ]
-        return Meshes(verts=verts, faces=faces)
-
     def test_simple(self):
-        mesh = TestMeshes.init_simple_mesh("cuda:0")
+        mesh = init_simple_mesh("cuda:0")
 
         # Check that faces/verts per mesh are set in init:
         self.assertClose(mesh._num_faces_per_mesh.cpu(), torch.tensor([1, 2, 7]))
@@ -168,7 +166,7 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
         # Check if correct errors are raised when verts/faces are on
         # different devices
 
-        mesh = TestMeshes.init_mesh(10, 10, 100)
+        mesh = init_mesh(10, 10, 100)
         verts_list = mesh.verts_list()  # all tensors on cpu
         verts_list = [
             v.to("cuda:0") if random.uniform(0, 1) > 0.5 else v for v in verts_list
@@ -192,7 +190,7 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
         # Define the test mesh object either as a list or tensor of faces/verts.
         for lists_to_tensors in (False, True):
             N = 10
-            mesh = TestMeshes.init_mesh(N, 100, 300, lists_to_tensors=lists_to_tensors)
+            mesh = init_mesh(N, 100, 300, lists_to_tensors=lists_to_tensors)
             verts_list = mesh.verts_list()
             faces_list = mesh.faces_list()
 
@@ -361,7 +359,7 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
 
     def test_clone(self):
         N = 5
-        mesh = TestMeshes.init_mesh(N, 10, 100)
+        mesh = init_mesh(N, 10, 100)
         for force in [0, 1]:
             if force:
                 # force mesh to have computed attributes
@@ -386,7 +384,7 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
 
     def test_detach(self):
         N = 5
-        mesh = TestMeshes.init_mesh(N, 10, 100, requires_grad=True)
+        mesh = init_mesh(N, 10, 100, requires_grad=True)
         for force in [0, 1]:
             if force:
                 # force mesh to have computed attributes
@@ -425,7 +423,7 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
 
         # Note that we don't test with random meshes for this case, as the
         # definition of Laplacian is defined for simple graphs (aka valid meshes)
-        meshes = TestMeshes.init_simple_mesh("cuda:0")
+        meshes = init_simple_mesh("cuda:0")
 
         lapl_naive = naive_laplacian_packed(meshes)
         lapl = meshes.laplacian_packed().to_dense()
@@ -443,10 +441,10 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
             return Meshes(verts=new_verts_list, faces=new_faces_list)
 
         N = 5
-        mesh = TestMeshes.init_mesh(N, 10, 100)
+        mesh = init_mesh(N, 30, 100, lists_to_tensors=True)
         all_v = mesh.verts_packed().size(0)
         verts_per_mesh = mesh.num_verts_per_mesh()
-        for force, deform_shape in itertools.product([0, 1], [(all_v, 3), 3]):
+        for force, deform_shape in itertools.product([False, True], [(all_v, 3), 3]):
             if force:
                 # force mesh to have computed attributes
                 mesh._compute_packed(refresh=True)
@@ -482,14 +480,17 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
                 self.assertClose(
                     new_mesh.faces_list()[i], new_mesh_naive.faces_list()[i]
                 )
+
                 # check faces and vertex normals
                 self.assertClose(
                     new_mesh.verts_normals_list()[i],
                     new_mesh_naive.verts_normals_list()[i],
+                    atol=1e-6,
                 )
                 self.assertClose(
                     new_mesh.faces_normals_list()[i],
                     new_mesh_naive.faces_normals_list()[i],
+                    atol=1e-6,
                 )
 
             # check padded & packed
@@ -533,16 +534,24 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
 
             # check face areas, normals and vertex normals
             self.assertClose(
-                new_mesh.verts_normals_packed(), new_mesh_naive.verts_normals_packed()
+                new_mesh.verts_normals_packed(),
+                new_mesh_naive.verts_normals_packed(),
+                atol=1e-6,
             )
             self.assertClose(
-                new_mesh.verts_normals_padded(), new_mesh_naive.verts_normals_padded()
+                new_mesh.verts_normals_padded(),
+                new_mesh_naive.verts_normals_padded(),
+                atol=1e-6,
             )
             self.assertClose(
-                new_mesh.faces_normals_packed(), new_mesh_naive.faces_normals_packed()
+                new_mesh.faces_normals_packed(),
+                new_mesh_naive.faces_normals_packed(),
+                atol=1e-6,
             )
             self.assertClose(
-                new_mesh.faces_normals_padded(), new_mesh_naive.faces_normals_padded()
+                new_mesh.faces_normals_padded(),
+                new_mesh_naive.faces_normals_padded(),
+                atol=1e-6,
             )
             self.assertClose(
                 new_mesh.faces_areas_packed(), new_mesh_naive.faces_areas_packed()
@@ -566,7 +575,7 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
         N = 5
         for test in ["tensor", "scalar"]:
             for force in (False, True):
-                mesh = TestMeshes.init_mesh(N, 10, 100)
+                mesh = init_mesh(N, 10, 100, lists_to_tensors=True)
                 if force:
                     # force mesh to have computed attributes
                     mesh.verts_packed()
@@ -675,7 +684,7 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
 
     def test_extend_list(self):
         N = 10
-        mesh = TestMeshes.init_mesh(5, 10, 100)
+        mesh = init_mesh(5, 10, 100)
         for force in [0, 1]:
             if force:
                 # force some computes to happen
@@ -710,15 +719,34 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
             mesh.extend(N=-1)
 
     def test_to(self):
-        mesh = TestMeshes.init_mesh(5, 10, 100, device=torch.device("cuda:0"))
-        device = torch.device("cuda:1")
+        mesh = init_mesh(5, 10, 100)
 
-        new_mesh = mesh.to(device)
-        self.assertTrue(new_mesh.device == device)
-        self.assertTrue(mesh.device == torch.device("cuda:0"))
+        cpu_device = torch.device("cpu")
+
+        converted_mesh = mesh.to("cpu")
+        self.assertEqual(cpu_device, converted_mesh.device)
+        self.assertEqual(cpu_device, mesh.device)
+        self.assertIs(mesh, converted_mesh)
+
+        converted_mesh = mesh.to(cpu_device)
+        self.assertEqual(cpu_device, converted_mesh.device)
+        self.assertEqual(cpu_device, mesh.device)
+        self.assertIs(mesh, converted_mesh)
+
+        cuda_device = torch.device("cuda")
+
+        converted_mesh = mesh.to("cuda")
+        self.assertEqual(cuda_device, converted_mesh.device)
+        self.assertEqual(cpu_device, mesh.device)
+        self.assertIsNot(mesh, converted_mesh)
+
+        converted_mesh = mesh.to(cuda_device)
+        self.assertEqual(cuda_device, converted_mesh.device)
+        self.assertEqual(cpu_device, mesh.device)
+        self.assertIsNot(mesh, converted_mesh)
 
     def test_split_mesh(self):
-        mesh = TestMeshes.init_mesh(5, 10, 100)
+        mesh = init_mesh(5, 10, 100)
         split_sizes = [2, 3]
         split_meshes = mesh.split(split_sizes)
         self.assertTrue(len(split_meshes[0]) == 2)
@@ -745,9 +773,7 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
         N = 10
         for lists_to_tensors in (False, True):
             for force in (True, False):
-                mesh = TestMeshes.init_mesh(
-                    N, 100, 300, lists_to_tensors=lists_to_tensors
-                )
+                mesh = init_mesh(N, 100, 300, lists_to_tensors=lists_to_tensors)
                 num_verts_per_mesh = mesh.num_verts_per_mesh()
                 if force:
                     # force mesh to have computed attributes
@@ -998,7 +1024,7 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
             [[0, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10, 11]], dtype=torch.int64
         )
         mesh = Meshes(verts=[verts], faces=[faces])
-
+        self.assertFalse(mesh.has_verts_normals())
         verts_normals_expected = torch.tensor(
             [
                 [0.0, 0.0, 1.0],
@@ -1020,6 +1046,7 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
         self.assertTrue(
             torch.allclose(mesh.verts_normals_list()[0], verts_normals_expected)
         )
+        self.assertTrue(mesh.has_verts_normals())
         self.assertTrue(
             torch.allclose(mesh.faces_normals_list()[0], faces_normals_expected)
         )
@@ -1133,11 +1160,28 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
         self.assertEqual(meshes.faces_normals_padded().shape[0], 0)
         self.assertEqual(meshes.faces_normals_list(), [])
 
+    def test_assigned_normals(self):
+        verts = torch.rand(2, 6, 3)
+        faces = torch.randint(6, size=(2, 4, 3))
+        no_normals = Meshes(verts=verts, faces=faces)
+        self.assertFalse(no_normals.has_verts_normals())
+
+        for verts_normals in [list(verts.unbind(0)), verts]:
+            yes_normals = Meshes(
+                verts=verts.clone(), faces=faces, verts_normals=verts_normals
+            )
+            self.assertTrue(yes_normals.has_verts_normals())
+            self.assertClose(yes_normals.verts_normals_padded(), verts)
+            yes_normals.offset_verts_(torch.FloatTensor([1, 2, 3]))
+            self.assertClose(yes_normals.verts_normals_padded(), verts)
+            yes_normals.offset_verts_(torch.FloatTensor([1, 2, 3]).expand(12, 3))
+            self.assertFalse(torch.allclose(yes_normals.verts_normals_padded(), verts))
+
     def test_compute_faces_areas_cpu_cuda(self):
         num_meshes = 10
         max_v = 100
         max_f = 300
-        mesh_cpu = TestMeshes.init_mesh(num_meshes, max_v, max_f, device="cpu")
+        mesh_cpu = init_mesh(num_meshes, max_v, max_f, device="cpu")
         device = torch.device("cuda:0")
         mesh_cuda = mesh_cpu.to(device)
 
@@ -1158,7 +1202,7 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
     def compute_packed_with_init(
         num_meshes: int = 10, max_v: int = 100, max_f: int = 300, device: str = "cpu"
     ):
-        mesh = TestMeshes.init_mesh(num_meshes, max_v, max_f, device=device)
+        mesh = init_mesh(num_meshes, max_v, max_f, device=device)
         torch.cuda.synchronize()
 
         def compute_packed():
@@ -1171,7 +1215,7 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
     def compute_padded_with_init(
         num_meshes: int = 10, max_v: int = 100, max_f: int = 300, device: str = "cpu"
     ):
-        mesh = TestMeshes.init_mesh(num_meshes, max_v, max_f, device=device)
+        mesh = init_mesh(num_meshes, max_v, max_f, device=device)
         torch.cuda.synchronize()
 
         def compute_padded():

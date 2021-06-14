@@ -2,11 +2,15 @@
 
 
 import unittest
-from pathlib import Path
 
 import numpy as np
 import torch
-from common_testing import TestCaseMixin, get_random_cuda_device
+from common_testing import (
+    TestCaseMixin,
+    get_pytorch3d_dir,
+    get_random_cuda_device,
+    get_tests_dir,
+)
 from PIL import Image
 from pytorch3d.io import load_objs_as_meshes
 from pytorch3d.ops import sample_points_from_meshes
@@ -26,43 +30,43 @@ from pytorch3d.utils.ico_sphere import ico_sphere
 # If DEBUG=True, save out images generated in the tests for debugging.
 # All saved images have prefix DEBUG_
 DEBUG = False
-DATA_DIR = Path(__file__).resolve().parent / "data"
+DATA_DIR = get_tests_dir() / "data"
+
+
+def init_meshes(
+    num_meshes: int = 10,
+    num_verts: int = 1000,
+    num_faces: int = 3000,
+    device: str = "cpu",
+    add_texture: bool = False,
+):
+    device = torch.device(device)
+    verts_list = []
+    faces_list = []
+    texts_list = []
+    for _ in range(num_meshes):
+        verts = torch.rand((num_verts, 3), dtype=torch.float32, device=device)
+        faces = torch.randint(
+            num_verts, size=(num_faces, 3), dtype=torch.int64, device=device
+        )
+        texts = torch.rand((num_verts, 3), dtype=torch.float32, device=device)
+        verts_list.append(verts)
+        faces_list.append(faces)
+        texts_list.append(texts)
+
+    # create textures
+    textures = None
+    if add_texture:
+        textures = TexturesVertex(texts_list)
+    meshes = Meshes(verts=verts_list, faces=faces_list, textures=textures)
+
+    return meshes
 
 
 class TestSamplePoints(TestCaseMixin, unittest.TestCase):
     def setUp(self) -> None:
         super().setUp()
         torch.manual_seed(1)
-
-    @staticmethod
-    def init_meshes(
-        num_meshes: int = 10,
-        num_verts: int = 1000,
-        num_faces: int = 3000,
-        device: str = "cpu",
-        add_texture: bool = False,
-    ):
-        device = torch.device(device)
-        verts_list = []
-        faces_list = []
-        texts_list = []
-        for _ in range(num_meshes):
-            verts = torch.rand((num_verts, 3), dtype=torch.float32, device=device)
-            faces = torch.randint(
-                num_verts, size=(num_faces, 3), dtype=torch.int64, device=device
-            )
-            texts = torch.rand((num_verts, 3), dtype=torch.float32, device=device)
-            verts_list.append(verts)
-            faces_list.append(faces)
-            texts_list.append(texts)
-
-        # create textures
-        textures = None
-        if add_texture:
-            textures = TexturesVertex(texts_list)
-        meshes = Meshes(verts=verts_list, faces=faces_list, textures=textures)
-
-        return meshes
 
     def test_all_empty_meshes(self):
         """
@@ -261,7 +265,7 @@ class TestSamplePoints(TestCaseMixin, unittest.TestCase):
         Confirm that torch.multinomial does not sample elements which have
         zero probability using a real example of input from a training run.
         """
-        weights = torch.load(Path(__file__).resolve().parent / "weights.pt")
+        weights = torch.load(get_tests_dir() / "weights.pt")
         S = 4096
         num_trials = 100
         for _ in range(0, num_trials):
@@ -294,9 +298,7 @@ class TestSamplePoints(TestCaseMixin, unittest.TestCase):
     def test_outputs(self):
 
         for add_texture in (True, False):
-            meshes = TestSamplePoints.init_meshes(
-                device=torch.device("cuda:0"), add_texture=add_texture
-            )
+            meshes = init_meshes(device=torch.device("cuda:0"), add_texture=add_texture)
             out1 = sample_points_from_meshes(meshes, num_samples=100)
             self.assertTrue(torch.is_tensor(out1))
 
@@ -378,7 +380,7 @@ class TestSamplePoints(TestCaseMixin, unittest.TestCase):
         # the cow mesh and its texture uv to a pointcloud with texture
 
         device = torch.device("cuda:0")
-        obj_dir = Path(__file__).resolve().parent.parent / "docs/tutorials/data"
+        obj_dir = get_pytorch3d_dir() / "docs/tutorials/data"
         obj_filename = obj_dir / "cow_mesh/cow.obj"
 
         for text_type in ("uv", "atlas"):

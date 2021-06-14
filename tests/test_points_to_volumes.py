@@ -230,9 +230,9 @@ class TestPointsToVolumes(TestCaseMixin, unittest.TestCase):
     def test_from_point_cloud(self, interp_mode="trilinear"):
         """
         Generates a volume from a random point cloud sampled from faces
-        of a 3D cube. Since each side of the cube is homogenously colored with
+        of a 3D cube. Since each side of the cube is homogeneously colored with
         a different color, this should result in a volume with a
-        predefined homogenous color of the cells along its borders
+        predefined homogeneous color of the cells along its borders
         and black interior. The test is run for both cube and non-cube shaped
         volumes.
         """
@@ -354,7 +354,7 @@ class TestPointsToVolumes(TestCaseMixin, unittest.TestCase):
                         # this does not produce grads w.r.t. xyz
                         self.assertIsNone(field.grad)
                     else:
-                        self.assertTrue(field.grad.data.isfinite().all())
+                        self.assertTrue(torch.isfinite(field.grad.data).all())
 
     def _check_volume_slice_color_density(
         self, V, split_dim, interp_mode, clr_gt, slice_type, border=3

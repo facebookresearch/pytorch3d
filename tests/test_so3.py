@@ -148,8 +148,8 @@ class TestSO3(TestCaseMixin, unittest.TestCase):
         `so3_exponential_map(so3_log_map(so3_exponential_map(log_rot)))
         == so3_exponential_map(log_rot)`
         for a randomly generated batch of rotation matrix logarithms `log_rot`.
-        Unlike `test_so3_log_to_exp_to_log`, this test allows to check the
-        correctness of converting `log_rot` which contains values > math.pi.
+        Unlike `test_so3_log_to_exp_to_log`, this test checks the
+        correctness of converting a `log_rot` which contains values > math.pi.
         """
         log_rot = 2.0 * TestSO3.init_log_rot(batch_size=batch_size)
         # check also the singular cases where rot. angle = {0, pi, 2pi, 3pi}

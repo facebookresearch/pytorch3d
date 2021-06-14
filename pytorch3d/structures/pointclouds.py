@@ -2,10 +2,11 @@
 
 import torch
 
+from ..common.types import Device, make_device
 from . import utils as struct_utils
 
 
-class Pointclouds(object):
+class Pointclouds:
     """
     This class provides functions for working with batches of 3d point clouds,
     and converting between representations.
@@ -18,7 +19,7 @@ class Pointclouds(object):
        - has specific batch dimension.
     Packed
        - no batch dimension.
-       - has auxillary variables used to index into the padded representation.
+       - has auxiliary variables used to index into the padded representation.
 
     Example
 
@@ -61,7 +62,7 @@ class Pointclouds(object):
                                |  ])                     |
     -----------------------------------------------------------------------------
 
-    Auxillary variables for packed representation
+    Auxiliary variables for packed representation
 
     Name                           |   Size              |  Example from above
     -------------------------------|---------------------|-----------------------
@@ -130,7 +131,7 @@ class Pointclouds(object):
         Refer to comments above for descriptions of List and Padded
         representations.
         """
-        self.device = None
+        self.device = torch.device("cpu")
 
         # Indicates whether the clouds in the list/batch have the same number
         # of points.
@@ -175,7 +176,6 @@ class Pointclouds(object):
         if isinstance(points, list):
             self._points_list = points
             self._N = len(self._points_list)
-            self.device = torch.device("cpu")
             self.valid = torch.zeros((self._N,), dtype=torch.bool, device=self.device)
             self._num_points_per_cloud = []
 
@@ -265,7 +265,7 @@ class Pointclouds(object):
                     )
                 if d.device != self.device:
                     raise ValueError(
-                        "All auxillary inputs must be on the same device as the points."
+                        "All auxiliary inputs must be on the same device as the points."
                     )
                 if p > 0:
                     if d.dim() != 2:
@@ -291,7 +291,7 @@ class Pointclouds(object):
                 )
             if aux_input.device != self.device:
                 raise ValueError(
-                    "All auxillary inputs must be on the same device as the points."
+                    "All auxiliary inputs must be on the same device as the points."
                 )
             aux_input_C = aux_input.shape[2]
             return None, aux_input, aux_input_C
@@ -508,7 +508,7 @@ class Pointclouds(object):
     def padded_to_packed_idx(self):
         """
         Return a 1D tensor x with length equal to the total number of points
-        such that points_packed()[i] is element x[i] of the flattened padded
+        such that points_packed()[i] is element x[i] of the flattened padded
         representation.
         The packed representation can be calculated as follows.
 
@@ -573,7 +573,7 @@ class Pointclouds(object):
     def _compute_packed(self, refresh: bool = False):
         """
         Computes the packed version from points_list, normals_list and
-        features_list and sets the values of auxillary tensors.
+        features_list and sets the values of auxiliary tensors.
 
         Args:
             refresh: Set to True to force recomputation of packed
@@ -700,7 +700,7 @@ class Pointclouds(object):
                 setattr(other, k, v.detach())
         return other
 
-    def to(self, device, copy: bool = False):
+    def to(self, device: Device, copy: bool = False):
         """
         Match functionality of torch.Tensor.to()
         If copy = True or the self Tensor is on a different device, the
@@ -709,34 +709,39 @@ class Pointclouds(object):
         then self is returned.
 
         Args:
-          device: Device id for the new tensor.
+          device: Device (as str or torch.device) for the new tensor.
           copy: Boolean indicator whether or not to clone self. Default False.
 
         Returns:
           Pointclouds object.
         """
-        if not copy and self.device == device:
+        device_ = make_device(device)
+
+        if not copy and self.device == device_:
             return self
+
         other = self.clone()
-        if self.device != device:
-            other.device = device
-            if other._N > 0:
-                other._points_list = [v.to(device) for v in other.points_list()]
-                if other._normals_list is not None:
-                    other._normals_list = [n.to(device) for n in other.normals_list()]
-                if other._features_list is not None:
-                    other._features_list = [f.to(device) for f in other.features_list()]
-            for k in self._INTERNAL_TENSORS:
-                v = getattr(self, k)
-                if torch.is_tensor(v):
-                    setattr(other, k, v.to(device))
+        if self.device == device_:
+            return other
+
+        other.device = device_
+        if other._N > 0:
+            other._points_list = [v.to(device_) for v in other.points_list()]
+            if other._normals_list is not None:
+                other._normals_list = [n.to(device_) for n in other.normals_list()]
+            if other._features_list is not None:
+                other._features_list = [f.to(device_) for f in other.features_list()]
+        for k in self._INTERNAL_TENSORS:
+            v = getattr(self, k)
+            if torch.is_tensor(v):
+                setattr(other, k, v.to(device_))
         return other
 
     def cpu(self):
-        return self.to(torch.device("cpu"))
+        return self.to("cpu")
 
     def cuda(self):
-        return self.to(torch.device("cuda"))
+        return self.to("cuda")
 
     def get_cloud(self, index: int):
         """
@@ -910,7 +915,7 @@ class Pointclouds(object):
           **neighborhood_size**: The size of the neighborhood used to estimate the
             geometry around each point.
           **disambiguate_directions**: If `True`, uses the algorithm from [1] to
-            ensure sign consistency of the normals of neigboring points.
+            ensure sign consistency of the normals of neighboring points.
           **normals**: A tensor of normals for each input point
             of shape `(minibatch, num_point, 3)`.
             If `pointclouds` are of `Pointclouds` class, returns a padded tensor.
@@ -985,7 +990,7 @@ class Pointclouds(object):
         Args:
             new_points_padded: FloatTensor of shape (N, P, 3)
             new_normals_padded: (optional) FloatTensor of shape (N, P, 3)
-            new_features_padded: (optional) FloatTensors of shape (N, P, C)
+            new_features_padded: (optional) FloatTensor of shape (N, P, C)
 
         Returns:
             Pointcloud with updated padded representations

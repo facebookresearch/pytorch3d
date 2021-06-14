@@ -9,6 +9,7 @@ from typing import Dict, List, Optional
 import numpy as np
 import torch
 from PIL import Image
+from pytorch3d.common.types import Device
 from pytorch3d.datasets.shapenet_base import ShapeNetBase
 from pytorch3d.renderer import HardPhongShader
 from tabulate import tabulate
@@ -37,7 +38,7 @@ BLENDER_INTRINSIC = torch.tensor(
 )
 
 
-class R2N2(ShapeNetBase):
+class R2N2(ShapeNetBase):  # pragma: no cover
     """
     This class loads the R2N2 dataset from a given directory into a Dataset object.
     The R2N2 dataset contains 13 categories that are a subset of the ShapeNetCore v.1
@@ -99,7 +100,7 @@ class R2N2(ShapeNetBase):
             path.join(SYNSET_DICT_DIR, "r2n2_synset_dict.json"), "r"
         ) as read_dict:
             self.synset_dict = json.load(read_dict)
-        # Inverse dicitonary mapping synset labels to corresponding offsets.
+        # Inverse dictionary mapping synset labels to corresponding offsets.
         self.synset_inv = {label: offset for offset, label in self.synset_dict.items()}
 
         # Store synset and model ids of objects mentioned in the splits_file.
@@ -371,7 +372,7 @@ class R2N2(ShapeNetBase):
         idxs: Optional[List[int]] = None,
         view_idxs: Optional[List[int]] = None,
         shader_type=HardPhongShader,
-        device="cpu",
+        device: Device = "cpu",
         **kwargs
     ) -> torch.Tensor:
         """
@@ -383,7 +384,7 @@ class R2N2(ShapeNetBase):
             view_idxs: each model will be rendered with the orientation(s) of the specified
                 views. Only render by view_idxs if no camera or args for BlenderCamera is
                 supplied.
-            Accepts any of the args of the render function in ShapnetBase:
+            Accepts any of the args of the render function in ShapeNetBase:
             model_ids: List[str] of model_ids of models intended to be rendered.
             categories: List[str] of categories intended to be rendered. categories
                 and sample_nums must be specified at the same time. categories can be given
@@ -394,7 +395,7 @@ class R2N2(ShapeNetBase):
             idxs: List[int] of indices of models to be rendered in the dataset.
             shader_type: Shader to use for rendering. Examples include HardPhongShader
             (default), SoftPhongShader etc or any other type of valid Shader class.
-            device: torch.device on which the tensors should be located.
+            device: Device (as str or torch.device) on which the tensors should be located.
             **kwargs: Accepts any of the kwargs that the renderer supports and any of the
                 args that BlenderCamera supports.
 

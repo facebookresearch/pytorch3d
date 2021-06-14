@@ -1,5 +1,6 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
+import itertools
 import struct
 import unittest
 from io import BytesIO, StringIO
@@ -12,7 +13,8 @@ from common_testing import TestCaseMixin
 from iopath.common.file_io import PathManager
 from pytorch3d.io import IO
 from pytorch3d.io.ply_io import load_ply, save_ply
-from pytorch3d.structures import Pointclouds
+from pytorch3d.renderer.mesh import TexturesVertex
+from pytorch3d.structures import Meshes, Pointclouds
 from pytorch3d.utils import torus
 
 
@@ -158,6 +160,7 @@ class TestMeshPlyIO(TestCaseMixin, unittest.TestCase):
     def test_pluggable_load_cube(self):
         """
         This won't work on Windows due to NamedTemporaryFile being reopened.
+        Use the testpath package instead?
         """
         ply_file = "\n".join(CUBE_PLY_LINES)
         io = IO()
@@ -187,6 +190,106 @@ class TestMeshPlyIO(TestCaseMixin, unittest.TestCase):
                 ValueError, "No mesh interpreter found to read "
             ):
                 io.load_mesh(f3.name)
+
+    def test_save_too_many_colors(self):
+        verts = torch.tensor(
+            [[0, 0, 0], [0, 0, 1], [0, 1, 0], [1, 0, 0]], dtype=torch.float32
+        )
+        faces = torch.tensor([[0, 1, 2], [0, 2, 3]])
+        vert_colors = torch.rand((4, 7))
+        texture_with_seven_colors = TexturesVertex(verts_features=[vert_colors])
+
+        mesh = Meshes(
+            verts=[verts],
+            faces=[faces],
+            textures=texture_with_seven_colors,
+        )
+
+        io = IO()
+        msg = "Texture will not be saved as it has 7 colors, not 3."
+        with NamedTemporaryFile(mode="w", suffix=".ply") as f:
+            with self.assertWarnsRegex(UserWarning, msg):
+                io.save_mesh(mesh.cuda(), f.name)
+
+    def test_save_load_meshes(self):
+        verts = torch.tensor(
+            [[0, 0, 0], [0, 0, 1], [0, 1, 0], [1, 0, 0]], dtype=torch.float32
+        )
+        faces = torch.tensor([[0, 1, 2], [0, 2, 3]])
+        normals = torch.tensor(
+            [[0, 1, 0], [1, 0, 0], [1, 4, 1], [1, 0, 0]], dtype=torch.float32
+        )
+        vert_colors = torch.rand_like(verts)
+        texture = TexturesVertex(verts_features=[vert_colors])
+
+        for do_textures, do_normals in itertools.product([True, False], [True, False]):
+            mesh = Meshes(
+                verts=[verts],
+                faces=[faces],
+                textures=texture if do_textures else None,
+                verts_normals=[normals] if do_normals else None,
+            )
+            device = torch.device("cuda:0")
+
+            io = IO()
+            with NamedTemporaryFile(mode="w", suffix=".ply") as f:
+                io.save_mesh(mesh.cuda(), f.name)
+                f.flush()
+                mesh2 = io.load_mesh(f.name, device=device)
+            self.assertEqual(mesh2.device, device)
+            mesh2 = mesh2.cpu()
+            self.assertClose(mesh2.verts_padded(), mesh.verts_padded())
+            self.assertClose(mesh2.faces_padded(), mesh.faces_padded())
+            if do_normals:
+                self.assertTrue(mesh.has_verts_normals())
+                self.assertTrue(mesh2.has_verts_normals())
+                self.assertClose(
+                    mesh2.verts_normals_padded(), mesh.verts_normals_padded()
+                )
+            else:
+                self.assertFalse(mesh.has_verts_normals())
+                self.assertFalse(mesh2.has_verts_normals())
+                self.assertFalse(torch.allclose(mesh2.verts_normals_padded(), normals))
+            if do_textures:
+                self.assertIsInstance(mesh2.textures, TexturesVertex)
+                self.assertClose(mesh2.textures.verts_features_list()[0], vert_colors)
+            else:
+                self.assertIsNone(mesh2.textures)
+
+    def test_save_load_with_normals(self):
+        points = torch.tensor(
+            [[0, 0, 0], [0, 0, 1], [0, 1, 0], [1, 0, 0]], dtype=torch.float32
+        )
+        normals = torch.tensor(
+            [[0, 1, 0], [1, 0, 0], [1, 4, 1], [1, 0, 0]], dtype=torch.float32
+        )
+        features = torch.rand_like(points)
+
+        for do_features, do_normals in itertools.product([True, False], [True, False]):
+            cloud = Pointclouds(
+                points=[points],
+                features=[features] if do_features else None,
+                normals=[normals] if do_normals else None,
+            )
+            device = torch.device("cuda:0")
+
+            io = IO()
+            with NamedTemporaryFile(mode="w", suffix=".ply") as f:
+                io.save_pointcloud(cloud.cuda(), f.name)
+                f.flush()
+                cloud2 = io.load_pointcloud(f.name, device=device)
+            self.assertEqual(cloud2.device, device)
+            cloud2 = cloud2.cpu()
+            self.assertClose(cloud2.points_padded(), cloud.points_padded())
+            if do_normals:
+                self.assertClose(cloud2.normals_padded(), cloud.normals_padded())
+            else:
+                self.assertIsNone(cloud.normals_padded())
+                self.assertIsNone(cloud2.normals_padded())
+            if do_features:
+                self.assertClose(cloud2.features_packed(), features)
+            else:
+                self.assertIsNone(cloud2.features_packed())
 
     def test_save_ply_invalid_shapes(self):
         # Invalid vertices shape
@@ -316,7 +419,7 @@ class TestMeshPlyIO(TestCaseMixin, unittest.TestCase):
                     file.close()
             self.assertLess(lengths[False], lengths[True], "ascii should be longer")
 
-    def test_heterogenous_property(self):
+    def test_heterogeneous_property(self):
         ply_file_ascii = "\n".join(
             [
                 "ply",
@@ -394,7 +497,7 @@ class TestMeshPlyIO(TestCaseMixin, unittest.TestCase):
             torch.FloatTensor([0, 1, 2]) + 7 * torch.arange(8)[:, None],
         )
         self.assertClose(
-            pointcloud.features_padded()[0],
+            pointcloud.features_padded()[0] * 255,
             torch.FloatTensor([3, 4, 5]) + 7 * torch.arange(8)[:, None],
         )
 
@@ -464,7 +567,7 @@ class TestMeshPlyIO(TestCaseMixin, unittest.TestCase):
         self.assertEqual(pointcloud_gpu.device, torch.device("cuda:0"))
         pointcloud = pointcloud_gpu.to(torch.device("cpu"))
         expected_points = torch.tensor([[[2, 5, 3]]], dtype=torch.float32)
-        expected_features = torch.tensor([[[4, 1, 6]]], dtype=torch.float32)
+        expected_features = torch.tensor([[[4, 1, 6]]], dtype=torch.float32) / 255.0
         self.assertClose(pointcloud.points_padded(), expected_points)
         self.assertClose(pointcloud.features_padded(), expected_features)
 
@@ -669,7 +772,7 @@ class TestMeshPlyIO(TestCaseMixin, unittest.TestCase):
         with self.assertRaisesRegex(ValueError, msg):
             _load_ply_raw(StringIO("\n".join(lines2)))
 
-        # Heterogenous cases
+        # Heterogeneous cases
         lines2 = lines.copy()
         lines2.insert(4, "property double y")
 

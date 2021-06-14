@@ -28,7 +28,7 @@ def estimate_pointcloud_normals(
       **neighborhood_size**: The size of the neighborhood used to estimate the
         geometry around each point.
       **disambiguate_directions**: If `True`, uses the algorithm from [1] to
-        ensure sign consistency of the normals of neigboring points.
+        ensure sign consistency of the normals of neighboring points.
 
     Returns:
       **normals**: A tensor of normals for each input point
@@ -83,7 +83,7 @@ def estimate_pointcloud_local_coord_frames(
       **neighborhood_size**: The size of the neighborhood used to estimate the
         geometry around each point.
       **disambiguate_directions**: If `True`, uses the algorithm from [1] to
-        ensure sign consistency of the normals of neigboring points.
+        ensure sign consistency of the normals of neighboring points.
 
     Returns:
       **curvatures**: The three principal curvatures of each point

@@ -511,7 +511,7 @@ def quaternion_to_axis_angle(quaternions):
 def rotation_6d_to_matrix(d6: torch.Tensor) -> torch.Tensor:
     """
     Converts 6D rotation representation by Zhou et al. [1] to rotation matrix
-    using Gram--Schmidt orthogonalisation per Section B of [1].
+    using Gram--Schmidt orthogonalization per Section B of [1].
     Args:
         d6: 6D rotation representation, of size (*, 6)
 

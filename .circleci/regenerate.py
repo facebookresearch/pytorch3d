@@ -21,6 +21,8 @@ CONDA_CUDA_VERSIONS = {
     "1.6.0": ["cu92", "cu101", "cu102"],
     "1.7.0": ["cu101", "cu102", "cu110"],
     "1.7.1": ["cu101", "cu102", "cu110"],
+    "1.8.0": ["cu101", "cu102", "cu111"],
+    "1.8.1": ["cu101", "cu102", "cu111"],
 }
 
 
@@ -131,6 +133,8 @@ def generate_upload_workflow(*, base_workflow_name, btype, cu_version, filter_br
 
 
 def indent(indentation, data_list):
+    if len(data_list) == 0:
+        return ""
     return ("\n" + " " * indentation).join(
         yaml.dump(data_list, default_flow_style=False).splitlines()
     )

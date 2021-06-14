@@ -245,7 +245,7 @@ inline std::tuple<vec3<T>, T, T, T> BarycentricPerspectiveCorrectionBackward(
 // Clip negative barycentric coordinates to 0.0 and renormalize so
 // the barycentric coordinates for a point sum to 1. When the blur_radius
 // is greater than 0, a face will still be recorded as overlapping a pixel
-// if the pixel is outisde the face. In this case at least one of the
+// if the pixel is outside the face. In this case at least one of the
 // barycentric coordinates for the pixel relative to the face will be negative.
 // Clipping will ensure that the texture and z buffer are interpolated
 // correctly.

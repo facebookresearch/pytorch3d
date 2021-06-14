@@ -4,11 +4,10 @@ Sanity checks for loading ShapeNetCore.
 """
 import os
 import unittest
-from pathlib import Path
 
 import numpy as np
 import torch
-from common_testing import TestCaseMixin, load_rgb_image
+from common_testing import TestCaseMixin, get_tests_dir, load_rgb_image
 from PIL import Image
 from pytorch3d.datasets import ShapeNetCore, collate_batched_meshes
 from pytorch3d.renderer import (
@@ -26,7 +25,7 @@ VERSION = 1
 # If DEBUG=True, save out images generated in the tests for debugging.
 # All saved images have prefix DEBUG_
 DEBUG = False
-DATA_DIR = Path(__file__).resolve().parent / "data"
+DATA_DIR = get_tests_dir() / "data"
 
 
 class TestShapenetCore(TestCaseMixin, unittest.TestCase):

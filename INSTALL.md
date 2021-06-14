@@ -5,7 +5,7 @@
 
 ### Core library
 
-The core library is written in PyTorch. Several components have underlying implementation in CUDA for improved performance. A subset of these components have CPU implementations in C++/Pytorch. It is advised to use PyTorch3D with GPU support in order to use all the features.
+The core library is written in PyTorch. Several components have underlying implementation in CUDA for improved performance. A subset of these components have CPU implementations in C++/PyTorch. It is advised to use PyTorch3D with GPU support in order to use all the features.
 
 - Linux or macOS or Windows
 - Python 3.6, 3.7 or 3.8
@@ -22,7 +22,7 @@ The runtime dependencies can be installed by running:
 conda create -n pytorch3d python=3.8
 conda activate pytorch3d
 conda install -c pytorch pytorch=1.7.1 torchvision cudatoolkit=10.2
-conda install -c conda-forge -c fvcore -c iopath fvcore iopath
+conda install -c fvcore -c iopath -c conda-forge fvcore iopath
 ```
 
 For the CUB build time dependency, if you are using conda, you can continue with

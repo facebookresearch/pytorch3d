@@ -372,7 +372,7 @@ def clip_faces(
         # (F) dim tensor containing the number of clipped vertices in each triangle
         faces_num_clipped_verts = faces_clipped_verts.sum(1)
     else:
-        faces_num_clipped_verts = torch.zeros([F, 3], device=device)
+        faces_num_clipped_verts = torch.zeros([F], device=device)
 
     # If no triangles need to be clipped or culled, avoid unnecessary computation
     # and return early
@@ -397,15 +397,15 @@ def clip_faces(
     # pyre-ignore[16]:
     faces_unculled = ~faces_culled
     # Case 1:  no clipped verts or culled faces
-    cases1_unclipped = torch.logical_and(faces_num_clipped_verts == 0, faces_unculled)
+    cases1_unclipped = (faces_num_clipped_verts == 0) & faces_unculled
     case1_unclipped_idx = cases1_unclipped.nonzero(as_tuple=True)[0]
     # Case 2: all verts clipped
-    case2_unclipped = torch.logical_or(faces_num_clipped_verts == 3, faces_culled)
+    case2_unclipped = (faces_num_clipped_verts == 3) | faces_culled
     # Case 3: two verts clipped
-    case3_unclipped = torch.logical_and(faces_num_clipped_verts == 2, faces_unculled)
+    case3_unclipped = (faces_num_clipped_verts == 2) & faces_unculled
     case3_unclipped_idx = case3_unclipped.nonzero(as_tuple=True)[0]
     # Case 4: one vert clipped
-    case4_unclipped = torch.logical_and(faces_num_clipped_verts == 1, faces_unculled)
+    case4_unclipped = (faces_num_clipped_verts == 1) & faces_unculled
     case4_unclipped_idx = case4_unclipped.nonzero(as_tuple=True)[0]
 
     # faces_unclipped_to_clipped_idx is an (F) dim tensor storing the index of each

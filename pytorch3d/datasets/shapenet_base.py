@@ -4,6 +4,7 @@ import warnings
 from typing import Dict, List, Optional, Tuple
 
 import torch
+from pytorch3d.common.types import Device
 from pytorch3d.io import load_obj
 from pytorch3d.renderer import (
     FoVPerspectiveCameras,
@@ -18,7 +19,7 @@ from pytorch3d.renderer import (
 from .utils import collate_batched_meshes
 
 
-class ShapeNetBase(torch.utils.data.Dataset):
+class ShapeNetBase(torch.utils.data.Dataset):  # pragma: no cover
     """
     'ShapeNetBase' implements a base Dataset for ShapeNet and R2N2 with helper methods.
     It is not intended to be used on its own as a Dataset for a Dataloader. Both __init__
@@ -107,7 +108,7 @@ class ShapeNetBase(torch.utils.data.Dataset):
         sample_nums: Optional[List[int]] = None,
         idxs: Optional[List[int]] = None,
         shader_type=HardPhongShader,
-        device="cpu",
+        device: Device = "cpu",
         **kwargs
     ) -> torch.Tensor:
         """
@@ -131,7 +132,7 @@ class ShapeNetBase(torch.utils.data.Dataset):
             shader_type: Select shading. Valid options include HardPhongShader (default),
                 SoftPhongShader, HardGouraudShader, SoftGouraudShader, HardFlatShader,
                 SoftSilhouetteShader.
-            device: torch.device on which the tensors should be located.
+            device: Device (as str or torch.device) on which the tensors should be located.
             **kwargs: Accepts any of the kwargs that the renderer supports.
 
         Returns:
@@ -252,7 +253,7 @@ class ShapeNetBase(torch.utils.data.Dataset):
         Helper function for sampling a number of indices from the given category.
 
         Args:
-            sample_num: number of indicies to be sampled from the given category.
+            sample_num: number of indices to be sampled from the given category.
             category: category synset of the category to be sampled from. If not
                 specified, sample from all models in the loaded dataset.
         """

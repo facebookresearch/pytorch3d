@@ -2,14 +2,14 @@
 import os
 import pickle
 import unittest
-from pathlib import Path
 
 import torch
-from common_testing import TestCaseMixin
+from common_testing import TestCaseMixin, get_tests_dir
 from pytorch3d.ops.marching_cubes import marching_cubes_naive
 
 
 USE_SCIKIT = False
+DATA_DIR = get_tests_dir() / "data"
 
 
 def convert_to_local(verts, volume_dim):
@@ -641,7 +641,6 @@ class TestMarchingCubes(TestCaseMixin, unittest.TestCase):
             volume, isolevel=64, return_local_coords=False
         )
 
-        DATA_DIR = Path(__file__).resolve().parent / "data"
         data_filename = "test_marching_cubes_data/sphere_level64.pickle"
         filename = os.path.join(DATA_DIR, data_filename)
         with open(filename, "rb") as file:
@@ -677,7 +676,6 @@ class TestMarchingCubes(TestCaseMixin, unittest.TestCase):
             volume = volume.permute(0, 3, 2, 1)  # (B, D, H, W)
             verts, faces = marching_cubes_naive(volume, isolevel=0.001)
 
-            DATA_DIR = Path(__file__).resolve().parent / "data"
             data_filename = "test_marching_cubes_data/double_ellipsoid.pickle"
             filename = os.path.join(DATA_DIR, data_filename)
             with open(filename, "rb") as file:

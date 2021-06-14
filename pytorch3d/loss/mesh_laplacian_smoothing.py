@@ -9,7 +9,7 @@ def mesh_laplacian_smoothing(meshes, method: str = "uniform"):
     Computes the laplacian smoothing objective for a batch of meshes.
     This function supports three variants of Laplacian smoothing,
     namely with uniform weights("uniform"), with cotangent weights ("cot"),
-    and cotangent cuvature ("cotcurv").For more details read [1, 2].
+    and cotangent curvature ("cotcurv").For more details read [1, 2].
 
     Args:
         meshes: Meshes object with a batch of meshes.

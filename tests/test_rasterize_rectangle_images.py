@@ -2,11 +2,15 @@
 
 import unittest
 from itertools import product
-from pathlib import Path
 
 import numpy as np
 import torch
-from common_testing import TestCaseMixin, load_rgb_image
+from common_testing import (
+    TestCaseMixin,
+    get_pytorch3d_dir,
+    get_tests_dir,
+    load_rgb_image,
+)
 from PIL import Image
 from pytorch3d.io import load_obj
 from pytorch3d.renderer.cameras import FoVPerspectiveCameras, look_at_view_transform
@@ -42,7 +46,7 @@ from pytorch3d.utils import torus
 
 
 DEBUG = False
-DATA_DIR = Path(__file__).resolve().parent / "data"
+DATA_DIR = get_tests_dir() / "data"
 
 # Verts/Faces for a simple mesh with two faces.
 verts0 = torch.tensor(
@@ -58,7 +62,7 @@ verts0 = torch.tensor(
 )
 faces0 = torch.tensor([[1, 0, 2], [4, 3, 5]], dtype=torch.int64)
 
-# Points for a simple pointcloud. Get the vertices from a
+# Points for a simple point cloud. Get the vertices from a
 # torus and apply rotations such that the points are no longer
 # symmerical in X/Y.
 torus_mesh = torus(r=0.25, R=1.0, sides=5, rings=2 * 5)
@@ -449,7 +453,7 @@ class TestRasterizeRectangleImagesMeshes(TestCaseMixin, unittest.TestCase):
         Test a larger textured mesh is rendered correctly in a non square image.
         """
         device = torch.device("cuda:0")
-        obj_dir = Path(__file__).resolve().parent.parent / "docs/tutorials/data"
+        obj_dir = get_pytorch3d_dir() / "docs/tutorials/data"
         obj_filename = obj_dir / "cow_mesh/cow.obj"
 
         # Load mesh + texture
@@ -767,7 +771,7 @@ class TestRasterizeRectangleImagesPointclouds(TestCaseMixin, unittest.TestCase):
 
     def test_render_pointcloud(self):
         """
-        Test a textured poincloud is rendered correctly in a non square image.
+        Test a textured point cloud is rendered correctly in a non square image.
         """
         device = torch.device("cuda:0")
         pointclouds = Pointclouds(

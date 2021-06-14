@@ -2,10 +2,10 @@
 
 
 import unittest
-from pathlib import Path
 
 import numpy as np
 import torch
+from common_testing import get_tests_dir
 from PIL import Image
 from pytorch3d.renderer.cameras import FoVPerspectiveCameras, look_at_view_transform
 from pytorch3d.renderer.mesh.rasterizer import MeshRasterizer, RasterizationSettings
@@ -17,7 +17,7 @@ from pytorch3d.structures import Pointclouds
 from pytorch3d.utils.ico_sphere import ico_sphere
 
 
-DATA_DIR = Path(__file__).resolve().parent / "data"
+DATA_DIR = get_tests_dir() / "data"
 DEBUG = False  # Set DEBUG to true to save outputs from the tests.
 
 

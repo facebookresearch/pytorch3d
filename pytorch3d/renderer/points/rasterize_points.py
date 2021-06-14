@@ -4,13 +4,11 @@ from typing import List, Optional, Tuple, Union
 
 import numpy as np
 import torch
-
-# pyre-fixme[21]: Could not find name `_C` in `pytorch3d`.
-from pytorch3d import _C
+from pytorch3d import _C  # pyre-fixme[21]: Could not find name `_C` in `pytorch3d`.
 from pytorch3d.renderer.mesh.rasterize_meshes import pix_to_non_square_ndc
 
 
-# Maxinum number of faces per bins for
+# Maximum number of faces per bins for
 # coarse-to-fine rasterization
 kMaxPointsPerBin = 22
 
@@ -61,7 +59,7 @@ def rasterize_points(
             set it heuristically based on the shape of the input. This should not
             affect the output, but can affect the speed of the forward pass.
         points_per_bin: Only applicable when using coarse-to-fine rasterization
-            (bin_size > 0); this is the maxiumum number of points allowed within each
+            (bin_size > 0); this is the maximum number of points allowed within each
             bin. If more than this many points actually fall into a bin, an error
             will be raised. This should not affect the output values, but can affect
             the memory usage in the forward pass.
@@ -97,7 +95,7 @@ def rasterize_points(
     radius = _format_radius(radius, pointclouds)
 
     # In the case that H != W use the max image size to set the bin_size
-    # to accommodate the num bins constraint in the coarse rasteizer.
+    # to accommodate the num bins constraint in the coarse rasterizer.
     # If the ratio of H:W is large this might cause issues as the smaller
     # dimension will have fewer bins.
     # TODO: consider a better way of setting the bin size.
@@ -195,7 +193,6 @@ def _format_radius(
 class _RasterizePoints(torch.autograd.Function):
     @staticmethod
     # pyre-fixme[14]: `forward` overrides method defined in `Function` inconsistently.
-    # pyre-fixme[14]: `forward` overrides method defined in `Function` inconsistently.
     def forward(
         ctx,
         points,  # (P, 3)
@@ -278,7 +275,7 @@ def rasterize_points_python(
     # Support variable size radius for each point in the batch
     radius = _format_radius(radius, pointclouds)
 
-    # Intialize output tensors.
+    # Initialize output tensors.
     point_idxs = torch.full(
         (N, H, W, K), fill_value=-1, dtype=torch.int32, device=device
     )

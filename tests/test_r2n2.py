@@ -5,11 +5,10 @@ Sanity checks for loading R2N2.
 import json
 import os
 import unittest
-from pathlib import Path
 
 import numpy as np
 import torch
-from common_testing import TestCaseMixin, load_rgb_image
+from common_testing import TestCaseMixin, get_tests_dir, load_rgb_image
 from PIL import Image
 from pytorch3d.datasets import (
     R2N2,
@@ -37,7 +36,7 @@ VOXELS_REL_PATH = "ShapeNetVox"
 
 
 DEBUG = False
-DATA_DIR = Path(__file__).resolve().parent / "data"
+DATA_DIR = get_tests_dir() / "data"
 
 
 class TestR2N2(TestCaseMixin, unittest.TestCase):

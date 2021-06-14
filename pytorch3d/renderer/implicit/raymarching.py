@@ -67,13 +67,13 @@ class EmissionAbsorptionRaymarcher(torch.nn.Module):
             rays_features: Per-ray feature values represented with a tensor
                 of shape `(..., n_points_per_ray, feature_dim)`.
             eps: A lower bound added to `rays_densities` before computing
-                the absorbtion function (cumprod of `1-rays_densities` along
+                the absorption function (cumprod of `1-rays_densities` along
                 each ray). This prevents the cumprod to yield exact 0
                 which would inhibit any gradient-based learning.
 
         Returns:
             features_opacities: A tensor of shape `(..., feature_dim+1)`
-                that concatenates two tensors alonng the last dimension:
+                that concatenates two tensors along the last dimension:
                     1) features: A tensor of per-ray renders
                         of shape `(..., feature_dim)`.
                     2) opacities: A tensor of per-ray opacity values
@@ -177,12 +177,12 @@ def _check_density_bounds(
     Checks whether the elements of `rays_densities` range within `bounds`.
     If not issues a warning.
     """
-    # pyre-fixme[16]: `ByteTensor` has no attribute `any`.
-    if ((rays_densities > bounds[1]) | (rays_densities < bounds[0])).any():
-        warnings.warn(
-            "One or more elements of rays_densities are outside of valid"
-            + f"range {str(bounds)}"
-        )
+    with torch.no_grad():
+        if (rays_densities.max() > bounds[1]) or (rays_densities.min() < bounds[0]):
+            warnings.warn(
+                "One or more elements of rays_densities are outside of valid"
+                + f"range {str(bounds)}"
+            )
 
 
 def _check_raymarcher_inputs(

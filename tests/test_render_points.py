@@ -7,11 +7,15 @@ Sanity checks for output images from the pointcloud renderer.
 import unittest
 import warnings
 from os import path
-from pathlib import Path
 
 import numpy as np
 import torch
-from common_testing import TestCaseMixin, load_rgb_image
+from common_testing import (
+    TestCaseMixin,
+    get_pytorch3d_dir,
+    get_tests_dir,
+    load_rgb_image,
+)
 from PIL import Image
 from pytorch3d.renderer.cameras import (
     FoVOrthographicCameras,
@@ -36,7 +40,7 @@ from pytorch3d.utils.ico_sphere import ico_sphere
 # If DEBUG=True, save out images generated in the tests for debugging.
 # All saved images have prefix DEBUG_
 DEBUG = False
-DATA_DIR = Path(__file__).resolve().parent / "data"
+DATA_DIR = get_tests_dir() / "data"
 
 
 class TestRenderPoints(TestCaseMixin, unittest.TestCase):
@@ -216,7 +220,7 @@ class TestRenderPoints(TestCaseMixin, unittest.TestCase):
 
     def test_pointcloud_with_features(self):
         device = torch.device("cuda:0")
-        file_dir = Path(__file__).resolve().parent.parent / "docs/tutorials/data"
+        file_dir = get_pytorch3d_dir() / "docs/tutorials/data"
         pointcloud_filename = file_dir / "PittsburghBridge/pointcloud.npz"
 
         # Note, this file is too large to check in to the repo.

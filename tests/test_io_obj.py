@@ -8,7 +8,7 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile
 
 import torch
-from common_testing import TestCaseMixin
+from common_testing import TestCaseMixin, get_pytorch3d_dir, get_tests_dir
 from iopath.common.file_io import PathManager
 from pytorch3d.io import IO, load_obj, load_objs_as_meshes, save_obj
 from pytorch3d.io.mtl_io import (
@@ -19,6 +19,10 @@ from pytorch3d.io.mtl_io import (
 from pytorch3d.renderer import TexturesAtlas, TexturesUV, TexturesVertex
 from pytorch3d.structures import Meshes, join_meshes_as_batch
 from pytorch3d.utils import torus
+
+
+DATA_DIR = get_tests_dir() / "data"
+TUTORIAL_DATA_DIR = get_pytorch3d_dir() / "docs/tutorials/data"
 
 
 class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
@@ -321,7 +325,9 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
 
         with self.assertRaises(ValueError) as err:
             load_obj(obj_file)
-        self.assertTrue("Face vertices can ony have 3 properties" in str(err.exception))
+        self.assertTrue(
+            "Face vertices can only have 3 properties" in str(err.exception)
+        )
 
     def test_load_obj_error_invalid_vertex_indices(self):
         obj_file = "\n".join(
@@ -475,9 +481,8 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
         self.assertEqual(actual_file, expected_file)
 
     def test_load_mtl(self):
-        DATA_DIR = Path(__file__).resolve().parent.parent / "docs/tutorials/data"
         obj_filename = "cow_mesh/cow.obj"
-        filename = os.path.join(DATA_DIR, obj_filename)
+        filename = os.path.join(TUTORIAL_DATA_DIR, obj_filename)
         verts, faces, aux = load_obj(filename)
         materials = aux.material_colors
         tex_maps = aux.texture_images
@@ -559,9 +564,8 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
     def test_load_mtl_texture_atlas_compare_softras(self):
         # Load saved texture atlas created with SoftRas.
         device = torch.device("cuda:0")
-        DATA_DIR = Path(__file__).resolve().parent.parent
-        obj_filename = DATA_DIR / "docs/tutorials/data/cow_mesh/cow.obj"
-        expected_atlas_fname = DATA_DIR / "tests/data/cow_texture_atlas_softras.pt"
+        obj_filename = TUTORIAL_DATA_DIR / "cow_mesh/cow.obj"
+        expected_atlas_fname = DATA_DIR / "cow_texture_atlas_softras.pt"
 
         # Note, the reference texture atlas generated using SoftRas load_obj function
         # is too large to check in to the repo. Download the file to run the test locally.
@@ -590,9 +594,8 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
         self.assertClose(expected_atlas, aux.texture_atlas, atol=5e-5)
 
     def test_load_mtl_noload(self):
-        DATA_DIR = Path(__file__).resolve().parent.parent / "docs/tutorials/data"
         obj_filename = "cow_mesh/cow.obj"
-        filename = os.path.join(DATA_DIR, obj_filename)
+        filename = os.path.join(TUTORIAL_DATA_DIR, obj_filename)
         verts, faces, aux = load_obj(filename, load_textures=False)
 
         self.assertTrue(aux.material_colors is None)
@@ -627,8 +630,7 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
         self.assertTrue(aux.normals is None)
         self.assertTrue(aux.verts_uvs is None)
 
-    def test_load_obj_mlt_no_image(self):
-        DATA_DIR = Path(__file__).resolve().parent / "data"
+    def test_load_obj_mtl_no_image(self):
         obj_filename = "obj_mtl_no_image/model.obj"
         filename = os.path.join(DATA_DIR, obj_filename)
         R = 8
@@ -657,7 +659,6 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
         self.assertEqual(list(aux.material_colors.keys()), ["material_1"])
 
     def test_load_obj_missing_texture(self):
-        DATA_DIR = Path(__file__).resolve().parent / "data"
         obj_filename = "missing_files_obj/model.obj"
         filename = os.path.join(DATA_DIR, obj_filename)
         with self.assertWarnsRegex(UserWarning, "Texture file does not exist"):
@@ -672,7 +673,6 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
         self.assertTrue(torch.allclose(faces.verts_idx, expected_faces))
 
     def test_load_obj_missing_texture_noload(self):
-        DATA_DIR = Path(__file__).resolve().parent / "data"
         obj_filename = "missing_files_obj/model.obj"
         filename = os.path.join(DATA_DIR, obj_filename)
         verts, faces, aux = load_obj(filename, load_textures=False)
@@ -688,7 +688,6 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
         self.assertTrue(aux.texture_images is None)
 
     def test_load_obj_missing_mtl(self):
-        DATA_DIR = Path(__file__).resolve().parent / "data"
         obj_filename = "missing_files_obj/model2.obj"
         filename = os.path.join(DATA_DIR, obj_filename)
         with self.assertWarnsRegex(UserWarning, "Mtl file does not exist"):
@@ -703,7 +702,6 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
         self.assertTrue(torch.allclose(faces.verts_idx, expected_faces))
 
     def test_load_obj_missing_mtl_noload(self):
-        DATA_DIR = Path(__file__).resolve().parent / "data"
         obj_filename = "missing_files_obj/model2.obj"
         filename = os.path.join(DATA_DIR, obj_filename)
         verts, faces, aux = load_obj(filename, load_textures=False)
@@ -760,8 +758,7 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
                         mesh.textures.atlas_padded(), mesh3.textures.atlas_padded()
                     )
 
-        DATA_DIR = Path(__file__).resolve().parent.parent / "docs/tutorials/data"
-        obj_filename = DATA_DIR / "cow_mesh/cow.obj"
+        obj_filename = TUTORIAL_DATA_DIR / "cow_mesh/cow.obj"
 
         mesh = load_objs_as_meshes([obj_filename])
         mesh3 = load_objs_as_meshes([obj_filename, obj_filename, obj_filename])
@@ -789,6 +786,11 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
         mesh_rgb = Meshes(verts=[verts], faces=[faces], textures=rgb_tex)
         mesh_rgb3 = join_meshes_as_batch([mesh_rgb, mesh_rgb, mesh_rgb])
         check_triple(mesh_rgb, mesh_rgb3)
+        nums_rgb = mesh_rgb.textures._num_verts_per_mesh
+        nums_rgb3 = mesh_rgb3.textures._num_verts_per_mesh
+        self.assertEqual(type(nums_rgb), list)
+        self.assertEqual(type(nums_rgb3), list)
+        self.assertListEqual(nums_rgb * 3, nums_rgb3)
 
         # meshes with texture atlas, join into a batch.
         device = "cuda:0"
@@ -799,7 +801,7 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
         check_triple(mesh_atlas, mesh_atlas3)
 
         # Test load multiple meshes with textures into a batch.
-        teapot_obj = DATA_DIR / "teapot.obj"
+        teapot_obj = TUTORIAL_DATA_DIR / "teapot.obj"
         mesh_teapot = load_objs_as_meshes([teapot_obj])
         teapot_verts, teapot_faces = mesh_teapot.get_mesh_verts_faces(0)
         mix_mesh = load_objs_as_meshes([obj_filename, teapot_obj], load_textures=False)
@@ -859,8 +861,8 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
     def bm_load_texture_atlas(R: int):
         device = torch.device("cuda:0")
         torch.cuda.set_device(device)
-        DATA_DIR = "/data/users/nikhilar/fbsource/fbcode/vision/fair/pytorch3d/docs/"
-        obj_filename = os.path.join(DATA_DIR, "tutorials/data/cow_mesh/cow.obj")
+        data_dir = "/data/users/nikhilar/fbsource/fbcode/vision/fair/pytorch3d/docs/"
+        obj_filename = os.path.join(data_dir, "tutorials/data/cow_mesh/cow.obj")
         torch.cuda.synchronize()
 
         def load():

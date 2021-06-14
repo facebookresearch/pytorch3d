@@ -60,7 +60,7 @@ class RasterizationSettings:
 
 class MeshRasterizer(nn.Module):
     """
-    This class implements methods for rasterizing a batch of heterogenous
+    This class implements methods for rasterizing a batch of heterogeneous
     Meshes.
     """
 

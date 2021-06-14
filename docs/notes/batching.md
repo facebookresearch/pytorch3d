@@ -5,7 +5,7 @@ sidebar_label: Batching
 
 # Batching
 
-In deep learning, every optimization step operates on multiple input examples for robust training. Thus, efficient batching is crucial. For image inputs, batching is straighforward; N images are resized to the same height and width and stacked as a 4 dimensional tensor of shape `N x 3 x H x W`. For meshes, batching is less straighforward.
+In deep learning, every optimization step operates on multiple input examples for robust training. Thus, efficient batching is crucial. For image inputs, batching is straightforward; N images are resized to the same height and width and stacked as a 4 dimensional tensor of shape `N x 3 x H x W`. For meshes, batching is less straightforward.
 
 <img src="assets/batch_intro.png" alt="batch_intro" align="middle"/>
 
@@ -21,7 +21,7 @@ Assume you want to construct a batch containing two meshes, with `mesh1 = (v1: V
 
 ## Use cases for batch modes
 
-The need for different mesh batch modes is inherent to the way pytorch operators are implemented. To fully utilize the optimized pytorch ops, the [Meshes][meshes] data structure allows for efficient conversion between the different batch modes. This is crucial when aiming for a fast and efficient training cycle. An example of this is [Mesh R-CNN][meshrcnn]. Here, in the same forward pass different parts of the network assume different inputs, which are computed by converting between the different batch modes. In particular, [vert_align][vert_align] assumes a *padded* input tensor while immediately after [graph_conv][graphconv] assumes a *packed* input tensor.
+The need for different mesh batch modes is inherent to the way PyTorch operators are implemented. To fully utilize the optimized PyTorch ops, the [Meshes][meshes] data structure allows for efficient conversion between the different batch modes. This is crucial when aiming for a fast and efficient training cycle. An example of this is [Mesh R-CNN][meshrcnn]. Here, in the same forward pass different parts of the network assume different inputs, which are computed by converting between the different batch modes. In particular, [vert_align][vert_align] assumes a *padded* input tensor while immediately after [graph_conv][graphconv] assumes a *packed* input tensor.
 
 <img src="assets/meshrcnn.png" alt="meshrcnn" width="700" align="middle" />
 

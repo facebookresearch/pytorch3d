@@ -18,7 +18,7 @@ from .utils import _validate_ray_bundle_variables, ray_bundle_variables_to_ray_p
 # 1) The raysampler:
 #     - samples rays from input cameras
 #     - transforms the rays to world coordinates
-# 2) The volumetric_function (which is a callable argument of the forwad pass)
+# 2) The volumetric_function (which is a callable argument of the forward pass)
 #    evaluates ray_densities and ray_features at the sampled ray-points.
 # 3) The raymarcher takes ray_densities and ray_features and uses a raymarching
 #    algorithm to render each ray.
@@ -32,23 +32,29 @@ class ImplicitRenderer(torch.nn.Module):
 
     VOLUMETRIC_FUNCTION
 
-    The `forward` function of the renderer accepts as input the rendering cameras as well
-    as the `volumetric_function` `Callable`, which defines a field of opacity
+    The `forward` function of the renderer accepts as input the rendering cameras
+    as well as the `volumetric_function` `Callable`, which defines a field of opacity
     and feature vectors over the 3D domain of the scene.
 
     A standard `volumetric_function` has the following signature:
     ```
-    def volumetric_function(ray_bundle: RayBundle) -> Tuple[torch.Tensor, torch.Tensor]
+    def volumetric_function(
+        ray_bundle: RayBundle,
+        **kwargs,
+    ) -> Tuple[torch.Tensor, torch.Tensor]
     ```
     With the following arguments:
         `ray_bundle`: A RayBundle object containing the following variables:
-            `rays_origins`: A tensor of shape `(minibatch, ..., 3)` denoting
+            `origins`: A tensor of shape `(minibatch, ..., 3)` denoting
                 the origins of the rendering rays.
-            `rays_directions`: A tensor of shape `(minibatch, ..., 3)`
+            `directions`: A tensor of shape `(minibatch, ..., 3)`
                 containing the direction vectors of rendering rays.
-            `rays_lengths`: A tensor of shape
+            `lengths`: A tensor of shape
                 `(minibatch, ..., num_points_per_ray)`containing the
                 lengths at which the ray points are sampled.
+            `xys`: A tensor of shape
+                `(minibatch, ..., 2)` containing the
+                xy locations of each ray's pixel in the screen space.
     Calling `volumetric_function` then returns the following:
         `rays_densities`: A tensor of shape
             `(minibatch, ..., num_points_per_ray, opacity_dim)` containing
@@ -57,12 +63,20 @@ class ImplicitRenderer(torch.nn.Module):
             `(minibatch, ..., num_points_per_ray, feature_dim)` containing
             the an feature vector for each ray point.
 
+    Note that, in order to increase flexibility of the API, we allow multiple
+    other arguments to enter the volumetric function via additional
+    (optional) keyword arguments `**kwargs`.
+    A typical use-case is passing a `CamerasBase` object as an additional
+    keyword argument, which can allow the volumetric function to adjust its
+    outputs based on the directions of the projection rays.
+
     Example:
         A simple volumetric function of a 0-centered
         RGB sphere with a unit diameter is defined as follows:
         ```
         def volumetric_function(
             ray_bundle: RayBundle,
+            **kwargs,
         ) -> Tuple[torch.Tensor, torch.Tensor]:
 
             # first convert the ray origins, directions and lengths
@@ -117,7 +131,7 @@ class ImplicitRenderer(torch.nn.Module):
         Args:
             cameras: A batch of cameras that render the scene. A `self.raysampler`
                 takes the cameras as input and samples rays that pass through the
-                domain of the volumentric function.
+                domain of the volumetric function.
             volumetric_function: A `Callable` that accepts the parametrizations
                 of the rendering rays and returns the densities and features
                 at the respective 3D of the rendering rays. Please refer to
@@ -215,7 +229,7 @@ class VolumeRenderer(torch.nn.Module):
         Args:
             cameras: A batch of cameras that render the scene. A `self.raysampler`
                 takes the cameras as input and samples rays that pass through the
-                domain of the volumentric function.
+                domain of the volumetric function.
             volumes: An instance of the `Volumes` class representing a
                 batch of volumes that are being rendered.
 
@@ -233,7 +247,7 @@ class VolumeRenderer(torch.nn.Module):
 
 class VolumeSampler(torch.nn.Module):
     """
-    A class that allows to sample a batch of volumes `Volumes`
+    A module to sample a batch of volumes `Volumes`
     at 3D points sampled along projection rays.
     """
 
@@ -241,7 +255,7 @@ class VolumeSampler(torch.nn.Module):
         """
         Args:
             volumes: An instance of the `Volumes` class representing a
-                batch if volumes that are being rendered.
+                batch of volumes that are being rendered.
             sample_mode: Defines the algorithm used to sample the volumetric
                 voxel grid. Can be either "bilinear" or "nearest".
         """
@@ -286,7 +300,7 @@ class VolumeSampler(torch.nn.Module):
         Returns:
             rays_densities: A tensor of shape
                 `(minibatch, ..., num_points_per_ray, opacity_dim)` containing the
-                densitity vectors sampled from the volume at the locations of
+                density vectors sampled from the volume at the locations of
                 the ray points.
             rays_features: A tensor of shape
                 `(minibatch, ..., num_points_per_ray, feature_dim)` containing the

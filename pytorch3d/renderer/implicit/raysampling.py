@@ -16,7 +16,7 @@ This file defines three raysampling techniques:
 
 class GridRaysampler(torch.nn.Module):
     """
-    Samples a fixed number of points along rays which are regulary distributed
+    Samples a fixed number of points along rays which are regularly distributed
     in a batch of rectangular image grids. Points along each ray
     have uniformly-spaced z-coordinates between a predefined
     minimum and maximum depth.
@@ -113,7 +113,7 @@ class GridRaysampler(torch.nn.Module):
                 containing the 2D image coordinates of each ray.
         """
 
-        batch_size = cameras.R.shape[0]  # pyre-ignore
+        batch_size = cameras.R.shape[0]
 
         device = cameras.device
 
@@ -129,7 +129,7 @@ class GridRaysampler(torch.nn.Module):
 
 class NDCGridRaysampler(GridRaysampler):
     """
-    Samples a fixed number of points along rays which are regulary distributed
+    Samples a fixed number of points along rays which are regularly distributed
     in a batch of rectangular image grids. Points along each ray
     have uniformly-spaced z-coordinates between a predefined minimum and maximum depth.
 
@@ -229,7 +229,7 @@ class MonteCarloRaysampler(torch.nn.Module):
                 containing the 2D image coordinates of each ray.
         """
 
-        batch_size = cameras.R.shape[0]  # pyre-ignore
+        batch_size = cameras.R.shape[0]
 
         device = cameras.device
 

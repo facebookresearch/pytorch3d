@@ -254,6 +254,11 @@ class TestMeshOffIO(TestCaseMixin, unittest.TestCase):
         lines2[0] = "OFF " + lines[0]
         load(lines2)
 
+        # OFF line can be merged in to the first line with no space
+        lines2 = lines.copy()
+        lines2[0] = "OFF" + lines[0]
+        load(lines2)
+
         with self.assertRaisesRegex(ValueError, "Not enough face data."):
             load(lines[:-1])
 
