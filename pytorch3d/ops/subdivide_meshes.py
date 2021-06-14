@@ -6,7 +6,7 @@ import torch.nn as nn
 from pytorch3d.structures import Meshes
 
 
-class SubdivideMeshes(nn.Module):  # pragma: no cover
+class SubdivideMeshes(nn.Module):
     """
     Subdivide a triangle mesh by adding a new vertex at the center of each edge
     and dividing each face into four new faces. Vectors of vertex
@@ -396,7 +396,7 @@ def create_verts_index(verts_per_mesh, edges_per_mesh, device=None):
     return verts_idx
 
 
-def create_faces_index(faces_per_mesh, device=None):  # pragma: no cover
+def create_faces_index(faces_per_mesh, device=None):
     """
     Helper function to group the faces indices for each mesh. New faces are
     stacked at the end of the original faces tensor, so in order to have

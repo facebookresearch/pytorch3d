@@ -11,7 +11,7 @@ from pytorch3d.utils.ico_sphere import ico_sphere
 
 
 class TestSubdivideMeshes(TestCaseMixin, unittest.TestCase):
-    def test_simple_subdivide(self):
+    def simple_subdivide(self, with_init=False):
         # Create a mesh with one face and check the subdivided mesh has
         # 4 faces with the correct vertex coordinates.
         device = torch.device("cuda:0")
@@ -23,7 +23,8 @@ class TestSubdivideMeshes(TestCaseMixin, unittest.TestCase):
         )
         faces = torch.tensor([[0, 1, 2]], dtype=torch.int64, device=device)
         mesh = Meshes(verts=[verts], faces=[faces])
-        subdivide = SubdivideMeshes()
+        mesh_init = mesh.clone() if with_init else None
+        subdivide = SubdivideMeshes(meshes=mesh_init)
         new_mesh = subdivide(mesh)
 
         # Subdivided face:
@@ -60,6 +61,12 @@ class TestSubdivideMeshes(TestCaseMixin, unittest.TestCase):
         self.assertClose(new_verts, gt_subdivide_verts)
         self.assertClose(new_faces, gt_subdivide_faces)
         self.assertTrue(new_verts.requires_grad == verts.requires_grad)
+
+    def test_simple_subdivide(self):
+        self.simple_subdivide()
+
+    def test_simple_subdivide_with_init(self):
+        self.simple_subdivide(with_init=True)
 
     def test_heterogeneous_meshes(self):
         device = torch.device("cuda:0")
