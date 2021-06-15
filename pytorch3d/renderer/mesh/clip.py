@@ -638,8 +638,11 @@ def convert_clipped_rasterization_to_original_faces(
     """
     faces_clipped_to_unclipped_idx = clipped_faces.faces_clipped_to_unclipped_idx
 
-    # If no clipping or culling then return inputs
-    if faces_clipped_to_unclipped_idx is None:
+    # If no clipping then return inputs
+    if (
+        faces_clipped_to_unclipped_idx is None
+        or faces_clipped_to_unclipped_idx.numel() == 0
+    ):
         return pix_to_face_clipped, bary_coords_clipped
 
     device = pix_to_face_clipped.device

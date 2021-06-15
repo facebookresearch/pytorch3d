@@ -657,22 +657,30 @@ class TestRenderMeshesClipping(TestCaseMixin, unittest.TestCase):
 
     def test_mesh_outside_frustrum(self):
         """
-        Test the case where the mesh is completely outside the view
+        Test cases:
+        1. Where the mesh is completely outside the view
         frustrum so all faces are culled and z_clip_value = None.
+        2. Where the part of the mesh is in the view frustrum but
+        the z_clip value = 5.0 so all the visible faces are behind
+        the clip plane so are culled instead of clipped.
         """
         device = "cuda:0"
-        mesh = torus(20.0, 85.0, 32, 16, device=device)
-        tex = TexturesVertex(verts_features=torch.rand_like(mesh.verts_padded()))
-        mesh.textures = tex
-        raster_settings = RasterizationSettings(image_size=512, cull_to_frustum=True)
-        R, T = look_at_view_transform(1.0, 0.0, 0.0)
-        cameras = PerspectiveCameras(device=device, R=R, T=T)
-        renderer = MeshRenderer(
-            rasterizer=MeshRasterizer(cameras=cameras, raster_settings=raster_settings),
-            shader=SoftPhongShader(cameras=cameras, device=device),
-        )
-        images = renderer(mesh)
-
-        # Mesh is completely outside the view frustrum
-        # The image should be white.
-        self.assertClose(images[0, ..., :3], torch.ones_like(images[0, ..., :3]))
+        mesh1 = torus(20.0, 85.0, 32, 16, device=device)
+        mesh2 = torus(2.0, 3.0, 32, 16, device=device)
+        for (mesh, z_clip) in [(mesh1, None), (mesh2, 5.0)]:
+            tex = TexturesVertex(verts_features=torch.rand_like(mesh.verts_padded()))
+            mesh.textures = tex
+            raster_settings = RasterizationSettings(
+                image_size=512, cull_to_frustum=True, z_clip_value=z_clip
+            )
+            R, T = look_at_view_transform(3.0, 0.0, 0.0)
+            cameras = PerspectiveCameras(device=device, R=R, T=T)
+            renderer = MeshRenderer(
+                rasterizer=MeshRasterizer(
+                    cameras=cameras, raster_settings=raster_settings
+                ),
+                shader=SoftPhongShader(cameras=cameras, device=device),
+            )
+            images = renderer(mesh)
+            # The image should be white.
+            self.assertClose(images[0, ..., :3], torch.ones_like(images[0, ..., :3]))
