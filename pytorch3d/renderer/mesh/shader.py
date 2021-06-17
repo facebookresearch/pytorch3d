@@ -26,7 +26,7 @@ from .shading import flat_shading, gouraud_shading, phong_shading
 #     - blend colors across top K faces per pixel.
 
 
-class HardPhongShader(nn.Module):  # pragma: no cover
+class HardPhongShader(nn.Module):
     """
     Per pixel lighting - the lighting model is applied using the interpolated
     coordinates and normals for each pixel. The blending function hard assigns
@@ -58,7 +58,8 @@ class HardPhongShader(nn.Module):  # pragma: no cover
 
     def to(self, device: Device):
         # Manually move to device modules which are not subclasses of nn.Module
-        self.cameras = self.cameras.to(device)
+        if self.cameras is not None:
+            self.cameras = self.cameras.to(device)
         self.materials = self.materials.to(device)
         self.lights = self.lights.to(device)
         return self
@@ -86,7 +87,7 @@ class HardPhongShader(nn.Module):  # pragma: no cover
         return images
 
 
-class SoftPhongShader(nn.Module):  # pragma: no cover
+class SoftPhongShader(nn.Module):
     """
     Per pixel lighting - the lighting model is applied using the interpolated
     coordinates and normals for each pixel. The blending function returns the
@@ -118,7 +119,8 @@ class SoftPhongShader(nn.Module):  # pragma: no cover
 
     def to(self, device: Device):
         # Manually move to device modules which are not subclasses of nn.Module
-        self.cameras = self.cameras.to(device)
+        if self.cameras is not None:
+            self.cameras = self.cameras.to(device)
         self.materials = self.materials.to(device)
         self.lights = self.lights.to(device)
         return self
@@ -150,7 +152,7 @@ class SoftPhongShader(nn.Module):  # pragma: no cover
         return images
 
 
-class HardGouraudShader(nn.Module):  # pragma: no cover
+class HardGouraudShader(nn.Module):
     """
     Per vertex lighting - the lighting model is applied to the vertex colors and
     the colors are then interpolated using the barycentric coordinates to
@@ -183,7 +185,8 @@ class HardGouraudShader(nn.Module):  # pragma: no cover
 
     def to(self, device: Device):
         # Manually move to device modules which are not subclasses of nn.Module
-        self.cameras = self.cameras.to(device)
+        if self.cameras is not None:
+            self.cameras = self.cameras.to(device)
         self.materials = self.materials.to(device)
         self.lights = self.lights.to(device)
         return self
@@ -214,7 +217,7 @@ class HardGouraudShader(nn.Module):  # pragma: no cover
         return images
 
 
-class SoftGouraudShader(nn.Module):  # pragma: no cover
+class SoftGouraudShader(nn.Module):
     """
     Per vertex lighting - the lighting model is applied to the vertex colors and
     the colors are then interpolated using the barycentric coordinates to
@@ -247,7 +250,8 @@ class SoftGouraudShader(nn.Module):  # pragma: no cover
 
     def to(self, device: Device):
         # Manually move to device modules which are not subclasses of nn.Module
-        self.cameras = self.cameras.to(device)
+        if self.cameras is not None:
+            self.cameras = self.cameras.to(device)
         self.materials = self.materials.to(device)
         self.lights = self.lights.to(device)
         return self
@@ -277,7 +281,7 @@ class SoftGouraudShader(nn.Module):  # pragma: no cover
 
 def TexturedSoftPhongShader(
     device: Device = "cpu", cameras=None, lights=None, materials=None, blend_params=None
-):  # pragma: no cover
+):
     """
     TexturedSoftPhongShader class has been DEPRECATED. Use SoftPhongShader instead.
     Preserving TexturedSoftPhongShader as a function for backwards compatibility.
@@ -296,7 +300,7 @@ def TexturedSoftPhongShader(
     )
 
 
-class HardFlatShader(nn.Module):  # pragma: no cover
+class HardFlatShader(nn.Module):
     """
     Per face lighting - the lighting model is applied using the average face
     position and the face normal. The blending function hard assigns
@@ -328,7 +332,8 @@ class HardFlatShader(nn.Module):  # pragma: no cover
 
     def to(self, device: Device):
         # Manually move to device modules which are not subclasses of nn.Module
-        self.cameras = self.cameras.to(device)
+        if self.cameras is not None:
+            self.cameras = self.cameras.to(device)
         self.materials = self.materials.to(device)
         self.lights = self.lights.to(device)
         return self
@@ -355,7 +360,7 @@ class HardFlatShader(nn.Module):  # pragma: no cover
         return images
 
 
-class SoftSilhouetteShader(nn.Module):  # pragma: no cover
+class SoftSilhouetteShader(nn.Module):
     """
     Calculate the silhouette by blending the top K faces for each pixel based
     on the 2d euclidean distance of the center of the pixel to the mesh face.
