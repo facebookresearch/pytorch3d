@@ -82,7 +82,7 @@ def _copysign(a, b):
     return torch.where(signs_differ, -a, a)
 
 
-def _sqrt_positive_part(x):
+def _sqrt_positive_part(x: torch.Tensor) -> torch.Tensor:
     """
     Returns torch.sqrt(torch.max(0, x))
     but with a zero subgradient where x is 0.
@@ -93,7 +93,7 @@ def _sqrt_positive_part(x):
     return ret
 
 
-def matrix_to_quaternion(matrix):
+def matrix_to_quaternion(matrix: torch.Tensor) -> torch.Tensor:
     """
     Convert rotations given as rotation matrices to quaternions.
 
@@ -105,17 +105,44 @@ def matrix_to_quaternion(matrix):
     """
     if matrix.size(-1) != 3 or matrix.size(-2) != 3:
         raise ValueError(f"Invalid rotation matrix  shape f{matrix.shape}.")
-    m00 = matrix[..., 0, 0]
-    m11 = matrix[..., 1, 1]
-    m22 = matrix[..., 2, 2]
-    o0 = 0.5 * _sqrt_positive_part(1 + m00 + m11 + m22)
-    x = 0.5 * _sqrt_positive_part(1 + m00 - m11 - m22)
-    y = 0.5 * _sqrt_positive_part(1 - m00 + m11 - m22)
-    z = 0.5 * _sqrt_positive_part(1 - m00 - m11 + m22)
-    o1 = _copysign(x, matrix[..., 2, 1] - matrix[..., 1, 2])
-    o2 = _copysign(y, matrix[..., 0, 2] - matrix[..., 2, 0])
-    o3 = _copysign(z, matrix[..., 1, 0] - matrix[..., 0, 1])
-    return torch.stack((o0, o1, o2, o3), -1)
+
+    batch_dim = matrix.shape[:-2]
+    m00, m01, m02, m10, m11, m12, m20, m21, m22 = torch.unbind(
+        matrix.reshape(*batch_dim, 9), dim=-1
+    )
+
+    q_abs = _sqrt_positive_part(
+        torch.stack(
+            [
+                1.0 + m00 + m11 + m22,
+                1.0 + m00 - m11 - m22,
+                1.0 - m00 + m11 - m22,
+                1.0 - m00 - m11 + m22,
+            ],
+            dim=-1,
+        )
+    )
+
+    # we produce the desired quaternion multiplied by each of r, i, j, k
+    quat_by_rijk = torch.stack(
+        [
+            torch.stack([q_abs[..., 0] ** 2, m21 - m12, m02 - m20, m10 - m01], dim=-1),
+            torch.stack([m21 - m12, q_abs[..., 1] ** 2, m10 + m01, m02 + m20], dim=-1),
+            torch.stack([m02 - m20, m10 + m01, q_abs[..., 2] ** 2, m12 + m21], dim=-1),
+            torch.stack([m10 - m01, m20 + m02, m21 + m12, q_abs[..., 3] ** 2], dim=-1),
+        ],
+        dim=-2,
+    )
+
+    # clipping is not important here; if q_abs is small, the candidate won't be picked
+    quat_candidates = quat_by_rijk / (2.0 * q_abs[..., None].clip(0.1))
+
+    # if not for numerical problems, quat_candidates[i] should be same (up to a sign),
+    # forall i; we pick the best-conditioned one (with the largest denominator)
+
+    return quat_candidates[
+        F.one_hot(q_abs.argmax(dim=-1), num_classes=4) > 0.5, :  # pyre-ignore[16]
+    ].reshape(*batch_dim, 4)
 
 
 def _axis_angle_rotation(axis: str, angle):
