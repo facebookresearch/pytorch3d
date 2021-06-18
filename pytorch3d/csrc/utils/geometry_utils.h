@@ -560,6 +560,26 @@ PointTriangleDistanceBackward(
   return std::make_tuple(grad_p, grad_v0, grad_v1, grad_v2);
 }
 
+// Computes the area of a triangle (v0, v1, v2).
+// Args:
+//     v0, v1, v2: vec3 coordinates of the triangle vertices
+//
+// Returns:
+//     area: float: the area of the triangle
+//
+template <typename T>
+T AreaOfTriangle(const vec3<T>& v0, const vec3<T>& v1, const vec3<T>& v2) {
+  vec3<T> p0 = v1 - v0;
+  vec3<T> p1 = v2 - v0;
+
+  // compute the hypotenus of the scross product (p0 x p1)
+  float dd = std::hypot(
+      p0.y * p1.z - p0.z * p1.y,
+      std::hypot(p0.z * p1.x - p0.x * p1.z, p0.x * p1.y - p0.y * p1.x));
+
+  return dd / 2.0;
+}
+
 // Computes the squared distance of a point p relative to a triangle (v0, v1,
 // v2). If the point's projection p0 on the plane spanned by (v0, v1, v2) is
 // inside the triangle with vertices (v0, v1, v2), then the returned value is
@@ -604,6 +624,7 @@ vec3<T> BarycentricCoords3Forward(
 // Checks whether the point p is inside the triangle (v0, v1, v2).
 // A point is inside the triangle, if all barycentric coordinates
 // wrt the triangle are >= 0 & <= 1.
+// If the triangle is degenerate, aka line or point, then return False.
 //
 // NOTE that this function assumes that p lives on the space spanned
 // by (v0, v1, v2).
@@ -623,11 +644,16 @@ static bool IsInsideTriangle(
     const vec3<T>& v0,
     const vec3<T>& v1,
     const vec3<T>& v2) {
-  vec3<T> bary = BarycentricCoords3Forward(p, v0, v1, v2);
-  bool x_in = 0.0f <= bary.x && bary.x <= 1.0f;
-  bool y_in = 0.0f <= bary.y && bary.y <= 1.0f;
-  bool z_in = 0.0f <= bary.z && bary.z <= 1.0f;
-  bool inside = x_in && y_in && z_in;
+  bool inside;
+  if (AreaOfTriangle(v0, v1, v2) < 1e-5) {
+    inside = 0;
+  } else {
+    vec3<T> bary = BarycentricCoords3Forward(p, v0, v1, v2);
+    bool x_in = 0.0f <= bary.x && bary.x <= 1.0f;
+    bool y_in = 0.0f <= bary.y && bary.y <= 1.0f;
+    bool z_in = 0.0f <= bary.z && bary.z <= 1.0f;
+    inside = x_in && y_in && z_in;
+  }
   return inside;
 }
 
