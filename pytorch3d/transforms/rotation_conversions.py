@@ -282,9 +282,7 @@ def matrix_to_euler_angles(matrix, convention: str):
     return torch.stack(o, -1)
 
 
-def random_quaternions(
-    n: int, dtype: Optional[torch.dtype] = None, device=None, requires_grad=False
-):
+def random_quaternions(n: int, dtype: Optional[torch.dtype] = None, device=None):
     """
     Generate random quaternions representing rotations,
     i.e. versors with nonnegative real part.
@@ -294,21 +292,17 @@ def random_quaternions(
         dtype: Type to return.
         device: Desired device of returned tensor. Default:
             uses the current device for the default tensor type.
-        requires_grad: Whether the resulting tensor should have the gradient
-            flag set.
 
     Returns:
         Quaternions as tensor of shape (N, 4).
     """
-    o = torch.randn((n, 4), dtype=dtype, device=device, requires_grad=requires_grad)
+    o = torch.randn((n, 4), dtype=dtype, device=device)
     s = (o * o).sum(1)
     o = o / _copysign(torch.sqrt(s), o[:, 0])[:, None]
     return o
 
 
-def random_rotations(
-    n: int, dtype: Optional[torch.dtype] = None, device=None, requires_grad=False
-):
+def random_rotations(n: int, dtype: Optional[torch.dtype] = None, device=None):
     """
     Generate random rotations as 3x3 rotation matrices.
 
@@ -317,21 +311,15 @@ def random_rotations(
         dtype: Type to return.
         device: Device of returned tensor. Default: if None,
             uses the current device for the default tensor type.
-        requires_grad: Whether the resulting tensor should have the gradient
-            flag set.
 
     Returns:
         Rotation matrices as tensor of shape (n, 3, 3).
     """
-    quaternions = random_quaternions(
-        n, dtype=dtype, device=device, requires_grad=requires_grad
-    )
+    quaternions = random_quaternions(n, dtype=dtype, device=device)
     return quaternion_to_matrix(quaternions)
 
 
-def random_rotation(
-    dtype: Optional[torch.dtype] = None, device=None, requires_grad=False
-):
+def random_rotation(dtype: Optional[torch.dtype] = None, device=None):
     """
     Generate a single random 3x3 rotation matrix.
 
@@ -339,13 +327,11 @@ def random_rotation(
         dtype: Type to return
         device: Device of returned tensor. Default: if None,
             uses the current device for the default tensor type
-        requires_grad: Whether the resulting tensor should have the gradient
-            flag set
 
     Returns:
         Rotation matrix as tensor of shape (3, 3).
     """
-    return random_rotations(1, dtype, device, requires_grad)[0]
+    return random_rotations(1, dtype, device)[0]
 
 
 def standardize_quaternion(quaternions):

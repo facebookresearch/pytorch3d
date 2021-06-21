@@ -76,7 +76,8 @@ class TestRotationConversion(TestCaseMixin, unittest.TestCase):
 
     def test_quat_grad_exists(self):
         """Quaternion calculations are differentiable."""
-        rotation = random_rotation(requires_grad=True)
+        rotation = random_rotation()
+        rotation.requires_grad = True
         modified = quaternion_to_matrix(matrix_to_quaternion(rotation))
         [g] = torch.autograd.grad(modified.sum(), rotation)
         self.assertTrue(torch.isfinite(g).all())
@@ -131,7 +132,8 @@ class TestRotationConversion(TestCaseMixin, unittest.TestCase):
 
     def test_euler_grad_exists(self):
         """Euler angle calculations are differentiable."""
-        rotation = random_rotation(dtype=torch.float64, requires_grad=True)
+        rotation = random_rotation(dtype=torch.float64)
+        rotation.requires_grad = True
         for convention in self._all_euler_angle_conventions():
             euler_angles = matrix_to_euler_angles(rotation, convention)
             mdata = euler_angles_to_matrix(euler_angles, convention)
@@ -218,7 +220,8 @@ class TestRotationConversion(TestCaseMixin, unittest.TestCase):
 
     def test_quaternion_application(self):
         """Applying a quaternion is the same as applying the matrix."""
-        quaternions = random_quaternions(3, torch.float64, requires_grad=True)
+        quaternions = random_quaternions(3, torch.float64)
+        quaternions.requires_grad = True
         matrices = quaternion_to_matrix(quaternions)
         points = torch.randn(3, 3, dtype=torch.float64, requires_grad=True)
         transform1 = quaternion_apply(quaternions, points)
