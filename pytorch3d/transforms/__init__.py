@@ -1,5 +1,6 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
+from .math import acos_linear_extrapolation
 from .rotation_conversions import (
     axis_angle_to_matrix,
     axis_angle_to_quaternion,
