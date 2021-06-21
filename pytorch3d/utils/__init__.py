@@ -1,5 +1,6 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
 
+from .camera_conversions import cameras_from_opencv_projection
 from .ico_sphere import ico_sphere
 from .torus import torus
 
