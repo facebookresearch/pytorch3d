@@ -353,6 +353,11 @@ class TestMeshPlyIO(TestCaseMixin, unittest.TestCase):
         save_ply(file, verts=verts, faces=faces, verts_normals=normals)
         file.close()
 
+    def test_contiguity_unimportant(self):
+        verts = torch.rand(32, 3)
+        self._test_save_load(verts, torch.randint(30, size=(10, 3)))
+        self._test_save_load(verts, torch.randint(30, size=(3, 10)).T)
+
     def test_empty_save_load(self):
         # Vertices + empty faces
         verts = torch.tensor([[0.1, 0.2, 0.3]])
