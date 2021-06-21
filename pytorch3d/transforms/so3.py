@@ -14,6 +14,7 @@ def so3_relative_angle(
     R2: torch.Tensor,
     cos_angle: bool = False,
     cos_bound: float = 1e-4,
+    eps: float = 1e-4,
 ) -> torch.Tensor:
     """
     Calculates the relative angle (in radians) between pairs of
@@ -33,7 +34,8 @@ def so3_relative_angle(
             of the `acos` call. Note that the non-finite outputs/gradients
             are returned when the angle is requested (i.e. `cos_angle==False`)
             and the rotation angle is close to 0 or π.
-
+        eps: Tolerance for the valid trace check of the relative rotation matrix
+            in `so3_rotation_angle`.
     Returns:
         Corresponding rotation angles of shape `(minibatch,)`.
         If `cos_angle==True`, returns the cosine of the angles.
@@ -43,7 +45,7 @@ def so3_relative_angle(
         ValueError if `R1` or `R2` has an unexpected trace.
     """
     R12 = torch.bmm(R1, R2.permute(0, 2, 1))
-    return so3_rotation_angle(R12, cos_angle=cos_angle, cos_bound=cos_bound)
+    return so3_rotation_angle(R12, cos_angle=cos_angle, cos_bound=cos_bound, eps=eps)
 
 
 def so3_rotation_angle(

@@ -20,6 +20,7 @@ from .rotation_conversions import (
     rotation_6d_to_matrix,
     standardize_quaternion,
 )
+from .se3 import se3_exp_map, se3_log_map
 from .so3 import (
     so3_exponential_map,
     so3_exp_map,
