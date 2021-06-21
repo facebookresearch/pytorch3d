@@ -122,7 +122,10 @@ jobs:
       - checkout
       # This is building with cuda but no gpu present,
       # so we aren't running the tests.
-      - run: MAX_JOBS=15 TEST_FLAG=--no-test packaging/build_conda.sh
+      - run:
+          name: build
+          no_output_timeout: 20m
+          command: MAX_JOBS=15 TEST_FLAG=--no-test packaging/build_conda.sh
       - store_artifacts:
           path: /opt/conda/conda-bld/linux-64
       - persist_to_workspace:
