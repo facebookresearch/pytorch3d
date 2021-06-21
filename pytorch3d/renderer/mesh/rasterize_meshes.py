@@ -401,7 +401,7 @@ def pix_to_non_square_ndc(i, S1, S2):
     return -offset + (ndc_range * i + offset) / S1
 
 
-def rasterize_meshes_python(
+def rasterize_meshes_python(  # noqa: C901
     meshes,
     image_size: Union[int, Tuple[int, int]] = 256,
     blur_radius: float = 0.0,

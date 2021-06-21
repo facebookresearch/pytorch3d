@@ -143,14 +143,26 @@ class TestMeshGltfIO(TestCaseMixin, unittest.TestCase):
             mesh_obj.get_bounding_boxes().cpu(), mesh_obj.get_bounding_boxes()
         )
 
+        self.assertClose(
+            mesh.textures.verts_uvs_padded().cpu(), mesh_obj.textures.verts_uvs_padded()
+        )
+
+        self.assertClose(
+            mesh.textures.faces_uvs_padded().cpu(), mesh_obj.textures.faces_uvs_padded()
+        )
+
+        self.assertClose(
+            mesh.textures.maps_padded().cpu(), mesh_obj.textures.maps_padded()
+        )
+
         if DEBUG:
             texturesuv_image_PIL(mesh.textures).save(DATA_DIR / "out_cow.png")
-        image = _render(mesh, "cow", azim=4)
 
-        with Image.open(DATA_DIR / "glb_cow.png") as f:
-            expected = np.array(f)
+            image = _render(mesh, "cow", azim=4)
+            with Image.open(DATA_DIR / "glb_cow.png") as f:
+                expected = np.array(f)
 
-        self.assertClose(image, expected)
+            self.assertClose(image, expected)
 
     def test_load_cow_no_texture(self):
         """

@@ -17,8 +17,8 @@ from common_testing import TestCaseMixin, get_tests_dir, load_rgb_image
 from pytorch3d.io import save_obj
 from pytorch3d.renderer.cameras import (
     FoVPerspectiveCameras,
-    look_at_view_transform,
     PerspectiveCameras,
+    look_at_view_transform,
 )
 from pytorch3d.renderer.lighting import PointLights
 from pytorch3d.renderer.mesh import (
@@ -34,6 +34,7 @@ from pytorch3d.renderer.mesh.shader import SoftPhongShader
 from pytorch3d.renderer.mesh.textures import TexturesVertex
 from pytorch3d.structures.meshes import Meshes
 from pytorch3d.utils import torus
+
 
 # If DEBUG=True, save out images generated in the tests for debugging.
 # All saved images have prefix DEBUG_

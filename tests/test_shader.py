@@ -4,10 +4,7 @@ import unittest
 
 import torch
 from common_testing import TestCaseMixin
-from pytorch3d.renderer.cameras import (
-    look_at_view_transform,
-    PerspectiveCameras,
-)
+from pytorch3d.renderer.cameras import PerspectiveCameras, look_at_view_transform
 from pytorch3d.renderer.mesh.rasterizer import Fragments
 from pytorch3d.renderer.mesh.shader import (
     HardFlatShader,

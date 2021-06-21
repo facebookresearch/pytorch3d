@@ -6,6 +6,7 @@ from typing import NamedTuple, Sequence, Union
 import torch
 from pytorch3d import _C  # pyre-fixme[21]: Could not find name `_C` in `pytorch3d`.
 
+
 # Example functions for blending the top K colors per pixel using the outputs
 # from rasterization.
 # NOTE: All blending function should return an RGBA image per batch element
