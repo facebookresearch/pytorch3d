@@ -22,6 +22,7 @@ from .rotation_conversions import (
 )
 from .so3 import (
     so3_exponential_map,
+    so3_exp_map,
     so3_log_map,
     so3_relative_angle,
     so3_rotation_angle,
