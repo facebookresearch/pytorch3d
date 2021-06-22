@@ -177,8 +177,8 @@ jobs:
           sudo apt-get update && sudo apt-get install -y nvidia-container-toolkit=${NVIDIA_CONTAINER_VERSION}
           sudo systemctl restart docker
 
-          DRIVER_FN="NVIDIA-Linux-x86_64-450.80.02.run"
-          wget "https://us.download.nvidia.com/XFree86/Linux-x86_64/450.80.02/$DRIVER_FN"
+          DRIVER_FN="NVIDIA-Linux-x86_64-460.84.run"
+          wget "https://us.download.nvidia.com/XFree86/Linux-x86_64/460.84/$DRIVER_FN"
           sudo /bin/bash "$DRIVER_FN" -s --no-drm || (sudo cat /var/log/nvidia-installer.log && false)
           nvidia-smi
 
@@ -238,10 +238,10 @@ workflows:
           pytorch_version: "1.4"
           cu_version: "cu101"
       - binary_linux_conda_cuda:
-          name: testrun_conda_cuda_py37_cu102_pyt160
+          name: testrun_conda_cuda_py37_cu102_pyt190
           context: DOCKERHUB_TOKEN
           python_version: "3.7"
-          pytorch_version: '1.6.0'
+          pytorch_version: '1.9.0'
           cu_version: "cu102"
       - binary_linux_conda_cuda:
           name: testrun_conda_cuda_py37_cu110_pyt170
@@ -259,19 +259,19 @@ workflows:
           cu_version: cpu
           name: macos_wheel_py36_cpu
           python_version: '3.6'
-          pytorch_version: '1.7.1'
+          pytorch_version: '1.9.0'
       - binary_macos_wheel:
           cu_version: cpu
           name: macos_wheel_py37_cpu
           python_version: '3.7'
-          pytorch_version: '1.7.1'
+          pytorch_version: '1.9.0'
       - binary_macos_wheel:
           cu_version: cpu
           name: macos_wheel_py38_cpu
           python_version: '3.8'
-          pytorch_version: '1.7.1'
+          pytorch_version: '1.9.0'
       - binary_macos_wheel:
           cu_version: cpu
           name: macos_wheel_py39_cpu
           python_version: '3.9'
-          pytorch_version: '1.7.1'
+          pytorch_version: '1.9.0'

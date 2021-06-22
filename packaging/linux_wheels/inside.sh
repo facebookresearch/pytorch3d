@@ -23,8 +23,10 @@ CUB_HOME=$(realpath ./cub-1.10.0)
 export CUB_HOME
 echo "CUB_HOME is now $CUB_HOME"
 
+# As a rule, we want to build for any combination of dependencies which is supported by
+# PyTorch3D and not older than the current Google Colab set up.
 
-PYTHON_VERSIONS="3.6 3.7 3.8 3.9"
+PYTHON_VERSIONS="3.7 3.8 3.9"
 # the keys are pytorch versions
 declare -A CONDA_CUDA_VERSIONS=(
 #    ["1.4.0"]="cu101"
@@ -33,8 +35,9 @@ declare -A CONDA_CUDA_VERSIONS=(
 #    ["1.6.0"]="cu101 cu102"
 #    ["1.7.0"]="cu101 cu102 cu110"
 #    ["1.7.1"]="cu101 cu102 cu110"
-    ["1.8.0"]="cu101 cu102 cu111"
-    ["1.8.1"]="cu101 cu102 cu111"
+#    ["1.8.0"]="cu101 cu102 cu111"
+#    ["1.8.1"]="cu101 cu102 cu111"
+    ["1.9.0"]="cu102 cu111"
 )
 
 
