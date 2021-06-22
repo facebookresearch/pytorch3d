@@ -1,4 +1,9 @@
-:: Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
+@REM Copyright (c) Facebook, Inc. and its affiliates.
+@REM All rights reserved.
+@REM
+@REM This source code is licensed under the BSD-style license found in the
+@REM LICENSE file in the root directory of this source tree.
+
 :: Set env vars that tell distutils to use the compiler that we put on path
 SET DISTUTILS_USE_SDK=1
 SET MSSdk=1

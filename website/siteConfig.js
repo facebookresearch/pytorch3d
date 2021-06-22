@@ -49,6 +49,7 @@ const siteConfig = {
     secondaryColor: '#FFAF00',
   },
 
+  // @lint-ignore-every LICENSELINT
   // This copyright info is used in /core/Footer.js and blog RSS/Atom feeds.
   copyright: `Copyright \u{00A9} ${new Date().getFullYear()} Facebook Inc`,
 

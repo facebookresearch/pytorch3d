@@ -1,4 +1,9 @@
-:: Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
+@REM Copyright (c) Facebook, Inc. and its affiliates.
+@REM All rights reserved.
+@REM
+@REM This source code is licensed under the BSD-style license found in the
+@REM LICENSE file in the root directory of this source tree.
+
 set YEAR=2017
 set VER=15
 

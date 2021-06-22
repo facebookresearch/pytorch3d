@@ -1,5 +1,11 @@
-// Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
-//
+/*
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
 // This file provides utilities for dispatching to specialized versions of
 // functions. This is especially useful for CUDA kernels, since specializing
 // them to particular input sizes can often allow the compiler to unroll loops

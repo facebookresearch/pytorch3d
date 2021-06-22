@@ -1,4 +1,9 @@
-:: Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
+@REM Copyright (c) Facebook, Inc. and its affiliates.
+@REM All rights reserved.
+@REM
+@REM This source code is licensed under the BSD-style license found in the
+@REM LICENSE file in the root directory of this source tree.
+
 set VC_PATH=x86
 if "%ARCH%"=="64" (
    set VC_PATH=x64

@@ -29,7 +29,7 @@ For detailed instructions refer to [INSTALL.md](INSTALL.md).
 
 ## License
 
-PyTorch3D is released under the [BSD-3-Clause License](LICENSE).
+PyTorch3D is released under the [BSD License](LICENSE).
 
 ## Tutorials
 
