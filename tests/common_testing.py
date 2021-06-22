@@ -110,7 +110,7 @@ class TestCaseMixin(unittest.TestCase):
         diff = norm_fn(input - other)
         other_ = norm_fn(other)
 
-        # We want to generalise allclose(input, output), which is essentially
+        # We want to generalize allclose(input, output), which is essentially
         #  all(diff <= atol + rtol * other)
         # but with a sophisticated handling non-finite values.
         # We work that around by calling allclose() with the following arguments:

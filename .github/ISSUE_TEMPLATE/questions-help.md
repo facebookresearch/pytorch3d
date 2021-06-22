@@ -17,5 +17,5 @@ Also note the following:
    please use the "Bugs / Unexpected behaviors" issue template.
 
 2. We do not answer general machine learning / computer vision questions that are not specific to
-	 PyTorch3D, such as how a model works or what algorithm/methods can be
-	 used to achieve X.
+   PyTorch3D, such as how a model works or what algorithm/methods can be
+   used to achieve X.

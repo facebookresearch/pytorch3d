@@ -43,7 +43,7 @@ Facebook has a [bounty program](https://www.facebook.com/whitehat/) for the safe
 disclosure of security bugs. In those cases, please go through the process
 outlined on that page and do not file a public issue.
 
-## Coding Style  
+## Coding Style
 We follow these [python](http://google.github.io/styleguide/pyguide.html) and [C++](https://google.github.io/styleguide/cppguide.html) style guides.
 
 For the linter to work, you will need to install `black`, `flake`, `isort` and `clang-format`, and

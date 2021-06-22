@@ -27,4 +27,4 @@ Please include the following (depending on what the issue is):
 ```
 
 Please also simplify the steps as much as possible so they do not require additional resources to
-	 run, such as a private dataset.
+   run, such as a private dataset.
