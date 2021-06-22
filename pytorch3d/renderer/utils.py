@@ -116,7 +116,7 @@ class TensorProperties(nn.Module):
             for k, v in kwargs.items():
                 if v is None or isinstance(v, (str, bool)):
                     setattr(self, k, v)
-                elif isinstance(v, BROADCAST_TYPES):  # pyre-fixme[6]
+                elif isinstance(v, BROADCAST_TYPES):
                     args_to_broadcast[k] = v
                 else:
                     msg = "Arg %s with type %r is not broadcastable"
