@@ -15,6 +15,7 @@ from pytorch3d.ops import eyes
 from pytorch3d.transforms import so3_exponential_map, so3_log_map
 from pytorch3d.utils import (
     cameras_from_opencv_projection,
+    opencv_from_cameras_projection,
 )
 
 DATA_DIR = get_tests_dir() / "data"
@@ -151,3 +152,11 @@ class TestCameraConversions(TestCaseMixin, unittest.TestCase):
         self.assertClose(
             pts_proj_opencv_in_pytorch3d_screen, pts_proj_pytorch3d, atol=1e-5
         )
+
+        # Check the inverse.
+        rvec_i, tvec_i, camera_matrix_i = opencv_from_cameras_projection(
+            cameras_opencv_to_pytorch3d, image_size
+        )
+        self.assertClose(rvec, rvec_i)
+        self.assertClose(tvec, tvec_i)
+        self.assertClose(camera_matrix, camera_matrix_i)
