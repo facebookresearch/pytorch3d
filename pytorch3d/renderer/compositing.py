@@ -5,7 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import torch
-from pytorch3d import _C  # pyre-fixme[21]: Could not find name `_C` in `pytorch3d`.
+from pytorch3d import _C
 
 
 # Example functions for blending the top K features per pixel using the outputs

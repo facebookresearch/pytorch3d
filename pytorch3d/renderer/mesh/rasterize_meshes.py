@@ -9,7 +9,7 @@ from typing import List, Optional, Tuple, Union
 
 import numpy as np
 import torch
-from pytorch3d import _C  # pyre-fixme[21]: Could not find name `_C` in `pytorch3d`.
+from pytorch3d import _C
 
 from .clip import (
     ClipFrustum,

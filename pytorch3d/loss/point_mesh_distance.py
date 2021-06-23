@@ -4,7 +4,6 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-fixme[21]: Could not find name `_C` in `pytorch3d`.
 from pytorch3d import _C
 from pytorch3d.structures import Meshes, Pointclouds
 from torch.autograd import Function

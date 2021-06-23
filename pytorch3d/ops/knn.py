@@ -8,7 +8,7 @@ from collections import namedtuple
 from typing import Union
 
 import torch
-from pytorch3d import _C  # pyre-fixme[21]: Could not find name `_C` in `pytorch3d`.
+from pytorch3d import _C
 from torch.autograd import Function
 from torch.autograd.function import once_differentiable
 
@@ -58,7 +58,6 @@ class _knn_points(Function):
                 in p2 has fewer than K points and where a cloud in p1 has fewer than P1 points.
         """
 
-        # pyre-fixme[16]: Module `pytorch3d` has no attribute `_C`.
         idx, dists = _C.knn_points_idx(p1, p2, lengths1, lengths2, K, version)
 
         # sort KNN in ascending order if K > 1
@@ -74,6 +73,7 @@ class _knn_points(Function):
                 dists[mask] = 0
             else:
                 dists, sort_idx = dists.sort(dim=2)
+            # pyre-fixme[16]: `Tensor` has no attribute `gather`.
             idx = idx.gather(2, sort_idx)
 
         ctx.save_for_backward(p1, p2, lengths1, lengths2, idx)
