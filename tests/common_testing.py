@@ -34,7 +34,7 @@ def get_pytorch3d_dir() -> Path:
 
 
 def load_rgb_image(filename: str, data_dir: Union[str, Path]):
-    filepath = data_dir / filename
+    filepath = os.path.join(data_dir, filename)
     with Image.open(filepath) as raw_image:
         image = torch.from_numpy(np.array(raw_image) / 255.0)
     image = image.to(dtype=torch.float32)
