@@ -144,7 +144,7 @@ class Transform3d:
         dtype: torch.dtype = torch.float32,
         device: Device = "cpu",
         matrix: Optional[torch.Tensor] = None,
-    ):
+    ) -> None:
         """
         Args:
             dtype: The data type of the transformation matrix.
@@ -176,7 +176,7 @@ class Transform3d:
         self.device = make_device(device)
         self.dtype = dtype
 
-    def __len__(self):
+    def __len__(self) -> int:
         return self.get_matrix().shape[0]
 
     def __getitem__(
@@ -462,7 +462,7 @@ class Translate(Transform3d):
         z=None,
         dtype: torch.dtype = torch.float32,
         device: Optional[Device] = None,
-    ):
+    ) -> None:
         """
         Create a new Transform3d representing 3D translations.
 
@@ -503,7 +503,7 @@ class Scale(Transform3d):
         z=None,
         dtype: torch.dtype = torch.float32,
         device: Optional[Device] = None,
-    ):
+    ) -> None:
         """
         A Transform3d representing a scaling operation, with different scale
         factors along each coordinate axis.
@@ -549,7 +549,7 @@ class Rotate(Transform3d):
         dtype: torch.dtype = torch.float32,
         device: Optional[Device] = None,
         orthogonal_tol: float = 1e-5,
-    ):
+    ) -> None:
         """
         Create a new Transform3d representing 3D rotation using a rotation
         matrix as the input.
@@ -589,7 +589,7 @@ class RotateAxisAngle(Rotate):
         degrees: bool = True,
         dtype: torch.dtype = torch.float64,
         device: Optional[Device] = None,
-    ):
+    ) -> None:
         """
         Create a new Transform3d representing 3D rotation about an axis
         by an angle.

@@ -84,7 +84,7 @@ class ClippedFaces:
         barycentric_conversion: Optional[torch.Tensor] = None,
         faces_clipped_to_conversion_idx: Optional[torch.Tensor] = None,
         clipped_faces_neighbor_idx: Optional[torch.Tensor] = None,
-    ):
+    ) -> None:
         self.face_verts = face_verts
         self.mesh_to_face_first_idx = mesh_to_face_first_idx
         self.num_faces_per_mesh = num_faces_per_mesh
@@ -139,7 +139,7 @@ class ClipFrustum:
         perspective_correct: bool = False,
         cull: bool = True,
         z_clip_value: Optional[float] = None,
-    ):
+    ) -> None:
         self.left = left
         self.right = right
         self.top = top

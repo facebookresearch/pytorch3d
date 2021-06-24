@@ -32,7 +32,7 @@ class PointsRenderer(nn.Module):
     function.
     """
 
-    def __init__(self, rasterizer, compositor):
+    def __init__(self, rasterizer, compositor) -> None:
         super().__init__()
         self.rasterizer = rasterizer
         self.compositor = compositor

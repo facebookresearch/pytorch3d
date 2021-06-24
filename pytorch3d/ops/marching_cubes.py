@@ -15,7 +15,7 @@ EPS = 0.00001
 
 
 class Cube:
-    def __init__(self, bfl_vertex: Tuple[int, int, int], spacing: int = 1):
+    def __init__(self, bfl_vertex: Tuple[int, int, int], spacing: int = 1) -> None:
         """
         Initializes a cube given the bottom front left vertex coordinate
         and the cube spacing

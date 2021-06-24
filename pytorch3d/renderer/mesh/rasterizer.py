@@ -49,7 +49,7 @@ class RasterizationSettings:
         cull_backfaces: bool = False,
         z_clip_value: Optional[float] = None,
         cull_to_frustum: bool = False,
-    ):
+    ) -> None:
         self.image_size = image_size
         self.blur_radius = blur_radius
         self.faces_per_pixel = faces_per_pixel
@@ -68,7 +68,7 @@ class MeshRasterizer(nn.Module):
     Meshes.
     """
 
-    def __init__(self, cameras=None, raster_settings=None):
+    def __init__(self, cameras=None, raster_settings=None) -> None:
         """
         Args:
             cameras: A cameras object which has a  `transform_points` method

@@ -262,7 +262,7 @@ class TexturesBase:
         """
         raise NotImplementedError()
 
-    def __getitem__(self, index):
+    def __getitem__(self, index) -> "TexturesBase":
         """
         Each texture class should implement a method
         to get the texture properties for the
@@ -321,7 +321,7 @@ def Textures(
 
 
 class TexturesAtlas(TexturesBase):
-    def __init__(self, atlas: Union[torch.Tensor, List[torch.Tensor]]):
+    def __init__(self, atlas: Union[torch.Tensor, List[torch.Tensor]]) -> None:
         """
         A texture representation where each face has a square texture map.
         This is based on the implementation from SoftRasterizer [1].
@@ -420,7 +420,7 @@ class TexturesAtlas(TexturesBase):
         tex._num_faces_per_mesh = num_faces
         return tex
 
-    def __getitem__(self, index):
+    def __getitem__(self, index) -> "TexturesAtlas":
         props = ["atlas_list", "_num_faces_per_mesh"]
         new_props = self._getitem(index, props=props)
         atlas = new_props["atlas_list"]
@@ -596,7 +596,7 @@ class TexturesUV(TexturesBase):
         verts_uvs: Union[torch.Tensor, List[torch.Tensor], Tuple[torch.Tensor]],
         padding_mode: str = "border",
         align_corners: bool = True,
-    ):
+    ) -> None:
         """
         Textures are represented as a per mesh texture map and uv coordinates for each
         vertex in each face. NOTE: this class only supports one texture map per mesh.
@@ -786,7 +786,7 @@ class TexturesUV(TexturesBase):
         tex.valid = self.valid.detach()
         return tex
 
-    def __getitem__(self, index):
+    def __getitem__(self, index) -> "TexturesUV":
         props = ["verts_uvs_list", "faces_uvs_list", "maps_list", "_num_faces_per_mesh"]
         new_props = self._getitem(index, props)
         faces_uvs = new_props["faces_uvs_list"]
@@ -1257,7 +1257,7 @@ class TexturesVertex(TexturesBase):
     def __init__(
         self,
         verts_features: Union[torch.Tensor, List[torch.Tensor], Tuple[torch.Tensor]],
-    ):
+    ) -> None:
         """
         Batched texture representation where each vertex in a mesh
         has a C dimensional feature vector.

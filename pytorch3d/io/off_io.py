@@ -419,7 +419,7 @@ class MeshOffFormat(MeshFormatInterpreter):
 
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.known_suffixes = (".off",)
 
     def read(

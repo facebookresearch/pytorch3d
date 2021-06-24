@@ -63,7 +63,7 @@ class IO:
         self,
         include_default_formats: bool = True,
         path_manager: Optional[PathManager] = None,
-    ):
+    ) -> None:
         if path_manager is None:
             self.path_manager = PathManager()
         else:

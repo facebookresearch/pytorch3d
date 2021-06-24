@@ -32,7 +32,7 @@ class MeshRenderer(nn.Module):
     function.
     """
 
-    def __init__(self, rasterizer, shader):
+    def __init__(self, rasterizer, shader) -> None:
         super().__init__()
         self.rasterizer = rasterizer
         self.shader = shader
@@ -76,7 +76,7 @@ class MeshRendererWithFragments(nn.Module):
         depth = fragments.zbuf
     """
 
-    def __init__(self, rasterizer, shader):
+    def __init__(self, rasterizer, shader) -> None:
         super().__init__()
         self.rasterizer = rasterizer
         self.shader = shader

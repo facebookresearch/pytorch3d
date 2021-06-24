@@ -326,7 +326,7 @@ class Renderer(torch.nn.Module):
         background_normalized_depth: float = _C.EPS,
         n_channels: int = 3,
         n_track: int = 5,
-    ):
+    ) -> None:
         super(Renderer, self).__init__()
         # pyre-fixme[16]: Module `pytorch3d` has no attribute `_C`.
         self._renderer = _C.PulsarRenderer(

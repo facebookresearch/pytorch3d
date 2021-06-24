@@ -30,7 +30,7 @@ class ShapeNetBase(torch.utils.data.Dataset):  # pragma: no cover
     and __getitem__ need to be implemented.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """
         Set up lists of synset_ids and model_ids.
         """
@@ -44,7 +44,7 @@ class ShapeNetBase(torch.utils.data.Dataset):  # pragma: no cover
         self.load_textures = True
         self.texture_resolution = 4
 
-    def __len__(self):
+    def __len__(self) -> int:
         """
         Return number of total models in the loaded dataset.
         """

@@ -26,7 +26,7 @@ class SubdivideMeshes(nn.Module):
     but different vertex positions.
     """
 
-    def __init__(self, meshes=None):
+    def __init__(self, meshes=None) -> None:
         """
         Args:
             meshes: Meshes object or None. If a meshes object is provided,

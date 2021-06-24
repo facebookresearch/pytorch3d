@@ -364,7 +364,7 @@ class FoVPerspectiveCameras(CamerasBase):
         T=_T,
         K=None,
         device: Device = "cpu",
-    ):
+    ) -> None:
         """
 
         Args:
@@ -848,7 +848,7 @@ class PerspectiveCameras(CamerasBase):
         K=None,
         device="cpu",
         image_size=((-1, -1),),
-    ):
+    ) -> None:
         """
 
         Args:
@@ -1013,7 +1013,7 @@ class OrthographicCameras(CamerasBase):
         K=None,
         device="cpu",
         image_size=((-1, -1),),
-    ):
+    ) -> None:
         """
 
         Args:

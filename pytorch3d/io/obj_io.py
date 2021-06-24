@@ -291,7 +291,7 @@ def load_objs_as_meshes(
 
 
 class MeshObjFormat(MeshFormatInterpreter):
-    def __init__(self):
+    def __init__(self) -> None:
         self.known_suffixes = (".obj",)
 
     def read(

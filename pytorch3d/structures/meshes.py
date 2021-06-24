@@ -219,7 +219,7 @@ class Meshes:
         textures=None,
         *,
         verts_normals=None,
-    ):
+    ) -> None:
         """
         Args:
             verts:
@@ -469,10 +469,10 @@ class Meshes:
         else:
             raise ValueError("verts_normals must be a list or tensor")
 
-    def __len__(self):
+    def __len__(self) -> int:
         return self._N
 
-    def __getitem__(self, index):
+    def __getitem__(self, index) -> "Meshes":
         """
         Args:
             index: Specifying the index of the mesh to retrieve.
@@ -493,7 +493,7 @@ class Meshes:
             # NOTE consider converting index to cpu for efficiency
             if index.dtype == torch.bool:
                 # advanced indexing on a single dimension
-                index = index.nonzero()
+                index = index.nonzero()  # pyre-ignore
                 index = index.squeeze(1) if index.numel() > 0 else index
                 index = index.tolist()
             verts = [self.verts_list()[i] for i in index]

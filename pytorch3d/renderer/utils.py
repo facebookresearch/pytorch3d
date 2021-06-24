@@ -25,7 +25,7 @@ class TensorAccessor(nn.Module):
     and one element in the batch needs to be modified.
     """
 
-    def __init__(self, class_object, index: Union[int, slice]):
+    def __init__(self, class_object, index: Union[int, slice]) -> None:
         """
         Args:
             class_object: this should be an instance of a class which has
@@ -96,7 +96,7 @@ class TensorProperties(nn.Module):
 
     def __init__(
         self, dtype: torch.dtype = torch.float32, device: Device = "cpu", **kwargs
-    ):
+    ) -> None:
         """
         Args:
             dtype: data type to set for the inputs
@@ -143,7 +143,7 @@ class TensorProperties(nn.Module):
     def isempty(self) -> bool:
         return self._N == 0
 
-    def __getitem__(self, index: Union[int, slice]):
+    def __getitem__(self, index: Union[int, slice]) -> TensorAccessor:
         """
 
         Args:

@@ -51,7 +51,7 @@ class HardPhongShader(nn.Module):
         lights=None,
         materials=None,
         blend_params=None,
-    ):
+    ) -> None:
         super().__init__()
         self.lights = lights if lights is not None else PointLights(device=device)
         self.materials = (
@@ -112,7 +112,7 @@ class SoftPhongShader(nn.Module):
         lights=None,
         materials=None,
         blend_params=None,
-    ):
+    ) -> None:
         super().__init__()
         self.lights = lights if lights is not None else PointLights(device=device)
         self.materials = (
@@ -178,7 +178,7 @@ class HardGouraudShader(nn.Module):
         lights=None,
         materials=None,
         blend_params=None,
-    ):
+    ) -> None:
         super().__init__()
         self.lights = lights if lights is not None else PointLights(device=device)
         self.materials = (
@@ -243,7 +243,7 @@ class SoftGouraudShader(nn.Module):
         lights=None,
         materials=None,
         blend_params=None,
-    ):
+    ) -> None:
         super().__init__()
         self.lights = lights if lights is not None else PointLights(device=device)
         self.materials = (
@@ -325,7 +325,7 @@ class HardFlatShader(nn.Module):
         lights=None,
         materials=None,
         blend_params=None,
-    ):
+    ) -> None:
         super().__init__()
         self.lights = lights if lights is not None else PointLights(device=device)
         self.materials = (
@@ -381,7 +381,7 @@ class SoftSilhouetteShader(nn.Module):
         3D Reasoning', ICCV 2019
     """
 
-    def __init__(self, blend_params=None):
+    def __init__(self, blend_params=None) -> None:
         super().__init__()
         self.blend_params = blend_params if blend_params is not None else BlendParams()
 

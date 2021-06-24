@@ -164,7 +164,7 @@ class DirectionalLights(TensorProperties):
         specular_color=((0.2, 0.2, 0.2),),
         direction=((0, 1, 0),),
         device: Device = "cpu",
-    ):
+    ) -> None:
         """
         Args:
             ambient_color: RGB color of the ambient component.
@@ -225,7 +225,7 @@ class PointLights(TensorProperties):
         specular_color=((0.2, 0.2, 0.2),),
         location=((0, 1, 0),),
         device: Device = "cpu",
-    ):
+    ) -> None:
         """
         Args:
             ambient_color: RGB color of the ambient component
@@ -294,7 +294,7 @@ class AmbientLights(TensorProperties):
     not used in rendering.
     """
 
-    def __init__(self, *, ambient_color=None, device: Device = "cpu"):
+    def __init__(self, *, ambient_color=None, device: Device = "cpu") -> None:
         """
         If ambient_color is provided, it should be a sequence of
         triples of floats.

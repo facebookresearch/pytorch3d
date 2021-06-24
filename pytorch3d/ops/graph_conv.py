@@ -21,7 +21,7 @@ class GraphConv(nn.Module):
         output_dim: int,
         init: str = "normal",
         directed: bool = False,
-    ):
+    ) -> None:
         """
         Args:
             input_dim: Number of input features per vertex.

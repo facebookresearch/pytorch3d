@@ -155,7 +155,7 @@ class Volumes:
         features: Optional[_TensorBatch] = None,
         voxel_size: _VoxelSize = 1.0,
         volume_translation: _Translation = (0.0, 0.0, 0.0),
-    ):
+    ) -> None:
         """
         Args:
             **densities**: Batch of input feature volume occupancies of shape

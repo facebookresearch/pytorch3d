@@ -31,7 +31,7 @@ class ShapeNetCore(ShapeNetBase):  # pragma: no cover
         version: int = 1,
         load_textures: bool = True,
         texture_resolution: int = 4,
-    ):
+    ) -> None:
         """
         Store each object's synset id and models id from data_dir.
 

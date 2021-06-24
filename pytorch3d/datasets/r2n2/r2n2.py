@@ -64,7 +64,7 @@ class R2N2(ShapeNetBase):  # pragma: no cover
         voxels_rel_path: str = "ShapeNetVoxels",
         load_textures: bool = True,
         texture_resolution: int = 4,
-    ):
+    ) -> None:
         """
         Store each object's synset id and models id the given directories.
 

@@ -187,7 +187,7 @@ def _make_node_transform(node: Dict[str, Any]) -> Transform3d:
 
 
 class _GLTFLoader:
-    def __init__(self, stream: BinaryIO):
+    def __init__(self, stream: BinaryIO) -> None:
         self._json_data = None
         # Map from buffer index to (decoded) binary data
         self._binary_data = {}
@@ -539,7 +539,7 @@ class MeshGlbFormat(MeshFormatInterpreter):
         used which does not match the semantics of the standard.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.known_suffixes = (".glb",)
 
     def read(

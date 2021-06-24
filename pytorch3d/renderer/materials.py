@@ -24,7 +24,7 @@ class Materials(TensorProperties):
         specular_color=((1, 1, 1),),
         shininess=64,
         device: Device = "cpu",
-    ):
+    ) -> None:
         """
         Args:
             ambient_color: RGB ambient reflectivity of the material

@@ -25,7 +25,7 @@ class AlphaCompositor(nn.Module):
 
     def __init__(
         self, background_color: Optional[Union[Tuple, List, torch.Tensor]] = None
-    ):
+    ) -> None:
         super().__init__()
         self.background_color = background_color
 
@@ -47,7 +47,7 @@ class NormWeightedCompositor(nn.Module):
 
     def __init__(
         self, background_color: Optional[Union[Tuple, List, torch.Tensor]] = None
-    ):
+    ) -> None:
         super().__init__()
         self.background_color = background_color
 

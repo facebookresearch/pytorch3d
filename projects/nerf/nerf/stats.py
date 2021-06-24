@@ -22,7 +22,7 @@ class AverageMeter:
     Tracks the exact history of the added values in every epoch.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """
         Initialize the structure with empty history and zero-ed moving average.
         """
@@ -110,7 +110,7 @@ class Stats:
         verbose: bool = False,
         epoch: int = -1,
         plot_file: Optional[str] = None,
-    ):
+    ) -> None:
         """
         Args:
             log_vars: The list of variable names to be logged.

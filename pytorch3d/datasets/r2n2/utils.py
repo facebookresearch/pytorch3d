@@ -437,7 +437,7 @@ class BlenderCamera(CamerasBase):  # pragma: no cover
     (which uses Blender for rendering the views for each model).
     """
 
-    def __init__(self, R=r, T=t, K=k, device: Device = "cpu"):
+    def __init__(self, R=r, T=t, K=k, device: Device = "cpu") -> None:
         """
         Args:
             R: Rotation matrix of shape (N, 3, 3).

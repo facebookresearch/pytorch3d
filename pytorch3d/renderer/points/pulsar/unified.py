@@ -51,7 +51,7 @@ class PulsarPointsRenderer(nn.Module):
         n_channels: int = 3,
         max_num_spheres: int = int(1e6),  # noqa: B008
         **kwargs,
-    ):
+    ) -> None:
         """
         rasterizer (PointsRasterizer): An object encapsulating rasterization parameters.
         compositor (ignored): Only keeping this for interface consistency. Default: None.

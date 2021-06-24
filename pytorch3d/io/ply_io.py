@@ -66,7 +66,7 @@ class _PlyElementType:
         self.name:       (str) name of the element
     """
 
-    def __init__(self, name: str, count: int):
+    def __init__(self, name: str, count: int) -> None:
         self.name = name
         self.count = count
         self.properties: List[_Property] = []
@@ -130,7 +130,7 @@ class _PlyElementType:
 
 
 class _PlyHeader:
-    def __init__(self, f):
+    def __init__(self, f) -> None:
         """
         Load a header of a Ply file from a file-like object.
         Members:
@@ -1232,7 +1232,7 @@ def save_ply(
 
 
 class MeshPlyFormat(MeshFormatInterpreter):
-    def __init__(self):
+    def __init__(self) -> None:
         self.known_suffixes = (".ply",)
 
     def read(
@@ -1313,7 +1313,7 @@ class MeshPlyFormat(MeshFormatInterpreter):
 
 
 class PointcloudPlyFormat(PointcloudFormatInterpreter):
-    def __init__(self):
+    def __init__(self) -> None:
         self.known_suffixes = (".ply",)
 
     def read(

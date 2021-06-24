@@ -36,7 +36,7 @@ class ListDataset(Dataset):
     A simple dataset made of a list of entries.
     """
 
-    def __init__(self, entries: List):
+    def __init__(self, entries: List) -> None:
         """
         Args:
             entries: The list of dataset entries.
@@ -45,7 +45,7 @@ class ListDataset(Dataset):
 
     def __len__(
         self,
-    ):
+    ) -> int:
         return len(self._entries)
 
     def __getitem__(self, index):

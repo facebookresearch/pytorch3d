@@ -108,7 +108,7 @@ class Pointclouds:
         "equisized",
     ]
 
-    def __init__(self, points, normals=None, features=None):
+    def __init__(self, points, normals=None, features=None) -> None:
         """
         Args:
             points:
@@ -306,10 +306,10 @@ class Pointclouds:
                     points in a cloud."
             )
 
-    def __len__(self):
+    def __len__(self) -> int:
         return self._N
 
-    def __getitem__(self, index):
+    def __getitem__(self, index) -> "Pointclouds":
         """
         Args:
             index: Specifying the index of the cloud to retrieve.
@@ -343,7 +343,7 @@ class Pointclouds:
             # NOTE consider converting index to cpu for efficiency
             if index.dtype == torch.bool:
                 # advanced indexing on a single dimension
-                index = index.nonzero()
+                index = index.nonzero()  # pyre-ignore
                 index = index.squeeze(1) if index.numel() > 0 else index
                 index = index.tolist()
             points = [self.points_list()[i] for i in index]
