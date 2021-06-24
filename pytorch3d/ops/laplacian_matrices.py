@@ -100,6 +100,7 @@ def cot_laplacian(
     s = 0.5 * (A + B + C)
     # note that the area can be negative (close to 0) causing nans after sqrt()
     # we clip it to a small positive value
+    # pyre-fixme[16]: `float` has no attribute `clamp_`.
     area = (s * (s - A) * (s - B) * (s - C)).clamp_(min=eps).sqrt()
 
     # Compute cotangents of angles, of shape (sum(F_n), 3)
