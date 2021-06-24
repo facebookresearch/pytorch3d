@@ -406,34 +406,6 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
                 self.assertFalse(newv.requires_grad)
                 self.assertClose(newv, v)
 
-    def test_laplacian_packed(self):
-        def naive_laplacian_packed(meshes):
-            verts_packed = meshes.verts_packed()
-            edges_packed = meshes.edges_packed()
-            V = verts_packed.shape[0]
-
-            L = torch.zeros((V, V), dtype=torch.float32, device=meshes.device)
-            for e in edges_packed:
-                L[e[0], e[1]] = 1
-                # symetric
-                L[e[1], e[0]] = 1
-
-            deg = L.sum(1).view(-1, 1)
-            deg[deg > 0] = 1.0 / deg[deg > 0]
-            L = L * deg
-            diag = torch.eye(V, dtype=torch.float32, device=meshes.device)
-            L.masked_fill_(diag > 0, -1)
-            return L
-
-        # Note that we don't test with random meshes for this case, as the
-        # definition of Laplacian is defined for simple graphs (aka valid meshes)
-        meshes = init_simple_mesh("cuda:0")
-
-        lapl_naive = naive_laplacian_packed(meshes)
-        lapl = meshes.laplacian_packed().to_dense()
-        # check with naive
-        self.assertClose(lapl, lapl_naive)
-
     def test_offset_verts(self):
         def naive_offset_verts(mesh, vert_offsets_packed):
             # new Meshes class

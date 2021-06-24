@@ -9,6 +9,7 @@ from .cubify import cubify
 from .graph_conv import GraphConv
 from .interp_face_attrs import interpolate_face_attributes
 from .knn import knn_gather, knn_points
+from .laplacian_matrices import laplacian, cot_laplacian, norm_laplacian
 from .mesh_face_areas_normals import mesh_face_areas_normals
 from .mesh_filtering import taubin_smoothing
 from .packed_to_padded import packed_to_padded, padded_to_packed
