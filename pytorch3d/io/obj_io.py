@@ -18,7 +18,12 @@ from iopath.common.file_io import PathManager
 from PIL import Image
 from pytorch3d.common.types import Device
 from pytorch3d.io.mtl_io import load_mtl, make_mesh_texture_atlas
-from pytorch3d.io.utils import _check_faces_indices, _make_tensor, _open_file
+from pytorch3d.io.utils import (
+    PathOrStr,
+    _check_faces_indices,
+    _make_tensor,
+    _open_file,
+)
 from pytorch3d.renderer import TexturesAtlas, TexturesUV
 from pytorch3d.structures import Meshes, join_meshes_as_batch
 
@@ -213,7 +218,7 @@ def load_obj(
               None.
     """
     data_dir = "./"
-    if isinstance(f, (str, bytes, os.PathLike)):
+    if isinstance(f, (str, bytes, Path)):
         data_dir = os.path.dirname(f)
     if path_manager is None:
         path_manager = PathManager()
@@ -297,7 +302,7 @@ class MeshObjFormat(MeshFormatInterpreter):
 
     def read(
         self,
-        path: Union[str, Path],
+        path: PathOrStr,
         include_textures: bool,
         device: Device,
         path_manager: PathManager,
@@ -322,7 +327,7 @@ class MeshObjFormat(MeshFormatInterpreter):
     def save(
         self,
         data: Meshes,
-        path: Union[str, Path],
+        path: PathOrStr,
         path_manager: PathManager,
         binary: Optional[bool],
         decimal_places: Optional[int] = None,
@@ -650,7 +655,7 @@ def _load_obj(
 
 
 def save_obj(
-    f: Union[str, os.PathLike],
+    f: PathOrStr,
     verts,
     faces,
     decimal_places: Optional[int] = None,

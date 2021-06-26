@@ -160,7 +160,7 @@ class TensorProperties(nn.Module):
         msg = "Expected index of type int or slice; got %r"
         raise ValueError(msg % type(index))
 
-    def to(self, device: Device = "cpu"):
+    def to(self, device: Device = "cpu") -> "TensorProperties":
         """
         In place operation to move class properties which are tensors to a
         specified device. If self has a property "device", update this as well.
@@ -174,7 +174,7 @@ class TensorProperties(nn.Module):
                 setattr(self, k, v.to(device_))
         return self
 
-    def clone(self, other):
+    def clone(self, other) -> "TensorProperties":
         """
         Update the tensor properties of other with the cloned properties of self.
         """
@@ -189,7 +189,7 @@ class TensorProperties(nn.Module):
             setattr(other, k, v_clone)
         return other
 
-    def gather_props(self, batch_idx):
+    def gather_props(self, batch_idx) -> "TensorProperties":
         """
         This is an in place operation to reformat all tensor class attributes
         based on a set of given indices using torch.gather. This is useful when

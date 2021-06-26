@@ -187,15 +187,15 @@ class Volumes:
         """
 
         # handle densities
-        densities, grid_sizes = self._convert_densities_features_to_tensor(
+        densities_, grid_sizes = self._convert_densities_features_to_tensor(
             densities, "densities"
         )
 
         # take device from densities
-        self.device = densities.device
+        self.device = densities_.device
 
         # assign to the internal buffers
-        self._densities = densities
+        self._densities = densities_
         self._grid_sizes = grid_sizes
 
         # handle features
@@ -497,7 +497,6 @@ class Volumes:
         )
 
     def __len__(self) -> int:
-        # pyre-fixme[16]: `List` has no attribute `shape`.
         return self._densities.shape[0]
 
     def __getitem__(
@@ -547,8 +546,6 @@ class Volumes:
         Returns:
             **densities**: The tensor of volume densities.
         """
-        # pyre-fixme[7]: Expected `Tensor` but got `Union[List[torch.Tensor],
-        #  torch.Tensor]`.
         return self._densities
 
     def densities_list(self) -> List[torch.Tensor]:
@@ -723,7 +720,6 @@ class Volumes:
             return other
 
         other.device = device_
-        # pyre-fixme[16]: `List` has no attribute `to`.
         other._densities = self._densities.to(device_)
         if self._features is not None:
             # pyre-fixme[16]: `Optional` has no attribute `to`.

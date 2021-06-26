@@ -42,14 +42,13 @@ from base64 import b64decode
 from collections import deque
 from enum import IntEnum
 from io import BytesIO
-from pathlib import Path
 from typing import Any, BinaryIO, Dict, List, Optional, Tuple, Union, cast
 
 import numpy as np
 import torch
 from iopath.common.file_io import PathManager
 from PIL import Image
-from pytorch3d.io.utils import _open_file
+from pytorch3d.io.utils import PathOrStr, _open_file
 from pytorch3d.renderer.mesh import TexturesBase, TexturesUV, TexturesVertex
 from pytorch3d.structures import Meshes, join_meshes_as_scene
 from pytorch3d.transforms import Transform3d, quaternion_to_matrix
@@ -498,7 +497,7 @@ class _GLTFLoader:
 
 
 def load_meshes(
-    path: Union[str, Path],
+    path: PathOrStr,
     path_manager: PathManager,
     include_textures: bool = True,
 ) -> List[Tuple[Optional[str], Meshes]]:
@@ -544,7 +543,7 @@ class MeshGlbFormat(MeshFormatInterpreter):
 
     def read(
         self,
-        path: Union[str, Path],
+        path: PathOrStr,
         include_textures: bool,
         device,
         path_manager: PathManager,
@@ -566,7 +565,7 @@ class MeshGlbFormat(MeshFormatInterpreter):
     def save(
         self,
         data: Meshes,
-        path: Union[str, Path],
+        path: PathOrStr,
         path_manager: PathManager,
         binary: Optional[bool],
         **kwargs,

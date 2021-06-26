@@ -223,7 +223,7 @@ class TexturesBase:
 
         return new_props
 
-    def sample_textures(self):
+    def sample_textures(self) -> torch.Tensor:
         """
         Different texture classes sample textures in different ways
         e.g. for vertex textures, the values at each vertex
@@ -237,7 +237,7 @@ class TexturesBase:
         """
         raise NotImplementedError()
 
-    def faces_verts_textures_packed(self):
+    def faces_verts_textures_packed(self) -> torch.Tensor:
         """
         Returns the texture for each vertex for each face in the mesh.
         For N meshes, this function returns sum(Fi)x3xC where Fi is the
@@ -248,14 +248,14 @@ class TexturesBase:
         """
         raise NotImplementedError()
 
-    def clone(self):
+    def clone(self) -> "TexturesBase":
         """
         Each texture class should implement a method
         to clone all necessary internal tensors.
         """
         raise NotImplementedError()
 
-    def detach(self):
+    def detach(self) -> "TexturesBase":
         """
         Each texture class should implement a method
         to detach all necessary internal tensors.
@@ -394,7 +394,7 @@ class TexturesAtlas(TexturesBase):
         # refer to the __init__ of Meshes.
         self.valid = torch.ones((self._N,), dtype=torch.bool, device=self.device)
 
-    def clone(self):
+    def clone(self) -> "TexturesAtlas":
         tex = self.__class__(atlas=self.atlas_padded().clone())
         if self._atlas_list is not None:
             tex._atlas_list = [atlas.clone() for atlas in self._atlas_list]
@@ -407,7 +407,7 @@ class TexturesAtlas(TexturesBase):
         tex._num_faces_per_mesh = num_faces
         return tex
 
-    def detach(self):
+    def detach(self) -> "TexturesAtlas":
         tex = self.__class__(atlas=self.atlas_padded().detach())
         if self._atlas_list is not None:
             tex._atlas_list = [atlas.detach() for atlas in self._atlas_list]

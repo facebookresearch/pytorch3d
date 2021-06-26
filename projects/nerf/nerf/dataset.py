@@ -136,7 +136,7 @@ def download_data(
     dataset_names: Optional[List[str]] = None,
     data_root: str = DEFAULT_DATA_ROOT,
     url_root: str = DEFAULT_URL_ROOT,
-):
+) -> None:
     """
     Downloads the relevant dataset files.
 

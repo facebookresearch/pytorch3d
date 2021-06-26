@@ -7,7 +7,7 @@
 import contextlib
 import pathlib
 import warnings
-from typing import IO, ContextManager, Optional
+from typing import IO, ContextManager, Optional, Union
 
 import numpy as np
 import torch
@@ -23,6 +23,9 @@ def nullcontext(x):
     This is just like contextlib.nullcontext but also works in Python 3.6.
     """
     yield x
+
+
+PathOrStr = Union[pathlib.Path, str]
 
 
 def _open_file(f, path_manager: PathManager, mode="r") -> ContextManager[IO]:

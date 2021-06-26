@@ -5,10 +5,12 @@
 # LICENSE file in the root directory of this source tree.
 
 
-from pathlib import Path
+import pathlib
 from typing import Optional, Tuple, Union
 
 from iopath.common.file_io import PathManager
+from pytorch3d.common.types import Device
+from pytorch3d.io.utils import PathOrStr
 from pytorch3d.structures import Meshes, Pointclouds
 
 
@@ -20,14 +22,14 @@ its load_* and save_* functions.
 """
 
 
-def endswith(path, suffixes: Tuple[str, ...]) -> bool:
+def endswith(path: PathOrStr, suffixes: Tuple[str, ...]) -> bool:
     """
     Returns whether the path ends with one of the given suffixes.
     If `path` is not actually a path, returns True. This is useful
     for allowing interpreters to bypass inappropriate paths, but
     always accepting streams.
     """
-    if isinstance(path, Path):
+    if isinstance(path, pathlib.Path):
         return path.suffix.lower() in suffixes
     if isinstance(path, str):
         return path.lower().endswith(suffixes)
@@ -42,9 +44,9 @@ class MeshFormatInterpreter:
 
     def read(
         self,
-        path: Union[str, Path],
+        path: PathOrStr,
         include_textures: bool,
-        device,
+        device: Device,
         path_manager: PathManager,
         **kwargs,
     ) -> Optional[Meshes]:
@@ -68,7 +70,7 @@ class MeshFormatInterpreter:
     def save(
         self,
         data: Meshes,
-        path: Union[str, Path],
+        path: PathOrStr,
         path_manager: PathManager,
         binary: Optional[bool],
         **kwargs,
@@ -96,7 +98,7 @@ class PointcloudFormatInterpreter:
     """
 
     def read(
-        self, path: Union[str, Path], device, path_manager: PathManager, **kwargs
+        self, path: PathOrStr, device: Device, path_manager: PathManager, **kwargs
     ) -> Optional[Pointclouds]:
         """
         Read the data from the specified file and return it as
@@ -117,7 +119,7 @@ class PointcloudFormatInterpreter:
     def save(
         self,
         data: Pointclouds,
-        path: Union[str, Path],
+        path: PathOrStr,
         path_manager: PathManager,
         binary: Optional[bool],
         **kwargs,

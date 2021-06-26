@@ -15,13 +15,17 @@ import sys
 import warnings
 from collections import namedtuple
 from io import BytesIO, TextIOBase
-from pathlib import Path
 from typing import List, Optional, Tuple, Union, cast
 
 import numpy as np
 import torch
 from iopath.common.file_io import PathManager
-from pytorch3d.io.utils import _check_faces_indices, _make_tensor, _open_file
+from pytorch3d.io.utils import (
+    PathOrStr,
+    _check_faces_indices,
+    _make_tensor,
+    _open_file,
+)
 from pytorch3d.renderer import TexturesVertex
 from pytorch3d.structures import Meshes, Pointclouds
 
@@ -1237,7 +1241,7 @@ class MeshPlyFormat(MeshFormatInterpreter):
 
     def read(
         self,
-        path: Union[str, Path],
+        path: PathOrStr,
         include_textures: bool,
         device,
         path_manager: PathManager,
@@ -1269,7 +1273,7 @@ class MeshPlyFormat(MeshFormatInterpreter):
     def save(
         self,
         data: Meshes,
-        path: Union[str, Path],
+        path: PathOrStr,
         path_manager: PathManager,
         binary: Optional[bool],
         decimal_places: Optional[int] = None,
@@ -1318,7 +1322,7 @@ class PointcloudPlyFormat(PointcloudFormatInterpreter):
 
     def read(
         self,
-        path: Union[str, Path],
+        path: PathOrStr,
         device,
         path_manager: PathManager,
         **kwargs,
@@ -1339,7 +1343,7 @@ class PointcloudPlyFormat(PointcloudFormatInterpreter):
     def save(
         self,
         data: Pointclouds,
-        path: Union[str, Path],
+        path: PathOrStr,
         path_manager: PathManager,
         binary: Optional[bool],
         decimal_places: Optional[int] = None,

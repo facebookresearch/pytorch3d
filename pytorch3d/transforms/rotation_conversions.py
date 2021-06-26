@@ -10,6 +10,8 @@ from typing import Optional
 import torch
 import torch.nn.functional as F
 
+from ..common.types import Device
+
 
 """
 The transformation matrices returned from the functions in this file assume
@@ -286,7 +288,9 @@ def matrix_to_euler_angles(matrix, convention: str):
     return torch.stack(o, -1)
 
 
-def random_quaternions(n: int, dtype: Optional[torch.dtype] = None, device=None):
+def random_quaternions(
+    n: int, dtype: Optional[torch.dtype] = None, device: Optional[Device] = None
+):
     """
     Generate random quaternions representing rotations,
     i.e. versors with nonnegative real part.
@@ -306,7 +310,9 @@ def random_quaternions(n: int, dtype: Optional[torch.dtype] = None, device=None)
     return o
 
 
-def random_rotations(n: int, dtype: Optional[torch.dtype] = None, device=None):
+def random_rotations(
+    n: int, dtype: Optional[torch.dtype] = None, device: Optional[Device] = None
+):
     """
     Generate random rotations as 3x3 rotation matrices.
 
@@ -323,7 +329,9 @@ def random_rotations(n: int, dtype: Optional[torch.dtype] = None, device=None):
     return quaternion_to_matrix(quaternions)
 
 
-def random_rotation(dtype: Optional[torch.dtype] = None, device=None):
+def random_rotation(
+    dtype: Optional[torch.dtype] = None, device: Optional[Device] = None
+):
     """
     Generate a single random 3x3 rotation matrix.
 

@@ -20,10 +20,12 @@ from pytorch3d import _C
 class BlendParams(NamedTuple):
     sigma: float = 1e-4
     gamma: float = 1e-4
-    background_color: Sequence = (1.0, 1.0, 1.0)
+    background_color: Union[torch.Tensor, Sequence[float]] = (1.0, 1.0, 1.0)
 
 
-def hard_rgb_blend(colors, fragments, blend_params) -> torch.Tensor:
+def hard_rgb_blend(
+    colors: torch.Tensor, fragments, blend_params: BlendParams
+) -> torch.Tensor:
     """
     Naive blending of top K faces to return an RGBA image
       - **RGB** - choose color of the closest point i.e. K=0
@@ -47,10 +49,11 @@ def hard_rgb_blend(colors, fragments, blend_params) -> torch.Tensor:
     # Mask for the background.
     is_background = fragments.pix_to_face[..., 0] < 0  # (N, H, W)
 
-    if torch.is_tensor(blend_params.background_color):
-        background_color = blend_params.background_color.to(device)
+    background_color_ = blend_params.background_color
+    if isinstance(background_color_, torch.Tensor):
+        background_color = background_color_.to(device)
     else:
-        background_color = colors.new_tensor(blend_params.background_color)  # (3)
+        background_color = colors.new_tensor(background_color_)  # pyre-fixme[16]
 
     # Find out how much background_color needs to be expanded to be used for masked_scatter.
     num_background_pixels = is_background.sum()
@@ -90,7 +93,7 @@ class _SigmoidAlphaBlend(torch.autograd.Function):
 _sigmoid_alpha = _SigmoidAlphaBlend.apply
 
 
-def sigmoid_alpha_blend(colors, fragments, blend_params) -> torch.Tensor:
+def sigmoid_alpha_blend(colors, fragments, blend_params: BlendParams) -> torch.Tensor:
     """
     Silhouette blending to return an RGBA image
       - **RGB** - choose color of the closest point.
@@ -121,9 +124,9 @@ def sigmoid_alpha_blend(colors, fragments, blend_params) -> torch.Tensor:
 
 
 def softmax_rgb_blend(
-    colors,
+    colors: torch.Tensor,
     fragments,
-    blend_params,
+    blend_params: BlendParams,
     znear: Union[float, torch.Tensor] = 1.0,
     zfar: Union[float, torch.Tensor] = 100,
 ) -> torch.Tensor:
@@ -167,11 +170,11 @@ def softmax_rgb_blend(
     N, H, W, K = fragments.pix_to_face.shape
     device = fragments.pix_to_face.device
     pixel_colors = torch.ones((N, H, W, 4), dtype=colors.dtype, device=colors.device)
-    background = blend_params.background_color
-    if not torch.is_tensor(background):
-        background = torch.tensor(background, dtype=torch.float32, device=device)
+    background_ = blend_params.background_color
+    if not isinstance(background_, torch.Tensor):
+        background = torch.tensor(background_, dtype=torch.float32, device=device)
     else:
-        background = background.to(device)
+        background = background_.to(device)
 
     # Weight for background color
     eps = 1e-10

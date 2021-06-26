@@ -13,13 +13,12 @@ This format is introduced, for example, at
 http://www.geomview.org/docs/html/OFF.html .
 """
 import warnings
-from pathlib import Path
 from typing import Optional, Tuple, Union, cast
 
 import numpy as np
 import torch
 from iopath.common.file_io import PathManager
-from pytorch3d.io.utils import _check_faces_indices, _open_file
+from pytorch3d.io.utils import PathOrStr, _check_faces_indices, _open_file
 from pytorch3d.renderer import TexturesAtlas, TexturesVertex
 from pytorch3d.structures import Meshes
 
@@ -424,7 +423,7 @@ class MeshOffFormat(MeshFormatInterpreter):
 
     def read(
         self,
-        path: Union[str, Path],
+        path: PathOrStr,
         include_textures: bool,
         device,
         path_manager: PathManager,
@@ -460,7 +459,7 @@ class MeshOffFormat(MeshFormatInterpreter):
     def save(
         self,
         data: Meshes,
-        path: Union[str, Path],
+        path: PathOrStr,
         path_manager: PathManager,
         binary: Optional[bool],
         decimal_places: Optional[int] = None,

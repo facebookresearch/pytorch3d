@@ -172,9 +172,11 @@ class CamerasBase(TensorProperties):
             A Transform3d object which represents a batch of transforms
             of shape (N, 3, 3)
         """
-        self.R = kwargs.get("R", self.R)  # pyre-ignore[16]
-        self.T = kwargs.get("T", self.T)  # pyre-ignore[16]
-        world_to_view_transform = get_world_to_view_transform(R=self.R, T=self.T)
+        R: torch.Tensor = kwargs.get("R", self.R)
+        T: torch.Tensor = kwargs.get("T", self.T)
+        self.R = R  # pyre-ignore[16]
+        self.T = T  # pyre-ignore[16]
+        world_to_view_transform = get_world_to_view_transform(R=R, T=T)
         return world_to_view_transform
 
     def get_full_projection_transform(self, **kwargs) -> Transform3d:
@@ -195,8 +197,8 @@ class CamerasBase(TensorProperties):
             a Transform3d object which represents a batch of transforms
             of shape (N, 3, 3)
         """
-        self.R = kwargs.get("R", self.R)  # pyre-ignore[16]
-        self.T = kwargs.get("T", self.T)  # pyre-ignore[16]
+        self.R: torch.Tensor = kwargs.get("R", self.R)  # pyre-ignore[16]
+        self.T: torch.Tensor = kwargs.get("T", self.T)  # pyre-ignore[16]
         world_to_view_transform = self.get_world_to_view_transform(R=self.R, T=self.T)
         view_to_ndc_transform = self.get_projection_transform(**kwargs)
         return world_to_view_transform.compose(view_to_ndc_transform)
@@ -293,10 +295,10 @@ def OpenGLPerspectiveCameras(
     aspect_ratio=1.0,
     fov=60.0,
     degrees: bool = True,
-    R=_R,
-    T=_T,
+    R: torch.Tensor = _R,
+    T: torch.Tensor = _T,
     device: Device = "cpu",
-):
+) -> "FoVPerspectiveCameras":
     """
     OpenGLPerspectiveCameras has been DEPRECATED. Use FoVPerspectiveCameras instead.
     Preserving OpenGLPerspectiveCameras for backward compatibility.
@@ -360,9 +362,9 @@ class FoVPerspectiveCameras(CamerasBase):
         aspect_ratio=1.0,
         fov=60.0,
         degrees: bool = True,
-        R=_R,
-        T=_T,
-        K=None,
+        R: torch.Tensor = _R,
+        T: torch.Tensor = _T,
+        K: Optional[torch.Tensor] = None,
         device: Device = "cpu",
     ) -> None:
         """
@@ -397,7 +399,7 @@ class FoVPerspectiveCameras(CamerasBase):
         self.degrees = degrees
 
     def compute_projection_matrix(
-        self, znear, zfar, fov, aspect_ratio, degrees
+        self, znear, zfar, fov, aspect_ratio, degrees: bool
     ) -> torch.Tensor:
         """
         Compute the calibration matrix K of shape (N, 4, 4)
@@ -559,10 +561,10 @@ def OpenGLOrthographicCameras(
     left=-1.0,
     right=1.0,
     scale_xyz=((1.0, 1.0, 1.0),),  # (1, 3)
-    R=_R,
-    T=_T,
-    device="cpu",
-):
+    R: torch.Tensor = _R,
+    T: torch.Tensor = _T,
+    device: Device = "cpu",
+) -> "FoVOrthographicCameras":
     """
     OpenGLOrthographicCameras has been DEPRECATED. Use FoVOrthographicCameras instead.
     Preserving OpenGLOrthographicCameras for backward compatibility.
@@ -605,10 +607,10 @@ class FoVOrthographicCameras(CamerasBase):
         max_x=1.0,
         min_x=-1.0,
         scale_xyz=((1.0, 1.0, 1.0),),  # (1, 3)
-        R=_R,
-        T=_T,
-        K=None,
-        device="cpu",
+        R: torch.Tensor = _R,
+        T: torch.Tensor = _T,
+        K: Optional[torch.Tensor] = None,
+        device: Device = "cpu",
     ):
         """
 
@@ -784,8 +786,12 @@ we assume the parameters are in screen space.
 
 
 def SfMPerspectiveCameras(
-    focal_length=1.0, principal_point=((0.0, 0.0),), R=_R, T=_T, device="cpu"
-):
+    focal_length=1.0,
+    principal_point=((0.0, 0.0),),
+    R: torch.Tensor = _R,
+    T: torch.Tensor = _T,
+    device: Device = "cpu",
+) -> "PerspectiveCameras":
     """
     SfMPerspectiveCameras has been DEPRECATED. Use PerspectiveCameras instead.
     Preserving SfMPerspectiveCameras for backward compatibility.
@@ -843,10 +849,10 @@ class PerspectiveCameras(CamerasBase):
         self,
         focal_length=1.0,
         principal_point=((0.0, 0.0),),
-        R=_R,
-        T=_T,
-        K=None,
-        device="cpu",
+        R: torch.Tensor = _R,
+        T: torch.Tensor = _T,
+        K: Optional[torch.Tensor] = None,
+        device: Device = "cpu",
         image_size=((-1, -1),),
     ) -> None:
         """
@@ -950,8 +956,12 @@ class PerspectiveCameras(CamerasBase):
 
 
 def SfMOrthographicCameras(
-    focal_length=1.0, principal_point=((0.0, 0.0),), R=_R, T=_T, device="cpu"
-):
+    focal_length=1.0,
+    principal_point=((0.0, 0.0),),
+    R: torch.Tensor = _R,
+    T: torch.Tensor = _T,
+    device: Device = "cpu",
+) -> "OrthographicCameras":
     """
     SfMOrthographicCameras has been DEPRECATED. Use OrthographicCameras instead.
     Preserving SfMOrthographicCameras for backward compatibility.
@@ -1008,10 +1018,10 @@ class OrthographicCameras(CamerasBase):
         self,
         focal_length=1.0,
         principal_point=((0.0, 0.0),),
-        R=_R,
-        T=_T,
-        K=None,
-        device="cpu",
+        R: torch.Tensor = _R,
+        T: torch.Tensor = _T,
+        K: Optional[torch.Tensor] = None,
+        device: Device = "cpu",
         image_size=((-1, -1),),
     ) -> None:
         """
@@ -1116,8 +1126,8 @@ class OrthographicCameras(CamerasBase):
 
 
 def _get_sfm_calibration_matrix(
-    N,
-    device,
+    N: int,
+    device: Device,
     focal_length,
     principal_point,
     orthographic: bool = False,
@@ -1216,7 +1226,9 @@ def _get_sfm_calibration_matrix(
 ################################################
 
 
-def get_world_to_view_transform(R=_R, T=_T) -> Transform3d:
+def get_world_to_view_transform(
+    R: torch.Tensor = _R, T: torch.Tensor = _T
+) -> Transform3d:
     """
     This function returns a Transform3d representing the transformation
     matrix to go from world space to view space by applying a rotation and
@@ -1250,13 +1262,17 @@ def get_world_to_view_transform(R=_R, T=_T) -> Transform3d:
         raise ValueError(msg % repr(R.shape))
 
     # Create a Transform3d object
-    T = Translate(T, device=T.device)
-    R = Rotate(R, device=R.device)
-    return R.compose(T)
+    T_ = Translate(T, device=T.device)
+    R_ = Rotate(R, device=R.device)
+    return R_.compose(T_)
 
 
 def camera_position_from_spherical_angles(
-    distance, elevation, azimuth, degrees: bool = True, device: str = "cpu"
+    distance: float,
+    elevation: float,
+    azimuth: float,
+    degrees: bool = True,
+    device: Device = "cpu",
 ) -> torch.Tensor:
     """
     Calculate the location of the camera based on the distance away from
@@ -1294,7 +1310,7 @@ def camera_position_from_spherical_angles(
 
 
 def look_at_rotation(
-    camera_position, at=((0, 0, 0),), up=((0, 1, 0),), device: str = "cpu"
+    camera_position, at=((0, 0, 0),), up=((0, 1, 0),), device: Device = "cpu"
 ) -> torch.Tensor:
     """
     This function takes a vector 'camera_position' which specifies the location
@@ -1351,7 +1367,7 @@ def look_at_view_transform(
     eye: Optional[Sequence] = None,
     at=((0, 0, 0),),  # (1, 3)
     up=((0, 1, 0),),  # (1, 3)
-    device="cpu",
+    device: Device = "cpu",
 ) -> Tuple[torch.Tensor, torch.Tensor]:
     """
     This function returns a rotation and translation matrix
