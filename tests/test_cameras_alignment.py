@@ -17,7 +17,7 @@ from pytorch3d.renderer.cameras import (
     SfMPerspectiveCameras,
 )
 from pytorch3d.transforms.rotation_conversions import random_rotations
-from pytorch3d.transforms.so3 import so3_exponential_map, so3_relative_angle
+from pytorch3d.transforms.so3 import so3_exp_map, so3_relative_angle
 from test_cameras import init_random_cameras
 
 
@@ -95,9 +95,7 @@ class TestCamerasAlignment(TestCaseMixin, unittest.TestCase):
         ) * s_align_gt
 
         if add_noise != 0.0:
-            R_new = torch.bmm(
-                R_new, so3_exponential_map(torch.randn_like(T_new) * add_noise)
-            )
+            R_new = torch.bmm(R_new, so3_exp_map(torch.randn_like(T_new) * add_noise))
             T_new += torch.randn_like(T_new) * add_noise
 
         # create new cameras from R_new and T_new

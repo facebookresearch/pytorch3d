@@ -12,7 +12,7 @@ import numpy as np
 import torch
 from common_testing import TestCaseMixin, get_tests_dir
 from pytorch3d.ops import eyes
-from pytorch3d.transforms import so3_exponential_map, so3_log_map
+from pytorch3d.transforms import so3_exp_map, so3_log_map
 from pytorch3d.utils import (
     cameras_from_opencv_projection,
     opencv_from_cameras_projection,
@@ -33,7 +33,7 @@ def cv2_project_points(pts, rvec, tvec, camera_matrix):
     """
     Reproduces the `cv2.projectPoints` function from OpenCV using PyTorch.
     """
-    R = so3_exponential_map(rvec)
+    R = so3_exp_map(rvec)
     pts_proj_3d = (
         camera_matrix.bmm(R.bmm(pts.permute(0, 2, 1)) + tvec[:, :, None])
     ).permute(0, 2, 1)

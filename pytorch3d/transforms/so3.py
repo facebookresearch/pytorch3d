@@ -4,6 +4,7 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+import warnings
 from typing import Tuple
 
 import torch
@@ -134,7 +135,15 @@ def so3_exp_map(log_rot: torch.Tensor, eps: float = 0.0001) -> torch.Tensor:
     return _so3_exp_map(log_rot, eps=eps)[0]
 
 
-so3_exponential_map = so3_exp_map
+def so3_exponential_map(log_rot: torch.Tensor, eps: float = 0.0001) -> torch.Tensor:
+    warnings.warn(
+        """so3_exponential_map is deprecated,
+        Use so3_exp_map instead.
+        so3_exponential_map will be removed in future releases.""",
+        PendingDeprecationWarning,
+    )
+
+    return so3_exp_map(log_rot, eps)
 
 
 def _so3_exp_map(

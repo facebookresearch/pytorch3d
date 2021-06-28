@@ -15,7 +15,7 @@ from pytorch3d.ops.sample_points_from_meshes import sample_points_from_meshes
 from pytorch3d.structures.meshes import Meshes
 from pytorch3d.structures.pointclouds import Pointclouds
 from pytorch3d.structures.volumes import Volumes
-from pytorch3d.transforms.so3 import so3_exponential_map
+from pytorch3d.transforms.so3 import so3_exp_map
 
 
 DEBUG = False
@@ -138,7 +138,7 @@ def init_uniform_y_rotations(batch_size: int = 10):
     angles = torch.linspace(0, 2.0 * np.pi, batch_size + 1, device=device)
     angles = angles[:batch_size]
     log_rots = axis[None, :] * angles[:, None]
-    R = so3_exponential_map(log_rots)
+    R = so3_exp_map(log_rots)
     return R
 
 

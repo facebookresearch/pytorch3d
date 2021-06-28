@@ -9,7 +9,7 @@ from typing import Tuple
 import torch
 
 from ..renderer import PerspectiveCameras
-from ..transforms import so3_exponential_map, so3_log_map
+from ..transforms import so3_exp_map, so3_log_map
 
 
 def cameras_from_opencv_projection(
@@ -51,7 +51,7 @@ def cameras_from_opencv_projection(
         cameras_pytorch3d: A batch of `N` cameras in the PyTorch3D convention.
     """
 
-    R = so3_exponential_map(rvec)
+    R = so3_exp_map(rvec)
     focal_length = torch.stack([camera_matrix[:, 0, 0], camera_matrix[:, 1, 1]], dim=-1)
     principal_point = camera_matrix[:, :2, 2]
 

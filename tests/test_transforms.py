@@ -10,7 +10,7 @@ import unittest
 
 import torch
 from common_testing import TestCaseMixin
-from pytorch3d.transforms.so3 import so3_exponential_map
+from pytorch3d.transforms.so3 import so3_exp_map
 from pytorch3d.transforms.transform3d import (
     Rotate,
     RotateAxisAngle,
@@ -146,7 +146,7 @@ class TestTransform(TestCaseMixin, unittest.TestCase):
         self.assertTrue(torch.allclose(normals_out, normals_out_expected))
 
     def test_rotate(self):
-        R = so3_exponential_map(torch.randn((1, 3)))
+        R = so3_exp_map(torch.randn((1, 3)))
         t = Transform3d().rotate(R)
         points = torch.tensor([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.5, 0.5, 0.0]]).view(
             1, 3, 3
@@ -273,7 +273,7 @@ class TestTransform(TestCaseMixin, unittest.TestCase):
                     )
                 elif choice <= 2.0 / 3.0:
                     t_ = Rotate(
-                        so3_exponential_map(
+                        so3_exp_map(
                             torch.randn(
                                 (batch_size, 3), dtype=torch.float32, device=device
                             )
@@ -894,7 +894,7 @@ class TestRotate(unittest.TestCase):
     def test_inverse(self, batch_size=5):
         device = torch.device("cuda:0")
         log_rot = torch.randn((batch_size, 3), dtype=torch.float32, device=device)
-        R = so3_exponential_map(log_rot)
+        R = so3_exp_map(log_rot)
         t = Rotate(R)
         im = t.inverse()._matrix
         im_2 = t._matrix.inverse()
