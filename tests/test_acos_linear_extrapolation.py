@@ -10,6 +10,7 @@ import unittest
 import numpy as np
 import torch
 from common_testing import TestCaseMixin
+from pytorch3d.common.compat import lstsq
 from pytorch3d.transforms import acos_linear_extrapolation
 
 
@@ -64,8 +65,7 @@ class TestAcosLinearExtrapolation(TestCaseMixin, unittest.TestCase):
         bound_t = torch.tensor(bound, device=x.device, dtype=x.dtype)
         # fit a line: slope * x + bias = y
         x_1 = torch.stack([x, torch.ones_like(x)], dim=-1)
-        solution = torch.linalg.lstsq(x_1, y[:, None]).solution
-        slope, bias = solution.view(-1)[:2]
+        slope, bias = lstsq(x_1, y[:, None]).view(-1)[:2]
         desired_slope = (-1.0) / torch.sqrt(1.0 - bound_t ** 2)
         # test that the desired slope is the same as the fitted one
         self.assertClose(desired_slope.view(1), slope.view(1), atol=1e-2)

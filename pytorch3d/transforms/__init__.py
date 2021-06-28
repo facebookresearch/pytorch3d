@@ -26,8 +26,8 @@ from .rotation_conversions import (
 )
 from .se3 import se3_exp_map, se3_log_map
 from .so3 import (
-    so3_exponential_map,
     so3_exp_map,
+    so3_exponential_map,
     so3_log_map,
     so3_relative_angle,
     so3_rotation_angle,

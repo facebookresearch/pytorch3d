@@ -11,6 +11,7 @@ import unittest
 import numpy as np
 import torch
 from common_testing import TestCaseMixin
+from pytorch3d.common.compat import qr
 from pytorch3d.transforms.so3 import (
     hat,
     so3_exp_map,
@@ -46,7 +47,7 @@ class TestSO3(TestCaseMixin, unittest.TestCase):
         # TODO(dnovotny): replace with random_rotation from random_rotation.py
         rot = []
         for _ in range(batch_size):
-            r = torch.qr(torch.randn((3, 3), device=device))[0]
+            r = qr(torch.randn((3, 3), device=device))[0]
             f = torch.randint(2, (3,), device=device, dtype=torch.float32)
             if f.sum() % 2 == 0:
                 f = 1 - f
@@ -142,7 +143,7 @@ class TestSO3(TestCaseMixin, unittest.TestCase):
         # add random rotations and random almost orthonormal matrices
         r.extend(
             [
-                torch.qr(identity + torch.randn_like(identity) * 1e-4)[0]
+                qr(identity + torch.randn_like(identity) * 1e-4)[0]
                 + float(i > batch_size // 2) * (0.5 - torch.rand_like(identity)) * 1e-3
                 # this adds random noise to the second half
                 # of the random orthogonal matrices to generate
@@ -242,7 +243,7 @@ class TestSO3(TestCaseMixin, unittest.TestCase):
         r = [identity, rot180]
         r.extend(
             [
-                torch.qr(identity + torch.randn_like(identity) * 1e-4)[0]
+                qr(identity + torch.randn_like(identity) * 1e-4)[0]
                 for _ in range(batch_size - 2)
             ]
         )
