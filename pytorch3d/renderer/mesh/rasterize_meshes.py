@@ -248,7 +248,10 @@ def rasterize_meshes(
         # original unclipped faces.  This may involve converting barycentric
         # coordinates
         outputs = convert_clipped_rasterization_to_original_faces(
-            pix_to_face, barycentric_coords, clipped_faces
+            pix_to_face,
+            barycentric_coords,
+            # pyre-fixme[61]: `clipped_faces` may not be initialized here.
+            clipped_faces,
         )
         pix_to_face, barycentric_coords = outputs
 
@@ -612,7 +615,10 @@ def rasterize_meshes_python(  # noqa: C901
         # original unclipped faces.  This may involve converting barycentric
         # coordinates
         (face_idxs, bary_coords,) = convert_clipped_rasterization_to_original_faces(
-            face_idxs, bary_coords, clipped_faces
+            face_idxs,
+            bary_coords,
+            # pyre-fixme[61]: `clipped_faces` may not be initialized here.
+            clipped_faces,
         )
 
     return face_idxs, zbuf, bary_coords, pix_dists

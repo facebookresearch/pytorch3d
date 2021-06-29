@@ -177,7 +177,6 @@ def chamfer_distance(
         )
 
         if is_x_heterogeneous:
-            # pyre-fixme[16]: `int` has no attribute `__setitem__`.
             cham_norm_x[x_mask] = 0.0
         if is_y_heterogeneous:
             cham_norm_y[y_mask] = 0.0

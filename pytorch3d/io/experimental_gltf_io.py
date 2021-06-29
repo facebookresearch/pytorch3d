@@ -400,6 +400,7 @@ class _GLTFLoader:
                     None, None, :3
                 ]
             texture = TexturesUV(
+                # pyre-fixme[61]: `map` may not be initialized here.
                 maps=[map],  # alpha channel ignored
                 faces_uvs=[faces_uvs],
                 verts_uvs=[verts_uvs],

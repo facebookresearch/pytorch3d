@@ -463,7 +463,6 @@ def round_points_to_volumes(
 
     # valid - binary indicators of votes that fall into the volume
     grid_sizes = grid_sizes.type_as(XYZ)
-    # pyre-fixme[16]: `int` has no attribute `long`.
     valid = (
         (0 <= X)
         * (X < grid_sizes_xyz[:, None, 0:1])

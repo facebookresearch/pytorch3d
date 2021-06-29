@@ -137,10 +137,14 @@ def sample_points_from_meshes(
     # return
     # TODO(gkioxari) consider returning a Pointclouds instance [breaking]
     if return_normals and return_textures:
+        # pyre-fixme[61]: `normals` may not be initialized here.
+        # pyre-fixme[61]: `textures` may not be initialized here.
         return samples, normals, textures
     if return_normals:  # return_textures is False
+        # pyre-fixme[61]: `normals` may not be initialized here.
         return samples, normals
     if return_textures:  # return_normals is False
+        # pyre-fixme[61]: `textures` may not be initialized here.
         return samples, textures
     return samples
 

@@ -427,7 +427,6 @@ def clip_faces(
     # during rasterization anyway).
     faces_delta_cum = faces_delta.cumsum(0) - faces_delta
     delta = 1 + case4_unclipped.int() - case2_unclipped.int()
-    # pyre-ignore[16]
     faces_unclipped_to_clipped_idx = delta.cumsum(0) - delta
 
     ###########################################

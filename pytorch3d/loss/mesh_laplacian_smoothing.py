@@ -124,6 +124,7 @@ def mesh_laplacian_smoothing(meshes, method: str = "uniform"):
     elif method == "cot":
         loss = L.mm(verts_packed) * norm_w - verts_packed
     elif method == "cotcurv":
+        # pyre-fixme[61]: `norm_w` may not be initialized here.
         loss = (L.mm(verts_packed) - L_sum * verts_packed) * norm_w
     loss = loss.norm(dim=1)
 
