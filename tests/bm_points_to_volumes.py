@@ -26,3 +26,7 @@ def bm_points_to_volumes() -> None:
         kwargs_list,
         warmup_iters=1,
     )
+
+
+if __name__ == "__main__":
+    bm_points_to_volumes()
