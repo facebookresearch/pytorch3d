@@ -8,6 +8,7 @@ from typing import Tuple
 
 import torch
 
+
 # ------------------------ Laplacian Matrices ------------------------ #
 # This file contains implementations of differentiable laplacian matrices.
 # These include

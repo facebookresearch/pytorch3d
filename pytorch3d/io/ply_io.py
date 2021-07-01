@@ -15,17 +15,12 @@ import sys
 import warnings
 from collections import namedtuple
 from io import BytesIO, TextIOBase
-from typing import List, Optional, Tuple, Union, cast
+from typing import List, Optional, Tuple, cast
 
 import numpy as np
 import torch
 from iopath.common.file_io import PathManager
-from pytorch3d.io.utils import (
-    PathOrStr,
-    _check_faces_indices,
-    _make_tensor,
-    _open_file,
-)
+from pytorch3d.io.utils import PathOrStr, _check_faces_indices, _make_tensor, _open_file
 from pytorch3d.renderer import TexturesVertex
 from pytorch3d.structures import Meshes, Pointclouds
 

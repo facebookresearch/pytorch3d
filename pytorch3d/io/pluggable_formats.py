@@ -6,7 +6,7 @@
 
 
 import pathlib
-from typing import Optional, Tuple, Union
+from typing import Optional, Tuple
 
 from iopath.common.file_io import PathManager
 from pytorch3d.common.types import Device
