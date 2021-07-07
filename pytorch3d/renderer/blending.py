@@ -209,7 +209,6 @@ def softmax_rgb_blend(
 
     # Also apply exp normalize trick for the background color weight.
     # Clamp to ensure delta is never 0.
-    # pyre-fixme[20]: Argument `max` expected.
     # pyre-fixme[6]: Expected `Tensor` for 1st param but got `float`.
     delta = torch.exp((eps - z_inv_max) / blend_params.gamma).clamp(min=eps)
 

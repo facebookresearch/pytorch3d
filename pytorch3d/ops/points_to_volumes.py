@@ -385,7 +385,6 @@ def splat_points_to_volumes(
                 volume_features.scatter_add_(2, idx_valid, w_valid * points_features)
 
     # divide each feature by the total weight of the votes
-    # pyre-fixme[20]: Argument `max` expected.
     volume_features = volume_features / volume_densities.view(ba, 1, n_voxels).clamp(
         min_weight
     )
@@ -495,7 +494,6 @@ def round_points_to_volumes(
     volume_features.scatter_add_(2, idx_valid, w_valid * points_features)
 
     # divide each feature by the total weight of the votes
-    # pyre-fixme[20]: Argument `max` expected.
     volume_features = volume_features / volume_densities.view(ba, 1, n_voxels).clamp(
         1.0
     )
