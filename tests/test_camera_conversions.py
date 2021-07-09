@@ -129,16 +129,15 @@ class TestCameraConversions(TestCaseMixin, unittest.TestCase):
         )
         camera_matrix[:, :2, 2] = principal_point
 
-        rvec = so3_log_map(R)
-
         pts = torch.nn.functional.normalize(torch.randn(4, 1000, 3), dim=-1)
 
         # project the 3D points with the opencv projection function
+        rvec = so3_log_map(R)
         pts_proj_opencv = cv2_project_points(pts, rvec, tvec, camera_matrix)
 
         # make the pytorch3d cameras
         cameras_opencv_to_pytorch3d = cameras_from_opencv_projection(
-            rvec, tvec, camera_matrix, image_size
+            R, tvec, camera_matrix, image_size
         )
 
         # project the 3D points with converted cameras
@@ -155,9 +154,9 @@ class TestCameraConversions(TestCaseMixin, unittest.TestCase):
         )
 
         # Check the inverse.
-        rvec_i, tvec_i, camera_matrix_i = opencv_from_cameras_projection(
+        R_i, tvec_i, camera_matrix_i = opencv_from_cameras_projection(
             cameras_opencv_to_pytorch3d, image_size
         )
-        self.assertClose(rvec, rvec_i)
+        self.assertClose(R, R_i)
         self.assertClose(tvec, tvec_i)
         self.assertClose(camera_matrix, camera_matrix_i)

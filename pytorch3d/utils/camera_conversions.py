@@ -13,14 +13,14 @@ from ..transforms import so3_exp_map, so3_log_map
 
 
 def cameras_from_opencv_projection(
-    rvec: torch.Tensor,
+    R: torch.Tensor,
     tvec: torch.Tensor,
     camera_matrix: torch.Tensor,
     image_size: torch.Tensor,
 ) -> PerspectiveCameras:
     """
     Converts a batch of OpenCV-conventioned cameras parametrized with the
-    axis-angle rotation vectors `rvec`, translation vectors `tvec`, and the camera
+    rotation matrices `R`, translation vectors `tvec`, and the camera
     calibration matrices `camera_matrix` to `PerspectiveCameras` in PyTorch3D
     convention.
 
@@ -32,16 +32,20 @@ def cameras_from_opencv_projection(
     More specifically, the OpenCV convention projects points to the OpenCV screen
     space as follows:
         ```
-        x_screen_opencv = camera_matrix @ (exp(rvec) @ x_world + tvec)
+        x_screen_opencv = camera_matrix @ (R @ x_world + tvec)
         ```
     followed by the homogenization of `x_screen_opencv`.
 
     Note:
-        The parameters `rvec, tvec, camera_matrix` correspond, e.g., to the inputs
-        of `cv2.projectPoints`, or to the ouputs of `cv2.calibrateCamera`.
+        The parameters `R, tvec, camera_matrix` correspond to the outputs of
+        `cv2.decomposeProjectionMatrix`.
+
+        The `rvec` parameter of the `cv2.projectPoints` is an axis-angle vector
+        that can be converted to the rotation matrix `R` expected here by
+        calling the `so3_exp_map` function.
 
     Args:
-        rvec: A batch of axis-angle rotation vectors of shape `(N, 3)`.
+        R: A batch of rotation matrices of shape `(N, 3, 3)`.
         tvec: A batch of translation vectors of shape `(N, 3)`.
         camera_matrix: A batch of camera calibration matrices of shape `(N, 3, 3)`.
         image_size: A tensor of shape `(N, 2)` containing the sizes of the images
@@ -51,7 +55,6 @@ def cameras_from_opencv_projection(
         cameras_pytorch3d: A batch of `N` cameras in the PyTorch3D convention.
     """
 
-    R = so3_exp_map(rvec)
     focal_length = torch.stack([camera_matrix[:, 0, 0], camera_matrix[:, 1, 1]], dim=-1)
     principal_point = camera_matrix[:, :2, 2]
 
@@ -84,13 +87,17 @@ def opencv_from_cameras_projection(
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     """
     Converts a batch of `PerspectiveCameras` into OpenCV-convention
-    axis-angle rotation vectors `rvec`, translation vectors `tvec`, and the camera
+    rotation matrices `R`, translation vectors `tvec`, and the camera
     calibration matrices `camera_matrix`. This operation is exactly the inverse
     of `cameras_from_opencv_projection`.
 
     Note:
-        The parameters `rvec, tvec, camera_matrix` correspond, e.g., to the inputs
-        of `cv2.projectPoints`, or to the ouputs of `cv2.calibrateCamera`.
+        The outputs `R, tvec, camera_matrix` correspond to the outputs of
+        `cv2.decomposeProjectionMatrix`.
+
+        The `rvec` parameter of the `cv2.projectPoints` is an axis-angle vector
+        that can be converted from the returned rotation matrix `R` here by
+        calling the `so3_log_map` function.
 
     Args:
         cameras: A batch of `N` cameras in the PyTorch3D convention.
@@ -98,7 +105,7 @@ def opencv_from_cameras_projection(
             (height, width) attached to each camera.
 
     Returns:
-        rvec: A batch of axis-angle rotation vectors of shape `(N, 3)`.
+        R: A batch of rotation matrices of shape `(N, 3, 3)`.
         tvec: A batch of translation vectors of shape `(N, 3)`.
         camera_matrix: A batch of camera calibration matrices of shape `(N, 3, 3)`.
     """
@@ -122,5 +129,4 @@ def opencv_from_cameras_projection(
     camera_matrix[:, 2, 2] = 1.0
     camera_matrix[:, 0, 0] = focal_length[:, 0]
     camera_matrix[:, 1, 1] = focal_length[:, 1]
-    rvec = so3_log_map(R)
-    return rvec, tvec, camera_matrix
+    return R, tvec, camera_matrix
