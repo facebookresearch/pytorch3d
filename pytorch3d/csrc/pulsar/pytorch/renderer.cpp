@@ -1046,7 +1046,7 @@ Renderer::backward(
       at::optional<torch::Tensor>,
       at::optional<torch::Tensor>>
       ret;
-  if (mode == 1 || (!dif_pos && !dif_col && !dif_rad && !dif_cam)) {
+  if (mode == 1 || (!dif_pos && !dif_col && !dif_rad && !dif_cam && !dif_opy)) {
     return ret;
   }
   // Create the camera information.
