@@ -22,7 +22,7 @@ from pytorch3d.structures.meshes import Meshes
 class TestShader(TestCaseMixin, unittest.TestCase):
     def test_to(self):
         cpu_device = torch.device("cpu")
-        cuda_device = torch.device("cuda")
+        cuda_device = torch.device("cuda:0")
 
         R, T = look_at_view_transform()
 

@@ -50,9 +50,9 @@ class TestTransform(TestCaseMixin, unittest.TestCase):
         self.assertEqual(torch.float32, t.dtype)
         self.assertIsNot(t, cpu_t)
 
-        cuda_device = torch.device("cuda")
+        cuda_device = torch.device("cuda:0")
 
-        cuda_t = t.to("cuda")
+        cuda_t = t.to("cuda:0")
         self.assertEqual(cuda_device, cuda_t.device)
         self.assertEqual(cpu_device, t.device)
         self.assertEqual(torch.float32, cuda_t.dtype)

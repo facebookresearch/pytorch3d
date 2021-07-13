@@ -15,7 +15,8 @@ Device = Union[str, torch.device]
 def make_device(device: Device) -> torch.device:
     """
     Makes an actual torch.device object from the device specified as
-    either a string or torch.device object.
+    either a string or torch.device object. If the device is `cuda` without
+    a specific index, the index of the current device is assigned.
 
     Args:
         device: Device (as str or torch.device)
@@ -23,7 +24,12 @@ def make_device(device: Device) -> torch.device:
     Returns:
         A matching torch.device object
     """
-    return torch.device(device) if isinstance(device, str) else device
+    device = torch.device(device) if isinstance(device, str) else device
+    if device.type == "cuda" and device.index is None:  # pyre-ignore[16]
+        # If cuda but with no index, then the current cuda device is indicated.
+        # In that case, we fix to that device
+        device = torch.device(f"cuda:{torch.cuda.current_device()}")
+    return device
 
 
 def get_device(x, device: Optional[Device] = None) -> torch.device:

@@ -8,7 +8,7 @@
 import copy
 import inspect
 import warnings
-from typing import Any, Union
+from typing import Any, Optional, Union
 
 import numpy as np
 import torch
@@ -173,6 +173,12 @@ class TensorProperties(nn.Module):
             if torch.is_tensor(v) and v.device != device_:
                 setattr(self, k, v.to(device_))
         return self
+
+    def cpu(self) -> "TensorProperties":
+        return self.to("cpu")
+
+    def cuda(self, device: Optional[int] = None) -> "TensorProperties":
+        return self.to(f"cuda:{device}" if device is not None else "cuda")
 
     def clone(self, other) -> "TensorProperties":
         """

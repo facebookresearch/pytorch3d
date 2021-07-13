@@ -709,9 +709,9 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
         self.assertEqual(cpu_device, mesh.device)
         self.assertIs(mesh, converted_mesh)
 
-        cuda_device = torch.device("cuda")
+        cuda_device = torch.device("cuda:0")
 
-        converted_mesh = mesh.to("cuda")
+        converted_mesh = mesh.to("cuda:0")
         self.assertEqual(cuda_device, converted_mesh.device)
         self.assertEqual(cpu_device, mesh.device)
         self.assertIsNot(mesh, converted_mesh)

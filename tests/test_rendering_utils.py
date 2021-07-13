@@ -39,7 +39,17 @@ class TestTensorProperties(TestCaseMixin, unittest.TestCase):
         example = TensorPropertiesTestClass(x=10.0, y=(100.0, 200.0))
         device = torch.device("cuda:0")
         new_example = example.to(device=device)
-        self.assertTrue(new_example.device == device)
+        self.assertEqual(new_example.device, device)
+
+        example_cpu = example.cpu()
+        self.assertEqual(example_cpu.device, torch.device("cpu"))
+
+        example_gpu = example.cuda()
+        self.assertEqual(example_gpu.device.type, "cuda")
+        self.assertIsNotNone(example_gpu.device.index)
+
+        example_gpu1 = example.cuda(1)
+        self.assertEqual(example_gpu1.device, torch.device("cuda:1"))
 
     def test_clone(self):
         # Check clone method
