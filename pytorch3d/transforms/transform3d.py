@@ -11,6 +11,7 @@ from typing import List, Optional, Union
 import torch
 
 from ..common.types import Device, get_device, make_device
+from ..common.workaround import _safe_det_3x3
 from .rotation_conversions import _axis_angle_rotation
 
 
@@ -774,7 +775,7 @@ def _check_valid_rotation_matrix(R, tol: float = 1e-7):
     eye = torch.eye(3, dtype=R.dtype, device=R.device)
     eye = eye.view(1, 3, 3).expand(N, -1, -1)
     orthogonal = torch.allclose(R.bmm(R.transpose(1, 2)), eye, atol=tol)
-    det_R = torch.det(R)
+    det_R = _safe_det_3x3(R)
     no_distortion = torch.allclose(det_R, torch.ones_like(det_R))
     if not (orthogonal and no_distortion):
         msg = "R is not a valid rotation matrix"
