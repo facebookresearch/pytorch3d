@@ -11,7 +11,7 @@ import numpy as np
 import plotly.graph_objects as go
 import torch
 from plotly.subplots import make_subplots
-from pytorch3d.renderer import TexturesVertex, RayBundle, ray_bundle_to_ray_points
+from pytorch3d.renderer import RayBundle, TexturesVertex, ray_bundle_to_ray_points
 from pytorch3d.renderer.camera_utils import camera_to_eye_at_up
 from pytorch3d.renderer.cameras import CamerasBase
 from pytorch3d.structures import Meshes, Pointclouds, join_meshes_as_scene

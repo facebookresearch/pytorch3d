@@ -15,7 +15,7 @@ from common_testing import get_pytorch3d_dir, get_tests_dir
 # This file groups together tests which look at the code without running it.
 # When running the tests inside conda's build, the code is not available.
 in_conda_build = os.environ.get("CONDA_BUILD_STATE", "") == "TEST"
-in_re_worker = os.environ.get("INSIDE_RE_WORKER", "") is not None
+in_re_worker = os.environ.get("INSIDE_RE_WORKER") is not None
 
 
 class TestBuild(unittest.TestCase):
@@ -42,10 +42,7 @@ class TestBuild(unittest.TestCase):
 
         extensions = ("py", "cu", "cuh", "cpp", "h", "hpp", "sh")
 
-        expect = (
-            "Copyright (c) Facebook, Inc. and its affiliates."
-            + " All rights reserved.\n"
-        )
+        expect = "Copyright (c) Facebook, Inc. and its affiliates.\n"
 
         files_missing_copyright_header = []
 
@@ -59,7 +56,7 @@ class TestBuild(unittest.TestCase):
                     continue
                 with open(path) as f:
                     firstline = f.readline()
-                    if firstline.startswith(("# -*-", "#!")):
+                    if firstline.startswith(("# -*-", "#!", "/*")):
                         firstline = f.readline()
                     if not firstline.endswith(expect):
                         files_missing_copyright_header.append(str(path))
