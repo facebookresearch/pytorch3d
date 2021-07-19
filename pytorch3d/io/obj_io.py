@@ -499,7 +499,7 @@ def _parse_obj(f, data_dir: str):
 
 def _load_materials(
     material_names: List[str],
-    f,
+    f: Optional[str],
     *,
     data_dir: str,
     load_textures: bool,
@@ -511,7 +511,7 @@ def _load_materials(
 
     Args:
         material_names: a list of the material names found in the .obj file.
-        f: a file-like object of the material information.
+        f: path to the material information.
         data_dir: the directory where the material texture files are located.
         load_textures: whether textures should be loaded.
         device: Device (as str or torch.device) on which to return the new tensors.
@@ -529,7 +529,7 @@ def _load_materials(
             warnings.warn("No mtl file provided")
         return None, None
 
-    if not os.path.isfile(f):
+    if not path_manager.exists(f):
         warnings.warn(f"Mtl file does not exist: {f}")
         return None, None
 

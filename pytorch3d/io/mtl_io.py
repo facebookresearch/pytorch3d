@@ -398,7 +398,7 @@ TextureImages = Dict[str, torch.Tensor]
 
 
 def _parse_mtl(
-    f, path_manager: PathManager, device: Device = "cpu"
+    f: str, path_manager: PathManager, device: Device = "cpu"
 ) -> Tuple[MaterialProperties, TextureFiles]:
     material_properties = {}
     texture_files = {}
@@ -456,7 +456,7 @@ def _load_texture_images(
         if material_name in texture_files:
             # Load the texture image.
             path = os.path.join(data_dir, texture_files[material_name])
-            if os.path.isfile(path):
+            if path_manager.exists(path):
                 image = (
                     _read_image(path, path_manager=path_manager, format="RGB") / 255.0
                 )
@@ -475,7 +475,7 @@ def _load_texture_images(
 
 
 def load_mtl(
-    f,
+    f: str,
     *,
     material_names: List[str],
     data_dir: str,
@@ -487,7 +487,7 @@ def load_mtl(
     and specular light (Ka, Kd, Ks, Ns).
 
     Args:
-        f: a file-like object of the material information.
+        f: path to the material information.
         material_names: a list of the material names found in the .obj file.
         data_dir: the directory where the material texture files are located.
         device: Device (as str or torch.tensor) on which to return the new tensors.
