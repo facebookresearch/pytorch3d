@@ -8,7 +8,8 @@
 import unittest
 
 import torch
-from pytorch3d.loss.mesh_normal_consistency import mesh_normal_consistency
+from pytorch3d.loss.mesh_normal_consistency import mesh_normal_consistency, \
+    MeshNormalConsistency
 from pytorch3d.structures.meshes import Meshes
 from pytorch3d.utils.ico_sphere import ico_sphere
 
@@ -21,7 +22,7 @@ PROBLEMATIC_CUDA = torch.version.cuda in ("11.0", "11.1")
 # or something like
 # operator(): block: [0,0,0], thread: [96,0,0]
 # Assertion `index >= -sizes[i] && index < sizes[i] && "index out of bounds"` failed.
-AVOID_LARGE_MESH_CUDA = PROBLEMATIC_CUDA and IS_TORCH_1_8
+AVOID_LARGE_MESH_CUDA = True#PROBLEMATIC_CUDA and IS_TORCH_1_8
 
 
 class TestMeshNormalConsistency(unittest.TestCase):
@@ -150,7 +151,7 @@ class TestMeshNormalConsistency(unittest.TestCase):
                         \/
                         v0
         """
-        device = torch.device("cuda:0")
+        device = torch.device("cpu")
         # mesh1 shown above
         verts1 = torch.rand((4, 3), dtype=torch.float32, device=device)
         faces1 = torch.tensor([[0, 1, 2], [2, 1, 3]], dtype=torch.int64, device=device)
@@ -234,6 +235,47 @@ class TestMeshNormalConsistency(unittest.TestCase):
         out1 = mesh_normal_consistency(meshes)
         out2 = TestMeshNormalConsistency.mesh_normal_consistency_naive(meshes)
 
+        self.assertTrue(torch.allclose(out1, out2))
+
+    def test_mesh_normal_consistency_class(self):
+        """
+        Test Mesh Normal Consistency for random meshes with MeshNormalConsistency class.
+        """
+        meshes = TestMeshNormalConsistency.init_meshes(5, 100, 300)
+        f = MeshNormalConsistency()
+        out1 = mesh_normal_consistency(meshes)
+        out2 = f(meshes)
+
+        self.assertTrue(torch.allclose(out1, out2))
+
+    def test_mesh_normal_consistency_class_with_bad_representative_mesh(self):
+        """
+        Test raising of error for MeshNormalConsistency class with bad
+        representative mesh.
+        """
+        meshes = TestMeshNormalConsistency.init_meshes(5, 100, 300)
+        msg = "There should be only a single representative mesh"
+        with self.assertRaises(ValueError, msg=msg):
+            f = MeshNormalConsistency(representative_mesh=meshes)
+
+    def test_mesh_normal_consistency_class_with_representative_mesh(self):
+        """
+        Test Mesh Normal Consistency for MeshNormalConsistency class with an
+        ico sphere as a representative mesh.
+        """
+        num_meshes = 5
+        mesh = ico_sphere(level=4, device=torch.device("cpu"))
+        verts, faces = mesh.get_mesh_verts_faces(0)
+        verts_list = [verts.clone() for _ in range(num_meshes)]
+        faces_list = [faces.clone() for _ in range(num_meshes)]
+        meshes = Meshes(verts_list, faces_list)
+
+        f = MeshNormalConsistency(representative_mesh=meshes[0])
+        deform_verts = torch.randn(meshes.verts_packed().shape,
+                                   device=meshes.device)
+        new_meshes = meshes.offset_verts(deform_verts)
+        out1 = mesh_normal_consistency(new_meshes)
+        out2 = f(new_meshes)
         self.assertTrue(torch.allclose(out1, out2))
 
     def test_no_intersection(self):
