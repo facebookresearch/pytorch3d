@@ -8,8 +8,10 @@
 import unittest
 
 import torch
-from pytorch3d.loss.mesh_normal_consistency import mesh_normal_consistency, \
-    MeshNormalConsistency
+from pytorch3d.loss.mesh_normal_consistency import (
+    mesh_normal_consistency,
+    MeshNormalConsistency,
+)
 from pytorch3d.structures.meshes import Meshes
 from pytorch3d.utils.ico_sphere import ico_sphere
 
@@ -22,7 +24,7 @@ PROBLEMATIC_CUDA = torch.version.cuda in ("11.0", "11.1")
 # or something like
 # operator(): block: [0,0,0], thread: [96,0,0]
 # Assertion `index >= -sizes[i] && index < sizes[i] && "index out of bounds"` failed.
-AVOID_LARGE_MESH_CUDA = True#PROBLEMATIC_CUDA and IS_TORCH_1_8
+AVOID_LARGE_MESH_CUDA = PROBLEMATIC_CUDA and IS_TORCH_1_8
 
 
 class TestMeshNormalConsistency(unittest.TestCase):
@@ -271,8 +273,7 @@ class TestMeshNormalConsistency(unittest.TestCase):
         meshes = Meshes(verts_list, faces_list)
 
         f = MeshNormalConsistency(representative_mesh=meshes[0])
-        deform_verts = torch.randn(meshes.verts_packed().shape,
-                                   device=meshes.device)
+        deform_verts = torch.randn(meshes.verts_packed().shape, device=meshes.device)
         new_meshes = meshes.offset_verts(deform_verts)
         out1 = mesh_normal_consistency(new_meshes)
         out2 = f(new_meshes)

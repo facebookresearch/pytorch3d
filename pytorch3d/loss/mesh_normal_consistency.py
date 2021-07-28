@@ -8,6 +8,43 @@ import torch
 from pytorch3d import _C
 
 
+def get_vert_edge_pair_idx(faces_packed, edges_packed, face_to_edge):
+    E = edges_packed.shape[0]  # sum(E_n)
+    F = faces_packed.shape[0]  # sum(F_n)
+
+    # We don't want gradients for the following operation. The goal is to
+    # find for each edge e all the vertices associated with e. In the example
+    # above, the vertices associated with e are (a, b), i.e. the points connected
+    # on faces to e.
+    with torch.no_grad():
+        edge_idx = face_to_edge.reshape(F * 3)  # (3 * F,) indexes into edges
+        vert_idx = (
+            faces_packed.view(1, F, 3).expand(3, F, 3).transpose(0, 1).reshape(3 * F, 3)
+        )
+        edge_idx, edge_sort_idx = edge_idx.sort()
+        vert_idx = vert_idx[edge_sort_idx]
+
+        # In well constructed meshes each edge is shared by precisely 2 faces
+        # However, in many meshes, this assumption is not always satisfied.
+        # We want to find all faces that share an edge, a number which can
+        # vary and which depends on the topology.
+        # In particular, we find the vertices not on the edge on the shared faces.
+        # In the example above, we want to associate edge e with vertices a and b.
+        # This operation is done more efficiently in cpu with lists.
+        # TODO(gkioxari) find a better way to do this.
+
+        # edge_idx represents the index of the edge for each vertex. We can count
+        # the number of vertices which are associated with each edge.
+        # There can be a different number for each edge.
+        edge_num = edge_idx.bincount(minlength=E)
+
+        # This calculates all pairs of vertices which are opposite to the same edge.
+        vert_edge_pair_idx = _C.mesh_normal_consistency_find_verts(edge_num.cpu()).to(
+            edge_num.device
+        )
+        return vert_idx, edge_idx, vert_edge_pair_idx
+
+
 def mesh_normal_consistency(meshes):
     r"""
     Computes the normal consistency of each mesh in meshes.
@@ -69,39 +106,9 @@ def mesh_normal_consistency(meshes):
     edges_packed = meshes.edges_packed()  # (sum(E_n), 2)
     verts_packed_to_mesh_idx = meshes.verts_packed_to_mesh_idx()  # (sum(V_n),)
     face_to_edge = meshes.faces_packed_to_edges_packed()  # (sum(F_n), 3)
-    E = edges_packed.shape[0]  # sum(E_n)
-    F = faces_packed.shape[0]  # sum(F_n)
-
-    # We don't want gradients for the following operation. The goal is to
-    # find for each edge e all the vertices associated with e. In the example
-    # above, the vertices associated with e are (a, b), i.e. the points connected
-    # on faces to e.
-    with torch.no_grad():
-        edge_idx = face_to_edge.reshape(F * 3)  # (3 * F,) indexes into edges
-        vert_idx = (
-            faces_packed.view(1, F, 3).expand(3, F, 3).transpose(0, 1).reshape(3 * F, 3)
-        )
-        edge_idx, edge_sort_idx = edge_idx.sort()
-        vert_idx = vert_idx[edge_sort_idx]
-
-        # In well constructed meshes each edge is shared by precisely 2 faces
-        # However, in many meshes, this assumption is not always satisfied.
-        # We want to find all faces that share an edge, a number which can
-        # vary and which depends on the topology.
-        # In particular, we find the vertices not on the edge on the shared faces.
-        # In the example above, we want to associate edge e with vertices a and b.
-        # This operation is done more efficiently in cpu with lists.
-        # TODO(gkioxari) find a better way to do this.
-
-        # edge_idx represents the index of the edge for each vertex. We can count
-        # the number of vertices which are associated with each edge.
-        # There can be a different number for each edge.
-        edge_num = edge_idx.bincount(minlength=E)
-
-        # This calculates all pairs of vertices which are opposite to the same edge.
-        vert_edge_pair_idx = _C.mesh_normal_consistency_find_verts(edge_num.cpu()).to(
-            edge_num.device
-        )
+    vert_idx, edge_idx, vert_edge_pair_idx = get_vert_edge_pair_idx(
+        faces_packed, edges_packed, face_to_edge
+    )
 
     if vert_edge_pair_idx.shape[0] == 0:
         return torch.tensor(
@@ -138,47 +145,10 @@ class MeshNormalConsistency(torch.nn.Module):
         self.vert_idx, self.edge_idx, self.vert_edge_pair_idx = None, None, None
         if representative_mesh is not None:
             if len(representative_mesh) != 1:
-               raise ValueError("There should be only a single representative mesh.")
-            self.vert_idx, self.edge_idx, self.vert_edge_pair_idx = self.forward(representative_mesh, initial=True)
-
-    def get_vert_edge_pair_idx(self, faces_packed, edges_packed, face_to_edge):
-
-        E = edges_packed.shape[0]  # sum(E_n)
-        F = faces_packed.shape[0]  # sum(F_n)
-
-        # We don't want gradients for the following operation. The goal is to
-        # find for each edge e all the vertices associated with e. In the example
-        # above, the vertices associated with e are (a, b), i.e. the points connected
-        # on faces to e.
-        with torch.no_grad():
-            edge_idx = face_to_edge.reshape(F * 3)  # (3 * F,) indexes into edges
-            vert_idx = (
-                faces_packed.view(1, F, 3).expand(3, F, 3).transpose(0, 1).reshape(
-                    3 * F, 3)
+                raise ValueError("There should be only a single representative mesh.")
+            self.vert_idx, self.edge_idx, self.vert_edge_pair_idx = self.forward(
+                representative_mesh, initial=True
             )
-            edge_idx, edge_sort_idx = edge_idx.sort()
-            vert_idx = vert_idx[edge_sort_idx]
-
-            # In well constructed meshes each edge is shared by precisely 2 faces
-            # However, in many meshes, this assumption is not always satisfied.
-            # We want to find all faces that share an edge, a number which can
-            # vary and which depends on the topology.
-            # In particular, we find the vertices not on the edge on the shared faces.
-            # In the example above, we want to associate edge e with vertices a and b.
-            # This operation is done more efficiently in cpu with lists.
-            # TODO(gkioxari) find a better way to do this.
-
-            # edge_idx represents the index of the edge for each vertex. We can count
-            # the number of vertices which are associated with each edge.
-            # There can be a different number for each edge.
-            edge_num = edge_idx.bincount(minlength=E)
-
-            # This calculates all pairs of vertices which are opposite to the same edge.
-            vert_edge_pair_idx = _C.mesh_normal_consistency_find_verts(
-                edge_num.cpu()).to(
-                edge_num.device
-            )
-            return vert_idx, edge_idx, vert_edge_pair_idx
 
     def forward(self, meshes, initial=False):
         if meshes.isempty():
@@ -193,15 +163,24 @@ class MeshNormalConsistency(torch.nn.Module):
         verts_packed_to_mesh_idx = meshes.verts_packed_to_mesh_idx()  # (sum(V_n),)
         face_to_edge = meshes.faces_packed_to_edges_packed()  # (sum(F_n), 3)
 
-        if self.vert_edge_pair_idx is not None and self.vert_idx is not None and self.edge_idx is not None:
-            offset = self.vert_idx.max() + 1
-            vert_idx = torch.cat([self.vert_idx + i * offset for i in range(N)])
-            offset = self.edge_idx.max() + 1
-            edge_idx = torch.cat([self.edge_idx + i * offset for i in range(N)])
-            offset = self.vert_edge_pair_idx.max() + 1
-            vert_edge_pair_idx = torch.cat([self.vert_edge_pair_idx + i * offset for i in range(N)])
+        if (
+            self.vert_edge_pair_idx is not None
+            and self.vert_idx is not None
+            and self.edge_idx is not None
+        ):
+            with torch.no_grad():
+                offset = self.vert_idx.max() + 1
+                vert_idx = torch.cat([self.vert_idx + i * offset for i in range(N)])
+                offset = self.edge_idx.max() + 1
+                edge_idx = torch.cat([self.edge_idx + i * offset for i in range(N)])
+                offset = self.vert_edge_pair_idx.max() + 1
+                vert_edge_pair_idx = torch.cat(
+                    [self.vert_edge_pair_idx + i * offset for i in range(N)]
+                )
         else:
-            vert_idx, edge_idx, vert_edge_pair_idx = self.get_vert_edge_pair_idx(faces_packed, edges_packed, face_to_edge)
+            vert_idx, edge_idx, vert_edge_pair_idx = get_vert_edge_pair_idx(
+                faces_packed, edges_packed, face_to_edge
+            )
 
         # Used when representative_mesh is not None
         if initial:
