@@ -11,7 +11,7 @@ from typing import Any, Dict, Optional, Tuple, Union
 import torch
 import torch.nn as nn
 
-from ....utils import pulsar_from_cameras_projection
+from ...camera_conversions import _pulsar_from_cameras_projection
 from ...cameras import (
     FoVOrthographicCameras,
     FoVPerspectiveCameras,
@@ -378,7 +378,7 @@ class PulsarPointsRenderer(nn.Module):
         size_tensor = torch.tensor(
             [[self.renderer._renderer.height, self.renderer._renderer.width]]
         )
-        pulsar_cam = pulsar_from_cameras_projection(tmp_cams, size_tensor)
+        pulsar_cam = _pulsar_from_cameras_projection(tmp_cams, size_tensor)
         cam_pos = pulsar_cam[0, :3]
         cam_rot = pulsar_cam[0, 3:9]
         return cam_pos, cam_rot
