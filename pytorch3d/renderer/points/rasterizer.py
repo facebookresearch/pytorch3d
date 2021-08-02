@@ -55,8 +55,7 @@ class PointsRasterizer(nn.Module):
         """
         cameras: A cameras object which has a  `transform_points` method
                 which returns the transformed points after applying the
-                world-to-view and view-to-screen
-                transformations.
+                world-to-view and view-to-ndc transformations.
             raster_settings: the parameters for rasterization. This should be a
                 named tuple.
 
@@ -76,8 +75,8 @@ class PointsRasterizer(nn.Module):
             point_clouds: a set of point clouds
 
         Returns:
-            points_screen: the points with the vertex positions in screen
-            space
+            points_proj: the points with positions projected
+            in NDC space
 
         NOTE: keeping this as a separate function for readability but it could
         be moved into forward.
@@ -93,14 +92,17 @@ class PointsRasterizer(nn.Module):
         # TODO: Remove this line when the convention for the z coordinate in
         # the rasterizer is decided. i.e. retain z in view space or transform
         # to a different range.
+        eps = kwargs.get("eps", None)
         pts_view = cameras.get_world_to_view_transform(**kwargs).transform_points(
-            pts_world
+            pts_world, eps=eps
         )
-        pts_screen = cameras.get_projection_transform(**kwargs).transform_points(
-            pts_view
-        )
-        pts_screen[..., 2] = pts_view[..., 2]
-        point_clouds = point_clouds.update_padded(pts_screen)
+        # view to NDC transform
+        to_ndc_transform = cameras.get_ndc_camera_transform(**kwargs)
+        projection_transform = cameras.get_projection_transform(**kwargs).compose(to_ndc_transform)
+        pts_ndc = projection_transform.transform_points(pts_view, eps=eps)
+
+        pts_ndc[..., 2] = pts_view[..., 2]
+        point_clouds = point_clouds.update_padded(pts_ndc)
         return point_clouds
 
     def to(self, device):
@@ -115,10 +117,10 @@ class PointsRasterizer(nn.Module):
         Returns:
             PointFragments: Rasterization outputs as a named tuple.
         """
-        points_screen = self.transform(point_clouds, **kwargs)
+        points_proj = self.transform(point_clouds, **kwargs)
         raster_settings = kwargs.get("raster_settings", self.raster_settings)
         idx, zbuf, dists2 = rasterize_points(
-            points_screen,
+            points_proj,
             image_size=raster_settings.image_size,
             radius=raster_settings.radius,
             points_per_pixel=raster_settings.points_per_pixel,

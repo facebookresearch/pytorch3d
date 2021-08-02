@@ -255,9 +255,20 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
                 device=device,
                 R=R,
                 T=T,
-                principal_point=((256.0, 256.0),),
-                focal_length=((256.0, 256.0),),
+                principal_point=(
+                    (
+                        (512.0 - 1.0) / 2.0,
+                        (512.0 - 1.0) / 2.0,
+                    ),
+                ),
+                focal_length=(
+                    (
+                        (512.0 - 1.0) / 2.0,
+                        (512.0 - 1.0) / 2.0,
+                    ),
+                ),
                 image_size=((512, 512),),
+                in_ndc=False,
             )
             rasterizer = MeshRasterizer(
                 cameras=cameras, raster_settings=raster_settings

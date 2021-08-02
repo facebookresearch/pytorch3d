@@ -124,17 +124,23 @@ def ndc_to_screen_points_naive(points, imsize):
     Transforms points from PyTorch3D's NDC space to screen space
     Args:
         points: (N, V, 3) representing padded points
-        imsize: (N, 2) image size = (width, height)
+        imsize: (N, 2) image size = (height, width)
     Returns:
         (N, V, 3) tensor of transformed points
     """
-    imwidth, imheight = imsize.unbind(1)
-    imwidth = imwidth.view(-1, 1)
-    imheight = imheight.view(-1, 1)
+    height, width = imsize.unbind(1)
+    width = width.view(-1, 1)
+    half_width = (width - 1.0) / 2.0
+    height = height.view(-1, 1)
+    half_height = (height - 1.0) / 2.0
+
+    scale = (
+        half_width * (height > width).float() + half_height * (height <= width).float()
+    )
 
     x, y, z = points.unbind(2)
-    x = (1.0 - x) * (imwidth - 1) / 2.0
-    y = (1.0 - y) * (imheight - 1) / 2.0
+    x = -scale * x + half_width
+    y = -scale * y + half_height
     return torch.stack((x, y, z), dim=2)
 
 
@@ -513,17 +519,23 @@ class TestCamerasCommon(TestCaseMixin, unittest.TestCase):
         screen_cam_params = {"R": R, "T": T}
         ndc_cam_params = {"R": R, "T": T}
         if cam_type in (OrthographicCameras, PerspectiveCameras):
-            ndc_cam_params["focal_length"] = torch.rand((batch_size, 2)) * 3.0
-            ndc_cam_params["principal_point"] = torch.randn((batch_size, 2))
-
+            fcl = torch.rand((batch_size, 2)) * 3.0 + 0.1
+            prc = torch.randn((batch_size, 2)) * 0.2
+            # (height, width)
             image_size = torch.randint(low=2, high=64, size=(batch_size, 2))
+            # scale
+            scale = (image_size.min(dim=1, keepdim=True).values - 1.0) / 2.0
+
+            ndc_cam_params["focal_length"] = fcl
+            ndc_cam_params["principal_point"] = prc
+            ndc_cam_params["image_size"] = image_size
+
             screen_cam_params["image_size"] = image_size
-            screen_cam_params["focal_length"] = (
-                ndc_cam_params["focal_length"] * image_size / 2.0
-            )
+            screen_cam_params["focal_length"] = fcl * scale
             screen_cam_params["principal_point"] = (
-                (1.0 - ndc_cam_params["principal_point"]) * image_size / 2.0
-            )
+                image_size[:, [1, 0]] - 1.0
+            ) / 2.0 - prc * scale
+            screen_cam_params["in_ndc"] = False
         else:
             raise ValueError(str(cam_type))
         return cam_type(**ndc_cam_params), cam_type(**screen_cam_params)
@@ -611,17 +623,22 @@ class TestCamerasCommon(TestCaseMixin, unittest.TestCase):
             # init the cameras
             cameras = init_random_cameras(cam_type, batch_size)
             # xyz - the ground truth point cloud
-            xyz = torch.randn(batch_size, num_points, 3) * 0.3
+            xy = torch.randn(batch_size, num_points, 2) * 2.0 - 1.0
+            z = torch.randn(batch_size, num_points, 1) * 3.0 + 1.0
+            xyz = torch.cat((xy, z), dim=2)
             # image size
-            image_size = torch.randint(low=2, high=64, size=(batch_size, 2))
+            image_size = torch.randint(low=32, high=64, size=(batch_size, 2))
             # project points
-            xyz_project_ndc = cameras.transform_points(xyz)
-            xyz_project_screen = cameras.transform_points_screen(xyz, image_size)
+            xyz_project_ndc = cameras.transform_points_ndc(xyz)
+            xyz_project_screen = cameras.transform_points_screen(
+                xyz, image_size=image_size
+            )
             # naive
             xyz_project_screen_naive = ndc_to_screen_points_naive(
                 xyz_project_ndc, image_size
             )
-            self.assertClose(xyz_project_screen, xyz_project_screen_naive)
+            # we set atol to 1e-4, remember that screen points are in [0, W-1]x[0, H-1] space
+            self.assertClose(xyz_project_screen, xyz_project_screen_naive, atol=1e-4)
 
     def test_equiv_project_points(self, batch_size=50, num_points=100):
         """
@@ -634,12 +651,15 @@ class TestCamerasCommon(TestCaseMixin, unittest.TestCase):
                 ndc_cameras,
                 screen_cameras,
             ) = TestCamerasCommon.init_equiv_cameras_ndc_screen(cam_type, batch_size)
-            # xyz - the ground truth point cloud
-            xyz = torch.randn(batch_size, num_points, 3) * 0.3
+            # xyz - the ground truth point cloud in Py3D space
+            xy = torch.randn(batch_size, num_points, 2) * 0.3
+            z = torch.rand(batch_size, num_points, 1) + 3.0 + 0.1
+            xyz = torch.cat((xy, z), dim=2)
             # project points
-            xyz_ndc_cam = ndc_cameras.transform_points(xyz)
-            xyz_screen_cam = screen_cameras.transform_points(xyz)
-            self.assertClose(xyz_ndc_cam, xyz_screen_cam, atol=1e-6)
+            xyz_ndc = ndc_cameras.transform_points_ndc(xyz)
+            xyz_screen = screen_cameras.transform_points_ndc(xyz)
+            # check correctness
+            self.assertClose(xyz_ndc, xyz_screen, atol=1e-5)
 
     def test_clone(self, batch_size: int = 10):
         """

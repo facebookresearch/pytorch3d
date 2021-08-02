@@ -73,8 +73,7 @@ class MeshRasterizer(nn.Module):
         Args:
             cameras: A cameras object which has a  `transform_points` method
                 which returns the transformed points after applying the
-                world-to-view and view-to-screen
-                transformations.
+                world-to-view and view-to-ndc transformations.
             raster_settings: the parameters for rasterization. This should be a
                 named tuple.
 
@@ -100,8 +99,8 @@ class MeshRasterizer(nn.Module):
                 vertex coordinates in world space.
 
         Returns:
-            meshes_screen: a Meshes object with the vertex positions in screen
-            space
+            meshes_proj: a Meshes object with the vertex positions projected
+            in NDC space
 
         NOTE: keeping this as a separate function for readability but it could
         be moved into forward.
@@ -126,12 +125,14 @@ class MeshRasterizer(nn.Module):
         verts_view = cameras.get_world_to_view_transform(**kwargs).transform_points(
             verts_world, eps=eps
         )
-        verts_screen = cameras.get_projection_transform(**kwargs).transform_points(
-            verts_view, eps=eps
-        )
-        verts_screen[..., 2] = verts_view[..., 2]
-        meshes_screen = meshes_world.update_padded(new_verts_padded=verts_screen)
-        return meshes_screen
+        # view to NDC transform
+        to_ndc_transform = cameras.get_ndc_camera_transform(**kwargs)
+        projection_transform = cameras.get_projection_transform(**kwargs).compose(to_ndc_transform)
+        verts_ndc = projection_transform.transform_points(verts_view, eps=eps)
+
+        verts_ndc[..., 2] = verts_view[..., 2]
+        meshes_ndc = meshes_world.update_padded(new_verts_padded=verts_ndc)
+        return meshes_ndc
 
     def forward(self, meshes_world, **kwargs) -> Fragments:
         """
@@ -141,7 +142,7 @@ class MeshRasterizer(nn.Module):
         Returns:
             Fragments: Rasterization outputs as a named tuple.
         """
-        meshes_screen = self.transform(meshes_world, **kwargs)
+        meshes_proj = self.transform(meshes_world, **kwargs)
         raster_settings = kwargs.get("raster_settings", self.raster_settings)
 
         # By default, turn on clip_barycentric_coords if blur_radius > 0.
@@ -166,7 +167,7 @@ class MeshRasterizer(nn.Module):
             z_clip = None if not perspective_correct or znear is None else znear / 2
 
         pix_to_face, zbuf, bary_coords, dists = rasterize_meshes(
-            meshes_screen,
+            meshes_proj,
             image_size=raster_settings.image_size,
             blur_radius=raster_settings.blur_radius,
             faces_per_pixel=raster_settings.faces_per_pixel,
