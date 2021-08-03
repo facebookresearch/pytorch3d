@@ -127,7 +127,9 @@ class MeshRasterizer(nn.Module):
         )
         # view to NDC transform
         to_ndc_transform = cameras.get_ndc_camera_transform(**kwargs)
-        projection_transform = cameras.get_projection_transform(**kwargs).compose(to_ndc_transform)
+        projection_transform = cameras.get_projection_transform(**kwargs).compose(
+            to_ndc_transform
+        )
         verts_ndc = projection_transform.transform_points(verts_view, eps=eps)
 
         verts_ndc[..., 2] = verts_view[..., 2]

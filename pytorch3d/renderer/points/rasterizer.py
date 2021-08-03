@@ -98,7 +98,9 @@ class PointsRasterizer(nn.Module):
         )
         # view to NDC transform
         to_ndc_transform = cameras.get_ndc_camera_transform(**kwargs)
-        projection_transform = cameras.get_projection_transform(**kwargs).compose(to_ndc_transform)
+        projection_transform = cameras.get_projection_transform(**kwargs).compose(
+            to_ndc_transform
+        )
         pts_ndc = projection_transform.transform_points(pts_view, eps=eps)
 
         pts_ndc[..., 2] = pts_view[..., 2]
