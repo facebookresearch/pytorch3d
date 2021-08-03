@@ -551,17 +551,15 @@ class PulsarPointsRenderer(nn.Module):
                 otherargs["bg_col"] = bg_col
             # Go!
             images.append(
-                torch.flipud(
-                    self.renderer(
-                        vert_pos=vert_pos,
-                        vert_col=vert_col,
-                        vert_rad=vert_rad,
-                        cam_params=cam_params,
-                        gamma=gamma,
-                        max_depth=zfar,
-                        min_depth=znear,
-                        **otherargs,
-                    )
-                )
+                self.renderer(
+                    vert_pos=vert_pos,
+                    vert_col=vert_col,
+                    vert_rad=vert_rad,
+                    cam_params=cam_params,
+                    gamma=gamma,
+                    max_depth=zfar,
+                    min_depth=znear,
+                    **otherargs,
+                ).flip(dims=[0])
             )
         return torch.stack(images, dim=0)

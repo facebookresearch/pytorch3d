@@ -19,7 +19,7 @@ def solve(A: torch.Tensor, B: torch.Tensor) -> torch.Tensor:  # pragma: no cover
     Like torch.linalg.solve, tries to return X
     such that AX=B, with A square.
     """
-    if hasattr(torch.linalg, "solve"):
+    if hasattr(torch, "linalg") and hasattr(torch.linalg, "solve"):
         # PyTorch version >= 1.8.0
         return torch.linalg.solve(A, B)
 
@@ -31,7 +31,7 @@ def lstsq(A: torch.Tensor, B: torch.Tensor) -> torch.Tensor:  # pragma: no cover
     Like torch.linalg.lstsq, tries to return X
     such that AX=B.
     """
-    if hasattr(torch.linalg, "lstsq"):
+    if hasattr(torch, "linalg") and hasattr(torch.linalg, "lstsq"):
         # PyTorch version >= 1.9
         return torch.linalg.lstsq(A, B).solution
 
@@ -45,7 +45,7 @@ def qr(A: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:  # pragma: no cove
     """
     Like torch.linalg.qr.
     """
-    if hasattr(torch.linalg, "qr"):
+    if hasattr(torch, "linalg") and hasattr(torch.linalg, "qr"):
         # PyTorch version >= 1.9
         return torch.linalg.qr(A)
     return torch.qr(A)

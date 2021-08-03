@@ -6,7 +6,7 @@
 
 import math
 import warnings
-from typing import Optional, Sequence, Tuple, Union, List
+from typing import List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import torch
@@ -259,8 +259,9 @@ class CamerasBase(TensorProperties):
             # users might might have to implement the screen to NDC transform based
             # on the definition of the camera parameters.
             # See PerspectiveCameras/OrthographicCameras for an example.
-            # We don't flip xy because we assume that world points are in PyTorch3D coodrinates
-            # and thus conversion from screen to ndc is a mere scaling from image to [-1, 1] scale.
+            # We don't flip xy because we assume that world points are in
+            # PyTorch3D coordinates, and thus conversion from screen to ndc
+            # is a mere scaling from image to [-1, 1] scale.
             return get_screen_to_ndc_transform(self, with_xyflip=False, **kwargs)
 
     def transform_points_ndc(
