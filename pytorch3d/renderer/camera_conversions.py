@@ -28,10 +28,11 @@ def _cameras_from_opencv_projection(
     # Retype the image_size correctly and flip to width, height.
     image_size_wh = image_size.to(R).flip(dims=(1,))
 
-    # Get the PyTorch3D focal length and principal point.
-    focal_pytorch3d = focal_length / (0.5 * image_size_wh)
-    p0_pytorch3d = -(principal_point / (0.5 * image_size_wh) - 1)
-
+    # Get the PyTorch3D focal length and principal point.  (https://github.com/facebookresearch/pytorch3d/blob/master/docs/notes/cameras.md)
+    s = (image_size_wh).min(dim=1).values
+    focal_pytorch3d = focal_length / (0.5 * s)
+    p0_pytorch3d = -(principal_point - (image_size_wh - 1) / 2) * 2 / (s - 1)
+    
     # For R, T we flip x, y axes (opencv screen space has an opposite
     # orientation of screen axes).
     # We also transpose R (opencv multiplies points from the opposite=left side).
