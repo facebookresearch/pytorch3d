@@ -28,7 +28,8 @@ def _coords_opencv_screen_to_pytorch3d_ndc(xy_opencv, image_size):
     """
     Converts the OpenCV screen coordinates `xy_opencv` to PyTorch3D NDC coordinates.
     """
-    xy_pytorch3d = -(2.0 * xy_opencv / image_size.flip(dims=(1,))[:, None] - 1.0)
+    s = torch.min(image_size, dim=1, keepdims=True).values
+    xy_pytorch3d = - (xy_opencv - image_size.flip(dims=(1,))[:, None] / 2.0) * 2.0 / s[:, None]
     return xy_pytorch3d
 
 
