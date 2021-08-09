@@ -1146,3 +1146,54 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
                 )
 
             self.assertClose(rgb, image_ref, atol=0.05)
+
+    def test_cameras_kwarg(self):
+        """
+        Test that when cameras are passed in as a kwarg the rendering
+        works as expected
+        """
+        device = torch.device("cuda:0")
+
+        # Init mesh
+        sphere_mesh = ico_sphere(5, device)
+        verts_padded = sphere_mesh.verts_padded()
+        faces_padded = sphere_mesh.faces_padded()
+        feats = torch.ones_like(verts_padded, device=device)
+        textures = TexturesVertex(verts_features=feats)
+        sphere_mesh = Meshes(verts=verts_padded, faces=faces_padded, textures=textures)
+
+        # No elevation or azimuth rotation
+        R, T = look_at_view_transform(2.7, 0.0, 0.0)
+        for cam_type in (
+            FoVPerspectiveCameras,
+            FoVOrthographicCameras,
+            PerspectiveCameras,
+            OrthographicCameras,
+        ):
+            cameras = cam_type(device=device, R=R, T=T)
+
+            # Init shader settings
+            materials = Materials(device=device)
+            lights = PointLights(device=device)
+            lights.location = torch.tensor([0.0, 0.0, +2.0], device=device)[None]
+
+            raster_settings = RasterizationSettings(
+                image_size=512, blur_radius=0.0, faces_per_pixel=1
+            )
+            rasterizer = MeshRasterizer(raster_settings=raster_settings)
+            blend_params = BlendParams(1e-4, 1e-4, (0, 0, 0))
+
+            shader = HardPhongShader(
+                lights=lights,
+                materials=materials,
+                blend_params=blend_params,
+            )
+            renderer = MeshRenderer(rasterizer=rasterizer, shader=shader)
+
+            # Cameras can be passed into the renderer in the forward pass
+            images = renderer(sphere_mesh, cameras=cameras)
+            rgb = images.squeeze()[..., :3].cpu().numpy()
+            image_ref = load_rgb_image(
+                "test_simple_sphere_light_phong_%s.png" % cam_type.__name__, DATA_DIR
+            )
+            self.assertClose(rgb, image_ref, atol=0.05)
