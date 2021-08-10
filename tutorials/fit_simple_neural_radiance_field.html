@@ -1,0 +1,956 @@
+<!DOCTYPE html><html lang=""><head><meta charSet="utf-8"/><meta http-equiv="X-UA-Compatible" content="IE=edge"/><title>PyTorch3D · A library for deep learning with 3D data</title><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="generator" content="Docusaurus"/><meta name="description" content="A library for deep learning with 3D data"/><meta property="og:title" content="PyTorch3D · A library for deep learning with 3D data"/><meta property="og:type" content="website"/><meta property="og:url" content="https://pytorch3d.org/"/><meta property="og:description" content="A library for deep learning with 3D data"/><meta property="og:image" content="https://pytorch3d.org/img/pytorch3dlogoicon.svg"/><meta name="twitter:card" content="summary"/><meta name="twitter:image" content="https://pytorch3d.org/img/pytorch3dlogoicon.svg"/><link rel="shortcut icon" href="/img/pytorch3dfavicon.png"/><link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css"/><script>
+              (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+              (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+              m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+              })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+              ga('create', 'UA-157376881-1', 'auto');
+              ga('send', 'pageview');
+            </script><script type="text/javascript" src="https://buttons.github.io/buttons.js"></script><script src="/js/scrollSpy.js"></script><link rel="stylesheet" href="/css/main.css"/><script src="/js/codetabs.js"></script></head><body><div class="fixedHeaderContainer"><div class="headerWrapper wrapper"><header><a href="/"><img class="logo" src="/img/pytorch3dfavicon.png" alt="PyTorch3D"/><h2 class="headerTitleWithLogo">PyTorch3D</h2></a><div class="navigationWrapper navigationSlider"><nav class="slidingNav"><ul class="nav-site nav-site-internal"><li class=""><a href="/docs/why_pytorch3d" target="_self">Docs</a></li><li class=""><a href="/tutorials" target="_self">Tutorials</a></li><li class=""><a href="https://pytorch3d.readthedocs.io/" target="_self">API</a></li><li class=""><a href="https://github.com/facebookresearch/pytorch3d" target="_self">GitHub</a></li></ul></nav></div></header></div></div><div class="navPusher"><div class="docMainWrapper wrapper"><div class="container docsNavContainer" id="docsNav"><nav class="toc"><div class="toggleNav"><section class="navWrapper wrapper"><div class="navBreadcrumb wrapper"><div class="navToggle" id="navToggler"><div class="hamburger-menu"><div class="line1"></div><div class="line2"></div><div class="line3"></div></div></div><h2><i>›</i><span></span></h2><div class="tocToggler" id="tocToggler"><i class="icon-toc"></i></div></div><div class="navGroups"><div class="navGroup"><h3 class="navGroupCategoryTitle">Tutorials</h3><ul class=""><li class="navListItem"><a class="navItem" href="/tutorials/">Overview</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">3D operators</h3><ul class=""><li class="navListItem"><a class="navItem" href="/tutorials/deform_source_mesh_to_target_mesh">Fit Mesh</a></li><li class="navListItem"><a class="navItem" href="/tutorials/bundle_adjustment">Bundle Adjustment</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Rendering</h3><ul class=""><li class="navListItem"><a class="navItem" href="/tutorials/render_textured_meshes">Render Textured Meshes</a></li><li class="navListItem"><a class="navItem" href="/tutorials/render_densepose">Render DensePose Meshes</a></li><li class="navListItem"><a class="navItem" href="/tutorials/render_colored_points">Render Colored Pointclouds</a></li><li class="navListItem"><a class="navItem" href="/tutorials/fit_textured_mesh">Fit a Mesh with Texture via Rendering</a></li><li class="navListItem"><a class="navItem" href="/tutorials/camera_position_optimization_with_differentiable_rendering">Camera Position Optimization with Differentiable Rendering</a></li><li class="navListItem"><a class="navItem" href="/tutorials/fit_textured_volume">Fit a volume via raymarching</a></li><li class="navListItem navListItemActive"><a class="navItem" href="/tutorials/fit_simple_neural_radiance_field">Fit a simplified NeRF via raymarching</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Dataloaders</h3><ul class=""><li class="navListItem"><a class="navItem" href="/tutorials/dataloaders_ShapeNetCore_R2N2">Data loaders for ShapeNetCore and R2N2</a></li></ul></div></div></section></div><script>
+            var coll = document.getElementsByClassName('collapsible');
+            var checkActiveCategory = true;
+            for (var i = 0; i < coll.length; i++) {
+              var links = coll[i].nextElementSibling.getElementsByTagName('*');
+              if (checkActiveCategory){
+                for (var j = 0; j < links.length; j++) {
+                  if (links[j].classList.contains('navListItemActive')){
+                    coll[i].nextElementSibling.classList.toggle('hide');
+                    coll[i].childNodes[1].classList.toggle('rotate');
+                    checkActiveCategory = false;
+                    break;
+                  }
+                }
+              }
+
+              coll[i].addEventListener('click', function() {
+                var arrow = this.childNodes[1];
+                arrow.classList.toggle('rotate');
+                var content = this.nextElementSibling;
+                content.classList.toggle('hide');
+              });
+            }
+
+            document.addEventListener('DOMContentLoaded', function() {
+              createToggler('#navToggler', '#docsNav', 'docsSliderActive');
+              createToggler('#tocToggler', 'body', 'tocActive');
+
+              var headings = document.querySelector('.toc-headings');
+              headings && headings.addEventListener('click', function(event) {
+                var el = event.target;
+                while(el !== headings){
+                  if (el.tagName === 'A') {
+                    document.body.classList.remove('tocActive');
+                    break;
+                  } else{
+                    el = el.parentNode;
+                  }
+                }
+              }, false);
+
+              function createToggler(togglerSelector, targetSelector, className) {
+                var toggler = document.querySelector(togglerSelector);
+                var target = document.querySelector(targetSelector);
+
+                if (!toggler) {
+                  return;
+                }
+
+                toggler.onclick = function(event) {
+                  event.preventDefault();
+
+                  target.classList.toggle(className);
+                };
+              }
+            });
+        </script></nav></div><div class="container mainContainer"><div class="wrapper"><div class="tutorialButtonsWrapper"><div class="tutorialButtonWrapper buttonWrapper"><a class="tutorialButton button" download="" href="https://colab.research.google.com/github/facebookresearch/pytorch3d/blob/stable/docs/tutorials/fit_simple_neural_radiance_field.ipynb" target="_blank"><img class="colabButton" align="left" src="/img/colab_icon.png"/>Run in Google Colab</a></div><div class="tutorialButtonWrapper buttonWrapper"><a class="tutorialButton button" download="" href="/files/fit_simple_neural_radiance_field.ipynb" target="_blank"><svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="file-download" class="svg-inline--fa fa-file-download fa-w-12" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path fill="currentColor" d="M224 136V0H24C10.7 0 0 10.7 0 24v464c0 13.3 10.7 24 24 24h336c13.3 0 24-10.7 24-24V160H248c-13.2 0-24-10.8-24-24zm76.45 211.36l-96.42 95.7c-6.65 6.61-17.39 6.61-24.04 0l-96.42-95.7C73.42 337.29 80.54 320 94.82 320H160v-80c0-8.84 7.16-16 16-16h32c8.84 0 16 7.16 16 16v80h65.18c14.28 0 21.4 17.29 11.27 27.36zM377 105L279.1 7c-4.5-4.5-10.6-7-17-7H256v128h128v-6.1c0-6.3-2.5-12.4-7-16.9z"></path></svg>Download Tutorial Jupyter Notebook</a></div><div class="tutorialButtonWrapper buttonWrapper"><a class="tutorialButton button" download="" href="/files/fit_simple_neural_radiance_field.py" target="_blank"><svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="file-download" class="svg-inline--fa fa-file-download fa-w-12" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path fill="currentColor" d="M224 136V0H24C10.7 0 0 10.7 0 24v464c0 13.3 10.7 24 24 24h336c13.3 0 24-10.7 24-24V160H248c-13.2 0-24-10.8-24-24zm76.45 211.36l-96.42 95.7c-6.65 6.61-17.39 6.61-24.04 0l-96.42-95.7C73.42 337.29 80.54 320 94.82 320H160v-80c0-8.84 7.16-16 16-16h32c8.84 0 16 7.16 16 16v80h65.18c14.28 0 21.4 17.29 11.27 27.36zM377 105L279.1 7c-4.5-4.5-10.6-7-17-7H256v128h128v-6.1c0-6.3-2.5-12.4-7-16.9z"></path></svg>Download Tutorial Source Code</a></div></div><div class="tutorialBody">
+<script
+  src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js">
+</script>
+<script
+  src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js">
+</script>
+<div class="notebook">
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h1 id="Fit-a-simple-Neural-Radiance-Field-via-raymarching">Fit a simple Neural Radiance Field via raymarching<a class="anchor-link" href="#Fit-a-simple-Neural-Radiance-Field-via-raymarching">¶</a></h1><p>This tutorial shows how to fit Neural Radiance Field given a set of views of a scene using differentiable implicit function rendering.</p>
+<p>More specifically, this tutorial will explain how to:</p>
+<ol>
+<li>Create a differentiable implicit function renderer with either image-grid or Monte Carlo ray sampling.</li>
+<li>Create an Implicit model of a scene.</li>
+<li>Fit the implicit function (Neural Radiance Field) based on input images using the differentiable implicit renderer. </li>
+<li>Visualize the learnt implicit function.</li>
+</ol>
+<p>Note that the presented implicit model is a simplified version of NeRF:<br/>
+<em>Ben Mildenhall, Pratul P. Srinivasan, Matthew Tancik, Jonathan T. Barron, Ravi Ramamoorthi, Ren Ng: NeRF: Representing Scenes as Neural Radiance Fields for View Synthesis, ECCV 2020.</em></p>
+<p>The simplifications include:</p>
+<ul>
+<li><em>Ray sampling</em>: This notebook does not perform stratified ray sampling but rather ray sampling at equidistant depths.</li>
+<li><em>Rendering</em>: We do a single rendering pass, as opposed to the original implementation that does a coarse and fine rendering pass.</li>
+<li><em>Architecture</em>: Our network is shallower which allows for faster optimization possibly at the cost of surface details.</li>
+<li><em>Mask loss</em>: Since our observations include segmentation masks, we also optimize a silhouette loss that forces rays to either get fully absorbed inside the volume, or to completely pass through it.</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="0.-Install-and-Import-modules">0. Install and Import modules<a class="anchor-link" href="#0.-Install-and-Import-modules">¶</a></h2><p>Ensure <code>torch</code> and <code>torchvision</code> are installed. If <code>pytorch3d</code> is not installed, install it using the following cell:</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="n">need_pytorch3d</span><span class="o">=</span><span class="kc">False</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">pytorch3d</span>
+<span class="k">except</span> <span class="ne">ModuleNotFoundError</span><span class="p">:</span>
+    <span class="n">need_pytorch3d</span><span class="o">=</span><span class="kc">True</span>
+<span class="k">if</span> <span class="n">need_pytorch3d</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"1.9"</span><span class="p">)</span> <span class="ow">and</span> <span class="n">sys</span><span class="o">.</span><span class="n">platform</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"linux"</span><span class="p">):</span>
+        <span class="c1"># We try to install PyTorch3D via a released wheel.</span>
+        <span class="n">version_str</span><span class="o">=</span><span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">([</span>
+            <span class="sa">f</span><span class="s2">"py3</span><span class="si">{</span><span class="n">sys</span><span class="o">.</span><span class="n">version_info</span><span class="o">.</span><span class="n">minor</span><span class="si">}</span><span class="s2">_cu"</span><span class="p">,</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">version</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"."</span><span class="p">,</span><span class="s2">""</span><span class="p">),</span>
+            <span class="sa">f</span><span class="s2">"_pyt</span><span class="si">{</span><span class="n">torch</span><span class="o">.</span><span class="n">__version__</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">5</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span>
+        <span class="p">])</span>
+        <span class="o">!</span>pip install pytorch3d -f https://dl.fbaipublicfiles.com/pytorch3d/packaging/wheels/<span class="o">{</span>version_str<span class="o">}</span>/download.html
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># We try to install PyTorch3D from source.</span>
+        <span class="o">!</span>curl -LO https://github.com/NVIDIA/cub/archive/1.10.0.tar.gz
+        <span class="o">!</span>tar xzf <span class="m">1</span>.10.0.tar.gz
+        <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">"CUB_HOME"</span><span class="p">]</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span> <span class="o">+</span> <span class="s2">"/cub-1.10.0"</span>
+        <span class="o">!</span>pip install <span class="s1">'git+https://github.com/facebookresearch/pytorch3d.git@stable'</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># %matplotlib inline</span>
+<span class="c1"># %matplotlib notebook</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">glob</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">Image</span>
+<span class="kn">from</span> <span class="nn">IPython</span> <span class="kn">import</span> <span class="n">display</span>
+<span class="kn">from</span> <span class="nn">tqdm.notebook</span> <span class="kn">import</span> <span class="n">tqdm</span>
+
+<span class="c1"># Data structures and functions for rendering</span>
+<span class="kn">from</span> <span class="nn">pytorch3d.structures</span> <span class="kn">import</span> <span class="n">Volumes</span>
+<span class="kn">from</span> <span class="nn">pytorch3d.transforms</span> <span class="kn">import</span> <span class="n">so3_exp_map</span>
+<span class="kn">from</span> <span class="nn">pytorch3d.renderer</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">FoVPerspectiveCameras</span><span class="p">,</span> 
+    <span class="n">NDCGridRaysampler</span><span class="p">,</span>
+    <span class="n">MonteCarloRaysampler</span><span class="p">,</span>
+    <span class="n">EmissionAbsorptionRaymarcher</span><span class="p">,</span>
+    <span class="n">ImplicitRenderer</span><span class="p">,</span>
+    <span class="n">RayBundle</span><span class="p">,</span>
+    <span class="n">ray_bundle_to_ray_points</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># obtain the utilized device</span>
+<span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">():</span>
+    <span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">"cuda:0"</span><span class="p">)</span>
+    <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">set_device</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span>
+        <span class="s1">'Please note that NeRF is a resource-demanding method.'</span>
+        <span class="o">+</span> <span class="s1">' Running this notebook on CPU will be extremely slow.'</span>
+        <span class="o">+</span> <span class="s1">' We recommend running the example on a GPU'</span>
+        <span class="o">+</span> <span class="s1">' with at least 10 GB of memory.'</span>
+    <span class="p">)</span>
+    <span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">"cpu"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="o">!</span>wget https://raw.githubusercontent.com/facebookresearch/pytorch3d/master/docs/tutorials/utils/plot_image_grid.py
+<span class="o">!</span>wget https://raw.githubusercontent.com/facebookresearch/pytorch3d/master/docs/tutorials/utils/generate_cow_renders.py
+<span class="kn">from</span> <span class="nn">plot_image_grid</span> <span class="kn">import</span> <span class="n">image_grid</span>
+<span class="kn">from</span> <span class="nn">generate_cow_renders</span> <span class="kn">import</span> <span class="n">generate_cow_renders</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>OR if running locally uncomment and run the following cell:</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># from utils.generate_cow_renders import generate_cow_renders</span>
+<span class="c1"># from utils import image_grid</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="1.-Generate-images-of-the-scene-and-masks">1. Generate images of the scene and masks<a class="anchor-link" href="#1.-Generate-images-of-the-scene-and-masks">¶</a></h2><p>The following cell generates our training data.
+It renders the cow mesh from the <code>fit_textured_mesh.ipynb</code> tutorial from several viewpoints and returns:</p>
+<ol>
+<li>A batch of image and silhouette tensors that are produced by the cow mesh renderer.</li>
+<li>A set of cameras corresponding to each render.</li>
+</ol>
+<p>Note: For the purpose of this tutorial, which aims at explaining the details of implicit rendering, we do not explain how the mesh rendering, implemented in the <code>generate_cow_renders</code> function, works. Please refer to <code>fit_textured_mesh.ipynb</code> for a detailed explanation of mesh rendering.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">target_cameras</span><span class="p">,</span> <span class="n">target_images</span><span class="p">,</span> <span class="n">target_silhouettes</span> <span class="o">=</span> <span class="n">generate_cow_renders</span><span class="p">(</span><span class="n">num_views</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">azimuth_range</span><span class="o">=</span><span class="mi">180</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Generated </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">target_images</span><span class="p">)</span><span class="si">}</span><span class="s1"> images/silhouettes/cameras.'</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="2.-Initialize-the-implicit-renderer">2. Initialize the implicit renderer<a class="anchor-link" href="#2.-Initialize-the-implicit-renderer">¶</a></h2><p>The following initializes an implicit renderer that emits a ray from each pixel of a target image and samples a set of uniformly-spaced points along the ray. At each ray-point, the corresponding density and color value is obtained by querying the corresponding location in the neural model of the scene (the model is described &amp; instantiated in a later cell).</p>
+<p>The renderer is composed of a <em>raymarcher</em> and a <em>raysampler</em>.</p>
+<ul>
+<li>The <em>raysampler</em> is responsible for emitting rays from image pixels and sampling the points along them. Here, we use two different raysamplers:<ul>
+<li><code>MonteCarloRaysampler</code> is used to generate rays from a random subset of pixels of the image plane. The random subsampling of pixels is carried out during <strong>training</strong> to decrease the memory consumption of the implicit model.</li>
+<li><code>NDCGridRaysampler</code> which follows the standard PyTorch3D coordinate grid convention (+X from right to left; +Y from bottom to top; +Z away from the user). In combination with the implicit model of the scene, <code>NDCGridRaysampler</code> consumes a large amount of memory and, hence, is only used for visualizing the results of the training at <strong>test</strong> time.</li>
+</ul>
+</li>
+<li>The <em>raymarcher</em> takes the densities and colors sampled along each ray and renders each ray into a color and an opacity value of the ray's source pixel. Here we use the <code>EmissionAbsorptionRaymarcher</code> which implements the standard Emission-Absorption raymarching algorithm.</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># render_size describes the size of both sides of the </span>
+<span class="c1"># rendered images in pixels. Since an advantage of </span>
+<span class="c1"># Neural Radiance Fields are high quality renders</span>
+<span class="c1"># with a significant amount of details, we render</span>
+<span class="c1"># the implicit function at double the size of </span>
+<span class="c1"># target images.</span>
+<span class="n">render_size</span> <span class="o">=</span> <span class="n">target_images</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="mi">2</span>
+
+<span class="c1"># Our rendered scene is centered around (0,0,0) </span>
+<span class="c1"># and is enclosed inside a bounding box</span>
+<span class="c1"># whose side is roughly equal to 3.0 (world units).</span>
+<span class="n">volume_extent_world</span> <span class="o">=</span> <span class="mf">3.0</span>
+
+<span class="c1"># 1) Instantiate the raysamplers.</span>
+
+<span class="c1"># Here, NDCGridRaysampler generates a rectangular image</span>
+<span class="c1"># grid of rays whose coordinates follow the PyTorch3D</span>
+<span class="c1"># coordinate conventions.</span>
+<span class="n">raysampler_grid</span> <span class="o">=</span> <span class="n">NDCGridRaysampler</span><span class="p">(</span>
+    <span class="n">image_height</span><span class="o">=</span><span class="n">render_size</span><span class="p">,</span>
+    <span class="n">image_width</span><span class="o">=</span><span class="n">render_size</span><span class="p">,</span>
+    <span class="n">n_pts_per_ray</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span>
+    <span class="n">min_depth</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+    <span class="n">max_depth</span><span class="o">=</span><span class="n">volume_extent_world</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># MonteCarloRaysampler generates a random subset </span>
+<span class="c1"># of `n_rays_per_image` rays emitted from the image plane.</span>
+<span class="n">raysampler_mc</span> <span class="o">=</span> <span class="n">MonteCarloRaysampler</span><span class="p">(</span>
+    <span class="n">min_x</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">,</span>
+    <span class="n">max_x</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="n">min_y</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">,</span>
+    <span class="n">max_y</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="n">n_rays_per_image</span><span class="o">=</span><span class="mi">750</span><span class="p">,</span>
+    <span class="n">n_pts_per_ray</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span>
+    <span class="n">min_depth</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+    <span class="n">max_depth</span><span class="o">=</span><span class="n">volume_extent_world</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># 2) Instantiate the raymarcher.</span>
+<span class="c1"># Here, we use the standard EmissionAbsorptionRaymarcher </span>
+<span class="c1"># which marches along each ray in order to render</span>
+<span class="c1"># the ray into a single 3D color vector </span>
+<span class="c1"># and an opacity scalar.</span>
+<span class="n">raymarcher</span> <span class="o">=</span> <span class="n">EmissionAbsorptionRaymarcher</span><span class="p">()</span>
+
+<span class="c1"># Finally, instantiate the implicit renders</span>
+<span class="c1"># for both raysamplers.</span>
+<span class="n">renderer_grid</span> <span class="o">=</span> <span class="n">ImplicitRenderer</span><span class="p">(</span>
+    <span class="n">raysampler</span><span class="o">=</span><span class="n">raysampler_grid</span><span class="p">,</span> <span class="n">raymarcher</span><span class="o">=</span><span class="n">raymarcher</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">renderer_mc</span> <span class="o">=</span> <span class="n">ImplicitRenderer</span><span class="p">(</span>
+    <span class="n">raysampler</span><span class="o">=</span><span class="n">raysampler_mc</span><span class="p">,</span> <span class="n">raymarcher</span><span class="o">=</span><span class="n">raymarcher</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="3.-Define-the-neural-radiance-field-model">3. Define the neural radiance field model<a class="anchor-link" href="#3.-Define-the-neural-radiance-field-model">¶</a></h2><p>In this cell we define the <code>NeuralRadianceField</code> module, which specifies a continuous field of colors and opacities over the 3D domain of the scene.</p>
+<p>The <code>forward</code> function of <code>NeuralRadianceField</code> (NeRF) receives as input a set of tensors that parametrize a bundle of rendering rays. The ray bundle is later converted to 3D ray points in the world coordinates of the scene. Each 3D point is then mapped to a harmonic representation using the <code>HarmonicEmbedding</code> layer (defined in the next cell). The harmonic embeddings then enter the <em>color</em> and <em>opacity</em> branches of the NeRF model in order to label each ray point with a 3D vector and a 1D scalar ranging in [0-1] which define the point's RGB color and opacity respectively.</p>
+<p>Since NeRF has a large memory footprint, we also implement the <code>NeuralRadianceField.forward_batched</code> method. The method splits the input rays into batches and executes the <code>forward</code> function for each batch separately in a for loop. This lets us render a large set of rays without running out of GPU memory. Standardly, <code>forward_batched</code> would be used to render rays emitted from all pixels of an image in order to produce a full-sized render of a scene.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="k">class</span> <span class="nc">HarmonicEmbedding</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_harmonic_functions</span><span class="o">=</span><span class="mi">60</span><span class="p">,</span> <span class="n">omega0</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
+        <span class="sd">"""</span>
+<span class="sd">        Given an input tensor `x` of shape [minibatch, ... , dim],</span>
+<span class="sd">        the harmonic embedding layer converts each feature</span>
+<span class="sd">        in `x` into a series of harmonic features `embedding`</span>
+<span class="sd">        as follows:</span>
+<span class="sd">            embedding[..., i*dim:(i+1)*dim] = [</span>
+<span class="sd">                sin(x[..., i]),</span>
+<span class="sd">                sin(2*x[..., i]),</span>
+<span class="sd">                sin(4*x[..., i]),</span>
+<span class="sd">                ...</span>
+<span class="sd">                sin(2**(self.n_harmonic_functions-1) * x[..., i]),</span>
+<span class="sd">                cos(x[..., i]),</span>
+<span class="sd">                cos(2*x[..., i]),</span>
+<span class="sd">                cos(4*x[..., i]),</span>
+<span class="sd">                ...</span>
+<span class="sd">                cos(2**(self.n_harmonic_functions-1) * x[..., i])</span>
+<span class="sd">            ]</span>
+<span class="sd">            </span>
+<span class="sd">        Note that `x` is also premultiplied by `omega0` before</span>
+<span class="sd">        evaluating the harmonic functions.</span>
+<span class="sd">        """</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span>
+            <span class="s1">'frequencies'</span><span class="p">,</span>
+            <span class="n">omega0</span> <span class="o">*</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">**</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n_harmonic_functions</span><span class="p">)),</span>
+        <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="sd">"""</span>
+<span class="sd">        Args:</span>
+<span class="sd">            x: tensor of shape [..., dim]</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            embedding: a harmonic embedding of `x`</span>
+<span class="sd">                of shape [..., n_harmonic_functions * dim * 2]</span>
+<span class="sd">        """</span>
+        <span class="n">embed</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">frequencies</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">*</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">embed</span><span class="o">.</span><span class="n">sin</span><span class="p">(),</span> <span class="n">embed</span><span class="o">.</span><span class="n">cos</span><span class="p">()),</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">NeuralRadianceField</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_harmonic_functions</span><span class="o">=</span><span class="mi">60</span><span class="p">,</span> <span class="n">n_hidden_neurons</span><span class="o">=</span><span class="mi">256</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="sd">"""</span>
+<span class="sd">        Args:</span>
+<span class="sd">            n_harmonic_functions: The number of harmonic functions</span>
+<span class="sd">                used to form the harmonic embedding of each point.</span>
+<span class="sd">            n_hidden_neurons: The number of hidden units in the</span>
+<span class="sd">                fully connected layers of the MLPs of the model.</span>
+<span class="sd">        """</span>
+        
+        <span class="c1"># The harmonic embedding layer converts input 3D coordinates</span>
+        <span class="c1"># to a representation that is more suitable for</span>
+        <span class="c1"># processing with a deep neural network.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">harmonic_embedding</span> <span class="o">=</span> <span class="n">HarmonicEmbedding</span><span class="p">(</span><span class="n">n_harmonic_functions</span><span class="p">)</span>
+        
+        <span class="c1"># The dimension of the harmonic embedding.</span>
+        <span class="n">embedding_dim</span> <span class="o">=</span> <span class="n">n_harmonic_functions</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="mi">3</span>
+        
+        <span class="c1"># self.mlp is a simple 2-layer multi-layer perceptron</span>
+        <span class="c1"># which converts the input per-point harmonic embeddings</span>
+        <span class="c1"># to a latent representation.</span>
+        <span class="c1"># Not that we use Softplus activations instead of ReLU.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mlp</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">embedding_dim</span><span class="p">,</span> <span class="n">n_hidden_neurons</span><span class="p">),</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Softplus</span><span class="p">(</span><span class="n">beta</span><span class="o">=</span><span class="mf">10.0</span><span class="p">),</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">n_hidden_neurons</span><span class="p">,</span> <span class="n">n_hidden_neurons</span><span class="p">),</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Softplus</span><span class="p">(</span><span class="n">beta</span><span class="o">=</span><span class="mf">10.0</span><span class="p">),</span>
+        <span class="p">)</span>        
+        
+        <span class="c1"># Given features predicted by self.mlp, self.color_layer</span>
+        <span class="c1"># is responsible for predicting a 3-D per-point vector</span>
+        <span class="c1"># that represents the RGB color of the point.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">color_layer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">n_hidden_neurons</span> <span class="o">+</span> <span class="n">embedding_dim</span><span class="p">,</span> <span class="n">n_hidden_neurons</span><span class="p">),</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Softplus</span><span class="p">(</span><span class="n">beta</span><span class="o">=</span><span class="mf">10.0</span><span class="p">),</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">n_hidden_neurons</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Sigmoid</span><span class="p">(),</span>
+            <span class="c1"># To ensure that the colors correctly range between [0-1],</span>
+            <span class="c1"># the layer is terminated with a sigmoid layer.</span>
+        <span class="p">)</span>  
+        
+        <span class="c1"># The density layer converts the features of self.mlp</span>
+        <span class="c1"># to a 1D density value representing the raw opacity</span>
+        <span class="c1"># of each point.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">density_layer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">n_hidden_neurons</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Softplus</span><span class="p">(</span><span class="n">beta</span><span class="o">=</span><span class="mf">10.0</span><span class="p">),</span>
+            <span class="c1"># Sofplus activation ensures that the raw opacity</span>
+            <span class="c1"># is a non-negative number.</span>
+        <span class="p">)</span>
+        
+        <span class="c1"># We set the bias of the density layer to -1.5</span>
+        <span class="c1"># in order to initialize the opacities of the</span>
+        <span class="c1"># ray points to values close to 0. </span>
+        <span class="c1"># This is a crucial detail for ensuring convergence</span>
+        <span class="c1"># of the model.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">density_layer</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">bias</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.5</span>        
+                
+    <span class="k">def</span> <span class="nf">_get_densities</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">features</span><span class="p">):</span>
+        <span class="sd">"""</span>
+<span class="sd">        This function takes `features` predicted by `self.mlp`</span>
+<span class="sd">        and converts them to `raw_densities` with `self.density_layer`.</span>
+<span class="sd">        `raw_densities` are later mapped to [0-1] range with</span>
+<span class="sd">        1 - inverse exponential of `raw_densities`.</span>
+<span class="sd">        """</span>
+        <span class="n">raw_densities</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">density_layer</span><span class="p">(</span><span class="n">features</span><span class="p">)</span>
+        <span class="k">return</span> <span class="mi">1</span> <span class="o">-</span> <span class="p">(</span><span class="o">-</span><span class="n">raw_densities</span><span class="p">)</span><span class="o">.</span><span class="n">exp</span><span class="p">()</span>
+    
+    <span class="k">def</span> <span class="nf">_get_colors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">features</span><span class="p">,</span> <span class="n">rays_directions</span><span class="p">):</span>
+        <span class="sd">"""</span>
+<span class="sd">        This function takes per-point `features` predicted by `self.mlp`</span>
+<span class="sd">        and evaluates the color model in order to attach to each</span>
+<span class="sd">        point a 3D vector of its RGB color.</span>
+<span class="sd">        </span>
+<span class="sd">        In order to represent viewpoint dependent effects,</span>
+<span class="sd">        before evaluating `self.color_layer`, `NeuralRadianceField`</span>
+<span class="sd">        concatenates to the `features` a harmonic embedding</span>
+<span class="sd">        of `ray_directions`, which are per-point directions </span>
+<span class="sd">        of point rays expressed as 3D l2-normalized vectors</span>
+<span class="sd">        in world coordinates.</span>
+<span class="sd">        """</span>
+        <span class="n">spatial_size</span> <span class="o">=</span> <span class="n">features</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        
+        <span class="c1"># Normalize the ray_directions to unit l2 norm.</span>
+        <span class="n">rays_directions_normed</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span>
+            <span class="n">rays_directions</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span>
+        <span class="p">)</span>
+        
+        <span class="c1"># Obtain the harmonic embedding of the normalized ray directions.</span>
+        <span class="n">rays_embedding</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">harmonic_embedding</span><span class="p">(</span>
+            <span class="n">rays_directions_normed</span>
+        <span class="p">)</span>
+        
+        <span class="c1"># Expand the ray directions tensor so that its spatial size</span>
+        <span class="c1"># is equal to the size of features.</span>
+        <span class="n">rays_embedding_expand</span> <span class="o">=</span> <span class="n">rays_embedding</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span>
+            <span class="o">*</span><span class="n">spatial_size</span><span class="p">,</span> <span class="n">rays_embedding</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="p">)</span>
+        
+        <span class="c1"># Concatenate ray direction embeddings with </span>
+        <span class="c1"># features and evaluate the color model.</span>
+        <span class="n">color_layer_input</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="n">rays_embedding_expand</span><span class="p">),</span>
+            <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">color_layer</span><span class="p">(</span><span class="n">color_layer_input</span><span class="p">)</span>
+    
+  
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> 
+        <span class="n">ray_bundle</span><span class="p">:</span> <span class="n">RayBundle</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="sd">"""</span>
+<span class="sd">        The forward function accepts the parametrizations of</span>
+<span class="sd">        3D points sampled along projection rays. The forward</span>
+<span class="sd">        pass is responsible for attaching a 3D vector</span>
+<span class="sd">        and a 1D scalar representing the point's </span>
+<span class="sd">        RGB color and opacity respectively.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            ray_bundle: A RayBundle object containing the following variables:</span>
+<span class="sd">                origins: A tensor of shape `(minibatch, ..., 3)` denoting the</span>
+<span class="sd">                    origins of the sampling rays in world coords.</span>
+<span class="sd">                directions: A tensor of shape `(minibatch, ..., 3)`</span>
+<span class="sd">                    containing the direction vectors of sampling rays in world coords.</span>
+<span class="sd">                lengths: A tensor of shape `(minibatch, ..., num_points_per_ray)`</span>
+<span class="sd">                    containing the lengths at which the rays are sampled.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            rays_densities: A tensor of shape `(minibatch, ..., num_points_per_ray, 1)`</span>
+<span class="sd">                denoting the opacity of each ray point.</span>
+<span class="sd">            rays_colors: A tensor of shape `(minibatch, ..., num_points_per_ray, 3)`</span>
+<span class="sd">                denoting the color of each ray point.</span>
+<span class="sd">        """</span>
+        <span class="c1"># We first convert the ray parametrizations to world</span>
+        <span class="c1"># coordinates with `ray_bundle_to_ray_points`.</span>
+        <span class="n">rays_points_world</span> <span class="o">=</span> <span class="n">ray_bundle_to_ray_points</span><span class="p">(</span><span class="n">ray_bundle</span><span class="p">)</span>
+        <span class="c1"># rays_points_world.shape = [minibatch x ... x 3]</span>
+        
+        <span class="c1"># For each 3D world coordinate, we obtain its harmonic embedding.</span>
+        <span class="n">embeds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">harmonic_embedding</span><span class="p">(</span>
+            <span class="n">rays_points_world</span>
+        <span class="p">)</span>
+        <span class="c1"># embeds.shape = [minibatch x ... x self.n_harmonic_functions*6]</span>
+        
+        <span class="c1"># self.mlp maps each harmonic embedding to a latent feature space.</span>
+        <span class="n">features</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mlp</span><span class="p">(</span><span class="n">embeds</span><span class="p">)</span>
+        <span class="c1"># features.shape = [minibatch x ... x n_hidden_neurons]</span>
+        
+        <span class="c1"># Finally, given the per-point features, </span>
+        <span class="c1"># execute the density and color branches.</span>
+        
+        <span class="n">rays_densities</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_densities</span><span class="p">(</span><span class="n">features</span><span class="p">)</span>
+        <span class="c1"># rays_densities.shape = [minibatch x ... x 1]</span>
+
+        <span class="n">rays_colors</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_colors</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="n">ray_bundle</span><span class="o">.</span><span class="n">directions</span><span class="p">)</span>
+        <span class="c1"># rays_colors.shape = [minibatch x ... x 3]</span>
+        
+        <span class="k">return</span> <span class="n">rays_densities</span><span class="p">,</span> <span class="n">rays_colors</span>
+    
+    <span class="k">def</span> <span class="nf">batched_forward</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> 
+        <span class="n">ray_bundle</span><span class="p">:</span> <span class="n">RayBundle</span><span class="p">,</span>
+        <span class="n">n_batches</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">16</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>        
+    <span class="p">):</span>
+        <span class="sd">"""</span>
+<span class="sd">        This function is used to allow for memory efficient processing</span>
+<span class="sd">        of input rays. The input rays are first split to `n_batches`</span>
+<span class="sd">        chunks and passed through the `self.forward` function one at a time</span>
+<span class="sd">        in a for loop. Combined with disabling PyTorch gradient caching</span>
+<span class="sd">        (`torch.no_grad()`), this allows for rendering large batches</span>
+<span class="sd">        of rays that do not all fit into GPU memory in a single forward pass.</span>
+<span class="sd">        In our case, batched_forward is used to export a fully-sized render</span>
+<span class="sd">        of the radiance field for visualization purposes.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            ray_bundle: A RayBundle object containing the following variables:</span>
+<span class="sd">                origins: A tensor of shape `(minibatch, ..., 3)` denoting the</span>
+<span class="sd">                    origins of the sampling rays in world coords.</span>
+<span class="sd">                directions: A tensor of shape `(minibatch, ..., 3)`</span>
+<span class="sd">                    containing the direction vectors of sampling rays in world coords.</span>
+<span class="sd">                lengths: A tensor of shape `(minibatch, ..., num_points_per_ray)`</span>
+<span class="sd">                    containing the lengths at which the rays are sampled.</span>
+<span class="sd">            n_batches: Specifies the number of batches the input rays are split into.</span>
+<span class="sd">                The larger the number of batches, the smaller the memory footprint</span>
+<span class="sd">                and the lower the processing speed.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            rays_densities: A tensor of shape `(minibatch, ..., num_points_per_ray, 1)`</span>
+<span class="sd">                denoting the opacity of each ray point.</span>
+<span class="sd">            rays_colors: A tensor of shape `(minibatch, ..., num_points_per_ray, 3)`</span>
+<span class="sd">                denoting the color of each ray point.</span>
+
+<span class="sd">        """</span>
+
+        <span class="c1"># Parse out shapes needed for tensor reshaping in this function.</span>
+        <span class="n">n_pts_per_ray</span> <span class="o">=</span> <span class="n">ray_bundle</span><span class="o">.</span><span class="n">lengths</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>  
+        <span class="n">spatial_size</span> <span class="o">=</span> <span class="p">[</span><span class="o">*</span><span class="n">ray_bundle</span><span class="o">.</span><span class="n">origins</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">n_pts_per_ray</span><span class="p">]</span>
+
+        <span class="c1"># Split the rays to `n_batches` batches.</span>
+        <span class="n">tot_samples</span> <span class="o">=</span> <span class="n">ray_bundle</span><span class="o">.</span><span class="n">origins</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span>
+        <span class="n">batches</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">chunk</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">tot_samples</span><span class="p">),</span> <span class="n">n_batches</span><span class="p">)</span>
+
+        <span class="c1"># For each batch, execute the standard forward pass.</span>
+        <span class="n">batch_outputs</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span>
+                <span class="n">RayBundle</span><span class="p">(</span>
+                    <span class="n">origins</span><span class="o">=</span><span class="n">ray_bundle</span><span class="o">.</span><span class="n">origins</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)[</span><span class="n">batch_idx</span><span class="p">],</span>
+                    <span class="n">directions</span><span class="o">=</span><span class="n">ray_bundle</span><span class="o">.</span><span class="n">directions</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)[</span><span class="n">batch_idx</span><span class="p">],</span>
+                    <span class="n">lengths</span><span class="o">=</span><span class="n">ray_bundle</span><span class="o">.</span><span class="n">lengths</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_pts_per_ray</span><span class="p">)[</span><span class="n">batch_idx</span><span class="p">],</span>
+                    <span class="n">xys</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span> <span class="k">for</span> <span class="n">batch_idx</span> <span class="ow">in</span> <span class="n">batches</span>
+        <span class="p">]</span>
+        
+        <span class="c1"># Concatenate the per-batch rays_densities and rays_colors</span>
+        <span class="c1"># and reshape according to the sizes of the inputs.</span>
+        <span class="n">rays_densities</span><span class="p">,</span> <span class="n">rays_colors</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">batch_output</span><span class="p">[</span><span class="n">output_i</span><span class="p">]</span> <span class="k">for</span> <span class="n">batch_output</span> <span class="ow">in</span> <span class="n">batch_outputs</span><span class="p">],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">*</span><span class="n">spatial_size</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">output_i</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="p">]</span>
+        <span class="k">return</span> <span class="n">rays_densities</span><span class="p">,</span> <span class="n">rays_colors</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="4.-Helper-functions">4. Helper functions<a class="anchor-link" href="#4.-Helper-functions">¶</a></h2><p>In this function we define functions that help with the Neural Radiance Field optimization.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">huber</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">scaling</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
+    <span class="sd">"""</span>
+<span class="sd">    A helper function for evaluating the smooth L1 (huber) loss</span>
+<span class="sd">    between the rendered silhouettes and colors.</span>
+<span class="sd">    """</span>
+    <span class="n">diff_sq</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="n">y</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+    <span class="n">loss</span> <span class="o">=</span> <span class="p">((</span><span class="mi">1</span> <span class="o">+</span> <span class="n">diff_sq</span> <span class="o">/</span> <span class="p">(</span><span class="n">scaling</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="mf">1e-4</span><span class="p">)</span><span class="o">.</span><span class="n">sqrt</span><span class="p">()</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="nb">float</span><span class="p">(</span><span class="n">scaling</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">loss</span>
+
+<span class="k">def</span> <span class="nf">sample_images_at_mc_locs</span><span class="p">(</span><span class="n">target_images</span><span class="p">,</span> <span class="n">sampled_rays_xy</span><span class="p">):</span>
+    <span class="sd">"""</span>
+<span class="sd">    Given a set of Monte Carlo pixel locations `sampled_rays_xy`,</span>
+<span class="sd">    this method samples the tensor `target_images` at the</span>
+<span class="sd">    respective 2D locations.</span>
+<span class="sd">    </span>
+<span class="sd">    This function is used in order to extract the colors from</span>
+<span class="sd">    ground truth images that correspond to the colors</span>
+<span class="sd">    rendered using `MonteCarloRaysampler`.</span>
+<span class="sd">    """</span>
+    <span class="n">ba</span> <span class="o">=</span> <span class="n">target_images</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">dim</span> <span class="o">=</span> <span class="n">target_images</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">spatial_size</span> <span class="o">=</span> <span class="n">sampled_rays_xy</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="c1"># In order to sample target_images, we utilize</span>
+    <span class="c1"># the grid_sample function which implements a</span>
+    <span class="c1"># bilinear image sampler.</span>
+    <span class="c1"># Note that we have to invert the sign of the </span>
+    <span class="c1"># sampled ray positions to convert the NDC xy locations</span>
+    <span class="c1"># of the MonteCarloRaysampler to the coordinate</span>
+    <span class="c1"># convention of grid_sample.</span>
+    <span class="n">images_sampled</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">grid_sample</span><span class="p">(</span>
+        <span class="n">target_images</span><span class="o">.</span><span class="n">permute</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> 
+        <span class="o">-</span><span class="n">sampled_rays_xy</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">ba</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>  <span class="c1"># note the sign inversion</span>
+        <span class="n">align_corners</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">images_sampled</span><span class="o">.</span><span class="n">permute</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span>
+        <span class="n">ba</span><span class="p">,</span> <span class="o">*</span><span class="n">spatial_size</span><span class="p">,</span> <span class="n">dim</span>
+    <span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">show_full_render</span><span class="p">(</span>
+    <span class="n">neural_radiance_field</span><span class="p">,</span> <span class="n">camera</span><span class="p">,</span>
+    <span class="n">target_image</span><span class="p">,</span> <span class="n">target_silhouette</span><span class="p">,</span>
+    <span class="n">loss_history_color</span><span class="p">,</span> <span class="n">loss_history_sil</span><span class="p">,</span>
+<span class="p">):</span>
+    <span class="sd">"""</span>
+<span class="sd">    This is a helper function for visualizing the</span>
+<span class="sd">    intermediate results of the learning. </span>
+<span class="sd">    </span>
+<span class="sd">    Since the `NeuralRadianceField` suffers from</span>
+<span class="sd">    a large memory footprint, which does not let us</span>
+<span class="sd">    render the full image grid in a single forward pass,</span>
+<span class="sd">    we utilize the `NeuralRadianceField.batched_forward`</span>
+<span class="sd">    function in combination with disabling the gradient caching.</span>
+<span class="sd">    This chunks the set of emitted rays to batches and </span>
+<span class="sd">    evaluates the implicit function on one batch at a time</span>
+<span class="sd">    to prevent GPU memory overflow.</span>
+<span class="sd">    """</span>
+    
+    <span class="c1"># Prevent gradient caching.</span>
+    <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+        <span class="c1"># Render using the grid renderer and the</span>
+        <span class="c1"># batched_forward function of neural_radiance_field.</span>
+        <span class="n">rendered_image_silhouette</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">renderer_grid</span><span class="p">(</span>
+            <span class="n">cameras</span><span class="o">=</span><span class="n">camera</span><span class="p">,</span> 
+            <span class="n">volumetric_function</span><span class="o">=</span><span class="n">neural_radiance_field</span><span class="o">.</span><span class="n">batched_forward</span>
+        <span class="p">)</span>
+        <span class="c1"># Split the rendering result to a silhouette render</span>
+        <span class="c1"># and the image render.</span>
+        <span class="n">rendered_image</span><span class="p">,</span> <span class="n">rendered_silhouette</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">rendered_image_silhouette</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">([</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="p">)</span>
+        
+    <span class="c1"># Generate plots.</span>
+    <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
+    <span class="n">ax</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+    <span class="n">clamp_and_detach</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+    <span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">loss_history_color</span><span class="p">))),</span> <span class="n">loss_history_color</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">clamp_and_detach</span><span class="p">(</span><span class="n">rendered_image</span><span class="p">))</span>
+    <span class="n">ax</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">clamp_and_detach</span><span class="p">(</span><span class="n">rendered_silhouette</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]))</span>
+    <span class="n">ax</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">loss_history_sil</span><span class="p">))),</span> <span class="n">loss_history_sil</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">ax</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">clamp_and_detach</span><span class="p">(</span><span class="n">target_image</span><span class="p">))</span>
+    <span class="n">ax</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">clamp_and_detach</span><span class="p">(</span><span class="n">target_silhouette</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">ax_</span><span class="p">,</span> <span class="n">title_</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+        <span class="n">ax</span><span class="p">,</span>
+        <span class="p">(</span>
+            <span class="s2">"loss color"</span><span class="p">,</span> <span class="s2">"rendered image"</span><span class="p">,</span> <span class="s2">"rendered silhouette"</span><span class="p">,</span>
+            <span class="s2">"loss silhouette"</span><span class="p">,</span> <span class="s2">"target image"</span><span class="p">,</span>  <span class="s2">"target silhouette"</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">title_</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">'loss'</span><span class="p">):</span>
+            <span class="n">ax_</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="s2">"off"</span><span class="p">)</span>
+            <span class="n">ax_</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">"off"</span><span class="p">)</span>
+        <span class="n">ax_</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">title_</span><span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">canvas</span><span class="o">.</span><span class="n">draw</span><span class="p">();</span> <span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+    <span class="n">display</span><span class="o">.</span><span class="n">clear_output</span><span class="p">(</span><span class="n">wait</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">display</span><span class="o">.</span><span class="n">display</span><span class="p">(</span><span class="n">fig</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">fig</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="5.-Fit-the-radiance-field">5. Fit the radiance field<a class="anchor-link" href="#5.-Fit-the-radiance-field">¶</a></h2><p>Here we carry out the radiance field fitting with differentiable rendering.</p>
+<p>In order to fit the radiance field, we render it from the viewpoints of the <code>target_cameras</code>
+and compare the resulting renders with the observed <code>target_images</code> and <code>target_silhouettes</code>.</p>
+<p>The comparison is done by evaluating the mean huber (smooth-l1) error between corresponding
+pairs of <code>target_images</code>/<code>rendered_images</code> and <code>target_silhouettes</code>/<code>rendered_silhouettes</code>.</p>
+<p>Since we use the <code>MonteCarloRaysampler</code>, the outputs of the training renderer <code>renderer_mc</code>
+are colors of pixels that are randomly sampled from the image plane, not a lattice of pixels forming
+a valid image. Thus, in order to compare the rendered colors with the ground truth, we 
+utilize the random MonteCarlo pixel locations to sample the ground truth images/silhouettes
+<code>target_silhouettes</code>/<code>rendered_silhouettes</code> at the xy locations corresponding to the render
+locations. This is done with the helper function <code>sample_images_at_mc_locs</code>, which is
+described in the previous cell.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># First move all relevant variables to the correct device.</span>
+<span class="n">renderer_grid</span> <span class="o">=</span> <span class="n">renderer_grid</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+<span class="n">renderer_mc</span> <span class="o">=</span> <span class="n">renderer_mc</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+<span class="n">target_cameras</span> <span class="o">=</span> <span class="n">target_cameras</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+<span class="n">target_images</span> <span class="o">=</span> <span class="n">target_images</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+<span class="n">target_silhouettes</span> <span class="o">=</span> <span class="n">target_silhouettes</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+
+<span class="c1"># Set the seed for reproducibility</span>
+<span class="n">torch</span><span class="o">.</span><span class="n">manual_seed</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="c1"># Instantiate the radiance field model.</span>
+<span class="n">neural_radiance_field</span> <span class="o">=</span> <span class="n">NeuralRadianceField</span><span class="p">()</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+
+<span class="c1"># Instantiate the Adam optimizer. We set its master learning rate to 1e-3.</span>
+<span class="n">lr</span> <span class="o">=</span> <span class="mf">1e-3</span>
+<span class="n">optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">neural_radiance_field</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="n">lr</span><span class="p">)</span>
+
+<span class="c1"># We sample 6 random cameras in a minibatch. Each camera</span>
+<span class="c1"># emits raysampler_mc.n_pts_per_image rays.</span>
+<span class="n">batch_size</span> <span class="o">=</span> <span class="mi">6</span>
+
+<span class="c1"># 3000 iterations take ~20 min on a Tesla M40 and lead to</span>
+<span class="c1"># reasonably sharp results. However, for the best possible</span>
+<span class="c1"># results, we recommend setting n_iter=20000.</span>
+<span class="n">n_iter</span> <span class="o">=</span> <span class="mi">3000</span>
+
+<span class="c1"># Init the loss history buffers.</span>
+<span class="n">loss_history_color</span><span class="p">,</span> <span class="n">loss_history_sil</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
+
+<span class="c1"># The main optimization loop.</span>
+<span class="k">for</span> <span class="n">iteration</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_iter</span><span class="p">):</span>      
+    <span class="c1"># In case we reached the last 75% of iterations,</span>
+    <span class="c1"># decrease the learning rate of the optimizer 10-fold.</span>
+    <span class="k">if</span> <span class="n">iteration</span> <span class="o">==</span> <span class="nb">round</span><span class="p">(</span><span class="n">n_iter</span> <span class="o">*</span> <span class="mf">0.75</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">'Decreasing LR 10-fold ...'</span><span class="p">)</span>
+        <span class="n">optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span>
+            <span class="n">neural_radiance_field</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="n">lr</span> <span class="o">*</span> <span class="mf">0.1</span>
+        <span class="p">)</span>
+    
+    <span class="c1"># Zero the optimizer gradient.</span>
+    <span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+    
+    <span class="c1"># Sample random batch indices.</span>
+    <span class="n">batch_idx</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randperm</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">target_cameras</span><span class="p">))[:</span><span class="n">batch_size</span><span class="p">]</span>
+    
+    <span class="c1"># Sample the minibatch of cameras.</span>
+    <span class="n">batch_cameras</span> <span class="o">=</span> <span class="n">FoVPerspectiveCameras</span><span class="p">(</span>
+        <span class="n">R</span> <span class="o">=</span> <span class="n">target_cameras</span><span class="o">.</span><span class="n">R</span><span class="p">[</span><span class="n">batch_idx</span><span class="p">],</span> 
+        <span class="n">T</span> <span class="o">=</span> <span class="n">target_cameras</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="n">batch_idx</span><span class="p">],</span> 
+        <span class="n">znear</span> <span class="o">=</span> <span class="n">target_cameras</span><span class="o">.</span><span class="n">znear</span><span class="p">[</span><span class="n">batch_idx</span><span class="p">],</span>
+        <span class="n">zfar</span> <span class="o">=</span> <span class="n">target_cameras</span><span class="o">.</span><span class="n">zfar</span><span class="p">[</span><span class="n">batch_idx</span><span class="p">],</span>
+        <span class="n">aspect_ratio</span> <span class="o">=</span> <span class="n">target_cameras</span><span class="o">.</span><span class="n">aspect_ratio</span><span class="p">[</span><span class="n">batch_idx</span><span class="p">],</span>
+        <span class="n">fov</span> <span class="o">=</span> <span class="n">target_cameras</span><span class="o">.</span><span class="n">fov</span><span class="p">[</span><span class="n">batch_idx</span><span class="p">],</span>
+        <span class="n">device</span> <span class="o">=</span> <span class="n">device</span><span class="p">,</span>
+    <span class="p">)</span>
+    
+    <span class="c1"># Evaluate the nerf model.</span>
+    <span class="n">rendered_images_silhouettes</span><span class="p">,</span> <span class="n">sampled_rays</span> <span class="o">=</span> <span class="n">renderer_mc</span><span class="p">(</span>
+        <span class="n">cameras</span><span class="o">=</span><span class="n">batch_cameras</span><span class="p">,</span> 
+        <span class="n">volumetric_function</span><span class="o">=</span><span class="n">neural_radiance_field</span>
+    <span class="p">)</span>
+    <span class="n">rendered_images</span><span class="p">,</span> <span class="n">rendered_silhouettes</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">rendered_images_silhouettes</span><span class="o">.</span><span class="n">split</span><span class="p">([</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="p">)</span>
+    
+    <span class="c1"># Compute the silhouette error as the mean huber</span>
+    <span class="c1"># loss between the predicted masks and the</span>
+    <span class="c1"># sampled target silhouettes.</span>
+    <span class="n">silhouettes_at_rays</span> <span class="o">=</span> <span class="n">sample_images_at_mc_locs</span><span class="p">(</span>
+        <span class="n">target_silhouettes</span><span class="p">[</span><span class="n">batch_idx</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">],</span> 
+        <span class="n">sampled_rays</span><span class="o">.</span><span class="n">xys</span>
+    <span class="p">)</span>
+    <span class="n">sil_err</span> <span class="o">=</span> <span class="n">huber</span><span class="p">(</span>
+        <span class="n">rendered_silhouettes</span><span class="p">,</span> 
+        <span class="n">silhouettes_at_rays</span><span class="p">,</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">abs</span><span class="p">()</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+
+    <span class="c1"># Compute the color error as the mean huber</span>
+    <span class="c1"># loss between the rendered colors and the</span>
+    <span class="c1"># sampled target images.</span>
+    <span class="n">colors_at_rays</span> <span class="o">=</span> <span class="n">sample_images_at_mc_locs</span><span class="p">(</span>
+        <span class="n">target_images</span><span class="p">[</span><span class="n">batch_idx</span><span class="p">],</span> 
+        <span class="n">sampled_rays</span><span class="o">.</span><span class="n">xys</span>
+    <span class="p">)</span>
+    <span class="n">color_err</span> <span class="o">=</span> <span class="n">huber</span><span class="p">(</span>
+        <span class="n">rendered_images</span><span class="p">,</span> 
+        <span class="n">colors_at_rays</span><span class="p">,</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">abs</span><span class="p">()</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+    
+    <span class="c1"># The optimization loss is a simple</span>
+    <span class="c1"># sum of the color and silhouette errors.</span>
+    <span class="n">loss</span> <span class="o">=</span> <span class="n">color_err</span> <span class="o">+</span> <span class="n">sil_err</span>
+    
+    <span class="c1"># Log the loss history.</span>
+    <span class="n">loss_history_color</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">color_err</span><span class="p">))</span>
+    <span class="n">loss_history_sil</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">sil_err</span><span class="p">))</span>
+    
+    <span class="c1"># Every 10 iterations, print the current values of the losses.</span>
+    <span class="k">if</span> <span class="n">iteration</span> <span class="o">%</span> <span class="mi">10</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s1">'Iteration </span><span class="si">{</span><span class="n">iteration</span><span class="si">:</span><span class="s1">05d</span><span class="si">}</span><span class="s1">:'</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s1">' loss color = </span><span class="si">{</span><span class="nb">float</span><span class="p">(</span><span class="n">color_err</span><span class="p">)</span><span class="si">:</span><span class="s1">1.2e</span><span class="si">}</span><span class="s1">'</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s1">' loss silhouette = </span><span class="si">{</span><span class="nb">float</span><span class="p">(</span><span class="n">sil_err</span><span class="p">)</span><span class="si">:</span><span class="s1">1.2e</span><span class="si">}</span><span class="s1">'</span>
+        <span class="p">)</span>
+    
+    <span class="c1"># Take the optimization step.</span>
+    <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+    <span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+    
+    <span class="c1"># Visualize the full renders every 100 iterations.</span>
+    <span class="k">if</span> <span class="n">iteration</span> <span class="o">%</span> <span class="mi">100</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">show_idx</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randperm</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">target_cameras</span><span class="p">))[:</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">show_full_render</span><span class="p">(</span>
+            <span class="n">neural_radiance_field</span><span class="p">,</span>
+            <span class="n">FoVPerspectiveCameras</span><span class="p">(</span>
+                <span class="n">R</span> <span class="o">=</span> <span class="n">target_cameras</span><span class="o">.</span><span class="n">R</span><span class="p">[</span><span class="n">show_idx</span><span class="p">],</span> 
+                <span class="n">T</span> <span class="o">=</span> <span class="n">target_cameras</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="n">show_idx</span><span class="p">],</span> 
+                <span class="n">znear</span> <span class="o">=</span> <span class="n">target_cameras</span><span class="o">.</span><span class="n">znear</span><span class="p">[</span><span class="n">show_idx</span><span class="p">],</span>
+                <span class="n">zfar</span> <span class="o">=</span> <span class="n">target_cameras</span><span class="o">.</span><span class="n">zfar</span><span class="p">[</span><span class="n">show_idx</span><span class="p">],</span>
+                <span class="n">aspect_ratio</span> <span class="o">=</span> <span class="n">target_cameras</span><span class="o">.</span><span class="n">aspect_ratio</span><span class="p">[</span><span class="n">show_idx</span><span class="p">],</span>
+                <span class="n">fov</span> <span class="o">=</span> <span class="n">target_cameras</span><span class="o">.</span><span class="n">fov</span><span class="p">[</span><span class="n">show_idx</span><span class="p">],</span>
+                <span class="n">device</span> <span class="o">=</span> <span class="n">device</span><span class="p">,</span>
+            <span class="p">),</span> 
+            <span class="n">target_images</span><span class="p">[</span><span class="n">show_idx</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>
+            <span class="n">target_silhouettes</span><span class="p">[</span><span class="n">show_idx</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>
+            <span class="n">loss_history_color</span><span class="p">,</span>
+            <span class="n">loss_history_sil</span><span class="p">,</span>
+        <span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="5.-Visualizing-the-optimized-neural-radiance-field">5. Visualizing the optimized neural radiance field<a class="anchor-link" href="#5.-Visualizing-the-optimized-neural-radiance-field">¶</a></h2><p>Finally, we visualize the neural radiance field by rendering from multiple viewpoints that rotate around the volume's y-axis.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">generate_rotating_nerf</span><span class="p">(</span><span class="n">neural_radiance_field</span><span class="p">,</span> <span class="n">n_frames</span> <span class="o">=</span> <span class="mi">50</span><span class="p">):</span>
+    <span class="n">logRs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_frames</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+    <span class="n">logRs</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mf">3.14</span><span class="p">,</span> <span class="mf">3.14</span><span class="p">,</span> <span class="n">n_frames</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+    <span class="n">Rs</span> <span class="o">=</span> <span class="n">so3_exp_map</span><span class="p">(</span><span class="n">logRs</span><span class="p">)</span>
+    <span class="n">Ts</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_frames</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+    <span class="n">Ts</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mf">2.7</span>
+    <span class="n">frames</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">'Rendering rotating NeRF ...'</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">R</span><span class="p">,</span> <span class="n">T</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">tqdm</span><span class="p">(</span><span class="n">Rs</span><span class="p">),</span> <span class="n">Ts</span><span class="p">):</span>
+        <span class="n">camera</span> <span class="o">=</span> <span class="n">FoVPerspectiveCameras</span><span class="p">(</span>
+            <span class="n">R</span><span class="o">=</span><span class="n">R</span><span class="p">[</span><span class="kc">None</span><span class="p">],</span> 
+            <span class="n">T</span><span class="o">=</span><span class="n">T</span><span class="p">[</span><span class="kc">None</span><span class="p">],</span> 
+            <span class="n">znear</span><span class="o">=</span><span class="n">target_cameras</span><span class="o">.</span><span class="n">znear</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+            <span class="n">zfar</span><span class="o">=</span><span class="n">target_cameras</span><span class="o">.</span><span class="n">zfar</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+            <span class="n">aspect_ratio</span><span class="o">=</span><span class="n">target_cameras</span><span class="o">.</span><span class="n">aspect_ratio</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+            <span class="n">fov</span><span class="o">=</span><span class="n">target_cameras</span><span class="o">.</span><span class="n">fov</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+            <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="c1"># Note that we again render with `NDCGridRaySampler`</span>
+        <span class="c1"># and the batched_forward function of neural_radiance_field.</span>
+        <span class="n">frames</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">renderer_grid</span><span class="p">(</span>
+                <span class="n">cameras</span><span class="o">=</span><span class="n">camera</span><span class="p">,</span> 
+                <span class="n">volumetric_function</span><span class="o">=</span><span class="n">neural_radiance_field</span><span class="o">.</span><span class="n">batched_forward</span><span class="p">,</span>
+            <span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="mi">3</span><span class="p">]</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">frames</span><span class="p">)</span>
+    
+<span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+    <span class="n">rotating_nerf_frames</span> <span class="o">=</span> <span class="n">generate_rotating_nerf</span><span class="p">(</span><span class="n">neural_radiance_field</span><span class="p">,</span> <span class="n">n_frames</span><span class="o">=</span><span class="mi">3</span><span class="o">*</span><span class="mi">5</span><span class="p">)</span>
+    
+<span class="n">image_grid</span><span class="p">(</span><span class="n">rotating_nerf_frames</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">)</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">rows</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">cols</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">rgb</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="6.-Conclusion">6. Conclusion<a class="anchor-link" href="#6.-Conclusion">¶</a></h2><p>In this tutorial, we have shown how to optimize an implicit representation of a scene such that the renders of the scene from known viewpoints match the observed images for each viewpoint. The rendering was carried out using the PyTorch3D's implicit function renderer composed of either a <code>MonteCarloRaysampler</code> or <code>NDCGridRaysampler</code>, and an <code>EmissionAbsorptionRaymarcher</code>.</p>
+</div>
+</div>
+</div>
+</div></div></div></div></div><footer class="nav-footer" id="footer"><section class="sitemap"><div class="footerSection"><div class="social"><a class="github-button" href="https://github.com/facebookresearch/pytorch3d" data-count-href="https://github.com/facebookresearch/pytorch3d/stargazers" data-show-count="true" data-count-aria-label="# stargazers on GitHub" aria-label="Star PyTorch3D on GitHub">pytorch3d</a></div></div></section><a href="https://opensource.facebook.com/" target="_blank" rel="noreferrer noopener" class="fbOpenSource"><img src="/img/oss_logo.png" alt="Facebook Open Source" width="170" height="45"/></a><section class="copyright">Copyright © 2021 Facebook Inc<br/>Legal:<a href="https://opensource.facebook.com/legal/privacy/" target="_blank" rel="noreferrer noopener">Privacy</a><a href="https://opensource.facebook.com/legal/terms/" target="_blank" rel="noreferrer noopener">Terms</a></section></footer></div></body></html>
