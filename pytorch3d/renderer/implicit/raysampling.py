@@ -123,7 +123,7 @@ class GridRaysampler(torch.nn.Module):
         device = cameras.device
 
         # expand the (H, W, 2) grid batch_size-times to (B, H, W, 2)
-        xy_grid = self._xy_grid.to(device)[None].expand(  # pyre-ignore
+        xy_grid = self._xy_grid.to(device)[None].expand(
             batch_size, *self._xy_grid.shape
         )
 
