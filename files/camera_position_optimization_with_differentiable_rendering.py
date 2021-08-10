@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+
 # coding: utf-8
 
 # In[ ]:
@@ -22,24 +22,30 @@
 
 # ##  0. Install and import modules
 
-# If `torch`, `torchvision` and `pytorch3d` are not installed, run the following cell:
+# Ensure `torch` and `torchvision` are installed. If `pytorch3d` is not installed, install it using the following cell:
 
 # In[ ]:
 
 
-get_ipython().system('pip install torch torchvision')
 import os
 import sys
 import torch
-if torch.__version__=='1.6.0+cu101' and sys.platform.startswith('linux'):
-    get_ipython().system('pip install pytorch3d')
-else:
-    need_pytorch3d=False
-    try:
-        import pytorch3d
-    except ModuleNotFoundError:
-        need_pytorch3d=True
-    if need_pytorch3d:
+need_pytorch3d=False
+try:
+    import pytorch3d
+except ModuleNotFoundError:
+    need_pytorch3d=True
+if need_pytorch3d:
+    if torch.__version__.startswith("1.9") and sys.platform.startswith("linux"):
+        # We try to install PyTorch3D via a released wheel.
+        version_str="".join([
+            f"py3{sys.version_info.minor}_cu",
+            torch.version.cuda.replace(".",""),
+            f"_pyt{torch.__version__[0:5:2]}"
+        ])
+        get_ipython().system('pip install pytorch3d -f https://dl.fbaipublicfiles.com/pytorch3d/packaging/wheels/{version_str}/download.html')
+    else:
+        # We try to install PyTorch3D from source.
         get_ipython().system('curl -LO https://github.com/NVIDIA/cub/archive/1.10.0.tar.gz')
         get_ipython().system('tar xzf 1.10.0.tar.gz')
         os.environ["CUB_HOME"] = os.getcwd() + "/cub-1.10.0"
@@ -121,9 +127,9 @@ teapot_mesh = Meshes(
 
 # ### Create a renderer
 # 
-# A **renderer** in PyTorch3D is composed of a **rasterizer** and a **shader** which each have a number of subcomponents such as a **camera** (orthgraphic/perspective). Here we initialize some of these components and use default values for the rest. 
+# A **renderer** in PyTorch3D is composed of a **rasterizer** and a **shader** which each have a number of subcomponents such as a **camera** (orthographic/perspective). Here we initialize some of these components and use default values for the rest. 
 # 
-# For optimizing the camera position we will use a renderer which produces a **silhouette** of the object only and does not apply any **lighting** or **shading**. We will also initialize another renderer which applies full **phong shading** and use this for visualizing the outputs. 
+# For optimizing the camera position we will use a renderer which produces a **silhouette** of the object only and does not apply any **lighting** or **shading**. We will also initialize another renderer which applies full **Phong shading** and use this for visualizing the outputs. 
 
 # In[ ]:
 
@@ -156,7 +162,7 @@ silhouette_renderer = MeshRenderer(
 )
 
 
-# We will also create a phong renderer. This is simpler and only needs to render one face per pixel.
+# We will also create a Phong renderer. This is simpler and only needs to render one face per pixel.
 raster_settings = RasterizationSettings(
     image_size=256, 
     blur_radius=0.0, 
@@ -193,15 +199,15 @@ azimuth = 0.0  # No rotation so the camera is positioned on the +Z axis.
 R, T = look_at_view_transform(distance, elevation, azimuth, device=device)
 
 # Render the teapot providing the values of R and T. 
-silhouete = silhouette_renderer(meshes_world=teapot_mesh, R=R, T=T)
+silhouette = silhouette_renderer(meshes_world=teapot_mesh, R=R, T=T)
 image_ref = phong_renderer(meshes_world=teapot_mesh, R=R, T=T)
 
-silhouete = silhouete.cpu().numpy()
+silhouette = silhouette.cpu().numpy()
 image_ref = image_ref.cpu().numpy()
 
 plt.figure(figsize=(10, 10))
 plt.subplot(1, 2, 1)
-plt.imshow(silhouete.squeeze()[..., 3])  # only plot the alpha channel of the RGBA image
+plt.imshow(silhouette.squeeze()[..., 3])  # only plot the alpha channel of the RGBA image
 plt.grid(False)
 plt.subplot(1, 2, 2)
 plt.imshow(image_ref.squeeze())
@@ -233,7 +239,7 @@ class Model(nn.Module):
     def forward(self):
         
         # Render the image using the updated camera position. Based on the new position of the 
-        # camer we calculate the rotation and translation matrices
+        # camera we calculate the rotation and translation matrices
         R = look_at_rotation(self.camera_position[None, :], device=self.device)  # (1, 3, 3)
         T = -torch.bmm(R.transpose(1, 2), self.camera_position[None, :, None])[:, :, 0]   # (1, 3)
         
@@ -313,7 +319,6 @@ for i in loop:
         plt.figure()
         plt.imshow(image[..., :3])
         plt.title("iter: %d, loss: %0.2f" % (i, loss.data))
-        plt.grid("off")
         plt.axis("off")
     
 writer.close()

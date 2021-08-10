@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+
 # coding: utf-8
 
 # In[ ]:
@@ -34,24 +34,30 @@
 
 # ## 0. Install and Import modules
 
-# If `torch`, `torchvision` and `pytorch3d` are not installed, run the following cell:
+# Ensure `torch` and `torchvision` are installed. If `pytorch3d` is not installed, install it using the following cell:
 
 # In[ ]:
 
 
-get_ipython().system('pip install torch torchvision')
 import os
 import sys
 import torch
-if torch.__version__=='1.6.0+cu101' and sys.platform.startswith('linux'):
-    get_ipython().system('pip install pytorch3d')
-else:
-    need_pytorch3d=False
-    try:
-        import pytorch3d
-    except ModuleNotFoundError:
-        need_pytorch3d=True
-    if need_pytorch3d:
+need_pytorch3d=False
+try:
+    import pytorch3d
+except ModuleNotFoundError:
+    need_pytorch3d=True
+if need_pytorch3d:
+    if torch.__version__.startswith("1.9") and sys.platform.startswith("linux"):
+        # We try to install PyTorch3D via a released wheel.
+        version_str="".join([
+            f"py3{sys.version_info.minor}_cu",
+            torch.version.cuda.replace(".",""),
+            f"_pyt{torch.__version__[0:5:2]}"
+        ])
+        get_ipython().system('pip install pytorch3d -f https://dl.fbaipublicfiles.com/pytorch3d/packaging/wheels/{version_str}/download.html')
+    else:
+        # We try to install PyTorch3D from source.
         get_ipython().system('curl -LO https://github.com/NVIDIA/cub/archive/1.10.0.tar.gz')
         get_ipython().system('tar xzf 1.10.0.tar.gz')
         os.environ["CUB_HOME"] = os.getcwd() + "/cub-1.10.0"
@@ -237,10 +243,10 @@ for i in loop:
     loop.set_description('total_loss = %.6f' % loss)
     
     # Save the losses for plotting
-    chamfer_losses.append(loss_chamfer)
-    edge_losses.append(loss_edge)
-    normal_losses.append(loss_normal)
-    laplacian_losses.append(loss_laplacian)
+    chamfer_losses.append(float(loss_chamfer.detach().cpu()))
+    edge_losses.append(float(loss_edge.detach().cpu()))
+    normal_losses.append(float(loss_normal.detach().cpu()))
+    laplacian_losses.append(float(loss_laplacian.detach().cpu()))
     
     # Plot mesh
     if i % plot_period == 0:

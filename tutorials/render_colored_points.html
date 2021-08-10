@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang=""><head><meta charSet="utf-8"/><meta http-equiv="X-UA-Compatible" content="IE=edge"/><title>PyTorch3D · A library for deep learning with 3D data</title><meta name="viewport" content="width=device-width"/><meta name="generator" content="Docusaurus"/><meta name="description" content="A library for deep learning with 3D data"/><meta property="og:title" content="PyTorch3D · A library for deep learning with 3D data"/><meta property="og:type" content="website"/><meta property="og:url" content="https://pytorch3d.org/"/><meta property="og:description" content="A library for deep learning with 3D data"/><meta property="og:image" content="https://pytorch3d.org/img/pytorch3dlogoicon.svg"/><meta name="twitter:card" content="summary"/><meta name="twitter:image" content="https://pytorch3d.org/img/pytorch3dlogoicon.svg"/><link rel="shortcut icon" href="/img/pytorch3dfavicon.png"/><link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css"/><script>
+<!DOCTYPE html><html lang=""><head><meta charSet="utf-8"/><meta http-equiv="X-UA-Compatible" content="IE=edge"/><title>PyTorch3D · A library for deep learning with 3D data</title><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="generator" content="Docusaurus"/><meta name="description" content="A library for deep learning with 3D data"/><meta property="og:title" content="PyTorch3D · A library for deep learning with 3D data"/><meta property="og:type" content="website"/><meta property="og:url" content="https://pytorch3d.org/"/><meta property="og:description" content="A library for deep learning with 3D data"/><meta property="og:image" content="https://pytorch3d.org/img/pytorch3dlogoicon.svg"/><meta name="twitter:card" content="summary"/><meta name="twitter:image" content="https://pytorch3d.org/img/pytorch3dlogoicon.svg"/><link rel="shortcut icon" href="/img/pytorch3dfavicon.png"/><link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css"/><script>
               (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
               (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
               m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
@@ -82,7 +82,8 @@
 </div>
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
+</div>
+<div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h1 id="Render-a-colored-point-cloud">Render a colored point cloud<a class="anchor-link" href="#Render-a-colored-point-cloud">¶</a></h1><p>This tutorial shows how to:</p>
 <ul>
@@ -94,16 +95,18 @@
 </div>
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
+</div>
+<div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="Import-modules">Import modules<a class="anchor-link" href="#Import-modules">¶</a></h2>
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
+</div>
+<div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>If <code>torch</code>, <code>torchvision</code> and <code>pytorch3d</code> are not installed, run the following cell:</p>
+<p>Ensure <code>torch</code> and <code>torchvision</code> are installed. If <code>pytorch3d</code> is not installed, install it using the following cell:</p>
 </div>
 </div>
 </div>
@@ -112,19 +115,25 @@
 <div class="prompt input_prompt">In [ ]:</div>
 <div class="inner_cell">
 <div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="o">!</span>pip install torch torchvision
-<span class="kn">import</span> <span class="nn">os</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">torch</span>
-<span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">__version__</span><span class="o">==</span><span class="s1">'1.6.0+cu101'</span> <span class="ow">and</span> <span class="n">sys</span><span class="o">.</span><span class="n">platform</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">'linux'</span><span class="p">):</span>
-    <span class="o">!</span>pip install pytorch3d
-<span class="k">else</span><span class="p">:</span>
-    <span class="n">need_pytorch3d</span><span class="o">=</span><span class="kc">False</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="kn">import</span> <span class="nn">pytorch3d</span>
-    <span class="k">except</span> <span class="n">ModuleNotFoundError</span><span class="p">:</span>
-        <span class="n">need_pytorch3d</span><span class="o">=</span><span class="kc">True</span>
-    <span class="k">if</span> <span class="n">need_pytorch3d</span><span class="p">:</span>
+<span class="n">need_pytorch3d</span><span class="o">=</span><span class="kc">False</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">pytorch3d</span>
+<span class="k">except</span> <span class="ne">ModuleNotFoundError</span><span class="p">:</span>
+    <span class="n">need_pytorch3d</span><span class="o">=</span><span class="kc">True</span>
+<span class="k">if</span> <span class="n">need_pytorch3d</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"1.9"</span><span class="p">)</span> <span class="ow">and</span> <span class="n">sys</span><span class="o">.</span><span class="n">platform</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"linux"</span><span class="p">):</span>
+        <span class="c1"># We try to install PyTorch3D via a released wheel.</span>
+        <span class="n">version_str</span><span class="o">=</span><span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">([</span>
+            <span class="sa">f</span><span class="s2">"py3</span><span class="si">{</span><span class="n">sys</span><span class="o">.</span><span class="n">version_info</span><span class="o">.</span><span class="n">minor</span><span class="si">}</span><span class="s2">_cu"</span><span class="p">,</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">version</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"."</span><span class="p">,</span><span class="s2">""</span><span class="p">),</span>
+            <span class="sa">f</span><span class="s2">"_pyt</span><span class="si">{</span><span class="n">torch</span><span class="o">.</span><span class="n">__version__</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">5</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span>
+        <span class="p">])</span>
+        <span class="o">!</span>pip install pytorch3d -f https://dl.fbaipublicfiles.com/pytorch3d/packaging/wheels/<span class="o">{</span>version_str<span class="o">}</span>/download.html
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># We try to install PyTorch3D from source.</span>
         <span class="o">!</span>curl -LO https://github.com/NVIDIA/cub/archive/1.10.0.tar.gz
         <span class="o">!</span>tar xzf <span class="m">1</span>.10.0.tar.gz
         <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">"CUB_HOME"</span><span class="p">]</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span> <span class="o">+</span> <span class="s2">"/cub-1.10.0"</span>
@@ -143,15 +152,14 @@
 <span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">import</span> <span class="nn">torch.nn.functional</span> <span class="k">as</span> <span class="nn">F</span>
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-<span class="kn">from</span> <span class="nn">skimage.io</span> <span class="k">import</span> <span class="n">imread</span>
 
 <span class="c1"># Util function for loading point clouds|</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
 <span class="c1"># Data structures and functions for rendering</span>
-<span class="kn">from</span> <span class="nn">pytorch3d.structures</span> <span class="k">import</span> <span class="n">Pointclouds</span>
-<span class="kn">from</span> <span class="nn">pytorch3d.vis.plotly_vis</span> <span class="k">import</span> <span class="n">AxisArgs</span><span class="p">,</span> <span class="n">plot_batch_individually</span><span class="p">,</span> <span class="n">plot_scene</span>
-<span class="kn">from</span> <span class="nn">pytorch3d.renderer</span> <span class="k">import</span> <span class="p">(</span>
+<span class="kn">from</span> <span class="nn">pytorch3d.structures</span> <span class="kn">import</span> <span class="n">Pointclouds</span>
+<span class="kn">from</span> <span class="nn">pytorch3d.vis.plotly_vis</span> <span class="kn">import</span> <span class="n">AxisArgs</span><span class="p">,</span> <span class="n">plot_batch_individually</span><span class="p">,</span> <span class="n">plot_scene</span>
+<span class="kn">from</span> <span class="nn">pytorch3d.renderer</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">look_at_view_transform</span><span class="p">,</span>
     <span class="n">FoVOrthographicCameras</span><span class="p">,</span> 
     <span class="n">PointsRasterizationSettings</span><span class="p">,</span>
@@ -167,7 +175,8 @@
 </div>
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
+</div>
+<div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h3 id="Load-a-point-cloud-and-corresponding-colors">Load a point cloud and corresponding colors<a class="anchor-link" href="#Load-a-point-cloud-and-corresponding-colors">¶</a></h3><p>Load and create a <strong>Point Cloud</strong> object.</p>
 <p><strong>Pointclouds</strong> is a unique datastructure provided in PyTorch3D for working with batches of point clouds of different sizes.</p>
@@ -175,7 +184,8 @@
 </div>
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
+</div>
+<div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <p>If running this notebook using <strong>Google Colab</strong>, run the following cell to fetch the pointcloud data and save it at the path <code>data/PittsburghBridge</code>:
 If running locally, the data is already available at the correct path.</p>
@@ -223,9 +233,10 @@ If running locally, the data is already available at the correct path.</p>
 </div>
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
+</div>
+<div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="Create-a-renderer">Create a renderer<a class="anchor-link" href="#Create-a-renderer">¶</a></h2><p>A renderer in PyTorch3D is composed of a <strong>rasterizer</strong> and a <strong>shader</strong> which each have a number of subcomponents such as a <strong>camera</strong> (orthgraphic/perspective). Here we initialize some of these components and use default values for the rest.</p>
+<h2 id="Create-a-renderer">Create a renderer<a class="anchor-link" href="#Create-a-renderer">¶</a></h2><p>A renderer in PyTorch3D is composed of a <strong>rasterizer</strong> and a <strong>shader</strong> which each have a number of subcomponents such as a <strong>camera</strong> (orthographic/perspective). Here we initialize some of these components and use default values for the rest.</p>
 <p>In this example we will first create a <strong>renderer</strong> which uses an <strong>orthographic camera</strong>, and applies <strong>alpha compositing</strong>. Then we learn how to vary different components using the modular API.</p>
 <p>[1] <a href="https://arxiv.org/abs/1912.08804">SynSin: End to end View Synthesis from a Single Image.</a> Olivia Wiles, Georgia Gkioxari, Richard Szeliski, Justin Johnson. CVPR 2020.</p>
 </div>
@@ -270,7 +281,6 @@ If running locally, the data is already available at the correct path.</p>
 <div class="highlight hl-ipython3"><pre><span></span><span class="n">images</span> <span class="o">=</span> <span class="n">renderer</span><span class="p">(</span><span class="n">point_cloud</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">images</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="s2">"off"</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">"off"</span><span class="p">);</span>
 </pre></div>
 </div>
@@ -278,7 +288,8 @@ If running locally, the data is already available at the correct path.</p>
 </div>
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
+</div>
+<div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <p>We will now modify the <strong>renderer</strong> to use <strong>alpha compositing</strong> with a set background color.</p>
 </div>
@@ -299,7 +310,6 @@ If running locally, the data is already available at the correct path.</p>
 
 <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">images</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="s2">"off"</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">"off"</span><span class="p">);</span>
 </pre></div>
 </div>
@@ -307,7 +317,8 @@ If running locally, the data is already available at the correct path.</p>
 </div>
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
+</div>
+<div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <p>In this example we will first create a <strong>renderer</strong> which uses an <strong>orthographic camera</strong>, and applies <strong>weighted compositing</strong>.</p>
 </div>
@@ -351,7 +362,6 @@ If running locally, the data is already available at the correct path.</p>
 <div class="highlight hl-ipython3"><pre><span></span><span class="n">images</span> <span class="o">=</span> <span class="n">renderer</span><span class="p">(</span><span class="n">point_cloud</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">images</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="s2">"off"</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">"off"</span><span class="p">);</span>
 </pre></div>
 </div>
@@ -359,7 +369,8 @@ If running locally, the data is already available at the correct path.</p>
 </div>
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
+</div>
+<div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <p>We will now modify the <strong>renderer</strong> to use <strong>weighted compositing</strong> with a set background color.</p>
 </div>
@@ -379,7 +390,6 @@ If running locally, the data is already available at the correct path.</p>
 <span class="n">images</span> <span class="o">=</span> <span class="n">renderer</span><span class="p">(</span><span class="n">point_cloud</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">images</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="s2">"off"</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">"off"</span><span class="p">);</span>
 </pre></div>
 </div>
@@ -387,7 +397,8 @@ If running locally, the data is already available at the correct path.</p>
 </div>
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
+</div>
+<div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="Using-the-pulsar-backend">Using the pulsar backend<a class="anchor-link" href="#Using-the-pulsar-backend">¶</a></h2><p>Switching to the pulsar backend is easy! The pulsar backend has a compositor built-in, so the <code>compositor</code> argument is not required when creating it (a warning will be displayed if you provide it nevertheless). It pre-allocates memory on the rendering device, that's why it needs the <code>n_channels</code> at construction time.</p>
 <p>All parameters for the renderer forward function are batch-wise except the background color (in this example, <code>gamma</code>) and you have to provide as many values as you have examples in your batch. The background color is optional and by default set to all zeros. You can find a detailed explanation of how gamma influences the rendering function here in the paper <a href="https://arxiv.org/pdf/2004.07484.pdf">Fast Differentiable Raycasting for Neural Rendering using
@@ -410,7 +421,6 @@ Sphere-based Representations</a>.</p>
                   <span class="n">bg_col</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">))</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">images</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="s2">"off"</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">"off"</span><span class="p">);</span>
 </pre></div>
 </div>
@@ -418,7 +428,8 @@ Sphere-based Representations</a>.</p>
 </div>
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
+</div>
+<div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h3 id="View-pointclouds-in-Plotly-figures">View pointclouds in Plotly figures<a class="anchor-link" href="#View-pointclouds-in-Plotly-figures">¶</a></h3><p>Here we use the PyTorch3D function <code>plot_scene</code> to render the pointcloud in a Plotly figure. <code>plot_scene</code> returns a plotly figure with trace and subplots defined by the input.</p>
 </div>
@@ -440,7 +451,8 @@ Sphere-based Representations</a>.</p>
 </div>
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
+</div>
+<div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <p>We will now render a batch of pointclouds. The first pointcloud is the same as above, and the second is all-black and offset by 2 in all dimensions so we can see them on the same plot.</p>
 </div>
@@ -483,7 +495,8 @@ Sphere-based Representations</a>.</p>
 </div>
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
+</div>
+<div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <p>For batches, we can also use <code>plot_batch_individually</code> to avoid constructing the scene dictionary ourselves.</p>
 </div>
@@ -516,7 +529,8 @@ Sphere-based Representations</a>.</p>
 </div>
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
+</div>
+<div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <p>We can also modify the axis arguments and axis backgrounds for either function, and title our plots in <code>plot_batch_individually</code>.</p>
 </div>
@@ -540,4 +554,4 @@ Sphere-based Representations</a>.</p>
 </div>
 </div>
 </div>
-</div></div></div></div></div><footer class="nav-footer" id="footer"><section class="sitemap"><div class="footerSection"><div class="social"><a class="github-button" href="https://github.com/facebookresearch/pytorch3d" data-count-href="https://github.com/facebookresearch/pytorch3d/stargazers" data-show-count="true" data-count-aria-label="# stargazers on GitHub" aria-label="Star PyTorch3D on GitHub">pytorch3d</a></div></div></section><a href="https://opensource.facebook.com/" target="_blank" rel="noreferrer noopener" class="fbOpenSource"><img src="/img/oss_logo.png" alt="Facebook Open Source" width="170" height="45"/></a><section class="copyright">Copyright © 2020 Facebook Inc<br/>Legal:<a href="https://opensource.facebook.com/legal/privacy/" target="_blank" rel="noreferrer noopener">Privacy</a><a href="https://opensource.facebook.com/legal/terms/" target="_blank" rel="noreferrer noopener">Terms</a></section></footer></div></body></html>
+</div></div></div></div></div><footer class="nav-footer" id="footer"><section class="sitemap"><div class="footerSection"><div class="social"><a class="github-button" href="https://github.com/facebookresearch/pytorch3d" data-count-href="https://github.com/facebookresearch/pytorch3d/stargazers" data-show-count="true" data-count-aria-label="# stargazers on GitHub" aria-label="Star PyTorch3D on GitHub">pytorch3d</a></div></div></section><a href="https://opensource.facebook.com/" target="_blank" rel="noreferrer noopener" class="fbOpenSource"><img src="/img/oss_logo.png" alt="Facebook Open Source" width="170" height="45"/></a><section class="copyright">Copyright © 2021 Facebook Inc<br/>Legal:<a href="https://opensource.facebook.com/legal/privacy/" target="_blank" rel="noreferrer noopener">Privacy</a><a href="https://opensource.facebook.com/legal/terms/" target="_blank" rel="noreferrer noopener">Terms</a></section></footer></div></body></html>

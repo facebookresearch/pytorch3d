@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+
 # coding: utf-8
 
 # In[ ]:
@@ -18,24 +18,30 @@
 
 # ## 0. Install and Import modules
 
-# If `torch`, `torchvision` and `pytorch3d` are not installed, run the following cell:
+# Ensure `torch` and `torchvision` are installed. If `pytorch3d` is not installed, install it using the following cell:
 
 # In[ ]:
 
 
-get_ipython().system('pip install torch torchvision')
 import os
 import sys
 import torch
-if torch.__version__=='1.6.0+cu101' and sys.platform.startswith('linux'):
-    get_ipython().system('pip install pytorch3d')
-else:
-    need_pytorch3d=False
-    try:
-        import pytorch3d
-    except ModuleNotFoundError:
-        need_pytorch3d=True
-    if need_pytorch3d:
+need_pytorch3d=False
+try:
+    import pytorch3d
+except ModuleNotFoundError:
+    need_pytorch3d=True
+if need_pytorch3d:
+    if torch.__version__.startswith("1.9") and sys.platform.startswith("linux"):
+        # We try to install PyTorch3D via a released wheel.
+        version_str="".join([
+            f"py3{sys.version_info.minor}_cu",
+            torch.version.cuda.replace(".",""),
+            f"_pyt{torch.__version__[0:5:2]}"
+        ])
+        get_ipython().system('pip install pytorch3d -f https://dl.fbaipublicfiles.com/pytorch3d/packaging/wheels/{version_str}/download.html')
+    else:
+        # We try to install PyTorch3D from source.
         get_ipython().system('curl -LO https://github.com/NVIDIA/cub/archive/1.10.0.tar.gz')
         get_ipython().system('tar xzf 1.10.0.tar.gz')
         os.environ["CUB_HOME"] = os.getcwd() + "/cub-1.10.0"
@@ -48,7 +54,6 @@ else:
 import os
 import torch
 import matplotlib.pyplot as plt
-from skimage.io import imread
 
 # Util function for loading meshes
 from pytorch3d.io import load_objs_as_meshes, load_obj
@@ -96,11 +101,11 @@ from plot_image_grid import image_grid
 
 # ### 1. Load a mesh and texture file
 # 
-# Load an `.obj` file and it's associated `.mtl` file and create a **Textures** and **Meshes** object. 
+# Load an `.obj` file and its associated `.mtl` file and create a **Textures** and **Meshes** object. 
 # 
 # **Meshes** is a unique datastructure provided in PyTorch3D for working with batches of meshes of different sizes. 
 # 
-# **TexturesUV** is an auxillary datastructure for storing vertex uv and texture maps for meshes. 
+# **TexturesUV** is an auxiliary datastructure for storing vertex uv and texture maps for meshes. 
 # 
 # **Meshes** has several class methods which are used throughout the rendering pipeline.
 
@@ -142,7 +147,6 @@ mesh = load_objs_as_meshes([obj_filename], device=device)
 plt.figure(figsize=(7,7))
 texture_image=mesh.textures.maps_padded()
 plt.imshow(texture_image.squeeze().cpu().numpy())
-plt.grid("off");
 plt.axis("off");
 
 
@@ -153,7 +157,6 @@ plt.axis("off");
 
 plt.figure(figsize=(7,7))
 texturesuv_image_matplotlib(mesh.textures, subsample=None)
-plt.grid("off");
 plt.axis("off");
 
 
@@ -161,7 +164,7 @@ plt.axis("off");
 # 
 # A renderer in PyTorch3D is composed of a **rasterizer** and a **shader** which each have a number of subcomponents such as a **camera** (orthographic/perspective). Here we initialize some of these components and use default values for the rest.
 # 
-# In this example we will first create a **renderer** which uses a **perspective camera**, a **point light** and applies **phong shading**. Then we learn how to vary different components using the modular API.  
+# In this example we will first create a **renderer** which uses a **perspective camera**, a **point light** and applies **Phong shading**. Then we learn how to vary different components using the modular API.  
 
 # In[ ]:
 
@@ -188,7 +191,7 @@ raster_settings = RasterizationSettings(
 # -z direction. 
 lights = PointLights(device=device, location=[[0.0, 0.0, -3.0]])
 
-# Create a phong renderer by composing a rasterizer and a shader. The textured phong shader will 
+# Create a Phong renderer by composing a rasterizer and a shader. The textured Phong shader will 
 # interpolate the texture uv coordinates for each vertex, sample from a texture image and 
 # apply the Phong lighting model
 renderer = MeshRenderer(
@@ -214,13 +217,12 @@ renderer = MeshRenderer(
 images = renderer(mesh)
 plt.figure(figsize=(10, 10))
 plt.imshow(images[0, ..., :3].cpu().numpy())
-plt.grid("off");
 plt.axis("off");
 
 
 # ## 4. Move the light behind the object and re-render
 # 
-# We can pass arbirary keyword arguments to the `rasterizer`/`shader` via the call to the `renderer` so the renderer does not need to be reinitialized if any of the settings change/
+# We can pass arbitrary keyword arguments to the `rasterizer`/`shader` via the call to the `renderer` so the renderer does not need to be reinitialized if any of the settings change/
 # 
 # In this case, we can simply update the location of the lights and pass them into the call to the renderer. 
 # 
@@ -239,7 +241,6 @@ images = renderer(mesh, lights=lights)
 
 plt.figure(figsize=(10, 10))
 plt.imshow(images[0, ..., :3].cpu().numpy())
-plt.grid("off");
 plt.axis("off");
 
 
@@ -277,7 +278,6 @@ images = renderer(mesh, lights=lights, materials=materials, cameras=cameras)
 
 plt.figure(figsize=(10, 10))
 plt.imshow(images[0, ..., :3].cpu().numpy())
-plt.grid("off");
 plt.axis("off");
 
 
@@ -315,7 +315,7 @@ lights.location = torch.tensor([[0.0, 0.0, -3.0]], device=device)
 # In[ ]:
 
 
-# We can pass arbirary keyword arguments to the rasterizer/shader via the renderer
+# We can pass arbitrary keyword arguments to the rasterizer/shader via the renderer
 # so the renderer does not need to be reinitialized if any of the settings change.
 images = renderer(meshes, cameras=cameras, lights=lights)
 

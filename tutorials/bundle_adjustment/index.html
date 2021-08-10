@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang=""><head><meta charSet="utf-8"/><meta http-equiv="X-UA-Compatible" content="IE=edge"/><title>PyTorch3D · A library for deep learning with 3D data</title><meta name="viewport" content="width=device-width"/><meta name="generator" content="Docusaurus"/><meta name="description" content="A library for deep learning with 3D data"/><meta property="og:title" content="PyTorch3D · A library for deep learning with 3D data"/><meta property="og:type" content="website"/><meta property="og:url" content="https://pytorch3d.org/"/><meta property="og:description" content="A library for deep learning with 3D data"/><meta property="og:image" content="https://pytorch3d.org/img/pytorch3dlogoicon.svg"/><meta name="twitter:card" content="summary"/><meta name="twitter:image" content="https://pytorch3d.org/img/pytorch3dlogoicon.svg"/><link rel="shortcut icon" href="/img/pytorch3dfavicon.png"/><link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css"/><script>
+<!DOCTYPE html><html lang=""><head><meta charSet="utf-8"/><meta http-equiv="X-UA-Compatible" content="IE=edge"/><title>PyTorch3D · A library for deep learning with 3D data</title><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="generator" content="Docusaurus"/><meta name="description" content="A library for deep learning with 3D data"/><meta property="og:title" content="PyTorch3D · A library for deep learning with 3D data"/><meta property="og:type" content="website"/><meta property="og:url" content="https://pytorch3d.org/"/><meta property="og:description" content="A library for deep learning with 3D data"/><meta property="og:image" content="https://pytorch3d.org/img/pytorch3dlogoicon.svg"/><meta name="twitter:card" content="summary"/><meta name="twitter:image" content="https://pytorch3d.org/img/pytorch3dlogoicon.svg"/><link rel="shortcut icon" href="/img/pytorch3dfavicon.png"/><link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css"/><script>
               (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
               (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
               m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
@@ -82,7 +82,8 @@
 </div>
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
+</div>
+<div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h1 id="Absolute-camera-orientation-given-set-of-relative-camera-pairs">Absolute camera orientation given set of relative camera pairs<a class="anchor-link" href="#Absolute-camera-orientation-given-set-of-relative-camera-pairs">¶</a></h1><p>This tutorial showcases the <code>cameras</code>, <code>transforms</code> and <code>so3</code> API.</p>
 <p>The problem we deal with is defined as follows:</p>
@@ -97,22 +98,24 @@ where $d(g_i, g_j)$ is a suitable metric that compares the extrinsics of cameras
 <img alt="Initialization" src="https://github.com/facebookresearch/pytorch3d/blob/master/docs/tutorials/data/bundle_adjustment_initialization.png?raw=1"/></p>
 <p>Our optimization seeks to align the estimated (orange) cameras with the ground truth (purple) cameras, by minimizing the discrepancies between pairs of relative cameras. Thus, the solution to the problem should look as follows:
 <img alt="Solution" src="https://github.com/facebookresearch/pytorch3d/blob/master/docs/tutorials/data/bundle_adjustment_final.png?raw=1"/></p>
-<p>In practice, the camera extrinsics $g_{ij}$ and $g_i$ are represented using objects from the <code>SfMPerspectiveCameras</code> class initialized with the corresponding rotation and translation matrices <code>R_absolute</code> and <code>T_absolute</code> that define the extrinsic parameters $g = (R, T); R \in SO(3); T \in \mathbb{R}^3$. In order to ensure that <code>R_absolute</code> is a valid rotation matrix, we represent it using an exponential map (implemented with <code>so3_exponential_map</code>) of the axis-angle representation of the rotation <code>log_R_absolute</code>.</p>
+<p>In practice, the camera extrinsics $g_{ij}$ and $g_i$ are represented using objects from the <code>SfMPerspectiveCameras</code> class initialized with the corresponding rotation and translation matrices <code>R_absolute</code> and <code>T_absolute</code> that define the extrinsic parameters $g = (R, T); R \in SO(3); T \in \mathbb{R}^3$. In order to ensure that <code>R_absolute</code> is a valid rotation matrix, we represent it using an exponential map (implemented with <code>so3_exp_map</code>) of the axis-angle representation of the rotation <code>log_R_absolute</code>.</p>
 <p>Note that the solution to this problem could only be recovered up to an unknown global rigid transformation $g_{glob} \in SE(3)$. Thus, for simplicity, we assume knowledge of the absolute extrinsics of the first camera $g_0$. We set $g_0$ as a trivial camera $g_0 = (I, \vec{0})$.</p>
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
+</div>
+<div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="0.-Install-and-Import-Modules">0. Install and Import Modules<a class="anchor-link" href="#0.-Install-and-Import-Modules">¶</a></h2>
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
+</div>
+<div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>If <code>torch</code>, <code>torchvision</code> and <code>pytorch3d</code> are not installed, run the following cell:</p>
+<p>Ensure <code>torch</code> and <code>torchvision</code> are installed. If <code>pytorch3d</code> is not installed, install it using the following cell:</p>
 </div>
 </div>
 </div>
@@ -121,19 +124,25 @@ where $d(g_i, g_j)$ is a suitable metric that compares the extrinsics of cameras
 <div class="prompt input_prompt">In [ ]:</div>
 <div class="inner_cell">
 <div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="o">!</span>pip install torch torchvision
-<span class="kn">import</span> <span class="nn">os</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">torch</span>
-<span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">__version__</span><span class="o">==</span><span class="s1">'1.6.0+cu101'</span> <span class="ow">and</span> <span class="n">sys</span><span class="o">.</span><span class="n">platform</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">'linux'</span><span class="p">):</span>
-    <span class="o">!</span>pip install pytorch3d
-<span class="k">else</span><span class="p">:</span>
-    <span class="n">need_pytorch3d</span><span class="o">=</span><span class="kc">False</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="kn">import</span> <span class="nn">pytorch3d</span>
-    <span class="k">except</span> <span class="n">ModuleNotFoundError</span><span class="p">:</span>
-        <span class="n">need_pytorch3d</span><span class="o">=</span><span class="kc">True</span>
-    <span class="k">if</span> <span class="n">need_pytorch3d</span><span class="p">:</span>
+<span class="n">need_pytorch3d</span><span class="o">=</span><span class="kc">False</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">pytorch3d</span>
+<span class="k">except</span> <span class="ne">ModuleNotFoundError</span><span class="p">:</span>
+    <span class="n">need_pytorch3d</span><span class="o">=</span><span class="kc">True</span>
+<span class="k">if</span> <span class="n">need_pytorch3d</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"1.9"</span><span class="p">)</span> <span class="ow">and</span> <span class="n">sys</span><span class="o">.</span><span class="n">platform</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"linux"</span><span class="p">):</span>
+        <span class="c1"># We try to install PyTorch3D via a released wheel.</span>
+        <span class="n">version_str</span><span class="o">=</span><span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">([</span>
+            <span class="sa">f</span><span class="s2">"py3</span><span class="si">{</span><span class="n">sys</span><span class="o">.</span><span class="n">version_info</span><span class="o">.</span><span class="n">minor</span><span class="si">}</span><span class="s2">_cu"</span><span class="p">,</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">version</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"."</span><span class="p">,</span><span class="s2">""</span><span class="p">),</span>
+            <span class="sa">f</span><span class="s2">"_pyt</span><span class="si">{</span><span class="n">torch</span><span class="o">.</span><span class="n">__version__</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">5</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span>
+        <span class="p">])</span>
+        <span class="o">!</span>pip install pytorch3d -f https://dl.fbaipublicfiles.com/pytorch3d/packaging/wheels/<span class="o">{</span>version_str<span class="o">}</span>/download.html
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># We try to install PyTorch3D from source.</span>
         <span class="o">!</span>curl -LO https://github.com/NVIDIA/cub/archive/1.10.0.tar.gz
         <span class="o">!</span>tar xzf <span class="m">1</span>.10.0.tar.gz
         <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">"CUB_HOME"</span><span class="p">]</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span> <span class="o">+</span> <span class="s2">"/cub-1.10.0"</span>
@@ -150,11 +159,11 @@ where $d(g_i, g_j)$ is a suitable metric that compares the extrinsics of cameras
 <div class="input_area">
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># imports</span>
 <span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">pytorch3d.transforms.so3</span> <span class="k">import</span> <span class="p">(</span>
-    <span class="n">so3_exponential_map</span><span class="p">,</span>
+<span class="kn">from</span> <span class="nn">pytorch3d.transforms.so3</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">so3_exp_map</span><span class="p">,</span>
     <span class="n">so3_relative_angle</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">pytorch3d.renderer.cameras</span> <span class="k">import</span> <span class="p">(</span>
+<span class="kn">from</span> <span class="nn">pytorch3d.renderer.cameras</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">SfMPerspectiveCameras</span><span class="p">,</span>
 <span class="p">)</span>
 
@@ -176,7 +185,8 @@ where $d(g_i, g_j)$ is a suitable metric that compares the extrinsics of cameras
 </div>
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
+</div>
+<div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <p>If using <strong>Google Colab</strong>, fetch the utils file for plotting the camera scene, and the ground truth camera positions:</p>
 </div>
@@ -188,7 +198,7 @@ where $d(g_i, g_j)$ is a suitable metric that compares the extrinsics of cameras
 <div class="inner_cell">
 <div class="input_area">
 <div class="highlight hl-ipython3"><pre><span></span><span class="o">!</span>wget https://raw.githubusercontent.com/facebookresearch/pytorch3d/master/docs/tutorials/utils/camera_visualization.py
-<span class="kn">from</span> <span class="nn">camera_visualization</span> <span class="k">import</span> <span class="n">plot_camera_scene</span>
+<span class="kn">from</span> <span class="nn">camera_visualization</span> <span class="kn">import</span> <span class="n">plot_camera_scene</span>
 
 <span class="o">!</span>mkdir data
 <span class="o">!</span>wget -P data https://raw.githubusercontent.com/facebookresearch/pytorch3d/master/docs/tutorials/data/camera_graph.pth
@@ -198,7 +208,8 @@ where $d(g_i, g_j)$ is a suitable metric that compares the extrinsics of cameras
 </div>
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
+</div>
+<div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <p>OR if running <strong>locally</strong> uncomment and run the following cell:</p>
 </div>
@@ -216,7 +227,8 @@ where $d(g_i, g_j)$ is a suitable metric that compares the extrinsics of cameras
 </div>
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
+</div>
+<div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="1.-Set-up-Cameras-and-load-ground-truth-positions">1. Set up Cameras and load ground truth positions<a class="anchor-link" href="#1.-Set-up-Cameras-and-load-ground-truth-positions">¶</a></h2>
 </div>
@@ -256,7 +268,8 @@ where $d(g_i, g_j)$ is a suitable metric that compares the extrinsics of cameras
 </div>
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
+</div>
+<div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="2.-Define-optimization-functions">2. Define optimization functions<a class="anchor-link" href="#2.-Define-optimization-functions">¶</a></h2><h3 id="Relative-cameras-and-camera-distance">Relative cameras and camera distance<a class="anchor-link" href="#Relative-cameras-and-camera-distance">¶</a></h3><p>We now define two functions crucial for the optimization.</p>
 <p><strong><code>calc_camera_distance</code></strong> compares a pair of cameras. This function is important as it defines the loss that we are minimizing. The method utilizes the <code>so3_relative_angle</code> function from the SO3 API.</p>
@@ -318,12 +331,13 @@ where $d(g_i, g_j)$ is a suitable metric that compares the extrinsics of cameras
 </div>
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
+</div>
+<div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="3.-Optimization">3. Optimization<a class="anchor-link" href="#3.-Optimization">¶</a></h2><p>Finally, we start the optimization of the absolute cameras.</p>
 <p>We use SGD with momentum and optimize over <code>log_R_absolute</code> and <code>T_absolute</code>.</p>
 <p>As mentioned earlier, <code>log_R_absolute</code> is the axis angle representation of the rotation part of our absolute cameras. We can obtain the 3x3 rotation matrix <code>R_absolute</code> that corresponds to <code>log_R_absolute</code> with:</p>
-<p><code>R_absolute = so3_exponential_map(log_R_absolute)</code></p>
+<p><code>R_absolute = so3_exp_map(log_R_absolute)</code></p>
 </div>
 </div>
 </div>
@@ -354,7 +368,7 @@ where $d(g_i, g_j)$ is a suitable metric that compares the extrinsics of cameras
 <span class="n">camera_mask</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
 
 <span class="c1"># init the optimizer</span>
-<span class="n">optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">SGD</span><span class="p">([</span><span class="n">log_R_absolute</span><span class="p">,</span> <span class="n">T_absolute</span><span class="p">],</span> <span class="n">lr</span><span class="o">=.</span><span class="mi">1</span><span class="p">,</span> <span class="n">momentum</span><span class="o">=</span><span class="mf">0.9</span><span class="p">)</span>
+<span class="n">optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">SGD</span><span class="p">([</span><span class="n">log_R_absolute</span><span class="p">,</span> <span class="n">T_absolute</span><span class="p">],</span> <span class="n">lr</span><span class="o">=</span><span class="mf">.1</span><span class="p">,</span> <span class="n">momentum</span><span class="o">=</span><span class="mf">0.9</span><span class="p">)</span>
 
 <span class="c1"># run the optimization</span>
 <span class="n">n_iter</span> <span class="o">=</span> <span class="mi">2000</span>  <span class="c1"># fix the number of iterations</span>
@@ -365,7 +379,7 @@ where $d(g_i, g_j)$ is a suitable metric that compares the extrinsics of cameras
     <span class="c1"># compute the absolute camera rotations as </span>
     <span class="c1"># an exponential map of the logarithms (=axis-angles)</span>
     <span class="c1"># of the absolute rotations</span>
-    <span class="n">R_absolute</span> <span class="o">=</span> <span class="n">so3_exponential_map</span><span class="p">(</span><span class="n">log_R_absolute</span> <span class="o">*</span> <span class="n">camera_mask</span><span class="p">)</span>
+    <span class="n">R_absolute</span> <span class="o">=</span> <span class="n">so3_exp_map</span><span class="p">(</span><span class="n">log_R_absolute</span> <span class="o">*</span> <span class="n">camera_mask</span><span class="p">)</span>
 
     <span class="c1"># get the current absolute cameras</span>
     <span class="n">cameras_absolute</span> <span class="o">=</span> <span class="n">SfMPerspectiveCameras</span><span class="p">(</span>
@@ -374,7 +388,7 @@ where $d(g_i, g_j)$ is a suitable metric that compares the extrinsics of cameras
         <span class="n">device</span> <span class="o">=</span> <span class="n">device</span><span class="p">,</span>
     <span class="p">)</span>
 
-    <span class="c1"># compute the relative cameras as a compositon of the absolute cameras</span>
+    <span class="c1"># compute the relative cameras as a composition of the absolute cameras</span>
     <span class="n">cameras_relative_composed</span> <span class="o">=</span> \
         <span class="n">get_relative_camera</span><span class="p">(</span><span class="n">cameras_absolute</span><span class="p">,</span> <span class="n">relative_edges</span><span class="p">)</span>
 
@@ -401,10 +415,11 @@ where $d(g_i, g_j)$ is a suitable metric that compares the extrinsics of cameras
 </div>
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
+</div>
+<div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="4.-Conclusion">4. Conclusion<a class="anchor-link" href="#4.-Conclusion">¶</a></h2><p>In this tutorial we learnt how to initialize a batch of SfM Cameras, set up loss functions for bundle adjustment, and run an optimization loop.</p>
 </div>
 </div>
 </div>
-</div></div></div></div></div><footer class="nav-footer" id="footer"><section class="sitemap"><div class="footerSection"><div class="social"><a class="github-button" href="https://github.com/facebookresearch/pytorch3d" data-count-href="https://github.com/facebookresearch/pytorch3d/stargazers" data-show-count="true" data-count-aria-label="# stargazers on GitHub" aria-label="Star PyTorch3D on GitHub">pytorch3d</a></div></div></section><a href="https://opensource.facebook.com/" target="_blank" rel="noreferrer noopener" class="fbOpenSource"><img src="/img/oss_logo.png" alt="Facebook Open Source" width="170" height="45"/></a><section class="copyright">Copyright © 2020 Facebook Inc<br/>Legal:<a href="https://opensource.facebook.com/legal/privacy/" target="_blank" rel="noreferrer noopener">Privacy</a><a href="https://opensource.facebook.com/legal/terms/" target="_blank" rel="noreferrer noopener">Terms</a></section></footer></div></body></html>
+</div></div></div></div></div><footer class="nav-footer" id="footer"><section class="sitemap"><div class="footerSection"><div class="social"><a class="github-button" href="https://github.com/facebookresearch/pytorch3d" data-count-href="https://github.com/facebookresearch/pytorch3d/stargazers" data-show-count="true" data-count-aria-label="# stargazers on GitHub" aria-label="Star PyTorch3D on GitHub">pytorch3d</a></div></div></section><a href="https://opensource.facebook.com/" target="_blank" rel="noreferrer noopener" class="fbOpenSource"><img src="/img/oss_logo.png" alt="Facebook Open Source" width="170" height="45"/></a><section class="copyright">Copyright © 2021 Facebook Inc<br/>Legal:<a href="https://opensource.facebook.com/legal/privacy/" target="_blank" rel="noreferrer noopener">Privacy</a><a href="https://opensource.facebook.com/legal/terms/" target="_blank" rel="noreferrer noopener">Terms</a></section></footer></div></body></html>

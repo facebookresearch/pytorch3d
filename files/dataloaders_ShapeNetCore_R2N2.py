@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+
 # coding: utf-8
 
 # In[ ]:
@@ -17,24 +17,30 @@
 
 # ## 0. Install and import modules
 
-# If `torch`, `torchvision` and `pytorch3d` are not installed, run the following cell:
+# Ensure `torch` and `torchvision` are installed. If `pytorch3d` is not installed, install it using the following cell:
 
 # In[ ]:
 
 
-get_ipython().system('pip install torch torchvision')
 import os
 import sys
 import torch
-if torch.__version__=='1.6.0+cu101' and sys.platform.startswith('linux'):
-    get_ipython().system('pip install pytorch3d')
-else:
-    need_pytorch3d=False
-    try:
-        import pytorch3d
-    except ModuleNotFoundError:
-        need_pytorch3d=True
-    if need_pytorch3d:
+need_pytorch3d=False
+try:
+    import pytorch3d
+except ModuleNotFoundError:
+    need_pytorch3d=True
+if need_pytorch3d:
+    if torch.__version__.startswith("1.9") and sys.platform.startswith("linux"):
+        # We try to install PyTorch3D via a released wheel.
+        version_str="".join([
+            f"py3{sys.version_info.minor}_cu",
+            torch.version.cuda.replace(".",""),
+            f"_pyt{torch.__version__[0:5:2]}"
+        ])
+        get_ipython().system('pip install pytorch3d -f https://dl.fbaipublicfiles.com/pytorch3d/packaging/wheels/{version_str}/download.html')
+    else:
+        # We try to install PyTorch3D from source.
         get_ipython().system('curl -LO https://github.com/NVIDIA/cub/archive/1.10.0.tar.gz')
         get_ipython().system('tar xzf 1.10.0.tar.gz')
         os.environ["CUB_HOME"] = os.getcwd() + "/cub-1.10.0"
@@ -120,7 +126,7 @@ SPLITS_PATH = "None"
 r2n2_dataset = R2N2("train", SHAPENET_PATH, R2N2_PATH, SPLITS_PATH, return_voxels=True)
 
 
-# We can retrieve a model by indexing into the loaded dataset. For both ShapeNetCore and R2N2, we can examine the category this model belongs to (in the form of a synset id, equivalend to wnid described in ImageNet's API: http://image-net.org/download-API), its model id, and its vertices and faces.
+# We can retrieve a model by indexing into the loaded dataset. For both ShapeNetCore and R2N2, we can examine the category this model belongs to (in the form of a synset id, equivalent to wnid described in ImageNet's API: http://image-net.org/download-API), its model id, and its vertices and faces.
 
 # In[ ]:
 
@@ -155,11 +161,11 @@ image_grid(r2n2_renderings.numpy(), rows=1, cols=2, rgb=True)
 
 # ## 2. Use the datasets with `torch.utils.data.DataLoader`
 
-# Training deep learning models, usually requires passing in batches of inputs. The `torch.utils.data.DataLoader` from Pytorch helps us do this. PyTorch3D provides a function `collate_batched_meshes` to group the input meshes into a single `Meshes` object which represents the batch. The `Meshes` datastructure can then be used directly by other PyTorch3D ops which might be part of the deep learning model (e.g. `graph_conv`).
+# Training deep learning models, usually requires passing in batches of inputs. The `torch.utils.data.DataLoader` from PyTorch helps us do this. PyTorch3D provides a function `collate_batched_meshes` to group the input meshes into a single `Meshes` object which represents the batch. The `Meshes` datastructure can then be used directly by other PyTorch3D ops which might be part of the deep learning model (e.g. `graph_conv`).
 # 
 # For R2N2, if all the models in the batch have the same number of views, the views, rotation matrices, translation matrices, intrinsic matrices and voxels will also be stacked into batched tensors.
 # 
-# **NOTE**: All models in the `val` split of R2N2 have 24 views, but there are 8 models that split their 24 views between `train` and `test` splits, in which case `collate_batched_meshes` will only be able to join the matrices, views and voxels as lists. However, this can be avoided by laoding only one view of each model by setting `return_all_views = False`.
+# **NOTE**: All models in the `val` split of R2N2 have 24 views, but there are 8 models that split their 24 views between `train` and `test` splits, in which case `collate_batched_meshes` will only be able to join the matrices, views and voxels as lists. However, this can be avoided by loading only one view of each model by setting `return_all_views = False`.
 
 # In[ ]:
 
@@ -180,7 +186,7 @@ batch_renderings = r2n2_batch["images"] # (N, V, H, W, 3), and in this case V is
 image_grid(batch_renderings.squeeze().numpy(), rows=3, cols=4, rgb=True)
 
 
-# ## 3. Render ShapeNetCore models with PyTorch3D's differntiable renderer
+# ## 3. Render ShapeNetCore models with PyTorch3D's differentiable renderer
 
 # Both `ShapeNetCore` and `R2N2` dataloaders have customized `render` functions that support rendering models by specifying their model ids, categories or indices using PyTorch3D's differentiable renderer implementation.
 
@@ -272,7 +278,7 @@ original_rendering = r2n2_dataset[6,[1,2]]["images"]
 image_grid(original_rendering.numpy(), rows=1, cols=2, rgb=True)
 
 
-# Next, we will visualize PyTorch3d's renderings:
+# Next, we will visualize PyTorch3D's renderings:
 
 # In[ ]:
 

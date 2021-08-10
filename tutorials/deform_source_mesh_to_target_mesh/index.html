@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang=""><head><meta charSet="utf-8"/><meta http-equiv="X-UA-Compatible" content="IE=edge"/><title>PyTorch3D · A library for deep learning with 3D data</title><meta name="viewport" content="width=device-width"/><meta name="generator" content="Docusaurus"/><meta name="description" content="A library for deep learning with 3D data"/><meta property="og:title" content="PyTorch3D · A library for deep learning with 3D data"/><meta property="og:type" content="website"/><meta property="og:url" content="https://pytorch3d.org/"/><meta property="og:description" content="A library for deep learning with 3D data"/><meta property="og:image" content="https://pytorch3d.org/img/pytorch3dlogoicon.svg"/><meta name="twitter:card" content="summary"/><meta name="twitter:image" content="https://pytorch3d.org/img/pytorch3dlogoicon.svg"/><link rel="shortcut icon" href="/img/pytorch3dfavicon.png"/><link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css"/><script>
+<!DOCTYPE html><html lang=""><head><meta charSet="utf-8"/><meta http-equiv="X-UA-Compatible" content="IE=edge"/><title>PyTorch3D · A library for deep learning with 3D data</title><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="generator" content="Docusaurus"/><meta name="description" content="A library for deep learning with 3D data"/><meta property="og:title" content="PyTorch3D · A library for deep learning with 3D data"/><meta property="og:type" content="website"/><meta property="og:url" content="https://pytorch3d.org/"/><meta property="og:description" content="A library for deep learning with 3D data"/><meta property="og:image" content="https://pytorch3d.org/img/pytorch3dlogoicon.svg"/><meta name="twitter:card" content="summary"/><meta name="twitter:image" content="https://pytorch3d.org/img/pytorch3dlogoicon.svg"/><link rel="shortcut icon" href="/img/pytorch3dfavicon.png"/><link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css"/><script>
               (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
               (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
               m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
@@ -82,14 +82,16 @@
 </div>
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
+</div>
+<div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h1 id="Deform-a-source-mesh-to-form-a-target-mesh-using-3D-loss-functions">Deform a source mesh to form a target mesh using 3D loss functions<a class="anchor-link" href="#Deform-a-source-mesh-to-form-a-target-mesh-using-3D-loss-functions">¶</a></h1>
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
+</div>
+<div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <p>In this tutorial, we learn to deform an initial generic shape (e.g. sphere) to fit a target shape.</p>
 <p>We will cover:</p>
@@ -115,16 +117,18 @@ the predicted mesh is closer to the target mesh at each optimization step. To ac
 </div>
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
+</div>
+<div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="0.-Install-and-Import-modules">0. Install and Import modules<a class="anchor-link" href="#0.-Install-and-Import-modules">¶</a></h2>
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
+</div>
+<div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>If <code>torch</code>, <code>torchvision</code> and <code>pytorch3d</code> are not installed, run the following cell:</p>
+<p>Ensure <code>torch</code> and <code>torchvision</code> are installed. If <code>pytorch3d</code> is not installed, install it using the following cell:</p>
 </div>
 </div>
 </div>
@@ -133,19 +137,25 @@ the predicted mesh is closer to the target mesh at each optimization step. To ac
 <div class="prompt input_prompt">In [ ]:</div>
 <div class="inner_cell">
 <div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="o">!</span>pip install torch torchvision
-<span class="kn">import</span> <span class="nn">os</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">torch</span>
-<span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">__version__</span><span class="o">==</span><span class="s1">'1.6.0+cu101'</span> <span class="ow">and</span> <span class="n">sys</span><span class="o">.</span><span class="n">platform</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">'linux'</span><span class="p">):</span>
-    <span class="o">!</span>pip install pytorch3d
-<span class="k">else</span><span class="p">:</span>
-    <span class="n">need_pytorch3d</span><span class="o">=</span><span class="kc">False</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="kn">import</span> <span class="nn">pytorch3d</span>
-    <span class="k">except</span> <span class="n">ModuleNotFoundError</span><span class="p">:</span>
-        <span class="n">need_pytorch3d</span><span class="o">=</span><span class="kc">True</span>
-    <span class="k">if</span> <span class="n">need_pytorch3d</span><span class="p">:</span>
+<span class="n">need_pytorch3d</span><span class="o">=</span><span class="kc">False</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">pytorch3d</span>
+<span class="k">except</span> <span class="ne">ModuleNotFoundError</span><span class="p">:</span>
+    <span class="n">need_pytorch3d</span><span class="o">=</span><span class="kc">True</span>
+<span class="k">if</span> <span class="n">need_pytorch3d</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"1.9"</span><span class="p">)</span> <span class="ow">and</span> <span class="n">sys</span><span class="o">.</span><span class="n">platform</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"linux"</span><span class="p">):</span>
+        <span class="c1"># We try to install PyTorch3D via a released wheel.</span>
+        <span class="n">version_str</span><span class="o">=</span><span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">([</span>
+            <span class="sa">f</span><span class="s2">"py3</span><span class="si">{</span><span class="n">sys</span><span class="o">.</span><span class="n">version_info</span><span class="o">.</span><span class="n">minor</span><span class="si">}</span><span class="s2">_cu"</span><span class="p">,</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">version</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"."</span><span class="p">,</span><span class="s2">""</span><span class="p">),</span>
+            <span class="sa">f</span><span class="s2">"_pyt</span><span class="si">{</span><span class="n">torch</span><span class="o">.</span><span class="n">__version__</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">5</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span>
+        <span class="p">])</span>
+        <span class="o">!</span>pip install pytorch3d -f https://dl.fbaipublicfiles.com/pytorch3d/packaging/wheels/<span class="o">{</span>version_str<span class="o">}</span>/download.html
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># We try to install PyTorch3D from source.</span>
         <span class="o">!</span>curl -LO https://github.com/NVIDIA/cub/archive/1.10.0.tar.gz
         <span class="o">!</span>tar xzf <span class="m">1</span>.10.0.tar.gz
         <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">"CUB_HOME"</span><span class="p">]</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span> <span class="o">+</span> <span class="s2">"/cub-1.10.0"</span>
@@ -162,20 +172,20 @@ the predicted mesh is closer to the target mesh at each optimization step. To ac
 <div class="input_area">
 <div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">pytorch3d.io</span> <span class="k">import</span> <span class="n">load_obj</span><span class="p">,</span> <span class="n">save_obj</span>
-<span class="kn">from</span> <span class="nn">pytorch3d.structures</span> <span class="k">import</span> <span class="n">Meshes</span>
-<span class="kn">from</span> <span class="nn">pytorch3d.utils</span> <span class="k">import</span> <span class="n">ico_sphere</span>
-<span class="kn">from</span> <span class="nn">pytorch3d.ops</span> <span class="k">import</span> <span class="n">sample_points_from_meshes</span>
-<span class="kn">from</span> <span class="nn">pytorch3d.loss</span> <span class="k">import</span> <span class="p">(</span>
+<span class="kn">from</span> <span class="nn">pytorch3d.io</span> <span class="kn">import</span> <span class="n">load_obj</span><span class="p">,</span> <span class="n">save_obj</span>
+<span class="kn">from</span> <span class="nn">pytorch3d.structures</span> <span class="kn">import</span> <span class="n">Meshes</span>
+<span class="kn">from</span> <span class="nn">pytorch3d.utils</span> <span class="kn">import</span> <span class="n">ico_sphere</span>
+<span class="kn">from</span> <span class="nn">pytorch3d.ops</span> <span class="kn">import</span> <span class="n">sample_points_from_meshes</span>
+<span class="kn">from</span> <span class="nn">pytorch3d.loss</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">chamfer_distance</span><span class="p">,</span> 
     <span class="n">mesh_edge_loss</span><span class="p">,</span> 
     <span class="n">mesh_laplacian_smoothing</span><span class="p">,</span> 
     <span class="n">mesh_normal_consistency</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">tqdm.notebook</span> <span class="k">import</span> <span class="n">tqdm</span>
+<span class="kn">from</span> <span class="nn">tqdm.notebook</span> <span class="kn">import</span> <span class="n">tqdm</span>
 <span class="o">%</span><span class="k">matplotlib</span> notebook 
-<span class="kn">from</span> <span class="nn">mpl_toolkits.mplot3d</span> <span class="k">import</span> <span class="n">Axes3D</span>
+<span class="kn">from</span> <span class="nn">mpl_toolkits.mplot3d</span> <span class="kn">import</span> <span class="n">Axes3D</span>
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 <span class="kn">import</span> <span class="nn">matplotlib</span> <span class="k">as</span> <span class="nn">mpl</span>
 <span class="n">mpl</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">'savefig.dpi'</span><span class="p">]</span> <span class="o">=</span> <span class="mi">80</span>
@@ -193,14 +203,16 @@ the predicted mesh is closer to the target mesh at each optimization step. To ac
 </div>
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
+</div>
+<div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="1.-Load-an-obj-file-and-create-a-Meshes-object">1. Load an obj file and create a Meshes object<a class="anchor-link" href="#1.-Load-an-obj-file-and-create-a-Meshes-object">¶</a></h2>
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
+</div>
+<div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <p>Download the target 3D model of a dolphin. It will be saved locally as a file called <code>dolphin.obj</code>.</p>
 </div>
@@ -271,7 +283,8 @@ the predicted mesh is closer to the target mesh at each optimization step. To ac
 </div>
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
+</div>
+<div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h3 id="Visualize-the-source-and-target-meshes">Visualize the source and target meshes<a class="anchor-link" href="#Visualize-the-source-and-target-meshes">¶</a></h3>
 </div>
@@ -314,7 +327,8 @@ the predicted mesh is closer to the target mesh at each optimization step. To ac
 </div>
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
+</div>
+<div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="3.-Optimization-loop">3. Optimization loop<a class="anchor-link" href="#3.-Optimization-loop">¶</a></h2>
 </div>
@@ -401,10 +415,10 @@ the predicted mesh is closer to the target mesh at each optimization step. To ac
     <span class="n">loop</span><span class="o">.</span><span class="n">set_description</span><span class="p">(</span><span class="s1">'total_loss = </span><span class="si">%.6f</span><span class="s1">'</span> <span class="o">%</span> <span class="n">loss</span><span class="p">)</span>
     
     <span class="c1"># Save the losses for plotting</span>
-    <span class="n">chamfer_losses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">loss_chamfer</span><span class="p">)</span>
-    <span class="n">edge_losses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">loss_edge</span><span class="p">)</span>
-    <span class="n">normal_losses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">loss_normal</span><span class="p">)</span>
-    <span class="n">laplacian_losses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">loss_laplacian</span><span class="p">)</span>
+    <span class="n">chamfer_losses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">loss_chamfer</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()))</span>
+    <span class="n">edge_losses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">loss_edge</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()))</span>
+    <span class="n">normal_losses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">loss_normal</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()))</span>
+    <span class="n">laplacian_losses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">loss_laplacian</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()))</span>
     
     <span class="c1"># Plot mesh</span>
     <span class="k">if</span> <span class="n">i</span> <span class="o">%</span> <span class="n">plot_period</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
@@ -419,7 +433,8 @@ the predicted mesh is closer to the target mesh at each optimization step. To ac
 </div>
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
+</div>
+<div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="4.-Visualize-the-loss">4. Visualize the loss<a class="anchor-link" href="#4.-Visualize-the-loss">¶</a></h2>
 </div>
@@ -446,7 +461,8 @@ the predicted mesh is closer to the target mesh at each optimization step. To ac
 </div>
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
+</div>
+<div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="5.-Save-the-predicted-mesh">5. Save the predicted mesh<a class="anchor-link" href="#5.-Save-the-predicted-mesh">¶</a></h2>
 </div>
@@ -472,10 +488,11 @@ the predicted mesh is closer to the target mesh at each optimization step. To ac
 </div>
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
+</div>
+<div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="6.-Conclusion">6. Conclusion<a class="anchor-link" href="#6.-Conclusion">¶</a></h2><p>In this tutorial we learnt how to load a mesh from an obj file, initialize a PyTorch3D datastructure called <strong>Meshes</strong>, set up an optimization loop and use four different PyTorch3D mesh loss functions.</p>
 </div>
 </div>
 </div>
-</div></div></div></div></div><footer class="nav-footer" id="footer"><section class="sitemap"><div class="footerSection"><div class="social"><a class="github-button" href="https://github.com/facebookresearch/pytorch3d" data-count-href="https://github.com/facebookresearch/pytorch3d/stargazers" data-show-count="true" data-count-aria-label="# stargazers on GitHub" aria-label="Star PyTorch3D on GitHub">pytorch3d</a></div></div></section><a href="https://opensource.facebook.com/" target="_blank" rel="noreferrer noopener" class="fbOpenSource"><img src="/img/oss_logo.png" alt="Facebook Open Source" width="170" height="45"/></a><section class="copyright">Copyright © 2020 Facebook Inc<br/>Legal:<a href="https://opensource.facebook.com/legal/privacy/" target="_blank" rel="noreferrer noopener">Privacy</a><a href="https://opensource.facebook.com/legal/terms/" target="_blank" rel="noreferrer noopener">Terms</a></section></footer></div></body></html>
+</div></div></div></div></div><footer class="nav-footer" id="footer"><section class="sitemap"><div class="footerSection"><div class="social"><a class="github-button" href="https://github.com/facebookresearch/pytorch3d" data-count-href="https://github.com/facebookresearch/pytorch3d/stargazers" data-show-count="true" data-count-aria-label="# stargazers on GitHub" aria-label="Star PyTorch3D on GitHub">pytorch3d</a></div></div></section><a href="https://opensource.facebook.com/" target="_blank" rel="noreferrer noopener" class="fbOpenSource"><img src="/img/oss_logo.png" alt="Facebook Open Source" width="170" height="45"/></a><section class="copyright">Copyright © 2021 Facebook Inc<br/>Legal:<a href="https://opensource.facebook.com/legal/privacy/" target="_blank" rel="noreferrer noopener">Privacy</a><a href="https://opensource.facebook.com/legal/terms/" target="_blank" rel="noreferrer noopener">Terms</a></section></footer></div></body></html>

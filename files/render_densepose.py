@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+
 # coding: utf-8
 
 # In[ ]:
@@ -20,24 +20,30 @@
 
 # ## Import modules
 
-# If torch, torchvision and PyTorch3D are not installed, run the following cell:
+# Ensure `torch` and `torchvision` are installed. If `pytorch3d` is not installed, install it using the following cell:
 
 # In[ ]:
 
 
-get_ipython().system('pip install torch torchvision')
 import os
 import sys
 import torch
-if torch.__version__=='1.6.0+cu101' and sys.platform.startswith('linux'):
-    get_ipython().system('pip install pytorch3d')
-else:
-    need_pytorch3d=False
-    try:
-        import pytorch3d
-    except ModuleNotFoundError:
-        need_pytorch3d=True
-    if need_pytorch3d:
+need_pytorch3d=False
+try:
+    import pytorch3d
+except ModuleNotFoundError:
+    need_pytorch3d=True
+if need_pytorch3d:
+    if torch.__version__.startswith("1.9") and sys.platform.startswith("linux"):
+        # We try to install PyTorch3D via a released wheel.
+        version_str="".join([
+            f"py3{sys.version_info.minor}_cu",
+            torch.version.cuda.replace(".",""),
+            f"_pyt{torch.__version__[0:5:2]}"
+        ])
+        get_ipython().system('pip install pytorch3d -f https://dl.fbaipublicfiles.com/pytorch3d/packaging/wheels/{version_str}/download.html')
+    else:
+        # We try to install PyTorch3D from source.
         get_ipython().system('curl -LO https://github.com/NVIDIA/cub/archive/1.10.0.tar.gz')
         get_ipython().system('tar xzf 1.10.0.tar.gz')
         os.environ["CUB_HOME"] = os.getcwd() + "/cub-1.10.0"
@@ -57,12 +63,11 @@ get_ipython().system('pip install chumpy')
 import os
 import torch
 import matplotlib.pyplot as plt
-from skimage.io import imread
 import numpy as np
 
 # libraries for reading data from files
 from scipy.io import loadmat
-from pytorch3d.io.utils import _read_image
+from PIL import Image
 import pickle
 
 # Data structures and functions for rendering
@@ -133,13 +138,15 @@ with open(verts_filename, 'rb') as f:
     data = pickle.load(f, encoding='latin1') 
     v_template = torch.Tensor(data['v_template']).to(device) # (6890, 3)
 ALP_UV = loadmat(data_filename)
-tex = torch.from_numpy(_read_image(file_name=tex_filename, format='RGB') / 255. ).unsqueeze(0).to(device)
+with Image.open(tex_filename) as image:
+    np_image = np.asarray(image.convert("RGB")).astype(np.float32)
+tex = torch.from_numpy(np_image / 255.)[None].to(device)
 
-verts = torch.from_numpy((ALP_UV["All_vertices"]).astype(int)).squeeze().to(device) # (7829, 1)
+verts = torch.from_numpy((ALP_UV["All_vertices"]).astype(int)).squeeze().to(device) # (7829,)
 U = torch.Tensor(ALP_UV['All_U_norm']).to(device) # (7829, 1)
 V = torch.Tensor(ALP_UV['All_V_norm']).to(device) # (7829, 1)
 faces = torch.from_numpy((ALP_UV['All_Faces'] - 1).astype(int)).to(device)  # (13774, 3)
-face_indices = torch.Tensor(ALP_UV['All_FaceIndices']).squeeze()
+face_indices = torch.Tensor(ALP_UV['All_FaceIndices']).squeeze()  # (13774,)
 
 
 # In[ ]:
@@ -148,7 +155,6 @@ face_indices = torch.Tensor(ALP_UV['All_FaceIndices']).squeeze()
 # Display the texture image
 plt.figure(figsize=(10, 10))
 plt.imshow(tex.squeeze(0).cpu())
-plt.grid("off");
 plt.axis("off");
 
 
@@ -166,6 +172,9 @@ for i, u in enumerate(np.linspace(0, 1, cols, endpoint=False)):
         part = rows * i + j + 1  # parts are 1-indexed in face_indices
         offset_per_part[part] = (u, v)
 
+U_norm = U.clone()
+V_norm = V.clone()
+
 # iterate over faces and offset the corresponding vertex u and v values
 for i in range(len(faces)):
     face_vert_idxs = faces[i]
@@ -176,15 +185,15 @@ for i in range(len(faces)):
         # vertices are reused, but we don't want to offset multiple times
         if vert_idx.item() not in already_offset:
             # offset u value
-            U[vert_idx] = U[vert_idx] / cols + offset_u
+            U_norm[vert_idx] = U[vert_idx] / cols + offset_u
             # offset v value
             # this also flips each part locally, as each part is upside down
-            V[vert_idx] = (1 - V[vert_idx]) / rows + offset_v
+            V_norm[vert_idx] = (1 - V[vert_idx]) / rows + offset_v
             # add vertex to our set tracking offsetted vertices
             already_offset.add(vert_idx.item())
 
 # invert V values
-U_norm, V_norm = U, 1 - V
+V_norm = 1 - V_norm
 
 
 # In[ ]:
@@ -198,23 +207,20 @@ verts_uv = torch.cat([U_norm[None],V_norm[None]], dim=2) # (1, 7829, 2)
 # Therefore when initializing the Meshes class,
 # we need to map each of the vertices referenced by the DensePose faces (in verts, which is the "All_vertices" field)
 # to the correct xyz coordinate in the SMPL template mesh.
-v_template_extended = torch.stack(list(map(lambda vert: v_template[vert-1], verts))).unsqueeze(0).to(device) # (1, 7829, 3)
-
-# add a batch dimension to faces
-faces = faces.unsqueeze(0)
+v_template_extended = v_template[verts-1][None] # (1, 7829, 3)
 
 
 # ### Create our textured mesh 
 # 
 # **Meshes** is a unique datastructure provided in PyTorch3D for working with batches of meshes of different sizes.
 # 
-# **TexturesUV** is an auxillary datastructure for storing vertex uv and texture maps for meshes.
+# **TexturesUV** is an auxiliary datastructure for storing vertex uv and texture maps for meshes.
 
 # In[ ]:
 
 
-texture = TexturesUV(maps=tex, faces_uvs=faces, verts_uvs=verts_uv)
-mesh = Meshes(v_template_extended, faces, texture)
+texture = TexturesUV(maps=tex, faces_uvs=faces[None], verts_uvs=verts_uv)
+mesh = Meshes(v_template_extended, faces[None], texture)
 
 
 # ## Create a renderer
@@ -239,7 +245,7 @@ raster_settings = RasterizationSettings(
 # Place a point light in front of the person. 
 lights = PointLights(device=device, location=[[0.0, 0.0, 2.0]])
 
-# Create a phong renderer by composing a rasterizer and a shader. The textured phong shader will 
+# Create a Phong renderer by composing a rasterizer and a shader. The textured Phong shader will 
 # interpolate the texture uv coordinates for each vertex, sample from a texture image and 
 # apply the Phong lighting model
 renderer = MeshRenderer(
@@ -263,7 +269,6 @@ renderer = MeshRenderer(
 images = renderer(mesh)
 plt.figure(figsize=(10, 10))
 plt.imshow(images[0, ..., :3].cpu().numpy())
-plt.grid("off");
 plt.axis("off");
 
 
@@ -293,7 +298,6 @@ images = renderer(mesh, lights=lights, cameras=cameras)
 
 plt.figure(figsize=(10, 10))
 plt.imshow(images[0, ..., :3].cpu().numpy())
-plt.grid("off");
 plt.axis("off");
 
 

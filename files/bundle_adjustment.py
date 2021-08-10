@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+
 # coding: utf-8
 
 # In[ ]:
@@ -28,31 +28,37 @@
 # Our optimization seeks to align the estimated (orange) cameras with the ground truth (purple) cameras, by minimizing the discrepancies between pairs of relative cameras. Thus, the solution to the problem should look as follows:
 # ![Solution](https://github.com/facebookresearch/pytorch3d/blob/master/docs/tutorials/data/bundle_adjustment_final.png?raw=1)
 # 
-# In practice, the camera extrinsics $g_{ij}$ and $g_i$ are represented using objects from the `SfMPerspectiveCameras` class initialized with the corresponding rotation and translation matrices `R_absolute` and `T_absolute` that define the extrinsic parameters $g = (R, T); R \in SO(3); T \in \mathbb{R}^3$. In order to ensure that `R_absolute` is a valid rotation matrix, we represent it using an exponential map (implemented with `so3_exponential_map`) of the axis-angle representation of the rotation `log_R_absolute`.
+# In practice, the camera extrinsics $g_{ij}$ and $g_i$ are represented using objects from the `SfMPerspectiveCameras` class initialized with the corresponding rotation and translation matrices `R_absolute` and `T_absolute` that define the extrinsic parameters $g = (R, T); R \in SO(3); T \in \mathbb{R}^3$. In order to ensure that `R_absolute` is a valid rotation matrix, we represent it using an exponential map (implemented with `so3_exp_map`) of the axis-angle representation of the rotation `log_R_absolute`.
 # 
 # Note that the solution to this problem could only be recovered up to an unknown global rigid transformation $g_{glob} \in SE(3)$. Thus, for simplicity, we assume knowledge of the absolute extrinsics of the first camera $g_0$. We set $g_0$ as a trivial camera $g_0 = (I, \vec{0})$.
 # 
 
 # ## 0. Install and Import Modules
 
-# If `torch`, `torchvision` and `pytorch3d` are not installed, run the following cell:
+# Ensure `torch` and `torchvision` are installed. If `pytorch3d` is not installed, install it using the following cell:
 
 # In[ ]:
 
 
-get_ipython().system('pip install torch torchvision')
 import os
 import sys
 import torch
-if torch.__version__=='1.6.0+cu101' and sys.platform.startswith('linux'):
-    get_ipython().system('pip install pytorch3d')
-else:
-    need_pytorch3d=False
-    try:
-        import pytorch3d
-    except ModuleNotFoundError:
-        need_pytorch3d=True
-    if need_pytorch3d:
+need_pytorch3d=False
+try:
+    import pytorch3d
+except ModuleNotFoundError:
+    need_pytorch3d=True
+if need_pytorch3d:
+    if torch.__version__.startswith("1.9") and sys.platform.startswith("linux"):
+        # We try to install PyTorch3D via a released wheel.
+        version_str="".join([
+            f"py3{sys.version_info.minor}_cu",
+            torch.version.cuda.replace(".",""),
+            f"_pyt{torch.__version__[0:5:2]}"
+        ])
+        get_ipython().system('pip install pytorch3d -f https://dl.fbaipublicfiles.com/pytorch3d/packaging/wheels/{version_str}/download.html')
+    else:
+        # We try to install PyTorch3D from source.
         get_ipython().system('curl -LO https://github.com/NVIDIA/cub/archive/1.10.0.tar.gz')
         get_ipython().system('tar xzf 1.10.0.tar.gz')
         os.environ["CUB_HOME"] = os.getcwd() + "/cub-1.10.0"
@@ -65,7 +71,7 @@ else:
 # imports
 import torch
 from pytorch3d.transforms.so3 import (
-    so3_exponential_map,
+    so3_exp_map,
     so3_relative_angle,
 )
 from pytorch3d.renderer.cameras import (
@@ -197,7 +203,7 @@ def get_relative_camera(cams, edges):
 # 
 # As mentioned earlier, `log_R_absolute` is the axis angle representation of the rotation part of our absolute cameras. We can obtain the 3x3 rotation matrix `R_absolute` that corresponds to `log_R_absolute` with:
 # 
-# `R_absolute = so3_exponential_map(log_R_absolute)`
+# `R_absolute = so3_exp_map(log_R_absolute)`
 # 
 
 # In[ ]:
@@ -236,7 +242,7 @@ for it in range(n_iter):
     # compute the absolute camera rotations as 
     # an exponential map of the logarithms (=axis-angles)
     # of the absolute rotations
-    R_absolute = so3_exponential_map(log_R_absolute * camera_mask)
+    R_absolute = so3_exp_map(log_R_absolute * camera_mask)
 
     # get the current absolute cameras
     cameras_absolute = SfMPerspectiveCameras(
@@ -245,7 +251,7 @@ for it in range(n_iter):
         device = device,
     )
 
-    # compute the relative cameras as a compositon of the absolute cameras
+    # compute the relative cameras as a composition of the absolute cameras
     cameras_relative_composed =         get_relative_camera(cameras_absolute, relative_edges)
 
     # compare the composed cameras with the ground truth relative cameras

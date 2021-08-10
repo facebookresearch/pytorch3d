@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+
 # coding: utf-8
 
 # In[ ]:
@@ -17,24 +17,30 @@
 
 # ## 0. Install and Import modules
 
-# If `torch`, `torchvision` and `pytorch3d` are not installed, run the following cell:
+# Ensure `torch` and `torchvision` are installed. If `pytorch3d` is not installed, install it using the following cell:
 
 # In[ ]:
 
 
-get_ipython().system('pip install torch torchvision')
 import os
 import sys
 import torch
-if torch.__version__=='1.6.0+cu101' and sys.platform.startswith('linux'):
-    get_ipython().system('pip install pytorch3d')
-else:
-    need_pytorch3d=False
-    try:
-        import pytorch3d
-    except ModuleNotFoundError:
-        need_pytorch3d=True
-    if need_pytorch3d:
+need_pytorch3d=False
+try:
+    import pytorch3d
+except ModuleNotFoundError:
+    need_pytorch3d=True
+if need_pytorch3d:
+    if torch.__version__.startswith("1.9") and sys.platform.startswith("linux"):
+        # We try to install PyTorch3D via a released wheel.
+        version_str="".join([
+            f"py3{sys.version_info.minor}_cu",
+            torch.version.cuda.replace(".",""),
+            f"_pyt{torch.__version__[0:5:2]}"
+        ])
+        get_ipython().system('pip install pytorch3d -f https://dl.fbaipublicfiles.com/pytorch3d/packaging/wheels/{version_str}/download.html')
+    else:
+        # We try to install PyTorch3D from source.
         get_ipython().system('curl -LO https://github.com/NVIDIA/cub/archive/1.10.0.tar.gz')
         get_ipython().system('tar xzf 1.10.0.tar.gz')
         os.environ["CUB_HOME"] = os.getcwd() + "/cub-1.10.0"
@@ -47,7 +53,6 @@ else:
 import os
 import torch
 import matplotlib.pyplot as plt
-from skimage.io import imread
 
 from pytorch3d.utils import ico_sphere
 import numpy as np
@@ -105,11 +110,11 @@ from plot_image_grid import image_grid
 
 # ### 1. Load a mesh and texture file
 # 
-# Load an `.obj` file and it's associated `.mtl` file and create a **Textures** and **Meshes** object. 
+# Load an `.obj` file and its associated `.mtl` file and create a **Textures** and **Meshes** object. 
 # 
 # **Meshes** is a unique datastructure provided in PyTorch3D for working with batches of meshes of different sizes. 
 # 
-# **TexturesVertex** is an auxillary datastructure for storing vertex rgb texture information about meshes. 
+# **TexturesVertex** is an auxiliary datastructure for storing vertex rgb texture information about meshes. 
 # 
 # **Meshes** has several class methods which are used throughout the rendering pipeline.
 
@@ -150,7 +155,7 @@ verts = mesh.verts_packed()
 N = verts.shape[0]
 center = verts.mean(0)
 scale = max((verts - center).abs().max(0)[0])
-mesh.offset_verts_(-center.expand(N, 3))
+mesh.offset_verts_(-center)
 mesh.scale_verts_((1.0 / float(scale)));
 
 
@@ -190,7 +195,7 @@ camera = OpenGLPerspectiveCameras(device=device, R=R[None, 1, ...],
 # purposes only we will set faces_per_pixel=1 and blur_radius=0.0. Refer to 
 # rasterize_meshes.py for explanations of these parameters.  We also leave 
 # bin_size and max_faces_per_bin to their default values of None, which sets 
-# their values using huristics and ensures that the faster coarse-to-fine 
+# their values using heuristics and ensures that the faster coarse-to-fine 
 # rasterization method is used.  Refer to docs/notes/renderer.md for an 
 # explanation of the difference between naive and coarse-to-fine rasterization. 
 raster_settings = RasterizationSettings(
@@ -199,8 +204,8 @@ raster_settings = RasterizationSettings(
     faces_per_pixel=1, 
 )
 
-# Create a phong renderer by composing a rasterizer and a shader. The textured 
-# phong shader will interpolate the texture uv coordinates for each vertex, 
+# Create a Phong renderer by composing a rasterizer and a shader. The textured 
+# Phong shader will interpolate the texture uv coordinates for each vertex, 
 # sample from a texture image and apply the Phong lighting model
 renderer = MeshRenderer(
     rasterizer=MeshRasterizer(
@@ -239,7 +244,7 @@ image_grid(target_images.cpu().numpy(), rows=4, cols=5, rgb=True)
 plt.show()
 
 
-# Later in this tutorial, we will fit a mesh to the rendered RGB images, as well as to just images of just the cow silhouette.  For the latter case, we will render a dataset of silhouette images.  Most shaders in PyTorch3D will output an alpha channel along with the RGB image as a 4th channel in an RGBA image.  The alpha channel encodes the probability that each pixel belongs to the foreground of the object.  We contruct a soft silhouette shader to render this alpha channel.
+# Later in this tutorial, we will fit a mesh to the rendered RGB images, as well as to just images of just the cow silhouette.  For the latter case, we will render a dataset of silhouette images.  Most shaders in PyTorch3D will output an alpha channel along with the RGB image as a 4th channel in an RGBA image.  The alpha channel encodes the probability that each pixel belongs to the foreground of the object.  We construct a soft silhouette shader to render this alpha channel.
 
 # In[ ]:
 
@@ -285,7 +290,8 @@ def visualize_prediction(predicted_mesh, renderer=renderer_silhouette,
                          target_image=target_rgb[1], title='', 
                          silhouette=False):
     inds = 3 if silhouette else range(3)
-    predicted_images = renderer(predicted_mesh)
+    with torch.no_grad():
+        predicted_images = renderer(predicted_mesh)
     plt.figure(figsize=(20, 10))
     plt.subplot(1, 2, 1)
     plt.imshow(predicted_images[0, ..., inds].cpu().detach().numpy())
@@ -293,7 +299,6 @@ def visualize_prediction(predicted_mesh, renderer=renderer_silhouette,
     plt.subplot(1, 2, 2)
     plt.imshow(target_image.cpu().detach().numpy())
     plt.title(title)
-    plt.grid("off")
     plt.axis("off")
 
 # Plot losses as a function of optimization iteration
@@ -385,7 +390,7 @@ deform_verts = torch.full(verts_shape, 0.0, device=device, requires_grad=True)
 optimizer = torch.optim.SGD([deform_verts], lr=1.0, momentum=0.9)
 
 
-# We write an optimization loop to iteratively refine our predicted mesh from the sphere mesh into a mesh that matches the sillhouettes of the target images:
+# We write an optimization loop to iteratively refine our predicted mesh from the sphere mesh into a mesh that matches the silhouettes of the target images:
 
 # In[ ]:
 
@@ -416,7 +421,8 @@ for i in loop:
     sum_loss = torch.tensor(0.0, device=device)
     for k, l in loss.items():
         sum_loss += l * losses[k]["weight"]
-        losses[k]["values"].append(l)
+        losses[k]["values"].append(float(l.detach().cpu()))
+
     
     # Print the losses
     loop.set_description("total_loss = %.6f" % sum_loss)
@@ -547,7 +553,7 @@ for i in loop:
     sum_loss = torch.tensor(0.0, device=device)
     for k, l in loss.items():
         sum_loss += l * losses[k]["weight"]
-        losses[k]["values"].append(l)
+        losses[k]["values"].append(float(l.detach().cpu()))
     
     # Print the losses
     loop.set_description("total_loss = %.6f" % sum_loss)

@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang=""><head><meta charSet="utf-8"/><meta http-equiv="X-UA-Compatible" content="IE=edge"/><title>PyTorch3D · A library for deep learning with 3D data</title><meta name="viewport" content="width=device-width"/><meta name="generator" content="Docusaurus"/><meta name="description" content="A library for deep learning with 3D data"/><meta property="og:title" content="PyTorch3D · A library for deep learning with 3D data"/><meta property="og:type" content="website"/><meta property="og:url" content="https://pytorch3d.org/"/><meta property="og:description" content="A library for deep learning with 3D data"/><meta property="og:image" content="https://pytorch3d.org/img/pytorch3dlogoicon.svg"/><meta name="twitter:card" content="summary"/><meta name="twitter:image" content="https://pytorch3d.org/img/pytorch3dlogoicon.svg"/><link rel="shortcut icon" href="/img/pytorch3dfavicon.png"/><link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css"/><script>
+<!DOCTYPE html><html lang=""><head><meta charSet="utf-8"/><meta http-equiv="X-UA-Compatible" content="IE=edge"/><title>PyTorch3D · A library for deep learning with 3D data</title><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="generator" content="Docusaurus"/><meta name="description" content="A library for deep learning with 3D data"/><meta property="og:title" content="PyTorch3D · A library for deep learning with 3D data"/><meta property="og:type" content="website"/><meta property="og:url" content="https://pytorch3d.org/"/><meta property="og:description" content="A library for deep learning with 3D data"/><meta property="og:image" content="https://pytorch3d.org/img/pytorch3dlogoicon.svg"/><meta name="twitter:card" content="summary"/><meta name="twitter:image" content="https://pytorch3d.org/img/pytorch3dlogoicon.svg"/><link rel="shortcut icon" href="/img/pytorch3dfavicon.png"/><link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css"/><script>
               (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
               (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
               m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
@@ -82,7 +82,8 @@
 </div>
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
+</div>
+<div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h1 id="Camera-position-optimization-using-differentiable-rendering">Camera position optimization using differentiable rendering<a class="anchor-link" href="#Camera-position-optimization-using-differentiable-rendering">¶</a></h1><p>In this tutorial we will learn the [x, y, z] position of a camera given a reference image using differentiable rendering.</p>
 <p>We will first initialize a renderer with a starting position for the camera. We will then use this to generate an image, compute a loss with the reference image, and finally backpropagate through the entire pipeline to update the position of the camera.</p>
@@ -97,16 +98,18 @@
 </div>
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
+</div>
+<div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="0.-Install-and-import-modules">0. Install and import modules<a class="anchor-link" href="#0.-Install-and-import-modules">¶</a></h2>
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
+</div>
+<div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>If <code>torch</code>, <code>torchvision</code> and <code>pytorch3d</code> are not installed, run the following cell:</p>
+<p>Ensure <code>torch</code> and <code>torchvision</code> are installed. If <code>pytorch3d</code> is not installed, install it using the following cell:</p>
 </div>
 </div>
 </div>
@@ -115,19 +118,25 @@
 <div class="prompt input_prompt">In [ ]:</div>
 <div class="inner_cell">
 <div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="o">!</span>pip install torch torchvision
-<span class="kn">import</span> <span class="nn">os</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">torch</span>
-<span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">__version__</span><span class="o">==</span><span class="s1">'1.6.0+cu101'</span> <span class="ow">and</span> <span class="n">sys</span><span class="o">.</span><span class="n">platform</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">'linux'</span><span class="p">):</span>
-    <span class="o">!</span>pip install pytorch3d
-<span class="k">else</span><span class="p">:</span>
-    <span class="n">need_pytorch3d</span><span class="o">=</span><span class="kc">False</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="kn">import</span> <span class="nn">pytorch3d</span>
-    <span class="k">except</span> <span class="n">ModuleNotFoundError</span><span class="p">:</span>
-        <span class="n">need_pytorch3d</span><span class="o">=</span><span class="kc">True</span>
-    <span class="k">if</span> <span class="n">need_pytorch3d</span><span class="p">:</span>
+<span class="n">need_pytorch3d</span><span class="o">=</span><span class="kc">False</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">pytorch3d</span>
+<span class="k">except</span> <span class="ne">ModuleNotFoundError</span><span class="p">:</span>
+    <span class="n">need_pytorch3d</span><span class="o">=</span><span class="kc">True</span>
+<span class="k">if</span> <span class="n">need_pytorch3d</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"1.9"</span><span class="p">)</span> <span class="ow">and</span> <span class="n">sys</span><span class="o">.</span><span class="n">platform</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"linux"</span><span class="p">):</span>
+        <span class="c1"># We try to install PyTorch3D via a released wheel.</span>
+        <span class="n">version_str</span><span class="o">=</span><span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">([</span>
+            <span class="sa">f</span><span class="s2">"py3</span><span class="si">{</span><span class="n">sys</span><span class="o">.</span><span class="n">version_info</span><span class="o">.</span><span class="n">minor</span><span class="si">}</span><span class="s2">_cu"</span><span class="p">,</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">version</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"."</span><span class="p">,</span><span class="s2">""</span><span class="p">),</span>
+            <span class="sa">f</span><span class="s2">"_pyt</span><span class="si">{</span><span class="n">torch</span><span class="o">.</span><span class="n">__version__</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">5</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span>
+        <span class="p">])</span>
+        <span class="o">!</span>pip install pytorch3d -f https://dl.fbaipublicfiles.com/pytorch3d/packaging/wheels/<span class="o">{</span>version_str<span class="o">}</span>/download.html
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># We try to install PyTorch3D from source.</span>
         <span class="o">!</span>curl -LO https://github.com/NVIDIA/cub/archive/1.10.0.tar.gz
         <span class="o">!</span>tar xzf <span class="m">1</span>.10.0.tar.gz
         <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">"CUB_HOME"</span><span class="p">]</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span> <span class="o">+</span> <span class="s2">"/cub-1.10.0"</span>
@@ -145,24 +154,24 @@
 <div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">tqdm.notebook</span> <span class="k">import</span> <span class="n">tqdm</span>
+<span class="kn">from</span> <span class="nn">tqdm.notebook</span> <span class="kn">import</span> <span class="n">tqdm</span>
 <span class="kn">import</span> <span class="nn">imageio</span>
 <span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
 <span class="kn">import</span> <span class="nn">torch.nn.functional</span> <span class="k">as</span> <span class="nn">F</span>
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-<span class="kn">from</span> <span class="nn">skimage</span> <span class="k">import</span> <span class="n">img_as_ubyte</span>
+<span class="kn">from</span> <span class="nn">skimage</span> <span class="kn">import</span> <span class="n">img_as_ubyte</span>
 
 <span class="c1"># io utils</span>
-<span class="kn">from</span> <span class="nn">pytorch3d.io</span> <span class="k">import</span> <span class="n">load_obj</span>
+<span class="kn">from</span> <span class="nn">pytorch3d.io</span> <span class="kn">import</span> <span class="n">load_obj</span>
 
 <span class="c1"># datastructures</span>
-<span class="kn">from</span> <span class="nn">pytorch3d.structures</span> <span class="k">import</span> <span class="n">Meshes</span>
+<span class="kn">from</span> <span class="nn">pytorch3d.structures</span> <span class="kn">import</span> <span class="n">Meshes</span>
 
 <span class="c1"># 3D transformations functions</span>
-<span class="kn">from</span> <span class="nn">pytorch3d.transforms</span> <span class="k">import</span> <span class="n">Rotate</span><span class="p">,</span> <span class="n">Translate</span>
+<span class="kn">from</span> <span class="nn">pytorch3d.transforms</span> <span class="kn">import</span> <span class="n">Rotate</span><span class="p">,</span> <span class="n">Translate</span>
 
 <span class="c1"># rendering components</span>
-<span class="kn">from</span> <span class="nn">pytorch3d.renderer</span> <span class="k">import</span> <span class="p">(</span>
+<span class="kn">from</span> <span class="nn">pytorch3d.renderer</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">FoVPerspectiveCameras</span><span class="p">,</span> <span class="n">look_at_view_transform</span><span class="p">,</span> <span class="n">look_at_rotation</span><span class="p">,</span> 
     <span class="n">RasterizationSettings</span><span class="p">,</span> <span class="n">MeshRenderer</span><span class="p">,</span> <span class="n">MeshRasterizer</span><span class="p">,</span> <span class="n">BlendParams</span><span class="p">,</span>
     <span class="n">SoftSilhouetteShader</span><span class="p">,</span> <span class="n">HardPhongShader</span><span class="p">,</span> <span class="n">PointLights</span><span class="p">,</span> <span class="n">TexturesVertex</span><span class="p">,</span>
@@ -173,14 +182,16 @@
 </div>
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
+</div>
+<div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="1.-Load-the-Obj">1. Load the Obj<a class="anchor-link" href="#1.-Load-the-Obj">¶</a></h2><p>We will load an obj file and create a <strong>Meshes</strong> object. <strong>Meshes</strong> is a unique datastructure provided in PyTorch3D for working with <strong>batches of meshes of different sizes</strong>. It has several useful class methods which are used in the rendering pipeline.</p>
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
+</div>
+<div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <p>If you are running this notebook locally after cloning the PyTorch3D repository, the mesh will already be available. <strong>If using Google Colab, fetch the mesh and save it at the path <code>data/</code></strong>:</p>
 </div>
@@ -230,17 +241,19 @@
 </div>
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
+</div>
+<div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="2.-Optimization-setup">2. Optimization setup<a class="anchor-link" href="#2.-Optimization-setup">¶</a></h2>
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
+</div>
+<div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h3 id="Create-a-renderer">Create a renderer<a class="anchor-link" href="#Create-a-renderer">¶</a></h3><p>A <strong>renderer</strong> in PyTorch3D is composed of a <strong>rasterizer</strong> and a <strong>shader</strong> which each have a number of subcomponents such as a <strong>camera</strong> (orthgraphic/perspective). Here we initialize some of these components and use default values for the rest.</p>
-<p>For optimizing the camera position we will use a renderer which produces a <strong>silhouette</strong> of the object only and does not apply any <strong>lighting</strong> or <strong>shading</strong>. We will also initialize another renderer which applies full <strong>phong shading</strong> and use this for visualizing the outputs.</p>
+<h3 id="Create-a-renderer">Create a renderer<a class="anchor-link" href="#Create-a-renderer">¶</a></h3><p>A <strong>renderer</strong> in PyTorch3D is composed of a <strong>rasterizer</strong> and a <strong>shader</strong> which each have a number of subcomponents such as a <strong>camera</strong> (orthographic/perspective). Here we initialize some of these components and use default values for the rest.</p>
+<p>For optimizing the camera position we will use a renderer which produces a <strong>silhouette</strong> of the object only and does not apply any <strong>lighting</strong> or <strong>shading</strong>. We will also initialize another renderer which applies full <strong>Phong shading</strong> and use this for visualizing the outputs.</p>
 </div>
 </div>
 </div>
@@ -277,7 +290,7 @@
 <span class="p">)</span>
 
 
-<span class="c1"># We will also create a phong renderer. This is simpler and only needs to render one face per pixel.</span>
+<span class="c1"># We will also create a Phong renderer. This is simpler and only needs to render one face per pixel.</span>
 <span class="n">raster_settings</span> <span class="o">=</span> <span class="n">RasterizationSettings</span><span class="p">(</span>
     <span class="n">image_size</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span> 
     <span class="n">blur_radius</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> 
@@ -298,7 +311,8 @@
 </div>
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
+</div>
+<div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h3 id="Create-a-reference-image">Create a reference image<a class="anchor-link" href="#Create-a-reference-image">¶</a></h3><p>We will first position the teapot and generate an image. We use helper functions to rotate the teapot to a desired viewpoint. Then we can use the renderers to produce an image. Here we will use both renderers and visualize the silhouette and full shaded image.</p>
 <p>The world coordinate system is defined as +Y up, +X left and +Z in. The teapot in world coordinates has the spout pointing to the left.</p>
@@ -320,15 +334,15 @@
 <span class="n">R</span><span class="p">,</span> <span class="n">T</span> <span class="o">=</span> <span class="n">look_at_view_transform</span><span class="p">(</span><span class="n">distance</span><span class="p">,</span> <span class="n">elevation</span><span class="p">,</span> <span class="n">azimuth</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
 
 <span class="c1"># Render the teapot providing the values of R and T. </span>
-<span class="n">silhouete</span> <span class="o">=</span> <span class="n">silhouette_renderer</span><span class="p">(</span><span class="n">meshes_world</span><span class="o">=</span><span class="n">teapot_mesh</span><span class="p">,</span> <span class="n">R</span><span class="o">=</span><span class="n">R</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="n">T</span><span class="p">)</span>
+<span class="n">silhouette</span> <span class="o">=</span> <span class="n">silhouette_renderer</span><span class="p">(</span><span class="n">meshes_world</span><span class="o">=</span><span class="n">teapot_mesh</span><span class="p">,</span> <span class="n">R</span><span class="o">=</span><span class="n">R</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="n">T</span><span class="p">)</span>
 <span class="n">image_ref</span> <span class="o">=</span> <span class="n">phong_renderer</span><span class="p">(</span><span class="n">meshes_world</span><span class="o">=</span><span class="n">teapot_mesh</span><span class="p">,</span> <span class="n">R</span><span class="o">=</span><span class="n">R</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="n">T</span><span class="p">)</span>
 
-<span class="n">silhouete</span> <span class="o">=</span> <span class="n">silhouete</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+<span class="n">silhouette</span> <span class="o">=</span> <span class="n">silhouette</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
 <span class="n">image_ref</span> <span class="o">=</span> <span class="n">image_ref</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
 
 <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">silhouete</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()[</span><span class="o">...</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>  <span class="c1"># only plot the alpha channel of the RGBA image</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">silhouette</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()[</span><span class="o">...</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>  <span class="c1"># only plot the alpha channel of the RGBA image</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">image_ref</span><span class="o">.</span><span class="n">squeeze</span><span class="p">())</span>
@@ -339,7 +353,8 @@
 </div>
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
+</div>
+<div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h3 id="Set-up-a-basic-model">Set up a basic model<a class="anchor-link" href="#Set-up-a-basic-model">¶</a></h3><p>Here we create a simple model class and initialize a parameter for the camera position.</p>
 </div>
@@ -351,7 +366,7 @@
 <div class="inner_cell">
 <div class="input_area">
 <div class="highlight hl-ipython3"><pre><span></span><span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">meshes</span><span class="p">,</span> <span class="n">renderer</span><span class="p">,</span> <span class="n">image_ref</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">meshes</span><span class="p">,</span> <span class="n">renderer</span><span class="p">,</span> <span class="n">image_ref</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">meshes</span> <span class="o">=</span> <span class="n">meshes</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">meshes</span><span class="o">.</span><span class="n">device</span>
@@ -368,7 +383,7 @@
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         
         <span class="c1"># Render the image using the updated camera position. Based on the new position of the </span>
-        <span class="c1"># camer we calculate the rotation and translation matrices</span>
+        <span class="c1"># camera we calculate the rotation and translation matrices</span>
         <span class="n">R</span> <span class="o">=</span> <span class="n">look_at_rotation</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">camera_position</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:],</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>  <span class="c1"># (1, 3, 3)</span>
         <span class="n">T</span> <span class="o">=</span> <span class="o">-</span><span class="n">torch</span><span class="o">.</span><span class="n">bmm</span><span class="p">(</span><span class="n">R</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">camera_position</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:,</span> <span class="kc">None</span><span class="p">])[:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span>   <span class="c1"># (1, 3)</span>
         
@@ -384,7 +399,8 @@
 </div>
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
+</div>
+<div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="3.-Initialize-the-model-and-optimizer">3. Initialize the model and optimizer<a class="anchor-link" href="#3.-Initialize-the-model-and-optimizer">¶</a></h2><p>Now we can create an instance of the <strong>model</strong> above and set up an <strong>optimizer</strong> for the camera position parameter.</p>
 </div>
@@ -410,7 +426,8 @@
 </div>
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
+</div>
+<div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h3 id="Visualize-the-starting-position-and-the-reference-position">Visualize the starting position and the reference position<a class="anchor-link" href="#Visualize-the-starting-position-and-the-reference-position">¶</a></h3>
 </div>
@@ -439,7 +456,8 @@
 </div>
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
+</div>
+<div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="4.-Run-the-optimization">4. Run the optimization<a class="anchor-link" href="#4.-Run-the-optimization">¶</a></h2><p>We run several iterations of the forward and backward pass and save outputs every 10 iterations. When this has finished take a look at <code>./teapot_optimization_demo.gif</code> for a cool gif of the optimization process!</p>
 </div>
@@ -474,7 +492,6 @@
         <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
         <span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">image</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="mi">3</span><span class="p">])</span>
         <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">"iter: </span><span class="si">%d</span><span class="s2">, loss: </span><span class="si">%0.2f</span><span class="s2">"</span> <span class="o">%</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">loss</span><span class="o">.</span><span class="n">data</span><span class="p">))</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="s2">"off"</span><span class="p">)</span>
         <span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">"off"</span><span class="p">)</span>
     
 <span class="n">writer</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
@@ -484,10 +501,11 @@
 </div>
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
+</div>
+<div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="5.-Conclusion">5. Conclusion<a class="anchor-link" href="#5.-Conclusion">¶</a></h2><p>In this tutorial we learnt how to <strong>load</strong> a mesh from an obj file, initialize a PyTorch3D datastructure called <strong>Meshes</strong>, set up an <strong>Renderer</strong> consisting of a <strong>Rasterizer</strong> and a <strong>Shader</strong>, set up an optimization loop including a <strong>Model</strong> and a <strong>loss function</strong>, and run  the optimization.</p>
 </div>
 </div>
 </div>
-</div></div></div></div></div><footer class="nav-footer" id="footer"><section class="sitemap"><div class="footerSection"><div class="social"><a class="github-button" href="https://github.com/facebookresearch/pytorch3d" data-count-href="https://github.com/facebookresearch/pytorch3d/stargazers" data-show-count="true" data-count-aria-label="# stargazers on GitHub" aria-label="Star PyTorch3D on GitHub">pytorch3d</a></div></div></section><a href="https://opensource.facebook.com/" target="_blank" rel="noreferrer noopener" class="fbOpenSource"><img src="/img/oss_logo.png" alt="Facebook Open Source" width="170" height="45"/></a><section class="copyright">Copyright © 2020 Facebook Inc<br/>Legal:<a href="https://opensource.facebook.com/legal/privacy/" target="_blank" rel="noreferrer noopener">Privacy</a><a href="https://opensource.facebook.com/legal/terms/" target="_blank" rel="noreferrer noopener">Terms</a></section></footer></div></body></html>
+</div></div></div></div></div><footer class="nav-footer" id="footer"><section class="sitemap"><div class="footerSection"><div class="social"><a class="github-button" href="https://github.com/facebookresearch/pytorch3d" data-count-href="https://github.com/facebookresearch/pytorch3d/stargazers" data-show-count="true" data-count-aria-label="# stargazers on GitHub" aria-label="Star PyTorch3D on GitHub">pytorch3d</a></div></div></section><a href="https://opensource.facebook.com/" target="_blank" rel="noreferrer noopener" class="fbOpenSource"><img src="/img/oss_logo.png" alt="Facebook Open Source" width="170" height="45"/></a><section class="copyright">Copyright © 2021 Facebook Inc<br/>Legal:<a href="https://opensource.facebook.com/legal/privacy/" target="_blank" rel="noreferrer noopener">Privacy</a><a href="https://opensource.facebook.com/legal/terms/" target="_blank" rel="noreferrer noopener">Terms</a></section></footer></div></body></html>

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+
 # coding: utf-8
 
 # In[ ]:
@@ -16,24 +16,30 @@
 
 # ## Import modules
 
-# If `torch`, `torchvision` and `pytorch3d` are not installed, run the following cell:
+# Ensure `torch` and `torchvision` are installed. If `pytorch3d` is not installed, install it using the following cell:
 
 # In[ ]:
 
 
-get_ipython().system('pip install torch torchvision')
 import os
 import sys
 import torch
-if torch.__version__=='1.6.0+cu101' and sys.platform.startswith('linux'):
-    get_ipython().system('pip install pytorch3d')
-else:
-    need_pytorch3d=False
-    try:
-        import pytorch3d
-    except ModuleNotFoundError:
-        need_pytorch3d=True
-    if need_pytorch3d:
+need_pytorch3d=False
+try:
+    import pytorch3d
+except ModuleNotFoundError:
+    need_pytorch3d=True
+if need_pytorch3d:
+    if torch.__version__.startswith("1.9") and sys.platform.startswith("linux"):
+        # We try to install PyTorch3D via a released wheel.
+        version_str="".join([
+            f"py3{sys.version_info.minor}_cu",
+            torch.version.cuda.replace(".",""),
+            f"_pyt{torch.__version__[0:5:2]}"
+        ])
+        get_ipython().system('pip install pytorch3d -f https://dl.fbaipublicfiles.com/pytorch3d/packaging/wheels/{version_str}/download.html')
+    else:
+        # We try to install PyTorch3D from source.
         get_ipython().system('curl -LO https://github.com/NVIDIA/cub/archive/1.10.0.tar.gz')
         get_ipython().system('tar xzf 1.10.0.tar.gz')
         os.environ["CUB_HOME"] = os.getcwd() + "/cub-1.10.0"
@@ -47,7 +53,6 @@ import os
 import torch
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
-from skimage.io import imread
 
 # Util function for loading point clouds|
 import numpy as np
@@ -108,7 +113,7 @@ point_cloud = Pointclouds(points=[verts], features=[rgb])
 
 # ## Create a renderer
 # 
-# A renderer in PyTorch3D is composed of a **rasterizer** and a **shader** which each have a number of subcomponents such as a **camera** (orthgraphic/perspective). Here we initialize some of these components and use default values for the rest.
+# A renderer in PyTorch3D is composed of a **rasterizer** and a **shader** which each have a number of subcomponents such as a **camera** (orthographic/perspective). Here we initialize some of these components and use default values for the rest.
 # 
 # In this example we will first create a **renderer** which uses an **orthographic camera**, and applies **alpha compositing**. Then we learn how to vary different components using the modular API.  
 # 
@@ -146,7 +151,6 @@ renderer = PointsRenderer(
 images = renderer(point_cloud)
 plt.figure(figsize=(10, 10))
 plt.imshow(images[0, ..., :3].cpu().numpy())
-plt.grid("off")
 plt.axis("off");
 
 
@@ -165,7 +169,6 @@ images = renderer(point_cloud)
 
 plt.figure(figsize=(10, 10))
 plt.imshow(images[0, ..., :3].cpu().numpy())
-plt.grid("off")
 plt.axis("off");
 
 
@@ -202,7 +205,6 @@ renderer = PointsRenderer(
 images = renderer(point_cloud)
 plt.figure(figsize=(10, 10))
 plt.imshow(images[0, ..., :3].cpu().numpy())
-plt.grid("off")
 plt.axis("off");
 
 
@@ -220,7 +222,6 @@ renderer = PointsRenderer(
 images = renderer(point_cloud)
 plt.figure(figsize=(10, 10))
 plt.imshow(images[0, ..., :3].cpu().numpy())
-plt.grid("off")
 plt.axis("off");
 
 
@@ -245,7 +246,6 @@ images = renderer(point_cloud, gamma=(1e-4,),
                   bg_col=torch.tensor([0.0, 1.0, 0.0, 1.0], dtype=torch.float32, device=device))
 plt.figure(figsize=(10, 10))
 plt.imshow(images[0, ..., :3].cpu().numpy())
-plt.grid("off")
 plt.axis("off");
 
 
