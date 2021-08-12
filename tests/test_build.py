@@ -74,3 +74,35 @@ class TestBuild(unittest.TestCase):
         for tutorial in tutorials:
             with open(tutorial) as f:
                 json.load(f)
+
+    @unittest.skipIf(in_conda_build or in_re_worker, "In conda build, or RE worker")
+    def test_enumerated_ipynbs(self):
+        # Check that the tutorials are all referenced in tutorials.json.
+        root_dir = get_pytorch3d_dir()
+        tutorials_dir = root_dir / "docs" / "tutorials"
+        tutorials_on_disk = sorted(i.stem for i in tutorials_dir.glob("*.ipynb"))
+
+        json_file = root_dir / "website" / "tutorials.json"
+        with open(json_file) as f:
+            cfg_dict = json.load(f)
+        listed_in_json = []
+        for section in cfg_dict.values():
+            listed_in_json.extend(item["id"] for item in section)
+
+        self.assertListEqual(sorted(listed_in_json), tutorials_on_disk)
+
+    @unittest.skipIf(in_conda_build or in_re_worker, "In conda build, or RE worker")
+    def test_enumerated_notes(self):
+        # Check that the notes are all referenced in sidebars.json.
+        root_dir = get_pytorch3d_dir()
+        notes_dir = root_dir / "docs" / "notes"
+        notes_on_disk = sorted(i.stem for i in notes_dir.glob("*.md"))
+
+        json_file = root_dir / "website" / "sidebars.json"
+        with open(json_file) as f:
+            cfg_dict = json.load(f)
+        listed_in_json = []
+        for section in cfg_dict["docs"].values():
+            listed_in_json.extend(section)
+
+        self.assertListEqual(sorted(listed_in_json), notes_on_disk)
