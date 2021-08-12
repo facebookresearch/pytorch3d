@@ -12,6 +12,7 @@
 // clang-format on
 #include "./pulsar/pytorch/renderer.h"
 #include "./pulsar/pytorch/tensor_util.h"
+#include "ball_query/ball_query.h"
 #include "blending/sigmoid_alpha_blend.h"
 #include "compositing/alpha_composite.h"
 #include "compositing/norm_weighted_sum.h"
@@ -38,6 +39,9 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
 #endif
   m.def("knn_points_idx", &KNearestNeighborIdx);
   m.def("knn_points_backward", &KNearestNeighborBackward);
+
+  // Ball Query
+  m.def("ball_query", &BallQuery);
   m.def(
       "mesh_normal_consistency_find_verts", &MeshNormalConsistencyFindVertices);
   m.def("gather_scatter", &GatherScatter);

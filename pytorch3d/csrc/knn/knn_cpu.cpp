@@ -99,6 +99,10 @@ std::tuple<at::Tensor, at::Tensor> KNearestNeighborBackwardCpu(
     for (int64_t i1 = 0; i1 < length1; ++i1) {
       for (int64_t k = 0; k < length2; ++k) {
         const int64_t i2 = idxs_a[n][i1][k];
+        // If the index is the pad value of -1 then ignore it
+        if (i2 == -1) {
+          continue;
+        }
         for (int64_t d = 0; d < D; ++d) {
           const float diff =
               2.0f * grad_dists_a[n][i1][k] * (p1_a[n][i1][d] - p2_a[n][i2][d]);

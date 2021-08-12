@@ -477,6 +477,10 @@ __global__ void KNearestNeighborBackwardKernel(
       const float grad_dist = grad_dists[n * P1 * K + p1_idx * K + k];
       // index of point in p2 corresponding to the k-th nearest neighbor
       const size_t p2_idx = idxs[n * P1 * K + p1_idx * K + k];
+      // If the index is the pad value of -1 then ignore it
+      if (p2_idx == -1) {
+        continue;
+      }
       const float diff = 2.0 * grad_dist *
           (p1[n * P1 * D + p1_idx * D + d] - p2[n * P2 * D + p2_idx * D + d]);
       atomicAdd(grad_p1 + n * P1 * D + p1_idx * D + d, diff);

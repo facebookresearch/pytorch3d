@@ -4,6 +4,7 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+from .ball_query import ball_query
 from .cameras_alignment import corresponding_cameras_alignment
 from .cubify import cubify
 from .graph_conv import GraphConv
@@ -33,6 +34,5 @@ from .utils import (
     wmean,
 )
 from .vert_align import vert_align
-
 
 __all__ = [k for k in globals().keys() if not k.startswith("_")]
