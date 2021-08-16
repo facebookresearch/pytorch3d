@@ -1,4 +1,4 @@
-<img src="https://raw.githubusercontent.com/facebookresearch/pytorch3d/master/.github/pytorch3dlogo.png" width="900"/>
+<img src="https://raw.githubusercontent.com/facebookresearch/pytorch3d/main/.github/pytorch3dlogo.png" width="900"/>
 
 [![CircleCI](https://circleci.com/gh/facebookresearch/pytorch3d.svg?style=svg)](https://circleci.com/gh/facebookresearch/pytorch3d)
 [![Anaconda-Server Badge](https://anaconda.org/pytorch3d/pytorch3d/badges/version.svg)](https://anaconda.org/pytorch3d/pytorch3d)
@@ -35,25 +35,25 @@ PyTorch3D is released under the [BSD License](LICENSE).
 
 Get started with PyTorch3D by trying one of the tutorial notebooks.
 
-|<img src="https://raw.githubusercontent.com/facebookresearch/pytorch3d/master/.github/dolphin_deform.gif" width="310"/>|<img src="https://raw.githubusercontent.com/facebookresearch/pytorch3d/master/.github/bundle_adjust.gif" width="310"/>|
+|<img src="https://raw.githubusercontent.com/facebookresearch/pytorch3d/main/.github/dolphin_deform.gif" width="310"/>|<img src="https://raw.githubusercontent.com/facebookresearch/pytorch3d/main/.github/bundle_adjust.gif" width="310"/>|
 |:-----------------------------------------------------------------------------------------------------------:|:--------------------------------------------------:|
-| [Deform a sphere mesh to dolphin](https://github.com/facebookresearch/pytorch3d/blob/master/docs/tutorials/deform_source_mesh_to_target_mesh.ipynb)| [Bundle adjustment](https://github.com/facebookresearch/pytorch3d/blob/master/docs/tutorials/bundle_adjustment.ipynb) |
+| [Deform a sphere mesh to dolphin](https://github.com/facebookresearch/pytorch3d/blob/main/docs/tutorials/deform_source_mesh_to_target_mesh.ipynb)| [Bundle adjustment](https://github.com/facebookresearch/pytorch3d/blob/main/docs/tutorials/bundle_adjustment.ipynb) |
 
-| <img src="https://raw.githubusercontent.com/facebookresearch/pytorch3d/master/.github/render_textured_mesh.gif" width="310"/> | <img src="https://raw.githubusercontent.com/facebookresearch/pytorch3d/master/.github/camera_position_teapot.gif" width="310" height="310"/>
+| <img src="https://raw.githubusercontent.com/facebookresearch/pytorch3d/main/.github/render_textured_mesh.gif" width="310"/> | <img src="https://raw.githubusercontent.com/facebookresearch/pytorch3d/main/.github/camera_position_teapot.gif" width="310" height="310"/>
 |:------------------------------------------------------------:|:--------------------------------------------------:|
-| [Render textured meshes](https://github.com/facebookresearch/pytorch3d/blob/master/docs/tutorials/render_textured_meshes.ipynb)| [Camera position optimization](https://github.com/facebookresearch/pytorch3d/blob/master/docs/tutorials/camera_position_optimization_with_differentiable_rendering.ipynb)|
+| [Render textured meshes](https://github.com/facebookresearch/pytorch3d/blob/main/docs/tutorials/render_textured_meshes.ipynb)| [Camera position optimization](https://github.com/facebookresearch/pytorch3d/blob/main/docs/tutorials/camera_position_optimization_with_differentiable_rendering.ipynb)|
 
-| <img src="https://raw.githubusercontent.com/facebookresearch/pytorch3d/master/.github/pointcloud_render.png" width="310"/> | <img src="https://raw.githubusercontent.com/facebookresearch/pytorch3d/master/.github/cow_deform.gif" width="310" height="310"/>
+| <img src="https://raw.githubusercontent.com/facebookresearch/pytorch3d/main/.github/pointcloud_render.png" width="310"/> | <img src="https://raw.githubusercontent.com/facebookresearch/pytorch3d/main/.github/cow_deform.gif" width="310" height="310"/>
 |:------------------------------------------------------------:|:--------------------------------------------------:|
-| [Render textured pointclouds](https://github.com/facebookresearch/pytorch3d/blob/master/docs/tutorials/render_colored_points.ipynb)| [Fit a mesh with texture](https://github.com/facebookresearch/pytorch3d/blob/master/docs/tutorials/fit_textured_mesh.ipynb)|
+| [Render textured pointclouds](https://github.com/facebookresearch/pytorch3d/blob/main/docs/tutorials/render_colored_points.ipynb)| [Fit a mesh with texture](https://github.com/facebookresearch/pytorch3d/blob/main/docs/tutorials/fit_textured_mesh.ipynb)|
 
-| <img src="https://raw.githubusercontent.com/facebookresearch/pytorch3d/master/.github/densepose_render.png" width="310"/> | <img src="https://raw.githubusercontent.com/facebookresearch/pytorch3d/master/.github/shapenet_render.png" width="310" height="310"/>
+| <img src="https://raw.githubusercontent.com/facebookresearch/pytorch3d/main/.github/densepose_render.png" width="310"/> | <img src="https://raw.githubusercontent.com/facebookresearch/pytorch3d/main/.github/shapenet_render.png" width="310" height="310"/>
 |:------------------------------------------------------------:|:--------------------------------------------------:|
-| [Render DensePose data](https://github.com/facebookresearch/pytorch3d/blob/master/docs/tutorials/render_densepose.ipynb)| [Load & Render ShapeNet data](https://github.com/facebookresearch/pytorch3d/blob/master/docs/tutorials/dataloaders_ShapeNetCore_R2N2.ipynb)|
+| [Render DensePose data](https://github.com/facebookresearch/pytorch3d/blob/main/docs/tutorials/render_densepose.ipynb)| [Load & Render ShapeNet data](https://github.com/facebookresearch/pytorch3d/blob/main/docs/tutorials/dataloaders_ShapeNetCore_R2N2.ipynb)|
 
-| <img src="https://raw.githubusercontent.com/facebookresearch/pytorch3d/master/.github/fit_textured_volume.gif" width="310"/> | <img src="https://raw.githubusercontent.com/facebookresearch/pytorch3d/master/.github/fit_nerf.gif" width="310" height="310"/>
+| <img src="https://raw.githubusercontent.com/facebookresearch/pytorch3d/main/.github/fit_textured_volume.gif" width="310"/> | <img src="https://raw.githubusercontent.com/facebookresearch/pytorch3d/main/.github/fit_nerf.gif" width="310" height="310"/>
 |:------------------------------------------------------------:|:--------------------------------------------------:|
-| [Fit Textured Volume](https://github.com/facebookresearch/pytorch3d/blob/master/docs/tutorials/fit_textured_volume.ipynb)| [Fit A Simple Neural Radiance Field](https://github.com/facebookresearch/pytorch3d/blob/master/docs/tutorials/fit_simple_neural_radiance_field.ipynb)|
+| [Fit Textured Volume](https://github.com/facebookresearch/pytorch3d/blob/main/docs/tutorials/fit_textured_volume.ipynb)| [Fit A Simple Neural Radiance Field](https://github.com/facebookresearch/pytorch3d/blob/main/docs/tutorials/fit_simple_neural_radiance_field.ipynb)|
 
 
 
@@ -64,9 +64,9 @@ Learn more about the API by reading the PyTorch3D [documentation](https://pytorc
 
 We also have deep dive notes on several API components:
 
-- [Heterogeneous Batching](https://github.com/facebookresearch/pytorch3d/tree/master/docs/notes/batching.md)
-- [Mesh IO](https://github.com/facebookresearch/pytorch3d/tree/master/docs/notes/meshes_io.md)
-- [Differentiable Rendering](https://github.com/facebookresearch/pytorch3d/tree/master/docs/notes/renderer_getting_started.md)
+- [Heterogeneous Batching](https://github.com/facebookresearch/pytorch3d/tree/main/docs/notes/batching.md)
+- [Mesh IO](https://github.com/facebookresearch/pytorch3d/tree/main/docs/notes/meshes_io.md)
+- [Differentiable Rendering](https://github.com/facebookresearch/pytorch3d/tree/main/docs/notes/renderer_getting_started.md)
 
 ### Overview Video
 
@@ -129,7 +129,7 @@ If you are using the pulsar backend for sphere-rendering (the `PulsarPointRender
 
 Please see below for a timeline of the codebase updates in reverse chronological order. We are sharing updates on the releases as well as research projects which are built with PyTorch3D. The changelogs for the releases are available under [`Releases`](https://github.com/facebookresearch/pytorch3d/releases),  and the builds can be installed using `conda` as per the instructions in [INSTALL.md](INSTALL.md).
 
-**[Feb 9th 2021]:** PyTorch3D [v0.4.0](https://github.com/facebookresearch/pytorch3d/releases/tag/v0.4.0) released with support for implicit functions, volume rendering and a [reimplementation of NeRF](https://github.com/facebookresearch/pytorch3d/tree/master/projects/nerf).
+**[Feb 9th 2021]:** PyTorch3D [v0.4.0](https://github.com/facebookresearch/pytorch3d/releases/tag/v0.4.0) released with support for implicit functions, volume rendering and a [reimplementation of NeRF](https://github.com/facebookresearch/pytorch3d/tree/main/projects/nerf).
 
 **[November 2nd 2020]:** PyTorch3D [v0.3.0](https://github.com/facebookresearch/pytorch3d/releases/tag/v0.3.0) released, integrating the pulsar backend.
 

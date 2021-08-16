@@ -159,7 +159,7 @@ html_theme_options = {"collapse_navigation": True}
 def url_resolver(url):
     if ".html" not in url:
         url = url.replace("../", "")
-        return "https://github.com/facebookresearch/pytorch3d/blob/master/" + url
+        return "https://github.com/facebookresearch/pytorch3d/blob/main/" + url
     else:
         if DEPLOY:
             return "http://pytorch3d.readthedocs.io/" + url
