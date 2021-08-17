@@ -26,6 +26,7 @@
 #include "point_mesh/point_mesh_cuda.h"
 #include "rasterize_meshes/rasterize_meshes.h"
 #include "rasterize_points/rasterize_points.h"
+#include "sample_pdf/sample_pdf.h"
 
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
   m.def("face_areas_normals_forward", &FaceAreasNormalsForward);
@@ -82,6 +83,9 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
   m.def("face_point_dist_backward", &FacePointDistanceBackward);
   m.def("point_face_array_dist_forward", &PointFaceArrayDistanceForward);
   m.def("point_face_array_dist_backward", &PointFaceArrayDistanceBackward);
+
+  // Sample PDF
+  m.def("sample_pdf", &SamplePdf);
 
   // Pulsar.
 #ifdef PULSAR_LOGGING_ENABLED
