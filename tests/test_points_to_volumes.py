@@ -30,8 +30,8 @@ def init_cube_point_cloud(
     batch_size: int = 10, n_points: int = 100000, rotate_y: bool = True
 ):
     """
-    Generate a random point cloud of `n_points` whose points of
-    which are sampled from faces of a 3D cube.
+    Generate a random point cloud of `n_points` whose points
+    are sampled from faces of a 3D cube.
     """
 
     # create the cube mesh batch_size times
