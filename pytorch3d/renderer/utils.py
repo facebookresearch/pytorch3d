@@ -95,7 +95,11 @@ class TensorProperties(nn.Module):
     """
 
     def __init__(
-        self, dtype: torch.dtype = torch.float32, device: Device = "cpu", **kwargs
+        self,
+        # pyre-fixme[9]: dtype has type `dtype`; used as `Type[torch.float32]`.
+        dtype: torch.dtype = torch.float32,
+        device: Device = "cpu",
+        **kwargs,
     ) -> None:
         """
         Args:
@@ -273,7 +277,10 @@ class TensorProperties(nn.Module):
 
 
 def format_tensor(
-    input, dtype: torch.dtype = torch.float32, device: Device = "cpu"
+    input,
+    # pyre-fixme[9]: dtype has type `dtype`; used as `Type[torch.float32]`.
+    dtype: torch.dtype = torch.float32,
+    device: Device = "cpu",
 ) -> torch.Tensor:
     """
     Helper function for converting a scalar value to a tensor.
@@ -301,7 +308,10 @@ def format_tensor(
 
 
 def convert_to_tensors_and_broadcast(
-    *args, dtype: torch.dtype = torch.float32, device: Device = "cpu"
+    *args,
+    # pyre-fixme[9]: dtype has type `dtype`; used as `Type[torch.float32]`.
+    dtype: torch.dtype = torch.float32,
+    device: Device = "cpu",
 ):
     """
     Helper function to handle parsing an arbitrary number of inputs (*args)
