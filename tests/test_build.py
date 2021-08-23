@@ -4,9 +4,12 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+import importlib
 import json
 import os
+import sys
 import unittest
+import unittest.mock
 from collections import Counter
 
 from common_testing import get_pytorch3d_dir
@@ -18,7 +21,6 @@ in_re_worker = os.environ.get("INSIDE_RE_WORKER") is not None
 
 
 class TestBuild(unittest.TestCase):
-    @unittest.skipIf(in_re_worker, "In RE worker")
     def test_name_clash(self):
         # For setup.py, all translation units need distinct names, so we
         # cannot have foo.cu and foo.cpp, even in different directories.
@@ -111,3 +113,22 @@ class TestBuild(unittest.TestCase):
             listed_in_json.extend(section)
 
         self.assertListEqual(sorted(listed_in_json), notes_on_disk)
+
+    def test_no_import_cycles(self):
+        # Check each module of pytorch3d imports cleanly,
+        # which may fail if there are import cycles.
+
+        # First check the setup of the test. If any of pytorch3d
+        # was already imported the test would be pointless.
+        for module in sys.modules:
+            self.assertFalse(module.startswith("pytorch3d"), module)
+
+        root_dir = get_pytorch3d_dir() / "pytorch3d"
+        for module_file in root_dir.glob("**/*.py"):
+            if module_file.stem == "__init__":
+                continue
+            relative_module = str(module_file.relative_to(root_dir))[:-3]
+            module = "pytorch3d." + relative_module.replace("/", ".")
+            with self.subTest(name=module):
+                with unittest.mock.patch.dict(sys.modules):
+                    importlib.import_module(module)
