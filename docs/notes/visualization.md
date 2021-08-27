@@ -10,7 +10,7 @@ PyTorch3D provides a modular differentiable renderer, but for instances where we
 
 # Examples
 
-These rendering functions accept plotly x,y, and z axis arguments as `kwargs`, allowing us to customize the plots. Here are two plots with colored axes, a [Pointclouds plot](assets/plotly_pointclouds.png), a [batched Meshes plot in subplots](assets/plotly_meshes_batch.png), and a [batched Meshes plot with multiple traces](assets/plotly_meshes_trace.png). Refer to the [render textured meshes](../tutorials/render_textured_meshes.ipynb) and [render colored pointclouds](../tutorials/render_colored_points) tutorials for code examples.
+These rendering functions accept plotly x,y, and z axis arguments as `kwargs`, allowing us to customize the plots. Here are two plots with colored axes, a [Pointclouds plot](assets/plotly_pointclouds.png), a [batched Meshes plot in subplots](assets/plotly_meshes_batch.png), and a [batched Meshes plot with multiple traces](assets/plotly_meshes_trace.png). Refer to the [render textured meshes](../tutorials/render_textured_meshes) and [render colored pointclouds](../tutorials/render_colored_points) tutorials for code examples.
 
 # Saving plots to images
 
