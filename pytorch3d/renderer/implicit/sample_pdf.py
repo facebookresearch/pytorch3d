@@ -75,14 +75,15 @@ def sample_pdf_python(
     This is a pure python implementation of the `sample_pdf` function.
     It may be faster than sample_pdf when the number of bins is very large,
     because it behaves as O(batchsize * [n_bins + log(n_bins) * n_samples] )
-    whereas sample_pdf  behaves as O(batchsize * n_bins * n_samples).
+    whereas sample_pdf behaves as O(batchsize * n_bins * n_samples).
     For 64 bins sample_pdf is much faster.
 
     Samples probability density functions defined by bin edges `bins` and
     the non-negative per-bin probabilities `weights`.
 
     Note: This is a direct conversion of the TensorFlow function from the original
-    release [1] to PyTorch.
+    release [1] to PyTorch. It requires PyTorch 1.6 or greater due to the use of
+    torch.searchsorted.
 
     Args:
         bins: Tensor of shape `(..., n_bins+1)` denoting the edges of the sampling bins.

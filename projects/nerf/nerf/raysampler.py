@@ -10,8 +10,7 @@ from typing import List
 import torch
 from pytorch3d.renderer import MonteCarloRaysampler, NDCGridRaysampler, RayBundle
 from pytorch3d.renderer.cameras import CamerasBase
-
-from .utils import sample_pdf
+from pytorch3d.renderer.implicit.sample_pdf import sample_pdf
 
 
 class ProbabilisticRaysampler(torch.nn.Module):

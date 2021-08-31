@@ -9,7 +9,6 @@ This project implements the Neural Radiance Fields (NeRF) from [1].
 Installation
 ------------
 1) [Install PyTorch3D](https://github.com/facebookresearch/pytorch3d/blob/main/INSTALL.md)
-    - Note that this repo requires `PyTorch` version `>= v1.6.0` due to dependency on `torch.searchsorted`.
 
 2) Install other dependencies:
     - [`visdom`](https://github.com/facebookresearch/visdom)
