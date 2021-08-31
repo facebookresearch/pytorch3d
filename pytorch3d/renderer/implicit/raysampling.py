@@ -96,7 +96,7 @@ class GridRaysampler(torch.nn.Module):
             ),
             dim=-1,
         )
-        self.register_buffer("_xy_grid", _xy_grid)
+        self.register_buffer("_xy_grid", _xy_grid, persistent=False)
 
     def forward(self, cameras: CamerasBase, **kwargs) -> RayBundle:
         """

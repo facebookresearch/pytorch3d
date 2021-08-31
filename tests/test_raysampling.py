@@ -425,3 +425,23 @@ class TestRaysampling(TestCaseMixin, unittest.TestCase):
             ray_bundle_camera_fix_seed.directions.view(batch_size, -1, 3),
             atol=1e-5,
         )
+
+    def test_load_state(self):
+        # check that we can load the state of one ray sampler into
+        # another with different image size.
+        module1 = NDCGridRaysampler(
+            image_width=20,
+            image_height=30,
+            n_pts_per_ray=40,
+            min_depth=1.2,
+            max_depth=2.3,
+        )
+        module2 = NDCGridRaysampler(
+            image_width=22,
+            image_height=32,
+            n_pts_per_ray=42,
+            min_depth=1.2,
+            max_depth=2.3,
+        )
+        state = module1.state_dict()
+        module2.load_state_dict(state)
