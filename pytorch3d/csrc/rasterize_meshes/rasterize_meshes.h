@@ -10,6 +10,7 @@
 #include <torch/extension.h>
 #include <cstdio>
 #include <tuple>
+#include "rasterize_coarse/rasterize_coarse.h"
 #include "utils/pytorch3d_cutils.h"
 
 // ****************************************************************************
@@ -236,6 +237,8 @@ torch::Tensor RasterizeMeshesBackward(
 // *                          COARSE RASTERIZATION                            *
 // ****************************************************************************
 
+// RasterizeMeshesCoarseCuda in rasterize_coarse/rasterize_coarse.h
+
 torch::Tensor RasterizeMeshesCoarseCpu(
     const torch::Tensor& face_verts,
     const at::Tensor& mesh_to_face_first_idx,
@@ -245,16 +248,6 @@ torch::Tensor RasterizeMeshesCoarseCpu(
     const int bin_size,
     const int max_faces_per_bin);
 
-#ifdef WITH_CUDA
-torch::Tensor RasterizeMeshesCoarseCuda(
-    const torch::Tensor& face_verts,
-    const torch::Tensor& mesh_to_face_first_idx,
-    const torch::Tensor& num_faces_per_mesh,
-    const std::tuple<int, int> image_size,
-    const float blur_radius,
-    const int bin_size,
-    const int max_faces_per_bin);
-#endif
 // Args:
 //    face_verts: Tensor of shape (F, 3, 3) giving (packed) vertex positions for
 //                faces in all the meshes in the batch. Concretely,
@@ -499,7 +492,7 @@ RasterizeMeshes(
     const bool cull_backfaces) {
   if (bin_size > 0 && max_faces_per_bin > 0) {
     // Use coarse-to-fine rasterization
-    auto bin_faces = RasterizeMeshesCoarse(
+    at::Tensor bin_faces = RasterizeMeshesCoarse(
         face_verts,
         mesh_to_face_first_idx,
         num_faces_per_mesh,
