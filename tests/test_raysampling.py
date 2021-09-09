@@ -426,7 +426,10 @@ class TestRaysampling(TestCaseMixin, unittest.TestCase):
             atol=1e-5,
         )
 
-    def test_load_state(self):
+    @unittest.skipIf(
+        torch.__version__[:4] == "1.5.", "non persistent buffer needs PyTorch 1.6"
+    )
+    def test_load_state_different_resolution(self):
         # check that we can load the state of one ray sampler into
         # another with different image size.
         module1 = NDCGridRaysampler(

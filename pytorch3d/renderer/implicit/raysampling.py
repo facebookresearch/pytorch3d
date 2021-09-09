@@ -96,7 +96,10 @@ class GridRaysampler(torch.nn.Module):
             ),
             dim=-1,
         )
-        self.register_buffer("_xy_grid", _xy_grid, persistent=False)
+        try:
+            self.register_buffer("_xy_grid", _xy_grid, persistent=False)
+        except TypeError:
+            self.register_buffer("_xy_grid", _xy_grid)  # workaround for pytorch<1.6
 
     def forward(self, cameras: CamerasBase, **kwargs) -> RayBundle:
         """

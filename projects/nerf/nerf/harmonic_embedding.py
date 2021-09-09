@@ -69,7 +69,12 @@ class HarmonicEmbedding(torch.nn.Module):
                 dtype=torch.float32,
             )
 
-        self.register_buffer("_frequencies", omega0 * frequencies, persistent=False)
+        try:
+            self.register_buffer("_frequencies", omega0 * frequencies, persistent=False)
+        except TypeError:
+            # workaround for pytorch<1.6
+            self.register_buffer("_frequencies", omega0 * frequencies)
+
         self.include_input = include_input
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
