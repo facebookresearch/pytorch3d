@@ -1157,22 +1157,46 @@ class TexturesUV(TexturesBase):
                     new_uvs = torch.Tensor(new_uvs)
 
             # If align_corners is True, then an index of x (where x is in
-            # the range 0 .. map_.shape[]-1) in one of the input maps
-            # was hit by a u of x/(map_.shape[]-1).
-            # That x is located at the index loc[] + x in the single_map, and
-            # to hit that we need u to equal (loc[] + x) / (total_size[]-1)
+            # the range 0 .. map_.shape[1]-1) in one of the input maps
+            # was hit by a u of x/(map_.shape[1]-1).
+            # That x is located at the index loc[1] + x in the single_map, and
+            # to hit that we need u to equal (loc[1] + x) / (total_size[1]-1)
             # so the old u should be mapped to
-            #   { u*(map_.shape[]-1) + loc[] } / (total_size[]-1)
+            #   { u*(map_.shape[1]-1) + loc[1] } / (total_size[1]-1)
+
+            # Also, an index of y (where y is in
+            # the range 0 .. map_.shape[0]-1) in one of the input maps
+            # was hit by a v of 1 - y/(map_.shape[0]-1).
+            # That y is located at the index loc[0] + y in the single_map, and
+            # to hit that we need v to equal 1 - (loc[0] + y) / (total_size[0]-1)
+            # so the old v should be mapped to
+            #   1 - { (1-v)*(map_.shape[0]-1) + loc[0] } / (total_size[0]-1)
+            # =
+            # { v*(map_.shape[0]-1) + total_size[0] - map.shape[0] - loc[0] }
+            #        / (total_size[0]-1)
 
             # If align_corners is False, then an index of x (where x is in
-            # the range 1 .. map_.shape[]-2) in one of the input maps
-            # was hit by a u of (x+0.5)/(map_.shape[]).
-            # That x is located at the index loc[] + 1 + x in the single_map,
+            # the range 1 .. map_.shape[1]-2) in one of the input maps
+            # was hit by a u of (x+0.5)/(map_.shape[1]).
+            # That x is located at the index loc[1] + 1 + x in the single_map,
             # (where the 1 is for the border)
-            # and to hit that we need u to equal (loc[] + 1 + x + 0.5) / (total_size[])
+            # and to hit that we need u to equal (loc[1] + 1 + x + 0.5) / (total_size[1])
             # so the old u should be mapped to
-            #   { loc[] + 1 + u*map_.shape[]-0.5 + 0.5 } / (total_size[])
-            #  = { loc[] + 1 + u*map_.shape[] } / (total_size[])
+            #   { loc[1] + 1 + u*map_.shape[1]-0.5 + 0.5 } / (total_size[1])
+            #  = { loc[1] + 1 + u*map_.shape[1] } / (total_size[1])
+
+            # Also, an index of y (where y is in
+            # the range 1 .. map_.shape[0]-2) in one of the input maps
+            # was hit by a v of 1 - (y+0.5)/(map_.shape[0]).
+            # That y is located at the index loc[0] + 1 + y in the single_map,
+            # (where the 1 is for the border)
+            # and to hit that we need v to equal 1 - (loc[0] + 1 + y + 0.5) / (total_size[0])
+            # so the old v should be mapped to
+            #   1 - { loc[0] + 1 + (1-v)*map_.shape[0]-0.5 + 0.5 } / (total_size[0])
+            #  = { total_size[0] - loc[0] -1 - (1-v)*map_.shape[0]  }
+            #         / (total_size[0])
+            #  = { total_size[0] - loc[0] - map.shape[0] - 1 + v*map_.shape[0] }
+            #         / (total_size[0])
 
             # We change the y's in new_uvs for the scaling of height,
             # and the x's for the scaling of width.
@@ -1184,7 +1208,9 @@ class TexturesUV(TexturesBase):
             denom_y = merging_plan.total_size[1] - one_if_align
             scale_y = y_shape - one_if_align
             new_uvs[:, 1] *= scale_x / denom_x
-            new_uvs[:, 1] += (loc.x + one_if_not_align) / denom_x
+            new_uvs[:, 1] += (
+                merging_plan.total_size[0] - x_shape - loc.x - one_if_not_align
+            ) / denom_x
             new_uvs[:, 0] *= scale_y / denom_y
             new_uvs[:, 0] += (loc.y + one_if_not_align) / denom_y
 

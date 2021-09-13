@@ -753,7 +753,7 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
                 Image.fromarray((output.numpy() * 255).astype(np.uint8)).save(
                     DATA_DIR / f"test_joinuvs{i}_final_.png"
                 )
-                Image.fromarray((output.numpy() * 255).astype(np.uint8)).save(
+                Image.fromarray((merged.numpy() * 255).astype(np.uint8)).save(
                     DATA_DIR / f"test_joinuvs{i}_merged.png"
                 )
 
@@ -782,9 +782,40 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
                     )
                 ).save(DATA_DIR / f"test_joinuvs{i}_map3.png")
 
-            self.assertClose(output, merged, atol=0.015)
-            self.assertClose(output, image_ref, atol=0.05)
+            self.assertClose(output, merged)
+            self.assertClose(output, image_ref, atol=0.005)
             self.assertClose(mesh.textures.maps_padded()[0].cpu(), map_ref, atol=0.05)
+
+    def test_join_uvs_simple(self):
+        # Example from issue #826
+        a = TexturesUV(
+            maps=torch.full((1, 4000, 4000, 3), 0.8),
+            faces_uvs=torch.arange(300).reshape(1, 100, 3),
+            verts_uvs=torch.rand(1, 300, 2) * 0.4 + 0.1,
+        )
+        b = TexturesUV(
+            maps=torch.full((1, 2000, 2000, 3), 0.7),
+            faces_uvs=torch.arange(150).reshape(1, 50, 3),
+            verts_uvs=torch.rand(1, 150, 2) * 0.2 + 0.3,
+        )
+        c = a.join_batch([b]).join_scene()
+
+        color = c.faces_verts_textures_packed()
+        color1 = color[:100, :, 0].flatten()
+        color2 = color[100:, :, 0].flatten()
+        expect1 = color1.new_tensor(0.8)
+        expect2 = color2.new_tensor(0.7)
+        self.assertClose(color1.min(), expect1)
+        self.assertClose(color1.max(), expect1)
+        self.assertClose(color2.min(), expect2)
+        self.assertClose(color2.max(), expect2)
+
+        if DEBUG:
+            from pytorch3d.vis.texture_vis import texturesuv_image_PIL as PI
+
+            PI(a, radius=5).save(DATA_DIR / "test_join_uvs_simple_a.png")
+            PI(b, radius=5).save(DATA_DIR / "test_join_uvs_simple_b.png")
+            PI(c, radius=5).save(DATA_DIR / "test_join_uvs_simple_c.png")
 
     def test_join_verts(self):
         """Meshes with TexturesVertex joined into a scene"""
