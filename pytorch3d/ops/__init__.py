@@ -24,6 +24,7 @@ from .points_to_volumes import (
     add_pointclouds_to_volumes,
     add_points_features_to_volume_densities_features,
 )
+from .sample_farthest_points import sample_farthest_points
 from .sample_points_from_meshes import sample_points_from_meshes
 from .subdivide_meshes import SubdivideMeshes
 from .utils import (

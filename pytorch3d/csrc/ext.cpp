@@ -26,8 +26,8 @@
 #include "point_mesh/point_mesh_cuda.h"
 #include "rasterize_meshes/rasterize_meshes.h"
 #include "rasterize_points/rasterize_points.h"
-#include "sample_pdf/sample_pdf.h"
 #include "sample_farthest_points/sample_farthest_points.h"
+#include "sample_pdf/sample_pdf.h"
 
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
   m.def("face_areas_normals_forward", &FaceAreasNormalsForward);

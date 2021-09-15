@@ -15,7 +15,7 @@ at::Tensor FarthestPointSamplingCpu(
     const at::Tensor& points,
     const at::Tensor& lengths,
     const at::Tensor& K,
-    const bool random_start_point) {
+    const at::Tensor& start_idxs) {
   // Get constants
   const int64_t N = points.size(0);
   const int64_t P = points.size(1);
@@ -32,6 +32,7 @@ at::Tensor FarthestPointSamplingCpu(
   auto lengths_a = lengths.accessor<int64_t, 1>();
   auto k_a = K.accessor<int64_t, 1>();
   auto sampled_indices_a = sampled_indices.accessor<int64_t, 2>();
+  auto start_idxs_a = start_idxs.accessor<int64_t, 1>();
 
   // Initialize a mask to prevent duplicates
   // If true, the point has already been selected.
@@ -41,10 +42,6 @@ at::Tensor FarthestPointSamplingCpu(
   // distances from each point to any of the previously selected points
   std::vector<float> dists(P, std::numeric_limits<float>::max());
 
-  // Initialize random number generation for random starting points
-  std::random_device rd;
-  std::default_random_engine eng(rd());
-
   for (int64_t n = 0; n < N; ++n) {
     // Resize and reset points mask and distances for each batch
     selected_points_mask.resize(lengths_a[n]);
@@ -52,9 +49,8 @@ at::Tensor FarthestPointSamplingCpu(
     std::fill(selected_points_mask.begin(), selected_points_mask.end(), false);
     std::fill(dists.begin(), dists.end(), std::numeric_limits<float>::max());
 
-    // Select a starting point index and save it
-    std::uniform_int_distribution<int> distr(0, lengths_a[n] - 1);
-    int64_t last_idx = random_start_point ? distr(eng) : 0;
+    // Get the starting point index and save it
+    int64_t last_idx = start_idxs_a[n];
     sampled_indices_a[n][0] = last_idx;
 
     // Set the value of the mask at this point to false

@@ -29,8 +29,17 @@ def bm_fps() -> None:
         warmup_iters=1,
     )
 
-    kwargs_list = [k for k in kwargs_list if k["device"] == "cpu"]
-    benchmark(TestFPS.sample_farthest_points, "FPS_CPU", kwargs_list, warmup_iters=1)
+    # Add some larger batch sizes and pointcloud sizes
+    Ns = [32]
+    Ps = [2048, 8192, 18384]
+    Ds = [3, 9]
+    Ks = [24, 48]
+    test_cases = product(Ns, Ps, Ds, Ks, backends)
+    for case in test_cases:
+        N, P, D, K, d = case
+        kwargs_list.append({"N": N, "P": P, "D": D, "K": K, "device": d})
+
+    benchmark(TestFPS.sample_farthest_points, "FPS", kwargs_list, warmup_iters=1)
 
 
 if __name__ == "__main__":

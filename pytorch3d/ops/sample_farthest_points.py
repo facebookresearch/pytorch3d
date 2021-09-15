@@ -57,7 +57,7 @@ def sample_farthest_points(
     if lengths is None:
         lengths = torch.full((N,), P, dtype=torch.int64, device=device)
 
-    if lengths.shape[0] != N:
+    if lengths.shape != (N,):
         raise ValueError("points and lengths must have same batch dimension.")
 
     # TODO: support providing K as a ratio of the total number of points instead of as an int
@@ -77,9 +77,15 @@ def sample_farthest_points(
     if not (K.dtype == torch.int64):
         K = K.to(torch.int64)
 
+    # Generate the starting indices for sampling
+    start_idxs = torch.zeros_like(lengths)
+    if random_start_point:
+        for n in range(N):
+            start_idxs[n] = torch.randint(high=lengths[n], size=(1,)).item()
+
     with torch.no_grad():
         # pyre-fixme[16]: `pytorch3d_._C` has no attribute `sample_farthest_points`.
-        idx = _C.sample_farthest_points(points, lengths, K, random_start_point)
+        idx = _C.sample_farthest_points(points, lengths, K, start_idxs)
     sampled_points = masked_gather(points, idx)
 
     return sampled_points, idx

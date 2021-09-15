@@ -29,28 +29,44 @@
 //     K: a tensor of length (N,) giving the number of
 //        samples to select for each element in the batch.
 //        The number of samples is typically << P.
-//     random_start_point: bool, if True, a random point is selected as the
-//        starting point for iterative sampling.
+//     start_idxs: (N,) long Tensor giving the index of the first point to
+//        sample. Default is all 0. When a random start point is required,
+//        start_idxs should be set to a random value between [0, lengths[n]]
+//        for batch element n.
 // Returns:
 //     selected_indices: (N, K) array of selected indices. If the values in
 //        K are not all the same, then the shape will be (N, max(K), D), and
 //        padded with -1 for batch elements where k_i < max(K). The selected
 //        points are gathered in the pytorch autograd wrapper.
 
+at::Tensor FarthestPointSamplingCuda(
+    const at::Tensor& points,
+    const at::Tensor& lengths,
+    const at::Tensor& K,
+    const at::Tensor& start_idxs);
+
 at::Tensor FarthestPointSamplingCpu(
     const at::Tensor& points,
     const at::Tensor& lengths,
     const at::Tensor& K,
-    const bool random_start_point);
+    const at::Tensor& start_idxs);
 
 // Exposed implementation.
 at::Tensor FarthestPointSampling(
     const at::Tensor& points,
     const at::Tensor& lengths,
     const at::Tensor& K,
-    const bool random_start_point) {
+    const at::Tensor& start_idxs) {
   if (points.is_cuda() || lengths.is_cuda() || K.is_cuda()) {
-    AT_ERROR("CUDA implementation not yet supported");
+#ifdef WITH_CUDA
+    CHECK_CUDA(points);
+    CHECK_CUDA(lengths);
+    CHECK_CUDA(K);
+    CHECK_CUDA(start_idxs);
+    return FarthestPointSamplingCuda(points, lengths, K, start_idxs);
+#else
+    AT_ERROR("Not compiled with GPU support.");
+#endif
   }
-  return FarthestPointSamplingCpu(points, lengths, K, random_start_point);
+  return FarthestPointSamplingCpu(points, lengths, K, start_idxs);
 }
