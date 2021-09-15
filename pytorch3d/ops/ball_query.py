@@ -12,6 +12,7 @@ from torch.autograd import Function
 from torch.autograd.function import once_differentiable
 
 from .knn import _KNN
+from .utils import masked_gather
 
 
 class _ball_query(Function):
@@ -123,7 +124,6 @@ def ball_query(
     p2 = p2.contiguous()
     P1 = p1.shape[1]
     P2 = p2.shape[1]
-    D = p2.shape[2]
     N = p1.shape[0]
 
     if lengths1 is None:
@@ -135,16 +135,6 @@ def ball_query(
     dists, idx = _ball_query.apply(p1, p2, lengths1, lengths2, K, radius)
 
     # Gather the neighbors if needed
-    points_nn = None
-    if return_nn:
-        idx_expanded = idx[:, :, :, None].expand(-1, -1, -1, D)
-        idx_mask = idx_expanded.eq(-1)
-        idx_new = idx_expanded.clone()
-        # Replace -1 values with 0 for gather
-        idx_new[idx_mask] = 0
-        # Gather points from p2
-        points_nn = p2[:, :, None].expand(-1, -1, K, -1).gather(1, idx_new)
-        # Replace padded values
-        points_nn[idx_mask] = 0.0
+    points_nn = masked_gather(p2, idx) if return_nn else None
 
     return _KNN(dists=dists, idx=idx, knn=points_nn)
