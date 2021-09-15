@@ -27,6 +27,7 @@
 #include "rasterize_meshes/rasterize_meshes.h"
 #include "rasterize_points/rasterize_points.h"
 #include "sample_pdf/sample_pdf.h"
+#include "sample_farthest_points/sample_farthest_points.h"
 
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
   m.def("face_areas_normals_forward", &FaceAreasNormalsForward);
@@ -40,9 +41,8 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
 #endif
   m.def("knn_points_idx", &KNearestNeighborIdx);
   m.def("knn_points_backward", &KNearestNeighborBackward);
-
-  // Ball Query
   m.def("ball_query", &BallQuery);
+  m.def("sample_farthest_points", &FarthestPointSampling);
   m.def(
       "mesh_normal_consistency_find_verts", &MeshNormalConsistencyFindVertices);
   m.def("gather_scatter", &GatherScatter);
