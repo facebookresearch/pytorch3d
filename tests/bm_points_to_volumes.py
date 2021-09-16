@@ -12,6 +12,7 @@ from test_points_to_volumes import TestPointsToVolumes
 
 def bm_points_to_volumes() -> None:
     case_grid = {
+        "device": ["cpu", "cuda:0"],
         "batch_size": [10, 100],
         "interp_mode": ["trilinear", "nearest"],
         "volume_size": [[25, 25, 25], [101, 111, 121]],

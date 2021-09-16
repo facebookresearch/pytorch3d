@@ -24,6 +24,12 @@
       }, {
        "id": "camera_position_optimization_with_differentiable_rendering",
        "title": "Camera Position Optimization with Differentiable Rendering"
+       },{
+       "id": "fit_textured_volume",
+       "title": "Fit a volume via raymarching"
+       },{
+       "id": "fit_simple_neural_radiance_field",
+       "title": "Fit a simplified NeRF via raymarching"
       }
    ],
    "Dataloaders": [

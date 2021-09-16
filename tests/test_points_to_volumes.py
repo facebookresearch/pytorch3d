@@ -26,16 +26,14 @@ if DEBUG:
     from PIL import Image
 
 
-def init_cube_point_cloud(
-    batch_size: int = 10, n_points: int = 100000, rotate_y: bool = True
-):
+def init_cube_point_cloud(batch_size: int, n_points: int, device: str, rotate_y: bool):
     """
-    Generate a random point cloud of `n_points` whose points of
-    which are sampled from faces of a 3D cube.
+    Generate a random point cloud of `n_points` whose points
+    are sampled from faces of a 3D cube.
     """
 
     # create the cube mesh batch_size times
-    meshes = TestPointsToVolumes.init_cube_mesh(batch_size)
+    meshes = TestPointsToVolumes.init_cube_mesh(batch_size=batch_size, device=device)
 
     # generate point clouds by sampling points from the meshes
     pcl = sample_points_from_meshes(meshes, num_samples=n_points, return_normals=False)
@@ -66,7 +64,7 @@ def init_cube_point_cloud(
 
     if rotate_y:
         # uniformly spaced rotations around y axis
-        R = init_uniform_y_rotations(batch_size=batch_size)
+        R = init_uniform_y_rotations(batch_size=batch_size, device=device)
         # rotate the point clouds around y axis
         pcl = torch.bmm(pcl - 0.5, R) + 0.5
 
@@ -78,6 +76,7 @@ def init_volume_boundary_pointcloud(
     volume_size: Tuple[int, int, int],
     n_points: int,
     interp_mode: str,
+    device: str,
     require_grad: bool = False,
 ):
     """
@@ -86,7 +85,9 @@ def init_volume_boundary_pointcloud(
     """
 
     # generate a 3D point cloud sampled from sides of a [0,1] cube
-    xyz, rgb = init_cube_point_cloud(batch_size, n_points=n_points, rotate_y=True)
+    xyz, rgb = init_cube_point_cloud(
+        batch_size, n_points=n_points, device=device, rotate_y=True
+    )
 
     # make volume_size tensor
     volume_size_t = torch.tensor(volume_size, dtype=xyz.dtype, device=xyz.device)
@@ -128,12 +129,11 @@ def init_volume_boundary_pointcloud(
     return pointclouds, initial_volumes
 
 
-def init_uniform_y_rotations(batch_size: int = 10):
+def init_uniform_y_rotations(batch_size: int, device: torch.device):
     """
     Generate a batch of `batch_size` 3x3 rotation matrices around y-axis
     whose angles are uniformly distributed between 0 and 2 pi.
     """
-    device = torch.device("cuda:0")
     axis = torch.tensor([0.0, 1.0, 0.0], device=device, dtype=torch.float32)
     angles = torch.linspace(0, 2.0 * np.pi, batch_size + 1, device=device)
     angles = angles[:batch_size]
@@ -153,6 +153,7 @@ class TestPointsToVolumes(TestCaseMixin, unittest.TestCase):
         volume_size: Tuple[int, int, int],
         n_points: int,
         interp_mode: str,
+        device: str,
     ):
         (pointclouds, initial_volumes) = init_volume_boundary_pointcloud(
             batch_size=batch_size,
@@ -160,10 +161,14 @@ class TestPointsToVolumes(TestCaseMixin, unittest.TestCase):
             n_points=n_points,
             interp_mode=interp_mode,
             require_grad=False,
+            device=device,
         )
+
+        torch.cuda.synchronize()
 
         def _add_points_to_volumes():
             add_pointclouds_to_volumes(pointclouds, initial_volumes, mode=interp_mode)
+            torch.cuda.synchronize()
 
         return _add_points_to_volumes
 
@@ -179,12 +184,12 @@ class TestPointsToVolumes(TestCaseMixin, unittest.TestCase):
         return arr3d
 
     @staticmethod
-    def init_cube_mesh(batch_size: int = 10):
+    def init_cube_mesh(batch_size: int, device: str):
         """
         Generate a batch of `batch_size` cube meshes.
         """
 
-        device = torch.device("cuda:0")
+        device = torch.device(device)
 
         verts, faces = [], []
 
@@ -255,6 +260,7 @@ class TestPointsToVolumes(TestCaseMixin, unittest.TestCase):
                     interp_mode=interp_mode,
                     batch_size=batch_size,
                     require_grad=True,
+                    device="cuda:0",
                 )
 
                 volumes = add_pointclouds_to_volumes(

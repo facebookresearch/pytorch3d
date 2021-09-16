@@ -36,7 +36,8 @@ def texturesuv_image_matplotlib(
         color: any matplotlib-understood color for the circles.
         subsample: if not None, number of points to plot.
                 Otherwise all points are plotted.
-        origin: "upper" or "lower" like matplotlib.imshow
+        origin: "upper" or "lower" like matplotlib.imshow .
+            upper (the default) matches texturesuv_image_PIL.
     """
 
     import matplotlib.pyplot as plt

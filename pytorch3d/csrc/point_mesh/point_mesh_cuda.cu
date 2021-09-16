@@ -121,7 +121,7 @@ __global__ void DistanceForwardKernel(
     // Unroll the last 6 iterations of the loop since they will happen
     // synchronized within a single warp.
     if (tid < 32)
-      WarpReduce<float>(min_dists, min_idxs, tid);
+      WarpReduceMin<float>(min_dists, min_idxs, tid);
 
     // Finally thread 0 writes the result to the output buffer.
     if (tid == 0) {

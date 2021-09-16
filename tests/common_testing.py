@@ -29,6 +29,8 @@ def get_pytorch3d_dir() -> Path:
     """
     if os.environ.get("INSIDE_RE_WORKER") is not None:
         return Path(__file__).resolve().parent
+    elif os.environ.get("CONDA_BUILD_STATE", "") == "TEST":
+        return Path(os.environ["SRC_DIR"])
     else:
         return Path(__file__).resolve().parent.parent
 

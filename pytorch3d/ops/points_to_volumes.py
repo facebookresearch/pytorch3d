@@ -157,12 +157,15 @@ def add_points_features_to_volume_densities_features(
                 of its floating point coordinate. The weights are
                 determined using a trilinear interpolation scheme.
                 Trilinear splatting is fully differentiable w.r.t. all input arguments.
-        mask: A binary mask of shape `(minibatch, N)` determining which 3D points
-            are going to be converted to the resulting volume.
-            Set to `None` if all points are valid.
         min_weight: A scalar controlling the lowest possible total per-voxel
             weight used to normalize the features accumulated in a voxel.
             Only active for `mode==trilinear`.
+        mask: A binary mask of shape `(minibatch, N)` determining which 3D points
+            are going to be converted to the resulting volume.
+            Set to `None` if all points are valid.
+        grid_sizes: `LongTensor` of shape (minibatch, 3) representing the
+            spatial resolutions of each of the the non-flattened `volumes` tensors,
+            or None to indicate the whole volume is used for every batch element.
     Returns:
         volume_features: Output volume of shape `(minibatch, feature_dim, D, H, W)`
         volume_densities: Occupancy volume of shape `(minibatch, 1, D, H, W)`
@@ -178,8 +181,11 @@ def add_points_features_to_volume_densities_features(
 
     # init the volumetric grid sizes if uninitialized
     if grid_sizes is None:
-        grid_sizes = torch.LongTensor(list(volume_densities.shape[2:])).to(
-            volume_densities
+        # grid sizes shape (minibatch, 3)
+        grid_sizes = (
+            torch.LongTensor(list(volume_densities.shape[2:]))
+            .to(volume_densities)
+            .expand(volume_densities.shape[0], 3)
         )
 
     # flatten densities and features
@@ -284,13 +290,15 @@ def splat_points_to_volumes(
         volume_features: Batch of input *flattened* feature volumes
             of shape `(minibatch, feature_dim, N_voxels)`
         volume_densities: Batch of input *flattened* feature volume densities
-            of shape `(minibatch, 1, N_voxels)`. Each voxel should
+            of shape `(minibatch, N_voxels, 1)`. Each voxel should
             contain a non-negative number corresponding to its
             opaqueness (the higher, the less transparent).
         grid_sizes: `LongTensor` of shape (minibatch, 3) representing the
             spatial resolutions of each of the the non-flattened `volumes` tensors.
             Note that the following has to hold:
                 `torch.prod(grid_sizes, dim=1)==N_voxels`
+        min_weight: A scalar controlling the lowest possible total per-voxel
+            weight used to normalize the features accumulated in a voxel.
         mask: A binary mask of shape `(minibatch, N)` determining which 3D points
             are going to be converted to the resulting volume.
             Set to `None` if all points are valid.
@@ -457,9 +465,6 @@ def round_points_to_volumes(
     # split into separate coordinate vectors
     X, Y, Z = XYZ.split(1, dim=2)
 
-    # get random indices for the purpose of adding out-of-bounds values
-    rand_idx = X.new_zeros(X.shape).random_(0, n_voxels)
-
     # valid - binary indicators of votes that fall into the volume
     grid_sizes = grid_sizes.type_as(XYZ)
     valid = (
@@ -470,6 +475,8 @@ def round_points_to_volumes(
         * (0 <= Z)
         * (Z < grid_sizes_xyz[:, None, 2:3])
     ).long()
+    if mask is not None:
+        valid = valid * mask[:, :, None].long()
 
     # get random indices for the purpose of adding out-of-bounds values
     rand_idx = valid.new_zeros(X.shape).random_(0, n_voxels)

@@ -9,10 +9,12 @@ from typing import Tuple, Union
 
 import torch
 
+DEFAULT_ACOS_BOUND = 1.0 - 1e-4
+
 
 def acos_linear_extrapolation(
     x: torch.Tensor,
-    bound: Union[float, Tuple[float, float]] = 1.0 - 1e-4,
+    bounds: Tuple[float, float] = (-DEFAULT_ACOS_BOUND, DEFAULT_ACOS_BOUND),
 ) -> torch.Tensor:
     """
     Implements `arccos(x)` which is linearly extrapolated outside `x`'s original
@@ -21,23 +23,20 @@ def acos_linear_extrapolation(
 
     More specifically:
     ```
-    if -bound <= x <= bound:
+    bounds=(lower_bound, upper_bound)
+    if lower_bound <= x <= upper_bound:
         acos_linear_extrapolation(x) = acos(x)
-    elif x <= -bound: # 1st order Taylor approximation
-        acos_linear_extrapolation(x) = acos(-bound) + dacos/dx(-bound) * (x - (-bound))
-    else:  # x >= bound
-        acos_linear_extrapolation(x) = acos(bound) + dacos/dx(bound) * (x - bound)
+    elif x <= lower_bound: # 1st order Taylor approximation
+        acos_linear_extrapolation(x) = acos(lower_bound) + dacos/dx(lower_bound) * (x - lower_bound)
+    else:  # x >= upper_bound
+        acos_linear_extrapolation(x) = acos(upper_bound) + dacos/dx(upper_bound) * (x - upper_bound)
     ```
-    Note that `bound` can be made more specific with setting
-    `bound=[lower_bound, upper_bound]` as detailed below.
 
     Args:
         x: Input `Tensor`.
-        bound: A float constant or a float 2-tuple defining the region for the
+        bounds: A float 2-tuple defining the region for the
             linear extrapolation of `acos`.
-            If `bound` is a float scalar, linearly interpolates acos for
-            `x <= -bound` or `bound <= x`.
-            If `bound` is a 2-tuple, the first/second element of `bound`
+            The first/second element of `bound`
             describes the lower/upper bound that defines the lower/upper
             extrapolation region, i.e. the region where
             `x <= bound[0]`/`bound[1] <= x`.
@@ -46,11 +45,7 @@ def acos_linear_extrapolation(
         acos_linear_extrapolation: `Tensor` containing the extrapolated `arccos(x)`.
     """
 
-    if isinstance(bound, float):
-        upper_bound = bound
-        lower_bound = -bound
-    else:
-        lower_bound, upper_bound = bound
+    lower_bound, upper_bound = bounds
 
     if lower_bound > upper_bound:
         raise ValueError("lower bound has to be smaller or equal to upper bound.")

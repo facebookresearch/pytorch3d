@@ -10,6 +10,7 @@
 #include <torch/extension.h>
 #include <cstdio>
 #include <tuple>
+#include "rasterize_coarse/rasterize_coarse.h"
 #include "utils/pytorch3d_cutils.h"
 
 // ****************************************************************************
@@ -104,6 +105,8 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> RasterizePointsNaive(
 // *                          COARSE RASTERIZATION                            *
 // ****************************************************************************
 
+// RasterizePointsCoarseCuda in rasterize_coarse/rasterize_coarse.h
+
 torch::Tensor RasterizePointsCoarseCpu(
     const torch::Tensor& points,
     const torch::Tensor& cloud_to_packed_first_idx,
@@ -113,16 +116,6 @@ torch::Tensor RasterizePointsCoarseCpu(
     const int bin_size,
     const int max_points_per_bin);
 
-#ifdef WITH_CUDA
-torch::Tensor RasterizePointsCoarseCuda(
-    const torch::Tensor& points,
-    const torch::Tensor& cloud_to_packed_first_idx,
-    const torch::Tensor& num_points_per_cloud,
-    const std::tuple<int, int> image_size,
-    const torch::Tensor& radius,
-    const int bin_size,
-    const int max_points_per_bin);
-#endif
 // Args:
 //  points: Tensor of shape (P, 3) giving (packed) positions for
 //          points in all N pointclouds in the batch where P is the total

@@ -151,7 +151,7 @@ def init_cameras(
     device = torch.device("cuda:0")
 
     # trivial rotations
-    R = init_uniform_y_rotations(batch_size).to(device)
+    R = init_uniform_y_rotations(batch_size=batch_size, device=device)
 
     # move camera 1.5 m away from the scene center
     T = torch.zeros((batch_size, 3), device=device)

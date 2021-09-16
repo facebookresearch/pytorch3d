@@ -14,7 +14,7 @@ class HarmonicEmbedding(torch.nn.Module):
         omega0: float = 1.0,
         logspace: bool = True,
         include_input: bool = True,
-    ):
+    ) -> None:
         """
         Given an input tensor `x` of shape [minibatch, ... , dim],
         the harmonic embedding layer converts each feature
@@ -69,10 +69,15 @@ class HarmonicEmbedding(torch.nn.Module):
                 dtype=torch.float32,
             )
 
-        self.register_buffer("_frequencies", omega0 * frequencies)
+        try:
+            self.register_buffer("_frequencies", omega0 * frequencies, persistent=False)
+        except TypeError:
+            # workaround for pytorch<1.6
+            self.register_buffer("_frequencies", omega0 * frequencies)
+
         self.include_input = include_input
 
-    def forward(self, x: torch.Tensor):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
         Args:
             x: tensor of shape [..., dim]

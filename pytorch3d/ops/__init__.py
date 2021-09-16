@@ -4,6 +4,7 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+from .ball_query import ball_query
 from .cameras_alignment import corresponding_cameras_alignment
 from .cubify import cubify
 from .graph_conv import GraphConv
@@ -23,6 +24,7 @@ from .points_to_volumes import (
     add_pointclouds_to_volumes,
     add_points_features_to_volume_densities_features,
 )
+from .sample_farthest_points import sample_farthest_points
 from .sample_points_from_meshes import sample_points_from_meshes
 from .subdivide_meshes import SubdivideMeshes
 from .utils import (

@@ -299,7 +299,7 @@ def make_material_atlas(
 
     # bi-linearly interpolate the textures from the images
     # using the uv coordinates given by uv_pos.
-    textures = _bilinear_interpolation_vectorized(image, uv_pos)
+    textures = _bilinear_interpolation_grid_sample(image, uv_pos)
 
     return textures
 
@@ -311,11 +311,14 @@ def _bilinear_interpolation_vectorized(
     Bi linearly interpolate the image using the uv positions in the flow-field
     grid (following the naming conventions for torch.nn.functional.grid_sample).
 
-    This implementation uses the same steps as in the SoftRas cuda kernel
-    to make it easy to compare. This vectorized version requires less memory than
+    This implementation uses the same steps as in the SoftRasterizer CUDA kernel
+    for loading textures. We are keeping it for reference to make it easy to
+    compare if required.
+
+    However it doesn't properly handle the out of bound values in the same way as
+    the grid_sample function does with the padding_mode argument.
+    This vectorized version requires less memory than
     _bilinear_interpolation_grid_sample but is slightly slower.
-    If speed is an issue and the number of faces in the mesh and texture image sizes
-    are small, consider using _bilinear_interpolation_grid_sample instead.
 
     Args:
         image: FloatTensor of shape (H, W, D) a single image/input tensor with D

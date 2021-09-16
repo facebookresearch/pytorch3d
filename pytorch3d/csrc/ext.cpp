@@ -12,6 +12,7 @@
 // clang-format on
 #include "./pulsar/pytorch/renderer.h"
 #include "./pulsar/pytorch/tensor_util.h"
+#include "ball_query/ball_query.h"
 #include "blending/sigmoid_alpha_blend.h"
 #include "compositing/alpha_composite.h"
 #include "compositing/norm_weighted_sum.h"
@@ -25,6 +26,8 @@
 #include "point_mesh/point_mesh_cuda.h"
 #include "rasterize_meshes/rasterize_meshes.h"
 #include "rasterize_points/rasterize_points.h"
+#include "sample_farthest_points/sample_farthest_points.h"
+#include "sample_pdf/sample_pdf.h"
 
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
   m.def("face_areas_normals_forward", &FaceAreasNormalsForward);
@@ -38,6 +41,8 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
 #endif
   m.def("knn_points_idx", &KNearestNeighborIdx);
   m.def("knn_points_backward", &KNearestNeighborBackward);
+  m.def("ball_query", &BallQuery);
+  m.def("sample_farthest_points", &FarthestPointSampling);
   m.def(
       "mesh_normal_consistency_find_verts", &MeshNormalConsistencyFindVertices);
   m.def("gather_scatter", &GatherScatter);
@@ -78,6 +83,9 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
   m.def("face_point_dist_backward", &FacePointDistanceBackward);
   m.def("point_face_array_dist_forward", &PointFaceArrayDistanceForward);
   m.def("point_face_array_dist_backward", &PointFaceArrayDistanceBackward);
+
+  // Sample PDF
+  m.def("sample_pdf", &SamplePdf);
 
   // Pulsar.
 #ifdef PULSAR_LOGGING_ENABLED

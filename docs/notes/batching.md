@@ -26,7 +26,7 @@ The need for different mesh batch modes is inherent to the way PyTorch operators
 <img src="assets/meshrcnn.png" alt="meshrcnn" width="700" align="middle" />
 
 
-[meshes]: https://github.com/facebookresearch/pytorch3d/blob/master/pytorch3d/structures/meshes.py
-[graphconv]: https://github.com/facebookresearch/pytorch3d/blob/master/pytorch3d/ops/graph_conv.py
-[vert_align]: https://github.com/facebookresearch/pytorch3d/blob/master/pytorch3d/ops/vert_align.py
+[meshes]: https://github.com/facebookresearch/pytorch3d/blob/main/pytorch3d/structures/meshes.py
+[graphconv]: https://github.com/facebookresearch/pytorch3d/blob/main/pytorch3d/ops/graph_conv.py
+[vert_align]: https://github.com/facebookresearch/pytorch3d/blob/main/pytorch3d/ops/vert_align.py
 [meshrcnn]: https://github.com/facebookresearch/meshrcnn

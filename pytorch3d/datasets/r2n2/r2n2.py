@@ -31,7 +31,7 @@ SYNSET_DICT_DIR = Path(__file__).resolve().parent
 MAX_CAMERA_DISTANCE = 1.75  # Constant from R2N2.
 VOXEL_SIZE = 128
 # Intrinsic matrix extracted from Blender. Taken from meshrcnn codebase:
-# https://github.com/facebookresearch/meshrcnn/blob/master/shapenet/utils/coords.py
+# https://github.com/facebookresearch/meshrcnn/blob/main/shapenet/utils/coords.py
 BLENDER_INTRINSIC = torch.tensor(
     [
         [2.1875, 0.0, 0.0, 0.0],
@@ -295,7 +295,7 @@ class R2N2(ShapeNetBase):  # pragma: no cover
 
             # Intrinsic matrix extracted from the Blender with slight modification to work with
             # PyTorch3D world space. Taken from meshrcnn codebase:
-            # https://github.com/facebookresearch/meshrcnn/blob/master/shapenet/utils/coords.py
+            # https://github.com/facebookresearch/meshrcnn/blob/main/shapenet/utils/coords.py
             K = torch.tensor(
                 [
                     [2.1875, 0.0, 0.0, 0.0],

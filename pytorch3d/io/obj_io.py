@@ -576,12 +576,21 @@ def _load_obj(
         mtl_path,
     ) = _parse_obj(f_obj, data_dir)
 
+    # pyre-fixme[6]: Expected `dtype` for 3rd param but got `Type[torch.float32]`.
     verts = _make_tensor(verts, cols=3, dtype=torch.float32, device=device)  # (V, 3)
     normals = _make_tensor(
-        normals, cols=3, dtype=torch.float32, device=device
+        normals,
+        cols=3,
+        # pyre-fixme[6]: Expected `dtype` for 3rd param but got `Type[torch.float32]`.
+        dtype=torch.float32,
+        device=device,
     )  # (N, 3)
     verts_uvs = _make_tensor(
-        verts_uvs, cols=2, dtype=torch.float32, device=device
+        verts_uvs,
+        cols=2,
+        # pyre-fixme[6]: Expected `dtype` for 3rd param but got `Type[torch.float32]`.
+        dtype=torch.float32,
+        device=device,
     )  # (T, 2)
 
     faces_verts_idx = _format_faces_indices(
