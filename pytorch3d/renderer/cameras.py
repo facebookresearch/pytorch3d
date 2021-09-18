@@ -253,8 +253,6 @@ class CamerasBase(TensorProperties):
         input points to the renderer to be in NDC space.
         """
         if self.in_ndc():
-            # pyre-fixme[6]: Expected `dtype` for 2nd param but got
-            #  `Type[torch.float32]`.
             return Transform3d(device=self.device, dtype=torch.float32)
         else:
             # For custom cameras which can be defined in screen space,
@@ -1033,8 +1031,6 @@ class PerspectiveCameras(CamerasBase):
         i.e. +X left, +Y up.
         """
         if self.in_ndc():
-            # pyre-fixme[6]: Expected `dtype` for 2nd param but got
-            #  `Type[torch.float32]`.
             ndc_transform = Transform3d(device=self.device, dtype=torch.float32)
         else:
             # when cameras are defined in screen/image space, the principal point is
@@ -1233,8 +1229,6 @@ class OrthographicCameras(CamerasBase):
         i.e. +X left, +Y up.
         """
         if self.in_ndc():
-            # pyre-fixme[6]: Expected `dtype` for 2nd param but got
-            #  `Type[torch.float32]`.
             ndc_transform = Transform3d(device=self.device, dtype=torch.float32)
         else:
             # when cameras are defined in screen/image space, the principal point is

@@ -146,7 +146,6 @@ def compute_extrinsic_matrix(azimuth, elevation, distance):  # pragma: no cover
 def read_binvox_coords(
     f,
     integer_division: bool = True,
-    # pyre-fixme[9]: dtype has type `dtype`; used as `Type[torch.float32]`.
     dtype: torch.dtype = torch.float32,
 ):  # pragma: no cover
     """

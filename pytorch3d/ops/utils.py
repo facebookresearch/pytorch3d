@@ -106,7 +106,6 @@ def eyes(
     dim: int,
     N: int,
     device: Optional[torch.device] = None,
-    # pyre-fixme[9]: dtype has type `dtype`; used as `Type[torch.float32]`.
     dtype: torch.dtype = torch.float32,
 ) -> torch.Tensor:
     """

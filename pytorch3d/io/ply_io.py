@@ -884,7 +884,6 @@ def _get_verts(
         and vertex[0].ndim == 2
         and vertex[0].shape[1] == 3
     ):
-        # pyre-fixme[6]: Expected `dtype` for 3rd param but got `Type[torch.float32]`.
         return _make_tensor(vertex[0], cols=3, dtype=torch.float32), None, None
 
     vertex_colors = None

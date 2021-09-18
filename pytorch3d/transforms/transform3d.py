@@ -142,7 +142,6 @@ class Transform3d:
 
     def __init__(
         self,
-        # pyre-fixme[9]: dtype has type `dtype`; used as `Type[torch.float32]`.
         dtype: torch.dtype = torch.float32,
         device: Device = "cpu",
         matrix: Optional[torch.Tensor] = None,
@@ -462,7 +461,6 @@ class Translate(Transform3d):
         x,
         y=None,
         z=None,
-        # pyre-fixme[9]: dtype has type `dtype`; used as `Type[torch.float32]`.
         dtype: torch.dtype = torch.float32,
         device: Optional[Device] = None,
     ) -> None:
@@ -504,7 +502,6 @@ class Scale(Transform3d):
         x,
         y=None,
         z=None,
-        # pyre-fixme[9]: dtype has type `dtype`; used as `Type[torch.float32]`.
         dtype: torch.dtype = torch.float32,
         device: Optional[Device] = None,
     ) -> None:
@@ -550,7 +547,6 @@ class Rotate(Transform3d):
     def __init__(
         self,
         R: torch.Tensor,
-        # pyre-fixme[9]: dtype has type `dtype`; used as `Type[torch.float32]`.
         dtype: torch.dtype = torch.float32,
         device: Optional[Device] = None,
         orthogonal_tol: float = 1e-5,
@@ -592,7 +588,6 @@ class RotateAxisAngle(Rotate):
         angle,
         axis: str = "X",
         degrees: bool = True,
-        # pyre-fixme[9]: dtype has type `dtype`; used as `Type[torch.float64]`.
         dtype: torch.dtype = torch.float64,
         device: Optional[Device] = None,
     ) -> None:

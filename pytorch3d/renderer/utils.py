@@ -96,7 +96,6 @@ class TensorProperties(nn.Module):
 
     def __init__(
         self,
-        # pyre-fixme[9]: dtype has type `dtype`; used as `Type[torch.float32]`.
         dtype: torch.dtype = torch.float32,
         device: Device = "cpu",
         **kwargs,
@@ -278,7 +277,6 @@ class TensorProperties(nn.Module):
 
 def format_tensor(
     input,
-    # pyre-fixme[9]: dtype has type `dtype`; used as `Type[torch.float32]`.
     dtype: torch.dtype = torch.float32,
     device: Device = "cpu",
 ) -> torch.Tensor:
@@ -309,7 +307,6 @@ def format_tensor(
 
 def convert_to_tensors_and_broadcast(
     *args,
-    # pyre-fixme[9]: dtype has type `dtype`; used as `Type[torch.float32]`.
     dtype: torch.dtype = torch.float32,
     device: Device = "cpu",
 ):
