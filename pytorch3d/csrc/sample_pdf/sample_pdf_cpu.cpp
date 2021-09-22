@@ -32,8 +32,7 @@ void SamplePdfCpu_worker(
 
   auto bins_a = bins.accessor<float, 2>();
   auto weights_a = weights.accessor<float, 2>();
-  float* __restrict__ output_p =
-      outputs.data_ptr<float>() + start_batch * n_samples;
+  float* output_p = outputs.data_ptr<float>() + start_batch * n_samples;
 
 #ifdef USE_BINARY_SEARCH
   std::vector<float> partial_sums(n_bins);
