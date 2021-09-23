@@ -28,7 +28,7 @@ struct Pixel {
 };
 
 __device__ bool operator<(const Pixel& a, const Pixel& b) {
-  return a.z < b.z;
+  return a.z < b.z || (a.z == b.z && a.idx < b.idx);
 }
 
 // Get the xyz coordinates of the three vertices for the face given by the

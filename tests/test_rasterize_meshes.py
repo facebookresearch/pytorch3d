@@ -1151,6 +1151,28 @@ class TestRasterizeMeshes(TestCaseMixin, unittest.TestCase):
         bin_faces_same = (bin_faces.squeeze() == bin_faces_expected).all()
         self.assertTrue(bin_faces_same.item() == 1)
 
+    def test_order_of_ties(self):
+        # Tied faces are rasterized in index order
+        # We rasterize a mesh with many faces.
+        device = torch.device("cuda:0")
+        verts = -5 * torch.eye(3, dtype=torch.float32, device=device)[None]
+        faces = torch.arange(3, device=device, dtype=torch.int64).expand(1, 100, 3)
+        mesh = Meshes(verts=verts, faces=faces)
+
+        R, T = look_at_view_transform(2.7, 0.0, 0.0)
+        cameras = FoVPerspectiveCameras(device=device, R=R, T=T)
+
+        raster_settings = RasterizationSettings(
+            image_size=28, faces_per_pixel=100, bin_size=0
+        )
+        rasterizer = MeshRasterizer(raster_settings=raster_settings)
+
+        out = rasterizer(mesh, cameras=cameras)
+        self.assertClose(
+            out.pix_to_face[0, 14:, :14],
+            torch.arange(100, device=device).expand(14, 14, 100),
+        )
+
     @staticmethod
     def rasterize_meshes_python_with_init(
         num_meshes: int,

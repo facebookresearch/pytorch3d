@@ -117,13 +117,6 @@ struct IsNeighbor {
   int neighbor_idx;
 };
 
-// Function to sort based on the z distance in the top K queue
-bool SortTopKByZdist(
-    std::tuple<float, int, float, float, float, float> a,
-    std::tuple<float, int, float, float, float, float> b) {
-  return std::get<0>(a) < std::get<0>(b);
-}
-
 std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>
 RasterizeMeshesNaiveCpu(
     const torch::Tensor& face_verts,
@@ -310,7 +303,7 @@ RasterizeMeshesNaiveCpu(
 
           // Sort the deque inplace based on the z distance
           // to mimic using a priority queue.
-          std::sort(q.begin(), q.end(), SortTopKByZdist);
+          std::sort(q.begin(), q.end());
           if (static_cast<int>(q.size()) > K) {
             // remove the last value
             q.pop_back();
