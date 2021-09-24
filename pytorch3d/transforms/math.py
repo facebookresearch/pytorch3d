@@ -5,9 +5,10 @@
 # LICENSE file in the root directory of this source tree.
 
 import math
-from typing import Tuple, Union
+from typing import Tuple
 
 import torch
+
 
 DEFAULT_ACOS_BOUND = 1.0 - 1e-4
 
@@ -27,9 +28,11 @@ def acos_linear_extrapolation(
     if lower_bound <= x <= upper_bound:
         acos_linear_extrapolation(x) = acos(x)
     elif x <= lower_bound: # 1st order Taylor approximation
-        acos_linear_extrapolation(x) = acos(lower_bound) + dacos/dx(lower_bound) * (x - lower_bound)
+        acos_linear_extrapolation(x)
+            = acos(lower_bound) + dacos/dx(lower_bound) * (x - lower_bound)
     else:  # x >= upper_bound
-        acos_linear_extrapolation(x) = acos(upper_bound) + dacos/dx(upper_bound) * (x - upper_bound)
+        acos_linear_extrapolation(x)
+            = acos(upper_bound) + dacos/dx(upper_bound) * (x - upper_bound)
     ```
 
     Args:

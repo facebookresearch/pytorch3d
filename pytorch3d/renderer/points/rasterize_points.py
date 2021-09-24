@@ -64,8 +64,7 @@ def rasterize_points(
             affect the output, but can affect the speed of the forward pass.
         points_per_bin: Only applicable when using coarse-to-fine rasterization
             (bin_size > 0); this is the maximum number of points allowed within each
-            bin. If more than this many points actually fall into a bin, an error
-            will be raised. This should not affect the output values, but can affect
+            bin. This should not affect the output values, but can affect
             the memory usage in the forward pass.
 
     Returns:

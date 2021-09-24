@@ -16,8 +16,22 @@ from pytorch3d import _C
 # NOTE: All blending function should return an RGBA image per batch element
 
 
-# Data class to store blending params with defaults
 class BlendParams(NamedTuple):
+    """
+    Data class to store blending params with defaults
+
+    Members:
+        sigma (float): Controls the width of the sigmoid function used to
+            calculate the 2D distance based probability. Determines the
+            sharpness of the edges of the shape.
+            Higher => faces have less defined edges.
+        gamma (float): Controls the scaling of the exponential function used
+            to set the opacity of the color.
+            Higher => faces are more transparent.
+        background_color: RGB values for the background color as a tuple or
+            as a tensor of three floats.
+    """
+
     sigma: float = 1e-4
     gamma: float = 1e-4
     background_color: Union[torch.Tensor, Sequence[float]] = (1.0, 1.0, 1.0)

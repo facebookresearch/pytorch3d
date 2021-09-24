@@ -4,6 +4,7 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+from dataclasses import dataclass
 from typing import NamedTuple, Optional, Tuple, Union
 
 import torch
@@ -20,46 +21,66 @@ class Fragments(NamedTuple):
     dists: torch.Tensor
 
 
-# Class to store the mesh rasterization params with defaults
+@dataclass
 class RasterizationSettings:
-    __slots__ = [
-        "image_size",
-        "blur_radius",
-        "faces_per_pixel",
-        "bin_size",
-        "max_faces_per_bin",
-        "perspective_correct",
-        "clip_barycentric_coords",
-        "cull_backfaces",
-        "z_clip_value",
-        "cull_to_frustum",
-    ]
+    """
+    Class to store the mesh rasterization params with defaults
 
-    def __init__(
-        self,
-        image_size: Union[int, Tuple[int, int]] = 256,
-        blur_radius: float = 0.0,
-        faces_per_pixel: int = 1,
-        bin_size: Optional[int] = None,
-        max_faces_per_bin: Optional[int] = None,
-        # set perspective_correct = None so that the
-        # value can be inferred correctly from the Camera type
-        perspective_correct: Optional[bool] = None,
-        clip_barycentric_coords: Optional[bool] = None,
-        cull_backfaces: bool = False,
-        z_clip_value: Optional[float] = None,
-        cull_to_frustum: bool = False,
-    ) -> None:
-        self.image_size = image_size
-        self.blur_radius = blur_radius
-        self.faces_per_pixel = faces_per_pixel
-        self.bin_size = bin_size
-        self.max_faces_per_bin = max_faces_per_bin
-        self.perspective_correct = perspective_correct
-        self.clip_barycentric_coords = clip_barycentric_coords
-        self.cull_backfaces = cull_backfaces
-        self.z_clip_value = z_clip_value
-        self.cull_to_frustum = cull_to_frustum
+    Members:
+        image_size: Either common height and width or (height, width), in pixels.
+        blur_radius: Float distance in the range [0, 2] used to expand the face
+            bounding boxes for rasterization. Setting blur radius
+            results in blurred edges around the shape instead of a
+            hard boundary. Set to 0 for no blur.
+        faces_per_pixel: (int) Number of faces to keep track of per pixel.
+            We return the nearest faces_per_pixel faces along the z-axis.
+        bin_size: Size of bins to use for coarse-to-fine rasterization. Setting
+            bin_size=0 uses naive rasterization; setting bin_size=None attempts
+            to set it heuristically based on the shape of the input. This should
+            not affect the output, but can affect the speed of the forward pass.
+        max_faces_per_bin: Only applicable when using coarse-to-fine
+            rasterization (bin_size != 0); this is the maximum number of faces
+            allowed within each bin. This should not affect the output values,
+            but can affect the memory usage in the forward pass.
+            Setting max_faces_per_bin=None attempts to set with a heuristic.
+        perspective_correct: Whether to apply perspective correction when
+            computing barycentric coordinates for pixels.
+            None (default) means make correction if the camera uses perspective.
+        clip_barycentric_coords: Whether, after any perspective correction
+            is applied but before the depth is calculated (e.g. for
+            z clipping), to "correct" a location outside the face (i.e. with
+            a negative barycentric coordinate) to a position on the edge of the
+            face. None (default) means clip if blur_radius > 0, which is a condition
+            under which such outside-face-points are likely.
+        cull_backfaces: Whether to only rasterize mesh faces which are
+            visible to the camera.  This assumes that vertices of
+            front-facing triangles are ordered in an anti-clockwise
+            fashion, and triangles that face away from the camera are
+            in a clockwise order relative to the current view
+            direction. NOTE: This will only work if the mesh faces are
+            consistently defined with counter-clockwise ordering when
+            viewed from the outside.
+        z_clip_value: if not None, then triangles will be clipped (and possibly
+            subdivided into smaller triangles) such that z >= z_clip_value.
+            This avoids camera projections that go to infinity as z->0.
+            Default is None as clipping affects rasterization speed and
+            should only be turned on if explicitly needed.
+            See clip.py for all the extra computation that is required.
+        cull_to_frustum: Whether to cull triangles outside the view frustum.
+            Culling involves removing all faces which fall outside view frustum.
+            Default is False for performance as often not needed.
+    """
+
+    image_size: Union[int, Tuple[int, int]] = 256
+    blur_radius: float = 0.0
+    faces_per_pixel: int = 1
+    bin_size: Optional[int] = None
+    max_faces_per_bin: Optional[int] = None
+    perspective_correct: Optional[bool] = None
+    clip_barycentric_coords: Optional[bool] = None
+    cull_backfaces: bool = False
+    z_clip_value: Optional[float] = None
+    cull_to_frustum: bool = False
 
 
 class MeshRasterizer(nn.Module):

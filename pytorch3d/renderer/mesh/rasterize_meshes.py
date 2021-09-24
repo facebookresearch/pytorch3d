@@ -73,12 +73,15 @@ def rasterize_meshes(
             affect the output, but can affect the speed of the forward pass.
         faces_per_bin: Only applicable when using coarse-to-fine rasterization
             (bin_size > 0); this is the maximum number of faces allowed within each
-            bin. If more than this many faces actually fall into a bin, an error
-            will be raised. This should not affect the output values, but can affect
+            bin. This should not affect the output values, but can affect
             the memory usage in the forward pass.
         perspective_correct: Bool, Whether to apply perspective correction when computing
             barycentric coordinates for pixels. This should be set to True if a perspective
             camera is used.
+        clip_barycentric_coords: Whether, after any perspective correction is applied
+            but before the depth is calculated (e.g. for z clipping),
+            to "correct" a location outside the face (i.e. with a negative
+            barycentric coordinate) to a position on the edge of the face.
         cull_backfaces: Bool, Whether to only rasterize mesh faces which are
             visible to the camera.  This assumes that vertices of
             front-facing triangles are ordered in an anti-clockwise
