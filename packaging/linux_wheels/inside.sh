@@ -38,6 +38,7 @@ declare -A CONDA_CUDA_VERSIONS=(
 #    ["1.8.0"]="cu101 cu102 cu111"
 #    ["1.8.1"]="cu101 cu102 cu111"
     ["1.9.0"]="cu102 cu111"
+    ["1.9.1"]="cu102 cu111"
 )
 
 
