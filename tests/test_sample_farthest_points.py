@@ -10,16 +10,17 @@ import numpy as np
 import torch
 from common_testing import (
     TestCaseMixin,
+    get_pytorch3d_dir,
     get_random_cuda_device,
     get_tests_dir,
-    get_pytorch3d_dir,
 )
 from pytorch3d.io import load_obj
 from pytorch3d.ops.sample_farthest_points import (
-    sample_farthest_points_naive,
     sample_farthest_points,
+    sample_farthest_points_naive,
 )
 from pytorch3d.ops.utils import masked_gather
+
 
 DATA_DIR = get_tests_dir() / "data"
 TUTORIAL_DATA_DIR = get_pytorch3d_dir() / "docs/tutorials/data"

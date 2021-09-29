@@ -5,7 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 
 from random import randint
-from typing import Optional, Tuple, Union, List
+from typing import List, Optional, Tuple, Union
 
 import torch
 from pytorch3d import _C
