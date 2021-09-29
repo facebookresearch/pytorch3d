@@ -229,7 +229,6 @@ class _GLTFLoader:
         binary_data = self.get_binary_data(buffer_view["buffer"])
 
         bytesio = BytesIO(binary_data[offset : offset + length].tobytes())
-        # pyre-fixme[16]: `Image.Image` has no attribute `__enter__`.
         with Image.open(bytesio) as f:
             array = np.array(f)
             if array.dtype == np.uint8:

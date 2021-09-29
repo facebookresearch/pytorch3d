@@ -739,7 +739,6 @@ def save_obj(
         texture_map = texture_map.detach().cpu() * 255.0
         image = Image.fromarray(texture_map.numpy().astype(np.uint8))
         with _open_file(image_path, path_manager, "wb") as im_f:
-            # pyre-fixme[6] # incompatible parameter type
             image.save(im_f)
 
         # Create .mtl file with the material name and texture map filename
