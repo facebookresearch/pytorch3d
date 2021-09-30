@@ -110,7 +110,7 @@ def matrix_to_quaternion(matrix: torch.Tensor) -> torch.Tensor:
         quaternions with real part first, as tensor of shape (..., 4).
     """
     if matrix.size(-1) != 3 or matrix.size(-2) != 3:
-        raise ValueError(f"Invalid rotation matrix  shape f{matrix.shape}.")
+        raise ValueError(f"Invalid rotation matrix shape {matrix.shape}.")
 
     batch_dim = matrix.shape[:-2]
     m00, m01, m02, m10, m11, m12, m20, m21, m22 = torch.unbind(
@@ -267,7 +267,7 @@ def matrix_to_euler_angles(matrix, convention: str):
         if letter not in ("X", "Y", "Z"):
             raise ValueError(f"Invalid letter {letter} in convention string.")
     if matrix.size(-1) != 3 or matrix.size(-2) != 3:
-        raise ValueError(f"Invalid rotation matrix  shape f{matrix.shape}.")
+        raise ValueError(f"Invalid rotation matrix shape {matrix.shape}.")
     i0 = _index_from_letter(convention[0])
     i2 = _index_from_letter(convention[2])
     tait_bryan = i0 != i2
@@ -430,7 +430,7 @@ def quaternion_apply(quaternion, point):
         Tensor of rotated points of shape (..., 3).
     """
     if point.size(-1) != 3:
-        raise ValueError(f"Points are not in 3D, f{point.shape}.")
+        raise ValueError(f"Points are not in 3D, {point.shape}.")
     real_parts = point.new_zeros(point.shape[:-1] + (1,))
     point_as_quaternion = torch.cat((real_parts, point), -1)
     out = quaternion_raw_multiply(
