@@ -26,12 +26,23 @@ std::tuple<at::Tensor, at::Tensor> IoUBox3DCpu(
     const at::Tensor& boxes1,
     const at::Tensor& boxes2);
 
+// CUDA implementation
+std::tuple<at::Tensor, at::Tensor> IoUBox3DCuda(
+    const at::Tensor& boxes1,
+    const at::Tensor& boxes2);
+
 // Implementation which is exposed
 inline std::tuple<at::Tensor, at::Tensor> IoUBox3D(
     const at::Tensor& boxes1,
     const at::Tensor& boxes2) {
   if (boxes1.is_cuda() || boxes2.is_cuda()) {
-    AT_ERROR("GPU support not implemented");
+#ifdef WITH_CUDA
+    CHECK_CUDA(boxes1);
+    CHECK_CUDA(boxes2);
+    return IoUBox3DCuda(boxes1.contiguous(), boxes2.contiguous());
+#else
+    AT_ERROR("Not compiled with GPU support.");
+#endif
   }
   return IoUBox3DCpu(boxes1.contiguous(), boxes2.contiguous());
 }

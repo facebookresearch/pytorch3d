@@ -79,7 +79,7 @@ std::tuple<at::Tensor, at::Tensor> IoUBox3DCpu(
         std::fill(tri2_keep.begin(), tri2_keep.end(), 1);
         for (int b1 = 0; b1 < box1_intersect.size(); ++b1) {
           for (int b2 = 0; b2 < box2_intersect.size(); ++b2) {
-            bool is_coplanar =
+            const bool is_coplanar =
                 IsCoplanarFace(box1_intersect[b1], box2_intersect[b2]);
             if (is_coplanar) {
               tri2_keep[b2] = 0;
