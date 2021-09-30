@@ -71,7 +71,7 @@ def rasterize_meshes(
             bin_size=0 uses naive rasterization; setting bin_size=None attempts to
             set it heuristically based on the shape of the input. This should not
             affect the output, but can affect the speed of the forward pass.
-        faces_per_bin: Only applicable when using coarse-to-fine rasterization
+        max_faces_per_bin: Only applicable when using coarse-to-fine rasterization
             (bin_size > 0); this is the maximum number of faces allowed within each
             bin. This should not affect the output values, but can affect
             the memory usage in the forward pass.

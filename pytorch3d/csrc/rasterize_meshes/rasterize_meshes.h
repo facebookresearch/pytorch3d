@@ -75,6 +75,11 @@ RasterizeMeshesNaiveCuda(
 //                         coordinates for each pixel; if this is False then
 //                         this function instead returns screen-space
 //                         barycentric coordinates for each pixel.
+//    clip_barycentric_coords: Whether, after any perspective correction
+//          is applied but before the depth is calculated (e.g. for
+//          z clipping), to "correct" a location outside the face (i.e. with
+//          a negative barycentric coordinate) to a position on the edge of the
+//          face.
 //    cull_backfaces: Bool, Whether to only rasterize mesh faces which are
 //                    visible to the camera.  This assumes that vertices of
 //                    front-facing triangles are ordered in an anti-clockwise
@@ -191,6 +196,11 @@ torch::Tensor RasterizeMeshesBackwardCuda(
 //                         coordinates for each pixel; if this is False then
 //                         this function instead returns screen-space
 //                         barycentric coordinates for each pixel.
+//    clip_barycentric_coords: Whether, after any perspective correction
+//          is applied but before the depth is calculated (e.g. for
+//          z clipping), to "correct" a location outside the face (i.e. with
+//          a negative barycentric coordinate) to a position on the edge of the
+//          face.
 //
 // Returns:
 //    grad_face_verts: float32 Tensor of shape (F, 3, 3) giving downstream
@@ -352,6 +362,11 @@ RasterizeMeshesFineCuda(
 //                         coordinates for each pixel; if this is False then
 //                         this function instead returns screen-space
 //                         barycentric coordinates for each pixel.
+//    clip_barycentric_coords: Whether, after any perspective correction
+//          is applied but before the depth is calculated (e.g. for
+//          z clipping), to "correct" a location outside the face (i.e. with
+//          a negative barycentric coordinate) to a position on the edge of the
+//          face.
 //    cull_backfaces: Bool, Whether to only rasterize mesh faces which are
 //                    visible to the camera.  This assumes that vertices of
 //                    front-facing triangles are ordered in an anti-clockwise
@@ -441,6 +456,7 @@ RasterizeMeshesFine(
 //    blur_radius: float distance in NDC coordinates uses to expand the face
 //                 bounding boxes for the rasterization. Set to 0.0 if no blur
 //                 is required.
+//    faces_per_pixel: the number of closeset faces to rasterize per pixel.
 //    bin_size: Bin size (in pixels) for coarse-to-fine rasterization. Setting
 //              bin_size=0 uses naive rasterization instead.
 //    max_faces_per_bin: The maximum number of faces allowed to fall into each
@@ -451,6 +467,11 @@ RasterizeMeshesFine(
 //                         coordinates for each pixel; if this is False then
 //                         this function instead returns screen-space
 //                         barycentric coordinates for each pixel.
+//    clip_barycentric_coords: Whether, after any perspective correction
+//          is applied but before the depth is calculated (e.g. for
+//          z clipping), to "correct" a location outside the face (i.e. with
+//          a negative barycentric coordinate) to a position on the edge of the
+//          face.
 //    cull_backfaces: Bool, Whether to only rasterize mesh faces which are
 //                    visible to the camera.  This assumes that vertices of
 //                    front-facing triangles are ordered in an anti-clockwise
