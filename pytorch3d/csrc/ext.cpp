@@ -20,6 +20,7 @@
 #include "face_areas_normals/face_areas_normals.h"
 #include "gather_scatter/gather_scatter.h"
 #include "interp_face_attrs/interp_face_attrs.h"
+#include "iou_box3d/iou_box3d.h"
 #include "knn/knn.h"
 #include "mesh_normal_consistency/mesh_normal_consistency.h"
 #include "packed_to_padded_tensor/packed_to_padded_tensor.h"
@@ -86,6 +87,9 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
 
   // Sample PDF
   m.def("sample_pdf", &SamplePdf);
+
+  // 3D IoU
+  m.def("iou_box3d", &IoUBox3D);
 
   // Pulsar.
 #ifdef PULSAR_LOGGING_ENABLED
