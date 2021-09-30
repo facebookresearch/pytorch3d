@@ -91,7 +91,7 @@ def chamfer_distance(
         x_lengths: Optional LongTensor of shape (N,) giving the number of points in each
             cloud in x.
         y_lengths: Optional LongTensor of shape (N,) giving the number of points in each
-            cloud in x.
+            cloud in y.
         x_normals: Optional FloatTensor of shape (N, P1, D).
         y_normals: Optional FloatTensor of shape (N, P2, D).
         weights: Optional FloatTensor of shape (N,) giving weights for
