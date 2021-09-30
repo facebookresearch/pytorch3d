@@ -78,6 +78,13 @@ We have created a short (~14 min) video tutorial providing an overview of the Py
 
 We welcome new contributions to PyTorch3D and we will be actively maintaining this library! Please refer to [CONTRIBUTING.md](./.github/CONTRIBUTING.md) for full instructions on how to run the code, tests and linter, and submit your pull requests.
 
+## Development and Compatibility
+
+- `main` branch: actively developed, without any guarantee, Anything can be broken at any time
+  - REMARK: this includes nightly builds which are built from `main`
+  - HINT: the commit history can help locate regressions or changes
+- backward-compatibility between releases: no guarantee. Best efforts to communicate breaking changes and facilitate migration of code or data (incl. models).
+
 ## Contributors
 
 PyTorch3D is written and maintained by the Facebook AI Research Computer Vision Team.
