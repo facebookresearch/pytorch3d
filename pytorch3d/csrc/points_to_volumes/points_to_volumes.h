@@ -57,6 +57,17 @@ void PointsToVolumesForwardCpu(
     bool align_corners,
     bool splat);
 
+void PointsToVolumesForwardCuda(
+    const torch::Tensor& points_3d,
+    const torch::Tensor& points_features,
+    const torch::Tensor& volume_densities,
+    const torch::Tensor& volume_features,
+    const torch::Tensor& grid_sizes,
+    const torch::Tensor& mask,
+    float point_weight,
+    bool align_corners,
+    bool splat);
+
 inline void PointsToVolumesForward(
     const torch::Tensor& points_3d,
     const torch::Tensor& points_features,
@@ -69,7 +80,23 @@ inline void PointsToVolumesForward(
     bool splat) {
   if (points_3d.is_cuda()) {
 #ifdef WITH_CUDA
-    AT_ERROR("CUDA not implemented yet");
+    CHECK_CUDA(points_3d);
+    CHECK_CUDA(points_features);
+    CHECK_CUDA(volume_densities);
+    CHECK_CUDA(volume_features);
+    CHECK_CUDA(grid_sizes);
+    CHECK_CUDA(mask);
+    PointsToVolumesForwardCuda(
+        points_3d,
+        points_features,
+        volume_densities,
+        volume_features,
+        grid_sizes,
+        mask,
+        point_weight,
+        align_corners,
+        splat);
+    return;
 #else
     AT_ERROR("Not compiled with GPU support.");
 #endif
@@ -101,6 +128,19 @@ void PointsToVolumesBackwardCpu(
     const torch::Tensor& grad_points_3d,
     const torch::Tensor& grad_points_features);
 
+void PointsToVolumesBackwardCuda(
+    const torch::Tensor& points_3d,
+    const torch::Tensor& points_features,
+    const torch::Tensor& grid_sizes,
+    const torch::Tensor& mask,
+    float point_weight,
+    bool align_corners,
+    bool splat,
+    const torch::Tensor& grad_volume_densities,
+    const torch::Tensor& grad_volume_features,
+    const torch::Tensor& grad_points_3d,
+    const torch::Tensor& grad_points_features);
+
 inline void PointsToVolumesBackward(
     const torch::Tensor& points_3d,
     const torch::Tensor& points_features,
@@ -115,7 +155,27 @@ inline void PointsToVolumesBackward(
     const torch::Tensor& grad_points_features) {
   if (points_3d.is_cuda()) {
 #ifdef WITH_CUDA
-    AT_ERROR("CUDA not implemented yet");
+    CHECK_CUDA(points_3d);
+    CHECK_CUDA(points_features);
+    CHECK_CUDA(grid_sizes);
+    CHECK_CUDA(mask);
+    CHECK_CUDA(grad_volume_densities);
+    CHECK_CUDA(grad_volume_features);
+    CHECK_CUDA(grad_points_3d);
+    CHECK_CUDA(grad_points_features);
+    PointsToVolumesBackwardCuda(
+        points_3d,
+        points_features,
+        grid_sizes,
+        mask,
+        point_weight,
+        align_corners,
+        splat,
+        grad_volume_densities,
+        grad_volume_features,
+        grad_points_3d,
+        grad_points_features);
+    return;
 #else
     AT_ERROR("Not compiled with GPU support.");
 #endif

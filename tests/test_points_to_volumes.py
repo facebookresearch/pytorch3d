@@ -420,6 +420,18 @@ class TestRawFunction(TestCaseMixin, unittest.TestCase):
     def test_grad_round_cpu(self):
         self.do_gradcheck(torch.device("cpu"), False, False)
 
+    def test_grad_corners_splat_cuda(self):
+        self.do_gradcheck(torch.device("cuda:0"), True, True)
+
+    def test_grad_corners_round_cuda(self):
+        self.do_gradcheck(torch.device("cuda:0"), False, True)
+
+    def test_grad_splat_cuda(self):
+        self.do_gradcheck(torch.device("cuda:0"), True, False)
+
+    def test_grad_round_cuda(self):
+        self.do_gradcheck(torch.device("cuda:0"), False, False)
+
     def do_gradcheck(self, device, splat: bool, align_corners: bool):
         """
         Use gradcheck to verify the gradient of _points_to_volumes
@@ -491,6 +503,18 @@ class TestRawFunction(TestCaseMixin, unittest.TestCase):
 
     def test_single_splat_cpu(self):
         self.single_point(torch.device("cpu"), True, False)
+
+    def test_single_corners_round_cuda(self):
+        self.single_point(torch.device("cuda:0"), False, True)
+
+    def test_single_corners_splat_cuda(self):
+        self.single_point(torch.device("cuda:0"), True, True)
+
+    def test_single_round_cuda(self):
+        self.single_point(torch.device("cuda:0"), False, False)
+
+    def test_single_splat_cuda(self):
+        self.single_point(torch.device("cuda:0"), True, False)
 
     def single_point(self, device, splat: bool, align_corners: bool):
         """
