@@ -6,6 +6,7 @@
 
 import unittest
 from functools import partial
+from itertools import product
 from typing import Tuple
 
 import numpy as np
@@ -254,7 +255,7 @@ class TestPointsToVolumes(TestCaseMixin, unittest.TestCase):
 
         for volume_size in ([25, 25, 25], [30, 25, 15]):
 
-            for interp_mode in ("trilinear", "nearest"):
+            for python, interp_mode in product([True, False], ["trilinear", "nearest"]):
 
                 (pointclouds, initial_volumes) = init_volume_boundary_pointcloud(
                     volume_size=volume_size,
@@ -266,7 +267,10 @@ class TestPointsToVolumes(TestCaseMixin, unittest.TestCase):
                 )
 
                 volumes = add_pointclouds_to_volumes(
-                    pointclouds, initial_volumes, mode=interp_mode
+                    pointclouds,
+                    initial_volumes,
+                    mode=interp_mode,
+                    _python=python,
                 )
 
                 V_color, V_density = volumes.features(), volumes.densities()
