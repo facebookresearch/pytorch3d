@@ -25,6 +25,7 @@
 #include "mesh_normal_consistency/mesh_normal_consistency.h"
 #include "packed_to_padded_tensor/packed_to_padded_tensor.h"
 #include "point_mesh/point_mesh_cuda.h"
+#include "points_to_volumes/points_to_volumes.h"
 #include "rasterize_meshes/rasterize_meshes.h"
 #include "rasterize_points/rasterize_points.h"
 #include "sample_farthest_points/sample_farthest_points.h"
@@ -47,6 +48,8 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
   m.def(
       "mesh_normal_consistency_find_verts", &MeshNormalConsistencyFindVertices);
   m.def("gather_scatter", &GatherScatter);
+  m.def("points_to_volumes_forward", PointsToVolumesForward);
+  m.def("points_to_volumes_backward", PointsToVolumesBackward);
   m.def("rasterize_points", &RasterizePoints);
   m.def("rasterize_points_backward", &RasterizePointsBackward);
   m.def("rasterize_meshes_backward", &RasterizeMeshesBackward);
