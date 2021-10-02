@@ -7,7 +7,6 @@
 import warnings
 from typing import Dict, List, NamedTuple, Optional, Tuple, Union
 
-import numpy as np
 import plotly.graph_objects as go
 import torch
 from plotly.subplots import make_subplots
@@ -644,31 +643,12 @@ def _add_pointcloud_trace(
         max_points_per_pointcloud: the number of points to render, which are randomly sampled.
         marker_size: the size of the rendered points
     """
-    pointclouds = pointclouds.detach().cpu()
+    pointclouds = pointclouds.detach().cpu().subsample(max_points_per_pointcloud)
     verts = pointclouds.points_packed()
     features = pointclouds.features_packed()
 
-    indices = None
-    if pointclouds.num_points_per_cloud().max() > max_points_per_pointcloud:
-        start_index = 0
-        index_list = []
-        for num_points in pointclouds.num_points_per_cloud():
-            if num_points > max_points_per_pointcloud:
-                indices_cloud = np.random.choice(
-                    num_points, max_points_per_pointcloud, replace=False
-                )
-                index_list.append(start_index + indices_cloud)
-            else:
-                index_list.append(start_index + np.arange(num_points))
-            start_index += num_points
-        indices = np.concatenate(index_list)
-        verts = verts[indices]
-
     color = None
     if features is not None:
-        if indices is not None:
-            # Only select features if we selected vertices above
-            features = features[indices]
         if features.shape[1] == 4:  # rgba
             template = "rgb(%d, %d, %d, %f)"
             rgb = (features[:, :3].clamp(0.0, 1.0) * 255).int()
