@@ -16,7 +16,7 @@ In 2D, IoU is commonly applied to axis-aligned boxes, namely boxes with edges pa
 In 3D, boxes are usually not axis aligned and can be oriented in any way in the world.
 We introduce a new algorithm which computes the *exact* IoU of two *oriented 3D boxes*.
 
-Our algorithm is based on the simple observation that the intersection of two oriented boxes, `box1` and `box2`, is a convex n-gon with `n > 2` comprised of connected *planar units*.
+Our algorithm is based on the simple observation that the intersection of two oriented 3D boxes, `box1` and `box2`, is a convex polyhedron (convex n-gon in 2D) with `n > 2` comprised of connected *planar units*.
 In 3D, these planar units are 3D triangular faces.
 In 2D, they are 2D edges.
 Each planar unit belongs strictly to either `box1` or `box2`.
@@ -46,12 +46,12 @@ The intersection shape is formed by the convex hull from the intersection points
 
 Our algorithm has several advantages over Objectron's:
 
-1. Our algorithm also computes the points of intersection, similar to Objectron, but in addition stores the *planar units* the points belong to. This eliminates the need for convex hull computation which is `O(nlogn)` and relies on a third party library which often crashes with nondescript error messages.
-2. Objectron's implementation assumes that boxes are a rotation away from axis aligned. Our algorithm and implementation makes no such assumption and works for any 3D boxes.
-3. Our implementation supports batching, unlike Objectron which assumes single element inputs for `box1` and `box2`.
-4. Our implementation is easily parallelizable and in fact we provide a custom C++/CUDA implementation which is **450 times faster than Objectron**.
+* Our algorithm also computes the points of intersection, similar to Objectron, but in addition stores the *planar units* the points belong to. This eliminates the need for convex hull computation which is `O(nlogn)` and relies on a third party library which often crashes with nondescript error messages.
+* Objectron's implementation assumes that boxes are a rotation away from axis aligned. Our algorithm and implementation make no such assumption and work for any 3D boxes.
+* Our implementation supports batching, unlike Objectron which assumes single element inputs for `box1` and `box2`.
+* Our implementation is easily parallelizable and in fact we provide a custom C++/CUDA implementation which is **450 times faster than Objectron**.
 
-Below we compare the performance for Objectron (in C++) and our algorithm, in C++ and CUDA. We benchmark for a common use case in object detection where `boxes1` hold M predictions and `boxes2` hold N ground truth 3D boxes in an image. We compute the `MxN` IoU matrix and report the time in ms for `M=N=16`.
+Below we compare the performance for Objectron (in C++) and our algorithm, in C++ and CUDA. We benchmark for a common use case in object detection where `boxes1` hold M predictions and `boxes2` hold N ground truth 3D boxes in an image and compute the `MxN` IoU matrix. We report the time in ms for `M=N=16`.
 
 <p align="center">
 <img src="assets/iou3d_comp.png" alt="drawing" width="400"/>
