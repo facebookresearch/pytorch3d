@@ -23,10 +23,10 @@
 # where $d(g_i, g_j)$ is a suitable metric that compares the extrinsics of cameras $g_i$ and $g_j$. 
 # 
 # Visually, the problem can be described as follows. The picture below depicts the situation at the beginning of our optimization. The ground truth cameras are plotted in purple while the randomly initialized estimated cameras are plotted in orange:
-# ![Initialization](https://github.com/facebookresearch/pytorch3d/blob/master/docs/tutorials/data/bundle_adjustment_initialization.png?raw=1)
+# ![Initialization](https://github.com/facebookresearch/pytorch3d/blob/main/docs/tutorials/data/bundle_adjustment_initialization.png?raw=1)
 # 
 # Our optimization seeks to align the estimated (orange) cameras with the ground truth (purple) cameras, by minimizing the discrepancies between pairs of relative cameras. Thus, the solution to the problem should look as follows:
-# ![Solution](https://github.com/facebookresearch/pytorch3d/blob/master/docs/tutorials/data/bundle_adjustment_final.png?raw=1)
+# ![Solution](https://github.com/facebookresearch/pytorch3d/blob/main/docs/tutorials/data/bundle_adjustment_final.png?raw=1)
 # 
 # In practice, the camera extrinsics $g_{ij}$ and $g_i$ are represented using objects from the `SfMPerspectiveCameras` class initialized with the corresponding rotation and translation matrices `R_absolute` and `T_absolute` that define the extrinsic parameters $g = (R, T); R \in SO(3); T \in \mathbb{R}^3$. In order to ensure that `R_absolute` is a valid rotation matrix, we represent it using an exponential map (implemented with `so3_exp_map`) of the axis-angle representation of the rotation `log_R_absolute`.
 # 
@@ -97,11 +97,11 @@ else:
 # In[ ]:
 
 
-get_ipython().system('wget https://raw.githubusercontent.com/facebookresearch/pytorch3d/master/docs/tutorials/utils/camera_visualization.py')
+get_ipython().system('wget https://raw.githubusercontent.com/facebookresearch/pytorch3d/main/docs/tutorials/utils/camera_visualization.py')
 from camera_visualization import plot_camera_scene
 
 get_ipython().system('mkdir data')
-get_ipython().system('wget -P data https://raw.githubusercontent.com/facebookresearch/pytorch3d/master/docs/tutorials/data/camera_graph.pth')
+get_ipython().system('wget -P data https://raw.githubusercontent.com/facebookresearch/pytorch3d/main/docs/tutorials/data/camera_graph.pth')
 
 
 # OR if running **locally** uncomment and run the following cell:

@@ -81,7 +81,7 @@ sys.path.append(os.path.abspath(''))
 # In[ ]:
 
 
-get_ipython().system('wget https://raw.githubusercontent.com/facebookresearch/pytorch3d/master/docs/tutorials/utils/plot_image_grid.py')
+get_ipython().system('wget https://raw.githubusercontent.com/facebookresearch/pytorch3d/main/docs/tutorials/utils/plot_image_grid.py')
 from plot_image_grid import image_grid
 
 

@@ -1,0 +1,125 @@
+<!DOCTYPE html><html lang="en"><head><meta charSet="utf-8"/><meta http-equiv="X-UA-Compatible" content="IE=edge"/><title>iou3d · PyTorch3D</title><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="generator" content="Docusaurus"/><meta name="description" content="# Intersection Over Union of Oriented 3D Boxes: A New Algorithm"/><meta name="docsearch:language" content="en"/><meta property="og:title" content="iou3d · PyTorch3D"/><meta property="og:type" content="website"/><meta property="og:url" content="https://pytorch3d.org/"/><meta property="og:description" content="# Intersection Over Union of Oriented 3D Boxes: A New Algorithm"/><meta property="og:image" content="https://pytorch3d.org/img/pytorch3dlogoicon.svg"/><meta name="twitter:card" content="summary"/><meta name="twitter:image" content="https://pytorch3d.org/img/pytorch3dlogoicon.svg"/><link rel="shortcut icon" href="/img/pytorch3dfavicon.png"/><link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css"/><script>
+              (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+              (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+              m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+              })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+              ga('create', 'UA-157376881-1', 'auto');
+              ga('send', 'pageview');
+            </script><script type="text/javascript" src="https://buttons.github.io/buttons.js"></script><script src="/js/scrollSpy.js"></script><link rel="stylesheet" href="/css/main.css"/><script src="/js/codetabs.js"></script></head><body class="sideNavVisible separateOnPageNav"><div class="fixedHeaderContainer"><div class="headerWrapper wrapper"><header><a href="/"><img class="logo" src="/img/pytorch3dfavicon.png" alt="PyTorch3D"/><h2 class="headerTitleWithLogo">PyTorch3D</h2></a><div class="navigationWrapper navigationSlider"><nav class="slidingNav"><ul class="nav-site nav-site-internal"><li class="siteNavGroupActive"><a href="/docs/why_pytorch3d" target="_self">Docs</a></li><li class=""><a href="/tutorials" target="_self">Tutorials</a></li><li class=""><a href="https://pytorch3d.readthedocs.io/" target="_self">API</a></li><li class=""><a href="https://github.com/facebookresearch/pytorch3d" target="_self">GitHub</a></li></ul></nav></div></header></div></div><div class="navPusher"><div class="docMainWrapper wrapper"><div class="docsNavContainer" id="docsNav"><nav class="toc"><div class="toggleNav"><section class="navWrapper wrapper"><div class="navBreadcrumb wrapper"><div class="navToggle" id="navToggler"><div class="hamburger-menu"><div class="line1"></div><div class="line2"></div><div class="line3"></div></div></div><h2><i>›</i><span>Ops</span></h2><div class="tocToggler" id="tocToggler"><i class="icon-toc"></i></div></div><div class="navGroups"><div class="navGroup"><h3 class="navGroupCategoryTitle">Introduction</h3><ul class=""><li class="navListItem"><a class="navItem" href="/docs/why_pytorch3d">Why PyTorch3D</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Data</h3><ul class=""><li class="navListItem"><a class="navItem" href="/docs/io">File IO</a></li><li class="navListItem"><a class="navItem" href="/docs/meshes_io">Loading from file</a></li><li class="navListItem"><a class="navItem" href="/docs/datasets">Data loaders</a></li><li class="navListItem"><a class="navItem" href="/docs/batching">Batching</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Ops</h3><ul class=""><li class="navListItem"><a class="navItem" href="/docs/cubify">Cubify</a></li><li class="navListItem navListItemActive"><a class="navItem" href="/docs/iou3d">IoU3D</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Visualization</h3><ul class=""><li class="navListItem"><a class="navItem" href="/docs/visualization">Plotly Visualization</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Renderer</h3><ul class=""><li class="navListItem"><a class="navItem" href="/docs/renderer">Overview</a></li><li class="navListItem"><a class="navItem" href="/docs/renderer_getting_started">Getting Started</a></li><li class="navListItem"><a class="navItem" href="/docs/cameras">Cameras</a></li></ul></div></div></section></div><script>
+            var coll = document.getElementsByClassName('collapsible');
+            var checkActiveCategory = true;
+            for (var i = 0; i < coll.length; i++) {
+              var links = coll[i].nextElementSibling.getElementsByTagName('*');
+              if (checkActiveCategory){
+                for (var j = 0; j < links.length; j++) {
+                  if (links[j].classList.contains('navListItemActive')){
+                    coll[i].nextElementSibling.classList.toggle('hide');
+                    coll[i].childNodes[1].classList.toggle('rotate');
+                    checkActiveCategory = false;
+                    break;
+                  }
+                }
+              }
+
+              coll[i].addEventListener('click', function() {
+                var arrow = this.childNodes[1];
+                arrow.classList.toggle('rotate');
+                var content = this.nextElementSibling;
+                content.classList.toggle('hide');
+              });
+            }
+
+            document.addEventListener('DOMContentLoaded', function() {
+              createToggler('#navToggler', '#docsNav', 'docsSliderActive');
+              createToggler('#tocToggler', 'body', 'tocActive');
+
+              var headings = document.querySelector('.toc-headings');
+              headings && headings.addEventListener('click', function(event) {
+                var el = event.target;
+                while(el !== headings){
+                  if (el.tagName === 'A') {
+                    document.body.classList.remove('tocActive');
+                    break;
+                  } else{
+                    el = el.parentNode;
+                  }
+                }
+              }, false);
+
+              function createToggler(togglerSelector, targetSelector, className) {
+                var toggler = document.querySelector(togglerSelector);
+                var target = document.querySelector(targetSelector);
+
+                if (!toggler) {
+                  return;
+                }
+
+                toggler.onclick = function(event) {
+                  event.preventDefault();
+
+                  target.classList.toggle(className);
+                };
+              }
+            });
+        </script></nav></div><div class="container mainContainer docsContainer"><div class="wrapper"><div class="post"><header class="postHeader"></header><article><div><span><h1><a class="anchor" aria-hidden="true" id="intersection-over-union-of-oriented-3d-boxes-a-new-algorithm"></a><a href="#intersection-over-union-of-oriented-3d-boxes-a-new-algorithm" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Intersection Over Union of Oriented 3D Boxes: A New Algorithm</h1>
+<p>Author: Georgia Gkioxari</p>
+<p>Implementation: Georgia Gkioxari and Nikhila Ravi</p>
+<h2><a class="anchor" aria-hidden="true" id="description"></a><a href="#description" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Description</h2>
+<p>Intersection over union (IoU) of boxes is widely used as an evaluation metric in object detection (<a href="http://host.robots.ox.ac.uk/pascal/VOC/">1</a>, <a href="https://cocodataset.org/">2</a>).
+In 2D, IoU is commonly applied to axis-aligned boxes, namely boxes with edges parallel to the image axis.
+In 3D, boxes are usually not axis aligned and can be oriented in any way in the world.
+We introduce a new algorithm which computes the <em>exact</em> IoU of two <em>oriented 3D boxes</em>.</p>
+<p>Our algorithm is based on the simple observation that the intersection of two oriented 3D boxes, <code>box1</code> and <code>box2</code>, is a convex polyhedron (convex n-gon in 2D) with <code>n &gt; 2</code> comprised of connected <em>planar units</em>.
+In 3D, these planar units are 3D triangular faces.
+In 2D, they are 2D edges.
+Each planar unit belongs strictly to either <code>box1</code> or <code>box2</code>.
+Our algorithm finds these units by iterating through the sides of each box.</p>
+<ol>
+<li>For each 3D triangular face <code>e</code> in <code>box1</code> we check wether <code>e</code> is <em>inside</em> <code>box2</code>.</li>
+<li>If <code>e</code> is not <em>inside</em>, then we discard it.</li>
+<li>If <code>e</code> is <em>inside</em> or <em>partially inside</em>, then the part of <code>e</code> <em>inside</em> <code>box2</code> is added to the units that comprise the final intersection shape.</li>
+<li>We repeat for <code>box2</code>.</li>
+</ol>
+<p>Below, we show a visualization of our algorithm for the case of 2D oriented boxes.</p>
+<p align="center">
+<img src="assets/iou3d.gif" alt="drawing" width="400"/>
+</p>
+<p>Note that when a box's unit <code>e</code> is <em>partially inside</em> a <code>box</code> then <code>e</code> breaks into smaller units. In 2D, <code>e</code> is an edge and breaks into smaller edges. In 3D, <code>e</code> is a 3D triangular face and is clipped to more and smaller faces by the plane of the <code>box</code> it intersects with.
+This is the sole fundamental difference between the algorithms for 2D and 3D.</p>
+<h2><a class="anchor" aria-hidden="true" id="comparison-with-other-algorithms"></a><a href="#comparison-with-other-algorithms" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Comparison With Other Algorithms</h2>
+<p>Current algorithms for 3D box IoU rely on crude approximations or make box assumptions, for example they restrict the orientation of the 3D boxes.
+<a href="https://arxiv.org/abs/2012.09988">Objectron</a> provides a nice discussion on the limitations of prior works.
+<a href="https://arxiv.org/abs/2012.09988">Objectron</a> introduces a great algorithm for exact IoU computation of oriented 3D boxes.
+Objectron's algorithm computes the intersection points of two boxes using the <a href="https://en.wikipedia.org/wiki/Sutherland%E2%80%93Hodgman_algorithm">Sutherland-Hodgman algorithm</a>.
+The intersection shape is formed by the convex hull from the intersection points, using the <a href="http://www.qhull.org/">Qhull library</a>.</p>
+<p>Our algorithm has several advantages over Objectron's:</p>
+<ul>
+<li>Our algorithm also computes the points of intersection, similar to Objectron, but in addition stores the <em>planar units</em> the points belong to. This eliminates the need for convex hull computation which is <code>O(nlogn)</code> and relies on a third party library which often crashes with nondescript error messages.</li>
+<li>Objectron's implementation assumes that boxes are a rotation away from axis aligned. Our algorithm and implementation make no such assumption and work for any 3D boxes.</li>
+<li>Our implementation supports batching, unlike Objectron which assumes single element inputs for <code>box1</code> and <code>box2</code>.</li>
+<li>Our implementation is easily parallelizable and in fact we provide a custom C++/CUDA implementation which is <strong>450 times faster than Objectron</strong>.</li>
+</ul>
+<p>Below we compare the performance for Objectron (in C++) and our algorithm, in C++ and CUDA. We benchmark for a common use case in object detection where <code>boxes1</code> hold M predictions and <code>boxes2</code> hold N ground truth 3D boxes in an image and compute the <code>MxN</code> IoU matrix. We report the time in ms for <code>M=N=16</code>.</p>
+<p align="center">
+<img src="assets/iou3d_comp.png" alt="drawing" width="400"/>
+</p>
+<h2><a class="anchor" aria-hidden="true" id="usage-and-code"></a><a href="#usage-and-code" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Usage and Code</h2>
+<pre><code class="hljs css language-python"><span class="hljs-keyword">from</span> pytorch3d.ops <span class="hljs-keyword">import</span> box3d_overlap
+<span class="hljs-comment"># Assume inputs: boxes1 (M, 8, 3) and boxes2 (N, 8, 3)</span>
+intersection_vol, iou_3d = box3d_overal(boxes1, boxes2)
+</code></pre>
+<p>For more details, read <a href="https://github.com/facebookresearch/pytorch3d/blob/main/pytorch3d/ops/iou_box3d.py">iou_box3d.py</a>.</p>
+<p>Note that our implementation is not differentiable as of now. We plan to add gradient support soon.</p>
+<p>We also include have extensive <a href="https://github.com/facebookresearch/pytorch3d/blob/main/tests/test_iou_box3d.py">tests</a> comparing our implementation with Objectron and MeshLab.</p>
+<h2><a class="anchor" aria-hidden="true" id="cite"></a><a href="#cite" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Cite</h2>
+<p>If you use our 3D IoU algorithm, please cite PyTorch3D</p>
+<pre><code class="hljs css language-bibtex">@article{ravi2020pytorch3d,
+    author = {Nikhila Ravi <span class="hljs-keyword">and </span><span class="hljs-keyword">Jeremy </span>Reizenstein <span class="hljs-keyword">and </span>David Novotny <span class="hljs-keyword">and </span>Taylor Gordon
+                  <span class="hljs-keyword">and </span>Wan-Yen Lo <span class="hljs-keyword">and </span><span class="hljs-keyword">Justin </span><span class="hljs-keyword">Johnson </span><span class="hljs-keyword">and </span>Georgia Gkioxari},
+    title = {Accelerating <span class="hljs-number">3</span>D Deep Learning with PyTorch3D},
+    <span class="hljs-keyword">journal </span>= {arXiv:<span class="hljs-number">2007</span>.<span class="hljs-number">08501</span>},
+    year = {<span class="hljs-number">2020</span>},
+}
+</code></pre>
+</span></div></article></div><div class="docLastUpdate"><em>Last updated by Georgia Gkioxari</em></div><div class="docs-prevnext"><a class="docs-prev button" href="/docs/cubify"><span class="arrow-prev">← </span><span>Cubify</span></a><a class="docs-next button" href="/docs/visualization"><span>Plotly Visualization</span><span class="arrow-next"> →</span></a></div></div></div><nav class="onPageNav"><ul class="toc-headings"><li><a href="#description">Description</a></li><li><a href="#comparison-with-other-algorithms">Comparison With Other Algorithms</a></li><li><a href="#usage-and-code">Usage and Code</a></li><li><a href="#cite">Cite</a></li></ul></nav></div><footer class="nav-footer" id="footer"><section class="sitemap"><div class="footerSection"><div class="social"><a class="github-button" href="https://github.com/facebookresearch/pytorch3d" data-count-href="https://github.com/facebookresearch/pytorch3d/stargazers" data-show-count="true" data-count-aria-label="# stargazers on GitHub" aria-label="Star PyTorch3D on GitHub">pytorch3d</a></div></div></section><a href="https://opensource.facebook.com/" target="_blank" rel="noreferrer noopener" class="fbOpenSource"><img src="/img/oss_logo.png" alt="Facebook Open Source" width="170" height="45"/></a><section class="copyright">Copyright © 2021 Facebook Inc<br/>Legal:<a href="https://opensource.facebook.com/legal/privacy/" target="_blank" rel="noreferrer noopener">Privacy</a><a href="https://opensource.facebook.com/legal/terms/" target="_blank" rel="noreferrer noopener">Terms</a></section></footer></div></body></html>
