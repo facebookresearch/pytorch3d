@@ -7,6 +7,8 @@
 
 # run this script from the project root using `./scripts/build_docs.sh`
 
+set -e
+
 usage() {
   echo "Usage: $0 [-b]"
   echo ""
@@ -37,7 +39,7 @@ done
 echo "-----------------------------------"
 echo "Building PyTorch3D Docusaurus site"
 echo "-----------------------------------"
-cd website || exit
+cd website
 yarn
 cd ..
 
@@ -49,7 +51,7 @@ mkdir -p "website/_tutorials"
 mkdir -p "website/static/files"
 python scripts/parse_tutorials.py --repo_dir "${cwd}"
 
-cd website || exit
+cd website
 
 if [[ $BUILD_STATIC == true ]]; then
   echo "-----------------------------------"
