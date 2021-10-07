@@ -28,9 +28,18 @@ def _cameras_from_opencv_projection(
     # Retype the image_size correctly and flip to width, height.
     image_size_wh = image_size.to(R).flip(dims=(1,))
 
+    # Screen to NDC conversion:
+    # For non square images, we scale the points such that smallest side
+    # has range [-1, 1] and the largest side has range [-u, u], with u > 1.
+    # This convention is consistent with the PyTorch3D renderer, as well as
+    # the transformation function `get_ndc_to_screen_transform`.
+    scale = (image_size_wh.to(R).min(dim=1, keepdim=True)[0] - 1) / 2.0
+    scale = scale.expand(-1, 2)
+    c0 = (image_size_wh - 1) / 2.0
+
     # Get the PyTorch3D focal length and principal point.
-    focal_pytorch3d = focal_length / (0.5 * image_size_wh)
-    p0_pytorch3d = -(principal_point / (0.5 * image_size_wh) - 1)
+    focal_pytorch3d = focal_length / scale
+    p0_pytorch3d = -(principal_point - c0) / scale
 
     # For R, T we flip x, y axes (opencv screen space has an opposite
     # orientation of screen axes).
@@ -45,6 +54,7 @@ def _cameras_from_opencv_projection(
         T=T_pytorch3d,
         focal_length=focal_pytorch3d,
         principal_point=p0_pytorch3d,
+        image_size=image_size,
     )
 
 
@@ -64,8 +74,13 @@ def _opencv_from_cameras_projection(
     # Retype the image_size correctly and flip to width, height.
     image_size_wh = image_size.to(R).flip(dims=(1,))
 
-    principal_point = (-p0_pytorch3d + 1.0) * (0.5 * image_size_wh)  # pyre-ignore
-    focal_length = focal_pytorch3d * (0.5 * image_size_wh)
+    # NDC to screen conversion.
+    scale = (image_size_wh.to(R).min(dim=1, keepdim=True)[0] - 1) / 2.0
+    scale = scale.expand(-1, 2)
+    c0 = (image_size_wh - 1) / 2.0
+
+    principal_point = -p0_pytorch3d * scale + c0
+    focal_length = focal_pytorch3d * scale
 
     camera_matrix = torch.zeros_like(R)
     camera_matrix[:, :2, 2] = principal_point

@@ -24,14 +24,6 @@ from pytorch3d.utils import (
 DATA_DIR = get_tests_dir() / "data"
 
 
-def _coords_opencv_screen_to_pytorch3d_ndc(xy_opencv, image_size):
-    """
-    Converts the OpenCV screen coordinates `xy_opencv` to PyTorch3D NDC coordinates.
-    """
-    xy_pytorch3d = -(2.0 * xy_opencv / image_size.flip(dims=(1,))[:, None] - 1.0)
-    return xy_pytorch3d
-
-
 def cv2_project_points(pts, rvec, tvec, camera_matrix):
     """
     Reproduces the `cv2.projectPoints` function from OpenCV using PyTorch.
@@ -145,18 +137,13 @@ class TestCameraConversions(TestCaseMixin, unittest.TestCase):
             R, tvec, camera_matrix, image_size
         )
 
-        # project the 3D points with converted cameras
-        pts_proj_pytorch3d = cameras_opencv_to_pytorch3d.transform_points(pts)[..., :2]
-
-        # convert the opencv-projected points to pytorch3d screen coords
-        pts_proj_opencv_in_pytorch3d_screen = _coords_opencv_screen_to_pytorch3d_ndc(
-            pts_proj_opencv, image_size
-        )
+        # project the 3D points with converted cameras to screen space.
+        pts_proj_pytorch3d_screen = cameras_opencv_to_pytorch3d.transform_points_screen(
+            pts
+        )[..., :2]
 
         # compare to the cached projected points
-        self.assertClose(
-            pts_proj_opencv_in_pytorch3d_screen, pts_proj_pytorch3d, atol=1e-5
-        )
+        self.assertClose(pts_proj_opencv, pts_proj_pytorch3d_screen, atol=1e-5)
 
         # Check the inverse.
         R_i, tvec_i, camera_matrix_i = opencv_from_cameras_projection(
