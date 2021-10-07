@@ -322,7 +322,7 @@ class TestRasterizeRectangleImagesMeshes(TestCaseMixin, unittest.TestCase):
 
             # Finally check the gradients of the input vertices for
             # the square and non square case
-            self.assertClose(verts_square.grad, grad_tensor.grad, rtol=3e-4)
+            self.assertClose(verts_square.grad, grad_tensor.grad, rtol=3e-4, atol=5e-3)
 
     def test_gpu(self):
         """
