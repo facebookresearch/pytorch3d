@@ -11,7 +11,8 @@
 #include <thrust/device_vector.h>
 #include <cstdio>
 #include "utils/float_math.cuh"
-#include "utils/geometry_utils.cuh"
+
+const auto kEpsilon = 1e-4;
 
 /*
 _PLANES and _TRIS define the 4- and 3-connectivity

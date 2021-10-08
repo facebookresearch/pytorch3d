@@ -16,9 +16,9 @@
 #include <queue>
 #include <tuple>
 #include <type_traits>
-#include "utils/geometry_utils.h"
 #include "utils/vec3.h"
 
+const auto kEpsilon = 1e-4;
 /*
 _PLANES and _TRIS define the 4- and 3-connectivity
 of the 8 box corners.
