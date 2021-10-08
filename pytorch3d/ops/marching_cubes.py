@@ -117,7 +117,6 @@ def marching_cubes_naive(
     volume_data_batch = volume_data_batch.detach().cpu()
     batched_verts, batched_faces = [], []
     D, H, W = volume_data_batch.shape[1:]
-    # pyre-ignore [16]
     volume_size_xyz = volume_data_batch.new_tensor([W, H, D])[None]
 
     if return_local_coords:

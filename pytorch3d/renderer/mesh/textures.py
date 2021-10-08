@@ -1134,7 +1134,6 @@ class TexturesUV(TexturesBase):
             )
         merging_plan = pack_unique_rectangles(heights_and_widths)
         C = maps[0].shape[-1]
-        # pyre-fixme[16]: `Tensor` has no attribute `new_zeros`.
         single_map = maps[0].new_zeros((*merging_plan.total_size, C))
         verts_uvs = self.verts_uvs_list()
         verts_uvs_merged = []

@@ -791,7 +791,7 @@ def _add_ray_bundle_trace(
     # make ray line endpoints
     min_max_ray_depth = torch.stack(
         [
-            ray_bundle_flat.lengths.min(dim=1).values,  # pyre-ignore[16]
+            ray_bundle_flat.lengths.min(dim=1).values,
             ray_bundle_flat.lengths.max(dim=1).values,
         ],
         dim=-1,

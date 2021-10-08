@@ -475,7 +475,6 @@ def rasterize_meshes_python(  # noqa: C901
     )
 
     # Calculate all face bounding boxes.
-    # pyre-fixme[16]: `Tuple` has no attribute `values`.
     x_mins = torch.min(faces_verts[:, :, 0], dim=1, keepdim=True).values
     x_maxs = torch.max(faces_verts[:, :, 0], dim=1, keepdim=True).values
     y_mins = torch.min(faces_verts[:, :, 1], dim=1, keepdim=True).values

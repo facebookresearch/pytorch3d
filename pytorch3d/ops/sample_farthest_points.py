@@ -134,7 +134,6 @@ def sample_farthest_points_naive(
         # Initialize closest distances to inf, shape: (P,)
         # This will be updated at each iteration to track the closest distance of the
         # remaining points to any of the selected points
-        # pyre-fixme[16]: `torch.Tensor` has no attribute new_full.
         closest_dists = points.new_full(
             (lengths[n],), float("inf"), dtype=torch.float32
         )

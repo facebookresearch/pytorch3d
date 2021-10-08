@@ -67,7 +67,7 @@ def hard_rgb_blend(
     if isinstance(background_color_, torch.Tensor):
         background_color = background_color_.to(device)
     else:
-        background_color = colors.new_tensor(background_color_)  # pyre-fixme[16]
+        background_color = colors.new_tensor(background_color_)
 
     # Find out how much background_color needs to be expanded to be used for masked_scatter.
     num_background_pixels = is_background.sum()
@@ -217,7 +217,6 @@ def softmax_rgb_blend(
         znear = znear[:, None, None, None]
 
     z_inv = (zfar - fragments.zbuf) / (zfar - znear) * mask
-    # pyre-fixme[16]: `Tuple` has no attribute `values`.
     z_inv_max = torch.max(z_inv, dim=-1).values[..., None].clamp(min=eps)
     weights_num = prob_map * torch.exp((z_inv - z_inv_max) / blend_params.gamma)
 

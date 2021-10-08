@@ -142,7 +142,6 @@ def matrix_to_quaternion(matrix: torch.Tensor) -> torch.Tensor:
 
     # We floor here at 0.1 but the exact level is not important; if q_abs is small,
     # the candidate won't be picked.
-    # pyre-ignore [16]: `torch.Tensor` has no attribute `new_tensor`.
     quat_candidates = quat_by_rijk / (2.0 * q_abs[..., None].max(q_abs.new_tensor(0.1)))
 
     # if not for numerical problems, quat_candidates[i] should be same (up to a sign),

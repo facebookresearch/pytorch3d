@@ -298,7 +298,7 @@ def _xy_to_ray_bundle(
             .reshape(batch_size, n_rays_per_image * 2, 2),
             torch.cat(
                 (
-                    xy_grid.new_ones(batch_size, n_rays_per_image, 1),  # pyre-ignore
+                    xy_grid.new_ones(batch_size, n_rays_per_image, 1),
                     2.0 * xy_grid.new_ones(batch_size, n_rays_per_image, 1),
                 ),
                 dim=1,

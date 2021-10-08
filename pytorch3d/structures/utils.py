@@ -52,7 +52,6 @@ def list_to_padded(
 
     # replace empty 1D tensors with empty tensors with a correct number of dimensions
     x = [
-        # pyre-fixme[16]: `Tensor` has no attribute `new_zeros`.
         (y.new_zeros([0] * element_ndim) if (y.ndim == 1 and y.nelement() == 0) else y)
         for y in x
     ]
