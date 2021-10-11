@@ -9,7 +9,7 @@ The core library is written in PyTorch. Several components have underlying imple
 
 - Linux or macOS or Windows
 - Python 3.6, 3.7, 3.8 or 3.9
-- PyTorch 1.5.0, 1.5.1, 1.6.0, 1.7.0, 1.7.1, 1.8.0, 1.8.1, 1.9.0 or 1.9.1.
+- PyTorch 1.6.0, 1.7.0, 1.7.1, 1.8.0, 1.8.1, 1.9.0 or 1.9.1.
 - torchvision that matches the PyTorch installation. You can install them together as explained at pytorch.org to make sure of this.
 - gcc & g++ ≥ 4.9
 - [fvcore](https://github.com/facebookresearch/fvcore)

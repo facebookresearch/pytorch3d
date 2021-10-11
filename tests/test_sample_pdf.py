@@ -12,7 +12,6 @@ from common_testing import TestCaseMixin
 from pytorch3d.renderer.implicit.sample_pdf import sample_pdf, sample_pdf_python
 
 
-@unittest.skipIf(torch.__version__[:4] == "1.5.", "searchsorted needs PyTorch 1.6")
 class TestSamplePDF(TestCaseMixin, unittest.TestCase):
     def setUp(self) -> None:
         super().setUp()

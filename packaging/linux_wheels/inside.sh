@@ -53,12 +53,7 @@ do
             continue
         fi
 
-        if [[ "3.9" == "$python_version" ]]
-        then
-            extra_channel="-c conda-forge"
-        else
-            extra_channel=""
-        fi
+        extra_channel="-c conda-forge"
 
         for cu_version in ${CONDA_CUDA_VERSIONS[$pytorch_version]}
         do

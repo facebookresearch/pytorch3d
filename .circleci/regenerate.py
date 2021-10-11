@@ -19,8 +19,6 @@ import yaml
 # version of pytorch.
 # Pytorch 1.4 also supports cuda 10.0 but we no longer build for cuda 10.0 at all.
 CONDA_CUDA_VERSIONS = {
-    "1.5.0": ["cu92", "cu101", "cu102"],
-    "1.5.1": ["cu92", "cu101", "cu102"],
     "1.6.0": ["cu92", "cu101", "cu102"],
     "1.7.0": ["cu101", "cu102", "cu110"],
     "1.7.1": ["cu101", "cu102", "cu110"],
