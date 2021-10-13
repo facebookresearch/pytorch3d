@@ -45,7 +45,7 @@ _box_triangles = [
 ]
 
 
-def _check_coplanar(boxes: torch.Tensor, eps: float = 1e-5) -> None:
+def _check_coplanar(boxes: torch.Tensor, eps: float = 1e-4) -> None:
     faces = torch.tensor(_box_planes, dtype=torch.int64, device=boxes.device)
     # pyre-fixme[16]: `boxes` has no attribute `index_select`.
     verts = boxes.index_select(index=faces.view(-1), dim=1)
@@ -89,7 +89,7 @@ class _box3d_overlap(Function):
 
 
 def box3d_overlap(
-    boxes1: torch.Tensor, boxes2: torch.Tensor
+    boxes1: torch.Tensor, boxes2: torch.Tensor, eps: float = 1e-4
 ) -> Tuple[torch.Tensor, torch.Tensor]:
     """
     Computes the intersection of 3D boxes1 and boxes2.
@@ -136,8 +136,8 @@ def box3d_overlap(
     if not all((8, 3) == box.shape[1:] for box in [boxes1, boxes2]):
         raise ValueError("Each box in the batch must be of shape (8, 3)")
 
-    _check_coplanar(boxes1)
-    _check_coplanar(boxes2)
+    _check_coplanar(boxes1, eps)
+    _check_coplanar(boxes2, eps)
 
     # pyre-fixme[16]: `_box3d_overlap` has no attribute `apply`.
     vol, iou = _box3d_overlap.apply(boxes1, boxes2)
