@@ -82,11 +82,11 @@ for m in ["cv2", "scipy", "numpy", "pytorch3d._C", "np.eye", "np.zeros"]:
 # -- Project information -----------------------------------------------------
 
 project = "PyTorch3D"
-copyright = "2019, facebookresearch"
+copyright = "Facebook Research"
 author = "facebookresearch"
 
 # The short X.Y version
-version = "0.2.0"
+version = ""
 
 # The full version, including alpha/beta/rc tags
 release = version

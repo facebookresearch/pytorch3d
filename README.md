@@ -97,7 +97,7 @@ In alphabetical order:
 * Georgia Gkioxari
 * Taylor Gordon
 * Justin Johnson
-* Patrick Labtut
+* Patrick Labatut
 * Christoph Lassner
 * Wan-Yen Lo
 * David Novotny
