@@ -16,6 +16,7 @@ from pytorch3d.io import save_obj
 from pytorch3d.ops.iou_box3d import _box_planes, _box_triangles, box3d_overlap
 from pytorch3d.transforms.rotation_conversions import random_rotation
 
+
 OBJECTRON_TO_PYTORCH3D_FACE_IDX = [0, 4, 6, 2, 1, 5, 7, 3]
 DATA_DIR = get_tests_dir() / "data"
 DEBUG = False

@@ -364,7 +364,7 @@ def add_points_features_to_volume_densities_features(
         # grid sizes shape (minibatch, 3)
         grid_sizes = (
             torch.LongTensor(list(volume_densities.shape[2:]))
-            .to(volume_densities)
+            .to(volume_densities.device)
             .expand(volume_densities.shape[0], 3)
         )
 
@@ -386,6 +386,10 @@ def add_points_features_to_volume_densities_features(
         splat = False
     else:
         raise ValueError('No such interpolation mode "%s"' % mode)
+
+    if mask is None:
+        mask = points_3d.new_ones(1).expand(points_3d.shape[:2])
+
     volume_densities, volume_features = _points_to_volumes(
         points_3d,
         points_features,

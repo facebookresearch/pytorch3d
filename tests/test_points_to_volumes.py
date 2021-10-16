@@ -12,7 +12,10 @@ from typing import Tuple
 import numpy as np
 import torch
 from common_testing import TestCaseMixin
-from pytorch3d.ops import add_pointclouds_to_volumes
+from pytorch3d.ops import (
+    add_pointclouds_to_volumes,
+    add_points_features_to_volume_densities_features,
+)
 from pytorch3d.ops.points_to_volumes import _points_to_volumes
 from pytorch3d.ops.sample_points_from_meshes import sample_points_from_meshes
 from pytorch3d.structures.meshes import Meshes
@@ -372,6 +375,17 @@ class TestPointsToVolumes(TestCaseMixin, unittest.TestCase):
                         self.assertIsNone(field.grad)
                     else:
                         self.assertTrue(torch.isfinite(field.grad.data).all())
+
+    def test_defaulted_arguments(self):
+        points = torch.rand(30, 1000, 3)
+        features = torch.rand(30, 1000, 5)
+        _, densities = add_points_features_to_volume_densities_features(
+            points,
+            features,
+            torch.zeros(30, 1, 32, 32, 32),
+            torch.zeros(30, 5, 32, 32, 32),
+        )
+        self.assertClose(torch.sum(densities), torch.tensor(30 * 1000.0), atol=0.1)
 
     def _check_volume_slice_color_density(
         self, V, split_dim, interp_mode, clr_gt, slice_type, border=3
