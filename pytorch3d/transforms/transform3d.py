@@ -753,8 +753,6 @@ def _broadcast_bmm(a, b):
     return a.bmm(b)
 
 
-# pyre-fixme[56]: Decorator `torch.no_grad(...)` could not be called, because
-#  its type `no_grad` is not callable.
 @torch.no_grad()
 def _check_valid_rotation_matrix(R, tol: float = 1e-7):
     """
