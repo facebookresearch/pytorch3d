@@ -12,7 +12,7 @@
 #include <cstdio>
 #include "utils/float_math.cuh"
 
-const auto kEpsilon = 1e-4;
+__constant__ const float kEpsilon = 1e-4;
 
 /*
 _PLANES and _TRIS define the 4- and 3-connectivity
@@ -473,10 +473,10 @@ __device__ inline int ClipTriByPlane(
   if (isin0 && isin1 && !isin2) {
     return ClipTriByPlaneOneOut(plane, normal, v2, v0, v1, face_verts_out);
   }
-  if (isin0 && not isin1 && isin2) {
+  if (isin0 && !isin1 && isin2) {
     return ClipTriByPlaneOneOut(plane, normal, v1, v0, v2, face_verts_out);
   }
-  if (not isin0 && isin1 && isin2) {
+  if (!isin0 && isin1 && isin2) {
     return ClipTriByPlaneOneOut(plane, normal, v0, v1, v2, face_verts_out);
   }
 

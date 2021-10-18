@@ -437,10 +437,10 @@ inline face_verts ClipTriByPlane(
   if (isin0 && isin1 && !isin2) {
     return ClipTriByPlaneOneOut(plane, normal, v2, v0, v1);
   }
-  if (isin0 && not isin1 && isin2) {
+  if (isin0 && !isin1 && isin2) {
     return ClipTriByPlaneOneOut(plane, normal, v1, v0, v2);
   }
-  if (not isin0 && isin1 && isin2) {
+  if (!isin0 && isin1 && isin2) {
     return ClipTriByPlaneOneOut(plane, normal, v0, v1, v2);
   }
 
