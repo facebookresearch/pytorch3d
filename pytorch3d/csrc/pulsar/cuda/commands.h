@@ -208,7 +208,7 @@ __device__ static float atomicMin(float* address, float val) {
 #define IABS(a) abs(a)
 
 // Checks.
-#define CHECKOK THCudaCheck
+#define CHECKOK C10_CUDA_CHECK
 #define ARGCHECK THArgCheck
 
 // Math.
@@ -485,7 +485,7 @@ __device__ static float atomicMin(float* address, float val) {
 #define END_PARALLEL_2D_NORET()
 #define END_PARALLEL_2D()
 #define RETURN_PARALLEL() return
-#define CHECKLAUNCH() THCudaCheck(cudaGetLastError());
+#define CHECKLAUNCH() C10_CUDA_CHECK(cudaGetLastError());
 #define ISONDEVICE true
 #define SYNCDEVICE() HANDLECUDA(cudaDeviceSynchronize())
 #define START_TIME(TN)                             \
