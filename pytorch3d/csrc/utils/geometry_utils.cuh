@@ -177,7 +177,7 @@ __device__ inline float3 BarycentricPerspectiveCorrectionForward(
   const float w0_top = bary.x * z1 * z2;
   const float w1_top = z0 * bary.y * z2;
   const float w2_top = z0 * z1 * bary.z;
-  const float denom = w0_top + w1_top + w2_top;
+  const float denom = fmaxf(w0_top + w1_top + w2_top, kEpsilon);
   const float w0 = w0_top / denom;
   const float w1 = w1_top / denom;
   const float w2 = w2_top / denom;
@@ -208,7 +208,7 @@ BarycentricPerspectiveCorrectionBackward(
   const float w0_top = bary.x * z1 * z2;
   const float w1_top = z0 * bary.y * z2;
   const float w2_top = z0 * z1 * bary.z;
-  const float denom = w0_top + w1_top + w2_top;
+  const float denom = fmaxf(w0_top + w1_top + w2_top, kEpsilon);
 
   // Now do backward pass
   const float grad_denom_top =
