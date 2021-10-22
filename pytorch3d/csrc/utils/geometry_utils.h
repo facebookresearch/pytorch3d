@@ -198,7 +198,7 @@ inline vec3<T> BarycentricPerspectiveCorrectionForward(
   const T w0_top = bary.x * z1 * z2;
   const T w1_top = bary.y * z0 * z2;
   const T w2_top = bary.z * z0 * z1;
-  const T denom = w0_top + w1_top + w2_top;
+  const T denom = std::max<T>(w0_top + w1_top + w2_top, kEpsilon);
   const T w0 = w0_top / denom;
   const T w1 = w1_top / denom;
   const T w2 = w2_top / denom;
@@ -229,7 +229,7 @@ inline std::tuple<vec3<T>, T, T, T> BarycentricPerspectiveCorrectionBackward(
   const T w0_top = bary.x * z1 * z2;
   const T w1_top = bary.y * z0 * z2;
   const T w2_top = bary.z * z0 * z1;
-  const T denom = w0_top + w1_top + w2_top;
+  const T denom = std::max<T>(w0_top + w1_top + w2_top, kEpsilon);
 
   // Now do backward pass
   const T grad_denom_top =
