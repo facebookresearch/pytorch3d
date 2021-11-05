@@ -164,7 +164,7 @@ def init_cameras(
         p0 = torch.ones(batch_size, 2, device=device)
         p0[:, 0] *= image_size[1] * 0.5
         p0[:, 1] *= image_size[0] * 0.5
-        focal = image_size[0] * torch.ones(batch_size, device=device)
+        focal = max(*image_size) * torch.ones(batch_size, device=device)
 
     # convert to a Camera object
     cameras = PerspectiveCameras(focal, p0, R=R, T=T, device=device)
@@ -295,7 +295,7 @@ class TestRenderVolumes(TestCaseMixin, unittest.TestCase):
                 _validate_ray_bundle_variables(*bad_ray_bundle)
 
     def test_compare_with_pointclouds_renderer(
-        self, batch_size=11, volume_size=(30, 30, 30), image_size=200
+        self, batch_size=11, volume_size=(30, 30, 30), image_size=(200, 250)
     ):
         """
         Generate a volume and its corresponding point cloud and check whether
@@ -303,9 +303,7 @@ class TestRenderVolumes(TestCaseMixin, unittest.TestCase):
         """
 
         # generate NDC camera extrinsics and intrinsics
-        cameras = init_cameras(
-            batch_size, image_size=[image_size, image_size], ndc=True
-        )
+        cameras = init_cameras(batch_size, image_size=image_size, ndc=True)
 
         # init the boundary volume
         for shape in ("sphere", "cube"):
@@ -340,10 +338,10 @@ class TestRenderVolumes(TestCaseMixin, unittest.TestCase):
 
             # init the grid raysampler with the ndc grid
             coord_range = 1.0
-            half_pix_size = coord_range / image_size
+            half_pix_size = coord_range / max(*image_size)
             raysampler = NDCGridRaysampler(
-                image_width=image_size,
-                image_height=image_size,
+                image_width=image_size[1],
+                image_height=image_size[0],
                 n_pts_per_ray=256,
                 min_depth=0.1,
                 max_depth=2.0,
@@ -499,8 +497,12 @@ class TestRenderVolumes(TestCaseMixin, unittest.TestCase):
             images_opacities_mc.permute(0, 3, 1, 2), images_opacities_mc_, atol=1e-4
         )
 
-    def test_rotating_gif(
-        self, n_frames=50, fps=15, volume_size=(100, 100, 100), image_size=(100, 100)
+    def test_rotating_gif(self):
+        self._rotating_gif(image_size=(200, 100))
+        self._rotating_gif(image_size=(100, 200))
+
+    def _rotating_gif(
+        self, image_size, n_frames=50, fps=15, volume_size=(100, 100, 100)
     ):
         """
         Render a gif animation of a rotating cube/sphere (runs only if `DEBUG==True`).
@@ -586,7 +588,7 @@ class TestRenderVolumes(TestCaseMixin, unittest.TestCase):
 
         # batch_size = 4 sides of the cube
         batch_size = 4
-        image_size = (50, 50)
+        image_size = (50, 40)
 
         for volume_size in ([25, 25, 25],):
             for sample_mode in ("bilinear", "nearest"):

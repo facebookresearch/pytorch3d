@@ -139,8 +139,8 @@ class NDCGridRaysampler(GridRaysampler):
     have uniformly-spaced z-coordinates between a predefined minimum and maximum depth.
 
     `NDCGridRaysampler` follows the screen conventions of the `Meshes` and `Pointclouds`
-    renderers. I.e. the border of the leftmost / rightmost / topmost / bottommost pixel
-    has coordinates 1.0 / -1.0 / 1.0 / -1.0 respectively.
+    renderers. I.e. the pixel coordinates are in [-1, 1]x[-u, u] or [-u, u]x[-1, 1]
+    where u > 1 is the aspect ratio of the image.
     """
 
     def __init__(
@@ -159,13 +159,20 @@ class NDCGridRaysampler(GridRaysampler):
             min_depth: The minimum depth of a ray-point.
             max_depth: The maximum depth of a ray-point.
         """
-        half_pix_width = 1.0 / image_width
-        half_pix_height = 1.0 / image_height
+        if image_width >= image_height:
+            range_x = image_width / image_height
+            range_y = 1.0
+        else:
+            range_x = 1.0
+            range_y = image_height / image_width
+
+        half_pix_width = range_x / image_width
+        half_pix_height = range_y / image_height
         super().__init__(
-            min_x=1.0 - half_pix_width,
-            max_x=-1.0 + half_pix_width,
-            min_y=1.0 - half_pix_height,
-            max_y=-1.0 + half_pix_height,
+            min_x=range_x - half_pix_width,
+            max_x=-range_x + half_pix_width,
+            min_y=range_y - half_pix_height,
+            max_y=-range_y + half_pix_height,
             image_width=image_width,
             image_height=image_height,
             n_pts_per_ray=n_pts_per_ray,
