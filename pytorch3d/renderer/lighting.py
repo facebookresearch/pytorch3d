@@ -49,7 +49,7 @@ def diffuse(normals, color, direction) -> torch.Tensor:
         average/interpolated face coordinates.
     """
     # TODO: handle multiple directional lights per batch element.
-    # TODO: handle attenuation.
+    
 
     # Ensure color and location have same batch dimension as normals
     normals, color, direction = convert_to_tensors_and_broadcast(
@@ -67,10 +67,11 @@ def diffuse(normals, color, direction) -> torch.Tensor:
 
     # Renormalize the normals in case they have been interpolated.
     # We tried to replace the following with F.cosine_similarity, but it wasn't faster.
+    dist = ((direction**2).sum(-1)**0.5)[..., None] # attenuation
     normals = F.normalize(normals, p=2, dim=-1, eps=1e-6)
     direction = F.normalize(direction, p=2, dim=-1, eps=1e-6)
     angle = F.relu(torch.sum(normals * direction, dim=-1))
-    return color * angle[..., None]
+    return color * angle[..., None] / dist
 
 
 def specular(
@@ -112,7 +113,7 @@ def specular(
         meshes.verts_packed_to_mesh_idx() or meshes.faces_packed_to_mesh_idx().
     """
     # TODO: handle multiple directional lights
-    # TODO: attenuate based on inverse squared distance to the light source
+    
 
     if points.shape != normals.shape:
         msg = "Expected points and normals to have the same shape: got %r, %r"
@@ -140,6 +141,7 @@ def specular(
     # Renormalize the normals in case they have been interpolated.
     # We tried a version that uses F.cosine_similarity instead of renormalizing,
     # but it was slower.
+    dist = ((direction**2).sum(-1)**0.5)[..., None] # attenuation
     normals = F.normalize(normals, p=2, dim=-1, eps=1e-6)
     direction = F.normalize(direction, p=2, dim=-1, eps=1e-6)
     cos_angle = torch.sum(normals * direction, dim=-1)
@@ -153,7 +155,7 @@ def specular(
 
     # Cosine of the angle between the reflected light ray and the viewer
     alpha = F.relu(torch.sum(view_direction * reflect_direction, dim=-1)) * mask
-    return color * torch.pow(alpha, shininess)[..., None]
+    return color * torch.pow(alpha, shininess)[..., None] / dist
 
 
 class DirectionalLights(TensorProperties):
