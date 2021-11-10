@@ -351,7 +351,7 @@ class Pointclouds:
             # NOTE consider converting index to cpu for efficiency
             if index.dtype == torch.bool:
                 # advanced indexing on a single dimension
-                index = index.nonzero()  # pyre-ignore
+                index = index.nonzero()
                 index = index.squeeze(1) if index.numel() > 0 else index
                 index = index.tolist()
             points = [self.points_list()[i] for i in index]
