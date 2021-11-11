@@ -58,6 +58,16 @@ do
         for cu_version in ${CONDA_CUDA_VERSIONS[$pytorch_version]}
         do
             case "$cu_version" in
+                cu113)
+                    export CUDA_HOME=/usr/local/cuda-11.3/
+                    export CUDA_TAG=11.3
+                    export NVCC_FLAGS="-gencode=arch=compute_35,code=sm_35 -gencode=arch=compute_50,code=sm_50 -gencode=arch=compute_60,code=sm_60 -gencode=arch=compute_70,code=sm_70 -gencode=arch=compute_75,code=sm_75 -gencode=arch=compute_80,code=sm_80 -gencode=arch=compute_86,code=sm_86 -gencode=arch=compute_50,code=compute_50"
+                ;;
+                cu112)
+                    export CUDA_HOME=/usr/local/cuda-11.2/
+                    export CUDA_TAG=11.2
+                    export NVCC_FLAGS="-gencode=arch=compute_35,code=sm_35 -gencode=arch=compute_50,code=sm_50 -gencode=arch=compute_60,code=sm_60 -gencode=arch=compute_70,code=sm_70 -gencode=arch=compute_75,code=sm_75 -gencode=arch=compute_80,code=sm_80 -gencode=arch=compute_86,code=sm_86 -gencode=arch=compute_50,code=compute_50"
+                ;;
                 cu111)
                     export CUDA_HOME=/usr/local/cuda-11.1/
                     export CUDA_TAG=11.1

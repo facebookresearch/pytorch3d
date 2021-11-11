@@ -18,19 +18,12 @@ setupcuda: &setupcuda
     working_directory: ~/
     command: |
       # download and install nvidia drivers, cuda, etc
-      wget --no-verbose --no-clobber -P ~/nvidia-downloads https://developer.download.nvidia.com/compute/cuda/11.2.2/local_installers/cuda_11.2.2_460.32.03_linux.run
-      sudo sh ~/nvidia-downloads/cuda_11.2.2_460.32.03_linux.run --silent
+      wget --no-verbose --no-clobber -P ~/nvidia-downloads https://developer.download.nvidia.com/compute/cuda/11.3.1/local_installers/cuda_11.3.1_465.19.01_linux.run
+      sudo sh ~/nvidia-downloads/cuda_11.3.1_465.19.01_linux.run --silent
       echo "Done installing CUDA."
       pyenv versions
       nvidia-smi
       pyenv global 3.9.1
-
-gpu: &gpu
-  environment:
-    CUDA_VERSION: "10.2"
-  machine:
-    image: default
-  resource_class: gpu.medium # tesla m60
 
 binary_common: &binary_common
   parameters:
@@ -54,22 +47,29 @@ binary_common: &binary_common
       description: "Wheel only: what docker image to use"
       type: string
       default: "pytorch/manylinux-cuda101"
+    conda_docker_image:
+      description: "what docker image to use for docker"
+      type: string
+      default: "pytorch/conda-cuda"
   environment:
     PYTHON_VERSION: << parameters.python_version >>
     BUILD_VERSION: << parameters.build_version >>
     PYTORCH_VERSION: << parameters.pytorch_version >>
     CU_VERSION: << parameters.cu_version >>
+    TESTRUN_DOCKER_IMAGE: << parameters.conda_docker_image >>
 
 jobs:
   main:
-    <<: *gpu
+    environment:
+      CUDA_VERSION: "11.3"
+    resource_class: gpu.nvidia.small.multi
     machine:
       image: ubuntu-2004:202101-01
     steps:
       - checkout
       - <<: *setupcuda
       - run: pip3 install --progress-bar off imageio wheel matplotlib 'pillow<7'
-      - run: pip3 install --progress-bar off torch torchvision
+      - run: pip3 install --progress-bar off torch==1.10.0+cu113 torchvision==0.11.1+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html
       # - run: conda create -p ~/conda_env python=3.7 numpy
       # - run: conda activate ~/conda_env
       # - run: conda install -c pytorch pytorch torchvision
@@ -77,19 +77,11 @@ jobs:
       - run: pip3 install --progress-bar off 'git+https://github.com/facebookresearch/fvcore'
       - run: pip3 install --progress-bar off 'git+https://github.com/facebookresearch/iopath'
       - run:
-          name: get cub
-          command: |
-            cd ..
-            wget --no-verbose https://github.com/NVIDIA/cub/archive/1.10.0.tar.gz
-            tar xzf 1.10.0.tar.gz
-            # This expands to a directory called cub-1.10.0
-      - run:
           name: build
           command: |
-            export LD_LIBRARY_PATH=$LD_LIBARY_PATH:/usr/local/cuda-11.2/lib64
-            export CUB_HOME=$(realpath ../cub-1.10.0)
+            export LD_LIBRARY_PATH=$LD_LIBARY_PATH:/usr/local/cuda-11.3/lib64
             python3 setup.py build_ext --inplace
-      - run: LD_LIBRARY_PATH=$LD_LIBARY_PATH:/usr/local/cuda-11.2/lib64 python -m unittest discover -v -s tests
+      - run: LD_LIBRARY_PATH=$LD_LIBARY_PATH:/usr/local/cuda-11.3/lib64 python -m unittest discover -v -s tests
       - run: python3 setup.py bdist_wheel
 
   binary_linux_wheel:
@@ -113,7 +105,7 @@ jobs:
   binary_linux_conda:
     <<: *binary_common
     docker:
-      - image: "pytorch/conda-cuda"
+      - image: "<< parameters.conda_docker_image >>"
         auth:
           username: $DOCKERHUB_USERNAME
           password: $DOCKERHUB_TOKEN
@@ -137,7 +129,7 @@ jobs:
     <<: *binary_common
     machine:
       image: ubuntu-1604:201903-01
-    resource_class: gpu.medium
+    resource_class: gpu.nvidia.small.multi
     steps:
     - checkout
     - run:
@@ -189,9 +181,8 @@ jobs:
 
           { docker login -u="$DOCKERHUB_USERNAME" -p="$DOCKERHUB_TOKEN" ; } 2> /dev/null
 
-          DOCKER_IMAGE=pytorch/conda-cuda
-          echo Pulling docker image $DOCKER_IMAGE
-          docker pull $DOCKER_IMAGE
+          echo Pulling docker image $TESTRUN_DOCKER_IMAGE
+          docker pull $TESTRUN_DOCKER_IMAGE
     - run:
         name: Build and run tests
         no_output_timeout: 20m
@@ -200,11 +191,10 @@ jobs:
 
           cd ${HOME}/project/
 
-          DOCKER_IMAGE=pytorch/conda-cuda
           export JUST_TESTRUN=1
           VARS_TO_PASS="-e PYTHON_VERSION -e BUILD_VERSION -e PYTORCH_VERSION -e CU_VERSION -e JUST_TESTRUN"
 
-          docker run --gpus all  --ipc=host -v $(pwd):/remote -w /remote ${VARS_TO_PASS} ${DOCKER_IMAGE} ./packaging/build_conda.sh
+          docker run --gpus all  --ipc=host -v $(pwd):/remote -w /remote ${VARS_TO_PASS} ${TESTRUN_DOCKER_IMAGE} ./packaging/build_conda.sh
 
   binary_macos_wheel:
     <<: *binary_common
@@ -228,27 +218,15 @@ workflows:
   version: 2
   build_and_test:
     jobs:
-      - main:
-          context: DOCKERHUB_TOKEN
+      # - main:
+      #     context: DOCKERHUB_TOKEN
       {{workflows()}}
       - binary_linux_conda_cuda:
-          name: testrun_conda_cuda_py37_cu102_pyt190
-          context: DOCKERHUB_TOKEN
-          python_version: "3.7"
-          pytorch_version: '1.9.0'
-          cu_version: "cu102"
-      - binary_linux_conda_cuda:
-          name: testrun_conda_cuda_py37_cu110_pyt170
+          name: testrun_conda_cuda_py37_cu102_pyt170
           context: DOCKERHUB_TOKEN
           python_version: "3.7"
           pytorch_version: '1.7.0'
-          cu_version: "cu110"
-      - binary_linux_conda_cuda:
-          name: testrun_conda_cuda_py39_cu111_pyt181
-          context: DOCKERHUB_TOKEN
-          python_version: "3.9"
-          pytorch_version: '1.8.1'
-          cu_version: "cu111"
+          cu_version: "cu102"
       - binary_macos_wheel:
           cu_version: cpu
           name: macos_wheel_py36_cpu
