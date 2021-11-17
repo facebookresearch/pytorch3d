@@ -143,41 +143,30 @@ class PulsarPointsRenderer(nn.Module):
                 "The camera type can not be changed after renderer initialization! "
                 "Current camera orthogonal: %r. Original orthogonal: %r."
             ) % (orthogonal_projection, self.renderer._renderer.orthogonal)
-        if (
-            isinstance(self.rasterizer.raster_settings.image_size, tuple)
-            and self.rasterizer.raster_settings.image_size[0]
-            != self.renderer._renderer.width
-        ) or (
-            not isinstance(self.rasterizer.raster_settings.image_size, tuple)
-            and self.rasterizer.raster_settings.image_size
-            != self.renderer._renderer.width
-        ):
+        image_size = self.rasterizer.raster_settings.image_size
+        if isinstance(image_size, tuple):
+            expected_height, expected_width = image_size
+        else:
+            expected_height = expected_width = image_size
+        if expected_width != self.renderer._renderer.width:
             raise ValueError(
                 (
-                    "The rasterizer width and height can not be changed after renderer "
-                    "initialization! Current width: %d. Original width: %d."
+                    "The rasterizer width can not be changed after renderer "
+                    "initialization! Current width: %s. Original width: %d."
                 )
                 % (
-                    self.rasterizer.raster_settings.image_size,
+                    expected_width,
                     self.renderer._renderer.width,
                 )
             )
-        if (
-            isinstance(self.rasterizer.raster_settings.image_size, tuple)
-            and self.rasterizer.raster_settings.image_size[1]
-            != self.renderer._renderer.height
-        ) or (
-            not isinstance(self.rasterizer.raster_settings.image_size, tuple)
-            and self.rasterizer.raster_settings.image_size
-            != self.renderer._renderer.height
-        ):
+        if expected_height != self.renderer._renderer.height:
             raise ValueError(
                 (
-                    "The rasterizer width and height can not be changed after renderer "
-                    "initialization! Current height: %d. Original height: %d."
+                    "The rasterizer height can not be changed after renderer "
+                    "initialization! Current height: %s. Original height: %d."
                 )
                 % (
-                    self.rasterizer.raster_settings.image_size,
+                    expected_height,
                     self.renderer._renderer.height,
                 )
             )
