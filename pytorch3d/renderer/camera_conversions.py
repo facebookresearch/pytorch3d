@@ -79,6 +79,7 @@ def _opencv_from_cameras_projection(
     scale = scale.expand(-1, 2)
     c0 = (image_size_wh - 1) / 2.0
 
+    # pyre-fixme[29]: `Union[BoundMethod[typing.Callable(torch.Tensor.__neg__)[[Named...
     principal_point = -p0_pytorch3d * scale + c0
     focal_length = focal_pytorch3d * scale
 

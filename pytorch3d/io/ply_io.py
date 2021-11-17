@@ -839,8 +839,10 @@ def _get_verts_column_indices(
         color_scale = 1.0 / 255
     return (
         point_idxs,
+        # pyre-fixme[22]: The cast is redundant.
         None if None in color_idxs else cast(List[int], color_idxs),
         color_scale,
+        # pyre-fixme[22]: The cast is redundant.
         None if None in normal_idxs else cast(List[int], normal_idxs),
     )
 
