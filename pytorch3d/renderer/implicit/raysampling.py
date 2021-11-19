@@ -8,6 +8,7 @@ import torch
 
 from ..cameras import CamerasBase
 from .utils import RayBundle
+from ...structures.volumes import _ScalarOrVector
 
 
 """
@@ -64,8 +65,8 @@ class GridRaysampler(torch.nn.Module):
         image_width: int,
         image_height: int,
         n_pts_per_ray: int,
-        min_depth: float,
-        max_depth: float,
+        min_depth: _ScalarOrVector,
+        max_depth: _ScalarOrVector,
     ) -> None:
         """
         Args:
@@ -148,8 +149,8 @@ class NDCGridRaysampler(GridRaysampler):
         image_width: int,
         image_height: int,
         n_pts_per_ray: int,
-        min_depth: float,
-        max_depth: float,
+        min_depth: _ScalarOrVector,
+        max_depth: _ScalarOrVector,
     ) -> None:
         """
         Args:
@@ -197,8 +198,8 @@ class MonteCarloRaysampler(torch.nn.Module):
         max_y: float,
         n_rays_per_image: int,
         n_pts_per_ray: int,
-        min_depth: float,
-        max_depth: float,
+        min_depth: _ScalarOrVector,
+        max_depth: _ScalarOrVector,
     ) -> None:
         """
         Args:
@@ -272,8 +273,8 @@ class MonteCarloRaysampler(torch.nn.Module):
 def _xy_to_ray_bundle(
     cameras: CamerasBase,
     xy_grid: torch.Tensor,
-    min_depth: float,
-    max_depth: float,
+    min_depth: _ScalarOrVector,
+    max_depth: _ScalarOrVector,
     n_pts_per_ray: int,
 ) -> RayBundle:
     """
@@ -289,10 +290,23 @@ def _xy_to_ray_bundle(
     n_rays_per_image = spatial_size.numel()  # pyre-ignore
 
     # ray z-coords
-    depths = torch.linspace(
-        min_depth, max_depth, n_pts_per_ray, dtype=xy_grid.dtype, device=xy_grid.device
-    )
-    rays_zs = depths[None, None].expand(batch_size, n_rays_per_image, n_pts_per_ray)
+    if isinstance(min_depth, (float, int)):
+        min_depth = [min_depth] * batch_size
+    elif isinstance(min_depth, torch.Tensor):
+        min_depth = min_depth.tolist()
+        assert len(min_depth) == batch_size
+
+    if isinstance(max_depth, (float, int)):
+        max_depth = [max_depth] * batch_size
+    elif isinstance(max_depth, torch.Tensor):
+        max_depth = max_depth.tolist()
+        assert len(max_depth) == batch_size
+
+    depths = torch.stack([
+        torch.linspace(a, b, n_pts_per_ray, dtype=xy_grid.dtype, device=xy_grid.device)
+        for a, b in zip(min_depth, max_depth)
+    ])
+    rays_zs = depths[:, None, :].expand(batch_size, n_rays_per_image, n_pts_per_ray)
 
     # make two sets of points at a constant depth=1 and 2
     to_unproject = torch.cat(
