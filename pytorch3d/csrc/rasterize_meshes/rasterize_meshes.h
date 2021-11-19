@@ -17,7 +17,7 @@
 // *                            FORWARD PASS                                 *
 // ****************************************************************************
 
-std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>
+std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>
 RasterizeMeshesNaiveCpu(
     const torch::Tensor& face_verts,
     const torch::Tensor& mesh_to_face_first_idx,
@@ -31,7 +31,7 @@ RasterizeMeshesNaiveCpu(
     const bool cull_backfaces);
 
 #ifdef WITH_CUDA
-std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor>
+std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor, at::Tensor>
 RasterizeMeshesNaiveCuda(
     const at::Tensor& face_verts,
     const at::Tensor& mesh_to_face_first_idx,
@@ -90,7 +90,7 @@ RasterizeMeshesNaiveCuda(
 //                    viewed from the outside.
 //
 // Returns:
-//    A 4 element tuple of:
+//    A 5 element tuple of:
 //    pix_to_face: int64 tensor of shape (N, H, W, K) giving the face index of
 //                 each of the closest faces to the pixel in the rasterized
 //                 image, or -1 for pixels that are not covered by any face.
@@ -105,7 +105,10 @@ RasterizeMeshesNaiveCuda(
 //           in the (NDC) x/y plane between each pixel and its K closest
 //           faces along the z axis padded  with -1 for pixels hit by fewer than
 //           faces_per_pixel faces.
-inline std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>
+//    back_faces: bool Tensor of shape (N, H, W, K) giving whether the face is
+//                back-facing torward the camera (True) or front-facing toward
+//                the camera (False). If no face found, default to False.
+inline std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>
 RasterizeMeshesNaive(
     const torch::Tensor& face_verts,
     const torch::Tensor& mesh_to_face_first_idx,
@@ -322,7 +325,7 @@ torch::Tensor RasterizeMeshesCoarse(
 // ****************************************************************************
 
 #ifdef WITH_CUDA
-std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>
+std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>
 RasterizeMeshesFineCuda(
     const torch::Tensor& face_verts,
     const torch::Tensor& bin_faces,
@@ -377,7 +380,7 @@ RasterizeMeshesFineCuda(
 //                    viewed from the outside.
 //
 // Returns (same as rasterize_meshes):
-//    A 4 element tuple of:
+//    A 5 element tuple of:
 //    pix_to_face: int64 tensor of shape (N, H, W, K) giving the face index of
 //                 each of the closest faces to the pixel in the rasterized
 //                 image, or -1 for pixels that are not covered by any face.
@@ -392,7 +395,10 @@ RasterizeMeshesFineCuda(
 //           in the (NDC) x/y plane between each pixel and its K closest
 //           faces along the z axis padded  with -1 for pixels hit by fewer than
 //           faces_per_pixel faces.
-std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>
+//    back_faces: bool Tensor of shape (N, H, W, K) giving whether the face is
+//                back-facing torward the camera (True) or front-facing toward
+//                the camera (False). If no face found, default to False.
+std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>
 RasterizeMeshesFine(
     const torch::Tensor& face_verts,
     const torch::Tensor& bin_faces,
@@ -482,7 +488,7 @@ RasterizeMeshesFine(
 //                    viewed from the outside.
 //
 // Returns:
-//    A 4 element tuple of:
+//    A 5 element tuple of:
 //    pix_to_face: int64 tensor of shape (N, H, W, K) giving the face index of
 //                 each of the closest faces to the pixel in the rasterized
 //                 image, or -1 for pixels that are not covered by any face.
@@ -497,7 +503,10 @@ RasterizeMeshesFine(
 //           in the (NDC) x/y plane between each pixel and its K closest
 //           faces along the z axis padded  with -1 for pixels hit by fewer than
 //           faces_per_pixel faces.
-std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>
+//    back_faces: bool Tensor of shape (N, H, W, K) giving whether the face is
+//                back-facing torward the camera (True) or front-facing toward
+//                the camera (False). If no face found, default to False.
+std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>
 RasterizeMeshes(
     const torch::Tensor& face_verts,
     const torch::Tensor& mesh_to_face_first_idx,

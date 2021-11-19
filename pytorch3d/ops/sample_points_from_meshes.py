@@ -129,7 +129,7 @@ def sample_points_from_meshes(
             (len(meshes), num_samples, 1, 1), device=meshes.device, dtype=torch.float32
         )  # NxSx1x1
         fragments = MeshFragments(
-            pix_to_face=pix_to_face, zbuf=dummy, bary_coords=bary, dists=dummy
+            pix_to_face=pix_to_face, zbuf=dummy, bary_coords=bary, dists=dummy, back_faces=dummy
         )
         textures = meshes.sample_textures(fragments)  # NxSx1x1xC
         textures = textures[:, :, 0, 0, :]  # NxSxC

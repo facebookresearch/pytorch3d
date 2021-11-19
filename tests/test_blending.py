@@ -174,6 +174,7 @@ class TestBlending(TestCaseMixin, unittest.TestCase):
             bary_coords=bary_coords,
             zbuf=pix_to_face,  # dummy
             dists=pix_to_face,  # dummy
+            back_faces=pix_to_face,   # dummy
         )
         colors = torch.randn((N, H, W, K, 3))
         blend_params = BlendParams(1e-4, 1e-4, (0.5, 0.5, 1))
@@ -211,6 +212,7 @@ class TestBlending(TestCaseMixin, unittest.TestCase):
             pix_to_face=pix_to_face,
             bary_coords=empty,  # dummy
             zbuf=empty,  # dummy
+            back_faces=empty,  # dummy
             dists=dists,
         )
         blend_params = BlendParams(sigma=1e-3)
@@ -248,12 +250,14 @@ class TestBlending(TestCaseMixin, unittest.TestCase):
             pix_to_face=pix_to_face,
             bary_coords=empty,  # dummy
             zbuf=empty,  # dummy
+            back_faces=empty,  # dummy
             dists=dists1,
         )
         fragments2 = Fragments(
             pix_to_face=pix_to_face,
             bary_coords=empty,  # dummy
             zbuf=empty,  # dummy
+            back_faces=empty,  # dummy
             dists=dists2,
         )
 
@@ -303,12 +307,14 @@ class TestBlending(TestCaseMixin, unittest.TestCase):
         fragments1 = Fragments(
             pix_to_face=pix_to_face,
             bary_coords=empty,  # dummy
+            back_faces=empty,  # dummy
             zbuf=zbuf1,
             dists=dists1,
         )
         fragments2 = Fragments(
             pix_to_face=pix_to_face,
             bary_coords=empty,  # dummy
+            back_faces=empty,  # dummy
             zbuf=zbuf2,
             dists=dists2,
         )
@@ -351,6 +357,7 @@ class TestBlending(TestCaseMixin, unittest.TestCase):
             pix_to_face=pix_to_face,
             bary_coords=empty,  # dummy
             zbuf=empty,  # dummy
+            back_faces=empty,  # dummy
             dists=dists1,
         )
         blend_params = BlendParams(sigma=1e-3)
@@ -398,7 +405,7 @@ class TestBlending(TestCaseMixin, unittest.TestCase):
         dists1 = torch.randn(size=(N, S, S, K), requires_grad=True, device=device)
         zbuf = torch.randn(size=(N, S, S, K), requires_grad=True, device=device)
         fragments = Fragments(
-            pix_to_face=pix_to_face, bary_coords=empty, zbuf=zbuf, dists=dists1  # dummy
+            pix_to_face=pix_to_face, bary_coords=empty, zbuf=zbuf, dists=dists1, back_faces=dists1  # dummy
         )
         blend_params = BlendParams(sigma=1e-3)
 

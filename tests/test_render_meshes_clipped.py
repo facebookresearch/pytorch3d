@@ -584,7 +584,7 @@ class TestRenderMeshesClipping(TestCaseMixin, unittest.TestCase):
         cull_backfaces = False
 
         # Rasterize clipped mesh
-        pix_to_face, zbuf, barycentric_coords, dists = _RasterizeFaceVerts.apply(
+        pix_to_face, zbuf, barycentric_coords, dists, back_faces = _RasterizeFaceVerts.apply(
             clipped_faces.face_verts,
             clipped_faces.mesh_to_face_first_idx,
             clipped_faces.num_faces_per_mesh,

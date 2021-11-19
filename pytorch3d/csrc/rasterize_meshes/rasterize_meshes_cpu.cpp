@@ -111,13 +111,13 @@ struct IsNeighbor {
   IsNeighbor(int neighbor_idx) {
     this->neighbor_idx = neighbor_idx;
   }
-  bool operator()(std::tuple<float, int, float, float, float, float> elem) {
+  bool operator()(std::tuple<float, int, float, float, float, float, bool> elem) {
     return (std::get<1>(elem) == neighbor_idx);
   }
   int neighbor_idx;
 };
 
-std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>
+std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>
 RasterizeMeshesNaiveCpu(
     const torch::Tensor& face_verts,
     const torch::Tensor& mesh_to_face_first_idx,
@@ -145,19 +145,21 @@ RasterizeMeshesNaiveCpu(
 
   auto long_opts = num_faces_per_mesh.options().dtype(torch::kInt64);
   auto float_opts = face_verts.options().dtype(torch::kFloat32);
+  auto bool_opts = face_verts.options().dtype(torch::kBool);
 
   // Initialize output tensors.
   torch::Tensor face_idxs = torch::full({N, H, W, K}, -1, long_opts);
   torch::Tensor zbuf = torch::full({N, H, W, K}, -1, float_opts);
   torch::Tensor pix_dists = torch::full({N, H, W, K}, -1, float_opts);
-  torch::Tensor barycentric_coords =
-      torch::full({N, H, W, K, 3}, -1, float_opts);
+  torch::Tensor barycentric_coords = torch::full({N, H, W, K, 3}, -1, float_opts);
+  torch::Tensor back_faces = torch::full({N, H, W, K}, false, bool_opts);
 
   auto face_verts_a = face_verts.accessor<float, 3>();
   auto face_idxs_a = face_idxs.accessor<int64_t, 4>();
   auto zbuf_a = zbuf.accessor<float, 4>();
   auto pix_dists_a = pix_dists.accessor<float, 4>();
   auto barycentric_coords_a = barycentric_coords.accessor<float, 5>();
+  auto back_faces_a = back_faces.accessor<bool, 4>();
   auto neighbor_idx_a = clipped_faces_neighbor_idx.accessor<int64_t, 1>();
 
   auto face_bboxes = ComputeFaceBoundingBoxes(face_verts);
@@ -192,7 +194,7 @@ RasterizeMeshesNaiveCpu(
         // Use a deque to hold values:
         // (z, idx, r, bary.x, bary.y. bary.z)
         // Sort the deque as needed to mimic a priority queue.
-        std::deque<std::tuple<float, int, float, float, float, float>> q;
+        std::deque<std::tuple<float, int, float, float, float, float, bool>> q;
 
         // Loop through the faces in the mesh.
         for (int f = face_start_idx; f < face_stop_idx; ++f) {
@@ -291,14 +293,14 @@ RasterizeMeshesNaiveCpu(
             if (dist < dist_neighbor) {
               // Overwrite the neighbor face values.
               q[idx_top_k] = std::make_tuple(
-                  pz, f, signed_dist, bary_clip.x, bary_clip.y, bary_clip.z);
+                  pz, f, signed_dist, bary_clip.x, bary_clip.y, bary_clip.z, back_face);
             }
           } else {
             // Handle as a normal face.
             // The current pixel lies inside the current face.
             // Add at the end of the deque.
             q.emplace_back(
-                pz, f, signed_dist, bary_clip.x, bary_clip.y, bary_clip.z);
+                pz, f, signed_dist, bary_clip.x, bary_clip.y, bary_clip.z, back_face);
           }
 
           // Sort the deque inplace based on the z distance
@@ -320,11 +322,12 @@ RasterizeMeshesNaiveCpu(
           barycentric_coords_a[n][yi][xi][i][0] = std::get<3>(t);
           barycentric_coords_a[n][yi][xi][i][1] = std::get<4>(t);
           barycentric_coords_a[n][yi][xi][i][2] = std::get<5>(t);
+          back_faces_a[n][yi][xi][i] = std::get<6>(t);
         }
       }
     }
   }
-  return std::make_tuple(face_idxs, zbuf, barycentric_coords, pix_dists);
+  return std::make_tuple(face_idxs, zbuf, barycentric_coords, pix_dists, back_faces);
 }
 
 torch::Tensor RasterizeMeshesBackwardCpu(

@@ -87,6 +87,7 @@ def baryclip_pytorch(
             zbuf=clipped_zbuf,
             dists=fragments.dists,
             pix_to_face=fragments.pix_to_face,
+            back_faces=fragments.back_faces
         )
         torch.cuda.synchronize()
 

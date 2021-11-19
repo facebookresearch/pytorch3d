@@ -119,6 +119,7 @@ class TestInterpolateFaceAttributes(TestCaseMixin, unittest.TestCase):
             bary_coords=barycentric_coords,
             zbuf=torch.ones_like(pix_to_face),
             dists=torch.ones_like(pix_to_face),
+            back_faces=torch.ones_like(pix_to_face),
         )
 
         verts_features_packed = mesh.textures.verts_features_packed()
@@ -148,6 +149,7 @@ class TestInterpolateFaceAttributes(TestCaseMixin, unittest.TestCase):
             bary_coords=barycentric_coords,
             zbuf=torch.ones_like(pix_to_face),
             dists=torch.ones_like(pix_to_face),
+            back_faces=torch.ones_like(pix_to_face),
         )
         grad_vert_tex = torch.tensor(
             [[0.3, 0.3, 0.3], [0.9, 0.9, 0.9], [0.5, 0.5, 0.5], [0.3, 0.3, 0.3]],
@@ -173,6 +175,7 @@ class TestInterpolateFaceAttributes(TestCaseMixin, unittest.TestCase):
             bary_coords=pix_to_face[..., None].expand(-1, -1, -1, -1, 3),
             zbuf=pix_to_face,
             dists=pix_to_face,
+            back_faces=pix_to_face
         )
         with self.assertRaises(ValueError):
             interpolate_face_attributes(
@@ -186,6 +189,7 @@ class TestInterpolateFaceAttributes(TestCaseMixin, unittest.TestCase):
             bary_coords=pix_to_face,
             zbuf=pix_to_face,
             dists=pix_to_face,
+            back_faces=pix_to_face
         )
         with self.assertRaises(ValueError):
             interpolate_face_attributes(

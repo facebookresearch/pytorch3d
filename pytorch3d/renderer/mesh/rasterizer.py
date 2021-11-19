@@ -19,6 +19,7 @@ class Fragments(NamedTuple):
     zbuf: torch.Tensor
     bary_coords: torch.Tensor
     dists: torch.Tensor
+    back_faces: torch.Tensor
 
 
 @dataclass
@@ -189,7 +190,7 @@ class MeshRasterizer(nn.Module):
                 znear = znear.min().item()
             z_clip = None if not perspective_correct or znear is None else znear / 2
 
-        pix_to_face, zbuf, bary_coords, dists = rasterize_meshes(
+        pix_to_face, zbuf, bary_coords, dists, back_faces = rasterize_meshes(
             meshes_proj,
             image_size=raster_settings.image_size,
             blur_radius=raster_settings.blur_radius,
@@ -203,5 +204,6 @@ class MeshRasterizer(nn.Module):
             cull_to_frustum=raster_settings.cull_to_frustum,
         )
         return Fragments(
-            pix_to_face=pix_to_face, zbuf=zbuf, bary_coords=bary_coords, dists=dists
+            pix_to_face=pix_to_face, zbuf=zbuf, bary_coords=bary_coords, dists=dists,
+            back_faces=back_faces
         )

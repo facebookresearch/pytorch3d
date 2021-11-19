@@ -175,7 +175,7 @@ class TestRasterizeRectangleImagesMeshes(TestCaseMixin, unittest.TestCase):
         Simple wrapper around the rasterize function to return
         the fragment data.
         """
-        face_idxs, zbuf, bary_coords, pix_dists = rasterize_meshes(
+        face_idxs, zbuf, bary_coords, pix_dists, back_faces = rasterize_meshes(
             meshes,
             image_size,
             blur,
@@ -187,6 +187,7 @@ class TestRasterizeRectangleImagesMeshes(TestCaseMixin, unittest.TestCase):
             zbuf=zbuf,
             bary_coords=bary_coords,
             dists=pix_dists,
+            back_faces=back_faces
         )
 
     @staticmethod
@@ -420,7 +421,7 @@ class TestRasterizeRectangleImagesMeshes(TestCaseMixin, unittest.TestCase):
             fragments_naive = self._rasterize(
                 meshes_nonsq_naive, image_size, bin_size=0, blur=blur
             )
-            face_idxs, zbuf, bary_coords, pix_dists = rasterize_meshes_python(
+            face_idxs, zbuf, bary_coords, pix_dists, back_faces = rasterize_meshes_python(
                 meshes_nonsq_python,
                 image_size,
                 blur,
@@ -431,6 +432,7 @@ class TestRasterizeRectangleImagesMeshes(TestCaseMixin, unittest.TestCase):
                 zbuf=zbuf,
                 bary_coords=bary_coords,
                 dists=pix_dists,
+                back_faces=back_faces
             )
 
             # Save debug images if DEBUG is set to true at the top of the file.

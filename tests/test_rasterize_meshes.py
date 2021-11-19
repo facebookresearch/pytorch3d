@@ -239,7 +239,7 @@ class TestRasterizeMeshes(TestCaseMixin, unittest.TestCase):
 
         # Option I: CPU, naive
         args = (meshes, image_size, radius, faces_per_pixel)
-        idx1, zbuf1, bary1, dist1 = rasterize_meshes(*args)
+        idx1, zbuf1, bary1, dist1, bf1 = rasterize_meshes(*args)
 
         loss = (
             (zbuf1 * grad_zbuf).sum()
@@ -260,7 +260,7 @@ class TestRasterizeMeshes(TestCaseMixin, unittest.TestCase):
         meshes = Meshes(verts=[verts], faces=[faces])
 
         args = (meshes, image_size, radius, faces_per_pixel, 0, 0)
-        idx2, zbuf2, bary2, dist2 = rasterize_meshes(*args)
+        idx2, zbuf2, bary2, dist2, bf2 = rasterize_meshes(*args)
         grad_zbuf = grad_zbuf.to(device)
         grad_dist = grad_dist.to(device)
         grad_bary = grad_bary.to(device)
@@ -282,7 +282,7 @@ class TestRasterizeMeshes(TestCaseMixin, unittest.TestCase):
         meshes = Meshes(verts=[verts], faces=[faces])
 
         args = (meshes, image_size, radius, faces_per_pixel, 32, 500)
-        idx3, zbuf3, bary3, dist3 = rasterize_meshes(*args)
+        idx3, zbuf3, bary3, dist3, bf3 = rasterize_meshes(*args)
 
         loss = (
             (zbuf3 * grad_zbuf).sum()
@@ -518,14 +518,14 @@ class TestRasterizeMeshes(TestCaseMixin, unittest.TestCase):
         # Without culling, for k=0, the front face (i.e. face 2) is
         # rasterized and for k=1, the back face (i.e. face 3) is
         # rasterized.
-        idx_f, zbuf_f, bary_f, dists_f = rasterize_meshes_fn(**kwargs)
+        idx_f, zbuf_f, bary_f, dists_f, bf_f = rasterize_meshes_fn(**kwargs)
         self.assertTrue(torch.all(idx_f[..., 0].squeeze() == pix_to_face_frontface))
         self.assertTrue(torch.all(idx_f[..., 1].squeeze() == pix_to_face_backface))
 
         # With culling, for k=0, the front face (i.e. face 2) is
         # rasterized and for k=1, there are no faces rasterized
         kwargs["cull_backfaces"] = True
-        idx_t, zbuf_t, bary_t, dists_t = rasterize_meshes_fn(**kwargs)
+        idx_t, zbuf_t, bary_t, dists_t, bf_t = rasterize_meshes_fn(**kwargs)
         self.assertTrue(torch.all(idx_t[..., 0].squeeze() == pix_to_face_frontface))
         self.assertTrue(torch.all(idx_t[..., 1].squeeze() == pix_to_face_padded))
 
@@ -603,10 +603,10 @@ class TestRasterizeMeshes(TestCaseMixin, unittest.TestCase):
             kwargs["bin_size"] = bin_size
 
         # Run with and without perspective correction
-        idx_f, zbuf_f, bary_f, dists_f = rasterize_meshes_fn(**kwargs)
+        idx_f, zbuf_f, bary_f, dists_f, bf_f = rasterize_meshes_fn(**kwargs)
 
         kwargs["perspective_correct"] = True
-        idx_t, zbuf_t, bary_t, dists_t = rasterize_meshes_fn(**kwargs)
+        idx_t, zbuf_t, bary_t, dists_t, bf_t = rasterize_meshes_fn(**kwargs)
 
         # Expected output tensors in the format with axes +X left, +Y up, +Z in
         # idx and dists should be the same with or without perspecitve correction
@@ -716,7 +716,7 @@ class TestRasterizeMeshes(TestCaseMixin, unittest.TestCase):
             kwargs["bin_size"] = bin_size
 
         # Run with and without perspective correction
-        idx_f, zbuf_f, bary_f, dists_f = rasterize_meshes_fn(**kwargs)
+        idx_f, zbuf_f, bary_f, dists_f, bf_f = rasterize_meshes_fn(**kwargs)
 
         # fmt: off
         expected_bary = torch.tensor([
@@ -765,7 +765,7 @@ class TestRasterizeMeshes(TestCaseMixin, unittest.TestCase):
         expected_z_clipped = _interpolate_zbuf(idx_f, expected_bary_clipped, meshes)
 
         kwargs["clip_barycentric_coords"] = True
-        idx_t, zbuf_t, bary_t, dists_t = rasterize_meshes_fn(**kwargs)
+        idx_t, zbuf_t, bary_t, dists_t, bf_t = rasterize_meshes_fn(**kwargs)
 
         self.assertClose(expected_bary_clipped, bary_t, atol=1e-4)
         self.assertClose(expected_z_clipped, zbuf_t, atol=1e-4)
@@ -825,11 +825,11 @@ class TestRasterizeMeshes(TestCaseMixin, unittest.TestCase):
         dists_expected = zbuf_expected.clone()
         if bin_size == -1:
             # naive python version with no binning
-            idx, zbuf, bary, dists = rasterize_meshes_fn(
+            idx, zbuf, bary, dists, bf = rasterize_meshes_fn(
                 meshes, image_size, radius, faces_per_pixel
             )
         else:
-            idx, zbuf, bary, dists = rasterize_meshes_fn(
+            idx, zbuf, bary, dists, bf = rasterize_meshes_fn(
                 meshes, image_size, radius, faces_per_pixel, bin_size
             )
         idx_same = (idx == idx_expected).all().item()

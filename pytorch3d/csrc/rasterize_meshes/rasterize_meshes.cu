@@ -25,6 +25,7 @@ struct Pixel {
   int64_t idx; // idx of face
   float dist; // abs distance of pixel to face
   float3 bary;
+  bool back_face;
 };
 
 __device__ bool operator<(const Pixel& a, const Pixel& b) {
@@ -204,7 +205,7 @@ __device__ void CheckPixelInsideFace(
     float neighbor_dist = abs(q[neighbor_idx_top_k].dist);
     if (dist < neighbor_dist) {
       // Overwrite the neighbor face values
-      q[neighbor_idx_top_k] = {pz, face_idx, signed_dist, p_bary_clip};
+      q[neighbor_idx_top_k] = {pz, face_idx, signed_dist, p_bary_clip, back_face};
 
       // If pz > q_max then overwrite the max values and index of the max.
       // q_size stays the same.
@@ -217,7 +218,7 @@ __device__ void CheckPixelInsideFace(
     // Handle as a normal face
     if (q_size < K) {
       // Just insert it.
-      q[q_size] = {pz, face_idx, signed_dist, p_bary_clip};
+      q[q_size] = {pz, face_idx, signed_dist, p_bary_clip, back_face};
       if (pz > q_max_z) {
         q_max_z = pz;
         q_max_idx = q_size;
@@ -225,7 +226,7 @@ __device__ void CheckPixelInsideFace(
       q_size++;
     } else if (pz < q_max_z) {
       // Overwrite the old max, and find the new max.
-      q[q_max_idx] = {pz, face_idx, signed_dist, p_bary_clip};
+      q[q_max_idx] = {pz, face_idx, signed_dist, p_bary_clip, back_face};
       q_max_z = pz;
       for (int i = 0; i < K; i++) {
         if (q[i].z > q_max_z) {
@@ -258,7 +259,8 @@ __global__ void RasterizeMeshesNaiveCudaKernel(
     int64_t* face_idxs,
     float* zbuf,
     float* pix_dists,
-    float* bary) {
+    float* bary,
+    bool* back_faces) {
   // Simple version: One thread per output pixel
   int num_threads = gridDim.x * blockDim.x;
   int tid = blockDim.x * blockIdx.x + threadIdx.x;
@@ -329,11 +331,12 @@ __global__ void RasterizeMeshesNaiveCudaKernel(
       bary[(idx + k) * 3 + 0] = q[k].bary.x;
       bary[(idx + k) * 3 + 1] = q[k].bary.y;
       bary[(idx + k) * 3 + 2] = q[k].bary.z;
+      back_faces[idx + k] = q[k].back_face;
     }
   }
 }
 
-std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor>
+std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor, at::Tensor>
 RasterizeMeshesNaiveCuda(
     const at::Tensor& face_verts,
     const at::Tensor& mesh_to_faces_packed_first_idx,
@@ -390,15 +393,17 @@ RasterizeMeshesNaiveCuda(
 
   auto long_opts = num_faces_per_mesh.options().dtype(at::kLong);
   auto float_opts = face_verts.options().dtype(at::kFloat);
+  auto bool_opts = face_verts.options().dtype(at::kBool);
 
   at::Tensor face_idxs = at::full({N, H, W, K}, -1, long_opts);
   at::Tensor zbuf = at::full({N, H, W, K}, -1, float_opts);
   at::Tensor pix_dists = at::full({N, H, W, K}, -1, float_opts);
   at::Tensor bary = at::full({N, H, W, K, 3}, -1, float_opts);
+  at::Tensor back_faces = at::full({N, H, W, K}, false, bool_opts);
 
   if (face_idxs.numel() == 0) {
     AT_CUDA_CHECK(cudaGetLastError());
-    return std::make_tuple(face_idxs, zbuf, bary, pix_dists);
+    return std::make_tuple(face_idxs, zbuf, bary, pix_dists, back_faces);
   }
 
   const size_t blocks = 1024;
@@ -420,10 +425,11 @@ RasterizeMeshesNaiveCuda(
       face_idxs.data_ptr<int64_t>(),
       zbuf.data_ptr<float>(),
       pix_dists.data_ptr<float>(),
-      bary.data_ptr<float>());
+      bary.data_ptr<float>(),
+      back_faces.data_ptr<bool>());
 
   AT_CUDA_CHECK(cudaGetLastError());
-  return std::make_tuple(face_idxs, zbuf, bary, pix_dists);
+  return std::make_tuple(face_idxs, zbuf, bary, pix_dists, back_faces);
 }
 
 // ****************************************************************************
@@ -643,7 +649,8 @@ __global__ void RasterizeMeshesFineCudaKernel(
     int64_t* face_idxs, // (N, H, W, K)
     float* zbuf, // (N, H, W, K)
     float* pix_dists, // (N, H, W, K)
-    float* bary // (N, H, W, K, 3)
+    float* bary, // (N, H, W, K, 3)
+    bool* back_faces // (N, H, W, K)
 ) {
   // This can be more than H * W if H or W are not divisible by bin_size.
   int num_pixels = N * BH * BW * bin_size * bin_size;
@@ -728,11 +735,12 @@ __global__ void RasterizeMeshesFineCudaKernel(
       bary[(pix_idx + k) * 3 + 0] = q[k].bary.x;
       bary[(pix_idx + k) * 3 + 1] = q[k].bary.y;
       bary[(pix_idx + k) * 3 + 2] = q[k].bary.z;
+      back_faces[pix_idx + k] = q[k].back_face;
     }
   }
 }
 
-std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor>
+std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor, at::Tensor>
 RasterizeMeshesFineCuda(
     const at::Tensor& face_verts,
     const at::Tensor& bin_faces,
@@ -781,15 +789,17 @@ RasterizeMeshesFineCuda(
   }
   auto long_opts = bin_faces.options().dtype(at::kLong);
   auto float_opts = face_verts.options().dtype(at::kFloat);
+  auto bool_opts = face_verts.options().dtype(at::kBool);
 
   at::Tensor face_idxs = at::full({N, H, W, K}, -1, long_opts);
   at::Tensor zbuf = at::full({N, H, W, K}, -1, float_opts);
   at::Tensor pix_dists = at::full({N, H, W, K}, -1, float_opts);
   at::Tensor bary = at::full({N, H, W, K, 3}, -1, float_opts);
+  at::Tensor back_faces = at::full({N, H, W, K}, false, bool_opts);
 
   if (face_idxs.numel() == 0) {
     AT_CUDA_CHECK(cudaGetLastError());
-    return std::make_tuple(face_idxs, zbuf, bary, pix_dists);
+    return std::make_tuple(face_idxs, zbuf, bary, pix_dists, back_faces);
   }
 
   const size_t blocks = 1024;
@@ -814,7 +824,8 @@ RasterizeMeshesFineCuda(
       face_idxs.data_ptr<int64_t>(),
       zbuf.data_ptr<float>(),
       pix_dists.data_ptr<float>(),
-      bary.data_ptr<float>());
+      bary.data_ptr<float>(),
+      back_faces.data_ptr<bool>());
 
-  return std::make_tuple(face_idxs, zbuf, bary, pix_dists);
+  return std::make_tuple(face_idxs, zbuf, bary, pix_dists, back_faces);
 }

@@ -101,7 +101,7 @@ def rasterize_meshes(
             Default is False so that it is turned on only when needed.
 
     Returns:
-        4-element tuple containing
+        5-element tuple containing
 
         - **pix_to_face**: LongTensor of shape
           (N, image_size, image_size, faces_per_pixel)
@@ -134,6 +134,12 @@ def rasterize_meshes(
           squared distance between the pixel (y, x) and the face given
           by vertices ``face_verts[f]``. Pixels hit with fewer than
           ``faces_per_pixel`` are padded with -1.
+        - **back_faces**: BoolTensor of shape
+          (N, image_size, image_size, faces_per_pixel)
+          giving whether the face is back-facing torward the camera (True)
+          or front-facing toward the camera (False). If no face found, 
+          default to False. When ``cull_backfaces = True``, all back-facing
+          faces are bypassed, so this entire Tensor is always False.
 
         In the case that image_size is a tuple of (H, W) then the outputs
         will be of shape `(N, H, W, ...)`.
@@ -231,7 +237,7 @@ def rasterize_meshes(
         max_faces_per_bin = int(max(10000, meshes._F / 5))
 
     # pyre-fixme[16]: `_RasterizeFaceVerts` has no attribute `apply`.
-    pix_to_face, zbuf, barycentric_coords, dists = _RasterizeFaceVerts.apply(
+    pix_to_face, zbuf, barycentric_coords, dists, back_faces = _RasterizeFaceVerts.apply(
         face_verts,
         mesh_to_face_first_idx,
         num_faces_per_mesh,
@@ -258,7 +264,7 @@ def rasterize_meshes(
         )
         pix_to_face, barycentric_coords = outputs
 
-    return pix_to_face, zbuf, barycentric_coords, dists
+    return pix_to_face, zbuf, barycentric_coords, dists, back_faces
 
 
 class _RasterizeFaceVerts(torch.autograd.Function):
@@ -305,7 +311,7 @@ class _RasterizeFaceVerts(torch.autograd.Function):
         cull_to_frustum: bool = True,
     ):
         # pyre-fixme[16]: Module `pytorch3d` has no attribute `_C`.
-        pix_to_face, zbuf, barycentric_coords, dists = _C.rasterize_meshes(
+        pix_to_face, zbuf, barycentric_coords, dists, back_faces = _C.rasterize_meshes(
             face_verts,
             mesh_to_face_first_idx,
             num_faces_per_mesh,
@@ -324,7 +330,7 @@ class _RasterizeFaceVerts(torch.autograd.Function):
         ctx.mark_non_differentiable(pix_to_face)
         ctx.perspective_correct = perspective_correct
         ctx.clip_barycentric_coords = clip_barycentric_coords
-        return pix_to_face, zbuf, barycentric_coords, dists
+        return pix_to_face, zbuf, barycentric_coords, dists, back_faces
 
     @staticmethod
     def backward(ctx, grad_pix_to_face, grad_zbuf, grad_barycentric_coords, grad_dists):

@@ -76,6 +76,7 @@ class TestTexturesVertex(TestCaseMixin, unittest.TestCase):
             bary_coords=barycentric_coords,
             zbuf=torch.ones_like(pix_to_face),
             dists=torch.ones_like(pix_to_face),
+            back_faces=torch.ones_like(pix_to_face),
         )
         # sample_textures calls interpolate_vertex_colors
         texels = mesh.sample_textures(fragments)
@@ -101,6 +102,7 @@ class TestTexturesVertex(TestCaseMixin, unittest.TestCase):
             bary_coords=barycentric_coords,
             zbuf=torch.ones_like(pix_to_face),
             dists=torch.ones_like(pix_to_face),
+            back_faces=torch.ones_like(pix_to_face),
         )
         grad_vert_tex = torch.tensor(
             [[0.3, 0.3, 0.3], [0.9, 0.9, 0.9], [0.5, 0.5, 0.5], [0.3, 0.3, 0.3]],
@@ -321,6 +323,7 @@ class TestTexturesAtlas(TestCaseMixin, unittest.TestCase):
             bary_coords=barycentric_coords,
             zbuf=torch.ones_like(pix_to_face),
             dists=torch.ones_like(pix_to_face),
+            back_faces=torch.ones_like(pix_to_face),
         )
         texels = mesh.textures.sample_textures(fragments)
         self.assertTrue(torch.allclose(texels, expected_vals))
@@ -341,6 +344,7 @@ class TestTexturesAtlas(TestCaseMixin, unittest.TestCase):
             bary_coords=barycentric_coords,
             zbuf=torch.ones_like(pix_to_face),
             dists=torch.ones_like(pix_to_face),
+            back_faces=torch.ones_like(pix_to_face),
         )
         texels = mesh.textures.sample_textures(fragments)
         grad_tex = torch.rand_like(texels)
@@ -557,6 +561,7 @@ class TestTexturesUV(TestCaseMixin, unittest.TestCase):
             bary_coords=barycentric_coords,
             zbuf=pix_to_face,
             dists=pix_to_face,
+            back_faces=pix_to_face,
         )
 
         for align_corners in [True, False]:

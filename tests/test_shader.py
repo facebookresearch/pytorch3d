@@ -73,6 +73,7 @@ class TestShader(TestCaseMixin, unittest.TestCase):
             bary_coords=barycentric_coords,
             zbuf=torch.ones_like(pix_to_face),
             dists=torch.ones_like(pix_to_face),
+            back_faces=torch.ones_like(pix_to_face),
         )
         shader_classes = [
             HardFlatShader,
