@@ -373,7 +373,7 @@ class VolumeSampler(torch.nn.Module):
         # run the grid sampler
         data_sampled = torch.nn.functional.grid_sample(
             data_to_sample,
-            rays_points_local_flat,
+            rays_points_local_flat.type_as(data_to_sample),
             align_corners=True,
             mode=self._sample_mode,
         )
