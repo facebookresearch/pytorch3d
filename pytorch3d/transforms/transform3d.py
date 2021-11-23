@@ -32,7 +32,7 @@ class Transform3d:
 
     BROADCASTING
     Transform3d objects supports broadcasting. Suppose that t1 and tN are
-    Transform3D objects with len(t1) == 1 and len(tN) == N respectively. Then we
+    Transform3d objects with len(t1) == 1 and len(tN) == N respectively. Then we
     can broadcast transforms like this:
 
     .. code-block:: python
@@ -248,7 +248,7 @@ class Transform3d:
 
     def inverse(self, invert_composed: bool = False):
         """
-        Returns a new Transform3D object that represents an inverse of the
+        Returns a new Transform3d object that represents an inverse of the
         current transformation.
 
         Args:
@@ -262,7 +262,7 @@ class Transform3d:
                   independently without composing them.
 
         Returns:
-            A new Transform3D object containing the inverse of the original
+            A new Transform3d object containing the inverse of the original
             transformation.
         """
 

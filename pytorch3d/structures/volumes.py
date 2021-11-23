@@ -124,7 +124,7 @@ class Volumes:
     appropriate `world_coordinates` argument.
 
     Internally, the mapping between `x_local` and `x_world` is represented
-    as a `Transform3D` object `Volumes._local_to_world_transform`.
+    as a `Transform3d` object `Volumes._local_to_world_transform`.
     Users can access the relevant transformations with the
     `Volumes.get_world_to_local_coords_transform()` and
     `Volumes.get_local_to_world_coords_transform()`
@@ -260,7 +260,7 @@ class Volumes:
     ) -> Transform3d:
         """
         Converts the `voxel_size` and `volume_translation` constructor arguments
-        to the internal `Transform3D` object `local_to_world_transform`.
+        to the internal `Transform3d` object `local_to_world_transform`.
         """
         volume_size_zyx = self.get_grid_sizes().float()
         volume_size_xyz = volume_size_zyx[:, [2, 1, 0]]

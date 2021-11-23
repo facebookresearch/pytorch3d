@@ -227,7 +227,7 @@ class CamerasBase(TensorProperties):
             eps: If eps!=None, the argument is used to clamp the
                 divisor in the homogeneous normalization of the points
                 transformed to the ndc space. Please see
-                `transforms.Transform3D.transform_points` for details.
+                `transforms.Transform3d.transform_points` for details.
 
                 For `CamerasBase.transform_points`, setting `eps > 0`
                 stabilizes gradients since it leads to avoiding division
@@ -283,7 +283,7 @@ class CamerasBase(TensorProperties):
             eps: If eps!=None, the argument is used to clamp the
                 divisor in the homogeneous normalization of the points
                 transformed to the ndc space. Please see
-                `transforms.Transform3D.transform_points` for details.
+                `transforms.Transform3d.transform_points` for details.
 
                 For `CamerasBase.transform_points`, setting `eps > 0`
                 stabilizes gradients since it leads to avoiding division
@@ -313,7 +313,7 @@ class CamerasBase(TensorProperties):
             eps: If eps!=None, the argument is used to clamp the
                 divisor in the homogeneous normalization of the points
                 transformed to the ndc space. Please see
-                `transforms.Transform3D.transform_points` for details.
+                `transforms.Transform3d.transform_points` for details.
 
                 For `CamerasBase.transform_points`, setting `eps > 0`
                 stabilizes gradients since it leads to avoiding division
