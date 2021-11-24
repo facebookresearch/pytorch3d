@@ -82,7 +82,7 @@ for m in ["cv2", "scipy", "numpy", "pytorch3d._C", "np.eye", "np.zeros"]:
 # -- Project information -----------------------------------------------------
 
 project = "PyTorch3D"
-copyright = "Facebook Research"
+copyright = "Meta Platforms, Inc"
 author = "facebookresearch"
 
 # The short X.Y version
