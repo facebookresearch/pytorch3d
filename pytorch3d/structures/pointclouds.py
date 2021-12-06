@@ -1176,5 +1176,5 @@ class Pointclouds:
             ]
             box = torch.cat(box, 0)
 
-        idx = (points_packed >= box[:, 0]) * (points_packed <= box[:, 1])
-        return idx
+        coord_inside = (points_packed >= box[:, 0]) * (points_packed <= box[:, 1])
+        return coord_inside.all(dim=-1)

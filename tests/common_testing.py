@@ -163,8 +163,17 @@ class TestCaseMixin(unittest.TestCase):
         if close:
             return
 
-        diff = backend.abs(input + 0.0 - other)
-        ratio = diff / backend.abs(other)
+        # handle bool case
+        if backend == torch and input.dtype == torch.bool:
+            diff = (input != other).float()
+            ratio = diff
+        if backend == np and input.dtype == bool:
+            diff = (input != other).astype(float)
+            ratio = diff
+        else:
+            diff = backend.abs(input + 0.0 - other)
+            ratio = diff / backend.abs(other)
+
         try_relative = (diff <= atol) | (backend.isfinite(ratio) & (ratio > 0))
         if try_relative.all():
             if backend == np:
