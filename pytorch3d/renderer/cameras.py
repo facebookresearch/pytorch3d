@@ -36,8 +36,9 @@ class CamerasBase(TensorProperties):
         and translation (T)
     - NDC coordinate system: This is the normalized coordinate system that confines
         in a volume the rendered part of the object or scene. Also known as view volume.
-        For square images, given the PyTorch3D convention, (+1, +1, znear) is the top left near corner,
-        and (-1, -1, zfar) is the bottom right far corner of the volume.
+        For square images, given the PyTorch3D convention, (+1, +1, znear)
+        is the top left near corner, and (-1, -1, zfar) is the bottom right far
+        corner of the volume.
         The transformation from view --> NDC happens after applying the camera
         projection matrix (P) if defined in NDC space.
         For non square images, we scale the points such that smallest side
@@ -1623,12 +1624,12 @@ def get_ndc_to_screen_transform(
     # For non square images, we scale the points such that smallest side
     # has range [-1, 1] and the largest side has range [-u, u], with u > 1.
     # This convention is consistent with the PyTorch3D renderer
-    scale = (image_size.min(dim=1).values - 1.0) / 2.0
+    scale = (image_size.min(dim=1).values - 0.0) / 2.0
 
     K[:, 0, 0] = scale
     K[:, 1, 1] = scale
-    K[:, 0, 3] = -1.0 * (width - 1.0) / 2.0
-    K[:, 1, 3] = -1.0 * (height - 1.0) / 2.0
+    K[:, 0, 3] = -1.0 * (width - 0.0) / 2.0
+    K[:, 1, 3] = -1.0 * (height - 0.0) / 2.0
     K[:, 2, 2] = 1.0
     K[:, 3, 3] = 1.0
 

@@ -250,23 +250,14 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
         raster_settings = RasterizationSettings(
             image_size=512, blur_radius=0.0, faces_per_pixel=1
         )
+        half_half = (512.0 / 2.0, 512.0 / 2.0)
         for cam_type in (PerspectiveCameras, OrthographicCameras):
             cameras = cam_type(
                 device=device,
                 R=R,
                 T=T,
-                principal_point=(
-                    (
-                        (512.0 - 1.0) / 2.0,
-                        (512.0 - 1.0) / 2.0,
-                    ),
-                ),
-                focal_length=(
-                    (
-                        (512.0 - 1.0) / 2.0,
-                        (512.0 - 1.0) / 2.0,
-                    ),
-                ),
+                principal_point=(half_half,),
+                focal_length=(half_half,),
                 image_size=((512, 512),),
                 in_ndc=False,
             )
@@ -285,6 +276,10 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
             images = renderer(sphere_mesh)
             rgb = images[0, ..., :3].squeeze().cpu()
             filename = "test_simple_sphere_light_phong_%s.png" % cam_type.__name__
+            if DEBUG:
+                Image.fromarray((rgb.numpy() * 255).astype(np.uint8)).save(
+                    DATA_DIR / f"{filename}_.png"
+                )
 
             image_ref = load_rgb_image(filename, DATA_DIR)
             self.assertClose(rgb, image_ref, atol=0.05)

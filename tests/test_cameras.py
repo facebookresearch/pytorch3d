@@ -130,9 +130,9 @@ def ndc_to_screen_points_naive(points, imsize):
     """
     height, width = imsize.unbind(1)
     width = width.view(-1, 1)
-    half_width = (width - 1.0) / 2.0
+    half_width = width / 2.0
     height = height.view(-1, 1)
-    half_height = (height - 1.0) / 2.0
+    half_height = height / 2.0
 
     scale = (
         half_width * (height > width).float() + half_height * (height <= width).float()
@@ -524,7 +524,7 @@ class TestCamerasCommon(TestCaseMixin, unittest.TestCase):
             # (height, width)
             image_size = torch.randint(low=2, high=64, size=(batch_size, 2))
             # scale
-            scale = (image_size.min(dim=1, keepdim=True).values - 1.0) / 2.0
+            scale = (image_size.min(dim=1, keepdim=True).values) / 2.0
 
             ndc_cam_params["focal_length"] = fcl
             ndc_cam_params["principal_point"] = prc
@@ -533,7 +533,7 @@ class TestCamerasCommon(TestCaseMixin, unittest.TestCase):
             screen_cam_params["image_size"] = image_size
             screen_cam_params["focal_length"] = fcl * scale
             screen_cam_params["principal_point"] = (
-                image_size[:, [1, 0]] - 1.0
+                image_size[:, [1, 0]]
             ) / 2.0 - prc * scale
             screen_cam_params["in_ndc"] = False
         else:
@@ -821,7 +821,7 @@ class TestFoVPerspectiveProjection(TestCaseMixin, unittest.TestCase):
     def test_perspective_type(self):
         cam = FoVPerspectiveCameras(znear=1.0, zfar=10.0, fov=60.0)
         self.assertTrue(cam.is_perspective())
-        self.assertEquals(cam.get_znear(), 1.0)
+        self.assertEqual(cam.get_znear(), 1.0)
 
 
 ############################################################
@@ -917,7 +917,7 @@ class TestFoVOrthographicProjection(TestCaseMixin, unittest.TestCase):
     def test_perspective_type(self):
         cam = FoVOrthographicCameras(znear=1.0, zfar=10.0)
         self.assertFalse(cam.is_perspective())
-        self.assertEquals(cam.get_znear(), 1.0)
+        self.assertEqual(cam.get_znear(), 1.0)
 
 
 ############################################################
@@ -974,7 +974,7 @@ class TestOrthographicProjection(TestCaseMixin, unittest.TestCase):
     def test_perspective_type(self):
         cam = OrthographicCameras(focal_length=5.0, principal_point=((2.5, 2.5),))
         self.assertFalse(cam.is_perspective())
-        self.assertEquals(cam.get_znear(), None)
+        self.assertIsNone(cam.get_znear())
 
 
 ############################################################
@@ -1026,4 +1026,4 @@ class TestPerspectiveProjection(TestCaseMixin, unittest.TestCase):
     def test_perspective_type(self):
         cam = PerspectiveCameras(focal_length=5.0, principal_point=((2.5, 2.5),))
         self.assertTrue(cam.is_perspective())
-        self.assertEquals(cam.get_znear(), None)
+        self.assertIsNone(cam.get_znear())
