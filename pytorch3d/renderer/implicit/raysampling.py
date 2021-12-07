@@ -312,7 +312,7 @@ def _xy_to_ray_bundle(
     )
 
     # unproject the points
-    unprojected = cameras.unproject_points(to_unproject)  # pyre-ignore
+    unprojected = cameras.unproject_points(to_unproject, from_ndc=True)  # pyre-ignore
 
     # split the two planes back
     rays_plane_1_world = unprojected[:, :n_rays_per_image]

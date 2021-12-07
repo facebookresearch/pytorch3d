@@ -129,6 +129,10 @@ class CamerasBase(TensorProperties):
                 coordinates using the camera extrinsics `R` and `T`.
                 `False` ignores `R` and `T` and unprojects to
                 the camera view coordinates.
+            from_ndc: If `False` (default), assumes xy part of input is in
+                NDC space if self.in_ndc(), otherwise in screen space. If
+                `True`, assumes xy is in NDC space even if the camera
+                is defined in screen space.
 
         Returns
             new_points: unprojected points with the same shape as `xy_depth`.
@@ -998,12 +1002,27 @@ class PerspectiveCameras(CamerasBase):
         return transform
 
     def unproject_points(
-        self, xy_depth: torch.Tensor, world_coordinates: bool = True, **kwargs
+        self,
+        xy_depth: torch.Tensor,
+        world_coordinates: bool = True,
+        from_ndc: bool = False,
+        **kwargs
     ) -> torch.Tensor:
+        """
+        Args:
+            from_ndc: If `False` (default), assumes xy part of input is in
+                NDC space if self.in_ndc(), otherwise in screen space. If
+                `True`, assumes xy is in NDC space even if the camera
+                is defined in screen space.
+        """
         if world_coordinates:
             to_camera_transform = self.get_full_projection_transform(**kwargs)
         else:
             to_camera_transform = self.get_projection_transform(**kwargs)
+        if from_ndc:
+            to_camera_transform = to_camera_transform.compose(
+                self.get_ndc_camera_transform()
+            )
 
         unprojection_transform = to_camera_transform.inverse()
         xy_inv_depth = torch.cat(
@@ -1029,6 +1048,8 @@ class PerspectiveCameras(CamerasBase):
         If the camera is defined already in NDC space, the transform is identity.
         For cameras defined in screen space, we adjust the principal point computation
         which is defined in the image space (commonly) and scale the points to NDC space.
+
+        This transform leaves the depth unchanged.
 
         Important: This transforms assumes PyTorch3D conventions for the input points,
         i.e. +X left, +Y up.
@@ -1199,12 +1220,27 @@ class OrthographicCameras(CamerasBase):
         return transform
 
     def unproject_points(
-        self, xy_depth: torch.Tensor, world_coordinates: bool = True, **kwargs
+        self,
+        xy_depth: torch.Tensor,
+        world_coordinates: bool = True,
+        from_ndc: bool = False,
+        **kwargs
     ) -> torch.Tensor:
+        """
+        Args:
+            from_ndc: If `False` (default), assumes xy part of input is in
+                NDC space if self.in_ndc(), otherwise in screen space. If
+                `True`, assumes xy is in NDC space even if the camera
+                is defined in screen space.
+        """
         if world_coordinates:
             to_camera_transform = self.get_full_projection_transform(**kwargs)
         else:
             to_camera_transform = self.get_projection_transform(**kwargs)
+        if from_ndc:
+            to_camera_transform = to_camera_transform.compose(
+                self.get_ndc_camera_transform()
+            )
 
         unprojection_transform = to_camera_transform.inverse()
         return unprojection_transform.transform_points(xy_depth)
