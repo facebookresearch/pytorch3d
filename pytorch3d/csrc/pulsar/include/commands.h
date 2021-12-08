@@ -23,9 +23,9 @@
 // #pragma push
 // #pragma diag_suppress = 68
 #include <ATen/cuda/CUDAContext.h>
-#include <THC/THC.h>
 // #pragma pop
 #include "../cuda/commands.h"
+#include <TH/TH.h>
 #else
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Weverything"
