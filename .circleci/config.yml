@@ -341,6 +341,12 @@ workflows:
           python_version: '3.6'
           pytorch_version: 1.10.0
       - binary_linux_conda:
+          context: DOCKERHUB_TOKEN
+          cu_version: cu111
+          name: linux_conda_py36_cu111_pyt1100
+          python_version: '3.6'
+          pytorch_version: 1.10.0
+      - binary_linux_conda:
           conda_docker_image: pytorch/conda-builder:cuda113
           context: DOCKERHUB_TOKEN
           cu_version: cu113
@@ -465,6 +471,12 @@ workflows:
           context: DOCKERHUB_TOKEN
           cu_version: cu102
           name: linux_conda_py37_cu102_pyt1100
+          python_version: '3.7'
+          pytorch_version: 1.10.0
+      - binary_linux_conda:
+          context: DOCKERHUB_TOKEN
+          cu_version: cu111
+          name: linux_conda_py37_cu111_pyt1100
           python_version: '3.7'
           pytorch_version: 1.10.0
       - binary_linux_conda:
@@ -595,6 +607,12 @@ workflows:
           python_version: '3.8'
           pytorch_version: 1.10.0
       - binary_linux_conda:
+          context: DOCKERHUB_TOKEN
+          cu_version: cu111
+          name: linux_conda_py38_cu111_pyt1100
+          python_version: '3.8'
+          pytorch_version: 1.10.0
+      - binary_linux_conda:
           conda_docker_image: pytorch/conda-builder:cuda113
           context: DOCKERHUB_TOKEN
           cu_version: cu113
@@ -683,6 +701,12 @@ workflows:
           context: DOCKERHUB_TOKEN
           cu_version: cu102
           name: linux_conda_py39_cu102_pyt1100
+          python_version: '3.9'
+          pytorch_version: 1.10.0
+      - binary_linux_conda:
+          context: DOCKERHUB_TOKEN
+          cu_version: cu111
+          name: linux_conda_py39_cu111_pyt1100
           python_version: '3.9'
           pytorch_version: 1.10.0
       - binary_linux_conda:
