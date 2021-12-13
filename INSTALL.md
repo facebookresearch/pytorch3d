@@ -9,7 +9,7 @@ The core library is written in PyTorch. Several components have underlying imple
 
 - Linux or macOS or Windows
 - Python 3.6, 3.7, 3.8 or 3.9
-- PyTorch 1.6.0, 1.7.0, 1.7.1, 1.8.0, 1.8.1, 1.9.0 or 1.9.1.
+- PyTorch 1.6.0, 1.7.0, 1.7.1, 1.8.0, 1.8.1, 1.9.0, 1.9.1 or 1.10.0.
 - torchvision that matches the PyTorch installation. You can install them together as explained at pytorch.org to make sure of this.
 - gcc & g++ ≥ 4.9
 - [fvcore](https://github.com/facebookresearch/fvcore)
@@ -19,9 +19,9 @@ The core library is written in PyTorch. Several components have underlying imple
 
 The runtime dependencies can be installed by running:
 ```
-conda create -n pytorch3d python=3.8
+conda create -n pytorch3d python=3.9
 conda activate pytorch3d
-conda install -c pytorch pytorch=1.7.1 torchvision cudatoolkit=10.2
+conda install -c pytorch pytorch=1.9.1 torchvision cudatoolkit=10.2
 conda install -c fvcore -c iopath -c conda-forge fvcore iopath
 ```
 
@@ -84,12 +84,12 @@ pip install pytorch3d
 ```
 
 ### 3. Install wheels for Linux
-We have prebuilt wheels with CUDA for Linux for PyTorch 1.9.0, for each of the CUDA versions that they support,
+We have prebuilt wheels with CUDA for Linux for PyTorch 1.10.0, for each of the CUDA versions that they support,
 for Python 3.7, 3.8 and 3.9.
 These are installed in a special way.
 For example, to install for Python 3.8, PyTorch 1.9.0 and CUDA 10.2
 ```
-pip install pytorch3d -f https://dl.fbaipublicfiles.com/pytorch3d/packaging/wheels/py38_cu102_pyt190/download.html
+pip install pytorch3d -f https://dl.fbaipublicfiles.com/pytorch3d/packaging/wheels/py38_cu102_pyt1100/download.html
 ```
 
 In general, from inside IPython, or in Google Colab or a jupyter notebook, you can install with
