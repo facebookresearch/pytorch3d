@@ -155,8 +155,7 @@ INLINE void ATOMICADD_F3(T* address, T val) {
 #define IABS(a) abs(a)
 
 // Checks.
-#define CHECKOK THCheck
-#define ARGCHECK THArgCheck
+#define ARGCHECK TORCH_CHECK_ARG
 
 // Math.
 #define NORM3DF(x, y, z) sqrtf(x* x + y * y + z * z)
