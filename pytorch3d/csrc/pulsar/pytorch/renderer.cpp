@@ -339,7 +339,8 @@ std::tuple<size_t, size_t, bool, torch::Tensor> Renderer::arg_check(
         vert_col.ndimension() == 2, 2, "vert_col needs to have dimension 2.");
     TORCH_CHECK_ARG(
         vert_radii.ndimension() == 1, 3, "vert_radii must have dimension 1.");
-    TORCH_CHECK_ARG(cam_pos.ndimension() == 1, 4, "cam_pos must have dimension 1.");
+    TORCH_CHECK_ARG(
+        cam_pos.ndimension() == 1, 4, "cam_pos must have dimension 1.");
     TORCH_CHECK_ARG(
         pixel_0_0_center.ndimension() == 1,
         5,
@@ -967,7 +968,8 @@ Renderer::backward(
       2,
       "The image must be of float type.");
   if (dif_opy) {
-    TORCH_CHECK_ARG(opacity.has_value(), 13, "dif_opy set requires opacity values.");
+    TORCH_CHECK_ARG(
+        opacity.has_value(), 13, "dif_opy set requires opacity values.");
   }
   if (batch_processing) {
     TORCH_CHECK_ARG(
