@@ -208,7 +208,9 @@ __device__ static float atomicMin(float* address, float val) {
 #define IABS(a) abs(a)
 
 // Checks.
-#define ARGCHECK TORCH_CHECK_ARG
+// like TORCH_CHECK_ARG in PyTorch > 1.10
+#define ARGCHECK(cond, argN, ...) \
+  TORCH_CHECK(cond, "invalid argument ", argN, ": ", __VA_ARGS__)
 
 // Math.
 #define NORM3DF(x, y, z) norm3df(x, y, z)

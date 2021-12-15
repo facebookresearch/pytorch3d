@@ -17,6 +17,12 @@
 #include <c10/cuda/CUDAGuard.h>
 #endif
 
+#ifndef TORCH_CHECK_ARG
+// torch <= 1.10
+#define TORCH_CHECK_ARG(cond, argN, ...) \
+  TORCH_CHECK(cond, "invalid argument ", argN, ": ", __VA_ARGS__)
+#endif
+
 namespace PRE = ::pulsar::Renderer;
 
 namespace pulsar {
