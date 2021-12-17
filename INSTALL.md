@@ -96,10 +96,11 @@ In general, from inside IPython, or in Google Colab or a jupyter notebook, you c
 ```
 import sys
 import torch
+pyt_version_str=torch.__version__.split("+")[0].replace(".", "")
 version_str="".join([
     f"py3{sys.version_info.minor}_cu",
     torch.version.cuda.replace(".",""),
-    f"_pyt{torch.__version__[0:5:2]}"
+    f"_pyt{pyt_version_str}"
 ])
 !pip install pytorch3d -f https://dl.fbaipublicfiles.com/pytorch3d/packaging/wheels/{version_str}/download.html
 ```
