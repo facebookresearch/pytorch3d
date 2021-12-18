@@ -145,6 +145,26 @@ inline vec3<float> FaceNormal(vec3<float> v0, vec3<float> v1, vec3<float> v2) {
   return n;
 }
 
+// The area of the face defined by vertices (v0, v1, v2)
+// Define e0 to be the edge connecting (v1, v0)
+// Define e1 to be the edge connecting (v2, v0)
+// Area is the norm of the cross product of e0, e1 divided by 2.0
+//
+// Args
+//    tri: vec3 coordinates of the vertices of the face
+//
+// Returns
+//    float: area for the face
+//
+inline float FaceArea(const std::vector<vec3<float>>& tri) {
+  // Get verts for face
+  const vec3<float> v0 = tri[0];
+  const vec3<float> v1 = tri[1];
+  const vec3<float> v2 = tri[2];
+  const vec3<float> n = cross(v1 - v0, v2 - v0);
+  return norm(n) / 2.0;
+}
+
 // The normal of a box plane defined by the verts in `plane` with
 // the centroid of the box given by `center`.
 // Args

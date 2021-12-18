@@ -138,6 +138,26 @@ FaceNormal(const float3 v0, const float3 v1, const float3 v2) {
   return n;
 }
 
+// The area of the face defined by vertices (v0, v1, v2)
+// Define e0 to be the edge connecting (v1, v0)
+// Define e1 to be the edge connecting (v2, v0)
+// Area is the norm of the cross product of e0, e1 divided by 2.0
+//
+// Args
+//    tri: FaceVerts of float3 coordinates of the vertices of the face
+//
+// Returns
+//    float: area for the face
+//
+__device__ inline float FaceArea(const FaceVerts& tri) {
+  // Get verts for face 1
+  const float3 v0 = tri.v0;
+  const float3 v1 = tri.v1;
+  const float3 v2 = tri.v2;
+  const float3 n = cross(v1 - v0, v2 - v0);
+  return norm(n) / 2.0;
+}
+
 // The normal of a box plane defined by the verts in `plane` with
 // the centroid of the box given by `center`.
 // Args
