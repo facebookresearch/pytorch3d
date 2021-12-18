@@ -163,6 +163,7 @@ class TensorProperties(nn.Module):
         msg = "Expected index of type int or slice; got %r"
         raise ValueError(msg % type(index))
 
+    # pyre-fixme[14]: `to` overrides method defined in `Module` inconsistently.
     def to(self, device: Device = "cpu") -> "TensorProperties":
         """
         In place operation to move class properties which are tensors to a
@@ -180,6 +181,7 @@ class TensorProperties(nn.Module):
     def cpu(self) -> "TensorProperties":
         return self.to("cpu")
 
+    # pyre-fixme[14]: `cuda` overrides method defined in `Module` inconsistently.
     def cuda(self, device: Optional[int] = None) -> "TensorProperties":
         return self.to(f"cuda:{device}" if device is not None else "cuda")
 

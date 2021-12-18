@@ -64,6 +64,7 @@ class HardPhongShader(nn.Module):
         self.cameras = cameras
         self.blend_params = blend_params if blend_params is not None else BlendParams()
 
+    # pyre-fixme[14]: `to` overrides method defined in `Module` inconsistently.
     def to(self, device: Device):
         # Manually move to device modules which are not subclasses of nn.Module
         cameras = self.cameras
@@ -126,6 +127,7 @@ class SoftPhongShader(nn.Module):
         self.cameras = cameras
         self.blend_params = blend_params if blend_params is not None else BlendParams()
 
+    # pyre-fixme[14]: `to` overrides method defined in `Module` inconsistently.
     def to(self, device: Device):
         # Manually move to device modules which are not subclasses of nn.Module
         cameras = self.cameras
@@ -193,6 +195,7 @@ class HardGouraudShader(nn.Module):
         self.cameras = cameras
         self.blend_params = blend_params if blend_params is not None else BlendParams()
 
+    # pyre-fixme[14]: `to` overrides method defined in `Module` inconsistently.
     def to(self, device: Device):
         # Manually move to device modules which are not subclasses of nn.Module
         cameras = self.cameras
@@ -259,6 +262,7 @@ class SoftGouraudShader(nn.Module):
         self.cameras = cameras
         self.blend_params = blend_params if blend_params is not None else BlendParams()
 
+    # pyre-fixme[14]: `to` overrides method defined in `Module` inconsistently.
     def to(self, device: Device):
         # Manually move to device modules which are not subclasses of nn.Module
         cameras = self.cameras
@@ -346,6 +350,7 @@ class HardFlatShader(nn.Module):
         self.cameras = cameras
         self.blend_params = blend_params if blend_params is not None else BlendParams()
 
+    # pyre-fixme[14]: `to` overrides method defined in `Module` inconsistently.
     def to(self, device: Device):
         # Manually move to device modules which are not subclasses of nn.Module
         cameras = self.cameras

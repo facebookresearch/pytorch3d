@@ -131,7 +131,12 @@ def _pad_texture_maps(
         if image.shape[:2] != max_shape:
             image_BCHW = image.permute(2, 0, 1)[None]
             new_image_BCHW = interpolate(
-                image_BCHW, size=max_shape, mode="bilinear", align_corners=align_corners
+                image_BCHW,
+                # pyre-fixme[6]: Expected `Optional[int]` for 2nd param but got
+                #  `Tuple[int, int]`.
+                size=max_shape,
+                mode="bilinear",
+                align_corners=align_corners,
             )
             tex_maps[i] = new_image_BCHW[0].permute(1, 2, 0)
     tex_maps = torch.stack(tex_maps, dim=0)  # (num_tex_maps, max_H, max_W, C)
