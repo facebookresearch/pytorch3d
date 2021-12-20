@@ -36,12 +36,13 @@ try:
 except ModuleNotFoundError:
     need_pytorch3d=True
 if need_pytorch3d:
-    if torch.__version__.startswith("1.9") and sys.platform.startswith("linux"):
+    if torch.__version__.startswith("1.10.") and sys.platform.startswith("linux"):
         # We try to install PyTorch3D via a released wheel.
+        pyt_version_str=torch.__version__.split("+")[0].replace(".", "")
         version_str="".join([
             f"py3{sys.version_info.minor}_cu",
             torch.version.cuda.replace(".",""),
-            f"_pyt{torch.__version__[0:5:2]}"
+            f"_pyt{pyt_version_str}"
         ])
         get_ipython().system('pip install pytorch3d -f https://dl.fbaipublicfiles.com/pytorch3d/packaging/wheels/{version_str}/download.html')
     else:
