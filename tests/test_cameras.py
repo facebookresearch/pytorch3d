@@ -637,7 +637,7 @@ class TestCamerasCommon(TestCaseMixin, unittest.TestCase):
             xyz_project_screen_naive = ndc_to_screen_points_naive(
                 xyz_project_ndc, image_size
             )
-            # we set atol to 1e-4, remember that screen points are in [0, W-1]x[0, H-1] space
+            # we set atol to 1e-4, remember that screen points are in [0, W]x[0, H] space
             self.assertClose(xyz_project_screen, xyz_project_screen_naive, atol=1e-4)
 
     def test_equiv_project_points(self, batch_size=50, num_points=100):

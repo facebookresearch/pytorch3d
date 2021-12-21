@@ -45,7 +45,7 @@ All cameras inherit from `CamerasBase` which is a base class for all cameras. Py
 * `transform_points` which takes a set of input points in world coordinates and projects to NDC coordinates ranging from [-1, -1, znear] to  [+1, +1, zfar].
 * `get_ndc_camera_transform` which defines the conversion to PyTorch3D's NDC space and is called when interfacing with the PyTorch3D renderer. If the camera is defined in NDC space, then the identity transform is returned. If the cameras is defined in screen space, the conversion from screen to NDC is returned. If users define their own camera in screen space, they need to think of the screen to NDC conversion. We provide examples for the `PerspectiveCameras` and `OrthographicCameras`.
 * `transform_points_ndc` which takes a set of points in world coordinates and projects them to PyTorch3D's NDC space
-* `transform_points_screen` which takes a set of input points in world coordinates and projects them to the screen coordinates ranging from [0, 0, znear] to [W-1, H-1, zfar]
+* `transform_points_screen` which takes a set of input points in world coordinates and projects them to the screen coordinates ranging from [0, 0, znear] to [W, H, zfar]
 
 Users can easily customize their own cameras. For each new camera, users should implement the `get_projection_transform` routine that returns the mapping `P` from camera view coordinates to NDC coordinates.
 

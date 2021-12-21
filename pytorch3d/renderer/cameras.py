@@ -250,7 +250,7 @@ class CamerasBase(TensorProperties):
         Returns the transform from camera projection space (screen or NDC) to NDC space.
         For cameras that can be specified in screen space, this transform
         allows points to be converted from screen to NDC space.
-        The default transform scales the points from [0, W-1]x[0, H-1]
+        The default transform scales the points from [0, W]x[0, H]
         to [-1, 1]x[-u, u] or [-u, u]x[-1, 1] where u > 1 is the aspect ratio of the image.
         This function should be modified per camera definitions if need be,
         e.g. for Perspective/Orthographic cameras we provide a custom implementation.
