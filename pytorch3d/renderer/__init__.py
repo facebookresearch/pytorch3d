@@ -37,6 +37,7 @@ from .implicit import (
     VolumeSampler,
     ray_bundle_to_ray_points,
     ray_bundle_variables_to_ray_points,
+    HarmonicEmbedding,
 )
 from .lighting import AmbientLights, DirectionalLights, PointLights, diffuse, specular
 from .materials import Materials
