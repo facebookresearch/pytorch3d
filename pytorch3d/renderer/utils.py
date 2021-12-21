@@ -155,7 +155,7 @@ class TensorProperties(nn.Module):
         Returns:
             if `index` is an index int/slice return a TensorAccessor class
             with getattribute/setattribute methods which return/update the value
-            at the index in the original camera.
+            at the index in the original class.
         """
         if isinstance(index, (int, slice)):
             return TensorAccessor(class_object=self, index=index)
