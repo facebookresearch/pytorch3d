@@ -1061,6 +1061,11 @@ class TexturesUV(TexturesBase):
         )
         if not align_corners_same:
             raise ValueError("All textures must have the same align_corners value.")
+        sampling_mode_same = all(
+            tex.sampling_mode == self.sampling_mode for tex in textures
+        )
+        if not sampling_mode_same:
+            raise ValueError("All textures must have the same sampling_mode.")
 
         verts_uvs_list = []
         faces_uvs_list = []
