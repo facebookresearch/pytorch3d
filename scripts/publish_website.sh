@@ -32,7 +32,7 @@ conda create -y -n myenv python=3.7 nodejs
 # is what lets conda activate work so smoothly.
 
 conda activate myenv
-pip install nbformat==4.4.0 nbconvert==5.3.1 ipywidgets==7.5.1 tornado==4.2 bs4 notebook==5.7.12
+pip install nbformat==4.4.0 nbconvert==5.3.1 ipywidgets==7.5.1 tornado==4.2 bs4 notebook==5.7.12 'mistune<2'
 npm install --global yarn
 
 cd /loc
