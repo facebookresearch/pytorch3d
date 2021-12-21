@@ -383,7 +383,7 @@ class CamerasBase(TensorProperties):
 
         kwargs = {}
 
-        if not isinstance(index, (int, list, torch.LongTensor)):
+        if not isinstance(index, (int, list, torch.LongTensor, torch.cuda.LongTensor)):
             msg = "Invalid index type, expected int, List[int] or torch.LongTensor; got %r"
             raise ValueError(msg % type(index))
 
