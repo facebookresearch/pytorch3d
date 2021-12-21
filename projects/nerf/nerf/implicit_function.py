@@ -7,9 +7,8 @@
 from typing import Tuple
 
 import torch
-from pytorch3d.renderer import RayBundle, ray_bundle_to_ray_points
+from pytorch3d.renderer import RayBundle, ray_bundle_to_ray_points, HarmonicEmbedding
 
-from .harmonic_embedding import HarmonicEmbedding
 from .linear_with_repeat import LinearWithRepeat
 
 
