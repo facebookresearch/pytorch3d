@@ -214,6 +214,8 @@ def softmax_rgb_blend(
         # pyre-fixme[16]
         zfar = zfar[:, None, None, None]
     if torch.is_tensor(znear):
+        # pyre-fixme[16]: Item `float` of `Union[float, Tensor]` has no attribute
+        #  `__getitem__`.
         znear = znear[:, None, None, None]
 
     z_inv = (zfar - fragments.zbuf) / (zfar - znear) * mask
