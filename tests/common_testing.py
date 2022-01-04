@@ -25,7 +25,7 @@ def get_pytorch3d_dir() -> Path:
     """
     Returns Path for the root PyTorch3D directory.
 
-    Facebook internal systems need a special case here.
+    Meta internal systems need a special case here.
     """
     if os.environ.get("INSIDE_RE_WORKER") is not None:
         return Path(__file__).resolve().parent
