@@ -46,7 +46,7 @@ def pytorch_versions_for_python(python_version):
 def workflows(prefix="", filter_branch=None, upload=False, indentation=6):
     w = []
     for btype in ["conda"]:
-        for python_version in ["3.6", "3.7", "3.8", "3.9"]:
+        for python_version in ["3.7", "3.8", "3.9"]:
             for pytorch_version in pytorch_versions_for_python(python_version):
                 for cu_version in CONDA_CUDA_VERSIONS[pytorch_version]:
                     w += workflow_pair(
