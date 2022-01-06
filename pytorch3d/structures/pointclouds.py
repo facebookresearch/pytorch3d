@@ -891,7 +891,7 @@ class Pointclouds:
         ):
             if n_points > max_:
                 keep_np = np.random.choice(n_points, max_, replace=False)
-                keep = torch.tensor(keep_np).to(points.device)
+                keep = torch.tensor(keep_np, device=points.device, dtype=torch.int64)
                 points = points[keep]
                 if features is not None:
                     features = features[keep]
