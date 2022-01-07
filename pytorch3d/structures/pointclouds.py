@@ -266,30 +266,8 @@ class Pointclouds:
         aux_input_C = None
 
         if isinstance(aux_input, list):
-            if len(aux_input) != self._N:
-                raise ValueError("Points and auxiliary input must be the same length.")
-            for p, d in zip(self._num_points_per_cloud, aux_input):
-                if p != d.shape[0]:
-                    raise ValueError(
-                        "A cloud has mismatched numbers of points and inputs"
-                    )
-                if d.device != self.device:
-                    raise ValueError(
-                        "All auxiliary inputs must be on the same device as the points."
-                    )
-                if p > 0:
-                    if d.dim() != 2:
-                        raise ValueError(
-                            "A cloud auxiliary input must be of shape PxC or empty"
-                        )
-                    if aux_input_C is None:
-                        aux_input_C = d.shape[1]
-                    if aux_input_C != d.shape[1]:
-                        raise ValueError(
-                            "The clouds must have the same number of channels"
-                        )
-            return aux_input, None, aux_input_C
-        elif torch.is_tensor(aux_input):
+            return self._parse_auxiliary_input_list(aux_input)
+        if torch.is_tensor(aux_input):
             if aux_input.dim() != 3:
                 raise ValueError("Auxiliary input tensor has incorrect dimensions.")
             if self._N != aux_input.shape[0]:
@@ -311,6 +289,72 @@ class Pointclouds:
                     shape (batch_size, P, C) where P is the maximum number of \
                     points in a cloud."
             )
+
+    def _parse_auxiliary_input_list(
+        self, aux_input: list
+    ) -> Tuple[Optional[List[torch.Tensor]], None, Optional[int]]:
+        """
+        Interpret the auxiliary inputs (normals, features) given to __init__,
+        if a list.
+
+        Args:
+            aux_input:
+                - List where each element is a tensor of shape (num_points, C)
+                  containing the features for the points in the cloud.
+              For normals, C = 3
+
+        Returns:
+            3-element tuple of list, padded=None, num_channels.
+            If aux_input is list, then padded is None. If aux_input is a tensor,
+            then list is None.
+        """
+        aux_input_C = None
+        good_empty = None
+        needs_fixing = False
+
+        if len(aux_input) != self._N:
+            raise ValueError("Points and auxiliary input must be the same length.")
+        for p, d in zip(self._num_points_per_cloud, aux_input):
+            valid_but_empty = p == 0 and d is not None and d.ndim == 2
+            if p > 0 or valid_but_empty:
+                if p != d.shape[0]:
+                    raise ValueError(
+                        "A cloud has mismatched numbers of points and inputs"
+                    )
+                if d.dim() != 2:
+                    raise ValueError(
+                        "A cloud auxiliary input must be of shape PxC or empty"
+                    )
+                if aux_input_C is None:
+                    aux_input_C = d.shape[1]
+                elif aux_input_C != d.shape[1]:
+                    raise ValueError("The clouds must have the same number of channels")
+                if d.device != self.device:
+                    raise ValueError(
+                        "All auxiliary inputs must be on the same device as the points."
+                    )
+            else:
+                needs_fixing = True
+
+        if aux_input_C is None:
+            # We found nothing useful
+            return None, None, None
+
+        # If we have empty but "wrong" inputs we want to store "fixed" versions.
+        if needs_fixing:
+            if good_empty is None:
+                good_empty = torch.zeros((0, aux_input_C), device=self.device)
+            aux_input_out = []
+            for p, d in zip(self._num_points_per_cloud, aux_input):
+                valid_but_empty = p == 0 and d is not None and d.ndim == 2
+                if p > 0 or valid_but_empty:
+                    aux_input_out.append(d)
+                else:
+                    aux_input_out.append(good_empty)
+        else:
+            aux_input_out = aux_input
+
+        return aux_input_out, None, aux_input_C
 
     def __len__(self) -> int:
         return self._N

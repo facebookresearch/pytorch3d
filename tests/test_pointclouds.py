@@ -383,6 +383,43 @@ class TestPointclouds(TestCaseMixin, unittest.TestCase):
                                 self.assertTrue(features_padded[n, p:, :].eq(0).all())
                     self.assertTrue(points_per_cloud[n] == p)
 
+    def test_list_someempty(self):
+        # We want
+        #     point_cloud = Pointclouds(
+        #         [pcl.points_packed() for pcl in point_clouds],
+        #         features=[pcl.features_packed() for pcl in point_clouds],
+        #     )
+        # to work if point_clouds is a list of pointclouds with some empty and some not.
+        points_list = [torch.rand(30, 3), torch.zeros(0, 3)]
+        features_list = [torch.rand(30, 3), None]
+        pcls = Pointclouds(points=points_list, features=features_list)
+        self.assertEqual(len(pcls), 2)
+        self.assertClose(
+            pcls.points_padded(),
+            torch.stack([points_list[0], torch.zeros_like(points_list[0])]),
+        )
+        self.assertClose(pcls.points_packed(), points_list[0])
+        self.assertClose(
+            pcls.features_padded(),
+            torch.stack([features_list[0], torch.zeros_like(points_list[0])]),
+        )
+        self.assertClose(pcls.features_packed(), features_list[0])
+
+        points_list = [torch.zeros(0, 3), torch.rand(30, 3)]
+        features_list = [None, torch.rand(30, 3)]
+        pcls = Pointclouds(points=points_list, features=features_list)
+        self.assertEqual(len(pcls), 2)
+        self.assertClose(
+            pcls.points_padded(),
+            torch.stack([torch.zeros_like(points_list[1]), points_list[1]]),
+        )
+        self.assertClose(pcls.points_packed(), points_list[1])
+        self.assertClose(
+            pcls.features_padded(),
+            torch.stack([torch.zeros_like(points_list[1]), features_list[1]]),
+        )
+        self.assertClose(pcls.features_packed(), features_list[1])
+
     def test_clone_list(self):
         N = 5
         clouds = self.init_cloud(N, 100, 5)
