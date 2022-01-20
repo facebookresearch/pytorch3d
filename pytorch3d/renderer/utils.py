@@ -349,7 +349,4 @@ def convert_to_tensors_and_broadcast(
         expand_sizes = (N,) + (-1,) * len(c.shape[1:])
         args_Nd.append(c.expand(*expand_sizes))
 
-    if len(args) == 1:
-        args_Nd = args_Nd[0]  # Return the first element
-
     return args_Nd
