@@ -87,9 +87,9 @@ pip install pytorch3d
 We have prebuilt wheels with CUDA for Linux for PyTorch 1.10.0, for each of the CUDA versions that they support,
 for Python 3.7, 3.8 and 3.9.
 These are installed in a special way.
-For example, to install for Python 3.8, PyTorch 1.9.0 and CUDA 10.2
+For example, to install for Python 3.8, PyTorch 1.10.0 and CUDA 10.2
 ```
-pip install pytorch3d -f https://dl.fbaipublicfiles.com/pytorch3d/packaging/wheels/py38_cu102_pyt1100/download.html
+pip install --no-index --no-cache-dir pytorch3d -f https://dl.fbaipublicfiles.com/pytorch3d/packaging/wheels/py38_cu102_pyt1100/download.html
 ```
 
 In general, from inside IPython, or in Google Colab or a jupyter notebook, you can install with
@@ -102,7 +102,7 @@ version_str="".join([
     torch.version.cuda.replace(".",""),
     f"_pyt{pyt_version_str}"
 ])
-!pip install pytorch3d -f https://dl.fbaipublicfiles.com/pytorch3d/packaging/wheels/{version_str}/download.html
+!pip install --no-index --no-cache-dir pytorch3d -f https://dl.fbaipublicfiles.com/pytorch3d/packaging/wheels/{version_str}/download.html
 ```
 
 ## Building / installing from source.
