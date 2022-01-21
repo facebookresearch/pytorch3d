@@ -55,6 +55,7 @@ def _cameras_from_opencv_projection(
         focal_length=focal_pytorch3d,
         principal_point=p0_pytorch3d,
         image_size=image_size,
+        device=R.device,
     )
 
 
