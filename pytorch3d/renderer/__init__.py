@@ -10,7 +10,7 @@ from .blending import (
     sigmoid_alpha_blend,
     softmax_rgb_blend,
 )
-from .camera_utils import rotate_on_spot
+from .camera_utils import join_cameras_as_batch, rotate_on_spot
 from .cameras import OpenGLOrthographicCameras  # deprecated
 from .cameras import OpenGLPerspectiveCameras  # deprecated
 from .cameras import SfMOrthographicCameras  # deprecated
@@ -29,6 +29,7 @@ from .implicit import (
     AbsorptionOnlyRaymarcher,
     EmissionAbsorptionRaymarcher,
     GridRaysampler,
+    HarmonicEmbedding,
     ImplicitRenderer,
     MonteCarloRaysampler,
     NDCGridRaysampler,
@@ -37,7 +38,6 @@ from .implicit import (
     VolumeSampler,
     ray_bundle_to_ray_points,
     ray_bundle_variables_to_ray_points,
-    HarmonicEmbedding,
 )
 from .lighting import AmbientLights, DirectionalLights, PointLights, diffuse, specular
 from .materials import Materials

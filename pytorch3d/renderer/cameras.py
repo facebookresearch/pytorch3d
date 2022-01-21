@@ -77,7 +77,12 @@ class CamerasBase(TensorProperties):
 
     # Used in __getitem__ to index the relevant fields
     # When creating a new camera, this should be set in the __init__
-    _FIELDS: Tuple = ()
+    _FIELDS: Tuple[str, ...] = ()
+
+    # Names of fields which are a constant property of the whole batch, rather
+    # than themselves a batch of data.
+    # When joining objects into a batch, they will have to agree.
+    _SHARED_FIELDS: Tuple[str, ...] = ()
 
     def get_projection_transform(self):
         """
@@ -498,6 +503,8 @@ class FoVPerspectiveCameras(CamerasBase):
         "T",
         "degrees",
     )
+
+    _SHARED_FIELDS = ("degrees",)
 
     def __init__(
         self,
@@ -997,6 +1004,8 @@ class PerspectiveCameras(CamerasBase):
         "image_size",
     )
 
+    _SHARED_FIELDS = ("_in_ndc",)
+
     def __init__(
         self,
         focal_length=1.0,
@@ -1046,6 +1055,12 @@ class PerspectiveCameras(CamerasBase):
                 raise ValueError("Image_size provided has invalid values")
         else:
             self.image_size = None
+
+        # When focal length is provided as one value, expand to
+        # create (N, 2) shape tensor
+        if self.focal_length.ndim == 1:  # (N,)
+            self.focal_length = self.focal_length[:, None]  # (N, 1)
+        self.focal_length = self.focal_length.expand(-1, 2)  # (N, 2)
 
     def get_projection_transform(self, **kwargs) -> Transform3d:
         """
@@ -1227,6 +1242,8 @@ class OrthographicCameras(CamerasBase):
         "image_size",
     )
 
+    _SHARED_FIELDS = ("_in_ndc",)
+
     def __init__(
         self,
         focal_length=1.0,
@@ -1275,6 +1292,12 @@ class OrthographicCameras(CamerasBase):
                 raise ValueError("Image_size provided has invalid values")
         else:
             self.image_size = None
+
+        # When focal length is provided as one value, expand to
+        # create (N, 2) shape tensor
+        if self.focal_length.ndim == 1:  # (N,)
+            self.focal_length = self.focal_length[:, None]  # (N, 1)
+        self.focal_length = self.focal_length.expand(-1, 2)  # (N, 2)
 
     def get_projection_transform(self, **kwargs) -> Transform3d:
         """

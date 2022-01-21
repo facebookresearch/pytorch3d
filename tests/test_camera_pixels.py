@@ -250,7 +250,4 @@ class TestPixels(TestCaseMixin, unittest.TestCase):
                             ],
                             dim=1,
                         )
-
-                    print(wanted)
-                    print(camera_points[batch_idx])
                     self.assertClose(camera_points[batch_idx], wanted)
