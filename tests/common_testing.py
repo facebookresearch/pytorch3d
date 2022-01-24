@@ -6,6 +6,7 @@
 
 import os
 import unittest
+from numbers import Real
 from pathlib import Path
 from typing import Callable, Optional, Union
 
@@ -190,3 +191,13 @@ class TestCaseMixin(unittest.TestCase):
         if msg is not None:
             self.fail(f"{msg} {err}")
         self.fail(err)
+
+    def assertConstant(self, input: TensorOrArray, value: Real) -> None:
+        """
+        Asserts input is entirely filled with value.
+
+        Args:
+            input: tensor or array
+        """
+        self.assertEqual(input.min(), value)
+        self.assertEqual(input.max(), value)

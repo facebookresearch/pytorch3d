@@ -10,9 +10,9 @@ from fvcore.common.benchmark import benchmark
 from pytorch3d.renderer import (
     FoVOrthographicCameras,
     FoVPerspectiveCameras,
-    GridRaysampler,
     MonteCarloRaysampler,
-    NDCGridRaysampler,
+    MultinomialRaysampler,
+    NDCMultinomialRaysampler,
     OrthographicCameras,
     PerspectiveCameras,
 )
@@ -21,7 +21,11 @@ from test_raysampling import TestRaysampling
 
 def bm_raysampling() -> None:
     case_grid = {
-        "raysampler_type": [GridRaysampler, NDCGridRaysampler, MonteCarloRaysampler],
+        "raysampler_type": [
+            MultinomialRaysampler,
+            NDCMultinomialRaysampler,
+            MonteCarloRaysampler,
+        ],
         "camera_type": [
             PerspectiveCameras,
             OrthographicCameras,

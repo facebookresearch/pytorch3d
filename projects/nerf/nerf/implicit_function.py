@@ -7,7 +7,7 @@
 from typing import Tuple
 
 import torch
-from pytorch3d.renderer import RayBundle, ray_bundle_to_ray_points, HarmonicEmbedding
+from pytorch3d.renderer import HarmonicEmbedding, RayBundle, ray_bundle_to_ray_points
 
 from .linear_with_repeat import LinearWithRepeat
 
