@@ -98,7 +98,7 @@ class CamerasBase(TensorProperties):
         """
         raise NotImplementedError()
 
-    def unproject_points(self):
+    def unproject_points(self, xy_depth: torch.Tensor, **kwargs):
         """
         Transform input points from camera coodinates (NDC or screen)
         to the world / camera coordinates.
