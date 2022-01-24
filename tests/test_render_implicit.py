@@ -12,13 +12,13 @@ from common_testing import TestCaseMixin
 from pytorch3d.renderer import (
     BlendParams,
     EmissionAbsorptionRaymarcher,
-    GridRaysampler,
     ImplicitRenderer,
     Materials,
     MeshRasterizer,
     MeshRenderer,
     MonteCarloRaysampler,
-    NDCGridRaysampler,
+    MultinomialRaysampler,
+    NDCMultinomialRaysampler,
     PointLights,
     RasterizationSettings,
     RayBundle,
@@ -142,7 +142,7 @@ class TestRenderImplicit(TestCaseMixin, unittest.TestCase):
 
         # init a trivial renderer
         renderer = ImplicitRenderer(
-            raysampler=NDCGridRaysampler(
+            raysampler=NDCMultinomialRaysampler(
                 image_width=100,
                 image_height=100,
                 n_pts_per_ray=10,
@@ -180,7 +180,7 @@ class TestRenderImplicit(TestCaseMixin, unittest.TestCase):
         sphere_centroid.requires_grad = True
 
         # init the grid raysampler with the ndc grid
-        raysampler = NDCGridRaysampler(
+        raysampler = NDCMultinomialRaysampler(
             image_width=image_size[1],
             image_height=image_size[0],
             n_pts_per_ray=256,
@@ -355,7 +355,7 @@ class TestRenderImplicit(TestCaseMixin, unittest.TestCase):
         cameras = init_cameras(n_frames, image_size=image_size)
 
         # init the grid raysampler
-        raysampler = GridRaysampler(
+        raysampler = MultinomialRaysampler(
             min_x=0.5,
             max_x=image_size[1] - 0.5,
             min_y=0.5,

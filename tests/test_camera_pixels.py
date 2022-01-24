@@ -10,7 +10,7 @@ import torch
 from common_testing import TestCaseMixin
 from pytorch3d.renderer import (
     MeshRasterizer,
-    NDCGridRaysampler,
+    NDCMultinomialRaysampler,
     PerspectiveCameras,
     PointsRasterizationSettings,
     PointsRasterizer,
@@ -172,7 +172,7 @@ class TestPixels(TestCaseMixin, unittest.TestCase):
 
     def test_raysampler(self):
         data = _CommonData()
-        gridsampler = NDCGridRaysampler(
+        gridsampler = NDCMultinomialRaysampler(
             image_width=data.W,
             image_height=data.H,
             n_pts_per_ray=2,

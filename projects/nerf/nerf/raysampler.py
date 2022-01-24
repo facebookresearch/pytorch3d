@@ -8,7 +8,7 @@ import math
 from typing import List
 
 import torch
-from pytorch3d.renderer import MonteCarloRaysampler, NDCGridRaysampler, RayBundle
+from pytorch3d.renderer import MonteCarloRaysampler, NDCMultinomialRaysampler, RayBundle
 from pytorch3d.renderer.cameras import CamerasBase
 from pytorch3d.renderer.implicit.sample_pdf import sample_pdf
 
@@ -150,7 +150,7 @@ class NeRFRaysampler(torch.nn.Module):
         self._stratified_test = stratified_test
 
         # Initialize the grid ray sampler.
-        self._grid_raysampler = NDCGridRaysampler(
+        self._grid_raysampler = NDCMultinomialRaysampler(
             image_width=image_width,
             image_height=image_height,
             n_pts_per_ray=n_pts_per_ray,

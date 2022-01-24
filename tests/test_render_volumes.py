@@ -15,9 +15,9 @@ from pytorch3d.renderer import (
     AbsorptionOnlyRaymarcher,
     AlphaCompositor,
     EmissionAbsorptionRaymarcher,
-    GridRaysampler,
     MonteCarloRaysampler,
-    NDCGridRaysampler,
+    MultinomialRaysampler,
+    NDCMultinomialRaysampler,
     PerspectiveCameras,
     PointsRasterizationSettings,
     PointsRasterizer,
@@ -228,7 +228,7 @@ class TestRenderVolumes(TestCaseMixin, unittest.TestCase):
                 with self.assertRaises(ValueError):
                     VolumeRenderer(raysampler=bad_raysampler, raymarcher=bad_raymarcher)
 
-        raysampler = NDCGridRaysampler(
+        raysampler = NDCMultinomialRaysampler(
             image_width=100,
             image_height=100,
             n_pts_per_ray=10,
@@ -339,7 +339,7 @@ class TestRenderVolumes(TestCaseMixin, unittest.TestCase):
             # init the grid raysampler with the ndc grid
             coord_range = 1.0
             half_pix_size = coord_range / max(*image_size)
-            raysampler = NDCGridRaysampler(
+            raysampler = NDCMultinomialRaysampler(
                 image_width=image_size[1],
                 image_height=image_size[0],
                 n_pts_per_ray=256,
@@ -431,7 +431,7 @@ class TestRenderVolumes(TestCaseMixin, unittest.TestCase):
     ):
         """
         Tests that rendering with the MonteCarloRaysampler matches the
-        rendering with GridRaysampler sampled at the corresponding
+        rendering with MultinomialRaysampler sampled at the corresponding
         MonteCarlo locations.
         """
         volumes = init_boundary_volume(
@@ -442,7 +442,7 @@ class TestRenderVolumes(TestCaseMixin, unittest.TestCase):
         cameras = init_cameras(n_frames, image_size=image_size)
 
         # init the grid raysampler
-        raysampler_grid = GridRaysampler(
+        raysampler_multinomial = MultinomialRaysampler(
             min_x=0.5,
             max_x=image_size[1] - 0.5,
             min_y=0.5,
@@ -475,11 +475,11 @@ class TestRenderVolumes(TestCaseMixin, unittest.TestCase):
             (images_opacities_grid, ray_bundle_grid),
         ) = [
             VolumeRenderer(
-                raysampler=raysampler_grid,
+                raysampler=raysampler_multinomial,
                 raymarcher=raymarcher,
                 sample_mode="bilinear",
             )(cameras=cameras, volumes=volumes)
-            for raysampler in (raysampler_mc, raysampler_grid)
+            for raysampler in (raysampler_mc, raysampler_multinomial)
         ]
 
         # convert the mc sampling locations to [-1, 1]
@@ -523,7 +523,7 @@ class TestRenderVolumes(TestCaseMixin, unittest.TestCase):
                 cameras = init_cameras(n_frames, image_size=image_size)
 
                 # init the grid raysampler
-                raysampler = GridRaysampler(
+                raysampler = MultinomialRaysampler(
                     min_x=0.5,
                     max_x=image_size[1] - 0.5,
                     min_y=0.5,
@@ -614,7 +614,7 @@ class TestRenderVolumes(TestCaseMixin, unittest.TestCase):
                 volumes.features().requires_grad = True
                 volumes.densities().requires_grad = True
 
-                raysampler = GridRaysampler(
+                raysampler = MultinomialRaysampler(
                     min_x=0.5,
                     max_x=image_size[1] - 0.5,
                     min_y=0.5,
