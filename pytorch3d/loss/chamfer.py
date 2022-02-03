@@ -14,7 +14,7 @@ from pytorch3d.structures.pointclouds import Pointclouds
 
 def _validate_chamfer_reduction_inputs(
     batch_reduction: Union[str, None], point_reduction: str
-):
+) -> None:
     """Check the requested reductions are valid.
 
     Args:

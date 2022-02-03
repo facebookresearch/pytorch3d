@@ -754,7 +754,7 @@ def _broadcast_bmm(a, b):
 
 
 @torch.no_grad()
-def _check_valid_rotation_matrix(R, tol: float = 1e-7):
+def _check_valid_rotation_matrix(R, tol: float = 1e-7) -> None:
     """
     Determine if R is a valid rotation matrix by checking it satisfies the
     following conditions:

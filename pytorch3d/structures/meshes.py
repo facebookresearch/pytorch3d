@@ -1557,7 +1557,7 @@ class Meshes:
             raise ValueError("Meshes does not have textures")
 
 
-def join_meshes_as_batch(meshes: List[Meshes], include_textures: bool = True):
+def join_meshes_as_batch(meshes: List[Meshes], include_textures: bool = True) -> Meshes:
     """
     Merge multiple Meshes objects, i.e. concatenate the meshes objects. They
     must all be on the same device. If include_textures is true, they must all

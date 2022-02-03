@@ -28,7 +28,7 @@ def nullcontext(x):
 PathOrStr = Union[pathlib.Path, str]
 
 
-def _open_file(f, path_manager: PathManager, mode="r") -> ContextManager[IO]:
+def _open_file(f, path_manager: PathManager, mode: str = "r") -> ContextManager[IO]:
     if isinstance(f, str):
         f = path_manager.open(f, mode)
         return contextlib.closing(f)

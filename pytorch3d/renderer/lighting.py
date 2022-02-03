@@ -323,7 +323,7 @@ class AmbientLights(TensorProperties):
         return torch.zeros_like(points)
 
 
-def _validate_light_properties(obj):
+def _validate_light_properties(obj) -> None:
     props = ("ambient_color", "diffuse_color", "specular_color")
     for n in props:
         t = getattr(obj, n)

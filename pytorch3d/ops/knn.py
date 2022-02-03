@@ -106,7 +106,7 @@ def knn_points(
     version: int = -1,
     return_nn: bool = False,
     return_sorted: bool = True,
-):
+) -> _KNN:
     """
     K-Nearest neighbors on point clouds.
 

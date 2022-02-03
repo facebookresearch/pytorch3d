@@ -19,7 +19,7 @@ def texturesuv_image_matplotlib(
     color=(1.0, 0.0, 0.0),
     subsample: Optional[int] = 10000,
     origin: str = "upper",
-):  # pragma: no cover
+) -> None:  # pragma: no cover
     """
     Plot the texture image for one element of a TexturesUV with
     matplotlib together with verts_uvs positions circled.
@@ -65,7 +65,7 @@ def texturesuv_image_PIL(
     *,
     texture_index: int = 0,
     radius: float = 1,
-    color="red",
+    color: str = "red",
     subsample: Optional[int] = 10000,
 ):  # pragma: no cover
     """

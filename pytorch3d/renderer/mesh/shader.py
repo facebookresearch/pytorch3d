@@ -301,7 +301,7 @@ def TexturedSoftPhongShader(
     lights: Optional[TensorProperties] = None,
     materials: Optional[Materials] = None,
     blend_params: Optional[BlendParams] = None,
-):
+) -> SoftPhongShader:
     """
     TexturedSoftPhongShader class has been DEPRECATED. Use SoftPhongShader instead.
     Preserving TexturedSoftPhongShader as a function for backwards compatibility.

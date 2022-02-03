@@ -10,7 +10,7 @@ from typing import Tuple
 import torch
 
 
-DEFAULT_ACOS_BOUND = 1.0 - 1e-4
+DEFAULT_ACOS_BOUND: float = 1.0 - 1e-4
 
 
 def acos_linear_extrapolation(

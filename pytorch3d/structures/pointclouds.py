@@ -1224,7 +1224,7 @@ class Pointclouds:
         return coord_inside.all(dim=-1)
 
 
-def join_pointclouds_as_batch(pointclouds: Sequence[Pointclouds]):
+def join_pointclouds_as_batch(pointclouds: Sequence[Pointclouds]) -> Pointclouds:
     """
     Merge a list of Pointclouds objects into a single batched Pointclouds
     object. All pointclouds must be on the same device.

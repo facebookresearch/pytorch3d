@@ -24,7 +24,7 @@ from pytorch3d.structures import Meshes, Pointclouds, join_meshes_as_scene
 Struct = Union[CamerasBase, Meshes, Pointclouds, RayBundle]
 
 
-def _get_struct_len(struct: Struct):  # pragma: no cover
+def _get_struct_len(struct: Struct) -> int:  # pragma: no cover
     """
     Returns the length (usually corresponds to the batch size) of the input structure.
     """
@@ -358,8 +358,14 @@ def plot_scene(
             up_y = _scale_camera_to_bounds(up_y, y_range, False)
             up_z = _scale_camera_to_bounds(up_z, z_range, False)
 
+            # pyre-fixme[6]: For 2nd param expected `Dict[str, int]` but got
+            #  `Dict[str, float]`.
             camera["eye"] = {"x": eye_x, "y": eye_y, "z": eye_z}
+            # pyre-fixme[6]: For 2nd param expected `Dict[str, int]` but got
+            #  `Dict[str, float]`.
             camera["center"] = {"x": at_x, "y": at_y, "z": at_z}
+            # pyre-fixme[6]: For 2nd param expected `Dict[str, int]` but got
+            #  `Dict[str, float]`.
             camera["up"] = {"x": up_x, "y": up_y, "z": up_z}
 
         current_layout.update(
@@ -510,7 +516,7 @@ def _add_struct_from_batch(
     subplot_title: str,
     scene_dictionary: Dict[str, Dict[str, Struct]],
     trace_idx: int = 1,
-):  # pragma: no cover
+) -> None:  # pragma: no cover
     """
     Adds the struct corresponding to the given scene_num index to
     a provided scene_dictionary to be passed in to plot_scene
@@ -567,7 +573,7 @@ def _add_mesh_trace(
     subplot_idx: int,
     ncols: int,
     lighting: Lighting,
-):  # pragma: no cover
+) -> None:  # pragma: no cover
     """
     Adds a trace rendering a Meshes object to the passed in figure, with
     a given name and in a specific subplot.
@@ -641,7 +647,7 @@ def _add_pointcloud_trace(
     ncols: int,
     max_points_per_pointcloud: int,
     marker_size: int,
-):  # pragma: no cover
+) -> None:  # pragma: no cover
     """
     Adds a trace rendering a Pointclouds object to the passed in figure, with
     a given name and in a specific subplot.
@@ -703,7 +709,7 @@ def _add_camera_trace(
     subplot_idx: int,
     ncols: int,
     camera_scale: float,
-):  # pragma: no cover
+) -> None:  # pragma: no cover
     """
     Adds a trace rendering a Cameras object to the passed in figure, with
     a given name and in a specific subplot.
@@ -761,7 +767,7 @@ def _add_ray_bundle_trace(
     max_points_per_ray: int,
     marker_size: int,
     line_width: int,
-):  # pragma: no cover
+) -> None:  # pragma: no cover
     """
     Adds a trace rendering a RayBundle object to the passed in figure, with
     a given name and in a specific subplot.
@@ -918,7 +924,7 @@ def _update_axes_bounds(
     verts_center: torch.Tensor,
     max_expand: float,
     current_layout: go.Scene,  # pyre-ignore[11]
-):  # pragma: no cover
+) -> None:  # pragma: no cover
     """
     Takes in the vertices' center point and max spread, and the current plotly figure
     layout and updates the layout to have bounds that include all traces for that subplot.
@@ -956,7 +962,7 @@ def _update_axes_bounds(
 
 def _scale_camera_to_bounds(
     coordinate: float, axis_bounds: Tuple[float, float], is_position: bool
-):  # pragma: no cover
+) -> float:  # pragma: no cover
     """
     We set our plotly plot's axes' bounding box to [-1,1]x[-1,1]x[-1,1]. As such,
     the plotly camera location has to be scaled accordingly to have its world coordinates

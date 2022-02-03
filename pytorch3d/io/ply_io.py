@@ -463,7 +463,9 @@ def _read_ply_element_ascii(f, definition: _PlyElementType):
     return data
 
 
-def _read_raw_array(f, aim: str, length: int, dtype: type = np.uint8, dtype_size=1):
+def _read_raw_array(
+    f, aim: str, length: int, dtype: type = np.uint8, dtype_size: int = 1
+):
     """
     Read [length] elements from a file.
 
