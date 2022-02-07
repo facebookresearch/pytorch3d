@@ -224,7 +224,7 @@ def cubify(voxels, thresh, device=None, align: str = "topleft") -> Meshes:
     grid_faces += nyxz[:, 0].view(-1, 1) * num_verts
     idleverts = torch.ones(num_verts * N, dtype=torch.uint8, device=device)
 
-    idleverts.scatter_(0, grid_faces.flatten(), 0)
+    idleverts.scatter_(0, grid_faces.flatten().unique(), 0)
     grid_faces -= nyxz[:, 0].view(-1, 1) * num_verts
     split_size = torch.bincount(nyxz[:, 0], minlength=N)
     faces_list = list(torch.split(grid_faces, split_size.tolist(), 0))
