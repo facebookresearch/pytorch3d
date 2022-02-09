@@ -70,7 +70,12 @@ from .points import (
     PulsarPointsRenderer,
     rasterize_points,
 )
-from .utils import TensorProperties, convert_to_tensors_and_broadcast
+from .utils import (
+    TensorProperties,
+    convert_to_tensors_and_broadcast,
+    ndc_to_grid_sample_coords,
+    ndc_grid_sample,
+)
 
 
 __all__ = [k for k in globals().keys() if not k.startswith("_")]

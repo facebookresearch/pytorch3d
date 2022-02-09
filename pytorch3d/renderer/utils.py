@@ -8,7 +8,7 @@
 import copy
 import inspect
 import warnings
-from typing import Any, Optional, Union
+from typing import Any, Optional, Union, Tuple
 
 import numpy as np
 import torch
@@ -350,3 +350,80 @@ def convert_to_tensors_and_broadcast(
         args_Nd.append(c.expand(*expand_sizes))
 
     return args_Nd
+
+
+def ndc_grid_sample(
+    input: torch.Tensor,
+    grid_ndc: torch.Tensor,
+    **grid_sample_kwargs,
+) -> torch.Tensor:
+    """
+    Samples a tensor `input` of shape `(B, dim, H, W)` at 2D locations
+    specified by a tensor `grid_ndc` of shape `(B, ..., 2)` using
+    the `torch.nn.functional.grid_sample` function.
+    `grid_ndc` is specified in PyTorch3D NDC coordinate frame.
+
+    Args:
+        input: The tensor of shape `(B, dim, H, W)` to be sampled.
+        grid_ndc: A tensor of shape `(B, ..., 2)` denoting the set of
+            2D locations at which `input` is sampled.
+            See [1] for a detailed description of the NDC coordinates.
+        grid_sample_kwargs: Additional arguments forwarded to the
+            `torch.nn.functional.grid_sample` call. See the corresponding
+            docstring for a listing of the corresponding arguments.
+
+    Returns:
+        sampled_input: A tensor of shape `(B, dim, ...)` containing the samples
+            of `input` at 2D locations `grid_ndc`.
+
+    References:
+        [1] https://pytorch3d.org/docs/cameras
+    """
+
+    batch, *spatial_size, pt_dim = grid_ndc.shape
+    if batch != input.shape[0]:
+        raise ValueError("'input' and 'grid_ndc' have to have the same batch size.")
+    if input.ndim != 4:
+        raise ValueError("'input' has to be a 4-dimensional Tensor.")
+    if pt_dim != 2:
+        raise ValueError("The last dimension of 'grid_ndc' has to be == 2.")
+
+    grid_ndc_flat = grid_ndc.reshape(batch, -1, 1, 2)
+
+    grid_flat = ndc_to_grid_sample_coords(grid_ndc_flat, input.shape[2:])
+
+    sampled_input_flat = torch.nn.functional.grid_sample(
+        input, grid_flat, **grid_sample_kwargs
+    )
+
+    sampled_input = sampled_input_flat.reshape([batch, input.shape[1], *spatial_size])
+
+    return sampled_input
+
+
+def ndc_to_grid_sample_coords(
+    xy_ndc: torch.Tensor,
+    image_size_hw: Tuple[int, int],
+) -> torch.Tensor:
+    """
+    Convert from the PyTorch3D's NDC coordinates to
+    `torch.nn.functional.grid_sampler`'s coordinates.
+
+    Args:
+        xy_ndc: Tensor of shape `(..., 2)` containing 2D points in the
+            PyTorch3D's NDC coordinates.
+        image_size_hw: A tuple `(image_height, image_width)` denoting the
+            height and width of the image tensor to sample.
+    Returns:
+        xy_grid_sample: Tensor of shape `(..., 2)` containing 2D points in the
+            `torch.nn.functional.grid_sample` coordinates.
+    """
+    if len(image_size_hw) != 2 or any(s <= 0 for s in image_size_hw):
+        raise ValueError("'image_size_hw' has to be a 2-tuple of positive integers")
+    aspect = min(image_size_hw) / max(image_size_hw)
+    xy_grid_sample = -xy_ndc  # first negate the coords
+    if image_size_hw[0] >= image_size_hw[1]:
+        xy_grid_sample[..., 1] *= aspect
+    else:
+        xy_grid_sample[..., 0] *= aspect
+    return xy_grid_sample
