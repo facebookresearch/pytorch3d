@@ -259,9 +259,9 @@ def plot_scene(
 
     camera = {
         "up": {
-            "x": 0,
-            "y": 1,
-            "z": 0,
+            "x": 0.0,
+            "y": 1.0,
+            "z": 0.0,
         }  # set the up vector to match PyTorch3D world coordinates conventions
     }
     viewpoints_eye_at_up_world = None
@@ -358,14 +358,8 @@ def plot_scene(
             up_y = _scale_camera_to_bounds(up_y, y_range, False)
             up_z = _scale_camera_to_bounds(up_z, z_range, False)
 
-            # pyre-fixme[6]: For 2nd param expected `Dict[str, int]` but got
-            #  `Dict[str, float]`.
             camera["eye"] = {"x": eye_x, "y": eye_y, "z": eye_z}
-            # pyre-fixme[6]: For 2nd param expected `Dict[str, int]` but got
-            #  `Dict[str, float]`.
             camera["center"] = {"x": at_x, "y": at_y, "z": at_z}
-            # pyre-fixme[6]: For 2nd param expected `Dict[str, int]` but got
-            #  `Dict[str, float]`.
             camera["up"] = {"x": up_x, "y": up_y, "z": up_z}
 
         current_layout.update(

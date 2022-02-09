@@ -400,7 +400,7 @@ def create_verts_index(verts_per_mesh, edges_per_mesh, device=None):
     return verts_idx
 
 
-def create_faces_index(faces_per_mesh: int, device=None):
+def create_faces_index(faces_per_mesh, device=None):
     """
     Helper function to group the faces indices for each mesh. New faces are
     stacked at the end of the original faces tensor, so in order to have
@@ -417,9 +417,7 @@ def create_faces_index(faces_per_mesh: int, device=None):
     """
     # e.g. faces_per_mesh = [2, 5, 3]
 
-    # pyre-fixme[16]: `int` has no attribute `sum`.
     F = faces_per_mesh.sum()  # e.g. 10
-    # pyre-fixme[16]: `int` has no attribute `cumsum`.
     faces_per_mesh_cumsum = faces_per_mesh.cumsum(dim=0)  # (N,) e.g. (2, 7, 10)
 
     switch1_idx = faces_per_mesh_cumsum.clone()

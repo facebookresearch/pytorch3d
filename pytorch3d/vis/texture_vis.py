@@ -65,7 +65,7 @@ def texturesuv_image_PIL(
     *,
     texture_index: int = 0,
     radius: float = 1,
-    color: str = "red",
+    color="red",
     subsample: Optional[int] = 10000,
 ):  # pragma: no cover
     """
