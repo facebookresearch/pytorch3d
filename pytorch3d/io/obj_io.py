@@ -526,9 +526,8 @@ def _load_materials(
     if not load_textures:
         return None, None
 
-    if not material_names or f is None:
-        if material_names:
-            warnings.warn("No mtl file provided")
+    if f is None:
+        warnings.warn("No mtl file provided")
         return None, None
 
     if not path_manager.exists(f):
@@ -619,6 +618,13 @@ def _load_obj(
         path_manager=path_manager,
         device=device,
     )
+
+    if material_colors and not material_names:
+        # usemtl was not present but single material was present in the .mtl file
+        material_names.append(next(iter(material_colors.keys())))
+        # replace all -1 by 0 material idx
+        if torch.is_tensor(faces_materials_idx):
+            faces_materials_idx.clamp_(min=0)
 
     if create_texture_atlas:
         # Using the images and properties from the

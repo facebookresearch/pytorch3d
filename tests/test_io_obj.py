@@ -658,6 +658,18 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
         self.assertTrue(aux.material_colors is None)
         self.assertTrue(aux.texture_images is None)
 
+    def test_load_no_usemtl(self):
+        obj_filename = "missing_usemtl/cow.obj"
+        # obj_filename has no "usemtl material_1" line
+        filename = os.path.join(DATA_DIR, obj_filename)
+        # TexturesUV type
+        mesh = IO().load_mesh(filename)
+        self.assertIsNotNone(mesh.textures)
+
+        verts, faces, aux = load_obj(filename)
+        self.assertTrue("material_1" in aux.material_colors)
+        self.assertTrue("material_1" in aux.texture_images)
+
     def test_load_mtl_fail(self):
         # Faces have a material
         obj_file = "\n".join(

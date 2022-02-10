@@ -454,8 +454,18 @@ def _load_texture_images(
     final_material_properties = {}
     texture_images = {}
 
+    used_material_names = list(material_names)
+    if not used_material_names and material_properties:
+        if len(material_properties) > 1:
+            raise ValueError(
+                "Multiple materials but no usemtl declarations in the obj file"
+            )
+        # No materials were specified in obj file and only one is in the
+        # specified .mtl file, so we use it.
+        used_material_names.append(next(iter(material_properties.keys())))
+
     # Only keep the materials referenced in the obj.
-    for material_name in material_names:
+    for material_name in used_material_names:
         if material_name in texture_files:
             # Load the texture image.
             path = os.path.join(data_dir, texture_files[material_name])
