@@ -7,9 +7,8 @@
 from typing import Tuple
 
 import torch
+from pytorch3d.common.linear_with_repeat import LinearWithRepeat
 from pytorch3d.renderer import HarmonicEmbedding, RayBundle, ray_bundle_to_ray_points
-
-from .linear_with_repeat import LinearWithRepeat
 
 
 def _xavier_init(linear):

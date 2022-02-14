@@ -12,16 +12,16 @@ import torch
 from common_testing import TestCaseMixin
 from pytorch3d.ops import eyes
 from pytorch3d.renderer import (
-    PerspectiveCameras,
     AlphaCompositor,
-    PointsRenderer,
+    PerspectiveCameras,
     PointsRasterizationSettings,
     PointsRasterizer,
+    PointsRenderer,
 )
 from pytorch3d.renderer.utils import (
     TensorProperties,
-    ndc_to_grid_sample_coords,
     ndc_grid_sample,
+    ndc_to_grid_sample_coords,
 )
 from pytorch3d.structures import Pointclouds
 

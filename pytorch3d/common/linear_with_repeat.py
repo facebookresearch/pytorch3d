@@ -4,13 +4,15 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+import math
 from typing import Tuple
 
 import torch
 import torch.nn.functional as F
+from torch.nn import Parameter, init
 
 
-class LinearWithRepeat(torch.nn.Linear):
+class LinearWithRepeat(torch.nn.Module):
     """
     if x has shape (..., k, n1)
     and y has shape (..., n2)
@@ -49,6 +51,40 @@ class LinearWithRepeat(torch.nn.Linear):
 
     and sent that through the Linear.
     """
+
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        bias: bool = True,
+        device=None,
+        dtype=None,
+    ) -> None:
+        """
+        Copied from torch.nn.Linear.
+        """
+        factory_kwargs = {"device": device, "dtype": dtype}
+        super().__init__()
+        self.in_features = in_features
+        self.out_features = out_features
+        self.weight = Parameter(
+            torch.empty((out_features, in_features), **factory_kwargs)
+        )
+        if bias:
+            self.bias = Parameter(torch.empty(out_features, **factory_kwargs))
+        else:
+            self.register_parameter("bias", None)
+        self.reset_parameters()
+
+    def reset_parameters(self) -> None:
+        """
+        Copied from torch.nn.Linear.
+        """
+        init.kaiming_uniform_(self.weight, a=math.sqrt(5))
+        if self.bias is not None:
+            fan_in, _ = init._calculate_fan_in_and_fan_out(self.weight)
+            bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
+            init.uniform_(self.bias, -bound, bound)
 
     def forward(self, input: Tuple[torch.Tensor, torch.Tensor]) -> torch.Tensor:
         n1 = input[0].shape[-1]

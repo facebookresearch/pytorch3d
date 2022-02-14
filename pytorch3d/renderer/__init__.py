@@ -73,8 +73,8 @@ from .points import (
 from .utils import (
     TensorProperties,
     convert_to_tensors_and_broadcast,
-    ndc_to_grid_sample_coords,
     ndc_grid_sample,
+    ndc_to_grid_sample_coords,
 )
 
 

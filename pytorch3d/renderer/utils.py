@@ -8,7 +8,7 @@
 import copy
 import inspect
 import warnings
-from typing import Any, Optional, Union, Tuple
+from typing import Any, Optional, Tuple, Union
 
 import numpy as np
 import torch
