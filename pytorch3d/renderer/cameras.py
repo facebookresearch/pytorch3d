@@ -1649,7 +1649,7 @@ def look_at_view_transform(
     elev=0.0,
     azim=0.0,
     degrees: bool = True,
-    eye: Optional[Sequence] = None,
+    eye: Optional[Union[Sequence, torch.Tensor]] = None,
     at=((0, 0, 0),),  # (1, 3)
     up=((0, 1, 0),),  # (1, 3)
     device: Device = "cpu",
