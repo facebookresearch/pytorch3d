@@ -35,7 +35,7 @@ class AlphaCompositor(nn.Module):
 
         # images are of shape (N, C, H, W)
         # check for background color & feature size C (C=4 indicates rgba)
-        if background_color is not None and images.shape[1] == 4:
+        if background_color is not None:
             return _add_background_color_to_images(fragments, images, background_color)
         return images
 
@@ -57,7 +57,7 @@ class NormWeightedCompositor(nn.Module):
 
         # images are of shape (N, C, H, W)
         # check for background color & feature size C (C=4 indicates rgba)
-        if background_color is not None and images.shape[1] == 4:
+        if background_color is not None:
             return _add_background_color_to_images(fragments, images, background_color)
         return images
 
@@ -85,21 +85,21 @@ def _add_background_color_to_images(pix_idxs, images, background_color):
     if not torch.is_tensor(background_color):
         background_color = images.new_tensor(background_color)
 
-    background_shape = background_color.shape
-
-    if len(background_shape) != 1 or background_shape[0] not in (3, 4):
-        warnings.warn(
-            "Background color should be size (3) or (4), but is size %s instead"
-            % (background_shape,)
-        )
-        return images
+    if len(background_color.shape) != 1:
+        raise ValueError("Wrong shape of background_color")
 
     background_color = background_color.to(images)
 
     # add alpha channel
-    if background_shape[0] == 3:
+    if background_color.shape[0] == 3 and images.shape[1] == 4:
+        # special case to allow giving RGB background for RGBA
         alpha = images.new_ones(1)
         background_color = torch.cat([background_color, alpha])
+
+    if images.shape[1] != background_color.shape[0]:
+        raise ValueError(
+            f"background color has {background_color.shape[0] } channels not {images.shape[1]}"
+        )
 
     num_background_pixels = background_mask.sum()
 
