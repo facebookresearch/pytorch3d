@@ -567,8 +567,8 @@ class TestRawFunction(TestCaseMixin, unittest.TestCase):
             splat,
         )
 
-        self.assertIs(volume_densities, volume_densities_)
-        self.assertIs(volume_features, volume_features_)
+        self.assertTrue(volume_densities_.is_set_to(volume_densities))
+        self.assertTrue(volume_features_.is_set_to(volume_features))
 
         if align_corners:
             volume_densities_expected[0, 0, 2, 3, 4] = point_weight
