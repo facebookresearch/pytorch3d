@@ -11,7 +11,11 @@ import torch
 from common_testing import TestCaseMixin, get_random_cuda_device
 from pytorch3d import _C
 from pytorch3d.loss import point_mesh_edge_distance, point_mesh_face_distance
-from pytorch3d.structures import Meshes, Pointclouds, packed_to_list
+from pytorch3d.structures import (
+    Meshes,
+    Pointclouds,
+    packed_to_list,
+)
 
 
 class TestPointMeshDistance(TestCaseMixin, unittest.TestCase):
@@ -126,7 +130,7 @@ class TestPointMeshDistance(TestCaseMixin, unittest.TestCase):
         area = torch.cross(v0, v1).norm() / 2.0
 
         # check if triangle is a line or a point. In that case, return False
-        if area < 1e-5:
+        if area < 5e-3:
             return False
         bary = TestPointMeshDistance._point_to_bary(point, tri)
         inside = ((bary >= 0.0) * (bary <= 1.0)).all()

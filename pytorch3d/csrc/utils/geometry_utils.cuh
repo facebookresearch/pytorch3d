@@ -550,7 +550,7 @@ __device__ inline bool IsInsideTriangle(
     const float3& v1,
     const float3& v2) {
   bool inside;
-  if (AreaOfTriangle(v0, v1, v2) < 1e-5) {
+  if (AreaOfTriangle(v0, v1, v2) < 5e-3) {
     inside = 0;
   } else {
     float3 bary = BarycentricCoords3Forward(p, v0, v1, v2);

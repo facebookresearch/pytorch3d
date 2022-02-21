@@ -651,7 +651,7 @@ static bool IsInsideTriangle(
     const vec3<T>& v1,
     const vec3<T>& v2) {
   bool inside;
-  if (AreaOfTriangle(v0, v1, v2) < 1e-5) {
+  if (AreaOfTriangle(v0, v1, v2) < 5e-3) {
     inside = 0;
   } else {
     vec3<T> bary = BarycentricCoords3Forward(p, v0, v1, v2);
