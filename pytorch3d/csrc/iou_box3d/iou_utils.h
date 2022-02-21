@@ -18,7 +18,8 @@
 #include <type_traits>
 #include "utils/vec3.h"
 
-const auto kEpsilon = 1e-4;
+const auto kEpsilon = 1e-5;
+
 /*
 _PLANES and _TRIS define the 4- and 3-connectivity
 of the 8 box corners.

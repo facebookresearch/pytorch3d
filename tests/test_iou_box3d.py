@@ -20,6 +20,7 @@ from pytorch3d.transforms.rotation_conversions import random_rotation
 OBJECTRON_TO_PYTORCH3D_FACE_IDX = [0, 4, 6, 2, 1, 5, 7, 3]
 DATA_DIR = get_tests_dir() / "data"
 DEBUG = False
+EPS = 1e-5
 
 UNIT_BOX = [
     [0, 0, 0],
@@ -386,6 +387,76 @@ class TestIoU3D(TestCaseMixin, unittest.TestCase):
         vol, iou = overlap_fn(box13a[None], box13b[None])
         self.assertClose(vol, torch.tensor([[2.0]], device=vol.device, dtype=vol.dtype))
 
+        # 14th test: From GH issue #992
+        # Random rotation, same boxes, iou should be 1.0
+        corners = (
+            torch.tensor(
+                [
+                    [-1.0, -1.0, -1.0],
+                    [1.0, -1.0, -1.0],
+                    [1.0, 1.0, -1.0],
+                    [-1.0, 1.0, -1.0],
+                    [-1.0, -1.0, 1.0],
+                    [1.0, -1.0, 1.0],
+                    [1.0, 1.0, 1.0],
+                    [-1.0, 1.0, 1.0],
+                ],
+                device=device,
+                dtype=torch.float32,
+            )
+            * 0.5
+        )
+        yaw = torch.tensor(0.185)
+        Rot = torch.tensor(
+            [
+                [torch.cos(yaw), 0.0, torch.sin(yaw)],
+                [0.0, 1.0, 0.0],
+                [-torch.sin(yaw), 0.0, torch.cos(yaw)],
+            ],
+            dtype=torch.float32,
+            device=device,
+        )
+        corners = (Rot.mm(corners.t())).t()
+        vol, iou = overlap_fn(corners[None], corners[None])
+        self.assertClose(
+            iou, torch.tensor([[1.0]], device=vol.device, dtype=vol.dtype), atol=1e-2
+        )
+
+        # 15th test: From GH issue #1082
+        box15a = torch.tensor(
+            [
+                [-2.5629019, 4.13995749, -1.76344576],
+                [1.92329434, 4.28127117, -1.86155124],
+                [1.86994571, 5.97489644, -1.86155124],
+                [-2.61625053, 5.83358276, -1.76344576],
+                [-2.53123587, 4.14095496, -0.31397536],
+                [1.95496037, 4.28226864, -0.41208084],
+                [1.90161174, 5.97589391, -0.41208084],
+                [-2.5845845, 5.83458023, -0.31397536],
+            ],
+            device=device,
+            dtype=torch.float32,
+        )
+
+        box15b = torch.tensor(
+            [
+                [-2.6256125, 4.13036357, -1.82893437],
+                [1.87201008, 4.25296695, -1.82893437],
+                [1.82562476, 5.95458116, -1.82893437],
+                [-2.67199782, 5.83197777, -1.82893437],
+                [-2.6256125, 4.13036357, -0.40095884],
+                [1.87201008, 4.25296695, -0.40095884],
+                [1.82562476, 5.95458116, -0.40095884],
+                [-2.67199782, 5.83197777, -0.40095884],
+            ],
+            device=device,
+            dtype=torch.float32,
+        )
+        vol, iou = overlap_fn(box15a[None], box15b[None])
+        self.assertClose(
+            iou, torch.tensor([[0.91]], device=vol.device, dtype=vol.dtype), atol=1e-2
+        )
+
     def _test_real_boxes(self, overlap_fn, device):
         data_filename = "./real_boxes.pkl"
         with open(DATA_DIR / data_filename, "rb") as f:
@@ -643,7 +714,7 @@ def get_plane_verts(box: torch.Tensor) -> torch.Tensor:
     return plane_verts
 
 
-def box_planar_dir(box: torch.Tensor, eps=1e-4) -> torch.Tensor:
+def box_planar_dir(box: torch.Tensor, eps: float = 1e-4) -> torch.Tensor:
     """
     Finds the unit vector n which is perpendicular to each plane in the box
     and points towards the inside of the box.
@@ -776,7 +847,7 @@ def box_volume(box: torch.Tensor) -> torch.Tensor:
     return vols
 
 
-def coplanar_tri_faces(tri1: torch.Tensor, tri2: torch.Tensor, eps: float = 1e-5):
+def coplanar_tri_faces(tri1: torch.Tensor, tri2: torch.Tensor, eps: float = EPS):
     """
     Determines whether two triangle faces in 3D are coplanar
     Args:
@@ -803,7 +874,7 @@ def is_inside(
     n: torch.Tensor,
     points: torch.Tensor,
     return_proj: bool = True,
-    eps: float = 1e-4,
+    eps: float = EPS,
 ):
     """
     Computes whether point is "inside" the plane.
@@ -911,7 +982,7 @@ def clip_tri_by_plane_oneout(
     vout: torch.Tensor,
     vin1: torch.Tensor,
     vin2: torch.Tensor,
-    eps: float = 1e-6,
+    eps: float = EPS,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
     """
     Case (a).
@@ -950,7 +1021,7 @@ def clip_tri_by_plane_twoout(
     vout1: torch.Tensor,
     vout2: torch.Tensor,
     vin: torch.Tensor,
-    eps: float = 1e-6,
+    eps: float = EPS,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
     """
     Case (b).

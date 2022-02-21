@@ -12,7 +12,7 @@
 #include <cstdio>
 #include "utils/float_math.cuh"
 
-__constant__ const float kEpsilon = 1e-4;
+__constant__ const float kEpsilon = 1e-5;
 
 /*
 _PLANES and _TRIS define the 4- and 3-connectivity
