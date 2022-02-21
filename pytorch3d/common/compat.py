@@ -49,3 +49,12 @@ def qr(A: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:  # pragma: no cove
         # PyTorch version >= 1.9
         return torch.linalg.qr(A)
     return torch.qr(A)
+
+
+def eigh(A: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:  # pragma: no cover
+    """
+    Like torch.linalg.eigh, assuming the argument is a symmetric real matrix.
+    """
+    if hasattr(torch, "linalg") and hasattr(torch.linalg, "eigh"):
+        return torch.linalg.eigh(A)
+    return torch.symeig(A, eigenvalues=True)
