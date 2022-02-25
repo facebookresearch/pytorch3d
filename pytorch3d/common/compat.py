@@ -4,7 +4,7 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-from typing import Tuple
+from typing import Sequence, Tuple, Union
 
 import torch
 
@@ -57,4 +57,16 @@ def eigh(A: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:  # pragma: no co
     """
     if hasattr(torch, "linalg") and hasattr(torch.linalg, "eigh"):
         return torch.linalg.eigh(A)
-    return torch.symeig(A, eigenvalues=True)
+    return torch.symeig(A, eigenvectors=True)
+
+
+def meshgrid_ij(
+    *A: Union[torch.Tensor, Sequence[torch.Tensor]]
+) -> Tuple[torch.Tensor, ...]:  # pragma: no cover
+    """
+    Like torch.meshgrid was before PyTorch 1.10.0, i.e. with indexing set to ij
+    """
+    if "indexing" in torch.meshgrid.__kwdefaults__:
+        # PyTorch >= 1.10.0
+        return torch.meshgrid(*A, indexing="ij")
+    return torch.meshgrid(*A)

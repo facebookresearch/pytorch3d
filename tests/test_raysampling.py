@@ -9,6 +9,7 @@ from typing import Callable
 
 import torch
 from common_testing import TestCaseMixin
+from pytorch3d.common.compat import meshgrid_ij
 from pytorch3d.ops import eyes
 from pytorch3d.renderer import (
     MonteCarloRaysampler,
@@ -86,7 +87,7 @@ class TestNDCRaysamplerConvention(TestCaseMixin, unittest.TestCase):
         min_y = range_y - half_pix_height
         max_y = -range_y + half_pix_height
 
-        y_grid, x_grid = torch.meshgrid(
+        y_grid, x_grid = meshgrid_ij(
             torch.linspace(min_y, max_y, h, dtype=torch.float32),
             torch.linspace(min_x, max_x, w, dtype=torch.float32),
         )
@@ -540,7 +541,7 @@ class TestRaysampling(TestCaseMixin, unittest.TestCase):
         self.assertTupleEqual(out.shape, data.shape)
 
         # Check `out` is in ascending order
-        self.assertGreater(torch.diff(out, dim=-1).min(), 0)
+        self.assertGreater((out[..., 1:] - out[..., :-1]).min(), 0)
 
         self.assertConstant(out[..., :-1] < data[..., 1:], True)
         self.assertConstant(data[..., :-1] < out[..., 1:], True)

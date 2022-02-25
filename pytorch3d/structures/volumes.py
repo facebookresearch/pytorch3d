@@ -8,9 +8,10 @@ import copy
 from typing import List, Optional, Tuple, Union
 
 import torch
+from pytorch3d.common.compat import meshgrid_ij
+from pytorch3d.common.datatypes import Device, make_device
+from pytorch3d.transforms import Scale, Transform3d
 
-from ..common.datatypes import Device, make_device
-from ..transforms import Scale, Transform3d
 from . import utils as struct_utils
 
 
@@ -393,7 +394,7 @@ class Volumes:
         ]
 
         # generate per-coord meshgrids
-        Z, Y, X = torch.meshgrid(vol_axes)
+        Z, Y, X = meshgrid_ij(vol_axes)
 
         # stack the coord grids ... this order matches the coordinate convention
         # of torch.nn.grid_sample

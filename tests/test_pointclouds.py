@@ -1033,7 +1033,7 @@ class TestPointclouds(TestCaseMixin, unittest.TestCase):
         for i, cloud in enumerate(clouds.points_list()):
             within_box_naive.append(inside_box_naive(cloud, box[i, 0], box[i, 1]))
         within_box_naive = torch.cat(within_box_naive, 0)
-        self.assertClose(within_box, within_box_naive)
+        self.assertTrue(torch.equal(within_box, within_box_naive))
 
         # box of shape 2x3
         box2 = box[0, :]
@@ -1044,13 +1044,12 @@ class TestPointclouds(TestCaseMixin, unittest.TestCase):
         for cloud in clouds.points_list():
             within_box_naive2.append(inside_box_naive(cloud, box2[0], box2[1]))
         within_box_naive2 = torch.cat(within_box_naive2, 0)
-        self.assertClose(within_box2, within_box_naive2)
-
+        self.assertTrue(torch.equal(within_box2, within_box_naive2))
         # box of shape 1x2x3
         box3 = box2.expand(1, 2, 3)
 
         within_box3 = clouds.inside_box(box3)
-        self.assertClose(within_box2, within_box3)
+        self.assertTrue(torch.equal(within_box2, within_box3))
 
         # invalid box
         invalid_box = torch.cat(

@@ -13,6 +13,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from iopath.common.file_io import PathManager
+from pytorch3d.common.compat import meshgrid_ij
 from pytorch3d.common.datatypes import Device
 from pytorch3d.io.utils import _open_file, _read_image
 
@@ -273,7 +274,7 @@ def make_material_atlas(
 
     # Meshgrid returns (row, column) i.e (Y, X)
     # Change order to (X, Y) to make the grid.
-    Y, X = torch.meshgrid(rng, rng)
+    Y, X = meshgrid_ij(rng, rng)
     # pyre-fixme[28]: Unexpected keyword argument `axis`.
     grid = torch.stack([X, Y], axis=-1)  # (R, R, 2)
 

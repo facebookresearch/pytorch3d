@@ -10,6 +10,7 @@ import unittest
 import numpy as np
 import torch
 from common_testing import TestCaseMixin
+from pytorch3d.common.compat import meshgrid_ij
 from pytorch3d.ops import eyes
 from pytorch3d.renderer import (
     AlphaCompositor,
@@ -129,8 +130,8 @@ class TestTensorProperties(TestCaseMixin, unittest.TestCase):
         point_radius = 0.015
         n_pts = n_grid_pts * n_grid_pts
         pts = torch.stack(
-            torch.meshgrid(
-                [torch.linspace(-grid_scale, grid_scale, n_grid_pts)] * 2, indexing="ij"
+            meshgrid_ij(
+                [torch.linspace(-grid_scale, grid_scale, n_grid_pts)] * 2,
             ),
             dim=-1,
         )

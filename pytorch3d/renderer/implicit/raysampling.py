@@ -8,6 +8,7 @@ import warnings
 from typing import Optional
 
 import torch
+from pytorch3d.common.compat import meshgrid_ij
 from pytorch3d.renderer.cameras import CamerasBase
 from pytorch3d.renderer.implicit.utils import RayBundle
 from torch.nn import functional as F
@@ -103,7 +104,7 @@ class MultinomialRaysampler(torch.nn.Module):
         _xy_grid = torch.stack(
             tuple(
                 reversed(
-                    torch.meshgrid(
+                    meshgrid_ij(
                         torch.linspace(min_y, max_y, image_height, dtype=torch.float32),
                         torch.linspace(min_x, max_x, image_width, dtype=torch.float32),
                     )

@@ -7,6 +7,7 @@
 
 import torch
 import torch.nn.functional as F
+from pytorch3d.common.compat import meshgrid_ij
 from pytorch3d.structures import Meshes
 
 
@@ -195,9 +196,7 @@ def cubify(voxels, thresh, device=None, align: str = "topleft") -> Meshes:
     # NF x 3
     grid_faces = torch.stack(grid_faces, dim=1)
 
-    y, x, z = torch.meshgrid(
-        torch.arange(H + 1), torch.arange(W + 1), torch.arange(D + 1)
-    )
+    y, x, z = meshgrid_ij(torch.arange(H + 1), torch.arange(W + 1), torch.arange(D + 1))
     y = y.to(device=device, dtype=torch.float32)
     x = x.to(device=device, dtype=torch.float32)
     z = z.to(device=device, dtype=torch.float32)
