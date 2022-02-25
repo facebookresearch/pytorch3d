@@ -540,6 +540,8 @@ __device__ inline float3 BarycentricCoords3Forward(
 // Args:
 //     p: vec3 coordinates of a point
 //     v0, v1, v2: vec3 coordinates of the triangle vertices
+//     min_triangle_area: triangles less than this size are considered
+//     points/lines, IsInsideTriangle returns False
 //
 // Returns:
 //     inside: bool indicating wether p is inside triangle
@@ -548,9 +550,10 @@ __device__ inline bool IsInsideTriangle(
     const float3& p,
     const float3& v0,
     const float3& v1,
-    const float3& v2) {
+    const float3& v2,
+    const double min_triangle_area) {
   bool inside;
-  if (AreaOfTriangle(v0, v1, v2) < 5e-3) {
+  if (AreaOfTriangle(v0, v1, v2) < min_triangle_area) {
     inside = 0;
   } else {
     float3 bary = BarycentricCoords3Forward(p, v0, v1, v2);
@@ -660,6 +663,8 @@ PointLine3DistanceBackward(
 // Args:
 //     p: vec3 coordinates of a point
 //     v0, v1, v2: vec3 coordinates of the triangle vertices
+//     min_triangle_area: triangles less than this size are considered
+//     points/lines, IsInsideTriangle returns False
 //
 // Returns:
 //     dist: Float of the squared distance
@@ -669,7 +674,8 @@ __device__ inline float PointTriangle3DistanceForward(
     const float3& p,
     const float3& v0,
     const float3& v1,
-    const float3& v2) {
+    const float3& v2,
+    const double min_triangle_area) {
   float3 normal = cross(v2 - v0, v1 - v0);
   const float norm_normal = norm(normal);
   normal = normalize(normal);
@@ -679,7 +685,7 @@ __device__ inline float PointTriangle3DistanceForward(
   const float t = dot(v0 - p, normal);
   const float3 p0 = p + t * normal;
 
-  bool is_inside = IsInsideTriangle(p0, v0, v1, v2);
+  bool is_inside = IsInsideTriangle(p0, v0, v1, v2, min_triangle_area);
   float dist = 0.0f;
 
   if ((is_inside) && (norm_normal > kEpsilon)) {
@@ -705,6 +711,8 @@ __device__ inline float PointTriangle3DistanceForward(
 //     p: xyz coordinates of a point
 //     v0, v1, v2: xyz coordinates of the triangle vertices
 //     grad_dist: Float of the gradient wrt dist
+//     min_triangle_area: triangles less than this size are considered
+//     points/lines, IsInsideTriangle returns False
 //
 // Returns:
 //     tuple of gradients for the point and triangle:
@@ -717,7 +725,8 @@ PointTriangle3DistanceBackward(
     const float3& v0,
     const float3& v1,
     const float3& v2,
-    const float& grad_dist) {
+    const float& grad_dist,
+    const double min_triangle_area) {
   const float3 v2v0 = v2 - v0;
   const float3 v1v0 = v1 - v0;
   const float3 v0p = v0 - p;
@@ -731,7 +740,7 @@ PointTriangle3DistanceBackward(
   const float3 p0 = p + t * normal;
   const float3 diff = t * normal;
 
-  bool is_inside = IsInsideTriangle(p0, v0, v1, v2);
+  bool is_inside = IsInsideTriangle(p0, v0, v1, v2, min_triangle_area);
 
   float3 grad_p = make_float3(0.0f, 0.0f, 0.0f);
   float3 grad_v0 = make_float3(0.0f, 0.0f, 0.0f);

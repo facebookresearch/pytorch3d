@@ -32,7 +32,8 @@ __global__ void DistanceForwardKernel(
     const int64_t* __restrict__ targets_first_idx, // (B,)
     const size_t batch_size, // B
     float* __restrict__ dist_objects, // (O,)
-    int64_t* __restrict__ idx_objects) { // (O,)
+    int64_t* __restrict__ idx_objects, // (O,)
+    const double min_triangle_area) {
   // This kernel is used interchangeably to compute bi-directional distances
   // between points and triangles/lines. The direction of the distance computed,
   // i.e. point to triangle/line or triangle/line to point, depends on the order
@@ -93,7 +94,8 @@ __global__ void DistanceForwardKernel(
             points_f3[point_idx],
             face_f3[face_idx],
             face_f3[face_idx + 1],
-            face_f3[face_idx + 2]);
+            face_f3[face_idx + 2],
+            min_triangle_area);
       } else {
         dist = PointLine3DistanceForward(
             points_f3[point_idx], face_f3[face_idx], face_f3[face_idx + 1]);
@@ -138,7 +140,8 @@ std::tuple<at::Tensor, at::Tensor> DistanceForwardCuda(
     const at::Tensor& targets,
     const size_t targets_dim,
     const at::Tensor& targets_first_idx,
-    const int64_t max_objects) {
+    const int64_t max_objects,
+    const double min_triangle_area) {
   // Check inputs are on the same device
   at::TensorArg objects_t{objects, "objects", 1},
       objects_first_idx_t{objects_first_idx, "objects_first_idx", 2},
@@ -202,7 +205,8 @@ std::tuple<at::Tensor, at::Tensor> DistanceForwardCuda(
       targets_first_idx.contiguous().data_ptr<int64_t>(),
       batch_size,
       dists.data_ptr<float>(),
-      idxs.data_ptr<int64_t>());
+      idxs.data_ptr<int64_t>(),
+      min_triangle_area);
 
   AT_CUDA_CHECK(cudaGetLastError());
   return std::make_tuple(dists, idxs);
@@ -217,7 +221,8 @@ __global__ void DistanceBackwardKernel(
     const int64_t* __restrict__ idx_objects, // (O,)
     const float* __restrict__ grad_dists, // (O,)
     float* __restrict__ grad_points, // ((O or T) * 3)
-    float* __restrict__ grad_face) { // ((O or T) * max(oD, tD) * 3)
+    float* __restrict__ grad_face, // ((O or T) * max(oD, tD) * 3)
+    const double min_triangle_area) {
   // This kernel is used interchangeably to compute bi-directional backward
   // distances between points and triangles/lines. The direction of the distance
   // computed, i.e. point to triangle/line or triangle/line to point, depends on
@@ -247,7 +252,8 @@ __global__ void DistanceBackwardKernel(
           face_f3[face_index],
           face_f3[face_index + 1],
           face_f3[face_index + 2],
-          grad_dists[o]);
+          grad_dists[o],
+          min_triangle_area);
       grad_point = thrust::get<0>(grads);
       grad_v0 = thrust::get<1>(grads);
       grad_v1 = thrust::get<2>(grads);
@@ -289,7 +295,8 @@ std::tuple<at::Tensor, at::Tensor> DistanceBackwardCuda(
     const at::Tensor& targets,
     const size_t targets_dim,
     const at::Tensor& idx_objects,
-    const at::Tensor& grad_dists) {
+    const at::Tensor& grad_dists,
+    const double min_triangle_area) {
   // Check inputs are on the same device
   at::TensorArg objects_t{objects, "objects", 1},
       targets_t{targets, "targets", 2},
@@ -355,7 +362,8 @@ std::tuple<at::Tensor, at::Tensor> DistanceBackwardCuda(
       idx_objects.contiguous().data_ptr<int64_t>(),
       grad_dists.contiguous().data_ptr<float>(),
       grad_points.data_ptr<float>(),
-      grad_tris.data_ptr<float>());
+      grad_tris.data_ptr<float>(),
+      min_triangle_area);
 
   AT_CUDA_CHECK(cudaGetLastError());
   return std::make_tuple(grad_points, grad_tris);
@@ -370,17 +378,27 @@ std::tuple<at::Tensor, at::Tensor> PointFaceDistanceForwardCuda(
     const at::Tensor& points_first_idx,
     const at::Tensor& tris,
     const at::Tensor& tris_first_idx,
-    const int64_t max_points) {
+    const int64_t max_points,
+    const double min_triangle_area) {
   return DistanceForwardCuda(
-      points, 1, points_first_idx, tris, 3, tris_first_idx, max_points);
+      points,
+      1,
+      points_first_idx,
+      tris,
+      3,
+      tris_first_idx,
+      max_points,
+      min_triangle_area);
 }
 
 std::tuple<at::Tensor, at::Tensor> PointFaceDistanceBackwardCuda(
     const at::Tensor& points,
     const at::Tensor& tris,
     const at::Tensor& idx_points,
-    const at::Tensor& grad_dists) {
-  return DistanceBackwardCuda(points, 1, tris, 3, idx_points, grad_dists);
+    const at::Tensor& grad_dists,
+    const double min_triangle_area) {
+  return DistanceBackwardCuda(
+      points, 1, tris, 3, idx_points, grad_dists, min_triangle_area);
 }
 
 // ****************************************************************************
@@ -392,17 +410,27 @@ std::tuple<at::Tensor, at::Tensor> FacePointDistanceForwardCuda(
     const at::Tensor& points_first_idx,
     const at::Tensor& tris,
     const at::Tensor& tris_first_idx,
-    const int64_t max_tris) {
+    const int64_t max_tris,
+    const double min_triangle_area) {
   return DistanceForwardCuda(
-      tris, 3, tris_first_idx, points, 1, points_first_idx, max_tris);
+      tris,
+      3,
+      tris_first_idx,
+      points,
+      1,
+      points_first_idx,
+      max_tris,
+      min_triangle_area);
 }
 
 std::tuple<at::Tensor, at::Tensor> FacePointDistanceBackwardCuda(
     const at::Tensor& points,
     const at::Tensor& tris,
     const at::Tensor& idx_tris,
-    const at::Tensor& grad_dists) {
-  return DistanceBackwardCuda(tris, 3, points, 1, idx_tris, grad_dists);
+    const at::Tensor& grad_dists,
+    const double min_triangle_area) {
+  return DistanceBackwardCuda(
+      tris, 3, points, 1, idx_tris, grad_dists, min_triangle_area);
 }
 
 // ****************************************************************************
@@ -416,7 +444,14 @@ std::tuple<at::Tensor, at::Tensor> PointEdgeDistanceForwardCuda(
     const at::Tensor& segms_first_idx,
     const int64_t max_points) {
   return DistanceForwardCuda(
-      points, 1, points_first_idx, segms, 2, segms_first_idx, max_points);
+      points,
+      1,
+      points_first_idx,
+      segms,
+      2,
+      segms_first_idx,
+      max_points,
+      1); // todo: unused parameter handling for min_triangle_area
 }
 
 std::tuple<at::Tensor, at::Tensor> PointEdgeDistanceBackwardCuda(
@@ -424,7 +459,7 @@ std::tuple<at::Tensor, at::Tensor> PointEdgeDistanceBackwardCuda(
     const at::Tensor& segms,
     const at::Tensor& idx_points,
     const at::Tensor& grad_dists) {
-  return DistanceBackwardCuda(points, 1, segms, 2, idx_points, grad_dists);
+  return DistanceBackwardCuda(points, 1, segms, 2, idx_points, grad_dists, 1);
 }
 
 // ****************************************************************************
@@ -438,7 +473,7 @@ std::tuple<at::Tensor, at::Tensor> EdgePointDistanceForwardCuda(
     const at::Tensor& segms_first_idx,
     const int64_t max_segms) {
   return DistanceForwardCuda(
-      segms, 2, segms_first_idx, points, 1, points_first_idx, max_segms);
+      segms, 2, segms_first_idx, points, 1, points_first_idx, max_segms, 1);
 }
 
 std::tuple<at::Tensor, at::Tensor> EdgePointDistanceBackwardCuda(
@@ -446,7 +481,7 @@ std::tuple<at::Tensor, at::Tensor> EdgePointDistanceBackwardCuda(
     const at::Tensor& segms,
     const at::Tensor& idx_segms,
     const at::Tensor& grad_dists) {
-  return DistanceBackwardCuda(segms, 2, points, 1, idx_segms, grad_dists);
+  return DistanceBackwardCuda(segms, 2, points, 1, idx_segms, grad_dists, 1);
 }
 
 // ****************************************************************************
@@ -459,7 +494,8 @@ __global__ void PointFaceArrayForwardKernel(
     const float* __restrict__ tris, // (T, 3, 3)
     float* __restrict__ dists, // (P, T)
     const size_t P,
-    const size_t T) {
+    const size_t T,
+    const double min_triangle_area) {
   const float3* points_f3 = (float3*)points;
   const float3* tris_f3 = (float3*)tris;
 
@@ -475,14 +511,16 @@ __global__ void PointFaceArrayForwardKernel(
     const float3 v2 = tris_f3[t * 3 + 2];
 
     const float3 point = points_f3[p];
-    float dist = PointTriangle3DistanceForward(point, v0, v1, v2);
+    float dist =
+        PointTriangle3DistanceForward(point, v0, v1, v2, min_triangle_area);
     dists[p * T + t] = dist;
   }
 }
 
 at::Tensor PointFaceArrayDistanceForwardCuda(
     const at::Tensor& points,
-    const at::Tensor& tris) {
+    const at::Tensor& tris,
+    const double min_triangle_area) {
   // Check inputs are on the same device
   at::TensorArg points_t{points, "points", 1}, tris_t{tris, "tris", 2};
   at::CheckedFrom c = "PointFaceArrayDistanceForwardCuda";
@@ -516,7 +554,8 @@ at::Tensor PointFaceArrayDistanceForwardCuda(
       tris.contiguous().data_ptr<float>(),
       dists.data_ptr<float>(),
       P,
-      T);
+      T,
+      min_triangle_area);
 
   AT_CUDA_CHECK(cudaGetLastError());
   return dists;
@@ -529,7 +568,8 @@ __global__ void PointFaceArrayBackwardKernel(
     float* __restrict__ grad_points, // (P, 3)
     float* __restrict__ grad_tris, // (T, 3, 3)
     const size_t P,
-    const size_t T) {
+    const size_t T,
+    const double min_triangle_area) {
   const float3* points_f3 = (float3*)points;
   const float3* tris_f3 = (float3*)tris;
 
@@ -547,8 +587,8 @@ __global__ void PointFaceArrayBackwardKernel(
     const float3 point = points_f3[p];
 
     const float grad_dist = grad_dists[p * T + t];
-    const auto grad =
-        PointTriangle3DistanceBackward(point, v0, v1, v2, grad_dist);
+    const auto grad = PointTriangle3DistanceBackward(
+        point, v0, v1, v2, grad_dist, min_triangle_area);
 
     const float3 grad_point = thrust::get<0>(grad);
     const float3 grad_v0 = thrust::get<1>(grad);
@@ -576,7 +616,8 @@ __global__ void PointFaceArrayBackwardKernel(
 std::tuple<at::Tensor, at::Tensor> PointFaceArrayDistanceBackwardCuda(
     const at::Tensor& points,
     const at::Tensor& tris,
-    const at::Tensor& grad_dists) {
+    const at::Tensor& grad_dists,
+    const double min_triangle_area) {
   // Check inputs are on the same device
   at::TensorArg points_t{points, "points", 1}, tris_t{tris, "tris", 2},
       grad_dists_t{grad_dists, "grad_dists", 3};
@@ -615,7 +656,8 @@ std::tuple<at::Tensor, at::Tensor> PointFaceArrayDistanceBackwardCuda(
       grad_points.data_ptr<float>(),
       grad_tris.data_ptr<float>(),
       P,
-      T);
+      T,
+      min_triangle_area);
 
   AT_CUDA_CHECK(cudaGetLastError());
   return std::make_tuple(grad_points, grad_tris);

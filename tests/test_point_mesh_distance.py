@@ -24,6 +24,10 @@ class TestPointMeshDistance(TestCaseMixin, unittest.TestCase):
         return 1e-8
 
     @staticmethod
+    def min_triangle_area():
+        return 5e-3
+
+    @staticmethod
     def init_meshes_clouds(
         batch_size: int = 10,
         num_verts: int = 1000,
@@ -563,8 +567,12 @@ class TestPointMeshDistance(TestCaseMixin, unittest.TestCase):
         grad_tris_naive = tris.grad.cpu()
 
         # Cuda Forward Implementation
-        dists_cuda = _C.point_face_array_dist_forward(points, tris)
-        dists_cpu = _C.point_face_array_dist_forward(points_cpu, tris_cpu)
+        dists_cuda = _C.point_face_array_dist_forward(
+            points, tris, TestPointMeshDistance.min_triangle_area()
+        )
+        dists_cpu = _C.point_face_array_dist_forward(
+            points_cpu, tris_cpu, TestPointMeshDistance.min_triangle_area()
+        )
 
         # Compare
         self.assertClose(dists_naive.cpu(), dists_cuda.cpu())
@@ -572,10 +580,13 @@ class TestPointMeshDistance(TestCaseMixin, unittest.TestCase):
 
         # CUDA Backward Implementation
         grad_points_cuda, grad_tris_cuda = _C.point_face_array_dist_backward(
-            points, tris, grad_dists
+            points, tris, grad_dists, TestPointMeshDistance.min_triangle_area()
         )
         grad_points_cpu, grad_tris_cpu = _C.point_face_array_dist_backward(
-            points_cpu, tris_cpu, grad_dists.cpu()
+            points_cpu,
+            tris_cpu,
+            grad_dists.cpu(),
+            TestPointMeshDistance.min_triangle_area(),
         )
 
         # Compare
@@ -615,12 +626,21 @@ class TestPointMeshDistance(TestCaseMixin, unittest.TestCase):
 
         # Cuda Implementation: forward
         dists_cuda, idx_cuda = _C.point_face_dist_forward(
-            points_packed, points_first_idx, faces_packed, faces_first_idx, max_p
+            points_packed,
+            points_first_idx,
+            faces_packed,
+            faces_first_idx,
+            max_p,
+            TestPointMeshDistance.min_triangle_area(),
         )
 
         # Cuda Implementation: backward
         grad_points_cuda, grad_faces_cuda = _C.point_face_dist_backward(
-            points_packed, faces_packed, idx_cuda, grad_dists
+            points_packed,
+            faces_packed,
+            idx_cuda,
+            grad_dists,
+            TestPointMeshDistance.min_triangle_area(),
         )
 
         # Cpu Implementation: forward
@@ -630,12 +650,17 @@ class TestPointMeshDistance(TestCaseMixin, unittest.TestCase):
             faces_packed.cpu(),
             faces_first_idx.cpu(),
             max_p,
+            TestPointMeshDistance.min_triangle_area(),
         )
 
         # Cpu Implementation: backward
         # Note that using idx_cpu doesn't pass - there seems to be a problem with tied results.
         grad_points_cpu, grad_faces_cpu = _C.point_face_dist_backward(
-            points_packed.cpu(), faces_packed.cpu(), idx_cuda.cpu(), grad_dists.cpu()
+            points_packed.cpu(),
+            faces_packed.cpu(),
+            idx_cuda.cpu(),
+            grad_dists.cpu(),
+            TestPointMeshDistance.min_triangle_area(),
         )
 
         # Naive Implementation: forward
@@ -716,12 +741,21 @@ class TestPointMeshDistance(TestCaseMixin, unittest.TestCase):
 
         # Cuda Implementation: forward
         dists_cuda, idx_cuda = _C.face_point_dist_forward(
-            points_packed, points_first_idx, faces_packed, faces_first_idx, max_f
+            points_packed,
+            points_first_idx,
+            faces_packed,
+            faces_first_idx,
+            max_f,
+            TestPointMeshDistance.min_triangle_area(),
         )
 
         # Cuda Implementation: backward
         grad_points_cuda, grad_faces_cuda = _C.face_point_dist_backward(
-            points_packed, faces_packed, idx_cuda, grad_dists
+            points_packed,
+            faces_packed,
+            idx_cuda,
+            grad_dists,
+            TestPointMeshDistance.min_triangle_area(),
         )
 
         # Cpu Implementation: forward
@@ -731,11 +765,16 @@ class TestPointMeshDistance(TestCaseMixin, unittest.TestCase):
             faces_packed.cpu(),
             faces_first_idx.cpu(),
             max_f,
+            TestPointMeshDistance.min_triangle_area(),
         )
 
         # Cpu Implementation: backward
         grad_points_cpu, grad_faces_cpu = _C.face_point_dist_backward(
-            points_packed.cpu(), faces_packed.cpu(), idx_cpu, grad_dists.cpu()
+            points_packed.cpu(),
+            faces_packed.cpu(),
+            idx_cpu,
+            grad_dists.cpu(),
+            TestPointMeshDistance.min_triangle_area(),
         )
 
         # Naive Implementation: forward

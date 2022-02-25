@@ -640,6 +640,8 @@ vec3<T> BarycentricCoords3Forward(
 // Args:
 //     p: vec3 coordinates of a point
 //     v0, v1, v2: vec3 coordinates of the triangle vertices
+//     min_triangle_area: triangles less than this size are considered
+//     points/lines, IsInsideTriangle returns False
 //
 // Returns:
 //     inside: bool indicating wether p is inside triangle
@@ -649,9 +651,10 @@ static bool IsInsideTriangle(
     const vec3<T>& p,
     const vec3<T>& v0,
     const vec3<T>& v1,
-    const vec3<T>& v2) {
+    const vec3<T>& v2,
+    const double min_triangle_area) {
   bool inside;
-  if (AreaOfTriangle(v0, v1, v2) < 5e-3) {
+  if (AreaOfTriangle(v0, v1, v2) < min_triangle_area) {
     inside = 0;
   } else {
     vec3<T> bary = BarycentricCoords3Forward(p, v0, v1, v2);
@@ -668,7 +671,8 @@ T PointTriangle3DistanceForward(
     const vec3<T>& p,
     const vec3<T>& v0,
     const vec3<T>& v1,
-    const vec3<T>& v2) {
+    const vec3<T>& v2,
+    const double min_triangle_area) {
   vec3<T> normal = cross(v2 - v0, v1 - v0);
   const T norm_normal = norm(normal);
   normal = normal / (norm_normal + vEpsilon);
@@ -678,7 +682,7 @@ T PointTriangle3DistanceForward(
   const T t = dot(v0 - p, normal);
   const vec3<T> p0 = p + t * normal;
 
-  bool is_inside = IsInsideTriangle(p0, v0, v1, v2);
+  bool is_inside = IsInsideTriangle(p0, v0, v1, v2, min_triangle_area);
   T dist = 0.0f;
 
   if ((is_inside) && (norm_normal > kEpsilon)) {
@@ -737,6 +741,8 @@ vec3<T> normalize_backward(const vec3<T>& a, const vec3<T>& grad_normz) {
 //     p: xyz coordinates of a point
 //     v0, v1, v2: xyz coordinates of the triangle vertices
 //     grad_dist: Float of the gradient wrt dist
+//     min_triangle_area: triangles less than this size are considered
+//     points/lines, IsInsideTriangle returns False
 //
 // Returns:
 //     tuple of gradients for the point and triangle:
@@ -750,7 +756,8 @@ PointTriangle3DistanceBackward(
     const vec3<T>& v0,
     const vec3<T>& v1,
     const vec3<T>& v2,
-    const T& grad_dist) {
+    const T& grad_dist,
+    const double min_triangle_area) {
   const vec3<T> v2v0 = v2 - v0;
   const vec3<T> v1v0 = v1 - v0;
   const vec3<T> v0p = v0 - p;
@@ -764,7 +771,7 @@ PointTriangle3DistanceBackward(
   const vec3<T> p0 = p + t * normal;
   const vec3<T> diff = t * normal;
 
-  bool is_inside = IsInsideTriangle(p0, v0, v1, v2);
+  bool is_inside = IsInsideTriangle(p0, v0, v1, v2, min_triangle_area);
 
   vec3<T> grad_p(0.0f, 0.0f, 0.0f);
   vec3<T> grad_v0(0.0f, 0.0f, 0.0f);

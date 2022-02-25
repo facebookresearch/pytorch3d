@@ -19,6 +19,8 @@ The exact mathematical formulations and implementations of these
 distances can be found in `csrc/utils/geometry_utils.cuh`.
 """
 
+_DEFAULT_MIN_TRIANGLE_AREA: float = 5e-3
+
 
 # PointFaceDistance
 class _PointFaceDistance(Function):
@@ -27,7 +29,15 @@ class _PointFaceDistance(Function):
     """
 
     @staticmethod
-    def forward(ctx, points, points_first_idx, tris, tris_first_idx, max_points):
+    def forward(
+        ctx,
+        points,
+        points_first_idx,
+        tris,
+        tris_first_idx,
+        max_points,
+        min_triangle_area=_DEFAULT_MIN_TRIANGLE_AREA,
+    ):
         """
         Args:
             ctx: Context object used to calculate gradients.
@@ -39,6 +49,8 @@ class _PointFaceDistance(Function):
             tris_first_idx: LongTensor of shape `(N,)` indicating the first face
                 index in each example in the batch
             max_points: Scalar equal to maximum number of points in the batch
+            min_triangle_area: (float, defaulted) Triangles of area less than this
+                will be treated as points/lines.
         Returns:
             dists: FloatTensor of shape `(P,)`, where `dists[p]` is the squared
                 euclidean distance of `p`-th point to the closest triangular face
@@ -53,9 +65,15 @@ class _PointFaceDistance(Function):
 
         """
         dists, idxs = _C.point_face_dist_forward(
-            points, points_first_idx, tris, tris_first_idx, max_points
+            points,
+            points_first_idx,
+            tris,
+            tris_first_idx,
+            max_points,
+            min_triangle_area,
         )
         ctx.save_for_backward(points, tris, idxs)
+        ctx.min_triangle_area = min_triangle_area
         return dists
 
     @staticmethod
@@ -63,10 +81,11 @@ class _PointFaceDistance(Function):
     def backward(ctx, grad_dists):
         grad_dists = grad_dists.contiguous()
         points, tris, idxs = ctx.saved_tensors
+        min_triangle_area = ctx.min_triangle_area
         grad_points, grad_tris = _C.point_face_dist_backward(
-            points, tris, idxs, grad_dists
+            points, tris, idxs, grad_dists, min_triangle_area
         )
-        return grad_points, None, grad_tris, None, None
+        return grad_points, None, grad_tris, None, None, None
 
 
 # pyre-fixme[16]: `_PointFaceDistance` has no attribute `apply`.
@@ -80,7 +99,15 @@ class _FacePointDistance(Function):
     """
 
     @staticmethod
-    def forward(ctx, points, points_first_idx, tris, tris_first_idx, max_tris):
+    def forward(
+        ctx,
+        points,
+        points_first_idx,
+        tris,
+        tris_first_idx,
+        max_tris,
+        min_triangle_area=_DEFAULT_MIN_TRIANGLE_AREA,
+    ):
         """
         Args:
             ctx: Context object used to calculate gradients.
@@ -92,6 +119,8 @@ class _FacePointDistance(Function):
             tris_first_idx: LongTensor of shape `(N,)` indicating the first face
                 index in each example in the batch
             max_tris: Scalar equal to maximum number of faces in the batch
+            min_triangle_area: (float, defaulted) Triangles of area less than this
+                will be treated as points/lines.
         Returns:
             dists: FloatTensor of shape `(T,)`, where `dists[t]` is the squared
                 euclidean distance of `t`-th triangular face to the closest point in the
@@ -104,9 +133,10 @@ class _FacePointDistance(Function):
             face `(v0, v1, v2)`.
         """
         dists, idxs = _C.face_point_dist_forward(
-            points, points_first_idx, tris, tris_first_idx, max_tris
+            points, points_first_idx, tris, tris_first_idx, max_tris, min_triangle_area
         )
         ctx.save_for_backward(points, tris, idxs)
+        ctx.min_triangle_area = min_triangle_area
         return dists
 
     @staticmethod
@@ -114,10 +144,11 @@ class _FacePointDistance(Function):
     def backward(ctx, grad_dists):
         grad_dists = grad_dists.contiguous()
         points, tris, idxs = ctx.saved_tensors
+        min_triangle_area = ctx.min_triangle_area
         grad_points, grad_tris = _C.face_point_dist_backward(
-            points, tris, idxs, grad_dists
+            points, tris, idxs, grad_dists, min_triangle_area
         )
-        return grad_points, None, grad_tris, None, None
+        return grad_points, None, grad_tris, None, None, None
 
 
 # pyre-fixme[16]: `_FacePointDistance` has no attribute `apply`.
@@ -293,7 +324,11 @@ def point_mesh_edge_distance(meshes: Meshes, pcls: Pointclouds):
     return point_dist + edge_dist
 
 
-def point_mesh_face_distance(meshes: Meshes, pcls: Pointclouds):
+def point_mesh_face_distance(
+    meshes: Meshes,
+    pcls: Pointclouds,
+    min_triangle_area: float = _DEFAULT_MIN_TRIANGLE_AREA,
+):
     """
     Computes the distance between a pointcloud and a mesh within a batch.
     Given a pair `(mesh, pcl)` in the batch, we define the distance to be the
@@ -310,6 +345,8 @@ def point_mesh_face_distance(meshes: Meshes, pcls: Pointclouds):
     Args:
         meshes: A Meshes data structure containing N meshes
         pcls: A Pointclouds data structure containing N pointclouds
+        min_triangle_area: (float, defaulted) Triangles of area less than this
+            will be treated as points/lines.
 
     Returns:
         loss: The `point_face(mesh, pcl) + face_point(mesh, pcl)` distance
@@ -334,7 +371,7 @@ def point_mesh_face_distance(meshes: Meshes, pcls: Pointclouds):
 
     # point to face distance: shape (P,)
     point_to_face = point_face_distance(
-        points, points_first_idx, tris, tris_first_idx, max_points
+        points, points_first_idx, tris, tris_first_idx, max_points, min_triangle_area
     )
 
     # weight each example by the inverse of number of points in the example
@@ -347,7 +384,7 @@ def point_mesh_face_distance(meshes: Meshes, pcls: Pointclouds):
 
     # face to point distance: shape (T,)
     face_to_point = face_point_distance(
-        points, points_first_idx, tris, tris_first_idx, max_tris
+        points, points_first_idx, tris, tris_first_idx, max_tris, min_triangle_area
     )
 
     # weight each example by the inverse of number of faces in the example
