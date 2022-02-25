@@ -128,55 +128,15 @@ jobs:
   binary_linux_conda_cuda:
     <<: *binary_common
     machine:
-      image: ubuntu-1604:201903-01
+      image: ubuntu-1604-cuda-10.2:202012-01
     resource_class: gpu.nvidia.small.multi
     steps:
     - checkout
-    - run:
-        name: Setup environment
-        command: |
-          set -e
-
-          curl -L https://packagecloud.io/circleci/trusty/gpgkey | sudo apt-key add -
-          curl -L https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
-
-          sudo apt-get update
-
-          sudo apt-get install \
-              apt-transport-https \
-              ca-certificates \
-              curl \
-              gnupg-agent \
-              software-properties-common
-
-          curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-
-          sudo add-apt-repository \
-             "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
-             $(lsb_release -cs) \
-             stable"
-
-          sudo apt-get update
-          export DOCKER_VERSION="5:19.03.2~3-0~ubuntu-xenial"
-          sudo apt-get install docker-ce=${DOCKER_VERSION} docker-ce-cli=${DOCKER_VERSION} containerd.io=1.2.6-3
-
-          # Add the package repositories
-          distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
-          curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add -
-          curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list
-
-          export NVIDIA_CONTAINER_VERSION="1.0.3-1"
-          sudo apt-get update && sudo apt-get install -y nvidia-container-toolkit=${NVIDIA_CONTAINER_VERSION}
-          sudo systemctl restart docker
-
-          DRIVER_FN="NVIDIA-Linux-x86_64-460.84.run"
-          wget "https://us.download.nvidia.com/XFree86/Linux-x86_64/460.84/$DRIVER_FN"
-          sudo /bin/bash "$DRIVER_FN" -s --no-drm || (sudo cat /var/log/nvidia-installer.log && false)
-          nvidia-smi
 
     - run:
         name: Pull docker image
         command: |
+          nvidia-smi
           set -e
 
           { docker login -u="$DOCKERHUB_USERNAME" -p="$DOCKERHUB_TOKEN" ; } 2> /dev/null
