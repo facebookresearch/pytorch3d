@@ -13,7 +13,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from iopath.common.file_io import PathManager
-from pytorch3d.common.types import Device
+from pytorch3d.common.datatypes import Device
 from pytorch3d.io.utils import _open_file, _read_image
 
 

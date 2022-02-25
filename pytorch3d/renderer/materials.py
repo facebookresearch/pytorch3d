@@ -7,7 +7,7 @@
 
 import torch
 
-from ..common.types import Device
+from ..common.datatypes import Device
 from .utils import TensorProperties
 
 

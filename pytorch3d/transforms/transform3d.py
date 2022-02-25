@@ -10,7 +10,7 @@ from typing import List, Optional, Union
 
 import torch
 
-from ..common.types import Device, get_device, make_device
+from ..common.datatypes import Device, get_device, make_device
 from ..common.workaround import _safe_det_3x3
 from .rotation_conversions import _axis_angle_rotation
 

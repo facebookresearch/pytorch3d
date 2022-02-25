@@ -10,7 +10,7 @@ from typing import List, Optional, Sequence, Tuple, Union
 import numpy as np
 import torch
 
-from ..common.types import Device, make_device
+from ..common.datatypes import Device, make_device
 from . import utils as struct_utils
 
 

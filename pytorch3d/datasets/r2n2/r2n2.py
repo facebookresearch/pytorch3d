@@ -13,7 +13,7 @@ from typing import Dict, List, Optional
 import numpy as np
 import torch
 from PIL import Image
-from pytorch3d.common.types import Device
+from pytorch3d.common.datatypes import Device
 from pytorch3d.datasets.shapenet_base import ShapeNetBase
 from pytorch3d.renderer import HardPhongShader
 from tabulate import tabulate

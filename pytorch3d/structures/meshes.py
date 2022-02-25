@@ -8,7 +8,7 @@ from typing import List, Union
 
 import torch
 
-from ..common.types import Device, make_device
+from ..common.datatypes import Device, make_device
 from . import utils as struct_utils
 
 

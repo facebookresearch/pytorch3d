@@ -9,7 +9,7 @@ from typing import List, Optional, Tuple, Union
 
 import torch
 
-from ..common.types import Device, make_device
+from ..common.datatypes import Device, make_device
 from ..transforms import Scale, Transform3d
 from . import utils as struct_utils
 

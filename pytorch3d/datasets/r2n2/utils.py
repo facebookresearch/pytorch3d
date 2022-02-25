@@ -9,7 +9,7 @@ from typing import Dict, List
 
 import numpy as np
 import torch
-from pytorch3d.common.types import Device
+from pytorch3d.common.datatypes import Device
 from pytorch3d.datasets.utils import collate_batched_meshes
 from pytorch3d.ops import cubify
 from pytorch3d.renderer import (

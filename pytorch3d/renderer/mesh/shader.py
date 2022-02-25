@@ -10,7 +10,7 @@ from typing import Optional
 import torch
 import torch.nn as nn
 
-from ...common.types import Device
+from ...common.datatypes import Device
 from ...structures.meshes import Meshes
 from ..blending import (
     BlendParams,

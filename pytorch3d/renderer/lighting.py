@@ -8,7 +8,7 @@
 import torch
 import torch.nn.functional as F
 
-from ..common.types import Device
+from ..common.datatypes import Device
 from .utils import TensorProperties, convert_to_tensors_and_broadcast
 
 

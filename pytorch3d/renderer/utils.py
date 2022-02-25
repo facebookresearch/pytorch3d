@@ -14,7 +14,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from ..common.types import Device, make_device
+from ..common.datatypes import Device, make_device
 
 
 class TensorAccessor(nn.Module):

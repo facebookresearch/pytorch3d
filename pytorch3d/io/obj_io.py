@@ -16,7 +16,7 @@ import numpy as np
 import torch
 from iopath.common.file_io import PathManager
 from PIL import Image
-from pytorch3d.common.types import Device
+from pytorch3d.common.datatypes import Device
 from pytorch3d.io.mtl_io import load_mtl, make_mesh_texture_atlas
 from pytorch3d.io.utils import PathOrStr, _check_faces_indices, _make_tensor, _open_file
 from pytorch3d.renderer import TexturesAtlas, TexturesUV

@@ -14,7 +14,7 @@ import torch
 from iopath.common.file_io import PathManager
 from PIL import Image
 
-from ..common.types import Device
+from ..common.datatypes import Device
 
 
 @contextlib.contextmanager

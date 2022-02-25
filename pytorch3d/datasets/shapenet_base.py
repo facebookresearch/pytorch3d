@@ -8,7 +8,7 @@ import warnings
 from typing import Dict, List, Optional, Tuple
 
 import torch
-from pytorch3d.common.types import Device
+from pytorch3d.common.datatypes import Device
 from pytorch3d.io import load_obj
 from pytorch3d.renderer import (
     FoVPerspectiveCameras,

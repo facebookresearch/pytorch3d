@@ -9,7 +9,7 @@ import pathlib
 from typing import Optional, Tuple
 
 from iopath.common.file_io import PathManager
-from pytorch3d.common.types import Device
+from pytorch3d.common.datatypes import Device
 from pytorch3d.io.utils import PathOrStr
 from pytorch3d.structures import Meshes, Pointclouds
 
