@@ -6,6 +6,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+// @licenselint-loose-mode
+
 // See https://docusaurus.io/docs/site-config for all the possible
 // site configuration options.
 
@@ -52,7 +54,6 @@ const siteConfig = {
     secondaryColor: '#FFAF00',
   },
 
-  // @lint-ignore-every LICENSELINT
   // This copyright info is used in /core/Footer.js and blog RSS/Atom feeds.
   copyright: `Copyright \u{00A9} ${new Date().getFullYear()} Meta Platforms, Inc`,
 
