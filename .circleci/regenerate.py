@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
@@ -19,14 +19,14 @@ import yaml
 # version of pytorch.
 # Pytorch 1.4 also supports cuda 10.0 but we no longer build for cuda 10.0 at all.
 CONDA_CUDA_VERSIONS = {
-    "1.6.0": ["cu92", "cu101", "cu102"],
     "1.7.0": ["cu101", "cu102", "cu110"],
     "1.7.1": ["cu101", "cu102", "cu110"],
     "1.8.0": ["cu101", "cu102", "cu111"],
     "1.8.1": ["cu101", "cu102", "cu111"],
     "1.9.0": ["cu102", "cu111"],
     "1.9.1": ["cu102", "cu111"],
-    "1.10.0": ["cu102", "cu113"],
+    "1.10.0": ["cu102", "cu111", "cu113"],
+    "1.10.1": ["cu102", "cu111", "cu113"],
 }
 
 
@@ -46,7 +46,7 @@ def pytorch_versions_for_python(python_version):
 def workflows(prefix="", filter_branch=None, upload=False, indentation=6):
     w = []
     for btype in ["conda"]:
-        for python_version in ["3.6", "3.7", "3.8", "3.9"]:
+        for python_version in ["3.7", "3.8", "3.9"]:
             for pytorch_version in pytorch_versions_for_python(python_version):
                 for cu_version in CONDA_CUDA_VERSIONS[pytorch_version]:
                     w += workflow_pair(

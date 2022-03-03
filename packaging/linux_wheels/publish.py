@@ -1,10 +1,9 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-import os
 import subprocess
 from pathlib import Path
 from typing import List
@@ -15,13 +14,12 @@ dest = "s3://dl.fbaipublicfiles.com/pytorch3d/packaging/wheels/"
 output = Path("output")
 
 
-def fs3cmd(args, allow_failure: bool = False) -> List[str]:
+def aws_s3_cmd(args) -> List[str]:
     """
-    This function returns the args for subprocess to mimic the bash command
-    fs3cmd available in the fairusers_aws module on the FAIR cluster.
+    This function returns the full args for subprocess to do a command
+    with aws.
     """
-    os.environ["FAIR_CLUSTER_NAME"] = os.environ["FAIR_ENV_CLUSTER"].lower()
-    cmd_args = ["/public/apps/fairusers_aws/bin/fs3cmd"] + args
+    cmd_args = ["aws", "s3", "--profile", "saml"] + args
     return cmd_args
 
 
@@ -31,7 +29,7 @@ def fs3_exists(path) -> bool:
     In fact, will also return True if there is a file which has the given
     path as a prefix, but we are careful about this.
     """
-    out = subprocess.check_output(fs3cmd(["ls", path]))
+    out = subprocess.check_output(aws_s3_cmd(["ls", path]))
     return len(out) != 0
 
 
@@ -41,7 +39,7 @@ def get_html_wrappers() -> None:
         assert not output_wrapper.exists()
         dest_wrapper = dest + directory.name + "/download.html"
         if fs3_exists(dest_wrapper):
-            subprocess.check_call(fs3cmd(["get", dest_wrapper, str(output_wrapper)]))
+            subprocess.check_call(aws_s3_cmd(["cp", dest_wrapper, str(output_wrapper)]))
 
 
 def write_html_wrappers() -> None:
@@ -70,7 +68,7 @@ def to_aws() -> None:
         for file in directory.iterdir():
             print(file)
             subprocess.check_call(
-                fs3cmd(["put", str(file), dest + str(file.relative_to(output))])
+                aws_s3_cmd(["cp", str(file), dest + str(file.relative_to(output))])
             )
 
 
@@ -79,3 +77,11 @@ if __name__ == "__main__":
     # get_html_wrappers()
     write_html_wrappers()
     to_aws()
+
+
+# see all files with
+#  aws s3 --profile saml ls --recursive s3://dl.fbaipublicfiles.com/pytorch3d/
+
+# empty current with
+#  aws s3 --profile saml rm --recursive
+#                 s3://dl.fbaipublicfiles.com/pytorch3d/packaging/wheels/

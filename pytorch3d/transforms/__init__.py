@@ -1,4 +1,4 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
@@ -9,6 +9,7 @@ from .rotation_conversions import (
     axis_angle_to_matrix,
     axis_angle_to_quaternion,
     euler_angles_to_matrix,
+    matrix_to_axis_angle,
     matrix_to_euler_angles,
     matrix_to_quaternion,
     matrix_to_rotation_6d,

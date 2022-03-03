@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -81,7 +81,8 @@ std::tuple<at::Tensor, at::Tensor> IoUBox3DCpu(
           for (int b2 = 0; b2 < box2_intersect.size(); ++b2) {
             const bool is_coplanar =
                 IsCoplanarFace(box1_intersect[b1], box2_intersect[b2]);
-            if (is_coplanar) {
+            const float area = FaceArea(box1_intersect[b1]);
+            if ((is_coplanar) && (area > kEpsilon)) {
               tri2_keep[b2] = 0;
             }
           }

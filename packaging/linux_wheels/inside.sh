@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
@@ -37,8 +37,10 @@ declare -A CONDA_CUDA_VERSIONS=(
 #    ["1.7.1"]="cu101 cu102 cu110"
 #    ["1.8.0"]="cu101 cu102 cu111"
 #    ["1.8.1"]="cu101 cu102 cu111"
-    ["1.9.0"]="cu102 cu111"
-    ["1.9.1"]="cu102 cu111"
+#    ["1.9.0"]="cu102 cu111"
+#    ["1.9.1"]="cu102 cu111"
+    ["1.10.0"]="cu102 cu111 cu113"
+    ["1.10.1"]="cu102 cu111 cu113"
 )
 
 
@@ -57,6 +59,13 @@ do
 
         for cu_version in ${CONDA_CUDA_VERSIONS[$pytorch_version]}
         do
+            if [[ "cu113" == *$cu_version* ]] && [[ $SELECTED_CUDA != "$cu_version" ]]
+            #       ^^^ CUDA versions listed here have to be built
+            # in their own containers.
+            then
+                continue
+            fi
+
             case "$cu_version" in
                 cu113)
                     export CUDA_HOME=/usr/local/cuda-11.3/

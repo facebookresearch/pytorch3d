@@ -1,4 +1,4 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
@@ -479,7 +479,7 @@ def _check_points_to_volumes_inputs(
     volume_features: torch.Tensor,
     grid_sizes: torch.LongTensor,
     mask: Optional[torch.Tensor] = None,
-):
+) -> None:
 
     max_grid_size = grid_sizes.max(dim=0).values
     if torch.prod(max_grid_size) > volume_densities.shape[1]:

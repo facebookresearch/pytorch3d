@@ -1,4 +1,4 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
@@ -6,6 +6,7 @@
 
 import os
 import unittest
+from numbers import Real
 from pathlib import Path
 from typing import Callable, Optional, Union
 
@@ -25,7 +26,7 @@ def get_pytorch3d_dir() -> Path:
     """
     Returns Path for the root PyTorch3D directory.
 
-    Facebook internal systems need a special case here.
+    Meta internal systems need a special case here.
     """
     if os.environ.get("INSIDE_RE_WORKER") is not None:
         return Path(__file__).resolve().parent
@@ -190,3 +191,13 @@ class TestCaseMixin(unittest.TestCase):
         if msg is not None:
             self.fail(f"{msg} {err}")
         self.fail(err)
+
+    def assertConstant(self, input: TensorOrArray, value: Real) -> None:
+        """
+        Asserts input is entirely filled with value.
+
+        Args:
+            input: tensor or array
+        """
+        self.assertEqual(input.min(), value)
+        self.assertEqual(input.max(), value)

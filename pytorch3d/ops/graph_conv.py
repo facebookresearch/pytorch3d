@@ -1,4 +1,4 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
@@ -39,7 +39,6 @@ class GraphConv(nn.Module):
         if init == "normal":
             nn.init.normal_(self.w0.weight, mean=0, std=0.01)
             nn.init.normal_(self.w1.weight, mean=0, std=0.01)
-            # pyre-fixme[16]: Optional type has no attribute `data`.
             self.w0.bias.data.zero_()
             self.w1.bias.data.zero_()
         elif init == "zero":

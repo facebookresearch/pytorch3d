@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -155,8 +155,9 @@ INLINE void ATOMICADD_F3(T* address, T val) {
 #define IABS(a) abs(a)
 
 // Checks.
-#define CHECKOK THCheck
-#define ARGCHECK THArgCheck
+// like TORCH_CHECK_ARG in PyTorch > 1.10
+#define ARGCHECK(cond, argN, ...) \
+  TORCH_CHECK(cond, "invalid argument ", argN, ": ", __VA_ARGS__)
 
 // Math.
 #define NORM3DF(x, y, z) sqrtf(x* x + y * y + z * z)

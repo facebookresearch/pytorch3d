@@ -1,4 +1,4 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
@@ -9,7 +9,7 @@ from typing import Dict, List
 
 import numpy as np
 import torch
-from pytorch3d.common.types import Device
+from pytorch3d.common.datatypes import Device
 from pytorch3d.datasets.utils import collate_batched_meshes
 from pytorch3d.ops import cubify
 from pytorch3d.renderer import (
@@ -98,7 +98,9 @@ def collate_batched_R2N2(batch: List[Dict]):  # pragma: no cover
     return collated_dict
 
 
-def compute_extrinsic_matrix(azimuth, elevation, distance):  # pragma: no cover
+def compute_extrinsic_matrix(
+    azimuth: float, elevation: float, distance: float
+):  # pragma: no cover
     """
     Copied from meshrcnn codebase:
     https://github.com/facebookresearch/meshrcnn/blob/main/shapenet/utils/coords.py#L96
@@ -138,6 +140,7 @@ def compute_extrinsic_matrix(azimuth, elevation, distance):  # pragma: no cover
     # rotates the model 90 degrees about the x axis. To compensate for this quirk we
     # roll that rotation into the extrinsic matrix here
     rot = torch.tensor([[1, 0, 0, 0], [0, 0, -1, 0], [0, 1, 0, 0], [0, 0, 0, 1]])
+    # pyre-fixme[16]: `Tensor` has no attribute `mm`.
     RT = RT.mm(rot.to(RT))
 
     return RT
@@ -384,7 +387,7 @@ def voxelize(voxel_coords, P, V):  # pragma: no cover
     return voxels
 
 
-def project_verts(verts, P, eps=1e-1):  # pragma: no cover
+def project_verts(verts, P, eps: float = 1e-1):  # pragma: no cover
     """
     Copied from meshrcnn codebase:
     https://github.com/facebookresearch/meshrcnn/blob/main/shapenet/utils/coords.py#L159

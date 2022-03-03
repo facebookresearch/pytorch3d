@@ -1,4 +1,4 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
@@ -10,7 +10,7 @@ from typing import Optional
 import torch
 import torch.nn as nn
 
-from ...common.types import Device
+from ...common.datatypes import Device
 from ...structures.meshes import Meshes
 from ..blending import (
     BlendParams,
@@ -64,6 +64,7 @@ class HardPhongShader(nn.Module):
         self.cameras = cameras
         self.blend_params = blend_params if blend_params is not None else BlendParams()
 
+    # pyre-fixme[14]: `to` overrides method defined in `Module` inconsistently.
     def to(self, device: Device):
         # Manually move to device modules which are not subclasses of nn.Module
         cameras = self.cameras
@@ -126,6 +127,7 @@ class SoftPhongShader(nn.Module):
         self.cameras = cameras
         self.blend_params = blend_params if blend_params is not None else BlendParams()
 
+    # pyre-fixme[14]: `to` overrides method defined in `Module` inconsistently.
     def to(self, device: Device):
         # Manually move to device modules which are not subclasses of nn.Module
         cameras = self.cameras
@@ -193,6 +195,7 @@ class HardGouraudShader(nn.Module):
         self.cameras = cameras
         self.blend_params = blend_params if blend_params is not None else BlendParams()
 
+    # pyre-fixme[14]: `to` overrides method defined in `Module` inconsistently.
     def to(self, device: Device):
         # Manually move to device modules which are not subclasses of nn.Module
         cameras = self.cameras
@@ -259,6 +262,7 @@ class SoftGouraudShader(nn.Module):
         self.cameras = cameras
         self.blend_params = blend_params if blend_params is not None else BlendParams()
 
+    # pyre-fixme[14]: `to` overrides method defined in `Module` inconsistently.
     def to(self, device: Device):
         # Manually move to device modules which are not subclasses of nn.Module
         cameras = self.cameras
@@ -297,7 +301,7 @@ def TexturedSoftPhongShader(
     lights: Optional[TensorProperties] = None,
     materials: Optional[Materials] = None,
     blend_params: Optional[BlendParams] = None,
-):
+) -> SoftPhongShader:
     """
     TexturedSoftPhongShader class has been DEPRECATED. Use SoftPhongShader instead.
     Preserving TexturedSoftPhongShader as a function for backwards compatibility.
@@ -346,6 +350,7 @@ class HardFlatShader(nn.Module):
         self.cameras = cameras
         self.blend_params = blend_params if blend_params is not None else BlendParams()
 
+    # pyre-fixme[14]: `to` overrides method defined in `Module` inconsistently.
     def to(self, device: Device):
         # Manually move to device modules which are not subclasses of nn.Module
         cameras = self.cameras

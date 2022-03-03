@@ -1,4 +1,4 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
@@ -106,7 +106,7 @@ def knn_points(
     version: int = -1,
     return_nn: bool = False,
     return_sorted: bool = True,
-):
+) -> _KNN:
     """
     K-Nearest neighbors on point clouds.
 

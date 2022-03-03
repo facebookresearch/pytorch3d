@@ -1,4 +1,4 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
@@ -9,7 +9,7 @@ import unittest
 import numpy as np
 import torch
 from common_testing import TestCaseMixin
-from pytorch3d.renderer.lighting import DirectionalLights, PointLights
+from pytorch3d.renderer.lighting import AmbientLights, DirectionalLights, PointLights
 from pytorch3d.transforms import RotateAxisAngle
 
 
@@ -120,6 +120,17 @@ class TestLights(TestCaseMixin, unittest.TestCase):
 
         with self.assertRaises(ValueError):
             PointLights(location=torch.randn(10, 4))
+
+    def test_initialize_ambient(self):
+        N = 13
+        color = 0.8 * torch.ones((N, 3))
+        lights = AmbientLights(ambient_color=color)
+        self.assertEqual(len(lights), N)
+        self.assertClose(lights.ambient_color, color)
+
+        lights = AmbientLights(ambient_color=color[:1])
+        self.assertEqual(len(lights), 1)
+        self.assertClose(lights.ambient_color, color[:1])
 
 
 class TestDiffuseLighting(TestCaseMixin, unittest.TestCase):

@@ -1,8 +1,12 @@
-# Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+# All rights reserved.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
+
 # shellcheck shell=bash
 # A set of useful bash functions for common functionality we need to do in
 # many build scripts
-
 
 # Setup CUDA environment variables, based on CU_VERSION
 #

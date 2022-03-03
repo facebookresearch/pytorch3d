@@ -1,4 +1,4 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
@@ -64,6 +64,28 @@ def _check_coplanar(boxes: torch.Tensor, eps: float = 1e-4) -> None:
     mat2 = normal.view(B, -1, 1)  # (B, P*3, 1)
     if not (mat1.bmm(mat2).abs() < eps).all().item():
         msg = "Plane vertices are not coplanar"
+        raise ValueError(msg)
+
+    return
+
+
+def _check_nonzero(boxes: torch.Tensor, eps: float = 1e-4) -> None:
+    """
+    Checks that the sides of the box have a non zero area
+    """
+    faces = torch.tensor(_box_triangles, dtype=torch.int64, device=boxes.device)
+    # pyre-fixme[16]: `boxes` has no attribute `index_select`.
+    verts = boxes.index_select(index=faces.view(-1), dim=1)
+    B = boxes.shape[0]
+    T, V = faces.shape
+    # (B, T, 3, 3) -> (B, T, 3)
+    v0, v1, v2 = verts.reshape(B, T, V, 3).unbind(2)
+
+    normals = torch.cross(v1 - v0, v2 - v0, dim=-1)  # (B, T, 3)
+    face_areas = normals.norm(dim=-1) / 2
+
+    if (face_areas < eps).any().item():
+        msg = "Planes have zero areas"
         raise ValueError(msg)
 
     return
@@ -138,6 +160,8 @@ def box3d_overlap(
 
     _check_coplanar(boxes1, eps)
     _check_coplanar(boxes2, eps)
+    _check_nonzero(boxes1, eps)
+    _check_nonzero(boxes2, eps)
 
     # pyre-fixme[16]: `_box3d_overlap` has no attribute `apply`.
     vol, iou = _box3d_overlap.apply(boxes1, boxes2)

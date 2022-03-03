@@ -1,4 +1,4 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
@@ -657,6 +657,18 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
 
         self.assertTrue(aux.material_colors is None)
         self.assertTrue(aux.texture_images is None)
+
+    def test_load_no_usemtl(self):
+        obj_filename = "missing_usemtl/cow.obj"
+        # obj_filename has no "usemtl material_1" line
+        filename = os.path.join(DATA_DIR, obj_filename)
+        # TexturesUV type
+        mesh = IO().load_mesh(filename)
+        self.assertIsNotNone(mesh.textures)
+
+        verts, faces, aux = load_obj(filename)
+        self.assertTrue("material_1" in aux.material_colors)
+        self.assertTrue("material_1" in aux.texture_images)
 
     def test_load_mtl_fail(self):
         # Faces have a material

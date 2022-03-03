@@ -1,4 +1,4 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
@@ -87,6 +87,7 @@ def vert_align(
             padding_mode=padding_mode,
             align_corners=align_corners,
         )  # (N, C, 1, V)
+        # pyre-fixme[28]: Unexpected keyword argument `dim`.
         feat_sampled = feat_sampled.squeeze(dim=2).transpose(1, 2)  # (N, V, C)
         feats_sampled.append(feat_sampled)
     feats_sampled = torch.cat(feats_sampled, dim=2)  # (N, V, sum(C))

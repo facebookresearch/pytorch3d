@@ -1,4 +1,4 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
@@ -33,9 +33,9 @@ def _cameras_from_opencv_projection(
     # has range [-1, 1] and the largest side has range [-u, u], with u > 1.
     # This convention is consistent with the PyTorch3D renderer, as well as
     # the transformation function `get_ndc_to_screen_transform`.
-    scale = (image_size_wh.to(R).min(dim=1, keepdim=True)[0] - 1) / 2.0
+    scale = image_size_wh.to(R).min(dim=1, keepdim=True)[0] / 2.0
     scale = scale.expand(-1, 2)
-    c0 = (image_size_wh - 1) / 2.0
+    c0 = image_size_wh / 2.0
 
     # Get the PyTorch3D focal length and principal point.
     focal_pytorch3d = focal_length / scale
@@ -55,6 +55,7 @@ def _cameras_from_opencv_projection(
         focal_length=focal_pytorch3d,
         principal_point=p0_pytorch3d,
         image_size=image_size,
+        device=R.device,
     )
 
 
@@ -75,9 +76,9 @@ def _opencv_from_cameras_projection(
     image_size_wh = image_size.to(R).flip(dims=(1,))
 
     # NDC to screen conversion.
-    scale = (image_size_wh.to(R).min(dim=1, keepdim=True)[0] - 1) / 2.0
+    scale = image_size_wh.to(R).min(dim=1, keepdim=True)[0] / 2.0
     scale = scale.expand(-1, 2)
-    c0 = (image_size_wh - 1) / 2.0
+    c0 = image_size_wh / 2.0
 
     # pyre-fixme[29]: `Union[BoundMethod[typing.Callable(torch.Tensor.__neg__)[[Named...
     principal_point = -p0_pytorch3d * scale + c0

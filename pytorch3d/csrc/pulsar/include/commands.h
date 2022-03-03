@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -23,13 +23,11 @@
 // #pragma push
 // #pragma diag_suppress = 68
 #include <ATen/cuda/CUDAContext.h>
-#include <THC/THC.h>
 // #pragma pop
 #include "../cuda/commands.h"
 #else
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Weverything"
-#include <TH/TH.h>
 #pragma clang diagnostic pop
 #include "../host/commands.h"
 #endif

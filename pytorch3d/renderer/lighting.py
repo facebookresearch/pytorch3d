@@ -1,4 +1,4 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
@@ -8,7 +8,7 @@
 import torch
 import torch.nn.functional as F
 
-from ..common.types import Device
+from ..common.datatypes import Device
 from .utils import TensorProperties, convert_to_tensors_and_broadcast
 
 
@@ -323,7 +323,7 @@ class AmbientLights(TensorProperties):
         return torch.zeros_like(points)
 
 
-def _validate_light_properties(obj):
+def _validate_light_properties(obj) -> None:
     props = ("ambient_color", "diffuse_color", "specular_color")
     for n in props:
         t = getattr(obj, n)

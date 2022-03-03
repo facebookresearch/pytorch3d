@@ -1,4 +1,4 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
@@ -13,7 +13,8 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from iopath.common.file_io import PathManager
-from pytorch3d.common.types import Device
+from pytorch3d.common.compat import meshgrid_ij
+from pytorch3d.common.datatypes import Device
 from pytorch3d.io.utils import _open_file, _read_image
 
 
@@ -273,7 +274,7 @@ def make_material_atlas(
 
     # Meshgrid returns (row, column) i.e (Y, X)
     # Change order to (X, Y) to make the grid.
-    Y, X = torch.meshgrid(rng, rng)
+    Y, X = meshgrid_ij(rng, rng)
     # pyre-fixme[28]: Unexpected keyword argument `axis`.
     grid = torch.stack([X, Y], axis=-1)  # (R, R, 2)
 
@@ -454,8 +455,18 @@ def _load_texture_images(
     final_material_properties = {}
     texture_images = {}
 
+    used_material_names = list(material_names)
+    if not used_material_names and material_properties:
+        if len(material_properties) > 1:
+            raise ValueError(
+                "Multiple materials but no usemtl declarations in the obj file"
+            )
+        # No materials were specified in obj file and only one is in the
+        # specified .mtl file, so we use it.
+        used_material_names.append(next(iter(material_properties.keys())))
+
     # Only keep the materials referenced in the obj.
-    for material_name in material_names:
+    for material_name in used_material_names:
         if material_name in texture_files:
             # Load the texture image.
             path = os.path.join(data_dir, texture_files[material_name])

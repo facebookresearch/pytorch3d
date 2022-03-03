@@ -1,4 +1,4 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
@@ -7,10 +7,8 @@
 from typing import Tuple
 
 import torch
-from pytorch3d.renderer import RayBundle, ray_bundle_to_ray_points
-
-from .harmonic_embedding import HarmonicEmbedding
-from .linear_with_repeat import LinearWithRepeat
+from pytorch3d.common.linear_with_repeat import LinearWithRepeat
+from pytorch3d.renderer import HarmonicEmbedding, RayBundle, ray_bundle_to_ray_points
 
 
 def _xavier_init(linear):

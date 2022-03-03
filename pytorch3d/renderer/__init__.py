@@ -1,4 +1,4 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
@@ -10,7 +10,7 @@ from .blending import (
     sigmoid_alpha_blend,
     softmax_rgb_blend,
 )
-from .camera_utils import rotate_on_spot
+from .camera_utils import join_cameras_as_batch, rotate_on_spot
 from .cameras import OpenGLOrthographicCameras  # deprecated
 from .cameras import OpenGLPerspectiveCameras  # deprecated
 from .cameras import SfMOrthographicCameras  # deprecated
@@ -29,9 +29,12 @@ from .implicit import (
     AbsorptionOnlyRaymarcher,
     EmissionAbsorptionRaymarcher,
     GridRaysampler,
+    HarmonicEmbedding,
     ImplicitRenderer,
     MonteCarloRaysampler,
+    MultinomialRaysampler,
     NDCGridRaysampler,
+    NDCMultinomialRaysampler,
     RayBundle,
     VolumeRenderer,
     VolumeSampler,
@@ -67,7 +70,12 @@ from .points import (
     PulsarPointsRenderer,
     rasterize_points,
 )
-from .utils import TensorProperties, convert_to_tensors_and_broadcast
+from .utils import (
+    TensorProperties,
+    convert_to_tensors_and_broadcast,
+    ndc_grid_sample,
+    ndc_to_grid_sample_coords,
+)
 
 
 __all__ = [k for k in globals().keys() if not k.startswith("_")]

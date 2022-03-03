@@ -1,4 +1,4 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
@@ -7,7 +7,7 @@
 
 import torch
 
-from ..common.types import Device
+from ..common.datatypes import Device
 from .utils import TensorProperties
 
 

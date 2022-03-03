@@ -1,4 +1,4 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
@@ -162,7 +162,7 @@ class AbsorptionOnlyRaymarcher(torch.nn.Module):
         return opacities
 
 
-def _shifted_cumprod(x, shift=1):
+def _shifted_cumprod(x, shift: int = 1):
     """
     Computes `torch.cumprod(x, dim=-1)` and prepends `shift` number of
     ones and removes `shift` trailing elements to/from the last dimension
@@ -177,7 +177,7 @@ def _shifted_cumprod(x, shift=1):
 
 def _check_density_bounds(
     rays_densities: torch.Tensor, bounds: Tuple[float, float] = (0.0, 1.0)
-):
+) -> None:
     """
     Checks whether the elements of `rays_densities` range within `bounds`.
     If not issues a warning.
@@ -197,7 +197,7 @@ def _check_raymarcher_inputs(
     features_can_be_none: bool = False,
     z_can_be_none: bool = False,
     density_1d: bool = True,
-):
+) -> None:
     """
     Checks the validity of the inputs to raymarching algorithms.
     """

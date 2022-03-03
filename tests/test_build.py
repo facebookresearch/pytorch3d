@@ -1,4 +1,4 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
@@ -41,7 +41,7 @@ class TestBuild(unittest.TestCase):
 
         extensions = ("py", "cu", "cuh", "cpp", "h", "hpp", "sh")
 
-        expect = "Copyright (c) Facebook, Inc. and its affiliates.\n"
+        expect = "Copyright (c) Meta Platforms, Inc. and affiliates.\n"
 
         files_missing_copyright_header = []
 

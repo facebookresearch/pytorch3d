@@ -16,10 +16,11 @@ This is the system that has its origin on the image plane and the `Z`-axis perpe
 This is the normalized coordinate system that confines in a volume the rendered part of the object/scene. Also known as view volume. For square images, under the PyTorch3D convention, `(+1, +1, znear)` is the top left near corner, and `(-1, -1, zfar)` is the bottom right far corner of the volume. For non-square images, the side of the volume in `XY` with the smallest length ranges from `[-1, 1]` while the larger side from `[-s, s]`, where `s` is the aspect ratio and `s > 1` (larger divided by smaller side).
 The transformation from view to NDC happens after applying the camera projection matrix (`P`).
 * **Screen coordinate system**
-This is another representation of the view volume with the `XY` coordinates defined in pixel space instead of a normalized space.
+This is another representation of the view volume with the `XY` coordinates defined in pixel space instead of a normalized space. (0,0) is the top left corner of the top left pixel
+and (W,H) is the bottom right corner of the bottom right pixel.
 
 An illustration of the 4 coordinate systems is shown below
-![cameras](https://user-images.githubusercontent.com/4369065/90317960-d9b8db80-dee1-11ea-8088-39c414b1e2fa.png)
+![cameras](https://user-images.githubusercontent.com/669761/145090051-67b506d7-6d73-4826-a677-5873b7cb92ba.png)
 
 ## Defining Cameras in PyTorch3D
 
@@ -44,7 +45,7 @@ All cameras inherit from `CamerasBase` which is a base class for all cameras. Py
 * `transform_points` which takes a set of input points in world coordinates and projects to NDC coordinates ranging from [-1, -1, znear] to  [+1, +1, zfar].
 * `get_ndc_camera_transform` which defines the conversion to PyTorch3D's NDC space and is called when interfacing with the PyTorch3D renderer. If the camera is defined in NDC space, then the identity transform is returned. If the cameras is defined in screen space, the conversion from screen to NDC is returned. If users define their own camera in screen space, they need to think of the screen to NDC conversion. We provide examples for the `PerspectiveCameras` and `OrthographicCameras`.
 * `transform_points_ndc` which takes a set of points in world coordinates and projects them to PyTorch3D's NDC space
-* `transform_points_screen` which takes a set of input points in world coordinates and projects them to the screen coordinates ranging from [0, 0, znear] to [W-1, H-1, zfar]
+* `transform_points_screen` which takes a set of input points in world coordinates and projects them to the screen coordinates ranging from [0, 0, znear] to [W, H, zfar]
 
 Users can easily customize their own cameras. For each new camera, users should implement the `get_projection_transform` routine that returns the mapping `P` from camera view coordinates to NDC coordinates.
 
@@ -83,8 +84,8 @@ cameras_ndc = PerspectiveCameras(focal_length=fcl_ndc, principal_point=prp_ndc)
 
 # Screen space camera
 image_size = ((128, 256),)    # (h, w)
-fcl_screen = (76.2,)          # fcl_ndc * (min(image_size) - 1) / 2
-prp_screen = ((114.8, 31.75), )  # (w - 1) / 2 - px_ndc * (min(image_size) - 1) / 2, (h - 1) / 2 - py_ndc * (min(image_size) - 1) / 2
+fcl_screen = (76.8,)          # fcl_ndc * min(image_size) / 2
+prp_screen = ((115.2, 48), )  # w / 2 - px_ndc * min(image_size) / 2, h / 2 - py_ndc * min(image_size) / 2
 cameras_screen = PerspectiveCameras(focal_length=fcl_screen, principal_point=prp_screen, in_ndc=False, image_size=image_size)
 ```
 
@@ -92,9 +93,9 @@ The relationship between screen and NDC specifications of a camera's `focal_leng
 The transformation of x and y coordinates between screen and NDC is exactly the same as for px and py.
 
 ```
-fx_ndc = fx_screen * 2.0 / (s - 1)
-fy_ndc = fy_screen * 2.0 / (s - 1)
+fx_ndc = fx_screen * 2.0 / s
+fy_ndc = fy_screen * 2.0 / s
 
-px_ndc = - (px_screen - (image_width - 1) / 2.0) * 2.0 / (s - 1)
-py_ndc = - (py_screen - (image_height - 1) / 2.0) * 2.0 / (s - 1)
+px_ndc = - (px_screen - image_width / 2.0) * 2.0 / s
+py_ndc = - (py_screen - image_height / 2.0) * 2.0 / s
 ```

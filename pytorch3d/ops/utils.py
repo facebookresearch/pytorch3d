@@ -1,4 +1,4 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
@@ -137,7 +137,11 @@ def convert_pointclouds_to_tensor(pcl: Union[torch.Tensor, "Pointclouds"]):
     elif torch.is_tensor(pcl):
         X = pcl
         num_points = X.shape[1] * torch.ones(  # type: ignore
-            X.shape[0], device=X.device, dtype=torch.int64
+            # pyre-fixme[16]: Item `Pointclouds` of `Union[Pointclouds, Tensor]` has
+            #  no attribute `shape`.
+            X.shape[0],
+            device=X.device,
+            dtype=torch.int64,
         )
     else:
         raise ValueError(
@@ -146,7 +150,7 @@ def convert_pointclouds_to_tensor(pcl: Union[torch.Tensor, "Pointclouds"]):
     return X, num_points
 
 
-def is_pointclouds(pcl: Union[torch.Tensor, "Pointclouds"]):
+def is_pointclouds(pcl: Union[torch.Tensor, "Pointclouds"]) -> bool:
     """Checks whether the input `pcl` is an instance of `Pointclouds`
     by checking the existence of `points_padded` and `num_points_per_cloud`
     functions.

@@ -1,4 +1,4 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
@@ -14,7 +14,7 @@ from pytorch3d.structures.pointclouds import Pointclouds
 
 def _validate_chamfer_reduction_inputs(
     batch_reduction: Union[str, None], point_reduction: str
-):
+) -> None:
     """Check the requested reductions are valid.
 
     Args:

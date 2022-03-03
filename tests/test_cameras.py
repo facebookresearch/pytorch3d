@@ -1,10 +1,11 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-# @lint-ignore-every LICENSELINT
+# @licenselint-loose-mode
+
 # Some of the code below is adapted from Soft Rasterizer (SoftRas)
 #
 # Copyright (c) 2017 Hiroharu Kato
@@ -36,6 +37,7 @@ import unittest
 import numpy as np
 import torch
 from common_testing import TestCaseMixin
+from pytorch3d.renderer.camera_utils import join_cameras_as_batch
 from pytorch3d.renderer.cameras import (
     CamerasBase,
     FoVOrthographicCameras,
@@ -130,9 +132,9 @@ def ndc_to_screen_points_naive(points, imsize):
     """
     height, width = imsize.unbind(1)
     width = width.view(-1, 1)
-    half_width = (width - 1.0) / 2.0
+    half_width = width / 2.0
     height = height.view(-1, 1)
-    half_height = (height - 1.0) / 2.0
+    half_height = height / 2.0
 
     scale = (
         half_width * (height > width).float() + half_height * (height <= width).float()
@@ -524,7 +526,7 @@ class TestCamerasCommon(TestCaseMixin, unittest.TestCase):
             # (height, width)
             image_size = torch.randint(low=2, high=64, size=(batch_size, 2))
             # scale
-            scale = (image_size.min(dim=1, keepdim=True).values - 1.0) / 2.0
+            scale = (image_size.min(dim=1, keepdim=True).values) / 2.0
 
             ndc_cam_params["focal_length"] = fcl
             ndc_cam_params["principal_point"] = prc
@@ -533,7 +535,7 @@ class TestCamerasCommon(TestCaseMixin, unittest.TestCase):
             screen_cam_params["image_size"] = image_size
             screen_cam_params["focal_length"] = fcl * scale
             screen_cam_params["principal_point"] = (
-                image_size[:, [1, 0]] - 1.0
+                image_size[:, [1, 0]]
             ) / 2.0 - prc * scale
             screen_cam_params["in_ndc"] = False
         else:
@@ -637,7 +639,7 @@ class TestCamerasCommon(TestCaseMixin, unittest.TestCase):
             xyz_project_screen_naive = ndc_to_screen_points_naive(
                 xyz_project_ndc, image_size
             )
-            # we set atol to 1e-4, remember that screen points are in [0, W-1]x[0, H-1] space
+            # we set atol to 1e-4, remember that screen points are in [0, W]x[0, H] space
             self.assertClose(xyz_project_screen, xyz_project_screen_naive, atol=1e-4)
 
     def test_equiv_project_points(self, batch_size=50, num_points=100):
@@ -687,6 +689,99 @@ class TestCamerasCommon(TestCaseMixin, unittest.TestCase):
                     self.assertSeparate(val, val_clone)
                 else:
                     self.assertTrue(val == val_clone)
+
+    def test_join_cameras_as_batch_errors(self):
+        cam0 = PerspectiveCameras(device="cuda:0")
+        cam1 = OrthographicCameras(device="cuda:0")
+
+        # Cameras not of the same type
+        with self.assertRaisesRegex(ValueError, "same type"):
+            join_cameras_as_batch([cam0, cam1])
+
+        cam2 = OrthographicCameras(device="cpu")
+        # Cameras not on the same device
+        with self.assertRaisesRegex(ValueError, "same device"):
+            join_cameras_as_batch([cam1, cam2])
+
+        cam3 = OrthographicCameras(in_ndc=False, device="cuda:0")
+        # Different coordinate systems -- all should be in ndc or in screen
+        with self.assertRaisesRegex(
+            ValueError, "Attribute _in_ndc is not constant across inputs"
+        ):
+            join_cameras_as_batch([cam1, cam3])
+
+    def join_cameras_as_batch_fov(self, camera_cls):
+        R0 = torch.randn((6, 3, 3))
+        R1 = torch.randn((3, 3, 3))
+        cam0 = camera_cls(znear=10.0, zfar=100.0, R=R0, device="cuda:0")
+        cam1 = camera_cls(znear=10.0, zfar=200.0, R=R1, device="cuda:0")
+
+        cam_batch = join_cameras_as_batch([cam0, cam1])
+
+        self.assertEqual(cam_batch._N, cam0._N + cam1._N)
+        self.assertEqual(cam_batch.device, cam0.device)
+        self.assertClose(cam_batch.R, torch.cat((R0, R1), dim=0).to(device="cuda:0"))
+
+    def join_cameras_as_batch(self, camera_cls):
+        R0 = torch.randn((6, 3, 3))
+        R1 = torch.randn((3, 3, 3))
+        p0 = torch.randn((6, 2, 1))
+        p1 = torch.randn((3, 2, 1))
+        f0 = 5.0
+        f1 = torch.randn(3, 2)
+        f2 = torch.randn(3, 1)
+        cam0 = camera_cls(
+            R=R0,
+            focal_length=f0,
+            principal_point=p0,
+        )
+        cam1 = camera_cls(
+            R=R1,
+            focal_length=f0,
+            principal_point=p1,
+        )
+        cam2 = camera_cls(
+            R=R1,
+            focal_length=f1,
+            principal_point=p1,
+        )
+        cam3 = camera_cls(
+            R=R1,
+            focal_length=f2,
+            principal_point=p1,
+        )
+        cam_batch = join_cameras_as_batch([cam0, cam1])
+
+        self.assertEqual(cam_batch._N, cam0._N + cam1._N)
+        self.assertEqual(cam_batch.device, cam0.device)
+        self.assertClose(cam_batch.R, torch.cat((R0, R1), dim=0))
+        self.assertClose(cam_batch.principal_point, torch.cat((p0, p1), dim=0))
+        self.assertEqual(cam_batch._in_ndc, cam0._in_ndc)
+
+        # Test one broadcasted value and one fixed value
+        # Focal length as (N,) in one camera and (N, 2) in the other
+        cam_batch = join_cameras_as_batch([cam0, cam2])
+        self.assertEqual(cam_batch._N, cam0._N + cam2._N)
+        self.assertClose(cam_batch.R, torch.cat((R0, R1), dim=0))
+        self.assertClose(
+            cam_batch.focal_length,
+            torch.cat([torch.tensor([[f0, f0]]).expand(6, -1), f1], dim=0),
+        )
+
+        # Focal length as (N, 1) in one camera and (N, 2) in the other
+        cam_batch = join_cameras_as_batch([cam2, cam3])
+        self.assertClose(
+            cam_batch.focal_length,
+            torch.cat([f1, f2.expand(-1, 2)], dim=0),
+        )
+
+    def test_join_batch_perspective(self):
+        self.join_cameras_as_batch_fov(FoVPerspectiveCameras)
+        self.join_cameras_as_batch(PerspectiveCameras)
+
+    def test_join_batch_orthographic(self):
+        self.join_cameras_as_batch_fov(FoVOrthographicCameras)
+        self.join_cameras_as_batch(OrthographicCameras)
 
 
 ############################################################
@@ -783,17 +878,52 @@ class TestFoVPerspectiveProjection(TestCaseMixin, unittest.TestCase):
         self.assertTrue(cam.znear.shape == (2,))
         self.assertTrue(cam.zfar.shape == (2,))
 
-        # update znear element 1
-        cam[1].znear = 20.0
-        self.assertTrue(cam.znear[1] == 20.0)
-
-        # Get item and get value
-        c0 = cam[0]
-        self.assertTrue(c0.zfar == 100.0)
-
         # Test to
         new_cam = cam.to(device=device)
         self.assertTrue(new_cam.device == device)
+
+    def test_getitem(self):
+        R_matrix = torch.randn((6, 3, 3))
+        cam = FoVPerspectiveCameras(znear=10.0, zfar=100.0, R=R_matrix)
+
+        # Check get item returns an instance of the same class
+        # with all the same keys
+        c0 = cam[0]
+        self.assertTrue(isinstance(c0, FoVPerspectiveCameras))
+        self.assertEqual(cam.__dict__.keys(), c0.__dict__.keys())
+
+        # Check all fields correct in get item with int index
+        self.assertEqual(len(c0), 1)
+        self.assertClose(c0.zfar, torch.tensor([100.0]))
+        self.assertClose(c0.znear, torch.tensor([10.0]))
+        self.assertClose(c0.R, R_matrix[0:1, ...])
+        self.assertEqual(c0.device, torch.device("cpu"))
+
+        # Check list(int) index
+        c012 = cam[[0, 1, 2]]
+        self.assertEqual(len(c012), 3)
+        self.assertClose(c012.zfar, torch.tensor([100.0] * 3))
+        self.assertClose(c012.znear, torch.tensor([10.0] * 3))
+        self.assertClose(c012.R, R_matrix[0:3, ...])
+
+        # Check torch.LongTensor index
+        index = torch.tensor([1, 3, 5], dtype=torch.int64)
+        c135 = cam[index]
+        self.assertEqual(len(c135), 3)
+        self.assertClose(c135.zfar, torch.tensor([100.0] * 3))
+        self.assertClose(c135.znear, torch.tensor([10.0] * 3))
+        self.assertClose(c135.R, R_matrix[[1, 3, 5], ...])
+
+        # Check errors with get item
+        with self.assertRaisesRegex(ValueError, "out of bounds"):
+            cam[6]
+
+        with self.assertRaisesRegex(ValueError, "Invalid index type"):
+            cam[slice(0, 1)]
+
+        with self.assertRaisesRegex(ValueError, "Invalid index type"):
+            index = torch.tensor([1, 3, 5], dtype=torch.float32)
+            cam[index]
 
     def test_get_full_transform(self):
         cam = FoVPerspectiveCameras()
@@ -821,7 +951,7 @@ class TestFoVPerspectiveProjection(TestCaseMixin, unittest.TestCase):
     def test_perspective_type(self):
         cam = FoVPerspectiveCameras(znear=1.0, zfar=10.0, fov=60.0)
         self.assertTrue(cam.is_perspective())
-        self.assertEquals(cam.get_znear(), 1.0)
+        self.assertEqual(cam.get_znear(), 1.0)
 
 
 ############################################################
@@ -917,7 +1047,31 @@ class TestFoVOrthographicProjection(TestCaseMixin, unittest.TestCase):
     def test_perspective_type(self):
         cam = FoVOrthographicCameras(znear=1.0, zfar=10.0)
         self.assertFalse(cam.is_perspective())
-        self.assertEquals(cam.get_znear(), 1.0)
+        self.assertEqual(cam.get_znear(), 1.0)
+
+    def test_getitem(self):
+        R_matrix = torch.randn((6, 3, 3))
+        scale = torch.tensor([[1.0, 1.0, 1.0]], requires_grad=True)
+        cam = FoVOrthographicCameras(
+            znear=10.0, zfar=100.0, R=R_matrix, scale_xyz=scale
+        )
+
+        # Check get item returns an instance of the same class
+        # with all the same keys
+        c0 = cam[0]
+        self.assertTrue(isinstance(c0, FoVOrthographicCameras))
+        self.assertEqual(cam.__dict__.keys(), c0.__dict__.keys())
+
+        # Check torch.LongTensor index
+        index = torch.tensor([1, 3, 5], dtype=torch.int64)
+        c135 = cam[index]
+        self.assertEqual(len(c135), 3)
+        self.assertClose(c135.zfar, torch.tensor([100.0] * 3))
+        self.assertClose(c135.znear, torch.tensor([10.0] * 3))
+        self.assertClose(c135.min_x, torch.tensor([-1.0] * 3))
+        self.assertClose(c135.max_x, torch.tensor([1.0] * 3))
+        self.assertClose(c135.R, R_matrix[[1, 3, 5], ...])
+        self.assertClose(c135.scale_xyz, scale.expand(3, -1))
 
 
 ############################################################
@@ -974,7 +1128,31 @@ class TestOrthographicProjection(TestCaseMixin, unittest.TestCase):
     def test_perspective_type(self):
         cam = OrthographicCameras(focal_length=5.0, principal_point=((2.5, 2.5),))
         self.assertFalse(cam.is_perspective())
-        self.assertEquals(cam.get_znear(), None)
+        self.assertIsNone(cam.get_znear())
+
+    def test_getitem(self):
+        R_matrix = torch.randn((6, 3, 3))
+        principal_point = torch.randn((6, 2, 1))
+        focal_length = 5.0
+        cam = OrthographicCameras(
+            R=R_matrix,
+            focal_length=focal_length,
+            principal_point=principal_point,
+        )
+
+        # Check get item returns an instance of the same class
+        # with all the same keys
+        c0 = cam[0]
+        self.assertTrue(isinstance(c0, OrthographicCameras))
+        self.assertEqual(cam.__dict__.keys(), c0.__dict__.keys())
+
+        # Check torch.LongTensor index
+        index = torch.tensor([1, 3, 5], dtype=torch.int64)
+        c135 = cam[index]
+        self.assertEqual(len(c135), 3)
+        self.assertClose(c135.focal_length, torch.tensor([[5.0, 5.0]] * 3))
+        self.assertClose(c135.R, R_matrix[[1, 3, 5], ...])
+        self.assertClose(c135.principal_point, principal_point[[1, 3, 5], ...])
 
 
 ############################################################
@@ -1026,4 +1204,31 @@ class TestPerspectiveProjection(TestCaseMixin, unittest.TestCase):
     def test_perspective_type(self):
         cam = PerspectiveCameras(focal_length=5.0, principal_point=((2.5, 2.5),))
         self.assertTrue(cam.is_perspective())
-        self.assertEquals(cam.get_znear(), None)
+        self.assertIsNone(cam.get_znear())
+
+    def test_getitem(self):
+        R_matrix = torch.randn((6, 3, 3))
+        principal_point = torch.randn((6, 2, 1))
+        focal_length = 5.0
+        cam = PerspectiveCameras(
+            R=R_matrix,
+            focal_length=focal_length,
+            principal_point=principal_point,
+        )
+
+        # Check get item returns an instance of the same class
+        # with all the same keys
+        c0 = cam[0]
+        self.assertTrue(isinstance(c0, PerspectiveCameras))
+        self.assertEqual(cam.__dict__.keys(), c0.__dict__.keys())
+
+        # Check torch.LongTensor index
+        index = torch.tensor([1, 3, 5], dtype=torch.int64)
+        c135 = cam[index]
+        self.assertEqual(len(c135), 3)
+        self.assertClose(c135.focal_length, torch.tensor([[5.0, 5.0]] * 3))
+        self.assertClose(c135.R, R_matrix[[1, 3, 5], ...])
+        self.assertClose(c135.principal_point, principal_point[[1, 3, 5], ...])
+
+        # Check in_ndc is handled correctly
+        self.assertEqual(cam._in_ndc, c0._in_ndc)

@@ -1,4 +1,4 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
@@ -8,7 +8,7 @@ from typing import List, Union
 
 import torch
 
-from ..common.types import Device, make_device
+from ..common.datatypes import Device, make_device
 from . import utils as struct_utils
 
 
@@ -1557,7 +1557,7 @@ class Meshes:
             raise ValueError("Meshes does not have textures")
 
 
-def join_meshes_as_batch(meshes: List[Meshes], include_textures: bool = True):
+def join_meshes_as_batch(meshes: List[Meshes], include_textures: bool = True) -> Meshes:
     """
     Merge multiple Meshes objects, i.e. concatenate the meshes objects. They
     must all be on the same device. If include_textures is true, they must all

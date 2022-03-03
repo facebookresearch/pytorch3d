@@ -1,4 +1,4 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
@@ -98,7 +98,7 @@ def _validate_ray_bundle_variables(
     rays_origins: torch.Tensor,
     rays_directions: torch.Tensor,
     rays_lengths: torch.Tensor,
-):
+) -> None:
     """
     Validate the shapes of RayBundle variables
     `rays_origins`, `rays_directions`, and `rays_lengths`.

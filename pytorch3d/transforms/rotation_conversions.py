@@ -1,4 +1,4 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
@@ -9,7 +9,7 @@ from typing import Optional
 import torch
 import torch.nn.functional as F
 
-from ..common.types import Device
+from ..common.datatypes import Device
 
 
 """

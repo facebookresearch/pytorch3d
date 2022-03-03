@@ -1,4 +1,4 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Deque, Optional, Union
 
 from iopath.common.file_io import PathManager
-from pytorch3d.common.types import Device
+from pytorch3d.common.datatypes import Device
 from pytorch3d.structures import Meshes, Pointclouds
 
 from .obj_io import MeshObjFormat
