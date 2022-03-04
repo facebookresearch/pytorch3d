@@ -75,7 +75,7 @@
 <div class="prompt input_prompt">In [ ]:</div>
 <div class="inner_cell">
 <div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Copyright (c) Meta Platforms, Inc. and affiliates. All rights reserved.</span>
 </pre></div>
 </div>
 </div>
@@ -135,7 +135,8 @@
             <span class="n">torch</span><span class="o">.</span><span class="n">version</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"."</span><span class="p">,</span><span class="s2">""</span><span class="p">),</span>
             <span class="sa">f</span><span class="s2">"_pyt</span><span class="si">{</span><span class="n">pyt_version_str</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">])</span>
-        <span class="o">!</span>pip install pytorch3d -f https://dl.fbaipublicfiles.com/pytorch3d/packaging/wheels/<span class="o">{</span>version_str<span class="o">}</span>/download.html
+        <span class="o">!</span>pip install fvcore iopath
+        <span class="o">!</span>pip install --no-index --no-cache-dir pytorch3d -f https://dl.fbaipublicfiles.com/pytorch3d/packaging/wheels/<span class="o">{</span>version_str<span class="o">}</span>/download.html
     <span class="k">else</span><span class="p">:</span>
         <span class="c1"># We try to install PyTorch3D from source.</span>
         <span class="o">!</span>curl -LO https://github.com/NVIDIA/cub/archive/1.10.0.tar.gz
@@ -172,7 +173,7 @@
 <span class="kn">from</span> <span class="nn">pytorch3d.transforms</span> <span class="kn">import</span> <span class="n">so3_exp_map</span>
 <span class="kn">from</span> <span class="nn">pytorch3d.renderer</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">FoVPerspectiveCameras</span><span class="p">,</span> 
-    <span class="n">NDCGridRaysampler</span><span class="p">,</span>
+    <span class="n">NDCMultinomialRaysampler</span><span class="p">,</span>
     <span class="n">MonteCarloRaysampler</span><span class="p">,</span>
     <span class="n">EmissionAbsorptionRaymarcher</span><span class="p">,</span>
     <span class="n">ImplicitRenderer</span><span class="p">,</span>
@@ -266,7 +267,7 @@ It renders the cow mesh from the <code>fit_textured_mesh.ipynb</code> tutorial f
 <ul>
 <li>The <em>raysampler</em> is responsible for emitting rays from image pixels and sampling the points along them. Here, we use two different raysamplers:<ul>
 <li><code>MonteCarloRaysampler</code> is used to generate rays from a random subset of pixels of the image plane. The random subsampling of pixels is carried out during <strong>training</strong> to decrease the memory consumption of the implicit model.</li>
-<li><code>NDCGridRaysampler</code> which follows the standard PyTorch3D coordinate grid convention (+X from right to left; +Y from bottom to top; +Z away from the user). In combination with the implicit model of the scene, <code>NDCGridRaysampler</code> consumes a large amount of memory and, hence, is only used for visualizing the results of the training at <strong>test</strong> time.</li>
+<li><code>NDCMultinomialRaysampler</code> which follows the standard PyTorch3D coordinate grid convention (+X from right to left; +Y from bottom to top; +Z away from the user). In combination with the implicit model of the scene, <code>NDCMultinomialRaysampler</code> consumes a large amount of memory and, hence, is only used for visualizing the results of the training at <strong>test</strong> time.</li>
 </ul>
 </li>
 <li>The <em>raymarcher</em> takes the densities and colors sampled along each ray and renders each ray into a color and an opacity value of the ray's source pixel. Here we use the <code>EmissionAbsorptionRaymarcher</code> which implements the standard Emission-Absorption raymarching algorithm.</li>
@@ -294,10 +295,10 @@ It renders the cow mesh from the <code>fit_textured_mesh.ipynb</code> tutorial f
 
 <span class="c1"># 1) Instantiate the raysamplers.</span>
 
-<span class="c1"># Here, NDCGridRaysampler generates a rectangular image</span>
+<span class="c1"># Here, NDCMultinomialRaysampler generates a rectangular image</span>
 <span class="c1"># grid of rays whose coordinates follow the PyTorch3D</span>
 <span class="c1"># coordinate conventions.</span>
-<span class="n">raysampler_grid</span> <span class="o">=</span> <span class="n">NDCGridRaysampler</span><span class="p">(</span>
+<span class="n">raysampler_grid</span> <span class="o">=</span> <span class="n">NDCMultinomialRaysampler</span><span class="p">(</span>
     <span class="n">image_height</span><span class="o">=</span><span class="n">render_size</span><span class="p">,</span>
     <span class="n">image_width</span><span class="o">=</span><span class="n">render_size</span><span class="p">,</span>
     <span class="n">n_pts_per_ray</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span>
@@ -926,7 +927,7 @@ described in the previous cell.</p>
             <span class="n">fov</span><span class="o">=</span><span class="n">target_cameras</span><span class="o">.</span><span class="n">fov</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
             <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="c1"># Note that we again render with `NDCGridRaySampler`</span>
+        <span class="c1"># Note that we again render with `NDCMultinomialRaysampler`</span>
         <span class="c1"># and the batched_forward function of neural_radiance_field.</span>
         <span class="n">frames</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
             <span class="n">renderer_grid</span><span class="p">(</span>
@@ -950,8 +951,8 @@ described in the previous cell.</p>
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="6.-Conclusion">6. Conclusion<a class="anchor-link" href="#6.-Conclusion">¶</a></h2><p>In this tutorial, we have shown how to optimize an implicit representation of a scene such that the renders of the scene from known viewpoints match the observed images for each viewpoint. The rendering was carried out using the PyTorch3D's implicit function renderer composed of either a <code>MonteCarloRaysampler</code> or <code>NDCGridRaysampler</code>, and an <code>EmissionAbsorptionRaymarcher</code>.</p>
+<h2 id="6.-Conclusion">6. Conclusion<a class="anchor-link" href="#6.-Conclusion">¶</a></h2><p>In this tutorial, we have shown how to optimize an implicit representation of a scene such that the renders of the scene from known viewpoints match the observed images for each viewpoint. The rendering was carried out using the PyTorch3D's implicit function renderer composed of either a <code>MonteCarloRaysampler</code> or <code>NDCMultinomialRaysampler</code>, and an <code>EmissionAbsorptionRaymarcher</code>.</p>
 </div>
 </div>
 </div>
-</div></div></div></div></div><footer class="nav-footer" id="footer"><section class="sitemap"><div class="footerSection"><div class="social"><a class="github-button" href="https://github.com/facebookresearch/pytorch3d" data-count-href="https://github.com/facebookresearch/pytorch3d/stargazers" data-show-count="true" data-count-aria-label="# stargazers on GitHub" aria-label="Star PyTorch3D on GitHub">pytorch3d</a></div></div></section><a href="https://opensource.facebook.com/" target="_blank" rel="noreferrer noopener" class="fbOpenSource"><img src="/img/oss_logo.png" alt="Facebook Open Source" width="170" height="45"/></a><section class="copyright">Copyright © 2021 Meta Platforms, Inc<br/>Legal:<a href="https://opensource.facebook.com/legal/privacy/" target="_blank" rel="noreferrer noopener">Privacy</a><a href="https://opensource.facebook.com/legal/terms/" target="_blank" rel="noreferrer noopener">Terms</a></section></footer></div></body></html>
+</div></div></div></div></div><footer class="nav-footer" id="footer"><section class="sitemap"><div class="footerSection"><div class="social"><a class="github-button" href="https://github.com/facebookresearch/pytorch3d" data-count-href="https://github.com/facebookresearch/pytorch3d/stargazers" data-show-count="true" data-count-aria-label="# stargazers on GitHub" aria-label="Star PyTorch3D on GitHub">pytorch3d</a></div></div></section><a href="https://opensource.facebook.com/" target="_blank" rel="noreferrer noopener" class="fbOpenSource"><img src="/img/oss_logo.png" alt="Facebook Open Source" width="170" height="45"/></a><section class="copyright">Copyright © 2022 Meta Platforms, Inc<br/>Legal:<a href="https://opensource.facebook.com/legal/privacy/" target="_blank" rel="noreferrer noopener">Privacy</a><a href="https://opensource.facebook.com/legal/terms/" target="_blank" rel="noreferrer noopener">Terms</a></section></footer></div></body></html>

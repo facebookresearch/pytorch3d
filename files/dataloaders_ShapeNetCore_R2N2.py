@@ -4,7 +4,7 @@
 # In[ ]:
 
 
-# Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
+# Copyright (c) Meta Platforms, Inc. and affiliates. All rights reserved.
 
 
 # # Dataloaders for ShapeNetCore and R2N2
@@ -39,7 +39,8 @@ if need_pytorch3d:
             torch.version.cuda.replace(".",""),
             f"_pyt{pyt_version_str}"
         ])
-        get_ipython().system('pip install pytorch3d -f https://dl.fbaipublicfiles.com/pytorch3d/packaging/wheels/{version_str}/download.html')
+        get_ipython().system('pip install fvcore iopath')
+        get_ipython().system('pip install --no-index --no-cache-dir pytorch3d -f https://dl.fbaipublicfiles.com/pytorch3d/packaging/wheels/{version_str}/download.html')
     else:
         # We try to install PyTorch3D from source.
         get_ipython().system('curl -LO https://github.com/NVIDIA/cub/archive/1.10.0.tar.gz')

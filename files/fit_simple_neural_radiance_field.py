@@ -4,7 +4,7 @@
 # In[ ]:
 
 
-# Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
+# Copyright (c) Meta Platforms, Inc. and affiliates. All rights reserved.
 
 
 # # Fit a simple Neural Radiance Field via raymarching
@@ -50,7 +50,8 @@ if need_pytorch3d:
             torch.version.cuda.replace(".",""),
             f"_pyt{pyt_version_str}"
         ])
-        get_ipython().system('pip install pytorch3d -f https://dl.fbaipublicfiles.com/pytorch3d/packaging/wheels/{version_str}/download.html')
+        get_ipython().system('pip install fvcore iopath')
+        get_ipython().system('pip install --no-index --no-cache-dir pytorch3d -f https://dl.fbaipublicfiles.com/pytorch3d/packaging/wheels/{version_str}/download.html')
     else:
         # We try to install PyTorch3D from source.
         get_ipython().system('curl -LO https://github.com/NVIDIA/cub/archive/1.10.0.tar.gz')
@@ -82,7 +83,7 @@ from pytorch3d.structures import Volumes
 from pytorch3d.transforms import so3_exp_map
 from pytorch3d.renderer import (
     FoVPerspectiveCameras, 
-    NDCGridRaysampler,
+    NDCMultinomialRaysampler,
     MonteCarloRaysampler,
     EmissionAbsorptionRaymarcher,
     ImplicitRenderer,
@@ -145,7 +146,7 @@ print(f'Generated {len(target_images)} images/silhouettes/cameras.')
 # The renderer is composed of a *raymarcher* and a *raysampler*.
 # - The *raysampler* is responsible for emitting rays from image pixels and sampling the points along them. Here, we use two different raysamplers:
 #     - `MonteCarloRaysampler` is used to generate rays from a random subset of pixels of the image plane. The random subsampling of pixels is carried out during **training** to decrease the memory consumption of the implicit model.
-#     - `NDCGridRaysampler` which follows the standard PyTorch3D coordinate grid convention (+X from right to left; +Y from bottom to top; +Z away from the user). In combination with the implicit model of the scene, `NDCGridRaysampler` consumes a large amount of memory and, hence, is only used for visualizing the results of the training at **test** time.
+#     - `NDCMultinomialRaysampler` which follows the standard PyTorch3D coordinate grid convention (+X from right to left; +Y from bottom to top; +Z away from the user). In combination with the implicit model of the scene, `NDCMultinomialRaysampler` consumes a large amount of memory and, hence, is only used for visualizing the results of the training at **test** time.
 # - The *raymarcher* takes the densities and colors sampled along each ray and renders each ray into a color and an opacity value of the ray's source pixel. Here we use the `EmissionAbsorptionRaymarcher` which implements the standard Emission-Absorption raymarching algorithm.
 
 # In[ ]:
@@ -166,10 +167,10 @@ volume_extent_world = 3.0
 
 # 1) Instantiate the raysamplers.
 
-# Here, NDCGridRaysampler generates a rectangular image
+# Here, NDCMultinomialRaysampler generates a rectangular image
 # grid of rays whose coordinates follow the PyTorch3D
 # coordinate conventions.
-raysampler_grid = NDCGridRaysampler(
+raysampler_grid = NDCMultinomialRaysampler(
     image_height=render_size,
     image_width=render_size,
     n_pts_per_ray=128,
@@ -768,7 +769,7 @@ def generate_rotating_nerf(neural_radiance_field, n_frames = 50):
             fov=target_cameras.fov[0],
             device=device,
         )
-        # Note that we again render with `NDCGridRaySampler`
+        # Note that we again render with `NDCMultinomialRaysampler`
         # and the batched_forward function of neural_radiance_field.
         frames.append(
             renderer_grid(
@@ -787,4 +788,4 @@ plt.show()
 
 # ## 6. Conclusion
 # 
-# In this tutorial, we have shown how to optimize an implicit representation of a scene such that the renders of the scene from known viewpoints match the observed images for each viewpoint. The rendering was carried out using the PyTorch3D's implicit function renderer composed of either a `MonteCarloRaysampler` or `NDCGridRaysampler`, and an `EmissionAbsorptionRaymarcher`.
+# In this tutorial, we have shown how to optimize an implicit representation of a scene such that the renders of the scene from known viewpoints match the observed images for each viewpoint. The rendering was carried out using the PyTorch3D's implicit function renderer composed of either a `MonteCarloRaysampler` or `NDCMultinomialRaysampler`, and an `EmissionAbsorptionRaymarcher`.

@@ -75,7 +75,7 @@
 <div class="prompt input_prompt">In [ ]:</div>
 <div class="inner_cell">
 <div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Copyright (c) Meta Platforms, Inc. and affiliates. All rights reserved.</span>
 </pre></div>
 </div>
 </div>
@@ -126,7 +126,8 @@
             <span class="n">torch</span><span class="o">.</span><span class="n">version</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"."</span><span class="p">,</span><span class="s2">""</span><span class="p">),</span>
             <span class="sa">f</span><span class="s2">"_pyt</span><span class="si">{</span><span class="n">pyt_version_str</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">])</span>
-        <span class="o">!</span>pip install pytorch3d -f https://dl.fbaipublicfiles.com/pytorch3d/packaging/wheels/<span class="o">{</span>version_str<span class="o">}</span>/download.html
+        <span class="o">!</span>pip install fvcore iopath
+        <span class="o">!</span>pip install --no-index --no-cache-dir pytorch3d -f https://dl.fbaipublicfiles.com/pytorch3d/packaging/wheels/<span class="o">{</span>version_str<span class="o">}</span>/download.html
     <span class="k">else</span><span class="p">:</span>
         <span class="c1"># We try to install PyTorch3D from source.</span>
         <span class="o">!</span>curl -LO https://github.com/NVIDIA/cub/archive/1.10.0.tar.gz
@@ -161,7 +162,7 @@
 <span class="kn">from</span> <span class="nn">pytorch3d.renderer</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">FoVPerspectiveCameras</span><span class="p">,</span> 
     <span class="n">VolumeRenderer</span><span class="p">,</span>
-    <span class="n">NDCGridRaysampler</span><span class="p">,</span>
+    <span class="n">NDCMultinomialRaysampler</span><span class="p">,</span>
     <span class="n">EmissionAbsorptionRaymarcher</span>
 <span class="p">)</span>
 <span class="kn">from</span> <span class="nn">pytorch3d.transforms</span> <span class="kn">import</span> <span class="n">so3_exp_map</span>
@@ -244,7 +245,7 @@ It renders the cow mesh from the <code>fit_textured_mesh.ipynb</code> tutorial f
 <h2 id="2.-Initialize-the-volumetric-renderer">2. Initialize the volumetric renderer<a class="anchor-link" href="#2.-Initialize-the-volumetric-renderer">¶</a></h2><p>The following initializes a volumetric renderer that emits a ray from each pixel of a target image and samples a set of uniformly-spaced points along the ray. At each ray-point, the corresponding density and color value is obtained by querying the corresponding location in the volumetric model of the scene (the model is described &amp; instantiated in a later cell).</p>
 <p>The renderer is composed of a <em>raymarcher</em> and a <em>raysampler</em>.</p>
 <ul>
-<li>The <em>raysampler</em> is responsible for emitting rays from image pixels and sampling the points along them. Here, we use the <code>NDCGridRaysampler</code> which follows the standard PyTorch3D coordinate grid convention (+X from right to left; +Y from bottom to top; +Z away from the user).</li>
+<li>The <em>raysampler</em> is responsible for emitting rays from image pixels and sampling the points along them. Here, we use the <code>NDCMultinomialRaysampler</code> which follows the standard PyTorch3D coordinate grid convention (+X from right to left; +Y from bottom to top; +Z away from the user).</li>
 <li>The <em>raymarcher</em> takes the densities and colors sampled along each ray and renders each ray into a color and an opacity value of the ray's source pixel. Here we use the <code>EmissionAbsorptionRaymarcher</code> which implements the standard Emission-Absorption raymarching algorithm.</li>
 </ul>
 </div>
@@ -267,14 +268,14 @@ It renders the cow mesh from the <code>fit_textured_mesh.ipynb</code> tutorial f
 <span class="n">volume_extent_world</span> <span class="o">=</span> <span class="mf">3.0</span>
 
 <span class="c1"># 1) Instantiate the raysampler.</span>
-<span class="c1"># Here, NDCGridRaysampler generates a rectangular image</span>
+<span class="c1"># Here, NDCMultinomialRaysampler generates a rectangular image</span>
 <span class="c1"># grid of rays whose coordinates follow the PyTorch3D</span>
 <span class="c1"># coordinate conventions.</span>
 <span class="c1"># Since we use a volume of size 128^3, we sample n_pts_per_ray=150,</span>
 <span class="c1"># which roughly corresponds to a one ray-point per voxel.</span>
 <span class="c1"># We further set the min_depth=0.1 since there is no surface within</span>
 <span class="c1"># 0.1 units of any camera plane.</span>
-<span class="n">raysampler</span> <span class="o">=</span> <span class="n">NDCGridRaysampler</span><span class="p">(</span>
+<span class="n">raysampler</span> <span class="o">=</span> <span class="n">NDCMultinomialRaysampler</span><span class="p">(</span>
     <span class="n">image_width</span><span class="o">=</span><span class="n">render_size</span><span class="p">,</span>
     <span class="n">image_height</span><span class="o">=</span><span class="n">render_size</span><span class="p">,</span>
     <span class="n">n_pts_per_ray</span><span class="o">=</span><span class="mi">150</span><span class="p">,</span>
@@ -542,8 +543,8 @@ pairs of <code>target_images</code>/<code>rendered_images</code> and <code>targe
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="6.-Conclusion">6. Conclusion<a class="anchor-link" href="#6.-Conclusion">¶</a></h2><p>In this tutorial, we have shown how to optimize a 3D volumetric representation of a scene such that the renders of the volume from known viewpoints match the observed images for each viewpoint. The rendering was carried out using the PyTorch3D's volumetric renderer composed of an <code>NDCGridRaysampler</code> and an <code>EmissionAbsorptionRaymarcher</code>.</p>
+<h2 id="6.-Conclusion">6. Conclusion<a class="anchor-link" href="#6.-Conclusion">¶</a></h2><p>In this tutorial, we have shown how to optimize a 3D volumetric representation of a scene such that the renders of the volume from known viewpoints match the observed images for each viewpoint. The rendering was carried out using the PyTorch3D's volumetric renderer composed of an <code>NDCMultinomialRaysampler</code> and an <code>EmissionAbsorptionRaymarcher</code>.</p>
 </div>
 </div>
 </div>
-</div></div></div></div></div><footer class="nav-footer" id="footer"><section class="sitemap"><div class="footerSection"><div class="social"><a class="github-button" href="https://github.com/facebookresearch/pytorch3d" data-count-href="https://github.com/facebookresearch/pytorch3d/stargazers" data-show-count="true" data-count-aria-label="# stargazers on GitHub" aria-label="Star PyTorch3D on GitHub">pytorch3d</a></div></div></section><a href="https://opensource.facebook.com/" target="_blank" rel="noreferrer noopener" class="fbOpenSource"><img src="/img/oss_logo.png" alt="Facebook Open Source" width="170" height="45"/></a><section class="copyright">Copyright © 2021 Meta Platforms, Inc<br/>Legal:<a href="https://opensource.facebook.com/legal/privacy/" target="_blank" rel="noreferrer noopener">Privacy</a><a href="https://opensource.facebook.com/legal/terms/" target="_blank" rel="noreferrer noopener">Terms</a></section></footer></div></body></html>
+</div></div></div></div></div><footer class="nav-footer" id="footer"><section class="sitemap"><div class="footerSection"><div class="social"><a class="github-button" href="https://github.com/facebookresearch/pytorch3d" data-count-href="https://github.com/facebookresearch/pytorch3d/stargazers" data-show-count="true" data-count-aria-label="# stargazers on GitHub" aria-label="Star PyTorch3D on GitHub">pytorch3d</a></div></div></section><a href="https://opensource.facebook.com/" target="_blank" rel="noreferrer noopener" class="fbOpenSource"><img src="/img/oss_logo.png" alt="Facebook Open Source" width="170" height="45"/></a><section class="copyright">Copyright © 2022 Meta Platforms, Inc<br/>Legal:<a href="https://opensource.facebook.com/legal/privacy/" target="_blank" rel="noreferrer noopener">Privacy</a><a href="https://opensource.facebook.com/legal/terms/" target="_blank" rel="noreferrer noopener">Terms</a></section></footer></div></body></html>

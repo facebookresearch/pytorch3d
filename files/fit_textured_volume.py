@@ -4,7 +4,7 @@
 # In[ ]:
 
 
-# Copyright (c) Facebook, Inc. and its affiliates. All rights reserved.
+# Copyright (c) Meta Platforms, Inc. and affiliates. All rights reserved.
 
 
 # # Fit a volume via raymarching
@@ -40,7 +40,8 @@ if need_pytorch3d:
             torch.version.cuda.replace(".",""),
             f"_pyt{pyt_version_str}"
         ])
-        get_ipython().system('pip install pytorch3d -f https://dl.fbaipublicfiles.com/pytorch3d/packaging/wheels/{version_str}/download.html')
+        get_ipython().system('pip install fvcore iopath')
+        get_ipython().system('pip install --no-index --no-cache-dir pytorch3d -f https://dl.fbaipublicfiles.com/pytorch3d/packaging/wheels/{version_str}/download.html')
     else:
         # We try to install PyTorch3D from source.
         get_ipython().system('curl -LO https://github.com/NVIDIA/cub/archive/1.10.0.tar.gz')
@@ -70,7 +71,7 @@ from pytorch3d.structures import Volumes
 from pytorch3d.renderer import (
     FoVPerspectiveCameras, 
     VolumeRenderer,
-    NDCGridRaysampler,
+    NDCMultinomialRaysampler,
     EmissionAbsorptionRaymarcher
 )
 from pytorch3d.transforms import so3_exp_map
@@ -122,7 +123,7 @@ print(f'Generated {len(target_images)} images/silhouettes/cameras.')
 # The following initializes a volumetric renderer that emits a ray from each pixel of a target image and samples a set of uniformly-spaced points along the ray. At each ray-point, the corresponding density and color value is obtained by querying the corresponding location in the volumetric model of the scene (the model is described & instantiated in a later cell).
 # 
 # The renderer is composed of a *raymarcher* and a *raysampler*.
-# - The *raysampler* is responsible for emitting rays from image pixels and sampling the points along them. Here, we use the `NDCGridRaysampler` which follows the standard PyTorch3D coordinate grid convention (+X from right to left; +Y from bottom to top; +Z away from the user).
+# - The *raysampler* is responsible for emitting rays from image pixels and sampling the points along them. Here, we use the `NDCMultinomialRaysampler` which follows the standard PyTorch3D coordinate grid convention (+X from right to left; +Y from bottom to top; +Z away from the user).
 # - The *raymarcher* takes the densities and colors sampled along each ray and renders each ray into a color and an opacity value of the ray's source pixel. Here we use the `EmissionAbsorptionRaymarcher` which implements the standard Emission-Absorption raymarching algorithm.
 
 # In[ ]:
@@ -140,14 +141,14 @@ render_size = target_images.shape[1]
 volume_extent_world = 3.0
 
 # 1) Instantiate the raysampler.
-# Here, NDCGridRaysampler generates a rectangular image
+# Here, NDCMultinomialRaysampler generates a rectangular image
 # grid of rays whose coordinates follow the PyTorch3D
 # coordinate conventions.
 # Since we use a volume of size 128^3, we sample n_pts_per_ray=150,
 # which roughly corresponds to a one ray-point per voxel.
 # We further set the min_depth=0.1 since there is no surface within
 # 0.1 units of any camera plane.
-raysampler = NDCGridRaysampler(
+raysampler = NDCMultinomialRaysampler(
     image_width=render_size,
     image_height=render_size,
     n_pts_per_ray=150,
@@ -388,4 +389,4 @@ plt.show()
 
 # ## 6. Conclusion
 # 
-# In this tutorial, we have shown how to optimize a 3D volumetric representation of a scene such that the renders of the volume from known viewpoints match the observed images for each viewpoint. The rendering was carried out using the PyTorch3D's volumetric renderer composed of an `NDCGridRaysampler` and an `EmissionAbsorptionRaymarcher`.
+# In this tutorial, we have shown how to optimize a 3D volumetric representation of a scene such that the renders of the volume from known viewpoints match the observed images for each viewpoint. The rendering was carried out using the PyTorch3D's volumetric renderer composed of an `NDCMultinomialRaysampler` and an `EmissionAbsorptionRaymarcher`.
