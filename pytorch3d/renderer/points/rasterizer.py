@@ -115,7 +115,8 @@ class PointsRasterizer(nn.Module):
 
     def to(self, device):
         # Manually move to device cameras as it is not a subclass of nn.Module
-        self.cameras = self.cameras.to(device)
+        if self.cameras is not None:
+            self.cameras = self.cameras.to(device)
         return self
 
     def forward(self, point_clouds, **kwargs) -> PointFragments:

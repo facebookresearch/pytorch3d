@@ -134,6 +134,12 @@ class TestMeshRasterizer(unittest.TestCase):
 
         self.assertTrue(torch.allclose(image, image_ref))
 
+    def test_simple_to(self):
+        # Check that to() works without a cameras object.
+        device = torch.device("cuda:0")
+        rasterizer = MeshRasterizer()
+        rasterizer.to(device)
+
 
 class TestPointRasterizer(unittest.TestCase):
     def test_simple_sphere(self):
@@ -203,3 +209,9 @@ class TestPointRasterizer(unittest.TestCase):
             image[image >= 0] = 1.0
             image[image < 0] = 0.0
             self.assertTrue(torch.allclose(image, image_ref[..., 0]))
+
+    def test_simple_to(self):
+        # Check that to() works without a cameras object.
+        device = torch.device("cuda:0")
+        rasterizer = PointsRasterizer()
+        rasterizer.to(device)
