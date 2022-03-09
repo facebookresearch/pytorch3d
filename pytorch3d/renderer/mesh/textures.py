@@ -569,7 +569,7 @@ class TexturesAtlas(TexturesBase):
 
         atlas_list = []
         atlas_list += self.atlas_list()
-        num_faces_per_mesh = self._num_faces_per_mesh
+        num_faces_per_mesh = self._num_faces_per_mesh.copy()
         for tex in textures:
             atlas_list += tex.atlas_list()
             num_faces_per_mesh += tex._num_faces_per_mesh
@@ -1073,7 +1073,7 @@ class TexturesUV(TexturesBase):
         faces_uvs_list += self.faces_uvs_list()
         verts_uvs_list += self.verts_uvs_list()
         maps_list += self.maps_list()
-        num_faces_per_mesh = self._num_faces_per_mesh
+        num_faces_per_mesh = self._num_faces_per_mesh.copy()
         for tex in textures:
             verts_uvs_list += tex.verts_uvs_list()
             faces_uvs_list += tex.faces_uvs_list()

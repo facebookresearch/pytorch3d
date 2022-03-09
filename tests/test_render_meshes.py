@@ -793,7 +793,12 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
             faces_uvs=torch.arange(150).reshape(1, 50, 3),
             verts_uvs=torch.rand(1, 150, 2) * 0.2 + 0.3,
         )
+        self.assertEqual(a._num_faces_per_mesh, [100])
+        self.assertEqual(b._num_faces_per_mesh, [50])
         c = a.join_batch([b]).join_scene()
+        self.assertEqual(a._num_faces_per_mesh, [100])
+        self.assertEqual(b._num_faces_per_mesh, [50])
+        self.assertEqual(c._num_faces_per_mesh, [150])
 
         color = c.faces_verts_textures_packed()
         color1 = color[:100, :, 0].flatten()
@@ -904,7 +909,12 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
         textures2 = TexturesAtlas(atlas=[atlas2])
         mesh1 = Meshes(verts=[verts], faces=[faces], textures=textures1)
         mesh2 = Meshes(verts=[verts_shifted1], faces=[faces], textures=textures2)
+        self.assertEqual(textures1._num_faces_per_mesh, [len(faces)])
+        self.assertEqual(textures2._num_faces_per_mesh, [len(faces)])
         mesh_joined = join_meshes_as_scene([mesh1, mesh2])
+        self.assertEqual(textures1._num_faces_per_mesh, [len(faces)])
+        self.assertEqual(textures2._num_faces_per_mesh, [len(faces)])
+        self.assertEqual(mesh_joined.textures._num_faces_per_mesh, [len(faces) * 2])
 
         R, T = look_at_view_transform(18, 0, 0)
         cameras = FoVPerspectiveCameras(device=device, R=R, T=T)
