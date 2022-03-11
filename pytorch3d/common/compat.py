@@ -66,7 +66,10 @@ def meshgrid_ij(
     """
     Like torch.meshgrid was before PyTorch 1.10.0, i.e. with indexing set to ij
     """
-    if "indexing" in torch.meshgrid.__kwdefaults__:
+    if (
+        torch.meshgrid.__kwdefaults__ is not None
+        and "indexing" in torch.meshgrid.__kwdefaults__
+    ):
         # PyTorch >= 1.10.0
         return torch.meshgrid(*A, indexing="ij")
     return torch.meshgrid(*A)
