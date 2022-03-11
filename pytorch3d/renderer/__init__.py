@@ -49,6 +49,7 @@ from .mesh import (
     HardPhongShader,
     MeshRasterizer,
     MeshRenderer,
+    MeshRendererWithFragments,
     RasterizationSettings,
     SoftGouraudShader,
     SoftPhongShader,

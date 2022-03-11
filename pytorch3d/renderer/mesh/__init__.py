@@ -13,7 +13,7 @@ from .clip import (
 )
 from .rasterize_meshes import rasterize_meshes
 from .rasterizer import MeshRasterizer, RasterizationSettings
-from .renderer import MeshRenderer
+from .renderer import MeshRenderer, MeshRendererWithFragments
 from .shader import TexturedSoftPhongShader  # DEPRECATED
 from .shader import (
     BlendParams,
