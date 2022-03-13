@@ -459,6 +459,12 @@ class BlenderCamera(CamerasBase):  # pragma: no cover
         transform._matrix = self.K.transpose(1, 2).contiguous()
         return transform
 
+    def is_perspective(self):
+        return False
+
+    def in_ndc(self):
+        return True
+
 
 def render_cubified_voxels(
     voxels: torch.Tensor, shader_type=HardPhongShader, device: Device = "cpu", **kwargs
