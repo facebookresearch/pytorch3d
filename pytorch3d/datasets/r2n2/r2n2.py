@@ -55,9 +55,9 @@ class R2N2(ShapeNetBase):  # pragma: no cover
     def __init__(
         self,
         split: str,
-        shapenet_dir,
-        r2n2_dir,
-        splits_file,
+        shapenet_dir: str,
+        r2n2_dir: str,
+        splits_file: str,
         return_all_views: bool = True,
         return_voxels: bool = False,
         views_rel_path: str = "ShapeNetRendering",
@@ -70,9 +70,9 @@ class R2N2(ShapeNetBase):  # pragma: no cover
 
         Args:
             split (str): One of (train, val, test).
-            shapenet_dir (path): Path to ShapeNet core v1.
-            r2n2_dir (path): Path to the R2N2 dataset.
-            splits_file (path): File containing the train/val/test splits.
+            shapenet_dir (str): Path to ShapeNet core v1.
+            r2n2_dir (str): Path to the R2N2 dataset.
+            splits_file (str): File containing the train/val/test splits.
             return_all_views (bool): Indicator of whether or not to load all the views in
                 the split. If set to False, one of the views in the split will be randomly
                 selected and loaded.
