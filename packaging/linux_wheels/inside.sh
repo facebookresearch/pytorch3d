@@ -26,21 +26,13 @@ echo "CUB_HOME is now $CUB_HOME"
 # As a rule, we want to build for any combination of dependencies which is supported by
 # PyTorch3D and not older than the current Google Colab set up.
 
-PYTHON_VERSIONS="3.7 3.8 3.9"
+PYTHON_VERSIONS="3.7 3.8 3.9 3.10"
 # the keys are pytorch versions
 declare -A CONDA_CUDA_VERSIONS=(
-#    ["1.4.0"]="cu101"
-#    ["1.5.0"]="cu101 cu102"
-#    ["1.5.1"]="cu101 cu102"
-#    ["1.6.0"]="cu101 cu102"
-#    ["1.7.0"]="cu101 cu102 cu110"
-#    ["1.7.1"]="cu101 cu102 cu110"
-#    ["1.8.0"]="cu101 cu102 cu111"
-#    ["1.8.1"]="cu101 cu102 cu111"
-#    ["1.9.0"]="cu102 cu111"
-#    ["1.9.1"]="cu102 cu111"
-    ["1.10.0"]="cu102 cu111 cu113"
-    ["1.10.1"]="cu102 cu111 cu113"
+    ["1.10.1"]="cu111 cu113"
+    ["1.10.2"]="cu111 cu113"
+    ["1.10.0"]="cu111 cu113"
+    ["1.11.0"]="cu111 cu113 cu115"
 )
 
 
@@ -49,24 +41,44 @@ for python_version in $PYTHON_VERSIONS
 do
     for pytorch_version in "${!CONDA_CUDA_VERSIONS[@]}"
     do
-        if [[ "3.6 3.7 3.8" != *$python_version* ]] && [[ "1.4.0 1.5.0 1.5.1 1.6.0 1.7.0" == *$pytorch_version* ]]
+        if [[ "3.7 3.8" != *$python_version* ]] && [[ "1.7.0" == *$pytorch_version* ]]
         then
             #python 3.9 and later not supported by pytorch 1.7.0 and before
             continue
         fi
+        if [[ "3.7 3.8 3.9" != *$python_version* ]] && [[ "1.7.0 1.7.1 1.8.0 1.8.1 1.9.0 1.9.1 1.10.0 1.10.1 1.10.2" == *$pytorch_version* ]]
+        then
+            #python 3.10 and later not supported by pytorch 1.10.2 and before
+            continue
+        fi
 
         extra_channel="-c conda-forge"
+        if [[ "1.11.0" == "$pytorch_version" ]]
+        then
+            extra_channel=""
+        fi
 
         for cu_version in ${CONDA_CUDA_VERSIONS[$pytorch_version]}
         do
-            if [[ "cu113" == *$cu_version* ]] && [[ $SELECTED_CUDA != "$cu_version" ]]
+            if [[ "cu113 cu115" == *$cu_version* ]]
             #       ^^^ CUDA versions listed here have to be built
             # in their own containers.
+            then
+            if [[ $SELECTED_CUDA != "$cu_version" ]]
+                then
+                    continue
+                fi
+            elif [[ $SELECTED_CUDA != "" ]]
             then
                 continue
             fi
 
             case "$cu_version" in
+                cu115)
+                    export CUDA_HOME=/usr/local/cuda-11.5/
+                    export CUDA_TAG=11.5
+                    export NVCC_FLAGS="-gencode=arch=compute_35,code=sm_35 -gencode=arch=compute_50,code=sm_50 -gencode=arch=compute_60,code=sm_60 -gencode=arch=compute_70,code=sm_70 -gencode=arch=compute_75,code=sm_75 -gencode=arch=compute_80,code=sm_80 -gencode=arch=compute_86,code=sm_86 -gencode=arch=compute_50,code=compute_50"
+                ;;
                 cu113)
                     export CUDA_HOME=/usr/local/cuda-11.3/
                     export CUDA_TAG=11.3

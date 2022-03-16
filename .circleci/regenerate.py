@@ -13,6 +13,7 @@ import os.path
 
 import jinja2
 import yaml
+from packaging import version
 
 
 # The CUDA versions which have pytorch conda packages available for linux for each
@@ -27,26 +28,40 @@ CONDA_CUDA_VERSIONS = {
     "1.9.1": ["cu102", "cu111"],
     "1.10.0": ["cu102", "cu111", "cu113"],
     "1.10.1": ["cu102", "cu111", "cu113"],
+    "1.10.2": ["cu102", "cu111", "cu113"],
+    "1.11.0": ["cu102", "cu111", "cu113", "cu115"],
 }
 
 
 def conda_docker_image_for_cuda(cuda_version):
     if cuda_version == "cu113":
         return "pytorch/conda-builder:cuda113"
+    if cuda_version == "cu115":
+        return "pytorch/conda-builder:cuda115"
     return None
 
 
 def pytorch_versions_for_python(python_version):
-    if python_version in ["3.6", "3.7", "3.8"]:
+    if python_version in ["3.7", "3.8"]:
         return list(CONDA_CUDA_VERSIONS)
-    pytorch_without_py39 = ["1.4", "1.5.0", "1.5.1", "1.6.0", "1.7.0"]
-    return [i for i in CONDA_CUDA_VERSIONS if i not in pytorch_without_py39]
+    if python_version == "3.9":
+        return [
+            i
+            for i in CONDA_CUDA_VERSIONS
+            if version.Version(i) > version.Version("1.7.0")
+        ]
+    if python_version == "3.10":
+        return [
+            i
+            for i in CONDA_CUDA_VERSIONS
+            if version.Version(i) >= version.Version("1.11.0")
+        ]
 
 
 def workflows(prefix="", filter_branch=None, upload=False, indentation=6):
     w = []
     for btype in ["conda"]:
-        for python_version in ["3.7", "3.8", "3.9"]:
+        for python_version in ["3.7", "3.8", "3.9", "3.10"]:
             for pytorch_version in pytorch_versions_for_python(python_version):
                 for cu_version in CONDA_CUDA_VERSIONS[pytorch_version]:
                     w += workflow_pair(
