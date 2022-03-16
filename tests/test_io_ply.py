@@ -510,6 +510,45 @@ class TestMeshPlyIO(TestCaseMixin, unittest.TestCase):
             torch.FloatTensor([3, 4, 5]) + 7 * torch.arange(8)[:, None],
         )
 
+    def test_load_open3d_mesh(self):
+        # Header based on issue #1104
+        header = "\n".join(
+            [
+                "ply",
+                "format binary_little_endian 1.0",
+                "comment Created by Open3D",
+                "element vertex 3",
+                "property double x",
+                "property double y",
+                "property double z",
+                "property double nx",
+                "property double ny",
+                "property double nz",
+                "property uchar red",
+                "property uchar green",
+                "property uchar blue",
+                "element face 1",
+                "property list uchar uint vertex_indices",
+                "end_header",
+                "",
+            ]
+        ).encode("ascii")
+        vert_data = struct.pack("<" + "ddddddBBB" * 3, *range(9 * 3))
+        face_data = struct.pack("<" + "BIII", 3, 0, 1, 2)
+        io = IO()
+        with NamedTemporaryFile(mode="wb", suffix=".ply") as f:
+            f.write(header)
+            f.write(vert_data)
+            f.write(face_data)
+            f.flush()
+            mesh = io.load_mesh(f.name)
+
+        self.assertClose(mesh.faces_padded(), torch.arange(3)[None, None])
+        self.assertClose(
+            mesh.verts_padded(),
+            (torch.arange(3) + 9.0 * torch.arange(3)[:, None])[None],
+        )
+
     def test_save_pointcloud(self):
         header = "\n".join(
             [

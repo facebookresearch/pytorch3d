@@ -1040,7 +1040,7 @@ def _load_ply(f, *, path_manager: PathManager) -> _PlyData:
         if face.shape[1] < 3:
             raise ValueError("Faces must have at least 3 vertices.")
         face_arrays = [face[:, [0, i + 1, i + 2]] for i in range(face.shape[1] - 2)]
-        faces = torch.LongTensor(np.vstack(face_arrays))
+        faces = torch.LongTensor(np.vstack(face_arrays).astype(np.int64))
     else:
         face_list = []
         for face_item in face:
