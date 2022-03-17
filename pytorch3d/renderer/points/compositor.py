@@ -92,9 +92,8 @@ def _add_background_color_to_images(pix_idxs, images, background_color):
 
     background_color = background_color.to(images)
 
-    # add alpha channel
-    if background_color.shape[0] == 3 and images.shape[1] == 4:
-        # special case to allow giving RGB background for RGBA
+    # add alpha channel if needed
+    if background_color.shape[0] + 1 == images.shape[1]:
         alpha = images.new_ones(1)
         background_color = torch.cat([background_color, alpha])
 
@@ -107,7 +106,7 @@ def _add_background_color_to_images(pix_idxs, images, background_color):
     num_background_pixels = background_mask.sum()
 
     # permute so that features are the last dimension for masked_scatter to work
-    masked_images = images.permute(0, 2, 3, 1)[..., :4].masked_scatter(
+    masked_images = images.permute(0, 2, 3, 1).masked_scatter(
         background_mask[..., None],
         background_color[None, :].expand(num_background_pixels, -1),
     )
