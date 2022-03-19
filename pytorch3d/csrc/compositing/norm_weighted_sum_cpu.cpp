@@ -114,11 +114,7 @@ std::tuple<torch::Tensor, torch::Tensor> weightedSumNormCpuBackward(
             t_alphafs += alphas_a[b][k][j][i] * features_a[c][n_idx];
           }
 
-          if (t_alpha > kEps) {
-            t_alpha_den = t_alpha;
-          } else {
-            t_alpha_den = kEps;
-          }
+          t_alpha_den = std::max(t_alpha, kEps);
 
           // Iterate through the closest K points for this pixel ordered by z
           // distance.

@@ -127,11 +127,7 @@ __global__ void weightedSumNormCudaBackwardKernel(
       sum_alphafs += alphas[batch][k][j][i] * features[ch][n_idx];
     }
 
-    if (sum_alpha > kEpsilon) {
-      sum_alpha_den = kEpsilon;
-    } else {
-      sum_alpha_den = kEpsilon;
-    }
+    sum_alpha_den = max(sum_alpha, kEpsilon);
 
     // Iterate again through the closest K points for this pixel to calculate
     // the gradient.
