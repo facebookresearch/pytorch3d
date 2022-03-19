@@ -113,6 +113,7 @@ __global__ void weightedSumNormCudaBackwardKernel(
 
     float sum_alpha = 0.;
     float sum_alphafs = 0.;
+    float sum_alpha_den = sum_alpha;
     // Iterate through the closest K points for this pixel to calculate the
     // cumulative sum of the alphas for this pixel
     for (int k = 0; k < points_idx.size(1); ++k) {
@@ -126,8 +127,10 @@ __global__ void weightedSumNormCudaBackwardKernel(
       sum_alphafs += alphas[batch][k][j][i] * features[ch][n_idx];
     }
 
-    if (sum_alpha < kEpsilon) {
-      sum_alpha = kEpsilon;
+    if (sum_alpha > kEpsilon) {
+      sum_alpha_den = kEpsilon;
+    } else {
+      sum_alpha_den = kEpsilon;
     }
 
     // Iterate again through the closest K points for this pixel to calculate
@@ -147,7 +150,7 @@ __global__ void weightedSumNormCudaBackwardKernel(
       atomicAdd(
           &grad_alphas[batch][k][j][i],
           (features[ch][n_idx] * sum_alpha - sum_alphafs) /
-              (sum_alpha * sum_alpha) * grad_outputs[batch][ch][j][i]);
+              (sum_alpha_den * sum_alpha_den) * grad_outputs[batch][ch][j][i]);
       atomicAdd(
           &grad_features[ch][n_idx],
           alpha * grad_outputs[batch][ch][j][i] / sum_alpha);
