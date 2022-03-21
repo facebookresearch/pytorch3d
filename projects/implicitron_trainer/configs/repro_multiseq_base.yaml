@@ -1,0 +1,31 @@
+defaults:
+- repro_base.yaml
+- _self_
+dataloader_args:
+  batch_size: 10
+  dataset_len: 1000
+  dataset_len_val: 1
+  num_workers: 8
+  images_per_seq_options:
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
+  - 8
+  - 9
+  - 10
+dataset_args:
+  assert_single_seq: false
+  dataset_name: co3d_multisequence
+  load_point_clouds: false
+  mask_depths: false
+  mask_images: false
+  n_frames_per_sequence: -1
+  test_on_train: true
+  test_restrict_sequence_id: 0
+solver_args:
+  max_epochs: 3000
+  milestones:
+  - 1000

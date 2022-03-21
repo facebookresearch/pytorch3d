@@ -1,0 +1,18 @@
+defaults:
+- repro_singleseq_base
+- _self_
+dataloader_args:
+  batch_size: 10
+  dataset_len: 1000
+  dataset_len_val: 1
+  num_workers: 8
+  images_per_seq_options:
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
+  - 8
+  - 9
+  - 10

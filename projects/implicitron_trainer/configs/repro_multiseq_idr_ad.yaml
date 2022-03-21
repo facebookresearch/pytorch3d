@@ -1,0 +1,64 @@
+defaults:
+- repro_multiseq_base.yaml
+- _self_
+generic_model_args:
+  loss_weights:
+    loss_mask_bce: 100.0
+    loss_kl: 0.0
+    loss_rgb_mse: 1.0
+    loss_eikonal: 0.1
+  chunk_size_grid: 65536
+  num_passes: 1
+  output_rasterized_mc: true
+  sampling_mode_training: mask_sample
+  view_pool: false
+  sequence_autodecoder_args:
+    n_instances: 20000
+    init_scale: 1.0
+    encoding_dim: 256
+  implicit_function_IdrFeatureField_args:
+    n_harmonic_functions_xyz: 6
+    bias: 0.6
+    d_in: 3
+    d_out: 1
+    dims:
+    - 512
+    - 512
+    - 512
+    - 512
+    - 512
+    - 512
+    - 512
+    - 512
+    geometric_init: true
+    pooled_feature_dim: 0
+    skip_in:
+    - 6
+    weight_norm: true
+  renderer_SignedDistanceFunctionRenderer_args:
+    ray_tracer_args:
+      line_search_step: 0.5
+      line_step_iters: 3
+      n_secant_steps: 8
+      n_steps: 100
+      object_bounding_sphere: 8.0
+      sdf_threshold: 5.0e-05
+    ray_normal_coloring_network_args:
+      d_in: 9
+      d_out: 3
+      dims:
+      - 512
+      - 512
+      - 512
+      - 512
+      mode: idr
+      n_harmonic_functions_dir: 4
+      pooled_feature_dim: 0
+      weight_norm: true
+  raysampler_args:
+    n_rays_per_image_sampled_from_mask: 1024
+    n_pts_per_ray_training: 0
+    n_pts_per_ray_evaluation: 0
+    scene_extent: 8.0
+  renderer_class_type: SignedDistanceFunctionRenderer
+  implicit_function_class_type: IdrFeatureField

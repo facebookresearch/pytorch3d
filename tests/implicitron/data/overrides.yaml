@@ -1,0 +1,122 @@
+mask_images: true
+mask_depths: true
+render_image_width: 400
+render_image_height: 400
+mask_threshold: 0.5
+output_rasterized_mc: false
+bg_color:
+- 0.0
+- 0.0
+- 0.0
+view_pool: false
+num_passes: 1
+chunk_size_grid: 4096
+render_features_dimensions: 3
+tqdm_trigger_threshold: 16
+n_train_target_views: 1
+sampling_mode_training: mask_sample
+sampling_mode_evaluation: full_grid
+renderer_class_type: LSTMRenderer
+feature_aggregator_class_type: AngleWeightedIdentityFeatureAggregator
+implicit_function_class_type: IdrFeatureField
+loss_weights:
+  loss_rgb_mse: 1.0
+  loss_prev_stage_rgb_mse: 1.0
+  loss_mask_bce: 0.0
+  loss_prev_stage_mask_bce: 0.0
+log_vars:
+- loss_rgb_psnr_fg
+- loss_rgb_psnr
+- loss_rgb_mse
+- loss_rgb_huber
+- loss_depth_abs
+- loss_depth_abs_fg
+- loss_mask_neg_iou
+- loss_mask_bce
+- loss_mask_beta_prior
+- loss_eikonal
+- loss_density_tv
+- loss_depth_neg_penalty
+- loss_autodecoder_norm
+- loss_prev_stage_rgb_mse
+- loss_prev_stage_rgb_psnr_fg
+- loss_prev_stage_rgb_psnr
+- loss_prev_stage_mask_bce
+- objective
+- epoch
+- sec/it
+sequence_autodecoder_args:
+  encoding_dim: 0
+  n_instances: 0
+  init_scale: 1.0
+  ignore_input: false
+raysampler_args:
+  image_width: 400
+  image_height: 400
+  scene_center:
+  - 0.0
+  - 0.0
+  - 0.0
+  scene_extent: 0.0
+  sampling_mode_training: mask_sample
+  sampling_mode_evaluation: full_grid
+  n_pts_per_ray_training: 64
+  n_pts_per_ray_evaluation: 64
+  n_rays_per_image_sampled_from_mask: 1024
+  min_depth: 0.1
+  max_depth: 8.0
+  stratified_point_sampling_training: true
+  stratified_point_sampling_evaluation: false
+renderer_LSTMRenderer_args:
+  num_raymarch_steps: 10
+  init_depth: 17.0
+  init_depth_noise_std: 0.0005
+  hidden_size: 16
+  n_feature_channels: 256
+  verbose: false
+image_feature_extractor_args:
+  name: resnet34
+  pretrained: true
+  stages:
+  - 1
+  - 2
+  - 3
+  - 4
+  normalize_image: true
+  image_rescale: 0.16
+  first_max_pool: true
+  proj_dim: 32
+  l2_norm: true
+  add_masks: true
+  add_images: true
+  global_average_pool: false
+  feature_rescale: 1.0
+view_sampler_args:
+  masked_sampling: false
+  sampling_mode: bilinear
+feature_aggregator_AngleWeightedIdentityFeatureAggregator_args:
+  exclude_target_view: true
+  exclude_target_view_mask_features: true
+  concatenate_output: true
+  weight_by_ray_angle_gamma: 1.0
+  min_ray_angle_weight: 0.1
+implicit_function_IdrFeatureField_args:
+  feature_vector_size: 3
+  d_in: 3
+  d_out: 1
+  dims:
+  - 512
+  - 512
+  - 512
+  - 512
+  - 512
+  - 512
+  - 512
+  - 512
+  geometric_init: true
+  bias: 1.0
+  skip_in: []
+  weight_norm: true
+  n_harmonic_functions_xyz: 0
+  pooled_feature_dim: 0
+  encoding_dim: 0

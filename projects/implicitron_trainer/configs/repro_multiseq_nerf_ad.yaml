@@ -1,0 +1,9 @@
+defaults:
+- repro_multiseq_base.yaml
+- _self_
+generic_model_args:
+  chunk_size_grid: 16000
+  view_pool: false
+  sequence_autodecoder_args:
+    n_instances: 20000
+    encoding_dim: 256

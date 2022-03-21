@@ -1,0 +1,83 @@
+defaults:
+- default_config
+- _self_
+exp_dir: ./data/exps/base/
+architecture: generic
+visualize_interval: 0
+visdom_port: 8097
+dataloader_args:
+  batch_size: 10
+  dataset_len: 1000
+  dataset_len_val: 1
+  num_workers: 8
+  images_per_seq_options:
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
+  - 8
+  - 9
+  - 10
+dataset_args:
+  dataset_root: ${oc.env:CO3D_DATASET_ROOT}"
+  load_point_clouds: false
+  mask_depths: false
+  mask_images: false
+  n_frames_per_sequence: -1
+  test_on_train: true
+  test_restrict_sequence_id: 0
+generic_model_args:
+  loss_weights:
+    loss_mask_bce: 1.0
+    loss_prev_stage_mask_bce: 1.0
+    loss_autodecoder_norm: 0.01
+    loss_rgb_mse: 1.0
+    loss_prev_stage_rgb_mse: 1.0
+  output_rasterized_mc: false
+  chunk_size_grid: 102400
+  render_image_height: 400
+  render_image_width: 400
+  num_passes: 2
+  implicit_function_NeuralRadianceFieldImplicitFunction_args:
+    n_harmonic_functions_xyz: 10
+    n_harmonic_functions_dir: 4
+    n_hidden_neurons_xyz: 256
+    n_hidden_neurons_dir: 128
+    n_layers_xyz: 8
+    append_xyz:
+    - 5
+    latent_dim: 0
+  raysampler_args:
+    n_rays_per_image_sampled_from_mask: 1024
+    min_depth: 0.0
+    max_depth: 0.0
+    scene_extent: 8.0
+    n_pts_per_ray_training: 64
+    n_pts_per_ray_evaluation: 64
+    stratified_point_sampling_training: true
+    stratified_point_sampling_evaluation: false
+  renderer_MultiPassEmissionAbsorptionRenderer_args:
+    n_pts_per_ray_fine_training: 64
+    n_pts_per_ray_fine_evaluation: 64
+    append_coarse_samples_to_fine: true
+    density_noise_std_train: 1.0
+  view_sampler_args:
+    masked_sampling: false
+  image_feature_extractor_args:
+    stages:
+    - 1
+    - 2
+    - 3
+    - 4
+    proj_dim: 16
+    image_rescale: 0.32
+    first_max_pool: false
+solver_args:
+  breed: adam
+  lr: 0.0005
+  lr_policy: multistep
+  max_epochs: 2000
+  momentum: 0.9
+  weight_decay: 0.0
