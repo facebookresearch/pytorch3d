@@ -1,0 +1,10 @@
+defaults:
+- repro_multiseq_srn_ad_hypernet.yaml
+- _self_
+generic_model_args:
+  num_passes: 1
+  implicit_function_SRNHyperNetImplicitFunction_args:
+    pixel_generator_args:
+      n_harmonic_functions: 0
+    hypernet_args:
+      n_harmonic_functions: 0

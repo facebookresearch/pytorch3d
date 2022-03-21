@@ -1,0 +1,41 @@
+defaults:
+- repro_base
+- _self_
+dataloader_args:
+  batch_size: 1
+  dataset_len: 1000
+  dataset_len_val: 1
+  num_workers: 8
+  images_per_seq_options:
+  - 2
+dataset_args:
+  dataset_name: co3d_singlesequence
+  assert_single_seq: true
+  n_frames_per_sequence: -1
+  test_restrict_sequence_id: 0
+  test_on_train: false
+generic_model_args:
+  render_image_height: 800
+  render_image_width: 800
+  log_vars:
+  - loss_rgb_psnr_fg
+  - loss_rgb_psnr
+  - loss_eikonal
+  - loss_prev_stage_rgb_psnr
+  - loss_mask_bce
+  - loss_prev_stage_mask_bce
+  - loss_rgb_mse
+  - loss_prev_stage_rgb_mse
+  - loss_depth_abs
+  - loss_depth_abs_fg
+  - loss_kl
+  - loss_mask_neg_iou
+  - objective
+  - epoch
+  - sec/it
+solver_args:
+  lr: 0.0005
+  max_epochs: 400
+  milestones:
+  - 200
+  - 300

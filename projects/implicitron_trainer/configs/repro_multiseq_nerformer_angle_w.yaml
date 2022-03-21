@@ -1,0 +1,16 @@
+defaults:
+- repro_multiseq_base.yaml
+- repro_feat_extractor_transformer.yaml
+- _self_
+generic_model_args:
+  chunk_size_grid: 16000
+  view_pool: true
+  raysampler_args:
+    n_rays_per_image_sampled_from_mask: 800
+    n_pts_per_ray_training: 32
+    n_pts_per_ray_evaluation: 32
+  renderer_MultiPassEmissionAbsorptionRenderer_args:
+    n_pts_per_ray_fine_training: 16
+    n_pts_per_ray_fine_evaluation: 16
+  implicit_function_class_type: NeRFormerImplicitFunction
+  feature_aggregator_class_type: AngleWeightedIdentityFeatureAggregator

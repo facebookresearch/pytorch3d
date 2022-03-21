@@ -1,0 +1,4 @@
+defaults:
+- repro_singleseq_base
+- _self_
+exp_dir: ./data/nerf_single_apple/

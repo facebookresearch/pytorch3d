@@ -1,0 +1,10 @@
+defaults:
+- repro_singleseq_srn_wce.yaml
+- _self_
+generic_model_args:
+  num_passes: 1
+  implicit_function_SRNImplicitFunction_args:
+    pixel_generator_args:
+      n_harmonic_functions: 0
+    raymarch_function_args:
+      n_harmonic_functions: 0
