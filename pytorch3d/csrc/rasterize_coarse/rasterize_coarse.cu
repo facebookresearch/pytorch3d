@@ -195,7 +195,7 @@ __global__ void RasterizeCoarseCudaKernel(
             "To solve, "
             "try increasing max_faces_per_bin / max_points_per_bin, "
             "decreasing bin_size, "
-            "or setting bin_size to -1 to use the naive rasterization.";
+            "or setting bin_size to 0 to use the naive rasterization.";
         printf(warning);
         continue;
       }
