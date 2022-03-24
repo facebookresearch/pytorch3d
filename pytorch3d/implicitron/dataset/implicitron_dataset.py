@@ -18,6 +18,8 @@ from pathlib import Path
 from typing import (
     ClassVar,
     Dict,
+    Iterable,
+    Iterator,
     List,
     Optional,
     Sequence,
@@ -203,11 +205,11 @@ class ImplicitronDatasetBase(torch.utils.data.Dataset[FrameData]):
 
     This means they have a __getitem__ which returns an instance of a FrameData,
     which will describe one frame in one sequence.
-
-    Members:
-        seq_to_idx: For each sequence, the indices of its frames.
     """
 
+    # Maps sequence name to the sequence's global frame indices.
+    # It is used for the default implementations of some functions in this class.
+    # Implementations which override them are free to ignore this member.
     seq_to_idx: Dict[str, List[int]] = field(init=False)
 
     def __len__(self) -> int:
@@ -239,6 +241,43 @@ class ImplicitronDatasetBase(torch.utils.data.Dataset[FrameData]):
 
     def get_eval_batches(self) -> Optional[List[List[int]]]:
         return None
+
+    def sequence_names(self) -> Iterable[str]:
+        """Returns an iterator over sequence names in the dataset."""
+        return self.seq_to_idx.keys()
+
+    def sequence_frames_in_order(
+        self, seq_name: str
+    ) -> Iterator[Tuple[float, int, int]]:
+        """Returns an iterator over the frame indices in a given sequence.
+        We attempt to first sort by timestamp (if they are available),
+        then by frame number.
+
+        Args:
+            seq_name: the name of the sequence.
+
+        Returns:
+            an iterator over triplets `(timestamp, frame_no, dataset_idx)`,
+                where `frame_no` is the index within the sequence, and
+                `dataset_idx` is the index within the dataset.
+                `None` timestamps are replaced with 0s.
+        """
+        seq_frame_indices = self.seq_to_idx[seq_name]
+        nos_timestamps = self.get_frame_numbers_and_timestamps(seq_frame_indices)
+
+        yield from sorted(
+            [
+                (timestamp, frame_no, idx)
+                for idx, (frame_no, timestamp) in zip(seq_frame_indices, nos_timestamps)
+            ]
+        )
+
+    def sequence_indices_in_order(self, seq_name: str) -> Iterator[int]:
+        """Same as `sequence_frames_in_order` but returns the iterator over
+        only dataset indices.
+        """
+        for _, _, idx in self.sequence_frames_in_order(seq_name):
+            yield idx
 
 
 class FrameAnnotsEntry(TypedDict):

@@ -7,7 +7,7 @@
 
 import warnings
 from dataclasses import dataclass, field
-from typing import Iterator, List, Sequence, Tuple
+from typing import Iterable, Iterator, List, Sequence, Tuple
 
 import numpy as np
 from torch.utils.data.sampler import Sampler
@@ -54,7 +54,7 @@ class SceneBatchSampler(Sampler[List[int]]):
         if len(self.images_per_seq_options) < 1:
             raise ValueError("n_per_seq_posibilities list cannot be empty")
 
-        self.seq_names = list(self.dataset.seq_to_idx.keys())
+        self.seq_names = list(self.dataset.sequence_names())
 
     def __len__(self) -> int:
         return self.num_batches
@@ -72,9 +72,7 @@ class SceneBatchSampler(Sampler[List[int]]):
         if self.sample_consecutive_frames:
             frame_idx = []
             for seq in chosen_seq:
-                segment_index = self._build_segment_index(
-                    list(self.dataset.seq_to_idx[seq]), n_per_seq
-                )
+                segment_index = self._build_segment_index(seq, n_per_seq)
 
                 segment, idx = segment_index[np.random.randint(len(segment_index))]
                 if len(segment) <= n_per_seq:
@@ -86,7 +84,9 @@ class SceneBatchSampler(Sampler[List[int]]):
         else:
             frame_idx = [
                 _capped_random_choice(
-                    self.dataset.seq_to_idx[seq], n_per_seq, replace=False
+                    list(self.dataset.sequence_indices_in_order(seq)),
+                    n_per_seq,
+                    replace=False,
                 )
                 for seq in chosen_seq
             ]
@@ -98,9 +98,7 @@ class SceneBatchSampler(Sampler[List[int]]):
             )
         return frame_idx
 
-    def _build_segment_index(
-        self, seq_frame_indices: List[int], size: int
-    ) -> List[Tuple[List[int], int]]:
+    def _build_segment_index(self, seq: str, size: int) -> List[Tuple[List[int], int]]:
         """
         Returns a list of (segment, index) tuples, one per eligible frame, where
             segment is a list of frame indices in the contiguous segment the frame
@@ -111,16 +109,14 @@ class SceneBatchSampler(Sampler[List[int]]):
             self.consecutive_frames_max_gap > 0
             or self.consecutive_frames_max_gap_seconds > 0.0
         ):
-            sequence_timestamps = _sort_frames_by_timestamps_then_numbers(
-                seq_frame_indices, self.dataset
+            segments = self._split_to_segments(
+                self.dataset.sequence_frames_in_order(seq)
             )
-            # TODO: use new API to access frame numbers / timestamps
-            segments = self._split_to_segments(sequence_timestamps)
             segments = _cull_short_segments(segments, size)
             if not segments:
                 raise AssertionError("Empty segments after culling")
         else:
-            segments = [seq_frame_indices]
+            segments = [list(self.dataset.sequence_indices_in_order(seq))]
 
         # build an index of segment for random selection of a pivot frame
         segment_index = [
@@ -130,7 +126,7 @@ class SceneBatchSampler(Sampler[List[int]]):
         return segment_index
 
     def _split_to_segments(
-        self, sequence_timestamps: List[Tuple[float, int, int]]
+        self, sequence_timestamps: Iterable[Tuple[float, int, int]]
     ) -> List[List[int]]:
         if (
             self.consecutive_frames_max_gap <= 0
@@ -144,7 +140,7 @@ class SceneBatchSampler(Sampler[List[int]]):
         for ts, no, idx in sequence_timestamps:
             if ts <= 0.0 and no <= last_no:
                 raise AssertionError(
-                    "Frames are not ordered in seq_to_idx while timestamps are not given"
+                    "Sequence frames are not ordered while timestamps are not given"
                 )
 
             if (
@@ -159,23 +155,6 @@ class SceneBatchSampler(Sampler[List[int]]):
             last_ts = ts
 
         return segments
-
-
-def _sort_frames_by_timestamps_then_numbers(
-    seq_frame_indices: List[int], dataset: ImplicitronDatasetBase
-) -> List[Tuple[float, int, int]]:
-    """Build the list of triplets (timestamp, frame_no, dataset_idx).
-    We attempt to first sort by timestamp, then by frame number.
-    Timestamps are coalesced with 0s.
-    """
-    nos_timestamps = dataset.get_frame_numbers_and_timestamps(seq_frame_indices)
-
-    return sorted(
-        [
-            (timestamp, frame_no, idx)
-            for idx, (frame_no, timestamp) in zip(seq_frame_indices, nos_timestamps)
-        ]
-    )
 
 
 def _cull_short_segments(segments: List[List[int]], min_size: int) -> List[List[int]]:
