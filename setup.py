@@ -57,12 +57,13 @@ def get_extensions():
         define_macros += [("THRUST_IGNORE_CUB_VERSION_CHECK", None)]
         cub_home = os.environ.get("CUB_HOME", None)
         nvcc_args = [
-            "-std=c++14",
             "-DCUDA_HAS_FP16=1",
             "-D__CUDA_NO_HALF_OPERATORS__",
             "-D__CUDA_NO_HALF_CONVERSIONS__",
             "-D__CUDA_NO_HALF2_OPERATORS__",
         ]
+        if os.name != "nt":
+            nvcc_args.append("-std=c++14")
         if cub_home is None:
             prefix = os.environ.get("CONDA_PREFIX", None)
             if prefix is not None and os.path.isdir(prefix + "/include/cub"):

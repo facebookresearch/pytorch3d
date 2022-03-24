@@ -12,7 +12,6 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "utils/pytorch3d_cutils.h"
 
 // A chunk of work is blocksize-many points of P1.
 // The number of potential chunks to do is N*(1+(P1-1)/blocksize)

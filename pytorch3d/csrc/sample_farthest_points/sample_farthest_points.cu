@@ -12,7 +12,6 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "utils/pytorch3d_cutils.h"
 #include "utils/warp_reduce.cuh"
 
 template <unsigned int block_size>
@@ -170,6 +169,9 @@ at::Tensor FarthestPointSamplingCuda(
   // This will ensure each thread processes the minimum necessary number of
   // points (P/threads).
   const int points_pow_2 = std::log(static_cast<double>(P)) / std::log(2.0);
+
+  // Max possible threads per block
+  const int MAX_THREADS_PER_BLOCK = 1024;
   const size_t threads = max(min(1 << points_pow_2, MAX_THREADS_PER_BLOCK), 1);
 
   // Create the accessors

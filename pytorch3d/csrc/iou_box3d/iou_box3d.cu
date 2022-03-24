@@ -15,7 +15,6 @@
 #include <thrust/device_vector.h>
 #include <thrust/tuple.h>
 #include "iou_box3d/iou_utils.cuh"
-#include "utils/pytorch3d_cutils.h"
 
 // Parallelize over N*M computations which can each be done
 // independently

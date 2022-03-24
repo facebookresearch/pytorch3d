@@ -15,6 +15,3 @@
 #define CHECK_CONTIGUOUS_CUDA(x) \
   CHECK_CUDA(x);                 \
   CHECK_CONTIGUOUS(x)
-
-// Max possible threads per block
-const int MAX_THREADS_PER_BLOCK = 1024;
