@@ -8,6 +8,7 @@
 import contextlib
 import copy
 import dataclasses
+import itertools
 import math
 import os
 import unittest
@@ -285,6 +286,7 @@ class TestEvaluation(unittest.TestCase):
 
     def test_full_eval(self, n_sequences=5):
         """Test evaluation."""
-        for _, idx in list(self.dataset.seq_to_idx.items())[:n_sequences]:
+        for seq in itertools.islice(self.dataset.sequence_names(), n_sequences):
+            idx = list(self.dataset.sequence_indices_in_order(seq))
             seq_dataset = torch.utils.data.Subset(self.dataset, idx)
             self._one_sequence_test(seq_dataset)

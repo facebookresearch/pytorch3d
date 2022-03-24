@@ -25,7 +25,7 @@ class MockDataset(ImplicitronDatasetBase):
         Makes a gap of max_frame_gap frame numbers in the middle of each sequence
         """
         self.seq_annots = {f"seq_{i}": None for i in range(num_seq)}
-        self.seq_to_idx = {
+        self._seq_to_idx = {
             f"seq_{i}": list(range(i * 10, i * 10 + 10)) for i in range(num_seq)
         }
 

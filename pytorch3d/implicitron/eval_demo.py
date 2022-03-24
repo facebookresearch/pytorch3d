@@ -198,7 +198,7 @@ def _get_all_source_cameras(
     """
 
     # load all source cameras of the sequence
-    seq_idx = dataset.seq_to_idx[sequence_name]
+    seq_idx = list(dataset.sequence_indices_in_order(sequence_name))
     dataset_for_loader = torch.utils.data.Subset(dataset, seq_idx)
     (all_frame_data,) = torch.utils.data.DataLoader(
         dataset_for_loader,

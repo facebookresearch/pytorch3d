@@ -67,7 +67,7 @@ def render_sequence(
     if seed is None:
         seed = hash(sequence_name)
     print(f"Loading all data of sequence '{sequence_name}'.")
-    seq_idx = dataset.seq_to_idx[sequence_name]
+    seq_idx = list(dataset.sequence_indices_in_order(sequence_name))
     train_data = _load_whole_dataset(dataset, seq_idx, num_workers=num_workers)
     assert all(train_data.sequence_name[0] == sn for sn in train_data.sequence_name)
     sequence_set_name = "train" if is_train_frame(train_data.frame_type)[0] else "test"
@@ -345,7 +345,7 @@ def export_scenes(
     dataset = dataset_zoo(**config.dataset_args)[split]
 
     # iterate over the sequences in the dataset
-    for sequence_name in dataset.seq_to_idx.keys():
+    for sequence_name in dataset.sequence_names():
         with torch.no_grad():
             render_sequence(
                 dataset,
