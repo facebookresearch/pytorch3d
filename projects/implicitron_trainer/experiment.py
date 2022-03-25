@@ -213,7 +213,7 @@ def init_optimizer(
     model: GenericModel,
     optimizer_state: Optional[Dict[str, Any]],
     last_epoch: int,
-    breed: bool = "adam",
+    breed: str = "adam",
     weight_decay: float = 0.0,
     lr_policy: str = "multistep",
     lr: float = 0.0005,
