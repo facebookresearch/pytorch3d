@@ -91,6 +91,8 @@ class TestDatasetVisualize(unittest.TestCase):
 
     def test_one(self):
         """Test dataset visualization."""
+        if os.environ.get("INSIDE_RE_WORKER") is not None:
+            raise unittest.SkipTest("Visdom not available")
         for max_frames in (16, -1):
             for load_dataset_point_cloud in (True, False):
                 for dataset_key in self.datasets:
