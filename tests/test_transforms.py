@@ -87,6 +87,34 @@ class TestTransform(TestCaseMixin, unittest.TestCase):
             t = t.cuda()
             t = t.cpu()
 
+    def test_dtype_propagation(self):
+        """
+        Check that a given dtype is correctly passed along to child
+        transformations.
+        """
+        # Use at least two dtypes so we avoid only testing on the
+        # default dtype.
+        for dtype in [torch.float32, torch.float64]:
+            R = torch.tensor(
+                [[0.0, 1.0, 0.0], [0.0, 0.0, 1.0], [1.0, 0.0, 0.0]],
+                dtype=dtype,
+            )
+            tf = Transform3d(dtype=dtype) \
+                .rotate(R) \
+                .rotate_axis_angle(
+                    R[0],
+                    'X',
+                ) \
+                .translate(3, 2, 1) \
+                .scale(0.5)
+
+            self.assertEqual(tf.dtype, dtype)
+            for inner_tf in tf._transforms:
+                self.assertEqual(inner_tf.dtype, dtype)
+
+            transformed = tf.transform_points(R)
+            self.assertEqual(transformed.dtype, dtype)
+
     def test_clone(self):
         """
         Check that cloned transformations contain different _matrix objects.
