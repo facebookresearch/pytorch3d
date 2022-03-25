@@ -598,7 +598,7 @@ class RotateAxisAngle(Rotate):
         angle,
         axis: str = "X",
         degrees: bool = True,
-        dtype: torch.dtype = torch.float64,
+        dtype: torch.dtype = torch.float32,
         device: Optional[Device] = None,
     ) -> None:
         """
