@@ -247,8 +247,8 @@ class TestTransform(TestCaseMixin, unittest.TestCase):
         normals_out_expected = torch.tensor(
             [[0.0, 1.0, 0.0], [0.0, 1.0, 0.0], [0.0, 1.0, 0.0]]
         ).view(1, 3, 3)
-        self.assertTrue(torch.allclose(points_out, points_out_expected))
-        self.assertTrue(torch.allclose(normals_out, normals_out_expected))
+        self.assertTrue(torch.allclose(points_out, points_out_expected, atol=1e-7))
+        self.assertTrue(torch.allclose(normals_out, normals_out_expected, atol=1e-7))
 
     def test_transform_points_fail(self):
         t1 = Scale(0.1, 0.1, 0.1)
@@ -979,7 +979,7 @@ class TestRotateAxisAngle(unittest.TestCase):
         self.assertTrue(
             torch.allclose(transformed_points.squeeze(), expected_points, atol=1e-7)
         )
-        self.assertTrue(torch.allclose(t._matrix, matrix))
+        self.assertTrue(torch.allclose(t._matrix, matrix, atol=1e-7))
 
     def test_rotate_x_torch_scalar(self):
         angle = torch.tensor(90.0)
