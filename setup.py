@@ -129,6 +129,7 @@ if os.getenv("PYTORCH3D_NO_NINJA", "0") == "1":
 else:
     BuildExtension = torch.utils.cpp_extension.BuildExtension
 
+trainer = "projects.implicitron_trainer"
 
 setup(
     name="pytorch3d",
@@ -138,12 +139,19 @@ setup(
     description="PyTorch3D is FAIR's library of reusable components "
     "for deep Learning with 3D data.",
     packages=find_packages(
-        exclude=("configs", "tests", "tests.*", "docs.*", "projects.*")
+        exclude=("configs", "tests", "tests.*", "docs.*", "projects.nerf.*")
     ),
     install_requires=["fvcore", "iopath"],
     extras_require={
         "all": ["matplotlib", "tqdm>4.29.0", "imageio", "ipywidgets"],
         "dev": ["flake8", "isort", "black==19.3b0"],
+        "implicitron": ["hydra-core>=1.1", "visdom", "lpips", "matplotlib"],
+    },
+    entry_points={
+        "console_scripts": [
+            f"pytorch3d_implicitron_runner={trainer}.experiment",
+            f"pytorch3d_implicitron_visualizer={trainer}.visualize_reconstruction",
+        ]
     },
     ext_modules=get_extensions(),
     cmdclass={"build_ext": BuildExtension},
