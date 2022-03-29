@@ -36,42 +36,6 @@ class TestBuild(unittest.TestCase):
             self.assertEqual(v, 1, f"Too many files with stem {k}.")
 
     @unittest.skipIf(in_re_worker, "In RE worker")
-    def test_copyright(self):
-        root_dir = get_pytorch3d_dir()
-
-        extensions = ("py", "cu", "cuh", "cpp", "h", "hpp", "sh")
-
-        expect = "Copyright (c) Meta Platforms, Inc. and affiliates.\n"
-
-        files_missing_copyright_header = []
-
-        for extension in extensions:
-            for path in root_dir.glob(f"**/*.{extension}"):
-                excluded_files = (
-                    "pytorch3d/transforms/external/kornia_angle_axis_to_rotation_matrix.py",
-                    "pytorch3d/csrc/pulsar/include/fastermath.h",
-                )
-                if in_conda_build:
-                    excluded_files += (
-                        "run_test.py",
-                        "run_test.sh",
-                        "conda_test_runner.sh",
-                        "conda_test_env_vars.sh",
-                    )
-
-                if str(path).endswith(excluded_files):
-                    continue
-                with open(path) as f:
-                    firstline = f.readline()
-                    if firstline.startswith(("# -*-", "#!", "/*")):
-                        firstline = f.readline()
-                    if not firstline.endswith(expect):
-                        files_missing_copyright_header.append(str(path))
-
-        if len(files_missing_copyright_header) != 0:
-            self.fail("\n".join(files_missing_copyright_header))
-
-    @unittest.skipIf(in_re_worker, "In RE worker")
     def test_valid_ipynbs(self):
         # Check that the ipython notebooks are valid json
         root_dir = get_pytorch3d_dir()
@@ -128,6 +92,8 @@ class TestBuild(unittest.TestCase):
             root_dir = get_pytorch3d_dir() / "pytorch3d"
             for module_file in root_dir.glob("**/*.py"):
                 if module_file.stem in ("__init__", "plotly_vis"):
+                    continue
+                if "implicitron" in str(module_file):
                     continue
                 relative_module = str(module_file.relative_to(root_dir))[:-3]
                 module = "pytorch3d." + relative_module.replace("/", ".")
