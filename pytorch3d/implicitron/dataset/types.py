@@ -8,30 +8,14 @@
 import dataclasses
 import gzip
 import json
-import sys
 from dataclasses import MISSING, Field, dataclass
 from typing import IO, Any, Optional, Tuple, Type, TypeVar, Union, cast
 
 import numpy as np
+from pytorch3d.common.datatypes import get_args, get_origin
 
 
 _X = TypeVar("_X")
-
-
-if sys.version_info >= (3, 8, 0):
-    from typing import get_args, get_origin
-elif sys.version_info >= (3, 7, 0):
-
-    def get_origin(cls):
-        return getattr(cls, "__origin__", None)
-
-    def get_args(cls):
-        return getattr(cls, "__args__", None)
-
-
-else:
-    raise ImportError("This module requires Python 3.7+")
-
 
 TF3 = Tuple[float, float, float]
 

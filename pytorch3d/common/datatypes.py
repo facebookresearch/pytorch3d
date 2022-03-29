@@ -4,6 +4,7 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+import sys
 from typing import Optional, Union
 
 import torch
@@ -56,3 +57,20 @@ def get_device(x, device: Optional[Device] = None) -> torch.device:
 
     # Default device is cpu
     return torch.device("cpu")
+
+
+# Provide get_origin and get_args even in Python 3.7.
+
+if sys.version_info >= (3, 8, 0):
+    from typing import get_args, get_origin
+elif sys.version_info >= (3, 7, 0):
+
+    def get_origin(cls):  # pragma: no cover
+        return getattr(cls, "__origin__", None)
+
+    def get_args(cls):  # pragma: no cover
+        return getattr(cls, "__args__", None)
+
+
+else:
+    raise ImportError("This module requires Python 3.7+")
