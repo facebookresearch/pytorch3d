@@ -87,6 +87,36 @@ class TestTransform(TestCaseMixin, unittest.TestCase):
             t = t.cuda()
             t = t.cpu()
 
+    def test_dtype_propagation(self):
+        """
+        Check that a given dtype is correctly passed along to child
+        transformations.
+        """
+        # Use at least two dtypes so we avoid only testing on the
+        # default dtype.
+        for dtype in [torch.float32, torch.float64]:
+            R = torch.tensor(
+                [[0.0, 1.0, 0.0], [0.0, 0.0, 1.0], [1.0, 0.0, 0.0]],
+                dtype=dtype,
+            )
+            tf = (
+                Transform3d(dtype=dtype)
+                .rotate(R)
+                .rotate_axis_angle(
+                    R[0],
+                    "X",
+                )
+                .translate(3, 2, 1)
+                .scale(0.5)
+            )
+
+            self.assertEqual(tf.dtype, dtype)
+            for inner_tf in tf._transforms:
+                self.assertEqual(inner_tf.dtype, dtype)
+
+            transformed = tf.transform_points(R)
+            self.assertEqual(transformed.dtype, dtype)
+
     def test_clone(self):
         """
         Check that cloned transformations contain different _matrix objects.
@@ -219,8 +249,8 @@ class TestTransform(TestCaseMixin, unittest.TestCase):
         normals_out_expected = torch.tensor(
             [[0.0, 1.0, 0.0], [0.0, 1.0, 0.0], [0.0, 1.0, 0.0]]
         ).view(1, 3, 3)
-        self.assertTrue(torch.allclose(points_out, points_out_expected))
-        self.assertTrue(torch.allclose(normals_out, normals_out_expected))
+        self.assertTrue(torch.allclose(points_out, points_out_expected, atol=1e-7))
+        self.assertTrue(torch.allclose(normals_out, normals_out_expected, atol=1e-7))
 
     def test_transform_points_fail(self):
         t1 = Scale(0.1, 0.1, 0.1)
@@ -951,7 +981,7 @@ class TestRotateAxisAngle(unittest.TestCase):
         self.assertTrue(
             torch.allclose(transformed_points.squeeze(), expected_points, atol=1e-7)
         )
-        self.assertTrue(torch.allclose(t._matrix, matrix))
+        self.assertTrue(torch.allclose(t._matrix, matrix, atol=1e-7))
 
     def test_rotate_x_torch_scalar(self):
         angle = torch.tensor(90.0)

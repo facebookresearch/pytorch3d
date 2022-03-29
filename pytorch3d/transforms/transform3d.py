@@ -390,16 +390,24 @@ class Transform3d:
         return normals_out
 
     def translate(self, *args, **kwargs) -> "Transform3d":
-        return self.compose(Translate(device=self.device, *args, **kwargs))
+        return self.compose(
+            Translate(device=self.device, dtype=self.dtype, *args, **kwargs)
+        )
 
     def scale(self, *args, **kwargs) -> "Transform3d":
-        return self.compose(Scale(device=self.device, *args, **kwargs))
+        return self.compose(
+            Scale(device=self.device, dtype=self.dtype, *args, **kwargs)
+        )
 
     def rotate(self, *args, **kwargs) -> "Transform3d":
-        return self.compose(Rotate(device=self.device, *args, **kwargs))
+        return self.compose(
+            Rotate(device=self.device, dtype=self.dtype, *args, **kwargs)
+        )
 
     def rotate_axis_angle(self, *args, **kwargs) -> "Transform3d":
-        return self.compose(RotateAxisAngle(device=self.device, *args, **kwargs))
+        return self.compose(
+            RotateAxisAngle(device=self.device, dtype=self.dtype, *args, **kwargs)
+        )
 
     def clone(self) -> "Transform3d":
         """
@@ -488,7 +496,7 @@ class Translate(Transform3d):
                 - A 1D torch tensor
         """
         xyz = _handle_input(x, y, z, dtype, device, "Translate")
-        super().__init__(device=xyz.device)
+        super().__init__(device=xyz.device, dtype=dtype)
         N = xyz.shape[0]
 
         mat = torch.eye(4, dtype=dtype, device=self.device)
@@ -532,7 +540,7 @@ class Scale(Transform3d):
                 - 1D torch tensor
         """
         xyz = _handle_input(x, y, z, dtype, device, "scale", allow_singleton=True)
-        super().__init__(device=xyz.device)
+        super().__init__(device=xyz.device, dtype=dtype)
         N = xyz.shape[0]
 
         # TODO: Can we do this all in one go somehow?
@@ -571,7 +579,7 @@ class Rotate(Transform3d):
 
         """
         device_ = get_device(R, device)
-        super().__init__(device=device_)
+        super().__init__(device=device_, dtype=dtype)
         if R.dim() == 2:
             R = R[None]
         if R.shape[-2:] != (3, 3):
@@ -598,7 +606,7 @@ class RotateAxisAngle(Rotate):
         angle,
         axis: str = "X",
         degrees: bool = True,
-        dtype: torch.dtype = torch.float64,
+        dtype: torch.dtype = torch.float32,
         device: Optional[Device] = None,
     ) -> None:
         """
@@ -629,7 +637,7 @@ class RotateAxisAngle(Rotate):
         # is for transforming column vectors. Therefore we transpose this matrix.
         # R will always be of shape (N, 3, 3)
         R = _axis_angle_rotation(axis, angle).transpose(1, 2)
-        super().__init__(device=angle.device, R=R)
+        super().__init__(device=angle.device, R=R, dtype=dtype)
 
 
 def _handle_coord(c, dtype: torch.dtype, device: torch.device) -> torch.Tensor:
@@ -646,8 +654,8 @@ def _handle_coord(c, dtype: torch.dtype, device: torch.device) -> torch.Tensor:
         c = torch.tensor(c, dtype=dtype, device=device)
     if c.dim() == 0:
         c = c.view(1)
-    if c.device != device:
-        c = c.to(device=device)
+    if c.device != device or c.dtype != dtype:
+        c = c.to(device=device, dtype=dtype)
     return c
 
 
@@ -696,7 +704,7 @@ def _handle_input(
         if y is not None or z is not None:
             msg = "Expected y and z to be None (in %s)" % name
             raise ValueError(msg)
-        return x.to(device=device_)
+        return x.to(device=device_, dtype=dtype)
 
     if allow_singleton and y is None and z is None:
         y = x
