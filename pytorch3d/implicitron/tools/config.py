@@ -474,13 +474,15 @@ def get_default_args(C, *, _do_not_process: Tuple[type, ...] = ()) -> DictConfig
                 + f" Argument '{pname}' does not have a type annotation."
             )
 
+        _, annotation = _resolve_optional(defval.annotation)
+
         if isinstance(default, set):  # force OmegaConf to convert it to ListConfig
             default = tuple(default)
 
         if isinstance(default, (list, dict)):
             # OmegaConf will convert to [Dict|List]Config, so it is safe to reuse the value
             field_ = dataclasses.field(default_factory=lambda default=default: default)
-        elif not _is_immutable_type(defval.annotation, default):
+        elif not _is_immutable_type(annotation, default):
             continue
         else:
             # we can use a simple default argument for dataclass.field
@@ -509,7 +511,22 @@ def _is_immutable_type(type_: Type, val: Any) -> bool:
     if isinstance(val, PRIMITIVE_TYPES):
         return True
 
-    return type_ in PRIMITIVE_TYPES or issubclass(type_, Enum)
+    return type_ in PRIMITIVE_TYPES or (
+        inspect.isclass(type_) and issubclass(type_, Enum)
+    )
+
+
+# copied from OmegaConf
+def _resolve_optional(type_: Any) -> Tuple[bool, Any]:
+    """Check whether `type_` is equivalent to `typing.Optional[T]` for some T."""
+    if get_origin(type_) is Union:
+        args = get_args(type_)
+        if len(args) == 2 and args[1] == type(None):  # noqa E721
+            return True, args[0]
+    if type_ is Any:
+        return True, Any
+
+    return False, type_
 
 
 def _is_actually_dataclass(some_class) -> bool:

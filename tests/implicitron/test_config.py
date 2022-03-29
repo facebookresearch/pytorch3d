@@ -629,6 +629,8 @@ class TestConfig(unittest.TestCase):
 class MockDataclass:
     field_no_default: int
     field_primitive_type: int = 42
+    field_optional_none: Optional[int] = None
+    field_optional_with_value: Optional[int] = 42
     field_list_type: List[int] = field(default_factory=lambda: [])
 
 
@@ -645,12 +647,16 @@ class MockClassWithInit:  # noqa: B903
         field_no_nothing,
         field_no_default: int,
         field_primitive_type: int = 42,
+        field_optional_none: Optional[int] = None,
+        field_optional_with_value: Optional[int] = 42,
         field_list_type: List[int] = [],  # noqa: B006
         field_reference_type: RefObject = REF_OBJECT,
     ):
         self.field_no_nothing = field_no_nothing
         self.field_no_default = field_no_default
         self.field_primitive_type = field_primitive_type
+        self.field_optional_none = field_optional_none
+        self.field_optional_with_value = field_optional_with_value
         self.field_list_type = field_list_type
         self.field_reference_type = field_reference_type
 
