@@ -4,6 +4,7 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+import copy
 import dataclasses
 import inspect
 import itertools
@@ -412,7 +413,9 @@ def _is_configurable_class(C) -> bool:
     return isinstance(C, type) and issubclass(C, (Configurable, ReplaceableBase))
 
 
-def get_default_args(C, *, _do_not_process: Tuple[type, ...] = ()) -> DictConfig:
+def get_default_args(
+    C, *, _allow_untyped: bool = False, _do_not_process: Tuple[type, ...] = ()
+) -> DictConfig:
     """
     Get the DictConfig of args to call C - which might be a type or a function.
 
@@ -423,6 +426,14 @@ def get_default_args(C, *, _do_not_process: Tuple[type, ...] = ()) -> DictConfig
 
     Args:
         C: the class or function to be processed
+        _allow_untyped: (internal use) If True, do not try to make the
+                        output typed when it is not a Configurable or
+                        ReplaceableBase. This avoids problems (due to local
+                        dataclasses being remembered inside the returned
+                        DictConfig and any of its DictConfig and ListConfig
+                        members) when pickling the output, but will break
+                        conversions of yaml strings to/from any emum members
+                        of C.
         _do_not_process: (internal use) When this function is called from
                     expand_args_fields, we specify any class currently being
                     processed, to make sure we don't try to process a class
@@ -462,6 +473,7 @@ def get_default_args(C, *, _do_not_process: Tuple[type, ...] = ()) -> DictConfig
 
     # regular class or function
     field_annotations = []
+    kwargs = {}
     for pname, defval in _params_iter(C):
         default = defval.default
         if default == inspect.Parameter.empty:
@@ -476,6 +488,8 @@ def get_default_args(C, *, _do_not_process: Tuple[type, ...] = ()) -> DictConfig
 
         _, annotation = _resolve_optional(defval.annotation)
 
+        kwargs[pname] = copy.deepcopy(default)
+
         if isinstance(default, set):  # force OmegaConf to convert it to ListConfig
             default = tuple(default)
 
@@ -488,6 +502,9 @@ def get_default_args(C, *, _do_not_process: Tuple[type, ...] = ()) -> DictConfig
             # we can use a simple default argument for dataclass.field
             field_ = dataclasses.field(default=default)
         field_annotations.append((pname, defval.annotation, field_))
+
+    if _allow_untyped:
+        return DictConfig(kwargs)
 
     # make a temp dataclass and generate a structured config from it.
     return OmegaConf.structured(
@@ -696,7 +713,9 @@ def expand_args_fields(
     return some_class
 
 
-def get_default_args_field(C, *, _do_not_process: Tuple[type, ...] = ()):
+def get_default_args_field(
+    C, *, _allow_untyped: bool = False, _do_not_process: Tuple[type, ...] = ()
+):
     """
     Get a dataclass field which defaults to get_default_args(...)
 
@@ -708,7 +727,9 @@ def get_default_args_field(C, *, _do_not_process: Tuple[type, ...] = ()):
     """
 
     def create():
-        return get_default_args(C, _do_not_process=_do_not_process)
+        return get_default_args(
+            C, _allow_untyped=_allow_untyped, _do_not_process=_do_not_process
+        )
 
     return dataclasses.field(default_factory=create)
 

@@ -67,8 +67,8 @@ from pytorch3d.implicitron.dataset import utils as ds_utils
 from pytorch3d.implicitron.dataset.dataloader_zoo import dataloader_zoo
 from pytorch3d.implicitron.dataset.dataset_zoo import dataset_zoo
 from pytorch3d.implicitron.dataset.implicitron_dataset import (
-    ImplicitronDataset,
     FrameData,
+    ImplicitronDataset,
 )
 from pytorch3d.implicitron.evaluation import evaluate_new_view_synthesis as evaluate
 from pytorch3d.implicitron.models.base import EvaluationMode, GenericModel
@@ -79,6 +79,7 @@ from pytorch3d.implicitron.tools.config import (
 )
 from pytorch3d.implicitron.tools.stats import Stats
 from pytorch3d.renderer.cameras import CamerasBase
+
 
 logger = logging.getLogger(__name__)
 
@@ -662,7 +663,9 @@ def _seed_all_random_engines(seed: int):
 @dataclass(eq=False)
 class ExperimentConfig:
     generic_model_args: DictConfig = get_default_args_field(GenericModel)
-    solver_args: DictConfig = get_default_args_field(init_optimizer)
+    solver_args: DictConfig = get_default_args_field(
+        init_optimizer, _allow_untyped=True
+    )
     dataset_args: DictConfig = get_default_args_field(dataset_zoo)
     dataloader_args: DictConfig = get_default_args_field(dataloader_zoo)
     architecture: str = "generic"

@@ -4,6 +4,7 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+import pickle
 import textwrap
 import unittest
 from dataclasses import dataclass, field, is_dataclass
@@ -580,6 +581,15 @@ class TestConfig(unittest.TestCase):
 
             remerged = OmegaConf.merge(base, OmegaConf.create(OmegaConf.to_yaml(base)))
             self.assertEqual(remerged.a, A.B1)
+
+    def test_pickle(self):
+        def f(a: int = 1, b: str = "3"):
+            pass
+
+        args = get_default_args(f, _allow_untyped=True)
+        args2 = pickle.loads(pickle.dumps(args))
+        self.assertEqual(args2.a, 1)
+        self.assertEqual(args2.b, "3")
 
     def test_remove_unused_components(self):
         struct = get_default_args(MainTest)

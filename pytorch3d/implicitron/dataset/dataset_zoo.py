@@ -100,6 +100,8 @@ def dataset_zoo(
         datasets: A dictionary containing the
             `"dataset_subset_name": torch_dataset_object` key, value pairs.
     """
+    restrict_sequence_name = tuple(restrict_sequence_name)
+    aux_dataset_kwargs = dict(aux_dataset_kwargs)
 
     datasets = {}
 

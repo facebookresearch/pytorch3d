@@ -57,6 +57,7 @@ def dataloader_zoo(
             `"dataset_subset_name": torch_dataloader_object` key, value pairs.
     """
 
+    images_per_seq_options = tuple(images_per_seq_options)
     if dataset_name not in ["co3d_singlesequence", "co3d_multisequence"]:
         raise ValueError(f"Unsupported dataset: {dataset_name}")
 
