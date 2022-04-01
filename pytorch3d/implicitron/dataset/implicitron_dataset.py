@@ -16,11 +16,13 @@ from dataclasses import dataclass, field, fields
 from itertools import islice
 from pathlib import Path
 from typing import (
+    Any,
     ClassVar,
     Dict,
     Iterable,
     Iterator,
     List,
+    Mapping,
     Optional,
     Sequence,
     Tuple,
@@ -42,7 +44,7 @@ from . import types
 
 
 @dataclass
-class FrameData:
+class FrameData(Mapping[str, Any]):
     """
     A type of the elements returned by indexing the dataset object.
     It can represent both individual frames and batches of thereof;
@@ -137,12 +139,15 @@ class FrameData:
         return self.to(device=torch.device("cuda"))
 
     # the following functions make sure **frame_data can be passed to functions
-    def keys(self):
+    def __iter__(self):
         for f in fields(self):
             yield f.name
 
     def __getitem__(self, key):
         return getattr(self, key)
+
+    def __len__(self):
+        return len(fields(self))
 
     @classmethod
     def collate(cls, batch):

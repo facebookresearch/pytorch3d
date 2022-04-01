@@ -10,6 +10,7 @@ from typing import NamedTuple, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
+from pytorch3d.structures import Pointclouds
 
 from .rasterize_points import rasterize_points
 
@@ -75,7 +76,7 @@ class PointsRasterizer(nn.Module):
         self.cameras = cameras
         self.raster_settings = raster_settings
 
-    def transform(self, point_clouds, **kwargs) -> torch.Tensor:
+    def transform(self, point_clouds, **kwargs) -> Pointclouds:
         """
         Args:
             point_clouds: a set of point clouds
