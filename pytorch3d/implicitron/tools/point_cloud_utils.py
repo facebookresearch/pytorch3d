@@ -74,6 +74,7 @@ def render_point_cloud_pytorch3d(
     topk: int = 10,
     eps: float = 1e-2,
     bg_color=None,
+    bin_size: Optional[int] = None,
     **kwargs
 ):
 
@@ -86,13 +87,18 @@ def render_point_cloud_pytorch3d(
     camera_trivial.R[:] = torch.eye(3)
     camera_trivial.T *= 0.0
 
+    bin_size = (
+        bin_size
+        if bin_size is not None
+        else (64 if int(max(render_size)) > 1024 else None)
+    )
     rasterizer = PointsRasterizer(
         cameras=camera_trivial,
         raster_settings=PointsRasterizationSettings(
             image_size=render_size,
             radius=point_radius,
             points_per_pixel=topk,
-            bin_size=64 if int(max(render_size)) > 1024 else None,
+            bin_size=bin_size,
         ),
     )
 
