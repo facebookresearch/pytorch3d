@@ -16,7 +16,10 @@ from pytorch3d.implicitron.dataset.implicitron_dataset import ImplicitronDataset
 from pytorch3d.implicitron.dataset.visualize import get_implicitron_sequence_pointcloud
 from pytorch3d.implicitron.tools.point_cloud_utils import render_point_cloud_pytorch3d
 from pytorch3d.vis.plotly_vis import plot_scene
-from visdom import Visdom
+
+
+if os.environ.get("INSIDE_RE_WORKER") is None:
+    from visdom import Visdom
 
 if os.environ.get("FB_TEST", False):
     from .common_resources import get_skateboard_data
