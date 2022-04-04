@@ -4,6 +4,7 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+import logging
 from typing import List, Optional, Tuple
 
 import torch
@@ -11,6 +12,9 @@ from pytorch3d.implicitron.tools.config import registry
 from pytorch3d.renderer import RayBundle
 
 from .base import BaseRenderer, EvaluationMode, ImplicitFunctionWrapper, RendererOutput
+
+
+logger = logging.getLogger(__name__)
 
 
 @registry.register
@@ -28,7 +32,7 @@ class LSTMRenderer(BaseRenderer, torch.nn.Module):
         hidden_size: The dimensionality of the LSTM's hidden state.
         n_feature_channels: The number of feature channels returned by the
             implicit_function evaluated at each raymarching step.
-        verbose: If `True`, prints raymarching debug info.
+        verbose: If `True`, logs raymarching debug info.
 
     References:
         [1] Sitzmann, V. and Zollhöfer, M. and Wetzstein, G..
@@ -110,8 +114,7 @@ class LSTMRenderer(BaseRenderer, torch.nn.Module):
                 raymarch_features=None,
             )
             if self.verbose:
-                # print some stats
-                print(
+                msg = (
                     f"{t}: mu={float(signed_distance.mean()):1.2e};"
                     + f" std={float(signed_distance.std()):1.2e};"
                     # pyre-fixme[6]: Expected `Union[bytearray, bytes, str,
@@ -123,6 +126,7 @@ class LSTMRenderer(BaseRenderer, torch.nn.Module):
                     #  param but got `Tensor`.
                     + f" std_d={float(ray_bundle_t.lengths.std()):1.2e};"
                 )
+                logger.info(msg)
             if t == self.num_raymarch_steps:
                 break
 

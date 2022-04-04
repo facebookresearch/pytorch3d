@@ -183,7 +183,6 @@ def _rgb_metrics(
     rgb_squared = ((images_pred - images) ** 2).mean(dim=1, keepdim=True)
     rgb_loss = utils.huber(rgb_squared, scaling=0.03)
     crop_mass = masks_crop.sum().clamp(1.0)
-    # print("IMAGE:", images.mean().item(), images_pred.mean().item())   # TEMP
     preds = {
         "rgb_huber": (rgb_loss * masks_crop).sum() / crop_mass,
         "rgb_mse": (rgb_squared * masks_crop).sum() / crop_mass,

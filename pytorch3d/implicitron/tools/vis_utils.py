@@ -4,10 +4,14 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+import logging
 from typing import Any, Dict, List
 
 import torch
 from visdom import Visdom
+
+
+logger = logging.getLogger(__name__)
 
 
 def get_visdom_env(cfg):
@@ -80,7 +84,7 @@ def visualize_basics(
     imout = {}
     for k in visualize_preds_keys:
         if k not in preds or preds[k] is None:
-            print(f"cant show {k}")
+            logger.info(f"cant show {k}")
             continue
         v = preds[k].cpu().detach().clone()
         if k.startswith("depth"):
@@ -154,7 +158,7 @@ def make_depth_image(
     for d, m in zip(depths, masks):
         ok = (d.view(-1) > 1e-6) * (m.view(-1) > 0.5)
         if ok.sum() <= 1:
-            print("empty depth!")
+            logger.info("empty depth!")
             normfacs.append(torch.zeros(2).type_as(depths))
             continue
         dok = d.view(-1)[ok].view(-1)

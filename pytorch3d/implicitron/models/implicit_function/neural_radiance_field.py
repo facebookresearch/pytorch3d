@@ -4,6 +4,7 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+import logging
 from dataclasses import field
 from typing import List, Optional
 
@@ -16,6 +17,9 @@ from pytorch3d.renderer.implicit import HarmonicEmbedding
 
 from .base import ImplicitFunctionBase
 from .utils import create_embeddings_for_implicit_function
+
+
+logger = logging.getLogger(__name__)
 
 
 class NeuralRadianceFieldBase(ImplicitFunctionBase, torch.nn.Module):
@@ -384,7 +388,7 @@ class TransformerWithInputSkips(torch.nn.Module):
         for layeri in range(n_layers):
             dimin = int(round(hidden_dim / (dim_down_factor ** layeri)))
             dimout = int(round(hidden_dim / (dim_down_factor ** (layeri + 1))))
-            print(f"Tr: {dimin} -> {dimout}")
+            logger.info(f"Tr: {dimin} -> {dimout}")
             for _i, l in enumerate((layers_pool, layers_ray)):
                 l.append(
                     TransformerEncoderLayer(

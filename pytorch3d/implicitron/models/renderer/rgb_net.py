@@ -3,11 +3,15 @@
 # https://github.com/lioryariv/idr/
 # Copyright (c) 2020 Lior Yariv
 
+import logging
 from typing import List, Tuple
 
 import torch
 from pytorch3d.renderer.implicit import HarmonicEmbedding, RayBundle
 from torch import nn
+
+
+logger = logging.getLogger(__name__)
 
 
 class RayNormalColoringNetwork(torch.nn.Module):
@@ -36,7 +40,7 @@ class RayNormalColoringNetwork(torch.nn.Module):
             dims_full[0] += self.embedview_fn.get_output_dim() - 3
 
         if pooled_feature_dim > 0:
-            print("Pooled features in rendering network.")
+            logger.info("Pooled features in rendering network.")
             dims_full[0] += pooled_feature_dim
 
         self.num_layers = len(dims_full)

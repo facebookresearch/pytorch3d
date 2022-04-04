@@ -5,6 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 
 
+import logging
 import math
 import warnings
 from dataclasses import field
@@ -52,6 +53,7 @@ from .view_pooling.view_sampling import ViewSampler
 
 
 STD_LOG_VARS = ["objective", "epoch", "sec/it"]
+logger = logging.getLogger(__name__)
 
 
 # pyre-ignore: 13
@@ -274,7 +276,7 @@ class GenericModel(Configurable, torch.nn.Module):
 
         self._implicit_functions = self._construct_implicit_functions()
 
-        self.print_loss_weights()
+        self.log_loss_weights()
 
     def forward(
         self,
@@ -507,7 +509,7 @@ class GenericModel(Configurable, torch.nn.Module):
             prefix: prepended to the names of images
         """
         if not viz.check_connection():
-            print("no visdom server! -> skipping batch vis")
+            logger.info("no visdom server! -> skipping batch vis")
             return
 
         idx_image = 0
@@ -662,14 +664,16 @@ class GenericModel(Configurable, torch.nn.Module):
         ]
         return torch.nn.ModuleList(implicit_functions_list)
 
-    def print_loss_weights(self) -> None:
+    def log_loss_weights(self) -> None:
         """
         Print a table of the loss weights.
         """
-        print("-------\nloss_weights:")
-        for k, w in self.loss_weights.items():
-            print(f"{k:40s}: {w:1.2e}")
-        print("-------")
+        loss_weights_message = (
+            "-------\nloss_weights:\n"
+            + "\n".join(f"{k:40s}: {w:1.2e}" for k, w in self.loss_weights.items())
+            + "-------"
+        )
+        logger.info(loss_weights_message)
 
     def _preprocess_input(
         self,

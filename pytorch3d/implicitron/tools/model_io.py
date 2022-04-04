@@ -5,11 +5,15 @@
 # LICENSE file in the root directory of this source tree.
 
 import glob
+import logging
 import os
 import shutil
 import tempfile
 
 import torch
+
+
+logger = logging.getLogger(__name__)
 
 
 def load_stats(flstats):
@@ -18,7 +22,7 @@ def load_stats(flstats):
     try:
         stats = Stats.load(flstats)
     except:
-        print("Cant load stats! %s" % flstats)
+        logger.info("Cant load stats! %s" % flstats)
         stats = None
     return stats
 
@@ -59,7 +63,7 @@ def safe_save_model(model, stats, fl, optimizer=None, cfg=None) -> None:
     the moves. It is however quite improbable that a crash would occur right at
     this time.
     """
-    print(f"saving model files safely to {fl}")
+    logger.info(f"saving model files safely to {fl}")
     # first store everything to a tmpdir
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpfl = os.path.join(tmpdir, os.path.split(fl)[-1])
@@ -76,21 +80,20 @@ def safe_save_model(model, stats, fl, optimizer=None, cfg=None) -> None:
         for tmpfl, tgt_fl in zip(stored_tmp_fls, tgt_fls):
             if tgt_fl is None:
                 continue
-            # print(f'Moving {tmpfl} --> {tgt_fl}\n')
             shutil.move(tmpfl, tgt_fl)
 
 
 def save_model(model, stats, fl, optimizer=None, cfg=None):
     flstats = get_stats_path(fl)
     flmodel = get_model_path(fl)
-    print("saving model to %s" % flmodel)
+    logger.info("saving model to %s" % flmodel)
     torch.save(model.state_dict(), flmodel)
     flopt = None
     if optimizer is not None:
         flopt = get_optimizer_path(fl)
-        print("saving optimizer to %s" % flopt)
+        logger.info("saving optimizer to %s" % flopt)
         torch.save(optimizer.state_dict(), flopt)
-    print("saving model stats to %s" % flstats)
+    logger.info("saving model stats to %s" % flstats)
     stats.save(flstats)
 
     return flstats, flmodel, flopt
@@ -159,5 +162,5 @@ def purge_epoch(exp_dir, epoch) -> None:
         get_stats_path(model_path),
     ]:
         if os.path.isfile(file_path):
-            print("deleting %s" % file_path)
+            logger.info("deleting %s" % file_path)
             os.remove(file_path)

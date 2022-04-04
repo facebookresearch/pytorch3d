@@ -8,6 +8,7 @@ import functools
 import gzip
 import hashlib
 import json
+import logging
 import os
 import random
 import warnings
@@ -41,6 +42,9 @@ from pytorch3d.renderer.cameras import CamerasBase, PerspectiveCameras
 from pytorch3d.structures.pointclouds import Pointclouds, join_pointclouds_as_batch
 
 from . import types
+
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -398,7 +402,7 @@ class ImplicitronDataset(ImplicitronDatasetBase):
             self._sort_frames()
         self._load_subset_lists()
         self._filter_db()  # also computes sequence indices
-        print(str(self))
+        logger.info(str(self))
 
     def seq_frame_index_to_dataset_index(
         self,
@@ -674,7 +678,7 @@ class ImplicitronDataset(ImplicitronDatasetBase):
         )
 
     def _load_frames(self) -> None:
-        print(f"Loading Co3D frames from {self.frame_annotations_file}.")
+        logger.info(f"Loading Co3D frames from {self.frame_annotations_file}.")
         local_file = self._local_path(self.frame_annotations_file)
         with gzip.open(local_file, "rt", encoding="utf8") as zipfile:
             frame_annots_list = types.load_dataclass(
@@ -687,7 +691,7 @@ class ImplicitronDataset(ImplicitronDatasetBase):
         ]
 
     def _load_sequences(self) -> None:
-        print(f"Loading Co3D sequences from {self.sequence_annotations_file}.")
+        logger.info(f"Loading Co3D sequences from {self.sequence_annotations_file}.")
         local_file = self._local_path(self.sequence_annotations_file)
         with gzip.open(local_file, "rt", encoding="utf8") as zipfile:
             seq_annots = types.load_dataclass(zipfile, List[types.SequenceAnnotation])
@@ -696,7 +700,7 @@ class ImplicitronDataset(ImplicitronDatasetBase):
         self.seq_annots = {entry.sequence_name: entry for entry in seq_annots}
 
     def _load_subset_lists(self) -> None:
-        print(f"Loading Co3D subset lists from {self.subset_lists_file}.")
+        logger.info(f"Loading Co3D subset lists from {self.subset_lists_file}.")
         if not self.subset_lists_file:
             return
 
@@ -731,7 +735,7 @@ class ImplicitronDataset(ImplicitronDatasetBase):
 
     def _filter_db(self) -> None:
         if self.remove_empty_masks:
-            print("Removing images with empty masks.")
+            logger.info("Removing images with empty masks.")
             old_len = len(self.frame_annots)
 
             msg = "remove_empty_masks needs every MaskAnnotation.mass to be set."
@@ -749,7 +753,7 @@ class ImplicitronDataset(ImplicitronDatasetBase):
                 for frame in self.frame_annots
                 if positive_mass(frame["frame_annotation"])
             ]
-            print("... filtered %d -> %d" % (old_len, len(self.frame_annots)))
+            logger.info("... filtered %d -> %d" % (old_len, len(self.frame_annots)))
 
         # this has to be called after joining with categories!!
         subsets = self.subsets
@@ -759,7 +763,7 @@ class ImplicitronDataset(ImplicitronDatasetBase):
                     "Subset filter is on but subset_lists_file was not given"
                 )
 
-            print(f"Limitting Co3D dataset to the '{subsets}' subsets.")
+            logger.info(f"Limiting Co3D dataset to the '{subsets}' subsets.")
 
             # truncate the list of subsets to the valid one
             self.frame_annots = [
@@ -771,7 +775,7 @@ class ImplicitronDataset(ImplicitronDatasetBase):
             self._invalidate_indexes(filter_seq_annots=True)
 
         if len(self.limit_category_to) > 0:
-            print(f"Limitting dataset to categories: {self.limit_category_to}")
+            logger.info(f"Limiting dataset to categories: {self.limit_category_to}")
             self.seq_annots = {
                 name: entry
                 for name, entry in self.seq_annots.items()
@@ -784,13 +788,13 @@ class ImplicitronDataset(ImplicitronDatasetBase):
             attr = f"{prefix}_sequence"
             arr = getattr(self, attr)
             if len(arr) > 0:
-                print(f"{attr}: {str(arr)}")
+                logger.info(f"{attr}: {str(arr)}")
                 self.seq_annots = {
                     name: entry
                     for name, entry in self.seq_annots.items()
                     if (name in arr) == (prefix == "pick")
                 }
-                print("... filtered %d -> %d" % (orig_len, len(self.seq_annots)))
+                logger.info("... filtered %d -> %d" % (orig_len, len(self.seq_annots)))
 
         if self.limit_sequences_to > 0:
             self.seq_annots = dict(
@@ -807,7 +811,7 @@ class ImplicitronDataset(ImplicitronDatasetBase):
         self._invalidate_indexes()
 
         if self.n_frames_per_sequence > 0:
-            print(f"Taking max {self.n_frames_per_sequence} per sequence.")
+            logger.info(f"Taking max {self.n_frames_per_sequence} per sequence.")
             keep_idx = []
             for seq, seq_indices in self._seq_to_idx.items():
                 # infer the seed from the sequence name, this is reproducible
@@ -818,13 +822,15 @@ class ImplicitronDataset(ImplicitronDatasetBase):
                 )
                 keep_idx.extend(seq_idx_shuffled[: self.n_frames_per_sequence])
 
-            print("... filtered %d -> %d" % (len(self.frame_annots), len(keep_idx)))
+            logger.info(
+                "... filtered %d -> %d" % (len(self.frame_annots), len(keep_idx))
+            )
             self.frame_annots = [self.frame_annots[i] for i in keep_idx]
             self._invalidate_indexes(filter_seq_annots=False)
             # sequences are not decimated, so self.seq_annots is valid
 
         if self.limit_to > 0 and self.limit_to < len(self.frame_annots):
-            print(
+            logger.info(
                 "limit_to: filtered %d -> %d" % (len(self.frame_annots), self.limit_to)
             )
             self.frame_annots = self.frame_annots[: self.limit_to]
