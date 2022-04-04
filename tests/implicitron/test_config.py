@@ -255,6 +255,8 @@ class TestConfig(unittest.TestCase):
         container_args = get_default_args(Container)
         container = Container(**container_args)
         self.assertIsInstance(container.fruit, Orange)
+        self.assertEqual(Container._processed_members, {"fruit": Fruit})
+        self.assertEqual(container._processed_members, {"fruit": Fruit})
 
         container_defaulted = Container()
         container_defaulted.fruit_Pear_args.n_pips += 4
