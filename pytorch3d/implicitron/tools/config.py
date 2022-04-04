@@ -746,7 +746,8 @@ def _get_type_to_process(type_) -> Optional[Tuple[Type, _ProcessType]]:
             return
         underlying = args[0] if args[1] is type(None) else args[1]  # noqa: E721
         if (
-            issubclass(underlying, ReplaceableBase)
+            isinstance(underlying, type)
+            and issubclass(underlying, ReplaceableBase)
             and ReplaceableBase in underlying.__bases__
         ):
             return underlying, _ProcessType.OPTIONAL_REPLACEABLE

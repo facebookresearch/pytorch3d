@@ -109,6 +109,7 @@ class TestConfig(unittest.TestCase):
         self.assertIsNone(gt(Optional[MainTest]))
         self.assertIsNone(gt(Tuple[Fruit]))
         self.assertIsNone(gt(Tuple[Fruit, Animal]))
+        self.assertIsNone(gt(Optional[List[int]]))
 
     def test_simple_replacement(self):
         struct = get_default_args(MainTest)
