@@ -74,6 +74,7 @@ from pytorch3d.implicitron.evaluation import evaluate_new_view_synthesis as eval
 from pytorch3d.implicitron.models.base import EvaluationMode, GenericModel
 from pytorch3d.implicitron.tools import model_io, vis_utils
 from pytorch3d.implicitron.tools.config import (
+    enable_get_default_args,
     get_default_args_field,
     remove_unused_components,
 )
@@ -302,6 +303,9 @@ def init_optimizer(
 
     optimizer.zero_grad()
     return optimizer, scheduler
+
+
+enable_get_default_args(init_optimizer)
 
 
 def trainvalidate(
@@ -663,9 +667,7 @@ def _seed_all_random_engines(seed: int):
 @dataclass(eq=False)
 class ExperimentConfig:
     generic_model_args: DictConfig = get_default_args_field(GenericModel)
-    solver_args: DictConfig = get_default_args_field(
-        init_optimizer, _allow_untyped=True
-    )
+    solver_args: DictConfig = get_default_args_field(init_optimizer)
     dataset_args: DictConfig = get_default_args_field(dataset_zoo)
     dataloader_args: DictConfig = get_default_args_field(dataloader_zoo)
     architecture: str = "generic"

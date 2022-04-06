@@ -7,6 +7,7 @@
 from typing import Dict, Sequence
 
 import torch
+from pytorch3d.implicitron.tools.config import enable_get_default_args
 
 from .implicitron_dataset import FrameData, ImplicitronDatasetBase
 from .scene_batch_sampler import SceneBatchSampler
@@ -56,8 +57,6 @@ def dataloader_zoo(
         dataloaders: A dictionary containing the
             `"dataset_subset_name": torch_dataloader_object` key, value pairs.
     """
-
-    images_per_seq_options = tuple(images_per_seq_options)
     if dataset_name not in ["co3d_singlesequence", "co3d_multisequence"]:
         raise ValueError(f"Unsupported dataset: {dataset_name}")
 
@@ -96,3 +95,6 @@ def dataloader_zoo(
         raise ValueError(f"Unsupported dataset: {dataset_name}")
 
     return dataloaders
+
+
+enable_get_default_args(dataloader_zoo)

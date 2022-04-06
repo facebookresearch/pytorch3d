@@ -19,6 +19,7 @@ from pytorch3d.implicitron.tools.config import (
     _is_actually_dataclass,
     _ProcessType,
     _Registry,
+    enable_get_default_args,
     expand_args_fields,
     get_default_args,
     get_default_args_field,
@@ -235,6 +236,8 @@ class TestConfig(unittest.TestCase):
         class Foo:
             def __init__(self, a: Any = 1, b: Any = 2):
                 self.a, self.b = a, b
+
+        enable_get_default_args(Foo)
 
         @dataclass()
         class Bar:
@@ -480,9 +483,13 @@ class TestConfig(unittest.TestCase):
             def get_tuple(self):
                 return self.tuple_member
 
+        enable_get_default_args(SimpleClass)
+
         def f(*, a: int = 3, b: str = "kj"):
             self.assertEqual(a, 3)
             self.assertEqual(b, "kj")
+
+        enable_get_default_args(f)
 
         class C(Configurable):
             simple: DictConfig = get_default_args_field(SimpleClass)
@@ -567,9 +574,13 @@ class TestConfig(unittest.TestCase):
         def C_fn(a: A = A.B1):
             pass
 
+        enable_get_default_args(C_fn)
+
         class C_cl:
             def __init__(self, a: A = A.B1) -> None:
                 pass
+
+        enable_get_default_args(C_cl)
 
         for C_ in [C, C_fn, C_cl]:
             base = get_default_args(C_)
@@ -586,13 +597,19 @@ class TestConfig(unittest.TestCase):
             self.assertEqual(remerged.a, A.B1)
 
     def test_pickle(self):
-        def f(a: int = 1, b: str = "3"):
+        def func(a: int = 1, b: str = "3"):
             pass
 
-        args = get_default_args(f, _allow_untyped=True)
+        enable_get_default_args(func)
+
+        args = get_default_args(func)
         args2 = pickle.loads(pickle.dumps(args))
         self.assertEqual(args2.a, 1)
         self.assertEqual(args2.b, "3")
+
+        args_regenerated = get_default_args(func)
+        pickle.dumps(args_regenerated)
+        pickle.dumps(args)
 
     def test_remove_unused_components(self):
         struct = get_default_args(MainTest)
@@ -672,6 +689,9 @@ class MockClassWithInit:  # noqa: B903
         self.field_optional_with_value = field_optional_with_value
         self.field_list_type = field_list_type
         self.field_reference_type = field_reference_type
+
+
+enable_get_default_args(MockClassWithInit)
 
 
 class TestRawClasses(unittest.TestCase):

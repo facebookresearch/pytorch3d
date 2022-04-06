@@ -20,11 +20,9 @@ from .rgb_net import RayNormalColoringNetwork
 @registry.register
 class SignedDistanceFunctionRenderer(BaseRenderer, torch.nn.Module):
     render_features_dimensions: int = 3
-    ray_tracer_args: DictConfig = get_default_args_field(
-        RayTracing, _allow_untyped=True
-    )
+    ray_tracer_args: DictConfig = get_default_args_field(RayTracing)
     ray_normal_coloring_network_args: DictConfig = get_default_args_field(
-        RayNormalColoringNetwork, _allow_untyped=True
+        RayNormalColoringNetwork
     )
     bg_color: Tuple[float, ...] = (0.0,)
     soft_mask_alpha: float = 50.0

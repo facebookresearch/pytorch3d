@@ -4,10 +4,10 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-import copy
 import dataclasses
 import inspect
 import itertools
+import sys
 import warnings
 from collections import Counter, defaultdict
 from enum import Enum
@@ -27,8 +27,7 @@ Core functionality:
 
 - expand_args_fields -- Expands a class like `dataclasses.dataclass`. Runs automatically.
 
-- get_default_args -- gets an omegaconf.DictConfig for initializing
-                       a given class or calling a given function.
+- get_default_args -- gets an omegaconf.DictConfig for initializing a given class.
 
 - run_auto_creation -- Initialises nested members. To be called in __post_init__.
 
@@ -46,6 +45,7 @@ Additional utility functions:
 
 - remove_unused_components -- used for simplifying a DictConfig instance.
 - get_default_args_field -- default for DictConfig member of another configurable.
+- enable_get_default_args -- Allows get_default_args on a function or plain class.
 
 
 1. The simplest usage of this functionality is as follows. First a schema is defined
@@ -413,34 +413,25 @@ def _is_configurable_class(C) -> bool:
     return isinstance(C, type) and issubclass(C, (Configurable, ReplaceableBase))
 
 
-def get_default_args(
-    C, *, _allow_untyped: bool = False, _do_not_process: Tuple[type, ...] = ()
-) -> DictConfig:
+def get_default_args(C, *, _do_not_process: Tuple[type, ...] = ()) -> DictConfig:
     """
-    Get the DictConfig of args to call C - which might be a type or a function.
+    Get the DictConfig corresponding to the defaults in a dataclass or
+    configurable. Normal use is to provide a dataclass can be provided as C.
+    If enable_get_default_args has been called on a function or plain class,
+    then that function or class can be provided as C.
 
     If C is a subclass of Configurable or ReplaceableBase, we make sure
-    it has been processed with expand_args_fields. If C is a dataclass,
-    including a subclass of Configurable or ReplaceableBase, the output
-    will be a typed DictConfig.
+    it has been processed with expand_args_fields.
 
     Args:
         C: the class or function to be processed
-        _allow_untyped: (internal use) If True, do not try to make the
-                        output typed when it is not a Configurable or
-                        ReplaceableBase. This avoids problems (due to local
-                        dataclasses being remembered inside the returned
-                        DictConfig and any of its DictConfig and ListConfig
-                        members) when pickling the output, but will break
-                        conversions of yaml strings to/from any emum members
-                        of C.
         _do_not_process: (internal use) When this function is called from
                     expand_args_fields, we specify any class currently being
                     processed, to make sure we don't try to process a class
                     while it is already being processed.
 
     Returns:
-        new DictConfig object
+        new DictConfig object, which is typed.
     """
     if C is None:
         return DictConfig({})
@@ -471,9 +462,46 @@ def get_default_args(
     if _is_configurable_class(C):
         raise ValueError(f"Failed to process {C}")
 
-    # regular class or function
+    if not inspect.isfunction(C) and not inspect.isclass(C):
+        raise ValueError(f"Unexpected {C}")
+
+    dataclass_name = _dataclass_name_for_function(C)
+    dataclass = getattr(sys.modules[C.__module__], dataclass_name, None)
+    if dataclass is None:
+        raise ValueError(
+            f"Cannot get args for {C}. Was enable_get_default_args forgotten?"
+        )
+
+    return OmegaConf.structured(dataclass)
+
+
+def _dataclass_name_for_function(C: Any) -> str:
+    """
+    Returns the name of the dataclass which enable_get_default_args(C)
+    creates.
+    """
+    name = f"_{C.__name__}_default_args_"
+    return name
+
+
+def enable_get_default_args(C: Any, *, overwrite: bool = True) -> None:
+    """
+    If C is a function or a plain class with an __init__ function,
+    and you want get_default_args(C) to work, then add
+    `enable_get_default_args(C)` straight after the definition of C.
+    This makes a dataclass corresponding to the default arguments of C
+    and stores it in the same module as C.
+
+    Args:
+        C: a function, or a class with an __init__ function. Must
+            have types for all its defaulted args.
+        overwrite: whether to allow calling this a second time on
+            the same function.
+    """
+    if not inspect.isfunction(C) and not inspect.isclass(C):
+        raise ValueError(f"Unexpected {C}")
+
     field_annotations = []
-    kwargs = {}
     for pname, defval in _params_iter(C):
         default = defval.default
         if default == inspect.Parameter.empty:
@@ -488,8 +516,6 @@ def get_default_args(
 
         _, annotation = _resolve_optional(defval.annotation)
 
-        kwargs[pname] = copy.deepcopy(default)
-
         if isinstance(default, set):  # force OmegaConf to convert it to ListConfig
             default = tuple(default)
 
@@ -503,13 +529,16 @@ def get_default_args(
             field_ = dataclasses.field(default=default)
         field_annotations.append((pname, defval.annotation, field_))
 
-    if _allow_untyped:
-        return DictConfig(kwargs)
-
-    # make a temp dataclass and generate a structured config from it.
-    return OmegaConf.structured(
-        dataclasses.make_dataclass(f"__{C.__name__}_default_args__", field_annotations)
-    )
+    name = _dataclass_name_for_function(C)
+    module = sys.modules[C.__module__]
+    if hasattr(module, name):
+        if overwrite:
+            warnings.warn(f"Overwriting {name} in {C.__module__}.")
+        else:
+            raise ValueError(f"Cannot overwrite {name} in {C.__module__}.")
+    dc = dataclasses.make_dataclass(name, field_annotations)
+    dc.__module__ = C.__module__
+    setattr(module, name, dc)
 
 
 def _params_iter(C):
@@ -715,9 +744,7 @@ def expand_args_fields(
     return some_class
 
 
-def get_default_args_field(
-    C, *, _allow_untyped: bool = False, _do_not_process: Tuple[type, ...] = ()
-):
+def get_default_args_field(C, *, _do_not_process: Tuple[type, ...] = ()):
     """
     Get a dataclass field which defaults to get_default_args(...)
 
@@ -729,9 +756,7 @@ def get_default_args_field(
     """
 
     def create():
-        return get_default_args(
-            C, _allow_untyped=_allow_untyped, _do_not_process=_do_not_process
-        )
+        return get_default_args(C, _do_not_process=_do_not_process)
 
     return dataclasses.field(default_factory=create)
 

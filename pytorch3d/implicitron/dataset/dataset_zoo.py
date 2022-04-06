@@ -11,6 +11,7 @@ import os
 from typing import Any, Dict, List, Optional, Sequence
 
 from iopath.common.file_io import PathManager
+from pytorch3d.implicitron.tools.config import enable_get_default_args
 
 from .implicitron_dataset import ImplicitronDataset, ImplicitronDatasetBase
 from .utils import (
@@ -100,9 +101,6 @@ def dataset_zoo(
         datasets: A dictionary containing the
             `"dataset_subset_name": torch_dataset_object` key, value pairs.
     """
-    restrict_sequence_name = tuple(restrict_sequence_name)
-    aux_dataset_kwargs = dict(aux_dataset_kwargs)
-
     datasets = {}
 
     # TODO:
@@ -220,6 +218,9 @@ def dataset_zoo(
         datasets["test"] = datasets["train"]
 
     return datasets
+
+
+enable_get_default_args(dataset_zoo)
 
 
 def _get_co3d_set_names_mapping(

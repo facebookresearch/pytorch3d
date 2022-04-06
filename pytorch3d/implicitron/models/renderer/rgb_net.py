@@ -7,6 +7,7 @@ import logging
 from typing import List, Tuple
 
 import torch
+from pytorch3d.implicitron.tools.config import enable_get_default_args
 from pytorch3d.renderer.implicit import HarmonicEmbedding, RayBundle
 from torch import nn
 
@@ -106,3 +107,6 @@ class RayNormalColoringNetwork(torch.nn.Module):
 
         x = self.tanh(x)
         return x
+
+
+enable_get_default_args(RayNormalColoringNetwork)
