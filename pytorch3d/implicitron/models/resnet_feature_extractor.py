@@ -144,8 +144,7 @@ class ResNetFeatureExtractor(Configurable, torch.nn.Module):
     def get_feat_dims(self, size_dict: bool = False):
         if size_dict:
             return copy.deepcopy(self._feat_dim)
-        # pyre-fixme[16]: Item `Tensor` of `Union[Tensor, Module]` has no attribute
-        #  `values`.
+        # pyre-fixme[29]: `Union[BoundMethod[typing.Callable(torch.Tensor.values)[[Na...
         return sum(self._feat_dim.values())
 
     def forward(
