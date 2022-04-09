@@ -427,10 +427,10 @@ class CamerasBase(TensorProperties):
 
 
 def OpenGLPerspectiveCameras(
-    znear=1.0,
-    zfar=100.0,
-    aspect_ratio=1.0,
-    fov=60.0,
+    znear: float = 1.0,
+    zfar: float = 100.0,
+    aspect_ratio: float = 1.0,
+    fov: float = 60.0,
     degrees: bool = True,
     R: torch.Tensor = _R,
     T: torch.Tensor = _T,
@@ -709,12 +709,12 @@ class FoVPerspectiveCameras(CamerasBase):
 
 
 def OpenGLOrthographicCameras(
-    znear=1.0,
-    zfar=100.0,
-    top=1.0,
-    bottom=-1.0,
-    left=-1.0,
-    right=1.0,
+    znear: float = 1.0,
+    zfar: float = 100.0,
+    top: float = 1.0,
+    bottom: float = -1.0,
+    left: float = -1.0,
+    right: float = 1.0,
     scale_xyz=((1.0, 1.0, 1.0),),  # (1, 3)
     R: torch.Tensor = _R,
     T: torch.Tensor = _T,
@@ -956,7 +956,7 @@ Note that the MultiView Cameras accept parameters in NDC space.
 
 
 def SfMPerspectiveCameras(
-    focal_length=1.0,
+    focal_length: float = 1.0,
     principal_point=((0.0, 0.0),),
     R: torch.Tensor = _R,
     T: torch.Tensor = _T,
@@ -1194,7 +1194,7 @@ class PerspectiveCameras(CamerasBase):
 
 
 def SfMOrthographicCameras(
-    focal_length=1.0,
+    focal_length: float = 1.0,
     principal_point=((0.0, 0.0),),
     R: torch.Tensor = _R,
     T: torch.Tensor = _T,
@@ -1645,9 +1645,9 @@ def look_at_rotation(
 
 
 def look_at_view_transform(
-    dist=1.0,
-    elev=0.0,
-    azim=0.0,
+    dist: float = 1.0,
+    elev: float = 0.0,
+    azim: float = 0.0,
     degrees: bool = True,
     eye: Optional[Union[Sequence, torch.Tensor]] = None,
     at=((0, 0, 0),),  # (1, 3)

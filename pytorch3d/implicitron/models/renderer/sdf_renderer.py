@@ -219,7 +219,7 @@ def _sample_network(
     surface_dists,
     surface_cam_loc,
     surface_ray_dirs,
-    eps=1e-4,
+    eps: float = 1e-4,
 ):
     # t -> t(theta)
     surface_ray_dirs_0 = surface_ray_dirs.detach()

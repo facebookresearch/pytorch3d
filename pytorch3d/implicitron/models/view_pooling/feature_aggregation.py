@@ -412,7 +412,7 @@ class AngleWeightedIdentityFeatureAggregator(torch.nn.Module, FeatureAggregatorB
 def _get_reduction_aggregator_feature_dim(
     feats_or_feats_dim: Union[Dict[str, torch.Tensor], int],
     reduction_functions: Sequence[ReductionFunction],
-):
+) -> int:
     if isinstance(feats_or_feats_dim, int):
         feat_dim = feats_or_feats_dim
     else:
