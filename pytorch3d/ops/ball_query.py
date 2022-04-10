@@ -43,8 +43,9 @@ class _ball_query(Function):
             p2 = p2.float()
 
         # Reuse the KNN backward function
+        # by default, norm is 2
         grad_p1, grad_p2 = _C.knn_points_backward(
-            p1, p2, lengths1, lengths2, idx, grad_dists
+            p1, p2, lengths1, lengths2, idx, 2, grad_dists
         )
         return grad_p1, grad_p2, None, None, None, None
 

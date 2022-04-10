@@ -21,6 +21,7 @@
 //        containing P2 points of dimension D.
 //    lengths1: LongTensor, shape (N,), giving actual length of each P1 cloud.
 //    lengths2: LongTensor, shape (N,), giving actual length of each P2 cloud.
+//    norm: int specifying the norm for the distance (1 for L1, 2 for L2)
 //    K: int giving the number of nearest points to return.
 //    version: Integer telling which implementation to use.
 //
@@ -41,7 +42,8 @@ std::tuple<at::Tensor, at::Tensor> KNearestNeighborIdxCpu(
     const at::Tensor& p2,
     const at::Tensor& lengths1,
     const at::Tensor& lengths2,
-    int K);
+    const int norm,
+    const int K);
 
 // CUDA implementation
 std::tuple<at::Tensor, at::Tensor> KNearestNeighborIdxCuda(
@@ -49,8 +51,9 @@ std::tuple<at::Tensor, at::Tensor> KNearestNeighborIdxCuda(
     const at::Tensor& p2,
     const at::Tensor& lengths1,
     const at::Tensor& lengths2,
-    int K,
-    int version);
+    const int norm,
+    const int K,
+    const int version);
 
 // Implementation which is exposed.
 std::tuple<at::Tensor, at::Tensor> KNearestNeighborIdx(
@@ -58,18 +61,20 @@ std::tuple<at::Tensor, at::Tensor> KNearestNeighborIdx(
     const at::Tensor& p2,
     const at::Tensor& lengths1,
     const at::Tensor& lengths2,
-    int K,
-    int version) {
+    const int norm,
+    const int K,
+    const int version) {
   if (p1.is_cuda() || p2.is_cuda()) {
 #ifdef WITH_CUDA
     CHECK_CUDA(p1);
     CHECK_CUDA(p2);
-    return KNearestNeighborIdxCuda(p1, p2, lengths1, lengths2, K, version);
+    return KNearestNeighborIdxCuda(
+        p1, p2, lengths1, lengths2, norm, K, version);
 #else
     AT_ERROR("Not compiled with GPU support.");
 #endif
   }
-  return KNearestNeighborIdxCpu(p1, p2, lengths1, lengths2, K);
+  return KNearestNeighborIdxCpu(p1, p2, lengths1, lengths2, norm, K);
 }
 
 // Compute gradients with respect to p1 and p2
@@ -86,6 +91,7 @@ std::tuple<at::Tensor, at::Tensor> KNearestNeighborIdx(
 //        neighbor to p1[n, i] in the cloud p2[n] is p2[n, j].
 //        It is padded with zeros so that it can be used easily in a later
 //        gather() operation. This is computed from the forward pass.
+//    norm: int specifying the norm for the distance (1 for L1, 2 for L2)
 //    grad_dists: FLoatTensor of shape (N, P1, K) which contains the input
 //        gradients.
 //
@@ -102,6 +108,7 @@ std::tuple<at::Tensor, at::Tensor> KNearestNeighborBackwardCpu(
     const at::Tensor& lengths1,
     const at::Tensor& lengths2,
     const at::Tensor& idxs,
+    const int norm,
     const at::Tensor& grad_dists);
 
 // CUDA implementation
@@ -111,6 +118,7 @@ std::tuple<at::Tensor, at::Tensor> KNearestNeighborBackwardCuda(
     const at::Tensor& lengths1,
     const at::Tensor& lengths2,
     const at::Tensor& idxs,
+    const int norm,
     const at::Tensor& grad_dists);
 
 // Implementation which is exposed.
@@ -120,19 +128,20 @@ std::tuple<at::Tensor, at::Tensor> KNearestNeighborBackward(
     const at::Tensor& lengths1,
     const at::Tensor& lengths2,
     const at::Tensor& idxs,
+    const int norm,
     const at::Tensor& grad_dists) {
   if (p1.is_cuda() || p2.is_cuda()) {
 #ifdef WITH_CUDA
     CHECK_CUDA(p1);
     CHECK_CUDA(p2);
     return KNearestNeighborBackwardCuda(
-        p1, p2, lengths1, lengths2, idxs, grad_dists);
+        p1, p2, lengths1, lengths2, idxs, norm, grad_dists);
 #else
     AT_ERROR("Not compiled with GPU support.");
 #endif
   }
   return KNearestNeighborBackwardCpu(
-      p1, p2, lengths1, lengths2, idxs, grad_dists);
+      p1, p2, lengths1, lengths2, idxs, norm, grad_dists);
 }
 
 // Utility to check whether a KNN version can be used.

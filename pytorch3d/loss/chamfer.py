@@ -77,6 +77,7 @@ def chamfer_distance(
     weights=None,
     batch_reduction: Union[str, None] = "mean",
     point_reduction: str = "mean",
+    norm: int = 2,
 ):
     """
     Chamfer distance between two pointclouds x and y.
@@ -100,6 +101,7 @@ def chamfer_distance(
             batch, can be one of ["mean", "sum"] or None.
         point_reduction: Reduction operation to apply for the loss across the
             points, can be one of ["mean", "sum"].
+        norm: int indicates the norm used for the distance. Supports 1 for L1 and 2 for L2.
 
     Returns:
         2-element tuple containing
@@ -111,6 +113,9 @@ def chamfer_distance(
           x_normals and y_normals are None.
     """
     _validate_chamfer_reduction_inputs(batch_reduction, point_reduction)
+
+    if not ((norm == 1) or (norm == 2)):
+        raise ValueError("Support for 1 or 2 norm.")
 
     x, x_lengths, x_normals = _handle_pointcloud_input(x, x_lengths, x_normals)
     y, y_lengths, y_normals = _handle_pointcloud_input(y, y_lengths, y_normals)
@@ -149,8 +154,8 @@ def chamfer_distance(
     cham_norm_x = x.new_zeros(())
     cham_norm_y = x.new_zeros(())
 
-    x_nn = knn_points(x, y, lengths1=x_lengths, lengths2=y_lengths, K=1)
-    y_nn = knn_points(y, x, lengths1=y_lengths, lengths2=x_lengths, K=1)
+    x_nn = knn_points(x, y, lengths1=x_lengths, lengths2=y_lengths, norm=norm, K=1)
+    y_nn = knn_points(y, x, lengths1=y_lengths, lengths2=x_lengths, norm=norm, K=1)
 
     cham_x = x_nn.dists[..., 0]  # (N, P1)
     cham_y = y_nn.dists[..., 0]  # (N, P2)
