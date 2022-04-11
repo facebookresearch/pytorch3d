@@ -265,9 +265,7 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
             self.assertTrue(mesh_to_edges_packed_first_idx[0] == 0)
 
     def test_allempty(self):
-        verts_list = []
-        faces_list = []
-        mesh = Meshes(verts=verts_list, faces=faces_list)
+        mesh = Meshes(verts=[], faces=[])
         self.assertEqual(len(mesh), 0)
         self.assertEqual(mesh.verts_padded().shape[0], 0)
         self.assertEqual(mesh.faces_padded().shape[0], 0)

@@ -214,8 +214,8 @@ class Meshes:
 
     def __init__(
         self,
-        verts=None,
-        faces=None,
+        verts,
+        faces,
         textures=None,
         *,
         verts_normals=None,
