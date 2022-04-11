@@ -145,6 +145,53 @@ class TestTexturesVertex(TestCaseMixin, unittest.TestCase):
 
         self.assertClose(faces_verts_texts_packed, faces_verts_texts)
 
+    def test_submeshes(self):
+        # define TexturesVertex
+        verts_features = torch.tensor(
+            [
+                [1, 0, 0],
+                [1, 0, 0],
+                [1, 0, 0],
+                [1, 0, 0],
+                [0, 1, 0],
+                [0, 1, 0],
+                [0, 1, 0],
+                [0, 1, 0],
+            ],
+            dtype=torch.float32,
+        )
+
+        textures = TexturesVertex(
+            verts_features=[verts_features, verts_features, verts_features]
+        )
+        subtextures = textures.submeshes(
+            [
+                [
+                    torch.LongTensor([0, 2, 3]),
+                    torch.LongTensor(list(range(8))),
+                ],
+                [],
+                [
+                    torch.LongTensor([4]),
+                ],
+            ],
+            None,
+        )
+
+        subtextures_features = subtextures.verts_features_list()
+
+        self.assertEqual(len(subtextures_features), 3)
+        self.assertTrue(
+            torch.equal(
+                subtextures_features[0],
+                torch.FloatTensor([[1, 0, 0], [1, 0, 0], [1, 0, 0]]),
+            )
+        )
+        self.assertTrue(torch.equal(subtextures_features[1], verts_features))
+        self.assertTrue(
+            torch.equal(subtextures_features[2], torch.FloatTensor([[0, 1, 0]]))
+        )
+
     def test_clone(self):
         tex = TexturesVertex(verts_features=torch.rand(size=(10, 100, 128)))
         tex.verts_features_list()

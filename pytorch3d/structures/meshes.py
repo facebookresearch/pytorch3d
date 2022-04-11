@@ -1618,13 +1618,6 @@ class Meshes:
             * There are no submeshes of cubes[1] and cubes[3] in subcubes.
             * subcubes[0] and subcubes[1] are not watertight. subcubes[2] is.
         """
-        if not (
-            self.textures is None or type(self.textures).__name__ == "TexturesVertex"
-        ):
-            raise ValueError(
-                "Submesh extraction only works with no textures or TexturesVertex."
-            )
-
         if len(face_indices) != len(self):
             raise ValueError(
                 "You must specify exactly one set of submeshes"
@@ -1632,13 +1625,18 @@ class Meshes:
             )
 
         sub_verts = []
+        sub_verts_ids = []
         sub_faces = []
+        sub_face_ids = []
 
         for face_ids_per_mesh, faces, verts in zip(
             face_indices, self.faces_list(), self.verts_list()
         ):
+            sub_verts_ids.append([])
+            sub_face_ids.append([])
             for submesh_face_ids in face_ids_per_mesh:
                 faces_to_keep = faces[submesh_face_ids]
+                sub_face_ids[-1].append(faces_to_keep)
 
                 # Say we are keeping two faces from a mesh with six vertices:
                 # faces_to_keep = [[0, 6, 4],
@@ -1646,6 +1644,7 @@ class Meshes:
                 # Then we want verts_to_keep to contain only vertices [0, 2, 4, 6]:
                 vertex_ids_to_keep = torch.unique(faces_to_keep, sorted=True)
                 sub_verts.append(verts[vertex_ids_to_keep])
+                sub_verts_ids[-1].append(vertex_ids_to_keep)
 
                 # Now, convert faces_to_keep to use the new vertex ids.
                 # In our example, instead of
@@ -1663,6 +1662,11 @@ class Meshes:
         return self.__class__(
             verts=sub_verts,
             faces=sub_faces,
+            textures=(
+                self.textures.submeshes(sub_verts_ids, sub_face_ids)
+                if self.textures
+                else None
+            ),
         )
 
 

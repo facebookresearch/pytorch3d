@@ -242,6 +242,16 @@ class TexturesBase:
         """
         raise NotImplementedError()
 
+    def submeshes(
+        self,
+        vertex_ids_list: Optional[List[List[torch.LongTensor]]],
+        faces_ids_list: Optional[List[List[torch.LongTensor]]],
+    ) -> "TexturesBase":
+        """
+        Extract sub-textures used for submeshing.
+        """
+        raise NotImplementedError(f"{self.__class__} does not support submeshes")
+
     def faces_verts_textures_packed(self) -> torch.Tensor:
         """
         Returns the texture for each vertex for each face in the mesh.
@@ -1464,6 +1474,47 @@ class TexturesVertex(TexturesBase):
             fragments.pix_to_face, fragments.bary_coords, faces_verts_features
         )
         return texels
+
+    def submeshes(
+        self,
+        vertex_ids_list: Optional[List[List[torch.LongTensor]]],
+        faces_ids_list: Optional[List[List[torch.LongTensor]]],
+    ) -> "TexturesVertex":
+        """
+        Extract a sub-texture for use in a submesh.
+
+        If the meshes batch corresponding to this TexturesVertex contains
+        `n = len(vertex_ids_list)` meshes, then self.verts_features_list()
+        will be of length n. After submeshing, we obtain a batch of
+        `k = sum(len(v) for v in vertex_ids_list` submeshes (see Meshes.submeshes). This
+        function creates a corresponding TexturesVertex object with `verts_features_list`
+        of length `k`.
+
+        Args:
+            vertex_ids_list: A list of length equal to self.verts_features_list. Each
+                element is a LongTensor listing the vertices that the submesh keeps in
+                each respective mesh.
+
+            face_ids_list: Not used when submeshing TexturesVertex.
+
+        Returns:
+            A TexturesVertex in which verts_features_list has length
+            sum(len(vertices) for vertices in vertex_ids_list). Each element contains
+            vertex features corresponding to the subset of vertices in that submesh.
+        """
+        if vertex_ids_list is None or len(vertex_ids_list) != len(
+            self.verts_features_list()
+        ):
+            raise IndexError(
+                "verts_features_list must be of " "the same length as vertex_ids_list."
+            )
+
+        sub_features = []
+        for vertex_ids, features in zip(vertex_ids_list, self.verts_features_list()):
+            for vertex_ids_submesh in vertex_ids:
+                sub_features.append(features[vertex_ids_submesh])
+
+        return self.__class__(sub_features)
 
     def faces_verts_textures_packed(self, faces_packed=None) -> torch.Tensor:
         """
