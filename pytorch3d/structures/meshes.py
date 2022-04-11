@@ -1556,6 +1556,115 @@ class Meshes:
         else:
             raise ValueError("Meshes does not have textures")
 
+    def submeshes(
+        self,
+        face_indices: Union[
+            List[List[torch.LongTensor]], List[torch.LongTensor], torch.LongTensor
+        ],
+    ) -> "Meshes":
+        """
+        Split a batch of meshes into a batch of submeshes.
+
+        The return value is a Meshes object representing
+            [mesh restricted to only faces indexed by selected_faces
+            for mesh, selected_faces_list in zip(self, face_indices)
+            for faces in selected_faces_list]
+
+        Args:
+          face_indices:
+            Let the original mesh have verts_list() of length N.
+            Can be either
+              - List of lists of LongTensors. The n-th element is a list of length
+              num_submeshes_n (empty lists are allowed). The k-th element of the n-th
+              sublist is a LongTensor of length num_faces_submesh_n_k.
+              - List of LongTensors. The n-th element is a (possibly empty) LongTensor
+                of shape (num_submeshes_n, num_faces_n).
+              - A LongTensor of shape (N, num_submeshes_per_mesh, num_faces_per_submesh)
+                where all meshes in the batch will have the same number of submeshes.
+                This will result in an output Meshes object with batch size equal to
+                N * num_submeshes_per_mesh.
+
+        Returns:
+          Meshes object of length `sum(len(ids) for ids in face_indices)`.
+
+        Submeshing only works with no textures or with the TexturesVertex texture.
+
+        Example 1:
+
+        If `meshes` has batch size 1, and `face_indices` is a 1D LongTensor,
+        then `meshes.submeshes([[face_indices]]) and
+        `meshes.submeshes(face_indices[None, None])` both produce a Meshes of length 1,
+        containing a single submesh with a subset of `meshes`' faces, whose indices are
+        specified by `face_indices`.
+
+        Example 2:
+
+        Take a Meshes object `cubes` with 4 meshes, each a translated cube. Then:
+            * len(cubes) is 4, len(cubes.verts_list()) is 4, len(cubes.faces_list()) 4,
+            * [cube_verts.size for cube_verts in cubes.verts_list()] is [8, 8, 8, 8],
+            * [cube_faces.size for cube_faces in cubes.faces_list()] if [6, 6, 6, 6],
+
+        Now let front_facet, top_and_bottom, all_facets be LongTensors of
+        sizes (2), (4), and (12), each picking up a number of facets of a cube by
+        specifying the appropriate triangular faces.
+
+        Then let `subcubes = cubes.submeshes([[front_facet, top_and_bottom], [],
+                                              [all_facets], []])`.
+            * len(subcubes) is 3.
+            * subcubes[0] is the front facet of the cube contained in cubes[0].
+            * subcubes[1] is a mesh containing the (disconnected) top and bottom facets
+              of cubes[0].
+            * subcubes[2] is cubes[2].
+            * There are no submeshes of cubes[1] and cubes[3] in subcubes.
+            * subcubes[0] and subcubes[1] are not watertight. subcubes[2] is.
+        """
+        if not (
+            self.textures is None or type(self.textures).__name__ == "TexturesVertex"
+        ):
+            raise ValueError(
+                "Submesh extraction only works with no textures or TexturesVertex."
+            )
+
+        if len(face_indices) != len(self):
+            raise ValueError(
+                "You must specify exactly one set of submeshes"
+                " for each mesh in this Meshes object."
+            )
+
+        sub_verts = []
+        sub_faces = []
+
+        for face_ids_per_mesh, faces, verts in zip(
+            face_indices, self.faces_list(), self.verts_list()
+        ):
+            for submesh_face_ids in face_ids_per_mesh:
+                faces_to_keep = faces[submesh_face_ids]
+
+                # Say we are keeping two faces from a mesh with six vertices:
+                # faces_to_keep = [[0, 6, 4],
+                #                  [0, 2, 6]]
+                # Then we want verts_to_keep to contain only vertices [0, 2, 4, 6]:
+                vertex_ids_to_keep = torch.unique(faces_to_keep, sorted=True)
+                sub_verts.append(verts[vertex_ids_to_keep])
+
+                # Now, convert faces_to_keep to use the new vertex ids.
+                # In our example, instead of
+                # [[0, 6, 4],
+                #  [0, 2, 6]]
+                # we want faces_to_keep to be
+                # [[0, 3, 2],
+                #  [0, 1, 3]],
+                # as each point id got reduced to its sort rank.
+                _, ids_of_unique_ids_in_sorted = torch.unique(
+                    faces_to_keep, return_inverse=True
+                )
+                sub_faces.append(ids_of_unique_ids_in_sorted)
+
+        return self.__class__(
+            verts=sub_verts,
+            faces=sub_faces,
+        )
+
 
 def join_meshes_as_batch(meshes: List[Meshes], include_textures: bool = True) -> Meshes:
     """

@@ -233,6 +233,46 @@ def to_sorted(mesh: Meshes) -> "Meshes":
     return other
 
 
+def init_cube_meshes(device: str = "cpu"):
+    # Make Meshes with four cubes translated from the origin by varying amounts.
+    verts = torch.FloatTensor(
+        [
+            [0, 0, 0],
+            [1, 0, 0],  # 1->0
+            [1, 1, 0],  # 2->1
+            [0, 1, 0],  # 3->2
+            [0, 1, 1],  # 3
+            [1, 1, 1],  # 4
+            [1, 0, 1],  # 5
+            [0, 0, 1],
+        ],
+        device=device,
+    )
+
+    faces = torch.FloatTensor(
+        [
+            [0, 2, 1],
+            [0, 3, 2],
+            [2, 3, 4],  # 1,2, 3
+            [2, 4, 5],  #
+            [1, 2, 5],  #
+            [1, 5, 6],  #
+            [0, 7, 4],
+            [0, 4, 3],
+            [5, 4, 7],
+            [5, 7, 6],
+            [0, 6, 7],
+            [0, 1, 6],
+        ],
+        device=device,
+    )
+
+    return Meshes(
+        verts=[verts, verts + 1, verts + 2, verts + 3],
+        faces=[faces, faces, faces, faces],
+    )
+
+
 class TestMeshes(TestCaseMixin, unittest.TestCase):
     def setUp(self) -> None:
         np.random.seed(42)
@@ -1256,6 +1296,106 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
             self.assertClose(yes_normals.verts_normals_padded(), verts)
             yes_normals.offset_verts_(torch.FloatTensor([1, 2, 3]).expand(12, 3))
             self.assertFalse(torch.allclose(yes_normals.verts_normals_padded(), verts))
+
+    def test_submeshes(self):
+        empty_mesh = Meshes([], [])
+        # Four cubes with offsets [0, 1, 2, 3].
+        cubes = init_cube_meshes()
+
+        # Extracting an empty submesh from an empty mesh is allowed, but extracting
+        # a nonempty submesh from an empty mesh should result in a value error.
+        self.assertTrue(mesh_structures_equal(empty_mesh.submeshes([]), empty_mesh))
+        self.assertTrue(
+            mesh_structures_equal(cubes.submeshes([[], [], [], []]), empty_mesh)
+        )
+
+        with self.assertRaisesRegex(
+            ValueError, "You must specify exactly one set of submeshes"
+        ):
+            empty_mesh.submeshes([torch.LongTensor([0])])
+
+        # Check that we can chop the cube up into its facets.
+        subcubes = to_sorted(
+            cubes.submeshes(
+                [  # Do not submesh cube#1.
+                    [],
+                    # Submesh the front face and the top-and-bottom of cube#2.
+                    [
+                        torch.LongTensor([0, 1]),
+                        torch.LongTensor([2, 3, 4, 5]),
+                    ],
+                    # Do not submesh cube#3.
+                    [],
+                    # Submesh the whole cube#4 (clone it).
+                    [torch.LongTensor(list(range(12)))],
+                ]
+            )
+        )
+
+        # The cube should've been chopped into three submeshes.
+        self.assertEquals(len(subcubes), 3)
+
+        # The first submesh should be a single facet of cube#2.
+        front_facet = to_sorted(
+            Meshes(
+                verts=torch.FloatTensor([[[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0]]])
+                + 1,
+                faces=torch.LongTensor([[[0, 2, 1], [0, 3, 2]]]),
+            )
+        )
+        self.assertTrue(mesh_structures_equal(front_facet, subcubes[0]))
+
+        # The second submesh should be the top and bottom facets of cube#2.
+        top_and_bottom = Meshes(
+            verts=torch.FloatTensor(
+                [[[1, 0, 0], [1, 1, 0], [0, 1, 0], [0, 1, 1], [1, 1, 1], [1, 0, 1]]]
+            )
+            + 1,
+            faces=torch.LongTensor([[[1, 2, 3], [1, 3, 4], [0, 1, 4], [0, 4, 5]]]),
+        )
+        self.assertTrue(mesh_structures_equal(to_sorted(top_and_bottom), subcubes[1]))
+
+        # The last submesh should be all of cube#3.
+        self.assertTrue(mesh_structures_equal(to_sorted(cubes[3]), subcubes[2]))
+
+        # Test alternative input parameterization: list of LongTensors.
+        two_facets = torch.LongTensor([[0, 1], [4, 5]])
+        subcubes = to_sorted(cubes.submeshes([two_facets, [], two_facets, []]))
+        expected_verts = torch.FloatTensor(
+            [
+                [[0, 0, 0], [0, 1, 0], [1, 0, 0], [1, 1, 0]],
+                [[1, 0, 0], [1, 0, 1], [1, 1, 0], [1, 1, 1]],
+                [[2, 2, 2], [2, 3, 2], [3, 2, 2], [3, 3, 2]],
+                [[3, 2, 2], [3, 2, 3], [3, 3, 2], [3, 3, 3]],
+            ]
+        )
+        expected_faces = torch.LongTensor(
+            [
+                [[0, 3, 2], [0, 1, 3]],
+                [[0, 2, 3], [0, 3, 1]],
+                [[0, 3, 2], [0, 1, 3]],
+                [[0, 2, 3], [0, 3, 1]],
+            ]
+        )
+        expected_meshes = Meshes(verts=expected_verts, faces=expected_faces)
+        self.assertTrue(mesh_structures_equal(subcubes, expected_meshes))
+
+        # Test alternative input parameterization: a single LongTensor.
+        triangle_per_mesh = torch.LongTensor([[[0]], [[1]], [[4]], [[5]]])
+        subcubes = to_sorted(cubes.submeshes(triangle_per_mesh))
+        expected_verts = torch.FloatTensor(
+            [
+                [[0, 0, 0], [1, 0, 0], [1, 1, 0]],
+                [[1, 1, 1], [1, 2, 1], [2, 2, 1]],
+                [[3, 2, 2], [3, 3, 2], [3, 3, 3]],
+                [[4, 3, 3], [4, 3, 4], [4, 4, 4]],
+            ]
+        )
+        expected_faces = torch.LongTensor(
+            [[[0, 2, 1]], [[0, 1, 2]], [[0, 1, 2]], [[0, 2, 1]]]
+        )
+        expected_meshes = Meshes(verts=expected_verts, faces=expected_faces)
+        self.assertTrue(mesh_structures_equal(subcubes, expected_meshes))
 
     def test_compute_faces_areas_cpu_cuda(self):
         num_meshes = 10
