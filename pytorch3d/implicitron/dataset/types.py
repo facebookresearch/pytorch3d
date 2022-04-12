@@ -277,6 +277,8 @@ def _unwrap_type(tp):
 
 def _get_dataclass_field_default(field: Field) -> Any:
     if field.default_factory is not MISSING:
+        # pyre-fixme[29]: `Union[dataclasses._MISSING_TYPE,
+        #  dataclasses._DefaultFactory[typing.Any]]` is not a function.
         return field.default_factory()
     elif field.default is not MISSING:
         return field.default
