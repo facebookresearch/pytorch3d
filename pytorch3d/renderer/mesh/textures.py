@@ -244,8 +244,8 @@ class TexturesBase:
 
     def submeshes(
         self,
-        vertex_ids_list: Optional[List[List[torch.LongTensor]]],
-        faces_ids_list: Optional[List[List[torch.LongTensor]]],
+        vertex_ids_list: List[List[torch.LongTensor]],
+        faces_ids_list: List[List[torch.LongTensor]],
     ) -> "TexturesBase":
         """
         Extract sub-textures used for submeshing.
@@ -1477,8 +1477,8 @@ class TexturesVertex(TexturesBase):
 
     def submeshes(
         self,
-        vertex_ids_list: Optional[List[List[torch.LongTensor]]],
-        faces_ids_list: Optional[List[List[torch.LongTensor]]],
+        vertex_ids_list: List[List[torch.LongTensor]],
+        faces_ids_list: List[List[torch.LongTensor]],
     ) -> "TexturesVertex":
         """
         Extract a sub-texture for use in a submesh.
@@ -1502,9 +1502,7 @@ class TexturesVertex(TexturesBase):
             sum(len(vertices) for vertices in vertex_ids_list). Each element contains
             vertex features corresponding to the subset of vertices in that submesh.
         """
-        if vertex_ids_list is None or len(vertex_ids_list) != len(
-            self.verts_features_list()
-        ):
+        if len(vertex_ids_list) != len(self.verts_features_list()):
             raise IndexError(
                 "verts_features_list must be of " "the same length as vertex_ids_list."
             )
