@@ -192,12 +192,22 @@ class TestCaseMixin(unittest.TestCase):
             self.fail(f"{msg} {err}")
         self.fail(err)
 
-    def assertConstant(self, input: TensorOrArray, value: Real) -> None:
+    def assertConstant(
+        self, input: TensorOrArray, value: Real, *, atol: float = 0
+    ) -> None:
         """
         Asserts input is entirely filled with value.
 
         Args:
             input: tensor or array
+            value: expected value
+            atol: tolerance
         """
-        self.assertEqual(input.min(), value)
-        self.assertEqual(input.max(), value)
+        mn, mx = input.min(), input.max()
+        msg = f"values in range [{mn}, {mx}], not {value}, shape {input.shape}"
+        if atol == 0:
+            self.assertEqual(input.min(), value, msg=msg)
+            self.assertEqual(input.max(), value, msg=msg)
+        else:
+            self.assertGreater(input.min(), value - atol, msg=msg)
+            self.assertLess(input.max(), value + atol, msg=msg)

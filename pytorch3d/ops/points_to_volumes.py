@@ -192,6 +192,7 @@ def add_pointclouds_to_volumes(
     initial_volumes: "Volumes",
     mode: str = "trilinear",
     min_weight: float = 1e-4,
+    rescale_features: bool = True,
     _python: bool = False,
 ) -> "Volumes":
     """
@@ -250,6 +251,10 @@ def add_pointclouds_to_volumes(
         min_weight: A scalar controlling the lowest possible total per-voxel
             weight used to normalize the features accumulated in a voxel.
             Only active for `mode==trilinear`.
+        rescale_features: If False, output features are just the sum of input and
+                            added points. If True, they are averaged. In both cases,
+                            output densities are just summed without rescaling, so
+                            you may need to rescale them afterwards.
         _python: Set to True to use a pure Python implementation, e.g. for test
             purposes, which requires more memory and may be slower.
 
@@ -286,6 +291,7 @@ def add_pointclouds_to_volumes(
         grid_sizes=initial_volumes.get_grid_sizes(),
         mask=mask,
         mode=mode,
+        rescale_features=rescale_features,
         _python=_python,
     )
 
@@ -303,6 +309,7 @@ def add_points_features_to_volume_densities_features(
     min_weight: float = 1e-4,
     mask: Optional[torch.Tensor] = None,
     grid_sizes: Optional[torch.LongTensor] = None,
+    rescale_features: bool = True,
     _python: bool = False,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
     """
@@ -345,6 +352,10 @@ def add_points_features_to_volume_densities_features(
         grid_sizes: `LongTensor` of shape (minibatch, 3) representing the
             spatial resolutions of each of the the non-flattened `volumes` tensors,
             or None to indicate the whole volume is used for every batch element.
+        rescale_features: If False, output features are just the sum of input and
+                            added points. If True, they are averaged. In both cases,
+                            output densities are just summed without rescaling, so
+                            you may need to rescale them afterwards.
         _python: Set to True to use a pure Python implementation.
     Returns:
         volume_features: Output volume of shape `(minibatch, feature_dim, D, H, W)`
@@ -401,12 +412,13 @@ def add_points_features_to_volume_densities_features(
         True,  # align_corners
         splat,
     )
-    if splat:
+
+    if rescale_features:
         # divide each feature by the total weight of the votes
-        volume_features = volume_features / volume_densities.clamp(min_weight)
-    else:
-        # divide each feature by the total weight of the votes
-        volume_features = volume_features / volume_densities.clamp(1.0)
+        if splat:
+            volume_features = volume_features / volume_densities.clamp(min_weight)
+        else:
+            volume_features = volume_features / volume_densities.clamp(1.0)
 
     return volume_features, volume_densities
 
