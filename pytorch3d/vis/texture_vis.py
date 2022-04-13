@@ -4,7 +4,7 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-from typing import Optional
+from typing import Any, Optional
 
 import numpy as np
 from PIL import Image, ImageDraw
@@ -65,7 +65,7 @@ def texturesuv_image_PIL(
     *,
     texture_index: int = 0,
     radius: float = 1,
-    color: str = "red",
+    color: Any = "red",
     subsample: Optional[int] = 10000,
 ):  # pragma: no cover
     """

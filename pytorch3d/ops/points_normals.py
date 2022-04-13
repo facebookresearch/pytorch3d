@@ -167,7 +167,7 @@ def estimate_pointcloud_local_coord_frames(
     return curvatures, local_coord_frames
 
 
-def _disambiguate_vector_directions(pcl, knns, vecs: float) -> float:
+def _disambiguate_vector_directions(pcl, knns, vecs: torch.Tensor) -> torch.Tensor:
     """
     Disambiguates normal directions according to [1].
 
@@ -181,7 +181,6 @@ def _disambiguate_vector_directions(pcl, knns, vecs: float) -> float:
     # each element of the neighborhood
     df = knns - pcl[:, :, None]
     # projection of the difference on the principal direction
-    # pyre-fixme[16]: `float` has no attribute `__getitem__`.
     proj = (vecs[:, :, None] * df).sum(3)
     # check how many projections are positive
     n_pos = (proj > 0).type_as(knns).sum(2, keepdim=True)

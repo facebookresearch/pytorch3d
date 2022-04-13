@@ -21,6 +21,14 @@ from .utils import TensorProperties, convert_to_tensors_and_broadcast
 _R = torch.eye(3)[None]  # (1, 3, 3)
 _T = torch.zeros(1, 3)  # (1, 3)
 
+# An input which is a float per batch element
+_BatchFloatType = Union[float, Sequence[float], torch.Tensor]
+
+# one or two floats per batch element
+_FocalLengthType = Union[
+    float, Sequence[Tuple[float]], Sequence[Tuple[float, float]], torch.Tensor
+]
+
 
 class CamerasBase(TensorProperties):
     """
@@ -427,10 +435,10 @@ class CamerasBase(TensorProperties):
 
 
 def OpenGLPerspectiveCameras(
-    znear: float = 1.0,
-    zfar: float = 100.0,
-    aspect_ratio: float = 1.0,
-    fov: float = 60.0,
+    znear: _BatchFloatType = 1.0,
+    zfar: _BatchFloatType = 100.0,
+    aspect_ratio: _BatchFloatType = 1.0,
+    fov: _BatchFloatType = 60.0,
     degrees: bool = True,
     R: torch.Tensor = _R,
     T: torch.Tensor = _T,
@@ -508,10 +516,10 @@ class FoVPerspectiveCameras(CamerasBase):
 
     def __init__(
         self,
-        znear=1.0,
-        zfar=100.0,
-        aspect_ratio=1.0,
-        fov=60.0,
+        znear: _BatchFloatType = 1.0,
+        zfar: _BatchFloatType = 100.0,
+        aspect_ratio: _BatchFloatType = 1.0,
+        fov: _BatchFloatType = 60.0,
         degrees: bool = True,
         R: torch.Tensor = _R,
         T: torch.Tensor = _T,
@@ -709,12 +717,12 @@ class FoVPerspectiveCameras(CamerasBase):
 
 
 def OpenGLOrthographicCameras(
-    znear: float = 1.0,
-    zfar: float = 100.0,
-    top: float = 1.0,
-    bottom: float = -1.0,
-    left: float = -1.0,
-    right: float = 1.0,
+    znear: _BatchFloatType = 1.0,
+    zfar: _BatchFloatType = 100.0,
+    top: _BatchFloatType = 1.0,
+    bottom: _BatchFloatType = -1.0,
+    left: _BatchFloatType = -1.0,
+    right: _BatchFloatType = 1.0,
     scale_xyz=((1.0, 1.0, 1.0),),  # (1, 3)
     R: torch.Tensor = _R,
     T: torch.Tensor = _T,
@@ -769,12 +777,12 @@ class FoVOrthographicCameras(CamerasBase):
 
     def __init__(
         self,
-        znear=1.0,
-        zfar=100.0,
-        max_y=1.0,
-        min_y=-1.0,
-        max_x=1.0,
-        min_x=-1.0,
+        znear: _BatchFloatType = 1.0,
+        zfar: _BatchFloatType = 100.0,
+        max_y: _BatchFloatType = 1.0,
+        min_y: _BatchFloatType = -1.0,
+        max_x: _BatchFloatType = 1.0,
+        min_x: _BatchFloatType = -1.0,
         scale_xyz=((1.0, 1.0, 1.0),),  # (1, 3)
         R: torch.Tensor = _R,
         T: torch.Tensor = _T,
@@ -956,7 +964,7 @@ Note that the MultiView Cameras accept parameters in NDC space.
 
 
 def SfMPerspectiveCameras(
-    focal_length: float = 1.0,
+    focal_length: _FocalLengthType = 1.0,
     principal_point=((0.0, 0.0),),
     R: torch.Tensor = _R,
     T: torch.Tensor = _T,
@@ -1008,7 +1016,7 @@ class PerspectiveCameras(CamerasBase):
 
     def __init__(
         self,
-        focal_length=1.0,
+        focal_length: _FocalLengthType = 1.0,
         principal_point=((0.0, 0.0),),
         R: torch.Tensor = _R,
         T: torch.Tensor = _T,
@@ -1194,7 +1202,7 @@ class PerspectiveCameras(CamerasBase):
 
 
 def SfMOrthographicCameras(
-    focal_length: float = 1.0,
+    focal_length: _FocalLengthType = 1.0,
     principal_point=((0.0, 0.0),),
     R: torch.Tensor = _R,
     T: torch.Tensor = _T,
@@ -1246,7 +1254,7 @@ class OrthographicCameras(CamerasBase):
 
     def __init__(
         self,
-        focal_length=1.0,
+        focal_length: _FocalLengthType = 1.0,
         principal_point=((0.0, 0.0),),
         R: torch.Tensor = _R,
         T: torch.Tensor = _T,
