@@ -7,7 +7,7 @@
 import unittest
 
 import torch
-from common_testing import TestCaseMixin, get_random_cuda_device
+from common_testing import get_random_cuda_device, TestCaseMixin
 from pytorch3d.ops.interp_face_attrs import (
     interpolate_face_attributes,
     interpolate_face_attributes_python,

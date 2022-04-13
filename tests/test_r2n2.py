@@ -13,19 +13,19 @@ import unittest
 
 import numpy as np
 import torch
-from common_testing import TestCaseMixin, get_tests_dir, load_rgb_image
+from common_testing import get_tests_dir, load_rgb_image, TestCaseMixin
 from PIL import Image
 from pytorch3d.datasets import (
-    R2N2,
     BlenderCamera,
     collate_batched_R2N2,
+    R2N2,
     render_cubified_voxels,
 )
 from pytorch3d.renderer import (
     FoVPerspectiveCameras,
+    look_at_view_transform,
     PointLights,
     RasterizationSettings,
-    look_at_view_transform,
 )
 from pytorch3d.renderer.cameras import get_world_to_view_transform
 from pytorch3d.transforms import Transform3d

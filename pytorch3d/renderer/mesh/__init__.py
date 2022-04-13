@@ -6,16 +6,15 @@
 
 
 from .clip import (
+    clip_faces,
     ClipFrustum,
     ClippedFaces,
-    clip_faces,
     convert_clipped_rasterization_to_original_faces,
 )
 from .rasterize_meshes import rasterize_meshes
 from .rasterizer import MeshRasterizer, RasterizationSettings
 from .renderer import MeshRenderer, MeshRendererWithFragments
-from .shader import TexturedSoftPhongShader  # DEPRECATED
-from .shader import (
+from .shader import (  # DEPRECATED
     BlendParams,
     HardFlatShader,
     HardGouraudShader,
@@ -23,10 +22,16 @@ from .shader import (
     SoftGouraudShader,
     SoftPhongShader,
     SoftSilhouetteShader,
+    TexturedSoftPhongShader,
 )
 from .shading import gouraud_shading, phong_shading
-from .textures import Textures  # DEPRECATED
-from .textures import TexturesAtlas, TexturesBase, TexturesUV, TexturesVertex
+from .textures import (  # DEPRECATED
+    Textures,
+    TexturesAtlas,
+    TexturesBase,
+    TexturesUV,
+    TexturesVertex,
+)
 
 
 __all__ = [k for k in globals().keys() if not k.startswith("_")]

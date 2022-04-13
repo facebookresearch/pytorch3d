@@ -4,7 +4,7 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-from typing import Optional, Tuple, cast
+from typing import cast, Optional, Tuple
 
 import torch
 from pytorch3d.implicitron.tools.point_cloud_utils import get_rgbd_point_cloud

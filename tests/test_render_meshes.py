@@ -15,19 +15,19 @@ from collections import namedtuple
 import numpy as np
 import torch
 from common_testing import (
-    TestCaseMixin,
     get_pytorch3d_dir,
     get_tests_dir,
     load_rgb_image,
+    TestCaseMixin,
 )
 from PIL import Image
 from pytorch3d.io import load_obj
 from pytorch3d.renderer.cameras import (
     FoVOrthographicCameras,
     FoVPerspectiveCameras,
+    look_at_view_transform,
     OrthographicCameras,
     PerspectiveCameras,
-    look_at_view_transform,
 )
 from pytorch3d.renderer.lighting import AmbientLights, PointLights
 from pytorch3d.renderer.materials import Materials
@@ -44,9 +44,9 @@ from pytorch3d.renderer.mesh.shader import (
     TexturedSoftPhongShader,
 )
 from pytorch3d.structures.meshes import (
-    Meshes,
     join_meshes_as_batch,
     join_meshes_as_scene,
+    Meshes,
 )
 from pytorch3d.utils.ico_sphere import ico_sphere
 from pytorch3d.utils.torus import torus

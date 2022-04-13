@@ -9,7 +9,7 @@ import torch
 import torch.nn.functional as F
 
 from ..common.datatypes import Device
-from .utils import TensorProperties, convert_to_tensors_and_broadcast
+from .utils import convert_to_tensors_and_broadcast, TensorProperties
 
 
 def diffuse(normals, color, direction) -> torch.Tensor:

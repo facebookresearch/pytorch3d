@@ -1,13 +1,13 @@
 # @lint-ignore-every LICENSELINT
 # Adapted from https://github.com/vsitzmann/scene-representation-networks
 # Copyright (c) 2019 Vincent Sitzmann
-from typing import Any, Optional, Tuple, cast
+from typing import Any, cast, Optional, Tuple
 
 import torch
 from pytorch3d.common.linear_with_repeat import LinearWithRepeat
 from pytorch3d.implicitron.third_party import hyperlayers, pytorch_prototyping
 from pytorch3d.implicitron.tools.config import Configurable, registry, run_auto_creation
-from pytorch3d.renderer import RayBundle, ray_bundle_to_ray_points
+from pytorch3d.renderer import ray_bundle_to_ray_points, RayBundle
 from pytorch3d.renderer.cameras import CamerasBase
 from pytorch3d.renderer.implicit import HarmonicEmbedding
 

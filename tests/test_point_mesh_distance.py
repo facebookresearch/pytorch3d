@@ -8,10 +8,10 @@ import unittest
 
 import numpy as np
 import torch
-from common_testing import TestCaseMixin, get_random_cuda_device
+from common_testing import get_random_cuda_device, TestCaseMixin
 from pytorch3d import _C
 from pytorch3d.loss import point_mesh_edge_distance, point_mesh_face_distance
-from pytorch3d.structures import Meshes, Pointclouds, packed_to_list
+from pytorch3d.structures import Meshes, packed_to_list, Pointclouds
 
 
 class TestPointMeshDistance(TestCaseMixin, unittest.TestCase):

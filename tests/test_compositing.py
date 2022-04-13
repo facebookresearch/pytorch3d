@@ -7,7 +7,7 @@
 import unittest
 
 import torch
-from common_testing import TestCaseMixin, get_random_cuda_device
+from common_testing import get_random_cuda_device, TestCaseMixin
 from pytorch3d.renderer.compositing import (
     alpha_composite,
     norm_weighted_sum,

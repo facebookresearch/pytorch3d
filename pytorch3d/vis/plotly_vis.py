@@ -11,14 +11,14 @@ import plotly.graph_objects as go
 import torch
 from plotly.subplots import make_subplots
 from pytorch3d.renderer import (
+    ray_bundle_to_ray_points,
     RayBundle,
     TexturesAtlas,
     TexturesVertex,
-    ray_bundle_to_ray_points,
 )
 from pytorch3d.renderer.camera_utils import camera_to_eye_at_up
 from pytorch3d.renderer.cameras import CamerasBase
-from pytorch3d.structures import Meshes, Pointclouds, join_meshes_as_scene
+from pytorch3d.structures import join_meshes_as_scene, Meshes, Pointclouds
 
 
 Struct = Union[CamerasBase, Meshes, Pointclouds, RayBundle]

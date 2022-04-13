@@ -7,7 +7,7 @@
 import contextlib
 import pathlib
 import warnings
-from typing import IO, ContextManager, Optional, Union
+from typing import ContextManager, IO, Optional, Union
 
 import numpy as np
 import torch

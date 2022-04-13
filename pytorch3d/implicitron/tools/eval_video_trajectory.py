@@ -10,7 +10,7 @@ from typing import Optional, Tuple
 import torch
 from pytorch3d.common.compat import eigh
 from pytorch3d.implicitron.tools.circle_fitting import fit_circle_in_3d
-from pytorch3d.renderer import PerspectiveCameras, look_at_view_transform
+from pytorch3d.renderer import look_at_view_transform, PerspectiveCameras
 from pytorch3d.transforms import Scale
 
 

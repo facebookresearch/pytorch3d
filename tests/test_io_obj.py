@@ -14,10 +14,10 @@ from tempfile import NamedTemporaryFile, TemporaryDirectory
 
 import torch
 from common_testing import (
-    TestCaseMixin,
     get_pytorch3d_dir,
     get_tests_dir,
     load_rgb_image,
+    TestCaseMixin,
 )
 from iopath.common.file_io import PathManager
 from pytorch3d.io import IO, load_obj, load_objs_as_meshes, save_obj
@@ -27,7 +27,7 @@ from pytorch3d.io.mtl_io import (
     _parse_mtl,
 )
 from pytorch3d.renderer import TexturesAtlas, TexturesUV, TexturesVertex
-from pytorch3d.structures import Meshes, join_meshes_as_batch
+from pytorch3d.structures import join_meshes_as_batch, Meshes
 from pytorch3d.utils import torus
 
 

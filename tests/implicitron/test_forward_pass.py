@@ -10,7 +10,7 @@ import torch
 from pytorch3d.implicitron.models.base import GenericModel
 from pytorch3d.implicitron.models.renderer.base import EvaluationMode
 from pytorch3d.implicitron.tools.config import expand_args_fields
-from pytorch3d.renderer.cameras import PerspectiveCameras, look_at_view_transform
+from pytorch3d.renderer.cameras import look_at_view_transform, PerspectiveCameras
 
 
 class TestGenericModel(unittest.TestCase):

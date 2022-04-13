@@ -39,7 +39,7 @@ from PIL import Image
 from pytorch3d.io import IO
 from pytorch3d.renderer.camera_utils import join_cameras_as_batch
 from pytorch3d.renderer.cameras import CamerasBase, PerspectiveCameras
-from pytorch3d.structures.pointclouds import Pointclouds, join_pointclouds_as_batch
+from pytorch3d.structures.pointclouds import join_pointclouds_as_batch, Pointclouds
 
 from . import types
 

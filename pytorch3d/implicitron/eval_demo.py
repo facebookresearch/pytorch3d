@@ -8,7 +8,7 @@
 import copy
 import dataclasses
 import os
-from typing import Optional, cast
+from typing import cast, Optional
 
 import lpips
 import torch

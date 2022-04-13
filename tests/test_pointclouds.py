@@ -12,7 +12,7 @@ import numpy as np
 import torch
 from common_testing import TestCaseMixin
 from pytorch3d.structures import utils as struct_utils
-from pytorch3d.structures.pointclouds import Pointclouds, join_pointclouds_as_batch
+from pytorch3d.structures.pointclouds import join_pointclouds_as_batch, Pointclouds
 
 
 class TestPointclouds(TestCaseMixin, unittest.TestCase):

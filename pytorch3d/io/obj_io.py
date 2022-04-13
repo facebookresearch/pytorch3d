@@ -18,11 +18,11 @@ from iopath.common.file_io import PathManager
 from PIL import Image
 from pytorch3d.common.datatypes import Device
 from pytorch3d.io.mtl_io import load_mtl, make_mesh_texture_atlas
-from pytorch3d.io.utils import PathOrStr, _check_faces_indices, _make_tensor, _open_file
+from pytorch3d.io.utils import _check_faces_indices, _make_tensor, _open_file, PathOrStr
 from pytorch3d.renderer import TexturesAtlas, TexturesUV
-from pytorch3d.structures import Meshes, join_meshes_as_batch
+from pytorch3d.structures import join_meshes_as_batch, Meshes
 
-from .pluggable_formats import MeshFormatInterpreter, endswith
+from .pluggable_formats import endswith, MeshFormatInterpreter
 
 
 # Faces & Aux type returned from load_obj function.

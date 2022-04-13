@@ -5,7 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 
 
-from typing import Optional, Tuple, cast
+from typing import cast, Optional, Tuple
 
 import torch
 import torch.nn.functional as Fu

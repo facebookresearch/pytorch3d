@@ -17,19 +17,19 @@ import unittest
 import imageio
 import numpy as np
 import torch
-from common_testing import TestCaseMixin, get_tests_dir, load_rgb_image
+from common_testing import get_tests_dir, load_rgb_image, TestCaseMixin
 from pytorch3d.io import save_obj
 from pytorch3d.renderer.cameras import (
     FoVPerspectiveCameras,
-    PerspectiveCameras,
     look_at_view_transform,
+    PerspectiveCameras,
 )
 from pytorch3d.renderer.lighting import PointLights
 from pytorch3d.renderer.mesh import (
-    ClipFrustum,
-    TexturesUV,
     clip_faces,
+    ClipFrustum,
     convert_clipped_rasterization_to_original_faces,
+    TexturesUV,
 )
 from pytorch3d.renderer.mesh.rasterize_meshes import _RasterizeFaceVerts
 from pytorch3d.renderer.mesh.rasterizer import MeshRasterizer, RasterizationSettings

@@ -21,10 +21,10 @@ from pytorch3d.renderer import (
     NDCMultinomialRaysampler,
     PointLights,
     RasterizationSettings,
+    ray_bundle_to_ray_points,
     RayBundle,
     SoftPhongShader,
     TexturesVertex,
-    ray_bundle_to_ray_points,
 )
 from pytorch3d.structures import Meshes
 from pytorch3d.utils import ico_sphere

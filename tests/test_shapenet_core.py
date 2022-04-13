@@ -12,14 +12,14 @@ import unittest
 
 import numpy as np
 import torch
-from common_testing import TestCaseMixin, get_tests_dir, load_rgb_image
+from common_testing import get_tests_dir, load_rgb_image, TestCaseMixin
 from PIL import Image
-from pytorch3d.datasets import ShapeNetCore, collate_batched_meshes
+from pytorch3d.datasets import collate_batched_meshes, ShapeNetCore
 from pytorch3d.renderer import (
     FoVPerspectiveCameras,
+    look_at_view_transform,
     PointLights,
     RasterizationSettings,
-    look_at_view_transform,
 )
 from torch.utils.data import DataLoader
 

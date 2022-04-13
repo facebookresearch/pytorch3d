@@ -15,18 +15,18 @@ from os import path
 import numpy as np
 import torch
 from common_testing import (
-    TestCaseMixin,
     get_pytorch3d_dir,
     get_tests_dir,
     load_rgb_image,
+    TestCaseMixin,
 )
 from PIL import Image
 from pytorch3d.renderer.cameras import (
     FoVOrthographicCameras,
     FoVPerspectiveCameras,
+    look_at_view_transform,
     OrthographicCameras,
     PerspectiveCameras,
-    look_at_view_transform,
 )
 from pytorch3d.renderer.compositing import alpha_composite, norm_weighted_sum
 from pytorch3d.renderer.points import (

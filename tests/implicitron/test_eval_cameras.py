@@ -11,7 +11,7 @@ import torch
 from pytorch3d.implicitron.tools.eval_video_trajectory import (
     generate_eval_video_cameras,
 )
-from pytorch3d.renderer.cameras import PerspectiveCameras, look_at_view_transform
+from pytorch3d.renderer.cameras import look_at_view_transform, PerspectiveCameras
 from pytorch3d.transforms import axis_angle_to_matrix
 
 

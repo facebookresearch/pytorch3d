@@ -8,7 +8,7 @@ import functools
 import unittest
 
 import torch
-from common_testing import TestCaseMixin, get_random_cuda_device
+from common_testing import get_random_cuda_device, TestCaseMixin
 from pytorch3d import _C
 from pytorch3d.renderer import FoVPerspectiveCameras, look_at_view_transform
 from pytorch3d.renderer.mesh import MeshRasterizer, RasterizationSettings

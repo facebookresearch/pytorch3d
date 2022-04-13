@@ -8,7 +8,7 @@ import unittest
 from itertools import product
 
 import torch
-from common_testing import TestCaseMixin, get_random_cuda_device
+from common_testing import get_random_cuda_device, TestCaseMixin
 from pytorch3d.ops.knn import _KNN, knn_gather, knn_points
 
 

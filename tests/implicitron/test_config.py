@@ -13,18 +13,18 @@ from typing import Any, List, Optional, Set, Tuple
 
 from omegaconf import DictConfig, ListConfig, OmegaConf, ValidationError
 from pytorch3d.implicitron.tools.config import (
-    Configurable,
-    ReplaceableBase,
     _get_type_to_process,
     _is_actually_dataclass,
     _ProcessType,
     _Registry,
+    Configurable,
     enable_get_default_args,
     expand_args_fields,
     get_default_args,
     get_default_args_field,
     registry,
     remove_unused_components,
+    ReplaceableBase,
     run_auto_creation,
 )
 

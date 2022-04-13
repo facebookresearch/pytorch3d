@@ -20,9 +20,9 @@ from pytorch3d.renderer import (
     PointsRenderer,
 )
 from pytorch3d.renderer.utils import (
-    TensorProperties,
     ndc_grid_sample,
     ndc_to_grid_sample_coords,
+    TensorProperties,
 )
 from pytorch3d.structures import Pointclouds
 

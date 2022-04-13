@@ -8,7 +8,7 @@
 import unittest
 
 import torch
-from common_testing import TestCaseMixin, get_random_cuda_device
+from common_testing import get_random_cuda_device, TestCaseMixin
 from pytorch3d.common.workaround import symeig3x3
 from pytorch3d.transforms.rotation_conversions import random_rotations
 

@@ -9,7 +9,7 @@ from typing import Tuple
 
 import torch
 import torch.nn.functional as F
-from torch.nn import Parameter, init
+from torch.nn import init, Parameter
 
 
 class LinearWithRepeat(torch.nn.Module):

@@ -10,7 +10,7 @@ from collections import namedtuple
 import numpy as np
 import torch
 import torch.nn.functional as F
-from common_testing import TestCaseMixin, get_random_cuda_device
+from common_testing import get_random_cuda_device, TestCaseMixin
 from pytorch3d.loss import chamfer_distance
 from pytorch3d.structures.pointclouds import Pointclouds
 

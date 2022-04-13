@@ -11,19 +11,19 @@ from .blending import (
     softmax_rgb_blend,
 )
 from .camera_utils import join_cameras_as_batch, rotate_on_spot
-from .cameras import OpenGLOrthographicCameras  # deprecated
-from .cameras import OpenGLPerspectiveCameras  # deprecated
-from .cameras import SfMOrthographicCameras  # deprecated
-from .cameras import SfMPerspectiveCameras  # deprecated
-from .cameras import (
+from .cameras import (  # deprecated  # deprecated  # deprecated  # deprecated
+    camera_position_from_spherical_angles,
     FoVOrthographicCameras,
     FoVPerspectiveCameras,
-    OrthographicCameras,
-    PerspectiveCameras,
-    camera_position_from_spherical_angles,
     get_world_to_view_transform,
     look_at_rotation,
     look_at_view_transform,
+    OpenGLOrthographicCameras,
+    OpenGLPerspectiveCameras,
+    OrthographicCameras,
+    PerspectiveCameras,
+    SfMOrthographicCameras,
+    SfMPerspectiveCameras,
 )
 from .implicit import (
     AbsorptionOnlyRaymarcher,
@@ -35,22 +35,25 @@ from .implicit import (
     MultinomialRaysampler,
     NDCGridRaysampler,
     NDCMultinomialRaysampler,
+    ray_bundle_to_ray_points,
+    ray_bundle_variables_to_ray_points,
     RayBundle,
     VolumeRenderer,
     VolumeSampler,
-    ray_bundle_to_ray_points,
-    ray_bundle_variables_to_ray_points,
 )
-from .lighting import AmbientLights, DirectionalLights, PointLights, diffuse, specular
+from .lighting import AmbientLights, diffuse, DirectionalLights, PointLights, specular
 from .materials import Materials
 from .mesh import (
+    gouraud_shading,
     HardFlatShader,
     HardGouraudShader,
     HardPhongShader,
     MeshRasterizer,
     MeshRenderer,
     MeshRendererWithFragments,
+    phong_shading,
     RasterizationSettings,
+    rasterize_meshes,
     SoftGouraudShader,
     SoftPhongShader,
     SoftSilhouetteShader,
@@ -58,9 +61,6 @@ from .mesh import (
     TexturesAtlas,
     TexturesUV,
     TexturesVertex,
-    gouraud_shading,
-    phong_shading,
-    rasterize_meshes,
 )
 from .points import (
     AlphaCompositor,
@@ -72,10 +72,10 @@ from .points import (
     rasterize_points,
 )
 from .utils import (
-    TensorProperties,
     convert_to_tensors_and_broadcast,
     ndc_grid_sample,
     ndc_to_grid_sample_coords,
+    TensorProperties,
 )
 
 

@@ -19,8 +19,8 @@ from pytorch3d.renderer import HardPhongShader
 from tabulate import tabulate
 
 from .utils import (
-    BlenderCamera,
     align_bbox,
+    BlenderCamera,
     compute_extrinsic_matrix,
     read_binvox_coords,
     voxelize,

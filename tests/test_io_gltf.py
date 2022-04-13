@@ -9,7 +9,7 @@ from math import radians
 
 import numpy as np
 import torch
-from common_testing import TestCaseMixin, get_pytorch3d_dir, get_tests_dir
+from common_testing import get_pytorch3d_dir, get_tests_dir, TestCaseMixin
 from PIL import Image
 from pytorch3d.io import IO
 from pytorch3d.io.experimental_gltf_io import MeshGlbFormat
@@ -17,9 +17,9 @@ from pytorch3d.renderer import (
     AmbientLights,
     BlendParams,
     FoVPerspectiveCameras,
+    look_at_view_transform,
     PointLights,
     RasterizationSettings,
-    look_at_view_transform,
     rotate_on_spot,
 )
 from pytorch3d.renderer.mesh import (

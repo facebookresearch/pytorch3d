@@ -12,13 +12,13 @@ from pytorch3d.io import load_objs_as_meshes
 from pytorch3d.renderer import (
     BlendParams,
     FoVPerspectiveCameras,
+    look_at_view_transform,
     MeshRasterizer,
     MeshRenderer,
     PointLights,
     RasterizationSettings,
     SoftPhongShader,
     SoftSilhouetteShader,
-    look_at_view_transform,
 )
 
 

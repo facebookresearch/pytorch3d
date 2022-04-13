@@ -10,10 +10,10 @@ from itertools import product
 import numpy as np
 import torch
 from common_testing import (
-    TestCaseMixin,
     get_pytorch3d_dir,
     get_tests_dir,
     load_rgb_image,
+    TestCaseMixin,
 )
 from PIL import Image
 from pytorch3d.io import load_obj

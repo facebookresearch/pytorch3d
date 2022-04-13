@@ -13,7 +13,7 @@ import torch.nn.functional as F
 from pytorch3d.implicitron.models.view_pooling.view_sampling import (
     cameras_points_cartesian_product,
 )
-from pytorch3d.implicitron.tools.config import ReplaceableBase, registry
+from pytorch3d.implicitron.tools.config import registry, ReplaceableBase
 from pytorch3d.ops import wmean
 from pytorch3d.renderer.cameras import CamerasBase
 
