@@ -21,7 +21,7 @@ Our implementation decouples the rasterization and shading steps of rendering. T
 
 ## <u>Get started</u>
 
-To learn about more the implementation and start using the renderer refer to [getting started with renderer](renderer_getting_started.md), which also contains the [architecture overview](assets/architecture_overview.png) and [coordinate transformation conventions](assets/transformations_overview.png).
+To learn about more the implementation and start using the renderer refer to [getting started with renderer](renderer_getting_started.md), which also contains the [architecture overview](assets/architecture_renderer.jpg) and [coordinate transformation conventions](assets/transforms_overview.jpg).
 
 ## <u>Tech Report</u>
 
