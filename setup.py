@@ -149,8 +149,8 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            f"pytorch3d_implicitron_runner={trainer}.experiment",
-            f"pytorch3d_implicitron_visualizer={trainer}.visualize_reconstruction",
+            f"pytorch3d_implicitron_runner={trainer}.experiment:experiment",
+            f"pytorch3d_implicitron_visualizer={trainer}.visualize_reconstruction:main",
         ]
     },
     ext_modules=get_extensions(),
