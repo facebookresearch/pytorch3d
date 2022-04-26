@@ -397,7 +397,7 @@ class GenericModel(Configurable, torch.nn.Module):
             func.bind_args(**custom_args)
 
         chunked_renderer_inputs = {}
-        if fg_probability is not None:
+        if fg_probability is not None and self.renderer.requires_object_mask():
             sampled_fb_prob = rend_utils.ndc_grid_sample(
                 fg_probability[:n_targets], ray_bundle.xys, mode="nearest"
             )

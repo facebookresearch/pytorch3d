@@ -49,6 +49,9 @@ class SignedDistanceFunctionRenderer(BaseRenderer, torch.nn.Module):
 
         self.register_buffer("_bg_color", torch.tensor(self.bg_color), persistent=False)
 
+    def requires_object_mask(self) -> bool:
+        return True
+
     def forward(
         self,
         ray_bundle: RayBundle,
