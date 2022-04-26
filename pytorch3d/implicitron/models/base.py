@@ -396,12 +396,12 @@ class GenericModel(Configurable, torch.nn.Module):
         for func in self._implicit_functions:
             func.bind_args(**custom_args)
 
-        object_mask: Optional[torch.Tensor] = None
+        chunked_renderer_inputs = {}
         if fg_probability is not None:
             sampled_fb_prob = rend_utils.ndc_grid_sample(
                 fg_probability[:n_targets], ray_bundle.xys, mode="nearest"
             )
-            object_mask = sampled_fb_prob > 0.5
+            chunked_renderer_inputs["object_mask"] = sampled_fb_prob > 0.5
 
         # (5)-(6) Implicit function evaluation and Rendering
         rendered = self._render(
@@ -409,7 +409,7 @@ class GenericModel(Configurable, torch.nn.Module):
             sampling_mode=sampling_mode,
             evaluation_mode=evaluation_mode,
             implicit_functions=self._implicit_functions,
-            object_mask=object_mask,
+            chunked_inputs=chunked_renderer_inputs,
         )
 
         # Unbind the custom arguments to prevent pytorch from storing
@@ -501,7 +501,6 @@ class GenericModel(Configurable, torch.nn.Module):
         Helper function to visualize the predictions generated
         in the forward pass.
 
-
         Args:
             viz: Visdom connection object
             visdom_env_imgs: name of visdom environment for the images.
@@ -521,7 +520,7 @@ class GenericModel(Configurable, torch.nn.Module):
         self,
         *,
         ray_bundle: RayBundle,
-        object_mask: Optional[torch.Tensor],
+        chunked_inputs: Dict[str, torch.Tensor],
         sampling_mode: RenderSamplingMode,
         **kwargs,
     ) -> RendererOutput:
@@ -529,13 +528,16 @@ class GenericModel(Configurable, torch.nn.Module):
         Args:
             ray_bundle: A `RayBundle` object containing the parametrizations of the
                 sampled rendering rays.
-            object_mask: A tensor of shape `(B, 3, H, W)` denoting the silhouette of the object
-                in the image. This is required for the SignedDistanceFunctionRenderer.
+            chunked_inputs: A collection of tensor of shape `(B, _, H, W)`. E.g.
+                SignedDistanceFunctionRenderer requires "object_mask", shape
+                (B, 1, H, W), the silhouette of the object in the image. When
+                chunking, they are passed to the renderer as shape
+                `(B, _, chunksize)`.
             sampling_mode: The sampling method to use. Must be a value from the
                 RenderSamplingMode Enum.
+
         Returns:
             An instance of RendererOutput
-
         """
         if sampling_mode == RenderSamplingMode.FULL_GRID and self.chunk_size_grid > 0:
             return _apply_chunked(
@@ -543,7 +545,7 @@ class GenericModel(Configurable, torch.nn.Module):
                 _chunk_generator(
                     self.chunk_size_grid,
                     ray_bundle,
-                    object_mask,
+                    chunked_inputs,
                     self.tqdm_trigger_threshold,
                     **kwargs,
                 ),
@@ -553,7 +555,7 @@ class GenericModel(Configurable, torch.nn.Module):
             # pyre-fixme[29]: `BaseRenderer` is not a function.
             return self.renderer(
                 ray_bundle=ray_bundle,
-                object_mask=object_mask,
+                **chunked_inputs,
                 **kwargs,
             )
 
@@ -837,7 +839,7 @@ def _tensor_collator(batch, new_dims) -> torch.Tensor:
 def _chunk_generator(
     chunk_size: int,
     ray_bundle: RayBundle,
-    object_mask: Optional[torch.Tensor],
+    chunked_inputs: Dict[str, torch.Tensor],
     tqdm_trigger_threshold: int,
     *args,
     **kwargs,
@@ -880,8 +882,6 @@ def _chunk_generator(
             xys=ray_bundle.xys.reshape(batch_size, -1, 2)[:, start_idx:end_idx],
         )
         extra_args = kwargs.copy()
-        if object_mask is not None:
-            extra_args["object_mask"] = object_mask.reshape(batch_size, -1, 1)[
-                :, start_idx:end_idx
-            ]
+        for k, v in chunked_inputs.items():
+            extra_args[k] = v.flatten(2)[:, :, start_idx:end_idx]
         yield [ray_bundle_chunk, *args], extra_args
