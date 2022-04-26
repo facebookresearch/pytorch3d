@@ -2,9 +2,9 @@
 # fmt: off
 # flake8: noqa
 '''Pytorch implementations of hyper-network modules.
-isort:skip_file
 '''
 import functools
+
 import torch
 import torch.nn as nn
 

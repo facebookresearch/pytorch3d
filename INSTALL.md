@@ -43,7 +43,7 @@ export CUB_HOME=$PWD/cub-1.10.0
 For developing on top of PyTorch3D or contributing, you will need to run the linter and tests. If you want to run any of the notebook tutorials as `docs/tutorials` or the examples in `docs/examples` you will also need matplotlib and OpenCV.
 - scikit-image
 - black
-- isort
+- usort
 - flake8
 - matplotlib
 - tdqm
@@ -59,7 +59,7 @@ conda install jupyter
 pip install scikit-image matplotlib imageio plotly opencv-python
 
 # Tests/Linting
-pip install black 'isort<5' flake8 flake8-bugbear flake8-comprehensions
+pip install black usort flake8 flake8-bugbear flake8-comprehensions
 ```
 
 ## Installing prebuilt binaries for PyTorch3D

@@ -2,7 +2,6 @@
 # fmt: off
 # flake8: noqa
 '''A number of custom pytorch modules with sane defaults that I find useful for model prototyping.
-isort:skip_file
 '''
 import torch
 import torch.nn as nn

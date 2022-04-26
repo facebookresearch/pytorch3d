@@ -22,8 +22,14 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 DIR=$(dirname "${DIR}")
 
-echo "Running isort..."
-isort -y -sp "${DIR}"
+if [[ -f "${DIR}/tests/TARGETS" ]]
+then
+  pyfmt "${DIR}"
+else
+# run usort externally only
+  echo "Running usort..."
+  usort  "${DIR}"
+fi
 
 echo "Running black..."
 black "${DIR}"

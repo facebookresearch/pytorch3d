@@ -144,7 +144,7 @@ setup(
     install_requires=["fvcore", "iopath"],
     extras_require={
         "all": ["matplotlib", "tqdm>4.29.0", "imageio", "ipywidgets"],
-        "dev": ["flake8", "isort", "black==19.3b0"],
+        "dev": ["flake8", "usort", "black==19.3b0"],
         "implicitron": ["hydra-core>=1.1", "visdom", "lpips", "matplotlib"],
     },
     entry_points={
