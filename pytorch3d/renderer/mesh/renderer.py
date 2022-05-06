@@ -4,9 +4,13 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+from typing import Tuple
 
 import torch
 import torch.nn as nn
+
+from ...structures.meshes import Meshes
+from .rasterizer import MeshRasterizer
 
 
 # A renderer class should be initialized with a
@@ -32,7 +36,7 @@ class MeshRenderer(nn.Module):
     function.
     """
 
-    def __init__(self, rasterizer, shader) -> None:
+    def __init__(self, rasterizer: MeshRasterizer, shader) -> None:
         super().__init__()
         self.rasterizer = rasterizer
         self.shader = shader
@@ -43,7 +47,7 @@ class MeshRenderer(nn.Module):
         self.shader.to(device)
         return self
 
-    def forward(self, meshes_world, **kwargs) -> torch.Tensor:
+    def forward(self, meshes_world: Meshes, **kwargs) -> torch.Tensor:
         """
         Render a batch of images from a batch of meshes by rasterizing and then
         shading.
@@ -76,7 +80,7 @@ class MeshRendererWithFragments(nn.Module):
         depth = fragments.zbuf
     """
 
-    def __init__(self, rasterizer, shader) -> None:
+    def __init__(self, rasterizer: MeshRasterizer, shader) -> None:
         super().__init__()
         self.rasterizer = rasterizer
         self.shader = shader
@@ -85,8 +89,11 @@ class MeshRendererWithFragments(nn.Module):
         # Rasterizer and shader have submodules which are not of type nn.Module
         self.rasterizer.to(device)
         self.shader.to(device)
+        return self
 
-    def forward(self, meshes_world, **kwargs):
+    def forward(
+        self, meshes_world: Meshes, **kwargs
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Render a batch of images from a batch of meshes by rasterizing and then
         shading.
