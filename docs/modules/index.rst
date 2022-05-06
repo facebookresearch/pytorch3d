@@ -3,7 +3,6 @@ API Documentation
 
 .. toctree::
 
-    common
     structures
     io
     loss
@@ -12,3 +11,5 @@ API Documentation
     transforms
     utils
     datasets
+    common
+    vis
