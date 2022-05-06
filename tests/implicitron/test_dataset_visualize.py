@@ -26,11 +26,16 @@ if os.environ.get("FB_TEST", False):
 else:
     from common_resources import get_skateboard_data
 
+if os.environ.get("FB_TEST", False):
+    from common_testing import interactive_testing_requested
+else:
+    from tests.common_testing import interactive_testing_requested
+
 
 class TestDatasetVisualize(unittest.TestCase):
     def setUp(self):
-        if os.environ.get("INSIDE_RE_WORKER") is not None:
-            raise unittest.SkipTest("Visdom not available")
+        if not interactive_testing_requested():
+            return
         category = "skateboard"
         stack = contextlib.ExitStack()
         dataset_root, path_manager = stack.enter_context(get_skateboard_data())
@@ -94,8 +99,8 @@ class TestDatasetVisualize(unittest.TestCase):
 
     def test_one(self):
         """Test dataset visualization."""
-        if os.environ.get("INSIDE_RE_WORKER") is not None:
-            raise unittest.SkipTest("Visdom not available")
+        if not interactive_testing_requested():
+            return
         for max_frames in (16, -1):
             for load_dataset_point_cloud in (True, False):
                 for dataset_key in self.datasets:

@@ -15,6 +15,15 @@ import torch
 from PIL import Image
 
 
+def interactive_testing_requested() -> bool:
+    """
+    Certain tests are only useful when run interactively, and so are not regularly run.
+    These are activated by this funciton returning True, which the user requests by
+    setting the environment variable `PYTORCH3D_INTERACTIVE_TESTING`.
+    """
+    return os.environ.get("PYTORCH3D_INTERACTIVE_TESTING", False)
+
+
 def get_tests_dir() -> Path:
     """
     Returns Path for the directory containing this file.

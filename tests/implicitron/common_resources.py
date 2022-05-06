@@ -16,6 +16,33 @@ from zipfile import ZipFile
 from iopath.common.file_io import PathManager
 
 
+CO3D_MANIFOLD_PATH: str = "manifold://co3d/tree/extracted"
+
+
+def get_path_manager(silence_logs: bool = False) -> PathManager:
+    """
+    Returns a path manager which can access manifold internally.
+
+    Args:
+        silence_logs: Whether to reduce log output from iopath library.
+    """
+    if silence_logs:
+        logging.getLogger("iopath.fb.manifold").setLevel(logging.CRITICAL)
+        logging.getLogger("iopath.common.file_io").setLevel(logging.CRITICAL)
+
+    if os.environ.get("INSIDE_RE_WORKER", False):
+        raise ValueError("Cannot get to manifold from RE")
+
+    path_manager = PathManager()
+
+    if os.environ.get("FB_TEST", False):
+        from iopath.fb.manifold import ManifoldPathHandler
+
+        path_manager.register_handler(ManifoldPathHandler())
+
+    return path_manager
+
+
 @contextlib.contextmanager
 def get_skateboard_data(
     avoid_manifold: bool = False, silence_logs: bool = False
@@ -34,7 +61,6 @@ def get_skateboard_data(
         dataset_root: (str) path to dataset root.
         path_manager: path_manager to access it with.
     """
-    path_manager = PathManager()
     if silence_logs:
         logging.getLogger("iopath.fb.manifold").setLevel(logging.CRITICAL)
         logging.getLogger("iopath.common.file_io").setLevel(logging.CRITICAL)
@@ -42,7 +68,7 @@ def get_skateboard_data(
     if not os.environ.get("FB_TEST", False):
         if os.getenv("FAIR_ENV_CLUSTER", "") == "":
             raise unittest.SkipTest("Unknown environment. Data not available.")
-        yield "/checkpoint/dnovotny/datasets/co3d/download_aws_22_02_18", path_manager
+        yield "/checkpoint/dnovotny/datasets/co3d/download_aws_22_02_18", PathManager()
 
     elif avoid_manifold or os.environ.get("INSIDE_RE_WORKER", False):
         from libfb.py.parutil import get_file_path
@@ -53,13 +79,9 @@ def get_skateboard_data(
         with tempfile.TemporaryDirectory() as dest:
             with ZipFile(source) as f:
                 f.extractall(dest)
-            yield os.path.join(dest, "extracted"), path_manager
+            yield os.path.join(dest, "extracted"), PathManager()
     else:
-        from iopath.fb.manifold import ManifoldPathHandler
-
-        path_manager.register_handler(ManifoldPathHandler())
-
-        yield "manifold://co3d/tree/extracted", path_manager
+        yield CO3D_MANIFOLD_PATH, get_path_manager()
 
 
 def provide_lpips_vgg():

@@ -12,6 +12,7 @@ from typing import cast, Optional
 
 import lpips
 import torch
+from iopath.common.file_io import PathManager
 from pytorch3d.implicitron.dataset.dataloader_zoo import dataloader_zoo
 from pytorch3d.implicitron.dataset.dataset_zoo import CO3D_CATEGORIES, dataset_zoo
 from pytorch3d.implicitron.dataset.implicitron_dataset import (
@@ -79,6 +80,7 @@ def evaluate_dbir_for_category(
     task: str = "singlesequence",
     single_sequence_id: Optional[int] = None,
     num_workers: int = 16,
+    path_manager: Optional[PathManager] = None,
 ):
     """
     Evaluates new view synthesis metrics of a simple depth-based image rendering
@@ -90,6 +92,7 @@ def evaluate_dbir_for_category(
         task: Evaluation task. Either singlesequence or multisequence.
         single_sequence_id: The ID of the evaluiation sequence for the singlesequence task.
         num_workers: The number of workers for the employed dataloaders.
+        path_manager: (optional) Used for interpreting paths.
 
     Returns:
         category_result: A dictionary of quantitative metrics.
@@ -110,6 +113,7 @@ def evaluate_dbir_for_category(
         test_on_train=False,
         load_point_clouds=True,
         test_restrict_sequence_id=single_sequence_id,
+        path_manager=path_manager,
     )
 
     dataloaders = dataloader_zoo(

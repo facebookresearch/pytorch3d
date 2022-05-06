@@ -122,6 +122,8 @@ def dataset_zoo(
             category,
             f"eval_batches_{task}.json",
         )
+        if path_manager is not None:
+            batch_indices_path = path_manager.get_local_path(batch_indices_path)
         if not os.path.isfile(batch_indices_path):
             # The batch indices file does not exist.
             # Most probably the user has not specified the root folder.
@@ -156,15 +158,12 @@ def dataset_zoo(
 
         for dataset, subsets in set_names_mapping.items():
             frame_file = os.path.join(dataset_root, category, "frame_annotations.jgz")
-            assert os.path.isfile(frame_file)
 
             sequence_file = os.path.join(
                 dataset_root, category, "sequence_annotations.jgz"
             )
-            assert os.path.isfile(sequence_file)
 
             subset_lists_file = os.path.join(dataset_root, category, "set_lists.json")
-            assert os.path.isfile(subset_lists_file)
 
             # TODO: maybe directly in param list
             params = {
