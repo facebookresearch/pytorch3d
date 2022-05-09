@@ -28,6 +28,7 @@ class ViewMetrics(torch.nn.Module):
         density_grid: Optional[torch.Tensor] = None,
         keys_prefix: str = "loss_",
         mask_renders_by_pred: bool = False,
+        **kwargs,
     ) -> Dict[str, torch.Tensor]:
         """
         Calculates various differentiable metrics useful for supervising
