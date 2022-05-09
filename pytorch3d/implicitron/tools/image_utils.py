@@ -5,7 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 
 
-from typing import Union
+from typing import Sequence, Union
 
 import torch
 
@@ -14,7 +14,7 @@ def mask_background(
     image_rgb: torch.Tensor,
     mask_fg: torch.Tensor,
     dim_color: int = 1,
-    bg_color: Union[torch.Tensor, str, float] = 0.0,
+    bg_color: Union[torch.Tensor, Sequence, str, float] = 0.0,
 ) -> torch.Tensor:
     """
     Mask the background input image tensor `image_rgb` with `bg_color`.
@@ -26,9 +26,11 @@ def mask_background(
     # obtain the background color tensor
     if isinstance(bg_color, torch.Tensor):
         bg_color_t = bg_color.view(1, 3, 1, 1).clone().to(image_rgb)
-    elif isinstance(bg_color, float):
+    elif isinstance(bg_color, (float, tuple, list)):
+        if isinstance(bg_color, float):
+            bg_color = [bg_color] * 3
         bg_color_t = torch.tensor(
-            [bg_color] * 3, device=image_rgb.device, dtype=image_rgb.dtype
+            bg_color, device=image_rgb.device, dtype=image_rgb.dtype
         ).view(*tgt_view)
     elif isinstance(bg_color, str):
         if bg_color == "white":

@@ -29,7 +29,7 @@ from pytorch3d.implicitron.dataset.implicitron_dataset import (
     ImplicitronDataset,
 )
 from pytorch3d.implicitron.dataset.utils import is_train_frame
-from pytorch3d.implicitron.models.base import EvaluationMode
+from pytorch3d.implicitron.models.base_model import EvaluationMode
 from pytorch3d.implicitron.tools.configurable import get_default_args
 from pytorch3d.implicitron.tools.eval_video_trajectory import (
     generate_eval_video_cameras,

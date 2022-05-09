@@ -9,12 +9,14 @@ import copy
 import warnings
 from collections import OrderedDict
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Sequence, Union
 
 import numpy as np
 import torch
+import torch.nn.functional as F
 from pytorch3d.implicitron.dataset.implicitron_dataset import FrameData
 from pytorch3d.implicitron.dataset.utils import is_known_frame, is_train_frame
+from pytorch3d.implicitron.models.base_model import ImplicitronRender
 from pytorch3d.implicitron.tools import vis_utils
 from pytorch3d.implicitron.tools.camera_utils import volumetric_camera_overlaps
 from pytorch3d.implicitron.tools.image_utils import mask_background
@@ -29,18 +31,6 @@ from visdom import Visdom
 
 
 EVAL_N_SRC_VIEWS = [1, 3, 5, 7, 9]
-
-
-@dataclass
-class NewViewSynthesisPrediction:
-    """
-    Holds the tensors that describe a result of synthesizing new views.
-    """
-
-    depth_render: Optional[torch.Tensor] = None
-    image_render: Optional[torch.Tensor] = None
-    mask_render: Optional[torch.Tensor] = None
-    camera_distance: Optional[torch.Tensor] = None
 
 
 @dataclass
@@ -145,8 +135,8 @@ class _Visualizer:
 
 def eval_batch(
     frame_data: FrameData,
-    nvs_prediction: NewViewSynthesisPrediction,
-    bg_color: Union[torch.Tensor, str, float] = "black",
+    implicitron_render: ImplicitronRender,
+    bg_color: Union[torch.Tensor, Sequence, str, float] = "black",
     mask_thr: float = 0.5,
     lpips_model=None,
     visualize: bool = False,
@@ -162,14 +152,14 @@ def eval_batch(
     is True), a new-view synthesis method (NVS) is tasked to generate new views
     of the scene from the viewpoint of the target views (for which
     frame_data.frame_type.endswith('known') is False). The resulting
-    synthesized new views, stored in `nvs_prediction`, are compared to the
+    synthesized new views, stored in `implicitron_render`, are compared to the
     target ground truth in `frame_data` in terms of geometry and appearance
     resulting in a dictionary of metrics returned by the `eval_batch` function.
 
     Args:
         frame_data: A FrameData object containing the input to the new view
             synthesis method.
-        nvs_prediction: The data describing the synthesized new views.
+        implicitron_render: The data describing the synthesized new views.
         bg_color: The background color of the generated new views and the
             ground truth.
         lpips_model: A pre-trained model for evaluating the LPIPS metric.
@@ -184,26 +174,39 @@ def eval_batch(
         ValueError if frame_data does not have frame_type, camera, or image_rgb
         ValueError if the batch has a mix of training and test samples
         ValueError if the batch frames are not [unseen, known, known, ...]
-        ValueError if one of the required fields in nvs_prediction is missing
+        ValueError if one of the required fields in implicitron_render is missing
     """
-    REQUIRED_NVS_PREDICTION_FIELDS = ["mask_render", "image_render", "depth_render"]
     frame_type = frame_data.frame_type
     if frame_type is None:
         raise ValueError("Frame type has not been set.")
 
     # we check that all those fields are not None but Pyre can't infer that properly
-    # TODO: assign to local variables
+    # TODO: assign to local variables and simplify the code.
     if frame_data.image_rgb is None:
         raise ValueError("Image is not in the evaluation batch.")
 
     if frame_data.camera is None:
         raise ValueError("Camera is not in the evaluation batch.")
 
-    if any(not hasattr(nvs_prediction, k) for k in REQUIRED_NVS_PREDICTION_FIELDS):
-        raise ValueError("One of the required predicted fields is missing")
+    # eval all results in the resolution of the frame_data image
+    image_resol = tuple(frame_data.image_rgb.shape[2:])
 
-    # obtain copies to make sure we dont edit the original data
-    nvs_prediction = copy.deepcopy(nvs_prediction)
+    # Post-process the render:
+    # 1) check implicitron_render for Nones,
+    # 2) obtain copies to make sure we dont edit the original data,
+    # 3) take only the 1st (target) image
+    # 4) resize to match ground-truth resolution
+    cloned_render: Dict[str, torch.Tensor] = {}
+    for k in ["mask_render", "image_render", "depth_render"]:
+        field = getattr(implicitron_render, k)
+        if field is None:
+            raise ValueError(f"A required predicted field {k} is missing")
+
+        imode = "bilinear" if k == "image_render" else "nearest"
+        cloned_render[k] = (
+            F.interpolate(field[:1], size=image_resol, mode=imode).detach().clone()
+        )
+
     frame_data = copy.deepcopy(frame_data)
 
     # mask the ground truth depth in case frame_data contains the depth mask
@@ -226,9 +229,6 @@ def eval_batch(
             + " a target view while the rest should be source views."
         )  # TODO: do we need to enforce this?
 
-    # take only the first (target image)
-    for k in REQUIRED_NVS_PREDICTION_FIELDS:
-        setattr(nvs_prediction, k, getattr(nvs_prediction, k)[:1])
     for k in [
         "depth_map",
         "image_rgb",
@@ -242,10 +242,6 @@ def eval_batch(
     if frame_data.depth_map is None or frame_data.depth_map.sum() <= 0:
         warnings.warn("Empty or missing depth map in evaluation!")
 
-    # eval all results in the resolution of the frame_data image
-    # pyre-fixme[16]: `Optional` has no attribute `shape`.
-    image_resol = list(frame_data.image_rgb.shape[2:])
-
     # threshold the masks to make ground truth binary masks
     mask_fg, mask_crop = [
         (getattr(frame_data, k) >= mask_thr) for k in ("fg_probability", "mask_crop")
@@ -258,29 +254,14 @@ def eval_batch(
         bg_color=bg_color,
     )
 
-    # resize to the target resolution
-    for k in REQUIRED_NVS_PREDICTION_FIELDS:
-        imode = "bilinear" if k == "image_render" else "nearest"
-        val = getattr(nvs_prediction, k)
-        setattr(
-            nvs_prediction,
-            k,
-            # pyre-fixme[6]: Expected `Optional[int]` for 2nd param but got
-            #  `List[typing.Any]`.
-            torch.nn.functional.interpolate(val, size=image_resol, mode=imode),
-        )
-
     # clamp predicted images
-    # pyre-fixme[16]: `Optional` has no attribute `clamp`.
-    image_render = nvs_prediction.image_render.clamp(0.0, 1.0)
+    image_render = cloned_render["image_render"].clamp(0.0, 1.0)
 
     if visualize:
         visualizer = _Visualizer(
             image_render=image_render,
             image_rgb_masked=image_rgb_masked,
-            # pyre-fixme[6]: Expected `Tensor` for 3rd param but got
-            #  `Optional[torch.Tensor]`.
-            depth_render=nvs_prediction.depth_render,
+            depth_render=cloned_render["depth_render"],
             # pyre-fixme[6]: Expected `Tensor` for 4th param but got
             #  `Optional[torch.Tensor]`.
             depth_map=frame_data.depth_map,
@@ -292,9 +273,7 @@ def eval_batch(
     results: Dict[str, Any] = {}
 
     results["iou"] = iou(
-        # pyre-fixme[6]: Expected `Tensor` for 1st param but got
-        #  `Optional[torch.Tensor]`.
-        nvs_prediction.mask_render,
+        cloned_render["mask_render"],
         mask_fg,
         mask=mask_crop,
     )
@@ -321,11 +300,7 @@ def eval_batch(
         if name_postfix == "_fg":
             # only record depth metrics for the foreground
             _, abs_ = eval_depth(
-                # pyre-fixme[6]: Expected `Tensor` for 1st param but got
-                #  `Optional[torch.Tensor]`.
-                nvs_prediction.depth_render,
-                # pyre-fixme[6]: Expected `Tensor` for 2nd param but got
-                #  `Optional[torch.Tensor]`.
+                cloned_render["depth_render"],
                 frame_data.depth_map,
                 get_best_scale=True,
                 mask=loss_mask_now,
@@ -343,7 +318,7 @@ def eval_batch(
     if lpips_model is not None:
         im1, im2 = [
             2.0 * im.clamp(0.0, 1.0) - 1.0
-            for im in (image_rgb_masked, nvs_prediction.image_render)
+            for im in (image_rgb_masked, cloned_render["image_render"])
         ]
         results["lpips"] = lpips_model.forward(im1, im2).item()
 

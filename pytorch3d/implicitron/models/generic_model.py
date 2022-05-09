@@ -13,11 +13,11 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import torch
 import tqdm
-from pytorch3d.implicitron.evaluation.evaluate_new_view_synthesis import (
-    NewViewSynthesisPrediction,
-)
 from pytorch3d.implicitron.tools import image_utils, vis_utils
-from pytorch3d.implicitron.tools.config import Configurable, registry, run_auto_creation
+from pytorch3d.implicitron.tools.config import (
+    registry,
+    run_auto_creation,
+)
 from pytorch3d.implicitron.tools.rasterize_mc import rasterize_mc_samples
 from pytorch3d.implicitron.tools.utils import cat_dataclass
 from pytorch3d.renderer import RayBundle, utils as rend_utils
@@ -25,6 +25,7 @@ from pytorch3d.renderer.cameras import CamerasBase
 from visdom import Visdom
 
 from .autodecoder import Autodecoder
+from .base_model import ImplicitronModelBase, ImplicitronRender
 from .implicit_function.base import ImplicitFunctionBase
 from .implicit_function.idr_feature_field import IdrFeatureField  # noqa
 from .implicit_function.neural_radiance_field import (  # noqa
@@ -56,8 +57,8 @@ STD_LOG_VARS = ["objective", "epoch", "sec/it"]
 logger = logging.getLogger(__name__)
 
 
-# pyre-ignore: 13
-class GenericModel(Configurable, torch.nn.Module):
+@registry.register
+class GenericModel(ImplicitronModelBase, torch.nn.Module):  # pyre-ignore: 13
     """
     GenericModel is a wrapper for the neural implicit
     rendering and reconstruction pipeline which consists
@@ -452,7 +453,7 @@ class GenericModel(Configurable, torch.nn.Module):
             preds["depths_render"] = rendered.depths.permute(0, 3, 1, 2)
             preds["masks_render"] = rendered.masks.permute(0, 3, 1, 2)
 
-            preds["nvs_prediction"] = NewViewSynthesisPrediction(
+            preds["implicitron_render"] = ImplicitronRender(
                 image_render=preds["images_render"],
                 depth_render=preds["depths_render"],
                 mask_render=preds["masks_render"],

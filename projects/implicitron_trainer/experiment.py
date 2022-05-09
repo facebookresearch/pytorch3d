@@ -71,7 +71,7 @@ from pytorch3d.implicitron.dataset.implicitron_dataset import (
     ImplicitronDataset,
 )
 from pytorch3d.implicitron.evaluation import evaluate_new_view_synthesis as evaluate
-from pytorch3d.implicitron.models.base import EvaluationMode, GenericModel
+from pytorch3d.implicitron.models.generic_model import EvaluationMode, GenericModel
 from pytorch3d.implicitron.tools import model_io, vis_utils
 from pytorch3d.implicitron.tools.config import (
     enable_get_default_args,
@@ -615,11 +615,11 @@ def run_eval(cfg, model, all_source_cameras, loader, task, device):
             preds = model(
                 **{**frame_data_for_eval, "evaluation_mode": EvaluationMode.EVALUATION}
             )
-            nvs_prediction = copy.deepcopy(preds["nvs_prediction"])
+            implicitron_render = copy.deepcopy(preds["implicitron_render"])
             per_batch_eval_results.append(
                 evaluate.eval_batch(
                     frame_data,
-                    nvs_prediction,
+                    implicitron_render,
                     bg_color="black",
                     lpips_model=lpips_model,
                     source_cameras=all_source_cameras,

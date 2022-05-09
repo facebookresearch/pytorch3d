@@ -9,7 +9,7 @@ import unittest
 
 from omegaconf import OmegaConf
 from pytorch3d.implicitron.models.autodecoder import Autodecoder
-from pytorch3d.implicitron.models.base import GenericModel
+from pytorch3d.implicitron.models.generic_model import GenericModel
 from pytorch3d.implicitron.models.implicit_function.idr_feature_field import (
     IdrFeatureField,
 )

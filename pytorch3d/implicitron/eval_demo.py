@@ -5,10 +5,9 @@
 # LICENSE file in the root directory of this source tree.
 
 
-import copy
 import dataclasses
 import os
-from typing import cast, Optional
+from typing import cast, Optional, Tuple
 
 import lpips
 import torch
@@ -76,7 +75,7 @@ def main() -> None:
 
 def evaluate_dbir_for_category(
     category: str = "apple",
-    bg_color: float = 0.0,
+    bg_color: Tuple[float, float, float] = (0.0, 0.0, 0.0),
     task: str = "singlesequence",
     single_sequence_id: Optional[int] = None,
     num_workers: int = 16,
@@ -141,8 +140,9 @@ def evaluate_dbir_for_category(
         raise ValueError("Image size should be set in the dataset")
 
     # init the simple DBIR model
-    model = ModelDBIR(
-        image_size=image_size,
+    model = ModelDBIR(  # pyre-ignore[28]: c’tor implicitly overridden
+        render_image_width=image_size,
+        render_image_height=image_size,
         bg_color=bg_color,
         max_points=int(1e5),
     )
@@ -157,11 +157,10 @@ def evaluate_dbir_for_category(
     for frame_data in tqdm(test_dataloader):
         frame_data = dataclass_to_cuda_(frame_data)
         preds = model(**dataclasses.asdict(frame_data))
-        nvs_prediction = copy.deepcopy(preds["nvs_prediction"])
         per_batch_eval_results.append(
             eval_batch(
                 frame_data,
-                nvs_prediction,
+                preds["implicitron_render"],
                 bg_color=bg_color,
                 lpips_model=lpips_model,
                 source_cameras=all_source_cameras,

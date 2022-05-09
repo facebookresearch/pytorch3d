@@ -5,13 +5,11 @@
 # LICENSE file in the root directory of this source tree.
 
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional, Tuple
 
 import torch
 from pytorch3d.implicitron.dataset.utils import is_known_frame
-from pytorch3d.implicitron.evaluation.evaluate_new_view_synthesis import (
-    NewViewSynthesisPrediction,
-)
+from pytorch3d.implicitron.tools.config import registry
 from pytorch3d.implicitron.tools.point_cloud_utils import (
     get_rgbd_point_cloud,
     render_point_cloud_pytorch3d,
@@ -19,41 +17,43 @@ from pytorch3d.implicitron.tools.point_cloud_utils import (
 from pytorch3d.renderer.cameras import CamerasBase
 from pytorch3d.structures import Pointclouds
 
+from .base_model import ImplicitronModelBase, ImplicitronRender
+from .renderer.base import EvaluationMode
 
-class ModelDBIR(torch.nn.Module):
+
+@registry.register
+class ModelDBIR(ImplicitronModelBase, torch.nn.Module):
     """
     A simple depth-based image rendering model.
+
+    Args:
+        render_image_width: The width of the rendered rectangular images.
+        render_image_height: The height of the rendered rectangular images.
+        bg_color: The color of the background.
+        max_points: Maximum number of points in the point cloud
+            formed by unprojecting all source view depths.
+            If more points are present, they are randomly subsampled
+            to this number of points without replacement.
     """
 
-    def __init__(
-        self,
-        image_size: int = 256,
-        bg_color: float = 0.0,
-        max_points: int = -1,
-    ):
-        """
-        Initializes a simple DBIR model.
+    render_image_width: int = 256
+    render_image_height: int = 256
+    bg_color: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+    max_points: int = -1
 
-        Args:
-            image_size: The size of the rendered rectangular images.
-            bg_color: The color of the background.
-            max_points: Maximum number of points in the point cloud
-                formed by unprojecting all source view depths.
-                If more points are present, they are randomly subsampled
-                to #max_size points without replacement.
-        """
-
+    def __post_init__(self):
         super().__init__()
-        self.image_size = image_size
-        self.bg_color = bg_color
-        self.max_points = max_points
 
     def forward(
         self,
+        *,  # force keyword-only arguments
+        image_rgb: Optional[torch.Tensor],
         camera: CamerasBase,
-        image_rgb: torch.Tensor,
-        depth_map: torch.Tensor,
-        fg_probability: torch.Tensor,
+        fg_probability: Optional[torch.Tensor],
+        mask_crop: Optional[torch.Tensor],
+        depth_map: Optional[torch.Tensor],
+        sequence_name: Optional[List[str]],
+        evaluation_mode: EvaluationMode = EvaluationMode.EVALUATION,
         frame_type: List[str],
         **kwargs,
     ) -> Dict[str, Any]:  # TODO: return a namedtuple or dataclass
@@ -72,11 +72,20 @@ class ModelDBIR(torch.nn.Module):
 
         Returns:
             preds: A dict with the following fields:
-                nvs_prediction: The rendered colors, depth and mask
+                implicitron_render: The rendered colors, depth and mask
                     of the target views.
                 point_cloud: The point cloud of the scene. It's renders are
-                    stored in `nvs_prediction`.
+                    stored in `implicitron_render`.
         """
+
+        if image_rgb is None:
+            raise ValueError("ModelDBIR needs image input")
+
+        if fg_probability is None:
+            raise ValueError("ModelDBIR needs foreground mask input")
+
+        if depth_map is None:
+            raise ValueError("ModelDBIR needs depth map input")
 
         is_known = is_known_frame(frame_type)
         is_known_idx = torch.where(is_known)[0]
@@ -108,7 +117,7 @@ class ModelDBIR(torch.nn.Module):
             _image_render, _mask_render, _depth_render = render_point_cloud_pytorch3d(
                 camera[int(tgt_idx)],
                 point_cloud,
-                render_size=(self.image_size, self.image_size),
+                render_size=(self.render_image_height, self.render_image_width),
                 point_radius=1e-2,
                 topk=10,
                 bg_color=self.bg_color,
@@ -121,7 +130,7 @@ class ModelDBIR(torch.nn.Module):
             image_render.append(_image_render)
             mask_render.append(_mask_render)
 
-        nvs_prediction = NewViewSynthesisPrediction(
+        implicitron_render = ImplicitronRender(
             **{
                 k: torch.cat(v, dim=0)
                 for k, v in zip(
@@ -132,7 +141,7 @@ class ModelDBIR(torch.nn.Module):
         )
 
         preds = {
-            "nvs_prediction": nvs_prediction,
+            "implicitron_render": implicitron_render,
             "point_cloud": point_cloud,
         }
 
