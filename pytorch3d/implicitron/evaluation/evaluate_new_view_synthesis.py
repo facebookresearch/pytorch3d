@@ -204,7 +204,11 @@ def eval_batch(
 
         imode = "bilinear" if k == "image_render" else "nearest"
         cloned_render[k] = (
-            F.interpolate(field[:1], size=image_resol, mode=imode).detach().clone()
+            # pyre-fixme[6]: For 2nd param expected `Optional[int]` but got
+            #  `Tuple[Any, ...]`.
+            F.interpolate(field[:1], size=image_resol, mode=imode)
+            .detach()
+            .clone()
         )
 
     frame_data = copy.deepcopy(frame_data)
@@ -301,6 +305,8 @@ def eval_batch(
             # only record depth metrics for the foreground
             _, abs_ = eval_depth(
                 cloned_render["depth_render"],
+                # pyre-fixme[6]: For 2nd param expected `Tensor` but got
+                #  `Optional[Tensor]`.
                 frame_data.depth_map,
                 get_best_scale=True,
                 mask=loss_mask_now,
