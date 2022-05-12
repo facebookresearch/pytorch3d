@@ -10,7 +10,7 @@ from typing import Dict, Optional, Sequence, Union
 
 import torch
 import torch.nn.functional as F
-from pytorch3d.implicitron.models.view_pooling.view_sampling import (
+from pytorch3d.implicitron.models.view_pooler.view_sampler import (
     cameras_points_cartesian_product,
 )
 from pytorch3d.implicitron.tools.config import registry, ReplaceableBase
@@ -82,6 +82,33 @@ class FeatureAggregatorBase(ABC, ReplaceableBase):
         """
         raise NotImplementedError()
 
+    @abstractmethod
+    def get_aggregated_feature_dim(
+        self, feats_or_feats_dim: Union[Dict[str, torch.Tensor], int]
+    ):
+        """
+        Returns the final dimensionality of the output aggregated features.
+
+        Args:
+            feats_or_feats_dim: Either a `dict` of sampled features `{f_i: t_i}` corresponding
+                to the `feats_sampled` argument of `forward`,
+                or an `int` representing the sum of dimensionalities of each `t_i`.
+
+        Returns:
+            aggregated_feature_dim: The final dimensionality of the output
+                aggregated features.
+        """
+        raise NotImplementedError()
+
+    def has_aggregation(self) -> bool:
+        """
+        Specifies whether the aggregator reduces the output `reduce_dim` dimension to 1.
+
+        Returns:
+            has_aggregation: `True` if `reduce_dim==1`, else `False`.
+        """
+        return hasattr(self, "reduction_functions")
+
 
 @registry.register
 class IdentityFeatureAggregator(torch.nn.Module, FeatureAggregatorBase):
@@ -94,8 +121,10 @@ class IdentityFeatureAggregator(torch.nn.Module, FeatureAggregatorBase):
     def __post_init__(self):
         super().__init__()
 
-    def get_aggregated_feature_dim(self, feats: Union[Dict[str, torch.Tensor], int]):
-        return _get_reduction_aggregator_feature_dim(feats, [])
+    def get_aggregated_feature_dim(
+        self, feats_or_feats_dim: Union[Dict[str, torch.Tensor], int]
+    ):
+        return _get_reduction_aggregator_feature_dim(feats_or_feats_dim, [])
 
     def forward(
         self,
@@ -155,8 +184,12 @@ class ReductionFeatureAggregator(torch.nn.Module, FeatureAggregatorBase):
     def __post_init__(self):
         super().__init__()
 
-    def get_aggregated_feature_dim(self, feats: Union[Dict[str, torch.Tensor], int]):
-        return _get_reduction_aggregator_feature_dim(feats, self.reduction_functions)
+    def get_aggregated_feature_dim(
+        self, feats_or_feats_dim: Union[Dict[str, torch.Tensor], int]
+    ):
+        return _get_reduction_aggregator_feature_dim(
+            feats_or_feats_dim, self.reduction_functions
+        )
 
     def forward(
         self,
@@ -246,8 +279,12 @@ class AngleWeightedReductionFeatureAggregator(torch.nn.Module, FeatureAggregator
     def __post_init__(self):
         super().__init__()
 
-    def get_aggregated_feature_dim(self, feats: Union[Dict[str, torch.Tensor], int]):
-        return _get_reduction_aggregator_feature_dim(feats, self.reduction_functions)
+    def get_aggregated_feature_dim(
+        self, feats_or_feats_dim: Union[Dict[str, torch.Tensor], int]
+    ):
+        return _get_reduction_aggregator_feature_dim(
+            feats_or_feats_dim, self.reduction_functions
+        )
 
     def forward(
         self,
@@ -345,8 +382,10 @@ class AngleWeightedIdentityFeatureAggregator(torch.nn.Module, FeatureAggregatorB
     def __post_init__(self):
         super().__init__()
 
-    def get_aggregated_feature_dim(self, feats: Union[Dict[str, torch.Tensor], int]):
-        return _get_reduction_aggregator_feature_dim(feats, [])
+    def get_aggregated_feature_dim(
+        self, feats_or_feats_dim: Union[Dict[str, torch.Tensor], int]
+    ):
+        return _get_reduction_aggregator_feature_dim(feats_or_feats_dim, [])
 
     def forward(
         self,

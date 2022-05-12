@@ -141,11 +141,12 @@ class ResNetFeatureExtractor(Configurable, torch.nn.Module):
     def _resnet_normalize_image(self, img: torch.Tensor) -> torch.Tensor:
         return (img - self._resnet_mean) / self._resnet_std
 
-    def get_feat_dims(self, size_dict: bool = False):
-        if size_dict:
-            return copy.deepcopy(self._feat_dim)
-        # pyre-fixme[29]: `Union[BoundMethod[typing.Callable(torch.Tensor.values)[[Na...
-        return sum(self._feat_dim.values())
+    def get_feat_dims(self) -> int:
+        return (
+            sum(self._feat_dim.values())  # pyre-fixme[29]
+            if len(self._feat_dim) > 0  # pyre-fixme[6]
+            else 0
+        )
 
     def forward(
         self, imgs: torch.Tensor, masks: Optional[torch.Tensor] = None

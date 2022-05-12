@@ -49,8 +49,7 @@ from .renderer.multipass_ea import MultiPassEmissionAbsorptionRenderer  # noqa
 from .renderer.ray_sampler import RaySampler
 from .renderer.sdf_renderer import SignedDistanceFunctionRenderer  # noqa
 from .resnet_feature_extractor import ResNetFeatureExtractor
-from .view_pooling.feature_aggregation import FeatureAggregatorBase
-from .view_pooling.view_sampling import ViewSampler
+from .view_pooler.view_pooler import ViewPooler
 
 
 STD_LOG_VARS = ["objective", "epoch", "sec/it"]
@@ -167,16 +166,13 @@ class GenericModel(ImplicitronModelBase, torch.nn.Module):  # pyre-ignore: 13
             registry.
         renderer: A renderer class which inherits from BaseRenderer. This is used to
             generate the images from the target view(s).
+        image_feature_extractor_enabled: If `True`, constructs and enables
+            the `image_feature_extractor` object.
         image_feature_extractor: A module for extrating features from an input image.
-        view_sampler: An instance of ViewSampler which is used for sampling of
+        view_pooler_enabled: If `True`, constructs and enables the `view_pooler` object.
+        view_pooler: An instance of ViewPooler which is used for sampling of
             image-based features at the 2D projections of a set
-            of 3D points.
-        feature_aggregator_class_type: The name of the feature aggregator class which
-            is available in the global registry.
-        feature_aggregator: A feature aggregator class which inherits from
-            FeatureAggregatorBase. Typically, the aggregated features and their
-            masks are output by a `ViewSampler` which samples feature tensors extracted
-            from a set of source images. FeatureAggregator executes step (4) above.
+            of 3D points and aggregating the sampled features.
         implicit_function_class_type: The type of implicit function to use which
             is available in the global registry.
         implicit_function: An instance of ImplicitFunctionBase. The actual implicit functions
@@ -195,7 +191,6 @@ class GenericModel(ImplicitronModelBase, torch.nn.Module):  # pyre-ignore: 13
     mask_threshold: float = 0.5
     output_rasterized_mc: bool = False
     bg_color: Tuple[float, float, float] = (0.0, 0.0, 0.0)
-    view_pool: bool = False
     num_passes: int = 1
     chunk_size_grid: int = 4096
     render_features_dimensions: int = 3
@@ -215,13 +210,12 @@ class GenericModel(ImplicitronModelBase, torch.nn.Module):  # pyre-ignore: 13
     renderer_class_type: str = "MultiPassEmissionAbsorptionRenderer"
     renderer: BaseRenderer
 
-    # ---- view sampling settings - used if view_pool=True
-    # (This is only created if view_pool is False)
-    image_feature_extractor: ResNetFeatureExtractor
-    view_sampler: ViewSampler
-    # ---- ---- view sampling feature aggregator settings
-    feature_aggregator_class_type: str = "AngleWeightedReductionFeatureAggregator"
-    feature_aggregator: FeatureAggregatorBase
+    # ---- image feature extractor settings
+    image_feature_extractor_enabled: bool = False
+    image_feature_extractor: Optional[ResNetFeatureExtractor]
+    # ---- view pooler settings
+    view_pooler_enabled: bool = False
+    view_pooler: Optional[ViewPooler]
 
     # ---- implicit function settings
     implicit_function_class_type: str = "NeuralRadianceFieldImplicitFunction"
@@ -356,32 +350,34 @@ class GenericModel(ImplicitronModelBase, torch.nn.Module):  # pyre-ignore: 13
         # custom_args hold additional arguments to the implicit function.
         custom_args = {}
 
-        if self.view_pool:
+        if self.image_feature_extractor_enabled:
+            # (2) Extract features for the image
+            img_feats = self.image_feature_extractor(  # pyre-fixme[29]
+                image_rgb, fg_probability
+            )
+
+        if self.view_pooler_enabled:
             if sequence_name is None:
                 raise ValueError("sequence_name must be provided for view pooling")
-            # (2) Extract features for the image
-            img_feats = self.image_feature_extractor(image_rgb, fg_probability)
+            if not self.image_feature_extractor_enabled:
+                raise ValueError(
+                    "image_feature_extractor has to be enabled for for view pooling"
+                    + " (I.e. set self.image_feature_extractor_enabled=True)."
+                )
 
-            # (3) Sample features and masks at the ray points
-            curried_view_sampler = lambda pts: self.view_sampler(  # noqa: E731
-                pts=pts,
-                seq_id_pts=sequence_name[:n_targets],
-                camera=camera,
-                seq_id_camera=sequence_name,
-                feats=img_feats,
-                masks=mask_crop,
-            )  # returns feats_sampled, masks_sampled
+            # (3-4) Sample features and masks at the ray points.
+            #       Aggregate features from multiple views.
+            def curried_viewpooler(pts):
+                return self.view_pooler(
+                    pts=pts,
+                    seq_id_pts=sequence_name[:n_targets],
+                    camera=camera,
+                    seq_id_camera=sequence_name,
+                    feats=img_feats,
+                    masks=mask_crop,
+                )
 
-            # (4) Aggregate features from multiple views
-            # pyre-fixme[29]: `Union[torch.Tensor, torch.nn.Module]` is not a function.
-            curried_view_pool = lambda pts: self.feature_aggregator(  # noqa: E731
-                *curried_view_sampler(pts=pts),
-                pts=pts,
-                camera=camera,
-            )  # TODO: do we need to pass a callback rather than compute here?
-            # precomputing will be faster for 2 passes
-            # -> but this is important for non-nerf
-            custom_args["fun_viewpool"] = curried_view_pool
+            custom_args["fun_viewpool"] = curried_viewpooler
 
         global_code = None
         if self.sequence_autodecoder.n_instances > 0:
@@ -562,10 +558,10 @@ class GenericModel(ImplicitronModelBase, torch.nn.Module):  # pyre-ignore: 13
 
     def _get_viewpooled_feature_dim(self):
         return (
-            self.feature_aggregator.get_aggregated_feature_dim(
+            self.view_pooler.get_aggregated_feature_dim(
                 self.image_feature_extractor.get_feat_dims()
             )
-            if self.view_pool
+            if self.view_pooler_enabled
             else 0
         )
 
@@ -583,15 +579,20 @@ class GenericModel(ImplicitronModelBase, torch.nn.Module):  # pyre-ignore: 13
             "object_bounding_sphere"
         ] = self.raysampler_args["scene_extent"]
 
-    def create_image_feature_extractor(self):
+    def create_view_pooler(self):
         """
-        Custom creation function called by run_auto_creation so that the
-        image_feature_extractor is not created if it is not be needed.
+        Custom creation function called by run_auto_creation checking
+        that image_feature_extractor is enabled when view_pooler is enabled.
         """
-        if self.view_pool:
-            self.image_feature_extractor = ResNetFeatureExtractor(
-                **self.image_feature_extractor_args
-            )
+        if self.view_pooler_enabled:
+            if not self.image_feature_extractor_enabled:
+                raise ValueError(
+                    "image_feature_extractor has to be enabled for view pooling"
+                    + " (I.e. set self.image_feature_extractor_enabled=True)."
+                )
+            self.view_pooler = ViewPooler(**self.view_pooler_args)
+        else:
+            self.view_pooler = None
 
     def create_implicit_function(self) -> None:
         """
@@ -652,10 +653,9 @@ class GenericModel(ImplicitronModelBase, torch.nn.Module):  # pyre-ignore: 13
             )
 
         if implicit_function_type.requires_pooling_without_aggregation():
-            has_aggregation = hasattr(self.feature_aggregator, "reduction_functions")
-            if not self.view_pool or has_aggregation:
+            if self.view_pooler_enabled and self.view_pooler.has_aggregation():
                 raise ValueError(
-                    "Chosen implicit function requires view pooling without aggregation."
+                    "The chosen implicit function requires view pooling without aggregation."
                 )
         config_name = f"implicit_function_{self.implicit_function_class_type}_args"
         config = getattr(self, config_name, None)

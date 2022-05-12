@@ -5,7 +5,7 @@ defaults:
 generic_model_args:
   num_passes: 1
   chunk_size_grid: 32000
-  view_pool: true
+  view_pooler_enabled: true
   loss_weights:
     loss_rgb_mse: 200.0
     loss_prev_stage_rgb_mse: 0.0

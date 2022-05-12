@@ -3,7 +3,7 @@ defaults:
 - _self_
 generic_model_args:
   chunk_size_grid: 16000
-  view_pool: false
+  view_pooler_enabled: false
   sequence_autodecoder_args:
     n_instances: 20000
     encoding_dim: 256

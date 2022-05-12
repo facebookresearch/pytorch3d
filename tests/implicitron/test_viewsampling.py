@@ -9,7 +9,7 @@ import unittest
 
 import pytorch3d as pt3d
 import torch
-from pytorch3d.implicitron.models.view_pooling.view_sampling import ViewSampler
+from pytorch3d.implicitron.models.view_pooler.view_sampler import ViewSampler
 from pytorch3d.implicitron.tools.config import expand_args_fields
 
 

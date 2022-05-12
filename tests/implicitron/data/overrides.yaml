@@ -8,7 +8,6 @@ bg_color:
 - 0.0
 - 0.0
 - 0.0
-view_pool: false
 num_passes: 1
 chunk_size_grid: 4096
 render_features_dimensions: 3
@@ -17,7 +16,8 @@ n_train_target_views: 1
 sampling_mode_training: mask_sample
 sampling_mode_evaluation: full_grid
 renderer_class_type: LSTMRenderer
-feature_aggregator_class_type: AngleWeightedIdentityFeatureAggregator
+image_feature_extractor_enabled: true
+view_pooler_enabled: true
 implicit_function_class_type: IdrFeatureField
 loss_weights:
   loss_rgb_mse: 1.0
@@ -91,15 +91,17 @@ image_feature_extractor_args:
   add_images: true
   global_average_pool: false
   feature_rescale: 1.0
-view_sampler_args:
-  masked_sampling: false
-  sampling_mode: bilinear
-feature_aggregator_AngleWeightedIdentityFeatureAggregator_args:
-  exclude_target_view: true
-  exclude_target_view_mask_features: true
-  concatenate_output: true
-  weight_by_ray_angle_gamma: 1.0
-  min_ray_angle_weight: 0.1
+view_pooler_args:
+  feature_aggregator_class_type: AngleWeightedIdentityFeatureAggregator
+  view_sampler_args:
+    masked_sampling: false
+    sampling_mode: bilinear
+  feature_aggregator_AngleWeightedIdentityFeatureAggregator_args:
+    exclude_target_view: true
+    exclude_target_view_mask_features: true
+    concatenate_output: true
+    weight_by_ray_angle_gamma: 1.0
+    min_ray_angle_weight: 0.1
 implicit_function_IdrFeatureField_args:
   feature_vector_size: 3
   d_in: 3

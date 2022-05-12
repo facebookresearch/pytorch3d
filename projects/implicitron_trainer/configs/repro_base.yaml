@@ -63,8 +63,9 @@ generic_model_args:
     n_pts_per_ray_fine_evaluation: 64
     append_coarse_samples_to_fine: true
     density_noise_std_train: 1.0
-  view_sampler_args:
-    masked_sampling: false
+  view_pooler_args:
+    view_sampler_args:
+      masked_sampling: false
   image_feature_extractor_args:
     stages:
     - 1

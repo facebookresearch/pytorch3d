@@ -1,4 +1,5 @@
 generic_model_args:
+  image_feature_extractor_enabled: true
   image_feature_extractor_args:
     add_images: true
     add_masks: true

@@ -4,7 +4,6 @@ defaults:
 - _self_
 generic_model_args:
   chunk_size_grid: 32000
-  view_pool: true
   num_passes: 1
   n_train_target_views: -1
   loss_weights:
@@ -25,6 +24,7 @@ generic_model_args:
     stratified_point_sampling_evaluation: false
   renderer_class_type: LSTMRenderer
   implicit_function_class_type: SRNImplicitFunction
+  view_pooler_enabled: true
 solver_args:
   breed: adam
   lr: 5.0e-05

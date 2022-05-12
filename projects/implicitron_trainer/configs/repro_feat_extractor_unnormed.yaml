@@ -1,4 +1,5 @@
 generic_model_args:
+  image_feature_extractor_enabled: true
   image_feature_extractor_args:
     stages:
     - 1
@@ -11,6 +12,7 @@ generic_model_args:
     name: resnet34
     normalize_image: true
     pretrained: true
-  feature_aggregator_AngleWeightedReductionFeatureAggregator_args:
-    reduction_functions:
-    - AVG
+  view_pooler_args:
+    feature_aggregator_AngleWeightedReductionFeatureAggregator_args:
+      reduction_functions:
+      - AVG

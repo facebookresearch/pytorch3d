@@ -9,7 +9,7 @@ generic_model_args:
     loss_eikonal: 0.1
   chunk_size_grid: 65536
   num_passes: 1
-  view_pool: false
+  view_pooler_enabled: false
   implicit_function_IdrFeatureField_args:
     n_harmonic_functions_xyz: 6
     bias: 0.6
