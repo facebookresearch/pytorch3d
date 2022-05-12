@@ -47,6 +47,7 @@ class RendererOutput:
     prev_stage: Optional[RendererOutput] = None
     normals: Optional[torch.Tensor] = None
     points: Optional[torch.Tensor] = None  # TODO: redundant with depths
+    weights: Optional[torch.Tensor] = None
     aux: Dict[str, Any] = field(default_factory=lambda: {})
 
 

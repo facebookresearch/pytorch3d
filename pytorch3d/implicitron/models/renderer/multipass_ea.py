@@ -4,18 +4,22 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-from typing import Tuple
+from typing import List
 
 import torch
-from pytorch3d.implicitron.tools.config import registry
+from pytorch3d.implicitron.models.renderer.base import ImplicitFunctionWrapper
+from pytorch3d.implicitron.tools.config import registry, run_auto_creation
+from pytorch3d.renderer import RayBundle
 
 from .base import BaseRenderer, EvaluationMode, RendererOutput
 from .ray_point_refiner import RayPointRefiner
-from .raymarcher import GenericRaymarcher
+from .raymarcher import RaymarcherBase
 
 
 @registry.register
-class MultiPassEmissionAbsorptionRenderer(BaseRenderer, torch.nn.Module):
+class MultiPassEmissionAbsorptionRenderer(  # pyre-ignore: 13
+    BaseRenderer, torch.nn.Module
+):
     """
     Implements the multi-pass rendering function, in particular,
     with emission-absorption ray marching used in NeRF [1]. First, it evaluates
@@ -33,7 +37,17 @@ class MultiPassEmissionAbsorptionRenderer(BaseRenderer, torch.nn.Module):
     ```
     and the final rendered quantities are computed by a dot-product of ray values
     with the weights, e.g. `features = sum_n(weight_n * ray_features_n)`.
-    See below for possible values of `cap_fn` and `weight_fn`.
+
+    By default, for the EA raymarcher from [1] (
+        activated with `self.raymarcher_class_type="EmissionAbsorptionRaymarcher"`
+    ):
+        ```
+        cap_fn(x) = 1 - exp(-x),
+        weight_fn(x) = w * x.
+        ```
+    Note that the latter can altered by changing `self.raymarcher_class_type`,
+    e.g. to "CumsumRaymarcher" which implements the cumulative-sum raymarcher
+    from NeuralVolumes [2].
 
     Settings:
         n_pts_per_ray_fine_training: The number of points sampled per ray for the
@@ -46,42 +60,33 @@ class MultiPassEmissionAbsorptionRenderer(BaseRenderer, torch.nn.Module):
             evaluation.
         append_coarse_samples_to_fine: Add the fine ray points to the coarse points
             after sampling.
-        bg_color: The background color. A tuple of either 1 element or of D elements,
-            where D matches the feature dimensionality; it is broadcasted when necessary.
         density_noise_std_train: Standard deviation of the noise added to the
             opacity field.
-        capping_function: The capping function of the raymarcher.
-            Options:
-                - "exponential" (`cap_fn(x) = 1 - exp(-x)`)
-                - "cap1" (`cap_fn(x) = min(x, 1)`)
-            Set to "exponential" for the standard Emission Absorption raymarching.
-        weight_function: The weighting function of the raymarcher.
-            Options:
-                - "product" (`weight_fn(w, x) = w * x`)
-                - "minimum" (`weight_fn(w, x) = min(w, x)`)
-            Set to "product" for the standard Emission Absorption raymarching.
-        background_opacity: The raw opacity value (i.e. before exponentiation)
-            of the background.
-        blend_output: If `True`, alpha-blends the output renders with the
-            background color using the rendered opacity mask.
+        return_weights: Enables returning the rendering weights of the EA raymarcher.
+            Setting to `True` can lead to a prohibitivelly large memory consumption.
+        raymarcher_class_type: The type of self.raymarcher corresponding to
+            a child of `RaymarcherBase` in the registry.
+        raymarcher: The raymarcher object used to convert per-point features
+            and opacities to a feature render.
 
     References:
-        [1] Mildenhall, Ben, et al. "Nerf: Representing scenes as neural radiance
-            fields for view synthesis." ECCV 2020.
+        [1] Mildenhall, Ben, et al. "Nerf: Representing Scenes as Neural Radiance
+            Fields for View Synthesis." ECCV 2020.
+        [2] Lombardi, Stephen, et al. "Neural Volumes: Learning Dynamic Renderable
+            Volumes from Images." SIGGRAPH 2019.
 
     """
+
+    raymarcher_class_type: str = "EmissionAbsorptionRaymarcher"
+    raymarcher: RaymarcherBase
 
     n_pts_per_ray_fine_training: int = 64
     n_pts_per_ray_fine_evaluation: int = 64
     stratified_sampling_coarse_training: bool = True
     stratified_sampling_coarse_evaluation: bool = False
     append_coarse_samples_to_fine: bool = True
-    bg_color: Tuple[float, ...] = (0.0,)
     density_noise_std_train: float = 0.0
-    capping_function: str = "exponential"  # exponential | cap1
-    weight_function: str = "product"  # product | minimum
-    background_opacity: float = 1e10
-    blend_output: bool = False
+    return_weights: bool = False
 
     def __post_init__(self):
         super().__init__()
@@ -97,20 +102,12 @@ class MultiPassEmissionAbsorptionRenderer(BaseRenderer, torch.nn.Module):
                 add_input_samples=self.append_coarse_samples_to_fine,
             ),
         }
-
-        self._raymarcher = GenericRaymarcher(
-            1,
-            self.bg_color,
-            capping_function=self.capping_function,
-            weight_function=self.weight_function,
-            background_opacity=self.background_opacity,
-            blend_output=self.blend_output,
-        )
+        run_auto_creation(self)
 
     def forward(
         self,
-        ray_bundle,
-        implicit_functions=[],
+        ray_bundle: RayBundle,
+        implicit_functions: List[ImplicitFunctionWrapper] = [],
         evaluation_mode: EvaluationMode = EvaluationMode.EVALUATION,
         **kwargs
     ) -> RendererOutput:
@@ -149,14 +146,16 @@ class MultiPassEmissionAbsorptionRenderer(BaseRenderer, torch.nn.Module):
             else 0.0
         )
 
-        features, depth, mask, weights, aux = self._raymarcher(
+        output = self.raymarcher(
             *implicit_functions[0](ray_bundle),
             ray_lengths=ray_bundle.lengths,
             density_noise_std=density_noise_std,
         )
-        output = RendererOutput(
-            features=features, depths=depth, masks=mask, aux=aux, prev_stage=prev_stage
-        )
+        output.prev_stage = prev_stage
+
+        weights = output.weights
+        if not self.return_weights:
+            output.weights = None
 
         # we may need to make a recursive call
         if len(implicit_functions) > 1:
