@@ -5,5 +5,5 @@ defaults:
 generic_model_args:
   chunk_size_grid: 16000
   view_pooler_enabled: true
-  raysampler_args:
+  raysampler_AdaptiveRaySampler_args:
     n_rays_per_image_sampled_from_mask: 850

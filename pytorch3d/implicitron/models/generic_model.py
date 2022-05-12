@@ -19,7 +19,7 @@ from pytorch3d.implicitron.tools.config import (
     run_auto_creation,
 )
 from pytorch3d.implicitron.tools.rasterize_mc import rasterize_mc_samples
-from pytorch3d.implicitron.tools.utils import cat_dataclass
+from pytorch3d.implicitron.tools.utils import cat_dataclass, setattr_if_hasattr
 from pytorch3d.renderer import RayBundle, utils as rend_utils
 from pytorch3d.renderer.cameras import CamerasBase
 from visdom import Visdom
@@ -46,7 +46,7 @@ from .renderer.base import (
 )
 from .renderer.lstm_renderer import LSTMRenderer  # noqa
 from .renderer.multipass_ea import MultiPassEmissionAbsorptionRenderer  # noqa
-from .renderer.ray_sampler import RaySampler
+from .renderer.ray_sampler import RaySamplerBase
 from .renderer.sdf_renderer import SignedDistanceFunctionRenderer  # noqa
 from .resnet_feature_extractor import ResNetFeatureExtractor
 from .view_pooler.view_pooler import ViewPooler
@@ -160,6 +160,8 @@ class GenericModel(ImplicitronModelBase, torch.nn.Module):  # pyre-ignore: 13
             the scene such as multiple objects or morphing objects. It is up to the implicit
             function definition how to use it, but the most typical way is to broadcast and
             concatenate to the other inputs for the implicit function.
+        raysampler_class_type: The name of the raysampler class which is available
+            in the global registry.
         raysampler: An instance of RaySampler which is used to emit
             rays from the target view(s).
         renderer_class_type: The name of the renderer class which is available in the global
@@ -204,7 +206,8 @@ class GenericModel(ImplicitronModelBase, torch.nn.Module):  # pyre-ignore: 13
     sequence_autodecoder: Autodecoder
 
     # ---- raysampler
-    raysampler: RaySampler
+    raysampler_class_type: str = "AdaptiveRaySampler"
+    raysampler: RaySamplerBase
 
     # ---- renderer configs
     renderer_class_type: str = "MultiPassEmissionAbsorptionRenderer"
@@ -262,11 +265,6 @@ class GenericModel(ImplicitronModelBase, torch.nn.Module):  # pyre-ignore: 13
         super().__init__()
         self.view_metrics = ViewMetrics()
 
-        self._check_and_preprocess_renderer_configs()
-        self.raysampler_args["sampling_mode_training"] = self.sampling_mode_training
-        self.raysampler_args["sampling_mode_evaluation"] = self.sampling_mode_evaluation
-        self.raysampler_args["image_width"] = self.render_image_width
-        self.raysampler_args["image_height"] = self.render_image_height
         run_auto_creation(self)
 
         self._implicit_functions = self._construct_implicit_functions()
@@ -339,7 +337,7 @@ class GenericModel(ImplicitronModelBase, torch.nn.Module):  # pyre-ignore: 13
         )
 
         # (1) Sample rendering rays with the ray sampler.
-        ray_bundle: RayBundle = self.raysampler(
+        ray_bundle: RayBundle = self.raysampler(  # pyre-fixme[29]
             target_cameras,
             evaluation_mode,
             mask=mask_crop[:n_targets]
@@ -565,19 +563,52 @@ class GenericModel(ImplicitronModelBase, torch.nn.Module):  # pyre-ignore: 13
             else 0
         )
 
-    def _check_and_preprocess_renderer_configs(self):
+    def create_raysampler(self):
+        raysampler_args = getattr(
+            self, "raysampler_" + self.raysampler_class_type + "_args"
+        )
+        setattr_if_hasattr(
+            raysampler_args, "sampling_mode_training", self.sampling_mode_training
+        )
+        setattr_if_hasattr(
+            raysampler_args, "sampling_mode_evaluation", self.sampling_mode_evaluation
+        )
+        setattr_if_hasattr(raysampler_args, "image_width", self.render_image_width)
+        setattr_if_hasattr(raysampler_args, "image_height", self.render_image_height)
+        self.raysampler = registry.get(RaySamplerBase, self.raysampler_class_type)(
+            **raysampler_args
+        )
+
+    def create_renderer(self):
+        raysampler_args = getattr(
+            self, "raysampler_" + self.raysampler_class_type + "_args"
+        )
         self.renderer_MultiPassEmissionAbsorptionRenderer_args[
             "stratified_sampling_coarse_training"
-        ] = self.raysampler_args["stratified_point_sampling_training"]
+        ] = raysampler_args["stratified_point_sampling_training"]
         self.renderer_MultiPassEmissionAbsorptionRenderer_args[
             "stratified_sampling_coarse_evaluation"
-        ] = self.raysampler_args["stratified_point_sampling_evaluation"]
+        ] = raysampler_args["stratified_point_sampling_evaluation"]
         self.renderer_SignedDistanceFunctionRenderer_args[
             "render_features_dimensions"
         ] = self.render_features_dimensions
-        self.renderer_SignedDistanceFunctionRenderer_args.ray_tracer_args[
-            "object_bounding_sphere"
-        ] = self.raysampler_args["scene_extent"]
+
+        if self.renderer_class_type == "SignedDistanceFunctionRenderer":
+            if "scene_extent" not in raysampler_args:
+                raise ValueError(
+                    "SignedDistanceFunctionRenderer requires"
+                    + " a raysampler that defines the 'scene_extent' field"
+                    + " (this field is supported by, e.g., the adaptive raysampler - "
+                    + " self.raysampler_class_type='AdaptiveRaySampler')."
+                )
+            self.renderer_SignedDistanceFunctionRenderer_args.ray_tracer_args[
+                "object_bounding_sphere"
+            ] = self.raysampler_AdaptiveRaySampler_args["scene_extent"]
+
+        renderer_args = getattr(self, "renderer_" + self.renderer_class_type + "_args")
+        self.renderer = registry.get(BaseRenderer, self.renderer_class_type)(
+            **renderer_args
+        )
 
     def create_view_pooler(self):
         """

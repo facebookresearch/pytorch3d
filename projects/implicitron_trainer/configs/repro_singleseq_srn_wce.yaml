@@ -13,11 +13,11 @@ generic_model_args:
     loss_prev_stage_mask_bce: 0.0
     loss_autodecoder_norm: 0.0
     depth_neg_penalty: 10000.0
-  raysampler_args:
+  raysampler_class_type: NearFarRaySampler
+  raysampler_NearFarRaySampler_args:
     n_rays_per_image_sampled_from_mask: 2048
     min_depth: 0.05
     max_depth: 0.05
-    scene_extent: 0.0
     n_pts_per_ray_training: 1
     n_pts_per_ray_evaluation: 1
     stratified_point_sampling_training: false

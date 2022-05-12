@@ -157,6 +157,15 @@ def cat_dataclass(batch, tensor_collator: Callable):
     return type(elem)(**collated)
 
 
+def setattr_if_hasattr(obj, name, value):
+    """
+    Same as setattr(obj, name, value), but does nothing in case `name` is
+    not an attribe of `obj`.
+    """
+    if hasattr(obj, name):
+        setattr(obj, name, value)
+
+
 class Timer:
     """
     A simple class for timing execution.

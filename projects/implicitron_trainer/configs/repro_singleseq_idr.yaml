@@ -49,7 +49,7 @@ generic_model_args:
       n_harmonic_functions_dir: 4
       pooled_feature_dim: 0
       weight_norm: true
-  raysampler_args:
+  raysampler_AdaptiveRaySampler_args:
     n_rays_per_image_sampled_from_mask: 1024
     n_pts_per_ray_training: 0
     n_pts_per_ray_evaluation: 0

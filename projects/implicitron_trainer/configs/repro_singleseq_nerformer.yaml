@@ -6,7 +6,7 @@ generic_model_args:
   chunk_size_grid: 16000
   view_pooler_enabled: true
   implicit_function_class_type: NeRFormerImplicitFunction
-  raysampler_args:
+  raysampler_AdaptiveRaySampler_args:
     n_rays_per_image_sampled_from_mask: 800
     n_pts_per_ray_training: 32
     n_pts_per_ray_evaluation: 32

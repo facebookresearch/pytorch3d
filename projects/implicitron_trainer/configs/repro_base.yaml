@@ -49,10 +49,8 @@ generic_model_args:
     append_xyz:
     - 5
     latent_dim: 0
-  raysampler_args:
+  raysampler_AdaptiveRaySampler_args:
     n_rays_per_image_sampled_from_mask: 1024
-    min_depth: 0.0
-    max_depth: 0.0
     scene_extent: 8.0
     n_pts_per_ray_training: 64
     n_pts_per_ray_evaluation: 64
