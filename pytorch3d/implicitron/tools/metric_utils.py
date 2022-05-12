@@ -65,7 +65,7 @@ def eval_depth(
 
     df = gt - pred
 
-    mse_depth = (dmask * (df ** 2)).sum((1, 2, 3)) / dmask_mass
+    mse_depth = (dmask * (df**2)).sum((1, 2, 3)) / dmask_mass
     abs_depth = (dmask * df.abs()).sum((1, 2, 3)) / dmask_mass
 
     return mse_depth, abs_depth

@@ -128,7 +128,7 @@ class TestSamplePoints(TestCaseMixin, unittest.TestCase):
 
         # Sphere: points should have radius 1.
         x, y, z = samples[1, :].unbind(1)
-        radius = torch.sqrt(x ** 2 + y ** 2 + z ** 2)
+        radius = torch.sqrt(x**2 + y**2 + z**2)
 
         self.assertClose(radius, torch.ones(num_samples))
 

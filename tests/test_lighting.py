@@ -412,7 +412,7 @@ class TestSpecularLighting(TestCaseMixin, unittest.TestCase):
             camera_position=camera_position[None, :],
             shininess=torch.tensor(10),
         )
-        self.assertClose(output_light, expected_output ** 10)
+        self.assertClose(output_light, expected_output**10)
 
     def test_specular_batched(self):
         batch_size = 10

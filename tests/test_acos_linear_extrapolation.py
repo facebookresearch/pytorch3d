@@ -66,7 +66,7 @@ class TestAcosLinearExtrapolation(TestCaseMixin, unittest.TestCase):
         # fit a line: slope * x + bias = y
         x_1 = torch.stack([x, torch.ones_like(x)], dim=-1)
         slope, bias = lstsq(x_1, y[:, None]).view(-1)[:2]
-        desired_slope = (-1.0) / torch.sqrt(1.0 - bound_t ** 2)
+        desired_slope = (-1.0) / torch.sqrt(1.0 - bound_t**2)
         # test that the desired slope is the same as the fitted one
         self.assertClose(desired_slope.view(1), slope.view(1), atol=1e-2)
         # test that the autograd's slope is the same as the desired one

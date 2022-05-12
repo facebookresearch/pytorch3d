@@ -80,7 +80,7 @@ class _SymEig3x3(nn.Module):
         q = inputs_trace / 3.0
 
         # Calculate squared sum of elements outside the main diagonal / 2
-        p1 = ((inputs ** 2).sum(dim=(-1, -2)) - (inputs_diag ** 2).sum(-1)) / 2
+        p1 = ((inputs**2).sum(dim=(-1, -2)) - (inputs_diag**2).sum(-1)) / 2
         p2 = ((inputs_diag - q[..., None]) ** 2).sum(dim=-1) + 2.0 * p1.clamp(self._eps)
 
         p = torch.sqrt(p2 / 6.0)
@@ -195,7 +195,7 @@ class _SymEig3x3(nn.Module):
             cross_products[..., :1, :]
         )
 
-        norms_sq = (cross_products ** 2).sum(dim=-1)
+        norms_sq = (cross_products**2).sum(dim=-1)
         max_norms_index = norms_sq.argmax(dim=-1)  # pyre-ignore[16]
 
         # Pick only the cross-product with highest squared norm for each input

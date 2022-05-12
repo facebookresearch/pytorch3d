@@ -295,7 +295,7 @@ class RayTracing(Configurable, nn.Module):
             ) and not_proj_iters < self.line_step_iters:
                 # Step backwards
                 acc_start_dis[not_projected_start] -= (
-                    (1 - self.line_search_step) / (2 ** not_proj_iters)
+                    (1 - self.line_search_step) / (2**not_proj_iters)
                 ) * curr_sdf_start[not_projected_start]
                 curr_start_points[not_projected_start] = (
                     cam_loc
@@ -303,7 +303,7 @@ class RayTracing(Configurable, nn.Module):
                 ).reshape(-1, 3)[not_projected_start]
 
                 acc_end_dis[not_projected_end] += (
-                    (1 - self.line_search_step) / (2 ** not_proj_iters)
+                    (1 - self.line_search_step) / (2**not_proj_iters)
                 ) * curr_sdf_end[not_projected_end]
                 curr_end_points[not_projected_end] = (
                     cam_loc
@@ -553,7 +553,7 @@ def _get_sphere_intersection(
     # cam_loc = cam_loc.unsqueeze(-1)
     # ray_cam_dot = torch.bmm(ray_directions, cam_loc).squeeze()
     ray_cam_dot = (ray_directions * cam_loc).sum(-1)  # n_images x n_rays
-    under_sqrt = ray_cam_dot ** 2 - (cam_loc.norm(2, dim=-1) ** 2 - r ** 2)
+    under_sqrt = ray_cam_dot**2 - (cam_loc.norm(2, dim=-1) ** 2 - r**2)
 
     under_sqrt = under_sqrt.reshape(-1)
     mask_intersect = under_sqrt > 0

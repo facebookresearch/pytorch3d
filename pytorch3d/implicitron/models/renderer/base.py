@@ -87,7 +87,7 @@ class BaseRenderer(ABC, ReplaceableBase):
         ray_bundle,
         implicit_functions: List[ImplicitFunctionWrapper],
         evaluation_mode: EvaluationMode = EvaluationMode.EVALUATION,
-        **kwargs
+        **kwargs,
     ) -> RendererOutput:
         """
         Each Renderer should implement its own forward function

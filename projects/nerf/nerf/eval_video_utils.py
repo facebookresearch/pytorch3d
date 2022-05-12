@@ -97,7 +97,7 @@ def generate_eval_video_cameras(
             cam_centers_on_plane.t() @ cam_centers_on_plane
         ) / cam_centers_on_plane.shape[0]
         _, e_vec = torch.symeig(cov, eigenvectors=True)
-        traj_radius = (cam_centers_on_plane ** 2).sum(dim=1).sqrt().mean()
+        traj_radius = (cam_centers_on_plane**2).sum(dim=1).sqrt().mean()
         angle = torch.linspace(0, 2.0 * math.pi, n_eval_cams)
         traj = traj_radius * torch.stack(
             (torch.zeros_like(angle), angle.cos(), angle.sin()), dim=-1

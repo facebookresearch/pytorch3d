@@ -217,7 +217,7 @@ def _align_camera_extrinsics(
         # of centered A and centered B
         Ac = A - Amu
         Bc = B - Bmu
-        align_t_s = (Ac * Bc).mean() / (Ac ** 2).mean().clamp(eps)
+        align_t_s = (Ac * Bc).mean() / (Ac**2).mean().clamp(eps)
     else:
         # set the scale to identity
         align_t_s = 1.0

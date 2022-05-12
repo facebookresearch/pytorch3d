@@ -386,7 +386,7 @@ class TransformerWithInputSkips(torch.nn.Module):
         layers_pool, layers_ray = [], []
         dimout = 0
         for layeri in range(n_layers):
-            dimin = int(round(hidden_dim / (dim_down_factor ** layeri)))
+            dimin = int(round(hidden_dim / (dim_down_factor**layeri)))
             dimout = int(round(hidden_dim / (dim_down_factor ** (layeri + 1))))
             logger.info(f"Tr: {dimin} -> {dimout}")
             for _i, l in enumerate((layers_pool, layers_ray)):

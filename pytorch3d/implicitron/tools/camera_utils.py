@@ -101,7 +101,7 @@ def volumetric_camera_overlaps(
     """
     device = cameras.device
     ba = cameras.R.shape[0]
-    n_vox = int(resol ** 3)
+    n_vox = int(resol**3)
     grid = pt3d.structures.Volumes(
         densities=torch.zeros([1, 1, resol, resol, resol], device=device),
         volume_translation=-torch.FloatTensor(scene_center)[None].to(device),

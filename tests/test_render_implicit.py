@@ -60,13 +60,13 @@ def spherical_volumetric_function(
 
     # the squared distance of each ray point to the centroid of the sphere
     surface_dist = (
-        (surface_vectors ** 2)
+        (surface_vectors**2)
         .sum(-1, keepdim=True)
         .view(*rays_points_world.shape[:-1], 1)
     )
 
     # set all ray densities within the sphere_diameter distance from the centroid to 1
-    rays_densities = torch.sigmoid(-100.0 * (surface_dist - sphere_diameter ** 2))
+    rays_densities = torch.sigmoid(-100.0 * (surface_dist - sphere_diameter**2))
 
     # ray colors are proportional to the normalized surface_vectors
     rays_features = (

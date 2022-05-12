@@ -194,10 +194,10 @@ def _se3_V_matrix(
     V = (
         torch.eye(3, dtype=log_rotation.dtype, device=log_rotation.device)[None]
         + log_rotation_hat
-        * ((1 - torch.cos(rotation_angles)) / (rotation_angles ** 2))[:, None, None]
+        * ((1 - torch.cos(rotation_angles)) / (rotation_angles**2))[:, None, None]
         + (
             log_rotation_hat_square
-            * ((rotation_angles - torch.sin(rotation_angles)) / (rotation_angles ** 3))[
+            * ((rotation_angles - torch.sin(rotation_angles)) / (rotation_angles**3))[
                 :, None, None
             ]
         )
@@ -211,7 +211,7 @@ def _get_se3_V_input(log_rotation: torch.Tensor, eps: float = 1e-4):
     A helper function that computes the input variables to the `_se3_V_matrix`
     function.
     """
-    nrms = (log_rotation ** 2).sum(-1)
+    nrms = (log_rotation**2).sum(-1)
     rotation_angles = torch.clamp(nrms, eps).sqrt()
     log_rotation_hat = hat(log_rotation)
     log_rotation_hat_square = torch.bmm(log_rotation_hat, log_rotation_hat)

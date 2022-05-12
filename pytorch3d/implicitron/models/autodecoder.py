@@ -73,7 +73,7 @@ class Autodecoder(Configurable, torch.nn.Module):
     def calc_squared_encoding_norm(self):
         if self.n_instances <= 0:
             return None
-        return (self._autodecoder_codes.weight ** 2).mean()
+        return (self._autodecoder_codes.weight**2).mean()
 
     def get_encoding_dim(self) -> int:
         if self.n_instances <= 0:

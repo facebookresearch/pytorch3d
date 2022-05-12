@@ -206,7 +206,7 @@ def _kernel_vec_distances(v):
     # this should produce B x 6 x (D choose 2) tensor
 
     # we should take dot-product of all (i,i)
-    rows_ii = (dv ** 2).sum(dim=-2)
+    rows_ii = (dv**2).sum(dim=-2)
     # this should produce B x 6 x D tensor
 
     return torch.cat((rows_ii, rows_2ij), dim=-1)

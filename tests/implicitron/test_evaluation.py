@@ -124,7 +124,7 @@ class TestEvaluation(unittest.TestCase):
                 )
                 self.assertGreater(
                     float(mse_depth_unmasked.sum()),
-                    float(diff ** 2),
+                    float(diff**2),
                 )
                 self.assertGreater(
                     float(abs_depth_unmasked.sum()),
@@ -143,7 +143,7 @@ class TestEvaluation(unittest.TestCase):
                     )
                     if _mask_gt is not None:
                         expected_err_abs = diff
-                        expected_err_mse = diff ** 2
+                        expected_err_mse = diff**2
                     else:
                         err_mask = (gt > 0.0).float() * mask
                         if crop > 0:
@@ -195,7 +195,7 @@ class TestEvaluation(unittest.TestCase):
             )
             self.assertAlmostEqual(float(psnr), float(psnr_cv2), delta=1e-4)
             # check that all PSNRs are bigger than the minimum possible PSNR
-            max_mse = max_diff ** 2
+            max_mse = max_diff**2
             min_psnr = 10 * math.log10(1.0 / max_mse)
             for _im1, _im2 in zip(im1, im2):
                 _psnr = calc_psnr(_im1, _im2)

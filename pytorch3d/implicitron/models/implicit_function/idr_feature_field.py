@@ -59,7 +59,7 @@ class IdrFeatureField(ImplicitFunctionBase, torch.nn.Module):
                 if layer_idx == self.num_layers - 2:
                     torch.nn.init.normal_(
                         lin.weight,
-                        mean=math.pi ** 0.5 / dims[layer_idx] ** 0.5,
+                        mean=math.pi**0.5 / dims[layer_idx] ** 0.5,
                         std=0.0001,
                     )
                     torch.nn.init.constant_(lin.bias, -self.bias)
@@ -67,15 +67,15 @@ class IdrFeatureField(ImplicitFunctionBase, torch.nn.Module):
                     torch.nn.init.constant_(lin.bias, 0.0)
                     torch.nn.init.constant_(lin.weight[:, 3:], 0.0)
                     torch.nn.init.normal_(
-                        lin.weight[:, :3], 0.0, 2 ** 0.5 / out_dim ** 0.5
+                        lin.weight[:, :3], 0.0, 2**0.5 / out_dim**0.5
                     )
                 elif self.n_harmonic_functions_xyz > 0 and layer_idx in self.skip_in:
                     torch.nn.init.constant_(lin.bias, 0.0)
-                    torch.nn.init.normal_(lin.weight, 0.0, 2 ** 0.5 / out_dim ** 0.5)
+                    torch.nn.init.normal_(lin.weight, 0.0, 2**0.5 / out_dim**0.5)
                     torch.nn.init.constant_(lin.weight[:, -(dims[0] - 3) :], 0.0)
                 else:
                     torch.nn.init.constant_(lin.bias, 0.0)
-                    torch.nn.init.normal_(lin.weight, 0.0, 2 ** 0.5 / out_dim ** 0.5)
+                    torch.nn.init.normal_(lin.weight, 0.0, 2**0.5 / out_dim**0.5)
 
             if self.weight_norm:
                 lin = nn.utils.weight_norm(lin)
@@ -130,7 +130,7 @@ class IdrFeatureField(ImplicitFunctionBase, torch.nn.Module):
         x = embedding
         for layer_idx in range(self.num_layers - 1):
             if layer_idx in self.skip_in:
-                x = torch.cat([x, embedding], dim=-1) / 2 ** 0.5
+                x = torch.cat([x, embedding], dim=-1) / 2**0.5
 
             # pyre-fixme[29]: `Union[torch.Tensor, torch.nn.Module]` is not a function.
             x = self.linear_layers[layer_idx](x)

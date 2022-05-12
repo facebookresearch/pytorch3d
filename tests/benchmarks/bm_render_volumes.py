@@ -17,7 +17,7 @@ def bm_render_volumes() -> None:
         "batch_size": [1, 5],
         "shape": ["sphere", "cube"],
         "raymarcher_type": [EmissionAbsorptionRaymarcher, AbsorptionOnlyRaymarcher],
-        "n_rays_per_image": [64 ** 2, 256 ** 2],
+        "n_rays_per_image": [64**2, 256**2],
         "n_pts_per_ray": [16, 128],
     }
     test_cases = itertools.product(*case_grid.values())

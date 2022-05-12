@@ -240,7 +240,7 @@ def _get_edge_indices(edges: int) -> List[int]:
 
     edge_indices = []
     for i in range(12):
-        if edges & (2 ** i):
+        if edges & (2**i):
             edge_indices.append(i)
     return edge_indices
 

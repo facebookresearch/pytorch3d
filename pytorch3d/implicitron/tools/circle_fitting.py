@@ -102,13 +102,13 @@ def fit_circle_in_2d(
         Circle2D object
     """
     design = torch.cat([points2d, torch.ones_like(points2d[:, :1])], dim=1)
-    rhs = (points2d ** 2).sum(1)
+    rhs = (points2d**2).sum(1)
     n_provided = points2d.shape[0]
     if n_provided < 3:
         raise ValueError(f"{n_provided} points are not enough to determine a circle")
     solution = lstsq(design, rhs[:, None])
     center = solution[:2, 0] / 2
-    radius = torch.sqrt(solution[2, 0] + (center ** 2).sum())
+    radius = torch.sqrt(solution[2, 0] + (center**2).sum())
     if n_points > 0:
         if angles is not None:
             warnings.warn("n_points ignored because angles provided")

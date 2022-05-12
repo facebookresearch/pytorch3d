@@ -62,7 +62,7 @@ class TestRasterizeMeshes(TestCaseMixin, unittest.TestCase):
         torch.manual_seed(231)
         device = torch.device("cpu")
         image_size = 32
-        blur_radius = 0.1 ** 2
+        blur_radius = 0.1**2
         faces_per_pixel = 3
 
         for d in ["cpu", get_random_cuda_device()]:
@@ -167,7 +167,7 @@ class TestRasterizeMeshes(TestCaseMixin, unittest.TestCase):
 
         torch.manual_seed(231)
         image_size = 64
-        radius = 0.1 ** 2
+        radius = 0.1**2
         faces_per_pixel = 3
         device = torch.device("cpu")
         meshes_cpu = ico_sphere(0, device)
@@ -224,7 +224,7 @@ class TestRasterizeMeshes(TestCaseMixin, unittest.TestCase):
         # Make sure that the backward pass runs for all pathways
         image_size = 64  # test is too slow for very large images.
         N = 1
-        radius = 0.1 ** 2
+        radius = 0.1**2
         faces_per_pixel = 3
 
         grad_zbuf = torch.randn(N, image_size, image_size, faces_per_pixel)
@@ -997,7 +997,7 @@ class TestRasterizeMeshes(TestCaseMixin, unittest.TestCase):
         ordering of faces.
         """
         image_size = 10
-        blur_radius = 0.12 ** 2
+        blur_radius = 0.12**2
         faces_per_pixel = 1
 
         # fmt: off

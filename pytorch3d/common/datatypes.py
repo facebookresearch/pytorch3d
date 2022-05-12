@@ -71,6 +71,5 @@ elif sys.version_info >= (3, 7, 0):
     def get_args(cls):  # pragma: no cover
         return getattr(cls, "__args__", None)
 
-
 else:
     raise ImportError("This module requires Python 3.7+")
