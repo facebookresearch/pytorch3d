@@ -5,10 +5,10 @@
 # LICENSE file in the root directory of this source tree.
 
 
-import copy
 import json
 import os
-from typing import Any, Dict, List, Optional, Sequence
+from dataclasses import dataclass
+from typing import Any, Dict, Iterator, List, Optional, Sequence
 
 from iopath.common.file_io import PathManager
 from pytorch3d.implicitron.tools.config import enable_get_default_args
@@ -52,6 +52,34 @@ CO3D_CATEGORIES: List[str] = list(reversed([
 _CO3D_DATASET_ROOT: str = os.getenv("CO3D_DATASET_ROOT", "")
 
 
+@dataclass
+class Datasets:
+    """
+    A provider of datasets for implicitron.
+
+    Members:
+
+        train: a dataset for training
+        val: a dataset for validating during training
+        test: a dataset for final evaluation
+    """
+
+    train: Optional[ImplicitronDatasetBase]
+    val: Optional[ImplicitronDatasetBase]
+    test: Optional[ImplicitronDatasetBase]
+
+    def iter_datasets(self) -> Iterator[ImplicitronDatasetBase]:
+        """
+        Iterator over all datasets.
+        """
+        if self.train is not None:
+            yield self.train
+        if self.val is not None:
+            yield self.val
+        if self.test is not None:
+            yield self.test
+
+
 def dataset_zoo(
     dataset_name: str = "co3d_singlesequence",
     dataset_root: str = _CO3D_DATASET_ROOT,
@@ -69,7 +97,7 @@ def dataset_zoo(
     only_test_set: bool = False,
     aux_dataset_kwargs: dict = DATASET_CONFIGS["default"],
     path_manager: Optional[PathManager] = None,
-) -> Dict[str, ImplicitronDatasetBase]:
+) -> Datasets:
     """
     Generates the training / validation and testing dataset objects.
 
@@ -101,12 +129,31 @@ def dataset_zoo(
         datasets: A dictionary containing the
             `"dataset_subset_name": torch_dataset_object` key, value pairs.
     """
-    datasets = {}
+    if only_test_set and test_on_train:
+        raise ValueError("Cannot have only_test_set and test_on_train")
 
     # TODO:
     # - implement loading multiple categories
 
     if dataset_name in ["co3d_singlesequence", "co3d_multisequence"]:
+        frame_file = os.path.join(dataset_root, category, "frame_annotations.jgz")
+        sequence_file = os.path.join(dataset_root, category, "sequence_annotations.jgz")
+        subset_lists_file = os.path.join(dataset_root, category, "set_lists.json")
+        common_kwargs = {
+            "dataset_root": dataset_root,
+            "limit_to": limit_to,
+            "limit_sequences_to": limit_sequences_to,
+            "load_point_clouds": load_point_clouds,
+            "mask_images": mask_images,
+            "mask_depths": mask_depths,
+            "pick_sequence": restrict_sequence_name,
+            "path_manager": path_manager,
+            "frame_annotations_file": frame_file,
+            "sequence_annotations_file": sequence_file,
+            "subset_lists_file": subset_lists_file,
+            **aux_dataset_kwargs,
+        }
+
         # This maps the common names of the dataset subsets ("train"/"val"/"test")
         # to the names of the subsets in the CO3D dataset.
         set_names_mapping = _get_co3d_set_names_mapping(
@@ -156,65 +203,48 @@ def dataset_zoo(
             # overwrite the restrict_sequence_name
             restrict_sequence_name = [eval_sequence_name]
 
-        for dataset, subsets in set_names_mapping.items():
-            frame_file = os.path.join(dataset_root, category, "frame_annotations.jgz")
-
-            sequence_file = os.path.join(
-                dataset_root, category, "sequence_annotations.jgz"
+        train_dataset = None
+        if not only_test_set:
+            train_dataset = ImplicitronDataset(
+                n_frames_per_sequence=n_frames_per_sequence,
+                subsets=set_names_mapping["train"],
+                **common_kwargs,
             )
-
-            subset_lists_file = os.path.join(dataset_root, category, "set_lists.json")
-
-            # TODO: maybe directly in param list
-            params = {
-                **copy.deepcopy(aux_dataset_kwargs),
-                "frame_annotations_file": frame_file,
-                "sequence_annotations_file": sequence_file,
-                "subset_lists_file": subset_lists_file,
-                "dataset_root": dataset_root,
-                "limit_to": limit_to,
-                "limit_sequences_to": limit_sequences_to,
-                "n_frames_per_sequence": n_frames_per_sequence
-                if dataset == "train"
-                else -1,
-                "subsets": subsets,
-                "load_point_clouds": load_point_clouds,
-                "mask_images": mask_images,
-                "mask_depths": mask_depths,
-                "pick_sequence": restrict_sequence_name,
-                "path_manager": path_manager,
-            }
-
-            datasets[dataset] = ImplicitronDataset(**params)
-            if dataset == "test":
-                if len(restrict_sequence_name) > 0:
-                    eval_batch_index = [
-                        b for b in eval_batch_index if b[0][0] in restrict_sequence_name
-                    ]
-
-                datasets[dataset].eval_batches = datasets[
-                    dataset
-                ].seq_frame_index_to_dataset_index(eval_batch_index)
-
-        if assert_single_seq:
-            # check theres only one sequence in all datasets
-            assert (
-                len(
-                    {
-                        e["frame_annotation"].sequence_name
-                        for dset in datasets.values()
-                        for e in dset.frame_annots
-                    }
-                )
-                <= 1
-            ), "Multiple sequences loaded but expected one"
+        if test_on_train:
+            assert train_dataset is not None
+            val_dataset = test_dataset = train_dataset
+        else:
+            val_dataset = ImplicitronDataset(
+                n_frames_per_sequence=1,
+                subsets=set_names_mapping["val"],
+                **common_kwargs,
+            )
+            test_dataset = ImplicitronDataset(
+                n_frames_per_sequence=1,
+                subsets=set_names_mapping["test"],
+                **common_kwargs,
+            )
+            if len(restrict_sequence_name) > 0:
+                eval_batch_index = [
+                    b for b in eval_batch_index if b[0][0] in restrict_sequence_name
+                ]
+            test_dataset.eval_batches = test_dataset.seq_frame_index_to_dataset_index(
+                eval_batch_index
+            )
+        datasets = Datasets(train=train_dataset, val=val_dataset, test=test_dataset)
 
     else:
         raise ValueError(f"Unsupported dataset: {dataset_name}")
 
-    if test_on_train:
-        datasets["val"] = datasets["train"]
-        datasets["test"] = datasets["train"]
+    if assert_single_seq:
+        # check there's only one sequence in all datasets
+        sequence_names = {
+            sequence_name
+            for dset in datasets.iter_datasets()
+            for sequence_name in dset.sequence_names()
+        }
+        if len(sequence_names) > 1:
+            raise ValueError("Multiple sequences loaded but expected one")
 
     return datasets
 
@@ -231,6 +261,11 @@ def _get_co3d_set_names_mapping(
     Returns the mapping of the common dataset subset names ("train"/"val"/"test")
     to the names of the corresponding subsets in the CO3D dataset
     ("test_known"/"test_unseen"/"train_known"/"train_unseen").
+
+    The keys returned will be
+        - train (if not only_test)
+        - val (if not test_on_train)
+        - test (if not test_on_train)
     """
     single_seq = dataset_name == "co3d_singlesequence"
 

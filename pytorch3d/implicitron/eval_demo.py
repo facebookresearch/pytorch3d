@@ -115,13 +115,12 @@ def evaluate_dbir_for_category(
         path_manager=path_manager,
     )
 
-    dataloaders = dataloader_zoo(
-        datasets,
-        dataset_name=f"co3d_{task}",
-    )
+    dataloaders = dataloader_zoo(datasets)
 
-    test_dataset = datasets["test"]
-    test_dataloader = dataloaders["test"]
+    test_dataset = datasets.test
+    test_dataloader = dataloaders.test
+    if test_dataset is None or test_dataloader is None:
+        raise ValueError("must have a test dataset.")
 
     if task == "singlesequence":
         # all_source_cameras are needed for evaluation of the

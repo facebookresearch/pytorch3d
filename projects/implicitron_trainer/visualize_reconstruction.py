@@ -27,6 +27,7 @@ from pytorch3d.implicitron.dataset.dataset_zoo import dataset_zoo
 from pytorch3d.implicitron.dataset.implicitron_dataset import (
     FrameData,
     ImplicitronDataset,
+    ImplicitronDatasetBase,
 )
 from pytorch3d.implicitron.dataset.utils import is_train_frame
 from pytorch3d.implicitron.models.base_model import EvaluationMode
@@ -342,7 +343,10 @@ def export_scenes(
     model.eval()
 
     # Setup the dataset
-    dataset = dataset_zoo(**config.dataset_args)[split]
+    datasets = dataset_zoo(**config.dataset_args)
+    dataset: Optional[ImplicitronDatasetBase] = getattr(datasets, split, None)
+    if dataset is None:
+        raise ValueError(f"{split} dataset not provided")
 
     # iterate over the sequences in the dataset
     for sequence_name in dataset.sequence_names():

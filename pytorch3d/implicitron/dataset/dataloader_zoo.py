@@ -4,18 +4,36 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-from typing import Dict, Sequence
+from dataclasses import dataclass
+from typing import Optional, Sequence
 
 import torch
 from pytorch3d.implicitron.tools.config import enable_get_default_args
 
+from .dataset_zoo import Datasets
 from .implicitron_dataset import FrameData, ImplicitronDatasetBase
 from .scene_batch_sampler import SceneBatchSampler
 
 
+@dataclass
+class Dataloaders:
+    """
+    A provider of dataloaders for implicitron.
+
+    Members:
+
+        train: a dataloader for training
+        val: a dataloader for validating during training
+        test: a dataloader for final evaluation
+    """
+
+    train: Optional[torch.utils.data.DataLoader[FrameData]]
+    val: Optional[torch.utils.data.DataLoader[FrameData]]
+    test: Optional[torch.utils.data.DataLoader[FrameData]]
+
+
 def dataloader_zoo(
-    datasets: Dict[str, ImplicitronDatasetBase],
-    dataset_name: str = "co3d_singlesequence",
+    datasets: Datasets,
     batch_size: int = 1,
     num_workers: int = 0,
     dataset_len: int = 1000,
@@ -24,7 +42,7 @@ def dataloader_zoo(
     sample_consecutive_frames: bool = False,
     consecutive_frames_max_gap: int = 0,
     consecutive_frames_max_gap_seconds: float = 0.1,
-) -> Dict[str, torch.utils.data.DataLoader]:
+) -> Dataloaders:
     """
     Returns a set of dataloaders for a given set of datasets.
 
@@ -57,44 +75,43 @@ def dataloader_zoo(
         dataloaders: A dictionary containing the
             `"dataset_subset_name": torch_dataloader_object` key, value pairs.
     """
-    if dataset_name not in ["co3d_singlesequence", "co3d_multisequence"]:
-        raise ValueError(f"Unsupported dataset: {dataset_name}")
 
-    dataloaders = {}
+    dataloader_kwargs = {"num_workers": num_workers, "collate_fn": FrameData.collate}
 
-    if dataset_name in ["co3d_singlesequence", "co3d_multisequence"]:
-        for dataset_set, dataset in datasets.items():
-            num_samples = {
-                "train": dataset_len,
-                "val": dataset_len_val,
-                "test": None,
-            }[dataset_set]
+    def train_or_val_loader(
+        dataset: Optional[ImplicitronDatasetBase], num_batches: int
+    ) -> Optional[torch.utils.data.DataLoader]:
+        if dataset is None:
+            return None
+        batch_sampler = SceneBatchSampler(
+            dataset,
+            batch_size,
+            num_batches=len(dataset) if num_batches <= 0 else num_batches,
+            images_per_seq_options=images_per_seq_options,
+            sample_consecutive_frames=sample_consecutive_frames,
+            consecutive_frames_max_gap=consecutive_frames_max_gap,
+            consecutive_frames_max_gap_seconds=consecutive_frames_max_gap_seconds,
+        )
+        return torch.utils.data.DataLoader(
+            dataset,
+            batch_sampler=batch_sampler,
+            **dataloader_kwargs,
+        )
 
-            if dataset_set == "test":
-                batch_sampler = dataset.get_eval_batches()
-            else:
-                assert num_samples is not None
-                num_samples = len(dataset) if num_samples <= 0 else num_samples
-                batch_sampler = SceneBatchSampler(
-                    dataset,
-                    batch_size,
-                    num_batches=num_samples,
-                    images_per_seq_options=images_per_seq_options,
-                    sample_consecutive_frames=sample_consecutive_frames,
-                    consecutive_frames_max_gap=consecutive_frames_max_gap,
-                )
+    train_dataloader = train_or_val_loader(datasets.train, dataset_len)
+    val_dataloader = train_or_val_loader(datasets.val, dataset_len_val)
 
-            dataloaders[dataset_set] = torch.utils.data.DataLoader(
-                dataset,
-                num_workers=num_workers,
-                batch_sampler=batch_sampler,
-                collate_fn=FrameData.collate,
-            )
-
+    test_dataset = datasets.test
+    if test_dataset is not None:
+        test_dataloader = torch.utils.data.DataLoader(
+            test_dataset,
+            batch_sampler=test_dataset.get_eval_batches(),
+            **dataloader_kwargs,
+        )
     else:
-        raise ValueError(f"Unsupported dataset: {dataset_name}")
+        test_dataloader = None
 
-    return dataloaders
+    return Dataloaders(train=train_dataloader, val=val_dataloader, test=test_dataloader)
 
 
 enable_get_default_args(dataloader_zoo)
