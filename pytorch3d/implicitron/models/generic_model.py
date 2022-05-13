@@ -15,6 +15,7 @@ import torch
 import tqdm
 from pytorch3d.implicitron.tools import image_utils, vis_utils
 from pytorch3d.implicitron.tools.config import (
+    expand_args_fields,
     registry,
     run_auto_creation,
 )
@@ -677,6 +678,7 @@ class GenericModel(ImplicitronModelBase, torch.nn.Module):  # pyre-ignore: 13
         implicit_function_type = registry.get(
             ImplicitFunctionBase, self.implicit_function_class_type
         )
+        expand_args_fields(implicit_function_type)
         if self.num_passes != 1 and not implicit_function_type.allows_multiple_passes():
             raise ValueError(
                 self.implicit_function_class_type

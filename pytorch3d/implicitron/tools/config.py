@@ -606,12 +606,14 @@ def expand_args_fields(
     """
     This expands a class which inherits Configurable or ReplaceableBase classes,
     including dataclass processing. some_class is modified in place by this function.
+    If expand_args_fields(some_class) has already been called, subsequent calls do
+    nothing and return some_class unmodified.
     For classes of type ReplaceableBase, you can add some_class to the registry before
     or after calling this function. But potential inner classes need to be registered
     before this function is run on the outer class.
 
     The transformations this function makes, before the concluding
-    dataclasses.dataclass, are as follows.  if X is a base class with registered
+    dataclasses.dataclass, are as follows. If X is a base class with registered
     subclasses Y and Z, replace a class member
 
         x: X
@@ -626,7 +628,9 @@ def expand_args_fields(
         x_Y_args : DictConfig = dataclasses.field(default_factory=lambda: get_default_args(Y))
         x_Z_args : DictConfig = dataclasses.field(default_factory=lambda: get_default_args(Z))
         def create_x(self):
-            self.x = registry.get(X, self.x_class_type)(
+            x_type = registry.get(X, self.x_class_type)
+            expand_args_fields(x_type)
+            self.x = x_type(
                 **self.getattr(f"x_{self.x_class_type}_args)
             )
         x_class_type: str = "UNDEFAULTED"
@@ -651,7 +655,9 @@ def expand_args_fields(
                 self.x = None
                 return
 
-            self.x = registry.get(X, self.x_class_type)(
+            x_type = registry.get(X, self.x_class_type)
+            expand_args_fields(x_type)
+            self.x = x_type(
                 **self.getattr(f"x_{self.x_class_type}_args)
             )
         x_class_type: Optional[str] = "UNDEFAULTED"
@@ -670,6 +676,7 @@ def expand_args_fields(
 
         x_args : DictConfig = dataclasses.field(default_factory=lambda: get_default_args(X))
         def create_x(self):
+            expand_args_fields(X)
             self.x = X(self.x_args)
 
     Similarly, replace,
@@ -687,6 +694,7 @@ def expand_args_fields(
         x_enabled: bool = False
         def create_x(self):
             if self.x_enabled:
+                expand_args_fields(X)
                 self.x = X(self.x_args)
             else:
                 self.x = None
