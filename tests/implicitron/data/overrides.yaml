@@ -15,6 +15,7 @@ tqdm_trigger_threshold: 16
 n_train_target_views: 1
 sampling_mode_training: mask_sample
 sampling_mode_evaluation: full_grid
+raysampler_class_type: AdaptiveRaySampler
 renderer_class_type: LSTMRenderer
 image_feature_extractor_enabled: true
 view_pooler_enabled: true
@@ -50,23 +51,21 @@ sequence_autodecoder_args:
   n_instances: 0
   init_scale: 1.0
   ignore_input: false
-raysampler_args:
+raysampler_AdaptiveRaySampler_args:
   image_width: 400
   image_height: 400
-  scene_center:
-  - 0.0
-  - 0.0
-  - 0.0
-  scene_extent: 0.0
   sampling_mode_training: mask_sample
   sampling_mode_evaluation: full_grid
   n_pts_per_ray_training: 64
   n_pts_per_ray_evaluation: 64
   n_rays_per_image_sampled_from_mask: 1024
-  min_depth: 0.1
-  max_depth: 8.0
   stratified_point_sampling_training: true
   stratified_point_sampling_evaluation: false
+  scene_extent: 8.0
+  scene_center:
+  - 0.0
+  - 0.0
+  - 0.0
 renderer_LSTMRenderer_args:
   num_raymarch_steps: 10
   init_depth: 17.0

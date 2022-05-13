@@ -32,9 +32,9 @@ from pytorch3d.implicitron.tools.config import (
 if os.environ.get("FB_TEST", False):
     from common_testing import get_tests_dir
 
-    from .common_resources import provide_lpips_vgg
+    from .common_resources import provide_resnet34
 else:
-    from common_resources import provide_lpips_vgg  # noqa
+    from common_resources import provide_resnet34
     from tests.common_testing import get_tests_dir
 
 DATA_DIR = get_tests_dir() / "implicitron/data"
@@ -48,7 +48,6 @@ class TestGenericModel(unittest.TestCase):
         self.maxDiff = None
 
     def test_create_gm(self):
-        provide_lpips_vgg()
         args = get_default_args(GenericModel)
         gm = GenericModel(**args)
         self.assertIsInstance(gm.renderer, MultiPassEmissionAbsorptionRenderer)
@@ -60,8 +59,8 @@ class TestGenericModel(unittest.TestCase):
         self.assertIsNone(gm.view_pooler)
         self.assertIsNone(gm.image_feature_extractor)
 
-    def _test_create_gm_overrides(self):
-        provide_lpips_vgg()
+    def test_create_gm_overrides(self):
+        provide_resnet34()
         args = get_default_args(GenericModel)
         args.view_pooler_enabled = True
         args.image_feature_extractor_enabled = True
