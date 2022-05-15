@@ -9,7 +9,7 @@ from typing import Optional, Tuple
 
 import torch
 from pytorch3d.implicitron.tools import camera_utils
-from pytorch3d.implicitron.tools.config import ReplaceableBase, registry
+from pytorch3d.implicitron.tools.config import registry, ReplaceableBase
 from pytorch3d.renderer import NDCMultinomialRaysampler, RayBundle
 from pytorch3d.renderer.cameras import CamerasBase
 

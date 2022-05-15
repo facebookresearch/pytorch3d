@@ -8,7 +8,7 @@ from typing import Any, Callable, Dict, Tuple
 
 import torch
 from pytorch3d.implicitron.models.renderer.base import RendererOutput
-from pytorch3d.implicitron.tools.config import ReplaceableBase, registry
+from pytorch3d.implicitron.tools.config import registry, ReplaceableBase
 from pytorch3d.renderer.implicit.raymarching import _check_raymarcher_inputs
 
 

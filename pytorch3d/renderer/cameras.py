@@ -14,7 +14,7 @@ import torch.nn.functional as F
 from pytorch3d.common.datatypes import Device
 from pytorch3d.transforms import Rotate, Transform3d, Translate
 
-from .utils import TensorProperties, convert_to_tensors_and_broadcast
+from .utils import convert_to_tensors_and_broadcast, TensorProperties
 
 
 # Default values for rotation and translation matrices.

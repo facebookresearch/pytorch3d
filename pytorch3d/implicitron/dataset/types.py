@@ -8,8 +8,8 @@
 import dataclasses
 import gzip
 import json
-from dataclasses import MISSING, Field, dataclass
-from typing import IO, Any, Optional, Tuple, Type, TypeVar, Union, cast
+from dataclasses import dataclass, Field, MISSING
+from typing import Any, cast, IO, Optional, Tuple, Type, TypeVar, Union
 
 import numpy as np
 from pytorch3d.common.datatypes import get_args, get_origin

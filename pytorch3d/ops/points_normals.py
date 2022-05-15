@@ -4,7 +4,7 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-from typing import TYPE_CHECKING, Tuple, Union
+from typing import Tuple, TYPE_CHECKING, Union
 
 import torch
 from pytorch3d.common.compat import eigh

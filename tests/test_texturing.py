@@ -12,17 +12,17 @@ import torch.nn.functional as F
 from common_testing import TestCaseMixin
 from pytorch3d.renderer.mesh.rasterizer import Fragments
 from pytorch3d.renderer.mesh.textures import (
+    _list_to_padded_wrapper,
     TexturesAtlas,
     TexturesUV,
     TexturesVertex,
-    _list_to_padded_wrapper,
 )
 from pytorch3d.renderer.mesh.utils import (
-    Rectangle,
     pack_rectangles,
     pack_unique_rectangles,
+    Rectangle,
 )
-from pytorch3d.structures import Meshes, list_to_packed, packed_to_list
+from pytorch3d.structures import list_to_packed, Meshes, packed_to_list
 from test_meshes import init_mesh
 
 

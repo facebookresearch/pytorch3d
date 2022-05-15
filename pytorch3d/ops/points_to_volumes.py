@@ -4,7 +4,7 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-from typing import TYPE_CHECKING, Optional, Tuple
+from typing import Optional, Tuple, TYPE_CHECKING
 
 import torch
 from pytorch3d import _C

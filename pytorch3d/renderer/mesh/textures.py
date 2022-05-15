@@ -6,7 +6,7 @@
 
 import itertools
 import warnings
-from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, TYPE_CHECKING, Union
 
 import torch
 import torch.nn.functional as F
@@ -14,7 +14,7 @@ from pytorch3d.ops import interpolate_face_attributes
 from pytorch3d.structures.utils import list_to_packed, list_to_padded, padded_to_list
 from torch.nn.functional import interpolate
 
-from .utils import PackedRectangle, Rectangle, pack_unique_rectangles
+from .utils import pack_unique_rectangles, PackedRectangle, Rectangle
 
 
 # This file contains classes and helper functions for texturing.
