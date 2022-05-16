@@ -21,7 +21,7 @@ dataloader_args:
   - 9
   - 10
 dataset_args:
-  dataset_root: ${oc.env:CO3D_DATASET_ROOT}"
+  dataset_root: ${oc.env:CO3D_DATASET_ROOT}
   load_point_clouds: false
   mask_depths: false
   mask_images: false
