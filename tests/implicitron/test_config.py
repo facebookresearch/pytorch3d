@@ -69,6 +69,10 @@ class LargePear(Pear):
     pass
 
 
+class BoringConfigurable(Configurable):
+    pass
+
+
 class MainTest(Configurable):
     the_fruit: Fruit
     n_ids: int
@@ -673,6 +677,57 @@ class TestConfig(unittest.TestCase):
         self.assertEqual(list(args.keys()), ["mt_args", "mt_enabled"])
         remove_unused_components(args)
         self.assertEqual(OmegaConf.to_yaml(args), "mt_enabled: false\n")
+
+    def test_impls(self):
+        # Check that create_x actually uses create_x_impl to do its work
+        # by using all the member types, both with a faked impl function
+        # and without.
+        # members with _0 are optional and absent, those with _o are
+        # optional and present.
+        control_args = []
+
+        def fake_impl(self, control, args):
+            control_args.append(control)
+
+        for fake in [False, True]:
+
+            class MyClass(Configurable):
+                fruit: Fruit
+                fruit_class_type: str = "Orange"
+                fruit_o: Optional[Fruit]
+                fruit_o_class_type: str = "Orange"
+                fruit_0: Optional[Fruit]
+                fruit_0_class_type: Optional[str] = None
+                boring: BoringConfigurable
+                boring_o: Optional[BoringConfigurable]
+                boring_o_enabled: bool = True
+                boring_0: Optional[BoringConfigurable]
+
+                def __post_init__(self):
+                    run_auto_creation(self)
+
+            if fake:
+                MyClass.create_fruit_impl = fake_impl
+                MyClass.create_fruit_o_impl = fake_impl
+                MyClass.create_boring_impl = fake_impl
+                MyClass.create_boring_o_impl = fake_impl
+
+            expand_args_fields(MyClass)
+            instance = MyClass()
+            for name in ["fruit", "fruit_o", "boring", "boring_o"]:
+                self.assertEqual(
+                    hasattr(instance, name), not fake, msg=f"{name} {fake}"
+                )
+
+            self.assertIsNone(instance.fruit_0)
+            self.assertIsNone(instance.boring_0)
+            if not fake:
+                self.assertIsInstance(instance.fruit, Orange)
+                self.assertIsInstance(instance.fruit_o, Orange)
+                self.assertIsInstance(instance.boring, BoringConfigurable)
+                self.assertIsInstance(instance.boring_o, BoringConfigurable)
+
+        self.assertEqual(control_args, ["Orange", "Orange", True, True])
 
 
 @dataclass(eq=False)

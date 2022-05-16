@@ -175,6 +175,8 @@ _unprocessed_warning: str = (
 TYPE_SUFFIX: str = "_class_type"
 ARGS_SUFFIX: str = "_args"
 ENABLED_SUFFIX: str = "_enabled"
+CREATE_PREFIX: str = "create_"
+IMPL_SUFFIX: str = "_impl"
 
 
 class ReplaceableBase:
@@ -375,25 +377,68 @@ def _default_create(
 
     Returns:
         Function taking one argument, the object whose member should be
-            initialized.
+            initialized, i.e. self.
     """
+    impl_name = f"{CREATE_PREFIX}{name}{IMPL_SUFFIX}"
 
     def inner(self):
         expand_args_fields(type_)
+        impl = getattr(self, impl_name)
         args = getattr(self, name + ARGS_SUFFIX)
-        setattr(self, name, type_(**args))
+        impl(True, args)
 
     def inner_optional(self):
         expand_args_fields(type_)
+        impl = getattr(self, impl_name)
         enabled = getattr(self, name + ENABLED_SUFFIX)
+        args = getattr(self, name + ARGS_SUFFIX)
+        impl(enabled, args)
+
+    def inner_pluggable(self):
+        type_name = getattr(self, name + TYPE_SUFFIX)
+        impl = getattr(self, impl_name)
+        if type_name is None:
+            args = None
+        else:
+            args = getattr(self, f"{name}_{type_name}{ARGS_SUFFIX}", None)
+        impl(type_name, args)
+
+    if process_type == _ProcessType.OPTIONAL_CONFIGURABLE:
+        return inner_optional
+    return inner if process_type == _ProcessType.CONFIGURABLE else inner_pluggable
+
+
+def _default_create_impl(
+    name: str, type_: Type, process_type: _ProcessType
+) -> Callable[[Any, Any, DictConfig], None]:
+    """
+    Return the default internal function for initialising a member. This is a function
+    which could be called in the create_ function to initialise the member.
+
+    Args:
+        name: name of the member
+        type_: type of the member (with any Optional removed)
+        process_type: Shows whether member's declared type inherits ReplaceableBase,
+                    in which case the actual type to be created is decided at
+                    runtime.
+
+    Returns:
+        Function taking
+            - self, the object whose member should be initialized.
+            - option for what to do. This is
+                - for pluggables, the type to initialise or None to do nothing
+                - for non pluggables, a bool indicating whether to initialise.
+            - the args for initializing the member.
+    """
+
+    def create_configurable(self, enabled, args):
         if enabled:
-            args = getattr(self, name + ARGS_SUFFIX)
+            expand_args_fields(type_)
             setattr(self, name, type_(**args))
         else:
             setattr(self, name, None)
 
-    def inner_pluggable(self):
-        type_name = getattr(self, name + TYPE_SUFFIX)
+    def create_pluggable(self, type_name, args):
         if type_name is None:
             setattr(self, name, None)
             return
@@ -408,12 +453,11 @@ def _default_create(
             # were made in the redefinition will not be reflected here.
             warnings.warn(f"New implementation of {type_name} is being chosen.")
         expand_args_fields(chosen_class)
-        args = getattr(self, f"{name}_{type_name}{ARGS_SUFFIX}")
         setattr(self, name, chosen_class(**args))
 
-    if process_type == _ProcessType.OPTIONAL_CONFIGURABLE:
-        return inner_optional
-    return inner if process_type == _ProcessType.CONFIGURABLE else inner_pluggable
+    if process_type in (_ProcessType.CONFIGURABLE, _ProcessType.OPTIONAL_CONFIGURABLE):
+        return create_configurable
+    return create_pluggable
 
 
 def run_auto_creation(self: Any) -> None:
@@ -628,11 +672,12 @@ def expand_args_fields(
         x_Y_args : DictConfig = dataclasses.field(default_factory=lambda: get_default_args(Y))
         x_Z_args : DictConfig = dataclasses.field(default_factory=lambda: get_default_args(Z))
         def create_x(self):
-            x_type = registry.get(X, self.x_class_type)
+            args = self.getattr(f"x_{self.x_class_type}_args")
+            self.create_x_impl(self.x_class_type, args)
+        def create_x_impl(self, x_type, args):
+            x_type = registry.get(X, x_type)
             expand_args_fields(x_type)
-            self.x = x_type(
-                **self.getattr(f"x_{self.x_class_type}_args)
-            )
+            self.x = x_type(**args)
         x_class_type: str = "UNDEFAULTED"
 
     without adding the optional attributes if they are already there.
@@ -652,14 +697,19 @@ def expand_args_fields(
         x_Z_args : DictConfig = dataclasses.field(default_factory=lambda: get_default_args(Z))
         def create_x(self):
             if self.x_class_type is None:
+                args = None
+            else:
+                args = self.getattr(f"x_{self.x_class_type}_args", None)
+            self.create_x_impl(self.x_class_type, args)
+        def create_x_impl(self, x_class_type, args):
+            if x_class_type is None:
                 self.x = None
                 return
 
-            x_type = registry.get(X, self.x_class_type)
+            x_type = registry.get(X, x_class_type)
             expand_args_fields(x_type)
-            self.x = x_type(
-                **self.getattr(f"x_{self.x_class_type}_args)
-            )
+            assert args is not None
+            self.x = x_type(**args)
         x_class_type: Optional[str] = "UNDEFAULTED"
 
     without adding the optional attributes if they are already there.
@@ -676,8 +726,14 @@ def expand_args_fields(
 
         x_args : DictConfig = dataclasses.field(default_factory=lambda: get_default_args(X))
         def create_x(self):
-            expand_args_fields(X)
-            self.x = X(self.x_args)
+            self.create_x_impl(True, self.x_args)
+
+        def create_x_impl(self, enabled, args):
+            if enabled:
+                expand_args_fields(X)
+                self.x = X(**args)
+            else:
+                self.x = None
 
     Similarly, replace,
 
@@ -693,9 +749,12 @@ def expand_args_fields(
         x_args : DictConfig = dataclasses.field(default_factory=lambda: get_default_args(X))
         x_enabled: bool = False
         def create_x(self):
-            if self.x_enabled:
+            self.create_x_impl(self.x_enabled, self.x_args)
+
+        def create_x_impl(self, enabled, args):
+            if enabled:
                 expand_args_fields(X)
-                self.x = X(self.x_args)
+                self.x = X(**args)
             else:
                 self.x = None
 
@@ -703,7 +762,7 @@ def expand_args_fields(
     Also adds the following class members, unannotated so that dataclass
     ignores them.
         - _creation_functions: Tuple[str] of all the create_ functions,
-            including those from base classes.
+            including those from base classes (not the create_x_impl ones).
         - _known_implementations: Dict[str, Type] containing the classes which
             have been found from the registry.
             (used only to raise a warning if it one has been overwritten)
@@ -918,7 +977,7 @@ def _process_member(
                 some_class.__annotations__[enabled_name] = bool
                 setattr(some_class, enabled_name, False)
 
-    creation_function_name = f"create_{name}"
+    creation_function_name = f"{CREATE_PREFIX}{name}"
     if not hasattr(some_class, creation_function_name):
         setattr(
             some_class,
@@ -926,6 +985,14 @@ def _process_member(
             _default_create(name, type_, process_type),
         )
     creation_functions.append(creation_function_name)
+
+    creation_function_impl_name = f"{CREATE_PREFIX}{name}{IMPL_SUFFIX}"
+    if not hasattr(some_class, creation_function_impl_name):
+        setattr(
+            some_class,
+            creation_function_impl_name,
+            _default_create_impl(name, type_, process_type),
+        )
 
 
 def remove_unused_components(dict_: DictConfig) -> None:
