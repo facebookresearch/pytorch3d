@@ -323,7 +323,7 @@ class CamerasBase(TensorProperties):
         return world_to_ndc_transform.transform_points(points, eps=eps)
 
     def transform_points_screen(
-        self, points, eps: Optional[float] = None, **kwargs
+        self, points, eps: Optional[float] = None, with_xyflip: bool = True, **kwargs
     ) -> torch.Tensor:
         """
         Transforms points from PyTorch3D world/camera space to screen space.
@@ -341,6 +341,11 @@ class CamerasBase(TensorProperties):
                 stabilizes gradients since it leads to avoiding division
                 by excessively low numbers for points close to the
                 camera plane.
+            with_xyflip: If True, flip x and y directions. In world/camera/ndc coords,
+                +x points to the left and +y up. If with_xyflip is true, in screen
+                coords +x points right, and +y down, following the usual RGB image
+                convention. Warning: do not set to False unless you know what you're
+                doing!
 
         Returns
             new_points: transformed points with the same shape as the input.
@@ -348,7 +353,7 @@ class CamerasBase(TensorProperties):
         points_ndc = self.transform_points_ndc(points, eps=eps, **kwargs)
         image_size = kwargs.get("image_size", self.get_image_size())
         return get_ndc_to_screen_transform(
-            self, with_xyflip=True, image_size=image_size
+            self, with_xyflip=with_xyflip, image_size=image_size
         ).transform_points(points_ndc, eps=eps)
 
     def clone(self):

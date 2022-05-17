@@ -204,6 +204,9 @@ class TestPixels(TestCaseMixin, unittest.TestCase):
         for cameras in (data.camera_ndc, data.camera_screen):
             ndc_points = cameras.transform_points_ndc(points)
             screen_points = cameras.transform_points_screen(points)
+            screen_points_without_xyflip = cameras.transform_points_screen(
+                points, with_xyflip=False
+            )
             camera_points = cameras.transform_points(points)
             for batch_idx in range(2):
                 # NDC space agrees with the original
@@ -212,6 +215,13 @@ class TestPixels(TestCaseMixin, unittest.TestCase):
                 self.assertClose(
                     screen_points[batch_idx][0],
                     torch.tensor([data.x + 0.5, data.y + 0.5, 1.0]),
+                    atol=1e-5,
+                )
+                # Screen coords without xyflip should have x, y that negate the non-
+                # flipped values, and unchanged z.
+                self.assertClose(
+                    screen_points_without_xyflip[batch_idx][0],
+                    torch.tensor([-(data.x + 0.5), -(data.y + 0.5), 1.0]),
                     atol=1e-5,
                 )
                 # Second point in screen space is the center of the screen
