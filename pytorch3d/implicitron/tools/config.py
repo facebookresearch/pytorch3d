@@ -611,6 +611,9 @@ def _params_iter(C):
 
 
 def _is_immutable_type(type_: Type, val: Any) -> bool:
+    if val is None:
+        return True
+
     PRIMITIVE_TYPES = (int, float, bool, str, bytes, tuple)
     # sometimes type can be too relaxed (e.g. Any), so we also check values
     if isinstance(val, PRIMITIVE_TYPES):
