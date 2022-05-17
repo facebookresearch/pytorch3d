@@ -85,6 +85,10 @@ class TestDatasetTypes(unittest.TestCase):
         self._compare_with_scalar([dct], List[FrameAnnotation])
         self._compare_with_scalar({"k": dct}, Dict[str, FrameAnnotation])
 
+        dct2 = dct.copy()
+        dct2["meta"] = {"d": 76}
+        self._compare_with_scalar(dct2, FrameAnnotation)
+
     def _compare_with_scalar(self, obj, typeannot, repeat=3):
         input = [obj] * 3
         vect_output = types._dataclass_list_from_dict_list(input, typeannot)
