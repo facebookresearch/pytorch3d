@@ -7,18 +7,6 @@
 
 # Run this script at project root by "./dev/linter.sh" before you commit
 
-{
-  V=$(black --version|cut '-d ' -f3)
-  code='import distutils.version; assert "19.3" < distutils.version.LooseVersion("'$V'")'
-  PYTHON=false
-  command -v python > /dev/null && PYTHON=python
-  command -v python3 > /dev/null && PYTHON=python3
-  ${PYTHON} -c "${code}" 2> /dev/null
-} || {
-  echo "Linter requires black 19.3b0 or higher!"
-  exit 1
-}
-
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 DIR=$(dirname "${DIR}")
 
