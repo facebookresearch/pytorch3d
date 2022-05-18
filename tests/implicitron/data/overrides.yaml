@@ -17,7 +17,7 @@ sampling_mode_training: mask_sample
 sampling_mode_evaluation: full_grid
 raysampler_class_type: AdaptiveRaySampler
 renderer_class_type: LSTMRenderer
-image_feature_extractor_enabled: true
+image_feature_extractor_class_type: ResNetFeatureExtractor
 view_pooler_enabled: true
 implicit_function_class_type: IdrFeatureField
 loss_weights:
@@ -73,7 +73,7 @@ renderer_LSTMRenderer_args:
   hidden_size: 16
   n_feature_channels: 256
   verbose: false
-image_feature_extractor_args:
+image_feature_extractor_ResNetFeatureExtractor_args:
   name: resnet34
   pretrained: true
   stages:

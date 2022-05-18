@@ -224,7 +224,8 @@ generic_model_args: GenericModel
         └-- hypernet_args: SRNRaymarchHyperNet
         └-- pixel_generator_args: SRNPixelGenerator
     ╘== IdrFeatureField
-└-- image_feature_extractor_args: ResNetFeatureExtractor
+└-- image_feature_extractor_*_args: FeatureExtractorBase
+    ╘== ResNetFeatureExtractor
 └-- view_sampler_args: ViewSampler
 └-- feature_aggregator_*_args: FeatureAggregatorBase
     ╘== IdentityFeatureAggregator

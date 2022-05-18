@@ -4,7 +4,6 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-import copy
 import logging
 import math
 from typing import Any, Dict, Optional, Tuple
@@ -12,7 +11,9 @@ from typing import Any, Dict, Optional, Tuple
 import torch
 import torch.nn.functional as Fu
 import torchvision
-from pytorch3d.implicitron.tools.config import Configurable
+from pytorch3d.implicitron.tools.config import registry
+
+from . import FeatureExtractorBase
 
 
 logger = logging.getLogger(__name__)
@@ -32,7 +33,8 @@ _RESNET_MEAN = [0.485, 0.456, 0.406]
 _RESNET_STD = [0.229, 0.224, 0.225]
 
 
-class ResNetFeatureExtractor(Configurable, torch.nn.Module):
+@registry.register
+class ResNetFeatureExtractor(FeatureExtractorBase):
     """
     Implements an image feature extractor. Depending on the settings allows
     to extract:
@@ -142,14 +144,14 @@ class ResNetFeatureExtractor(Configurable, torch.nn.Module):
         return (img - self._resnet_mean) / self._resnet_std
 
     def get_feat_dims(self) -> int:
-        return (
-            sum(self._feat_dim.values())  # pyre-fixme[29]
-            if len(self._feat_dim) > 0  # pyre-fixme[6]
-            else 0
-        )
+        # pyre-fixme[29]
+        return sum(self._feat_dim.values())
 
     def forward(
-        self, imgs: torch.Tensor, masks: Optional[torch.Tensor] = None
+        self,
+        imgs: Optional[torch.Tensor],
+        masks: Optional[torch.Tensor] = None,
+        **kwargs,
     ) -> Dict[Any, torch.Tensor]:
         """
         Args:
@@ -164,7 +166,7 @@ class ResNetFeatureExtractor(Configurable, torch.nn.Module):
         out_feats = {}
 
         imgs_input = imgs
-        if self.image_rescale != 1.0:
+        if self.image_rescale != 1.0 and imgs_input is not None:
             imgs_resized = Fu.interpolate(
                 imgs_input,
                 # pyre-fixme[6]: For 2nd param expected `Optional[List[float]]` but
@@ -175,12 +177,13 @@ class ResNetFeatureExtractor(Configurable, torch.nn.Module):
         else:
             imgs_resized = imgs_input
 
-        if self.normalize_image:
-            imgs_normed = self._resnet_normalize_image(imgs_resized)
-        else:
-            imgs_normed = imgs_resized
-
         if len(self.stages) > 0:
+            assert imgs_resized is not None
+
+            if self.normalize_image:
+                imgs_normed = self._resnet_normalize_image(imgs_resized)
+            else:
+                imgs_normed = imgs_resized
             # pyre-fixme[29]: `Union[torch.Tensor, torch.nn.modules.module.Module]`
             #  is not a function.
             feats = self.stem(imgs_normed)
@@ -207,7 +210,7 @@ class ResNetFeatureExtractor(Configurable, torch.nn.Module):
             out_feats[MASK_FEATURE_NAME] = masks
 
         if self.add_images:
-            assert imgs_input is not None
+            assert imgs_resized is not None
             out_feats[IMAGE_FEATURE_NAME] = imgs_resized
 
         if self.feature_rescale != 1.0:

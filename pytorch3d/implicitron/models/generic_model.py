@@ -5,6 +5,9 @@
 # LICENSE file in the root directory of this source tree.
 
 
+# Note: The #noqa comments below are for unused imports of pluggable implementations
+# which are part of implicitron. They ensure that the registry is prepopulated.
+
 import logging
 import math
 import warnings
@@ -27,6 +30,8 @@ from visdom import Visdom
 
 from .autodecoder import Autodecoder
 from .base_model import ImplicitronModelBase, ImplicitronRender
+from .feature_extractor import FeatureExtractorBase
+from .feature_extractor.resnet_feature_extractor import ResNetFeatureExtractor  # noqa
 from .implicit_function.base import ImplicitFunctionBase
 from .implicit_function.idr_feature_field import IdrFeatureField  # noqa
 from .implicit_function.neural_radiance_field import (  # noqa
@@ -49,7 +54,6 @@ from .renderer.lstm_renderer import LSTMRenderer  # noqa
 from .renderer.multipass_ea import MultiPassEmissionAbsorptionRenderer  # noqa
 from .renderer.ray_sampler import RaySamplerBase
 from .renderer.sdf_renderer import SignedDistanceFunctionRenderer  # noqa
-from .resnet_feature_extractor import ResNetFeatureExtractor
 from .view_pooler.view_pooler import ViewPooler
 
 
@@ -139,9 +143,6 @@ class GenericModel(ImplicitronModelBase, torch.nn.Module):  # pyre-ignore: 13
         output_rasterized_mc: If True, visualize the Monte-Carlo pixel renders by
             splatting onto an image grid. Default: False.
         bg_color: RGB values for the background color. Default (0.0, 0.0, 0.0)
-        view_pool: If True, features are sampled from the source image(s)
-            at the projected 2d locations of the sampled 3d ray points from the target
-            view(s), i.e. this activates step (3) above.
         num_passes: The specified implicit_function is initialized num_passes
             times and run sequentially.
         chunk_size_grid: The total number of points which can be rendered
@@ -169,10 +170,13 @@ class GenericModel(ImplicitronModelBase, torch.nn.Module):  # pyre-ignore: 13
             registry.
         renderer: A renderer class which inherits from BaseRenderer. This is used to
             generate the images from the target view(s).
-        image_feature_extractor_enabled: If `True`, constructs and enables
-            the `image_feature_extractor` object.
+        image_feature_extractor_class_type: If a str, constructs and enables
+            the `image_feature_extractor` object of this type. Or None if not needed.
         image_feature_extractor: A module for extrating features from an input image.
         view_pooler_enabled: If `True`, constructs and enables the `view_pooler` object.
+            This means features are sampled from the source image(s)
+            at the projected 2d locations of the sampled 3d ray points from the target
+            view(s), i.e. this activates step (3) above.
         view_pooler: An instance of ViewPooler which is used for sampling of
             image-based features at the 2D projections of a set
             of 3D points and aggregating the sampled features.
@@ -215,8 +219,9 @@ class GenericModel(ImplicitronModelBase, torch.nn.Module):  # pyre-ignore: 13
     renderer: BaseRenderer
 
     # ---- image feature extractor settings
-    image_feature_extractor_enabled: bool = False
-    image_feature_extractor: Optional[ResNetFeatureExtractor]
+    # (This is only created if view_pooler is enabled)
+    image_feature_extractor: Optional[FeatureExtractorBase]
+    image_feature_extractor_class_type: Optional[str] = "ResNetFeatureExtractor"
     # ---- view pooler settings
     view_pooler_enabled: bool = False
     view_pooler: Optional[ViewPooler]
@@ -266,6 +271,13 @@ class GenericModel(ImplicitronModelBase, torch.nn.Module):  # pyre-ignore: 13
         super().__init__()
         self.view_metrics = ViewMetrics()
 
+        if self.view_pooler_enabled:
+            if self.image_feature_extractor_class_type is None:
+                raise ValueError(
+                    "image_feature_extractor must be present for view pooling."
+                )
+        else:
+            self.image_feature_extractor_class_type = None
         run_auto_creation(self)
 
         self._implicit_functions = self._construct_implicit_functions()
@@ -349,20 +361,16 @@ class GenericModel(ImplicitronModelBase, torch.nn.Module):  # pyre-ignore: 13
         # custom_args hold additional arguments to the implicit function.
         custom_args = {}
 
-        if self.image_feature_extractor_enabled:
+        if self.image_feature_extractor is not None:
             # (2) Extract features for the image
-            img_feats = self.image_feature_extractor(  # pyre-fixme[29]
-                image_rgb, fg_probability
-            )
+            img_feats = self.image_feature_extractor(image_rgb, fg_probability)
+        else:
+            img_feats = None
 
         if self.view_pooler_enabled:
             if sequence_name is None:
                 raise ValueError("sequence_name must be provided for view pooling")
-            if not self.image_feature_extractor_enabled:
-                raise ValueError(
-                    "image_feature_extractor has to be enabled for for view pooling"
-                    + " (I.e. set self.image_feature_extractor_enabled=True)."
-                )
+            assert img_feats is not None
 
             # (3-4) Sample features and masks at the ray points.
             #       Aggregate features from multiple views.
@@ -555,13 +563,12 @@ class GenericModel(ImplicitronModelBase, torch.nn.Module):  # pyre-ignore: 13
                 **kwargs,
             )
 
-    def _get_viewpooled_feature_dim(self):
-        return (
-            self.view_pooler.get_aggregated_feature_dim(
-                self.image_feature_extractor.get_feat_dims()
-            )
-            if self.view_pooler_enabled
-            else 0
+    def _get_viewpooled_feature_dim(self) -> int:
+        if self.view_pooler is None:
+            return 0
+        assert self.image_feature_extractor is not None
+        return self.view_pooler.get_aggregated_feature_dim(
+            self.image_feature_extractor.get_feat_dims()
         )
 
     def create_raysampler(self):
@@ -617,11 +624,6 @@ class GenericModel(ImplicitronModelBase, torch.nn.Module):  # pyre-ignore: 13
         that image_feature_extractor is enabled when view_pooler is enabled.
         """
         if self.view_pooler_enabled:
-            if not self.image_feature_extractor_enabled:
-                raise ValueError(
-                    "image_feature_extractor has to be enabled for view pooling"
-                    + " (I.e. set self.image_feature_extractor_enabled=True)."
-                )
             self.view_pooler = ViewPooler(**self.view_pooler_args)
         else:
             self.view_pooler = None

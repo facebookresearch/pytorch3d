@@ -1,6 +1,6 @@
 generic_model_args:
-  image_feature_extractor_enabled: true
-  image_feature_extractor_args:
+  image_feature_extractor_class_type: ResNetFeatureExtractor
+  image_feature_extractor_ResNetFeatureExtractor_args:
     add_images: true
     add_masks: true
     first_max_pool: false

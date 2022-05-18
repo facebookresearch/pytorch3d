@@ -64,7 +64,7 @@ generic_model_args:
   view_pooler_args:
     view_sampler_args:
       masked_sampling: false
-  image_feature_extractor_args:
+  image_feature_extractor_ResNetFeatureExtractor_args:
     stages:
     - 1
     - 2
