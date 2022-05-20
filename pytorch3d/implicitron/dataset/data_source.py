@@ -6,15 +6,10 @@
 
 from typing import Tuple
 
-from omegaconf import DictConfig
-from pytorch3d.implicitron.tools.config import (
-    get_default_args_field,
-    ReplaceableBase,
-    run_auto_creation,
-)
+from pytorch3d.implicitron.tools.config import ReplaceableBase, run_auto_creation
 
 from . import json_index_dataset_map_provider  # noqa
-from .dataloader_zoo import dataloader_zoo, Dataloaders
+from .data_loader_map_provider import DataLoaderMap, DataLoaderMapProviderBase
 from .dataset_map_provider import DatasetMap, DatasetMapProviderBase, Task
 
 
@@ -24,7 +19,7 @@ class DataSourceBase(ReplaceableBase):
     and DataLoader configuration.
     """
 
-    def get_datasets_and_dataloaders(self) -> Tuple[DatasetMap, Dataloaders]:
+    def get_datasets_and_dataloaders(self) -> Tuple[DatasetMap, DataLoaderMap]:
         raise NotImplementedError()
 
 
@@ -36,18 +31,20 @@ class ImplicitronDataSource(DataSourceBase):  # pyre-ignore[13]
     Members:
         dataset_map_provider_class_type: identifies type for dataset_map_provider.
             e.g. JsonIndexDatasetMapProvider for Co3D.
+        data_loader_map_provider_class_type: identifies type for data_loader_map_provider.
     """
 
     dataset_map_provider: DatasetMapProviderBase
     dataset_map_provider_class_type: str
-    dataloader_args: DictConfig = get_default_args_field(dataloader_zoo)
+    data_loader_map_provider: DataLoaderMapProviderBase
+    data_loader_map_provider_class_type: str = "SequenceDataLoaderMapProvider"
 
     def __post_init__(self):
         run_auto_creation(self)
 
-    def get_datasets_and_dataloaders(self) -> Tuple[DatasetMap, Dataloaders]:
+    def get_datasets_and_dataloaders(self) -> Tuple[DatasetMap, DataLoaderMap]:
         datasets = self.dataset_map_provider.get_dataset_map()
-        dataloaders = dataloader_zoo(datasets, **self.dataloader_args)
+        dataloaders = self.data_loader_map_provider.get_data_loader_map(datasets)
         return datasets, dataloaders
 
     def get_task(self) -> Task:

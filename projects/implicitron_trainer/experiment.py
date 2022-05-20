@@ -64,8 +64,8 @@ import tqdm
 from omegaconf import DictConfig, OmegaConf
 from packaging import version
 from pytorch3d.implicitron.dataset import utils as ds_utils
+from pytorch3d.implicitron.dataset.data_loader_map_provider import DataLoaderMap
 from pytorch3d.implicitron.dataset.data_source import ImplicitronDataSource, Task
-from pytorch3d.implicitron.dataset.dataloader_zoo import Dataloaders
 from pytorch3d.implicitron.dataset.dataset_base import FrameData
 from pytorch3d.implicitron.dataset.dataset_map_provider import DatasetMap
 from pytorch3d.implicitron.dataset.implicitron_dataset import ImplicitronDataset
@@ -553,7 +553,7 @@ def _eval_and_dump(
     cfg,
     task: Task,
     datasets: DatasetMap,
-    dataloaders: Dataloaders,
+    dataloaders: DataLoaderMap,
     model,
     stats,
     device,
@@ -566,7 +566,7 @@ def _eval_and_dump(
     dataloader = dataloaders.test
 
     if dataloader is None:
-        raise ValueError('Dataloaders have to contain the "test" entry for eval!')
+        raise ValueError('DataLoaderMap have to contain the "test" entry for eval!')
 
     if task == Task.SINGLE_SEQUENCE:
         if datasets.train is None:

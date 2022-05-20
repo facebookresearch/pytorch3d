@@ -2,7 +2,7 @@ defaults:
 - repro_singleseq_base
 - _self_
 data_source_args:
-  dataloader_args:
+  data_loader_map_provider_SequenceDataLoaderMapProvider_args:
     batch_size: 10
     dataset_len: 1000
     dataset_len_val: 1

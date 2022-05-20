@@ -237,7 +237,7 @@ generic_model_args: GenericModel
 solver_args: init_optimizer
 data_source_args: ImplicitronDataSource
 └-- dataset_map_provider_*_args
-└-- dataloader_args
+└-- data_loader_map_provider_*_args
 ```
 
 Please look at the annotations of the respective classes or functions for the lists of hyperparameters.
