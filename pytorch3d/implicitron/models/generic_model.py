@@ -221,7 +221,7 @@ class GenericModel(ImplicitronModelBase, torch.nn.Module):  # pyre-ignore: 13
     # ---- image feature extractor settings
     # (This is only created if view_pooler is enabled)
     image_feature_extractor: Optional[FeatureExtractorBase]
-    image_feature_extractor_class_type: Optional[str] = "ResNetFeatureExtractor"
+    image_feature_extractor_class_type: Optional[str] = None
     # ---- view pooler settings
     view_pooler_enabled: bool = False
     view_pooler: Optional[ViewPooler]
@@ -276,8 +276,6 @@ class GenericModel(ImplicitronModelBase, torch.nn.Module):  # pyre-ignore: 13
                 raise ValueError(
                     "image_feature_extractor must be present for view pooling."
                 )
-        else:
-            self.image_feature_extractor_class_type = None
         run_auto_creation(self)
 
         self._implicit_functions = self._construct_implicit_functions()
@@ -617,16 +615,6 @@ class GenericModel(ImplicitronModelBase, torch.nn.Module):  # pyre-ignore: 13
         self.renderer = registry.get(BaseRenderer, self.renderer_class_type)(
             **renderer_args
         )
-
-    def create_view_pooler(self):
-        """
-        Custom creation function called by run_auto_creation checking
-        that image_feature_extractor is enabled when view_pooler is enabled.
-        """
-        if self.view_pooler_enabled:
-            self.view_pooler = ViewPooler(**self.view_pooler_args)
-        else:
-            self.view_pooler = None
 
     def create_implicit_function(self) -> None:
         """

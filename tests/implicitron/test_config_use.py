@@ -69,6 +69,7 @@ class TestGenericModel(unittest.TestCase):
         args.view_pooler_args.feature_aggregator_class_type = (
             "AngleWeightedIdentityFeatureAggregator"
         )
+        args.image_feature_extractor_class_type = "ResNetFeatureExtractor"
         args.implicit_function_class_type = "IdrFeatureField"
         idr_args = args.implicit_function_IdrFeatureField_args
         idr_args.n_harmonic_functions_xyz = 1729
