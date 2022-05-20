@@ -66,7 +66,8 @@ If you have a custom `experiment.py` script (as in the Option 2 above), replace 
 To run training, pass a yaml config file, followed by a list of overridden arguments.
 For example, to train NeRF on the first skateboard sequence from CO3D dataset, you can run:
 ```shell
-pytorch3d_implicitron_runner --config-path ./configs/ --config-name repro_singleseq_nerf dataset_args.dataset_root=<DATASET_ROOT> dataset_args.category='skateboard' dataset_args.test_restrict_sequence_id=0 test_when_finished=True exp_dir=<CHECKPOINT_DIR>
+dataset_args=data_source_args.dataset_args
+pytorch3d_implicitron_runner --config-path ./configs/ --config-name repro_singleseq_nerf $dataset_args.dataset_root=<DATASET_ROOT> $dataset_args.category='skateboard' $dataset_args.test_restrict_sequence_id=0 test_when_finished=True exp_dir=<CHECKPOINT_DIR>
 ```
 
 Here, `--config-path` points to the config path relative to `pytorch3d_implicitron_runner` location;
@@ -84,7 +85,8 @@ To run evaluation on the latest checkpoint after (or during) training, simply ad
 
 E.g. for executing the evaluation on the NeRF skateboard sequence, you can run:
 ```shell
-pytorch3d_implicitron_runner --config-path ./configs/ --config-name repro_singleseq_nerf dataset_args.dataset_root=<CO3D_DATASET_ROOT> dataset_args.category='skateboard' dataset_args.test_restrict_sequence_id=0 exp_dir=<CHECKPOINT_DIR> eval_only=True
+dataset_args=data_source_args.dataset_args
+pytorch3d_implicitron_runner --config-path ./configs/ --config-name repro_singleseq_nerf $dataset_args.dataset_root=<CO3D_DATASET_ROOT> $dataset_args.category='skateboard' $dataset_args.test_restrict_sequence_id=0 exp_dir=<CHECKPOINT_DIR> eval_only=True
 ```
 Evaluation prints the metrics to `stdout` and dumps them to a json file in `exp_dir`.
 
@@ -202,7 +204,7 @@ to replace the implementation and potentially override the parameters.
 # Code and config structure
 
 As per above, the config structure is parsed automatically from the module hierarchy.
-In particular, model parameters are contained in `generic_model_args` node, and dataset parameters in `dataset_args` node.
+In particular, model parameters are contained in `generic_model_args` node, and dataset parameters in `data_source_args` node.
 
 Here is the class structure (single-line edges show aggregation, while double lines show available implementations):
 ```
@@ -233,8 +235,9 @@ generic_model_args: GenericModel
     ╘== AngleWeightedReductionFeatureAggregator
     ╘== ReductionFeatureAggregator
 solver_args: init_optimizer
-dataset_args: dataset_zoo
-dataloader_args: dataloader_zoo
+data_source_args: ImplicitronDataSource
+└-- dataset_args
+└-- dataloader_args
 ```
 
 Please look at the annotations of the respective classes or functions for the lists of hyperparameters.

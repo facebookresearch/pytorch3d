@@ -5,29 +5,30 @@ exp_dir: ./data/exps/base/
 architecture: generic
 visualize_interval: 0
 visdom_port: 8097
-dataloader_args:
-  batch_size: 10
-  dataset_len: 1000
-  dataset_len_val: 1
-  num_workers: 8
-  images_per_seq_options:
-  - 2
-  - 3
-  - 4
-  - 5
-  - 6
-  - 7
-  - 8
-  - 9
-  - 10
-dataset_args:
-  dataset_root: ${oc.env:CO3D_DATASET_ROOT}
-  load_point_clouds: false
-  mask_depths: false
-  mask_images: false
-  n_frames_per_sequence: -1
-  test_on_train: true
-  test_restrict_sequence_id: 0
+data_source_args:
+  dataloader_args:
+    batch_size: 10
+    dataset_len: 1000
+    dataset_len_val: 1
+    num_workers: 8
+    images_per_seq_options:
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+    - 8
+    - 9
+    - 10
+  dataset_args:
+    dataset_root: ${oc.env:CO3D_DATASET_ROOT}
+    load_point_clouds: false
+    mask_depths: false
+    mask_images: false
+    n_frames_per_sequence: -1
+    test_on_train: true
+    test_restrict_sequence_id: 0
 generic_model_args:
   loss_weights:
     loss_mask_bce: 1.0

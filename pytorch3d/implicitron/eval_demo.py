@@ -7,11 +7,12 @@
 
 import dataclasses
 import os
-from typing import cast, Optional, Tuple
+from typing import Any, cast, Dict, List, Optional, Tuple
 
 import lpips
 import torch
 from iopath.common.file_io import PathManager
+from pytorch3d.implicitron.dataset.data_source import Task
 from pytorch3d.implicitron.dataset.dataloader_zoo import dataloader_zoo
 from pytorch3d.implicitron.dataset.dataset_zoo import CO3D_CATEGORIES, dataset_zoo
 from pytorch3d.implicitron.dataset.implicitron_dataset import (
@@ -47,10 +48,12 @@ def main() -> None:
     """
 
     task_results = {}
-    for task in ("singlesequence", "multisequence"):
+    for task in (Task.SINGLE_SEQUENCE, Task.MULTI_SEQUENCE):
         task_results[task] = []
-        for category in CO3D_CATEGORIES[: (20 if task == "singlesequence" else 10)]:
-            for single_sequence_id in (0, 1) if task == "singlesequence" else (None,):
+        for category in CO3D_CATEGORIES[: (20 if task == Task.SINGLE_SEQUENCE else 10)]:
+            for single_sequence_id in (
+                (0, 1) if task == Task.SINGLE_SEQUENCE else (None,)
+            ):
                 category_result = evaluate_dbir_for_category(
                     category, task=task, single_sequence_id=single_sequence_id
                 )
@@ -74,9 +77,9 @@ def main() -> None:
 
 
 def evaluate_dbir_for_category(
-    category: str = "apple",
+    category: str,
+    task: Task,
     bg_color: Tuple[float, float, float] = (0.0, 0.0, 0.0),
-    task: str = "singlesequence",
     single_sequence_id: Optional[int] = None,
     num_workers: int = 16,
     path_manager: Optional[PathManager] = None,
@@ -101,14 +104,16 @@ def evaluate_dbir_for_category(
 
     torch.manual_seed(42)
 
-    if task not in ["multisequence", "singlesequence"]:
-        raise ValueError("'task' has to be either 'multisequence' or 'singlesequence'")
+    dataset_name = {
+        Task.SINGLE_SEQUENCE: "co3d_singlesequence",
+        Task.MULTI_SEQUENCE: "co3d_multisequence",
+    }[task]
 
     datasets = dataset_zoo(
         category=category,
         dataset_root=os.environ["CO3D_DATASET_ROOT"],
-        assert_single_seq=task == "singlesequence",
-        dataset_name=f"co3d_{task}",
+        assert_single_seq=task == Task.SINGLE_SEQUENCE,
+        dataset_name=dataset_name,
         test_on_train=False,
         load_point_clouds=True,
         test_restrict_sequence_id=single_sequence_id,
@@ -122,7 +127,7 @@ def evaluate_dbir_for_category(
     if test_dataset is None or test_dataloader is None:
         raise ValueError("must have a test dataset.")
 
-    if task == "singlesequence":
+    if task == Task.SINGLE_SEQUENCE:
         # all_source_cameras are needed for evaluation of the
         # target camera difficulty
         # pyre-fixme[16]: `ImplicitronDataset` has no attribute `frame_annots`.
@@ -173,7 +178,9 @@ def evaluate_dbir_for_category(
     return category_result["results"]
 
 
-def _print_aggregate_results(task, task_results) -> None:
+def _print_aggregate_results(
+    task: Task, task_results: Dict[Task, List[List[Dict[str, Any]]]]
+) -> None:
     """
     Prints the aggregate metrics for a given task.
     """

@@ -14,6 +14,7 @@ from typing import Any, Dict, List, Optional, Sequence, Union
 import numpy as np
 import torch
 import torch.nn.functional as F
+from pytorch3d.implicitron.dataset.data_source import Task
 from pytorch3d.implicitron.dataset.implicitron_dataset import FrameData
 from pytorch3d.implicitron.dataset.utils import is_known_frame, is_train_frame
 from pytorch3d.implicitron.models.base_model import ImplicitronRender
@@ -317,7 +318,7 @@ def eval_batch(
             if visualize:
                 visualizer.show_depth(abs_.mean().item(), name_postfix, loss_mask_now)
                 if break_after_visualising:
-                    import pdb
+                    import pdb  # noqa: B602
 
                     pdb.set_trace()
 
@@ -411,16 +412,16 @@ def _reduce_camera_iou_overlap(ious: torch.Tensor, topk: int = 2) -> torch.Tenso
     return ious.topk(k=min(topk, len(ious) - 1)).values.mean()
 
 
-def get_camera_difficulty_bin_edges(task: str):
+def _get_camera_difficulty_bin_edges(task: Task):
     """
     Get the edges of camera difficulty bins.
     """
     _eps = 1e-5
-    if task == "multisequence":
+    if task == Task.MULTI_SEQUENCE:
         # TODO: extract those to constants
         diff_bin_edges = torch.linspace(0.5, 1.0 + _eps, 4)
         diff_bin_edges[0] = 0.0 - _eps
-    elif task == "singlesequence":
+    elif task == Task.SINGLE_SEQUENCE:
         diff_bin_edges = torch.tensor([0.0 - _eps, 0.97, 0.98, 1.0 + _eps]).float()
     else:
         raise ValueError(f"No such eval task {task}.")
@@ -430,7 +431,7 @@ def get_camera_difficulty_bin_edges(task: str):
 
 def summarize_nvs_eval_results(
     per_batch_eval_results: List[Dict[str, Any]],
-    task: str = "singlesequence",
+    task: Task,
 ):
     """
     Compile the per-batch evaluation results `per_batch_eval_results` into
@@ -439,7 +440,6 @@ def summarize_nvs_eval_results(
     Args:
         per_batch_eval_results: Metrics of each per-batch evaluation.
         task: The type of the new-view synthesis task.
-            Either 'singlesequence' or 'multisequence'.
 
     Returns:
         nvs_results_flat: A flattened dict of all aggregate metrics.
@@ -447,10 +447,10 @@ def summarize_nvs_eval_results(
     """
     n_batches = len(per_batch_eval_results)
     eval_sets: List[Optional[str]] = []
-    if task == "singlesequence":
+    if task == Task.SINGLE_SEQUENCE:
         eval_sets = [None]
         # assert n_batches==100
-    elif task == "multisequence":
+    elif task == Task.MULTI_SEQUENCE:
         eval_sets = ["train", "test"]
         # assert n_batches==1000
     else:
@@ -466,17 +466,17 @@ def summarize_nvs_eval_results(
     # init the result database dict
     results = []
 
-    diff_bin_edges, diff_bin_names = get_camera_difficulty_bin_edges(task)
+    diff_bin_edges, diff_bin_names = _get_camera_difficulty_bin_edges(task)
     n_diff_edges = diff_bin_edges.numel()
 
     # add per set averages
     for SET in eval_sets:
         if SET is None:
-            # task=='singlesequence'
+            assert task == Task.SINGLE_SEQUENCE
             ok_set = torch.ones(n_batches, dtype=torch.bool)
             set_name = "test"
         else:
-            # task=='multisequence'
+            assert task == Task.MULTI_SEQUENCE
             ok_set = is_train == int(SET == "train")
             set_name = SET
 
@@ -501,7 +501,7 @@ def summarize_nvs_eval_results(
                 }
             )
 
-        if task == "multisequence":
+        if task == Task.MULTI_SEQUENCE:
             # split based on n_src_views
             n_src_views = batch_sizes - 1
             for n_src in EVAL_N_SRC_VIEWS:
