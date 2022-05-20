@@ -183,7 +183,7 @@ class FrameData(Mapping[str, Any]):
 
 
 @dataclass(eq=False)
-class ImplicitronDatasetBase(torch.utils.data.Dataset[FrameData]):
+class DatasetBase(torch.utils.data.Dataset[FrameData]):
     """
     Base class to describe a dataset to be used with Implicitron.
 

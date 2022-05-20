@@ -9,7 +9,7 @@ import unittest
 from collections import defaultdict
 from dataclasses import dataclass
 
-from pytorch3d.implicitron.dataset.dataset_base import ImplicitronDatasetBase
+from pytorch3d.implicitron.dataset.dataset_base import DatasetBase
 from pytorch3d.implicitron.dataset.scene_batch_sampler import SceneBatchSampler
 
 
@@ -19,7 +19,7 @@ class MockFrameAnnotation:
     frame_timestamp: float = 0.0
 
 
-class MockDataset(ImplicitronDatasetBase):
+class MockDataset(DatasetBase):
     def __init__(self, num_seq, max_frame_gap=1):
         """
         Makes a gap of max_frame_gap frame numbers in the middle of each sequence

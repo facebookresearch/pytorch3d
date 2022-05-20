@@ -13,7 +13,7 @@ import lpips
 import torch
 from iopath.common.file_io import PathManager
 from pytorch3d.implicitron.dataset.data_source import ImplicitronDataSource, Task
-from pytorch3d.implicitron.dataset.dataset_base import FrameData, ImplicitronDatasetBase
+from pytorch3d.implicitron.dataset.dataset_base import DatasetBase, FrameData
 from pytorch3d.implicitron.dataset.implicitron_dataset import ImplicitronDataset
 from pytorch3d.implicitron.dataset.json_index_dataset_map_provider import (
     CO3D_CATEGORIES,
@@ -188,7 +188,7 @@ def _print_aggregate_results(
 
 
 def _get_all_source_cameras(
-    dataset: ImplicitronDatasetBase, sequence_name: str, num_workers: int = 8
+    dataset: DatasetBase, sequence_name: str, num_workers: int = 8
 ):
     """
     Loads all training cameras of a given sequence.

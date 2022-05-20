@@ -10,7 +10,7 @@ from typing import Iterator, Optional
 
 from pytorch3d.implicitron.tools.config import ReplaceableBase
 
-from .dataset_base import ImplicitronDatasetBase
+from .dataset_base import DatasetBase
 
 
 @dataclass
@@ -25,11 +25,11 @@ class DatasetMap:
         test: a dataset for final evaluation
     """
 
-    train: Optional[ImplicitronDatasetBase]
-    val: Optional[ImplicitronDatasetBase]
-    test: Optional[ImplicitronDatasetBase]
+    train: Optional[DatasetBase]
+    val: Optional[DatasetBase]
+    test: Optional[DatasetBase]
 
-    def __getitem__(self, split: str) -> Optional[ImplicitronDatasetBase]:
+    def __getitem__(self, split: str) -> Optional[DatasetBase]:
         """
         Get one of the datasets by key (name of data split)
         """
@@ -37,7 +37,7 @@ class DatasetMap:
             raise ValueError(f"{split} was not a valid split name (train/val/test)")
         return getattr(self, split)
 
-    def iter_datasets(self) -> Iterator[ImplicitronDatasetBase]:
+    def iter_datasets(self) -> Iterator[DatasetBase]:
         """
         Iterator over all datasets.
         """

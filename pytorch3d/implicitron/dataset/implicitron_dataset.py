@@ -37,7 +37,7 @@ from pytorch3d.renderer.cameras import PerspectiveCameras
 from pytorch3d.structures.pointclouds import Pointclouds
 
 from . import types
-from .dataset_base import FrameData, ImplicitronDatasetBase
+from .dataset_base import DatasetBase, FrameData
 
 
 logger = logging.getLogger(__name__)
@@ -49,7 +49,7 @@ class FrameAnnotsEntry(TypedDict):
 
 
 @dataclass(eq=False)
-class ImplicitronDataset(ImplicitronDatasetBase):
+class ImplicitronDataset(DatasetBase):
     """
     A class for the Common Objects in 3D (CO3D) dataset.
 

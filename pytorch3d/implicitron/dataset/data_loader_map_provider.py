@@ -10,7 +10,7 @@ from typing import Optional, Sequence
 import torch
 from pytorch3d.implicitron.tools.config import registry, ReplaceableBase
 
-from .dataset_base import FrameData, ImplicitronDatasetBase
+from .dataset_base import DatasetBase, FrameData
 from .dataset_map_provider import DatasetMap
 from .scene_batch_sampler import SceneBatchSampler
 
@@ -102,7 +102,7 @@ class SequenceDataLoaderMapProvider(DataLoaderMapProviderBase):
         }
 
         def train_or_val_loader(
-            dataset: Optional[ImplicitronDatasetBase], num_batches: int
+            dataset: Optional[DatasetBase], num_batches: int
         ) -> Optional[torch.utils.data.DataLoader]:
             if dataset is None:
                 return None

@@ -12,7 +12,7 @@ from typing import Iterable, Iterator, List, Sequence, Tuple
 import numpy as np
 from torch.utils.data.sampler import Sampler
 
-from .dataset_base import ImplicitronDatasetBase
+from .dataset_base import DatasetBase
 
 
 @dataclass(eq=False)  # TODO: do we need this if not init from config?
@@ -22,7 +22,7 @@ class SceneBatchSampler(Sampler[List[int]]):
     of sequences.
     """
 
-    dataset: ImplicitronDatasetBase
+    dataset: DatasetBase
     batch_size: int
     num_batches: int
     # the sampler first samples a random element k from this list and then
