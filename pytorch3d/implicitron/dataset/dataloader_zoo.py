@@ -10,8 +10,8 @@ from typing import Optional, Sequence
 import torch
 from pytorch3d.implicitron.tools.config import enable_get_default_args
 
+from .dataset_base import FrameData, ImplicitronDatasetBase
 from .dataset_zoo import Datasets
-from .implicitron_dataset import FrameData, ImplicitronDatasetBase
 from .scene_batch_sampler import SceneBatchSampler
 
 

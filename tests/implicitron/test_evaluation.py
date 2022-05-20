@@ -14,10 +14,8 @@ import unittest
 
 import lpips
 import torch
-from pytorch3d.implicitron.dataset.implicitron_dataset import (
-    FrameData,
-    ImplicitronDataset,
-)
+from pytorch3d.implicitron.dataset.dataset_base import FrameData
+from pytorch3d.implicitron.dataset.implicitron_dataset import ImplicitronDataset
 from pytorch3d.implicitron.evaluation.evaluate_new_view_synthesis import eval_batch
 from pytorch3d.implicitron.models.base_model import ImplicitronModelBase
 from pytorch3d.implicitron.models.generic_model import GenericModel  # noqa

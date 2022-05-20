@@ -13,7 +13,8 @@ from typing import Any, Dict, Iterator, List, Optional, Sequence
 from iopath.common.file_io import PathManager
 from pytorch3d.implicitron.tools.config import enable_get_default_args
 
-from .implicitron_dataset import ImplicitronDataset, ImplicitronDatasetBase
+from .dataset_base import ImplicitronDatasetBase
+from .implicitron_dataset import ImplicitronDataset
 from .utils import (
     DATASET_TYPE_KNOWN,
     DATASET_TYPE_TEST,

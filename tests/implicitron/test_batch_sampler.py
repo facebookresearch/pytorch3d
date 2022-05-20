@@ -9,7 +9,7 @@ import unittest
 from collections import defaultdict
 from dataclasses import dataclass
 
-from pytorch3d.implicitron.dataset.implicitron_dataset import ImplicitronDatasetBase
+from pytorch3d.implicitron.dataset.dataset_base import ImplicitronDatasetBase
 from pytorch3d.implicitron.dataset.scene_batch_sampler import SceneBatchSampler
 
 

@@ -14,12 +14,9 @@ import torch
 from iopath.common.file_io import PathManager
 from pytorch3d.implicitron.dataset.data_source import Task
 from pytorch3d.implicitron.dataset.dataloader_zoo import dataloader_zoo
+from pytorch3d.implicitron.dataset.dataset_base import FrameData, ImplicitronDatasetBase
 from pytorch3d.implicitron.dataset.dataset_zoo import CO3D_CATEGORIES, dataset_zoo
-from pytorch3d.implicitron.dataset.implicitron_dataset import (
-    FrameData,
-    ImplicitronDataset,
-    ImplicitronDatasetBase,
-)
+from pytorch3d.implicitron.dataset.implicitron_dataset import ImplicitronDataset
 from pytorch3d.implicitron.dataset.utils import is_known_frame
 from pytorch3d.implicitron.evaluation.evaluate_new_view_synthesis import (
     aggregate_nvs_results,

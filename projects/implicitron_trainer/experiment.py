@@ -66,11 +66,9 @@ from packaging import version
 from pytorch3d.implicitron.dataset import utils as ds_utils
 from pytorch3d.implicitron.dataset.data_source import ImplicitronDataSource, Task
 from pytorch3d.implicitron.dataset.dataloader_zoo import Dataloaders
+from pytorch3d.implicitron.dataset.dataset_base import FrameData
 from pytorch3d.implicitron.dataset.dataset_zoo import Datasets
-from pytorch3d.implicitron.dataset.implicitron_dataset import (
-    FrameData,
-    ImplicitronDataset,
-)
+from pytorch3d.implicitron.dataset.implicitron_dataset import ImplicitronDataset
 from pytorch3d.implicitron.evaluation import evaluate_new_view_synthesis as evaluate
 from pytorch3d.implicitron.models.generic_model import EvaluationMode, GenericModel
 from pytorch3d.implicitron.tools import model_io, vis_utils

@@ -10,7 +10,8 @@ import torch
 from pytorch3d.implicitron.tools.point_cloud_utils import get_rgbd_point_cloud
 from pytorch3d.structures import Pointclouds
 
-from .implicitron_dataset import FrameData, ImplicitronDataset
+from .dataset_base import FrameData
+from .implicitron_dataset import ImplicitronDataset
 
 
 def get_implicitron_sequence_pointcloud(

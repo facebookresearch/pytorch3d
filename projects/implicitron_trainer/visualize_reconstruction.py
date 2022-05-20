@@ -24,12 +24,9 @@ import torch.nn.functional as Fu
 from experiment import init_model
 from omegaconf import OmegaConf
 from pytorch3d.implicitron.dataset.data_source import ImplicitronDataSource
+from pytorch3d.implicitron.dataset.dataset_base import FrameData, ImplicitronDatasetBase
 from pytorch3d.implicitron.dataset.dataset_zoo import dataset_zoo
-from pytorch3d.implicitron.dataset.implicitron_dataset import (
-    FrameData,
-    ImplicitronDataset,
-    ImplicitronDatasetBase,
-)
+from pytorch3d.implicitron.dataset.implicitron_dataset import ImplicitronDataset
 from pytorch3d.implicitron.dataset.utils import is_train_frame
 from pytorch3d.implicitron.models.base_model import EvaluationMode
 from pytorch3d.implicitron.tools.configurable import get_default_args

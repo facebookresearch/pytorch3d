@@ -12,7 +12,7 @@ from typing import Iterable, Iterator, List, Sequence, Tuple
 import numpy as np
 from torch.utils.data.sampler import Sampler
 
-from .implicitron_dataset import ImplicitronDatasetBase
+from .dataset_base import ImplicitronDatasetBase
 
 
 @dataclass(eq=False)  # TODO: do we need this if not init from config?
