@@ -11,7 +11,7 @@ import torch
 from pytorch3d.implicitron.tools.config import enable_get_default_args
 
 from .dataset_base import FrameData, ImplicitronDatasetBase
-from .dataset_zoo import Datasets
+from .dataset_map_provider import DatasetMap
 from .scene_batch_sampler import SceneBatchSampler
 
 
@@ -33,7 +33,7 @@ class Dataloaders:
 
 
 def dataloader_zoo(
-    datasets: Datasets,
+    datasets: DatasetMap,
     batch_size: int = 1,
     num_workers: int = 0,
     dataset_len: int = 1000,
@@ -49,7 +49,6 @@ def dataloader_zoo(
     Args:
         datasets: A dictionary containing the
             `"dataset_subset_name": torch_dataset_object` key, value pairs.
-        dataset_name: The name of the returned dataset.
         batch_size: The size of the batch of the dataloader.
         num_workers: Number data-loading threads.
         dataset_len: The number of batches in a training epoch.

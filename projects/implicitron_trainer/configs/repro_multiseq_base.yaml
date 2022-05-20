@@ -17,9 +17,9 @@ data_source_args:
     - 8
     - 9
     - 10
-  dataset_args:
+  dataset_map_provider_JsonIndexDatasetMapProvider_args:
     assert_single_seq: false
-    dataset_name: co3d_multisequence
+    task_str: multisequence
     load_point_clouds: false
     mask_depths: false
     mask_images: false

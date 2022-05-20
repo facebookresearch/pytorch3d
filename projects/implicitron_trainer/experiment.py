@@ -67,7 +67,7 @@ from pytorch3d.implicitron.dataset import utils as ds_utils
 from pytorch3d.implicitron.dataset.data_source import ImplicitronDataSource, Task
 from pytorch3d.implicitron.dataset.dataloader_zoo import Dataloaders
 from pytorch3d.implicitron.dataset.dataset_base import FrameData
-from pytorch3d.implicitron.dataset.dataset_zoo import Datasets
+from pytorch3d.implicitron.dataset.dataset_map_provider import DatasetMap
 from pytorch3d.implicitron.dataset.implicitron_dataset import ImplicitronDataset
 from pytorch3d.implicitron.evaluation import evaluate_new_view_synthesis as evaluate
 from pytorch3d.implicitron.models.generic_model import EvaluationMode, GenericModel
@@ -552,7 +552,7 @@ def run_training(cfg: DictConfig, device: str = "cpu") -> None:
 def _eval_and_dump(
     cfg,
     task: Task,
-    datasets: Datasets,
+    datasets: DatasetMap,
     dataloaders: Dataloaders,
     model,
     stats,

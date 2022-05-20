@@ -118,6 +118,6 @@ implicit_function_IdrFeatureField_args:
   bias: 1.0
   skip_in: []
   weight_norm: true
-  n_harmonic_functions_xyz: 0
+  n_harmonic_functions_xyz: 1729
   pooled_feature_dim: 0
   encoding_dim: 0

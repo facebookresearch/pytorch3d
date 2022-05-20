@@ -66,7 +66,7 @@ If you have a custom `experiment.py` script (as in the Option 2 above), replace 
 To run training, pass a yaml config file, followed by a list of overridden arguments.
 For example, to train NeRF on the first skateboard sequence from CO3D dataset, you can run:
 ```shell
-dataset_args=data_source_args.dataset_args
+dataset_args=data_source_args.dataset_map_provider_JsonIndexDatasetMapProvider_args
 pytorch3d_implicitron_runner --config-path ./configs/ --config-name repro_singleseq_nerf $dataset_args.dataset_root=<DATASET_ROOT> $dataset_args.category='skateboard' $dataset_args.test_restrict_sequence_id=0 test_when_finished=True exp_dir=<CHECKPOINT_DIR>
 ```
 
@@ -85,7 +85,7 @@ To run evaluation on the latest checkpoint after (or during) training, simply ad
 
 E.g. for executing the evaluation on the NeRF skateboard sequence, you can run:
 ```shell
-dataset_args=data_source_args.dataset_args
+dataset_args=data_source_args.dataset_map_provider_JsonIndexDatasetMapProvider_args
 pytorch3d_implicitron_runner --config-path ./configs/ --config-name repro_singleseq_nerf $dataset_args.dataset_root=<CO3D_DATASET_ROOT> $dataset_args.category='skateboard' $dataset_args.test_restrict_sequence_id=0 exp_dir=<CHECKPOINT_DIR> eval_only=True
 ```
 Evaluation prints the metrics to `stdout` and dumps them to a json file in `exp_dir`.
@@ -236,7 +236,7 @@ generic_model_args: GenericModel
     ╘== ReductionFeatureAggregator
 solver_args: init_optimizer
 data_source_args: ImplicitronDataSource
-└-- dataset_args
+└-- dataset_map_provider_*_args
 └-- dataloader_args
 ```
 

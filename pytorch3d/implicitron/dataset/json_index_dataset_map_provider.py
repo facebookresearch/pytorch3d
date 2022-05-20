@@ -7,13 +7,13 @@
 
 import json
 import os
-from dataclasses import dataclass
-from typing import Any, Dict, Iterator, List, Optional, Sequence
+from dataclasses import field
+from typing import Any, Dict, List, Sequence
 
-from iopath.common.file_io import PathManager
-from pytorch3d.implicitron.tools.config import enable_get_default_args
+from omegaconf import DictConfig
+from pytorch3d.implicitron.tools.config import registry
 
-from .dataset_base import ImplicitronDatasetBase
+from .dataset_map_provider import DatasetMap, DatasetMapProviderBase, Task
 from .implicitron_dataset import ImplicitronDataset
 from .utils import (
     DATASET_TYPE_KNOWN,
@@ -34,6 +34,11 @@ DATASET_CONFIGS: Dict[str, Dict[str, Any]] = {
     }
 }
 
+
+def _make_default_config() -> DictConfig:
+    return DictConfig(DATASET_CONFIGS["default"])
+
+
 # fmt: off
 CO3D_CATEGORIES: List[str] = list(reversed([
     "baseballbat", "banana", "bicycle", "microwave", "tv",
@@ -53,59 +58,16 @@ CO3D_CATEGORIES: List[str] = list(reversed([
 _CO3D_DATASET_ROOT: str = os.getenv("CO3D_DATASET_ROOT", "")
 
 
-@dataclass
-class Datasets:
+@registry.register
+class JsonIndexDatasetMapProvider(DatasetMapProviderBase):  # pyre-ignore [13]
     """
-    A provider of datasets for implicitron.
-
-    Members:
-
-        train: a dataset for training
-        val: a dataset for validating during training
-        test: a dataset for final evaluation
-    """
-
-    train: Optional[ImplicitronDatasetBase]
-    val: Optional[ImplicitronDatasetBase]
-    test: Optional[ImplicitronDatasetBase]
-
-    def iter_datasets(self) -> Iterator[ImplicitronDatasetBase]:
-        """
-        Iterator over all datasets.
-        """
-        if self.train is not None:
-            yield self.train
-        if self.val is not None:
-            yield self.val
-        if self.test is not None:
-            yield self.test
-
-
-def dataset_zoo(
-    dataset_name: str = "co3d_singlesequence",
-    dataset_root: str = _CO3D_DATASET_ROOT,
-    category: str = "DEFAULT",
-    limit_to: int = -1,
-    limit_sequences_to: int = -1,
-    n_frames_per_sequence: int = -1,
-    test_on_train: bool = False,
-    load_point_clouds: bool = False,
-    mask_images: bool = False,
-    mask_depths: bool = False,
-    restrict_sequence_name: Sequence[str] = (),
-    test_restrict_sequence_id: int = -1,
-    assert_single_seq: bool = False,
-    only_test_set: bool = False,
-    aux_dataset_kwargs: dict = DATASET_CONFIGS["default"],
-    path_manager: Optional[PathManager] = None,
-) -> Datasets:
-    """
-    Generates the training / validation and testing dataset objects.
+    Generates the training / validation and testing dataset objects for
+    a dataset laid out on disk like Co3D, with annotations in json files.
 
     Args:
-        dataset_name: The name of the returned dataset.
-        dataset_root: The root folder of the dataset.
         category: The object category of the dataset.
+        task_str: "multisequence" or "singlesequence".
+        dataset_root: The root folder of the dataset.
         limit_to: Limit the dataset to the first #limit_to frames.
         limit_sequences_to: Limit the dataset to the first
             #limit_sequences_to sequences.
@@ -119,58 +81,78 @@ def dataset_zoo(
         restrict_sequence_name: Restrict the dataset sequences to the ones
             present in the given list of names.
         test_restrict_sequence_id: The ID of the loaded sequence.
-            Active for dataset_name='co3d_singlesequence'.
+            Active for task_str='singlesequence'.
         assert_single_seq: Assert that only frames from a single sequence
             are present in all generated datasets.
         only_test_set: Load only the test set.
         aux_dataset_kwargs: Specifies additional arguments to the
             ImplicitronDataset constructor call.
-
-    Returns:
-        datasets: A dictionary containing the
-            `"dataset_subset_name": torch_dataset_object` key, value pairs.
+        path_manager: Optional[PathManager] for interpreting paths
     """
-    if only_test_set and test_on_train:
-        raise ValueError("Cannot have only_test_set and test_on_train")
 
-    # TODO:
-    # - implement loading multiple categories
+    category: str
+    task_str: str = "singlesequence"
+    dataset_root: str = _CO3D_DATASET_ROOT
+    limit_to: int = -1
+    limit_sequences_to: int = -1
+    n_frames_per_sequence: int = -1
+    test_on_train: bool = False
+    load_point_clouds: bool = False
+    mask_images: bool = False
+    mask_depths: bool = False
+    restrict_sequence_name: Sequence[str] = ()
+    test_restrict_sequence_id: int = -1
+    assert_single_seq: bool = False
+    only_test_set: bool = False
+    aux_dataset_kwargs: DictConfig = field(default_factory=_make_default_config)
+    path_manager: Any = None
 
-    if dataset_name in ["co3d_singlesequence", "co3d_multisequence"]:
-        frame_file = os.path.join(dataset_root, category, "frame_annotations.jgz")
-        sequence_file = os.path.join(dataset_root, category, "sequence_annotations.jgz")
-        subset_lists_file = os.path.join(dataset_root, category, "set_lists.json")
+    def get_dataset_map(self) -> DatasetMap:
+        if self.only_test_set and self.test_on_train:
+            raise ValueError("Cannot have only_test_set and test_on_train")
+
+        # TODO:
+        # - implement loading multiple categories
+
+        frame_file = os.path.join(
+            self.dataset_root, self.category, "frame_annotations.jgz"
+        )
+        sequence_file = os.path.join(
+            self.dataset_root, self.category, "sequence_annotations.jgz"
+        )
+        subset_lists_file = os.path.join(
+            self.dataset_root, self.category, "set_lists.json"
+        )
         common_kwargs = {
-            "dataset_root": dataset_root,
-            "limit_to": limit_to,
-            "limit_sequences_to": limit_sequences_to,
-            "load_point_clouds": load_point_clouds,
-            "mask_images": mask_images,
-            "mask_depths": mask_depths,
-            "path_manager": path_manager,
+            "dataset_root": self.dataset_root,
+            "limit_to": self.limit_to,
+            "limit_sequences_to": self.limit_sequences_to,
+            "load_point_clouds": self.load_point_clouds,
+            "mask_images": self.mask_images,
+            "mask_depths": self.mask_depths,
+            "path_manager": self.path_manager,
             "frame_annotations_file": frame_file,
             "sequence_annotations_file": sequence_file,
             "subset_lists_file": subset_lists_file,
-            **aux_dataset_kwargs,
+            **self.aux_dataset_kwargs,
         }
 
         # This maps the common names of the dataset subsets ("train"/"val"/"test")
         # to the names of the subsets in the CO3D dataset.
         set_names_mapping = _get_co3d_set_names_mapping(
-            dataset_name,
-            test_on_train,
-            only_test_set,
+            self.get_task(),
+            self.test_on_train,
+            self.only_test_set,
         )
 
         # load the evaluation batches
-        task = dataset_name.split("_")[-1]
         batch_indices_path = os.path.join(
-            dataset_root,
-            category,
-            f"eval_batches_{task}.json",
+            self.dataset_root,
+            self.category,
+            f"eval_batches_{self.task_str}.json",
         )
-        if path_manager is not None:
-            batch_indices_path = path_manager.get_local_path(batch_indices_path)
+        if self.path_manager is not None:
+            batch_indices_path = self.path_manager.get_local_path(batch_indices_path)
         if not os.path.isfile(batch_indices_path):
             # The batch indices file does not exist.
             # Most probably the user has not specified the root folder.
@@ -181,25 +163,31 @@ def dataset_zoo(
 
         with open(batch_indices_path, "r") as f:
             eval_batch_index = json.load(f)
+        restrict_sequence_name = self.restrict_sequence_name
 
-        if task == "singlesequence":
-            assert (
-                test_restrict_sequence_id is not None and test_restrict_sequence_id >= 0
-            ), (
-                "Please specify an integer id 'test_restrict_sequence_id'"
-                + " of the sequence considered for 'singlesequence'"
-                + " training and evaluation."
-            )
-            assert len(restrict_sequence_name) == 0, (
-                "For the 'singlesequence' task, the restrict_sequence_name has"
-                " to be unset while test_restrict_sequence_id has to be set to an"
-                " integer defining the order of the evaluation sequence."
-            )
+        if self.get_task() == Task.SINGLE_SEQUENCE:
+            if (
+                self.test_restrict_sequence_id is None
+                or self.test_restrict_sequence_id < 0
+            ):
+                raise ValueError(
+                    "Please specify an integer id 'test_restrict_sequence_id'"
+                    + " of the sequence considered for 'singlesequence'"
+                    + " training and evaluation."
+                )
+            if len(self.restrict_sequence_name) > 0:
+                raise ValueError(
+                    "For the 'singlesequence' task, the restrict_sequence_name has"
+                    " to be unset while test_restrict_sequence_id has to be set to an"
+                    " integer defining the order of the evaluation sequence."
+                )
             # a sort-stable set() equivalent:
             eval_batches_sequence_names = list(
                 {b[0][0]: None for b in eval_batch_index}.keys()
             )
-            eval_sequence_name = eval_batches_sequence_names[test_restrict_sequence_id]
+            eval_sequence_name = eval_batches_sequence_names[
+                self.test_restrict_sequence_id
+            ]
             eval_batch_index = [
                 b for b in eval_batch_index if b[0][0] == eval_sequence_name
             ]
@@ -207,14 +195,14 @@ def dataset_zoo(
             restrict_sequence_name = [eval_sequence_name]
 
         train_dataset = None
-        if not only_test_set:
+        if not self.only_test_set:
             train_dataset = ImplicitronDataset(
-                n_frames_per_sequence=n_frames_per_sequence,
+                n_frames_per_sequence=self.n_frames_per_sequence,
                 subsets=set_names_mapping["train"],
                 pick_sequence=restrict_sequence_name,
                 **common_kwargs,
             )
-        if test_on_train:
+        if self.test_on_train:
             assert train_dataset is not None
             val_dataset = test_dataset = train_dataset
         else:
@@ -237,29 +225,26 @@ def dataset_zoo(
             test_dataset.eval_batches = test_dataset.seq_frame_index_to_dataset_index(
                 eval_batch_index
             )
-        datasets = Datasets(train=train_dataset, val=val_dataset, test=test_dataset)
+        datasets = DatasetMap(train=train_dataset, val=val_dataset, test=test_dataset)
 
-    else:
-        raise ValueError(f"Unsupported dataset: {dataset_name}")
+        if self.assert_single_seq:
+            # check there's only one sequence in all datasets
+            sequence_names = {
+                sequence_name
+                for dset in datasets.iter_datasets()
+                for sequence_name in dset.sequence_names()
+            }
+            if len(sequence_names) > 1:
+                raise ValueError("Multiple sequences loaded but expected one")
 
-    if assert_single_seq:
-        # check there's only one sequence in all datasets
-        sequence_names = {
-            sequence_name
-            for dset in datasets.iter_datasets()
-            for sequence_name in dset.sequence_names()
-        }
-        if len(sequence_names) > 1:
-            raise ValueError("Multiple sequences loaded but expected one")
+        return datasets
 
-    return datasets
-
-
-enable_get_default_args(dataset_zoo)
+    def get_task(self) -> Task:
+        return Task(self.task_str)
 
 
 def _get_co3d_set_names_mapping(
-    dataset_name: str,
+    task: Task,
     test_on_train: bool,
     only_test: bool,
 ) -> Dict[str, List[str]]:
@@ -273,7 +258,7 @@ def _get_co3d_set_names_mapping(
         - val (if not test_on_train)
         - test (if not test_on_train)
     """
-    single_seq = dataset_name == "co3d_singlesequence"
+    single_seq = task == Task.SINGLE_SEQUENCE
 
     if only_test:
         set_names_mapping = {}

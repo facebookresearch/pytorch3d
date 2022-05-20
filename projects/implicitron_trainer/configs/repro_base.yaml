@@ -6,6 +6,7 @@ architecture: generic
 visualize_interval: 0
 visdom_port: 8097
 data_source_args:
+  dataset_provider_class_type: JsonIndexDatasetMapProvider
   dataloader_args:
     batch_size: 10
     dataset_len: 1000
@@ -21,7 +22,7 @@ data_source_args:
     - 8
     - 9
     - 10
-  dataset_args:
+  dataset_map_provider_JsonIndexDatasetMapProvider_args:
     dataset_root: ${oc.env:CO3D_DATASET_ROOT}
     load_point_clouds: false
     mask_depths: false

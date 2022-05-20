@@ -24,8 +24,7 @@ import torch.nn.functional as Fu
 from experiment import init_model
 from omegaconf import OmegaConf
 from pytorch3d.implicitron.dataset.data_source import ImplicitronDataSource
-from pytorch3d.implicitron.dataset.dataset_base import FrameData, ImplicitronDatasetBase
-from pytorch3d.implicitron.dataset.dataset_zoo import dataset_zoo
+from pytorch3d.implicitron.dataset.dataset_base import FrameData
 from pytorch3d.implicitron.dataset.implicitron_dataset import ImplicitronDataset
 from pytorch3d.implicitron.dataset.utils import is_train_frame
 from pytorch3d.implicitron.models.base_model import EvaluationMode
@@ -296,7 +295,7 @@ def export_scenes(
     output_directory: Optional[str] = None,
     render_size: Tuple[int, int] = (512, 512),
     video_size: Optional[Tuple[int, int]] = None,
-    split: str = "train",  # train | test
+    split: str = "train",  # train | val | test
     n_source_views: int = 9,
     n_eval_cameras: int = 40,
     visdom_server="http://127.0.0.1",
@@ -324,14 +323,15 @@ def export_scenes(
     config.gpu_idx = gpu_idx
     config.exp_dir = exp_dir
     # important so that the CO3D dataset gets loaded in full
-    config.data_source_args.dataset_args.test_on_train = False
+    dataset_args = (
+        config.data_source_args.dataset_map_provider_JsonIndexDatasetMapProvider_args
+    )
+    dataset_args.test_on_train = False
     # Set the rendering image size
     config.generic_model_args.render_image_width = render_size[0]
     config.generic_model_args.render_image_height = render_size[1]
     if restrict_sequence_name is not None:
-        config.data_source_args.dataset_args.restrict_sequence_name = (
-            restrict_sequence_name
-        )
+        dataset_args.restrict_sequence_name = restrict_sequence_name
 
     # Set up the CUDA env for the visualization
     os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
@@ -344,8 +344,8 @@ def export_scenes(
 
     # Setup the dataset
     datasource = ImplicitronDataSource(**config.data_source_args)
-    datasets = dataset_zoo(**datasource.dataset_args)
-    dataset: Optional[ImplicitronDatasetBase] = getattr(datasets, split, None)
+    dataset_map = datasource.dataset_map_provider.get_dataset_map()
+    dataset = dataset_map[split]
     if dataset is None:
         raise ValueError(f"{split} dataset not provided")
 

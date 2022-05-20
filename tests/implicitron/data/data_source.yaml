@@ -1,0 +1,33 @@
+dataset_map_provider_class_type: ???
+dataloader_args:
+  batch_size: 1
+  num_workers: 0
+  dataset_len: 1000
+  dataset_len_val: 1
+  images_per_seq_options:
+  - 2
+  sample_consecutive_frames: false
+  consecutive_frames_max_gap: 0
+  consecutive_frames_max_gap_seconds: 0.1
+dataset_map_provider_JsonIndexDatasetMapProvider_args:
+  category: ???
+  task_str: singlesequence
+  dataset_root: ''
+  limit_to: -1
+  limit_sequences_to: -1
+  n_frames_per_sequence: -1
+  test_on_train: false
+  load_point_clouds: false
+  mask_images: false
+  mask_depths: false
+  restrict_sequence_name: []
+  test_restrict_sequence_id: -1
+  assert_single_seq: false
+  only_test_set: false
+  aux_dataset_kwargs:
+    box_crop: true
+    box_crop_context: 0.3
+    image_width: 800
+    image_height: 800
+    remove_empty_masks: true
+  path_manager: null

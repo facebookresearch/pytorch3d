@@ -12,11 +12,12 @@ from typing import Any, cast, Dict, List, Optional, Tuple
 import lpips
 import torch
 from iopath.common.file_io import PathManager
-from pytorch3d.implicitron.dataset.data_source import Task
-from pytorch3d.implicitron.dataset.dataloader_zoo import dataloader_zoo
+from pytorch3d.implicitron.dataset.data_source import ImplicitronDataSource, Task
 from pytorch3d.implicitron.dataset.dataset_base import FrameData, ImplicitronDatasetBase
-from pytorch3d.implicitron.dataset.dataset_zoo import CO3D_CATEGORIES, dataset_zoo
 from pytorch3d.implicitron.dataset.implicitron_dataset import ImplicitronDataset
+from pytorch3d.implicitron.dataset.json_index_dataset_map_provider import (
+    CO3D_CATEGORIES,
+)
 from pytorch3d.implicitron.dataset.utils import is_known_frame
 from pytorch3d.implicitron.evaluation.evaluate_new_view_synthesis import (
     aggregate_nvs_results,
@@ -101,23 +102,21 @@ def evaluate_dbir_for_category(
 
     torch.manual_seed(42)
 
-    dataset_name = {
-        Task.SINGLE_SEQUENCE: "co3d_singlesequence",
-        Task.MULTI_SEQUENCE: "co3d_multisequence",
-    }[task]
-
-    datasets = dataset_zoo(
-        category=category,
-        dataset_root=os.environ["CO3D_DATASET_ROOT"],
-        assert_single_seq=task == Task.SINGLE_SEQUENCE,
-        dataset_name=dataset_name,
-        test_on_train=False,
-        load_point_clouds=True,
-        test_restrict_sequence_id=single_sequence_id,
-        path_manager=path_manager,
+    dataset_map_provider_args = {
+        "category": category,
+        "dataset_root": os.environ["CO3D_DATASET_ROOT"],
+        "assert_single_seq": task == Task.SINGLE_SEQUENCE,
+        "task_str": task.value,
+        "test_on_train": False,
+        "load_point_clouds": True,
+        "test_restrict_sequence_id": single_sequence_id,
+        "path_manager": path_manager,
+    }
+    data_source = ImplicitronDataSource(
+        dataset_map_provider_JsonIndexDatasetMapProvider_args=dataset_map_provider_args
     )
 
-    dataloaders = dataloader_zoo(datasets)
+    datasets, dataloaders = data_source.get_datasets_and_dataloaders()
 
     test_dataset = datasets.test
     test_dataloader = dataloaders.test

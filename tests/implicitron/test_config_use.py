@@ -70,6 +70,9 @@ class TestGenericModel(unittest.TestCase):
             "AngleWeightedIdentityFeatureAggregator"
         )
         args.implicit_function_class_type = "IdrFeatureField"
+        idr_args = args.implicit_function_IdrFeatureField_args
+        idr_args.n_harmonic_functions_xyz = 1729
+
         args.renderer_class_type = "LSTMRenderer"
         gm = GenericModel(**args)
         self.assertIsInstance(gm.renderer, LSTMRenderer)
@@ -78,6 +81,7 @@ class TestGenericModel(unittest.TestCase):
             AngleWeightedIdentityFeatureAggregator,
         )
         self.assertIsInstance(gm._implicit_functions[0]._fn, IdrFeatureField)
+        self.assertEqual(gm._implicit_functions[0]._fn.n_harmonic_functions_xyz, 1729)
         self.assertIsInstance(gm.sequence_autodecoder, Autodecoder)
         self.assertIsInstance(gm.image_feature_extractor, ResNetFeatureExtractor)
         self.assertFalse(hasattr(gm, "implicit_function"))

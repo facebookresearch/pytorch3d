@@ -4,19 +4,18 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-from enum import Enum
 from typing import Tuple
 
 from omegaconf import DictConfig
-from pytorch3d.implicitron.tools.config import get_default_args_field, ReplaceableBase
+from pytorch3d.implicitron.tools.config import (
+    get_default_args_field,
+    ReplaceableBase,
+    run_auto_creation,
+)
 
+from . import json_index_dataset_map_provider  # noqa
 from .dataloader_zoo import dataloader_zoo, Dataloaders
-from .dataset_zoo import dataset_zoo, Datasets
-
-
-class Task(Enum):
-    SINGLE_SEQUENCE = "singlesequence"
-    MULTI_SEQUENCE = "multisequence"
+from .dataset_map_provider import DatasetMap, DatasetMapProviderBase, Task
 
 
 class DataSourceBase(ReplaceableBase):
@@ -25,24 +24,31 @@ class DataSourceBase(ReplaceableBase):
     and DataLoader configuration.
     """
 
-    def get_datasets_and_dataloaders(self) -> Tuple[Datasets, Dataloaders]:
+    def get_datasets_and_dataloaders(self) -> Tuple[DatasetMap, Dataloaders]:
         raise NotImplementedError()
 
 
-class ImplicitronDataSource(DataSourceBase):
+class ImplicitronDataSource(DataSourceBase):  # pyre-ignore[13]
     """
     Represents the data used in Implicitron. This is the only implementation
     of DataSourceBase provided.
+
+    Members:
+        dataset_map_provider_class_type: identifies type for dataset_map_provider.
+            e.g. JsonIndexDatasetMapProvider for Co3D.
     """
 
-    dataset_args: DictConfig = get_default_args_field(dataset_zoo)
+    dataset_map_provider: DatasetMapProviderBase
+    dataset_map_provider_class_type: str
     dataloader_args: DictConfig = get_default_args_field(dataloader_zoo)
 
-    def get_datasets_and_dataloaders(self) -> Tuple[Datasets, Dataloaders]:
-        datasets = dataset_zoo(**self.dataset_args)
+    def __post_init__(self):
+        run_auto_creation(self)
+
+    def get_datasets_and_dataloaders(self) -> Tuple[DatasetMap, Dataloaders]:
+        datasets = self.dataset_map_provider.get_dataset_map()
         dataloaders = dataloader_zoo(datasets, **self.dataloader_args)
         return datasets, dataloaders
 
     def get_task(self) -> Task:
-        eval_task = self.dataset_args["dataset_name"].split("_")[-1]
-        return Task(eval_task)
+        return self.dataset_map_provider.get_task()
