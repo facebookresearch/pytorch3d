@@ -1043,7 +1043,7 @@ def _load_ply(f, *, path_manager: PathManager) -> _PlyData:
         faces = torch.LongTensor(np.vstack(face_arrays).astype(np.int64))
     else:
         face_list = []
-        for face_item in face:
+        for (face_item,) in face:
             if face_item.ndim != 1:
                 raise ValueError("Bad face data.")
             if face_item.shape[0] < 3:

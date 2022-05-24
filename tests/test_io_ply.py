@@ -195,6 +195,15 @@ class TestMeshPlyIO(TestCaseMixin, unittest.TestCase):
             ):
                 io.load_mesh(f3.name)
 
+    def test_heterogenous_verts_per_face(self):
+        # The cube but where one face is pentagon not square.
+        text = CUBE_PLY_LINES.copy()
+        text[-1] = "5 3 7 4 0 1"
+        stream = StringIO("\n".join(text))
+        verts, faces = load_ply(stream)
+        self.assertEqual(verts.shape, (8, 3))
+        self.assertEqual(faces.shape, (13, 3))
+
     def test_save_too_many_colors(self):
         verts = torch.tensor(
             [[0, 0, 0], [0, 0, 1], [0, 1, 0], [1, 0, 0]], dtype=torch.float32
