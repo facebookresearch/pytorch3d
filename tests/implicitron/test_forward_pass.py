@@ -163,6 +163,7 @@ class TestGenericModel(unittest.TestCase):
         device = torch.device("cuda:1")
         args = get_default_args(GenericModel)
         args.view_pooler_enabled = True
+        args.image_feature_extractor_class_type = "ResNetFeatureExtractor"
         args.image_feature_extractor_ResNetFeatureExtractor_args.add_masks = False
         model = GenericModel(**args)
         model.to(device)
