@@ -14,7 +14,9 @@ from pytorch3d.renderer.blending import (
     sigmoid_alpha_blend,
     softmax_rgb_blend,
 )
+from pytorch3d.renderer.cameras import FoVPerspectiveCameras
 from pytorch3d.renderer.mesh.rasterizer import Fragments
+from pytorch3d.renderer.splatter_blend import SplatterBlender
 
 
 def sigmoid_blend_naive_loop(colors, fragments, blend_params):
@@ -407,6 +409,54 @@ class TestBlending(TestCaseMixin, unittest.TestCase):
         def fn():
             # test forward and backward pass
             images = softmax_rgb_blend(colors, fragments, blend_params)
+            images.sum().backward()
+            torch.cuda.synchronize()
+
+        return fn
+
+    @staticmethod
+    def bm_splatter_blending(
+        num_meshes: int = 16,
+        image_size: int = 128,
+        faces_per_pixel: int = 2,
+        use_jit: bool = False,
+        device: str = "cpu",
+        backend: str = "pytorch",
+    ):
+        if torch.cuda.is_available() and "cuda:" in device:
+            # If a device other than the default is used, set the device explicity.
+            torch.cuda.set_device(device)
+
+        device = torch.device(device)
+        torch.manual_seed(231)
+
+        # Create dummy outputs of rasterization
+        N, S, K = num_meshes, image_size, faces_per_pixel
+        F = 32  # num faces in the mesh
+
+        pixel_coords_camera = torch.randn(
+            (N, S, S, K, 3), device=device, requires_grad=True
+        )
+        cameras = FoVPerspectiveCameras(device=device)
+        colors = torch.randn((N, S, S, K, 3), device=device)
+        background_mask = torch.randint(
+            low=-1, high=F + 1, size=(N, S, S, K), device=device
+        )
+        background_mask = torch.full((N, S, S, K), False, dtype=bool, device=device)
+        blend_params = BlendParams(sigma=0.5)
+
+        torch.cuda.synchronize()
+        splatter_blender = SplatterBlender((N, S, S, K), colors.device)
+
+        def fn():
+            # test forward and backward pass
+            images = splatter_blender(
+                colors,
+                pixel_coords_camera,
+                cameras,
+                background_mask,
+                blend_params,
+            )
             images.sum().backward()
             torch.cuda.synchronize()
 
