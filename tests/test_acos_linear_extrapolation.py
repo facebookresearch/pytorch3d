@@ -9,9 +9,10 @@ import unittest
 
 import numpy as np
 import torch
-from common_testing import TestCaseMixin
 from pytorch3d.common.compat import lstsq
 from pytorch3d.transforms import acos_linear_extrapolation
+
+from .common_testing import TestCaseMixin
 
 
 class TestAcosLinearExtrapolation(TestCaseMixin, unittest.TestCase):

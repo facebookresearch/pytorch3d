@@ -8,7 +8,6 @@ import functools
 import unittest
 
 import torch
-from common_testing import get_random_cuda_device, TestCaseMixin
 from pytorch3d import _C
 from pytorch3d.renderer import FoVPerspectiveCameras, look_at_view_transform
 from pytorch3d.renderer.mesh import MeshRasterizer, RasterizationSettings
@@ -22,6 +21,8 @@ from pytorch3d.renderer.mesh.utils import (
 )
 from pytorch3d.structures import Meshes
 from pytorch3d.utils import ico_sphere
+
+from .common_testing import get_random_cuda_device, TestCaseMixin
 
 
 class TestRasterizeMeshes(TestCaseMixin, unittest.TestCase):

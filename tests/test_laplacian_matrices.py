@@ -7,9 +7,10 @@
 import unittest
 
 import torch
-from common_testing import get_random_cuda_device, TestCaseMixin
 from pytorch3d.ops import cot_laplacian, laplacian, norm_laplacian
 from pytorch3d.structures.meshes import Meshes
+
+from .common_testing import get_random_cuda_device, TestCaseMixin
 
 
 class TestLaplacianMatrices(TestCaseMixin, unittest.TestCase):

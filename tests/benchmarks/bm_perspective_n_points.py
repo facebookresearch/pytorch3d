@@ -7,7 +7,7 @@
 import itertools
 
 from fvcore.common.benchmark import benchmark
-from test_perspective_n_points import TestPerspectiveNPoints
+from tests.test_perspective_n_points import TestPerspectiveNPoints
 
 
 def bm_perspective_n_points() -> None:

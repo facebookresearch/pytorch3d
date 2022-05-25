@@ -9,16 +9,9 @@ import unittest
 
 from pytorch3d.implicitron import eval_demo
 
+from tests.common_testing import interactive_testing_requested
 
-if os.environ.get("FB_TEST", False):
-    from .common_resources import CO3D_MANIFOLD_PATH, get_path_manager
-else:
-    from common_resources import CO3D_MANIFOLD_PATH, get_path_manager
-
-if os.environ.get("FB_TEST", False):
-    from common_testing import interactive_testing_requested
-else:
-    from tests.common_testing import interactive_testing_requested
+from .common_resources import CO3D_MANIFOLD_PATH, get_path_manager
 
 """
 This test runs a single sequence eval_demo, useful for debugging datasets.

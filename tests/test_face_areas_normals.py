@@ -8,9 +8,10 @@
 import unittest
 
 import torch
-from common_testing import get_random_cuda_device, TestCaseMixin
 from pytorch3d.ops import mesh_face_areas_normals
 from pytorch3d.structures.meshes import Meshes
+
+from .common_testing import get_random_cuda_device, TestCaseMixin
 
 
 class TestFaceAreasNormals(TestCaseMixin, unittest.TestCase):

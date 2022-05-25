@@ -7,8 +7,9 @@
 import unittest
 
 import torch
-from common_testing import TestCaseMixin
 from pytorch3d.renderer.materials import Materials
+
+from .common_testing import TestCaseMixin
 
 
 class TestMaterials(TestCaseMixin, unittest.TestCase):

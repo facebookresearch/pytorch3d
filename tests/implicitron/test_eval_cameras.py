@@ -4,7 +4,6 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-import os
 import unittest
 
 import torch
@@ -13,12 +12,7 @@ from pytorch3d.implicitron.tools.eval_video_trajectory import (
 )
 from pytorch3d.renderer.cameras import look_at_view_transform, PerspectiveCameras
 from pytorch3d.transforms import axis_angle_to_matrix
-
-
-if os.environ.get("FB_TEST", False):
-    from common_testing import TestCaseMixin
-else:
-    from tests.common_testing import TestCaseMixin
+from tests.common_testing import TestCaseMixin
 
 
 class TestEvalCameras(TestCaseMixin, unittest.TestCase):

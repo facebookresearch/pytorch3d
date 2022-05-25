@@ -8,7 +8,8 @@ import unittest
 
 import numpy as np
 import torch
-from common_testing import TestCaseMixin
+
+from .common_testing import TestCaseMixin
 
 
 class TestOpsUtils(TestCaseMixin, unittest.TestCase):

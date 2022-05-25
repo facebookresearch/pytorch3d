@@ -13,13 +13,14 @@ from tempfile import NamedTemporaryFile, TemporaryFile
 import numpy as np
 import pytorch3d.io.ply_io
 import torch
-from common_testing import TestCaseMixin
 from iopath.common.file_io import PathManager
 from pytorch3d.io import IO
 from pytorch3d.io.ply_io import load_ply, save_ply
 from pytorch3d.renderer.mesh import TexturesVertex
 from pytorch3d.structures import Meshes, Pointclouds
 from pytorch3d.utils import torus
+
+from .common_testing import TestCaseMixin
 
 
 global_path_manager = PathManager()

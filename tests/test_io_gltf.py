@@ -9,7 +9,6 @@ from math import radians
 
 import numpy as np
 import torch
-from common_testing import get_pytorch3d_dir, get_tests_dir, TestCaseMixin
 from PIL import Image
 from pytorch3d.io import IO
 from pytorch3d.io.experimental_gltf_io import MeshGlbFormat
@@ -31,6 +30,8 @@ from pytorch3d.renderer.mesh import (
 from pytorch3d.structures import Meshes
 from pytorch3d.transforms import axis_angle_to_matrix
 from pytorch3d.vis.texture_vis import texturesuv_image_PIL
+
+from .common_testing import get_pytorch3d_dir, get_tests_dir, TestCaseMixin
 
 
 DATA_DIR = get_tests_dir() / "data"

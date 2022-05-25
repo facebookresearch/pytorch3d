@@ -8,7 +8,7 @@
 from itertools import product
 
 from fvcore.common.benchmark import benchmark
-from test_subdivide_meshes import TestSubdivideMeshes
+from tests.test_subdivide_meshes import TestSubdivideMeshes
 
 
 def bm_subdivide() -> None:

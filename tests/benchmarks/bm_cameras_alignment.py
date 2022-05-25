@@ -7,7 +7,7 @@
 import itertools
 
 from fvcore.common.benchmark import benchmark
-from test_cameras_alignment import TestCamerasAlignment
+from tests.test_cameras_alignment import TestCamerasAlignment
 
 
 def bm_cameras_alignment() -> None:

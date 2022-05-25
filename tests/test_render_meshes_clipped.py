@@ -17,7 +17,6 @@ import unittest
 import imageio
 import numpy as np
 import torch
-from common_testing import get_tests_dir, load_rgb_image, TestCaseMixin
 from pytorch3d.io import save_obj
 from pytorch3d.renderer.cameras import (
     FoVPerspectiveCameras,
@@ -38,6 +37,8 @@ from pytorch3d.renderer.mesh.shader import SoftPhongShader
 from pytorch3d.renderer.mesh.textures import TexturesVertex
 from pytorch3d.structures.meshes import Meshes
 from pytorch3d.utils import torus
+
+from .common_testing import get_tests_dir, load_rgb_image, TestCaseMixin
 
 
 # If DEBUG=True, save out images generated in the tests for debugging.

@@ -11,7 +11,6 @@ from distutils.version import LooseVersion
 
 import numpy as np
 import torch
-from common_testing import TestCaseMixin
 from pytorch3d.common.compat import qr
 from pytorch3d.transforms.so3 import (
     hat,
@@ -20,6 +19,8 @@ from pytorch3d.transforms.so3 import (
     so3_relative_angle,
     so3_rotation_angle,
 )
+
+from .common_testing import TestCaseMixin
 
 
 class TestSO3(TestCaseMixin, unittest.TestCase):

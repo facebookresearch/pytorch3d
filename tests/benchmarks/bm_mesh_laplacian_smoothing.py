@@ -9,7 +9,7 @@ from itertools import product
 
 import torch
 from fvcore.common.benchmark import benchmark
-from test_mesh_laplacian_smoothing import TestLaplacianSmoothing
+from tests.test_mesh_laplacian_smoothing import TestLaplacianSmoothing
 
 
 def bm_mesh_laplacian_smoothing() -> None:

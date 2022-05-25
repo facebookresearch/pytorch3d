@@ -9,7 +9,7 @@ from itertools import product
 
 import torch
 from fvcore.common.benchmark import benchmark
-from test_vert_align import TestVertAlign
+from tests.test_vert_align import TestVertAlign
 
 
 def bm_vert_align() -> None:

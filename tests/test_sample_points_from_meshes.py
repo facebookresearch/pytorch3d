@@ -9,12 +9,6 @@ import unittest
 
 import numpy as np
 import torch
-from common_testing import (
-    get_pytorch3d_dir,
-    get_random_cuda_device,
-    get_tests_dir,
-    TestCaseMixin,
-)
 from PIL import Image
 from pytorch3d.io import load_objs_as_meshes
 from pytorch3d.ops import sample_points_from_meshes
@@ -29,6 +23,13 @@ from pytorch3d.renderer.points import (
 )
 from pytorch3d.structures import Meshes, Pointclouds
 from pytorch3d.utils.ico_sphere import ico_sphere
+
+from .common_testing import (
+    get_pytorch3d_dir,
+    get_random_cuda_device,
+    get_tests_dir,
+    TestCaseMixin,
+)
 
 
 # If DEBUG=True, save out images generated in the tests for debugging.

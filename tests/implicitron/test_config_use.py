@@ -4,7 +4,6 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-import os
 import unittest
 
 from omegaconf import OmegaConf
@@ -30,15 +29,9 @@ from pytorch3d.implicitron.tools.config import (
     get_default_args,
     remove_unused_components,
 )
+from tests.common_testing import get_tests_dir
 
-
-if os.environ.get("FB_TEST", False):
-    from common_testing import get_tests_dir
-
-    from .common_resources import provide_resnet34
-else:
-    from common_resources import provide_resnet34
-    from tests.common_testing import get_tests_dir
+from .common_resources import provide_resnet34
 
 DATA_DIR = get_tests_dir() / "implicitron/data"
 DEBUG: bool = False

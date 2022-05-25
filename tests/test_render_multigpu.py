@@ -8,7 +8,6 @@ import unittest
 
 import torch
 import torch.nn as nn
-from common_testing import get_random_cuda_device, TestCaseMixin
 from pytorch3d.renderer import (
     AlphaCompositor,
     BlendParams,
@@ -27,6 +26,8 @@ from pytorch3d.renderer import (
 from pytorch3d.renderer.cameras import FoVPerspectiveCameras, look_at_view_transform
 from pytorch3d.structures import Meshes, Pointclouds
 from pytorch3d.utils.ico_sphere import ico_sphere
+
+from .common_testing import get_random_cuda_device, TestCaseMixin
 
 
 # Set the number of GPUS you want to test with

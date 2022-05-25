@@ -10,9 +10,10 @@ import unittest
 
 import numpy as np
 import torch
-from common_testing import TestCaseMixin
 from pytorch3d.structures import utils as struct_utils
 from pytorch3d.structures.pointclouds import join_pointclouds_as_batch, Pointclouds
+
+from .common_testing import TestCaseMixin
 
 
 class TestPointclouds(TestCaseMixin, unittest.TestCase):

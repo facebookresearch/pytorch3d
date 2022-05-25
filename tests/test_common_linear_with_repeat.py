@@ -7,8 +7,9 @@
 import unittest
 
 import torch
-from common_testing import TestCaseMixin
 from pytorch3d.common.linear_with_repeat import LinearWithRepeat
+
+from .common_testing import TestCaseMixin
 
 
 class TestLinearWithRepeat(TestCaseMixin, unittest.TestCase):

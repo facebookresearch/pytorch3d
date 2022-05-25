@@ -7,9 +7,10 @@
 import unittest
 
 import torch
-from common_testing import get_random_cuda_device, TestCaseMixin
 from pytorch3d.ops import packed_to_padded, padded_to_packed
 from pytorch3d.structures.meshes import Meshes
+
+from .common_testing import get_random_cuda_device, TestCaseMixin
 
 
 class TestPackedToPadded(TestCaseMixin, unittest.TestCase):

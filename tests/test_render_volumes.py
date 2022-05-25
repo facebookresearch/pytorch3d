@@ -9,7 +9,6 @@ from typing import Optional, Tuple
 
 import numpy as np
 import torch
-from common_testing import TestCaseMixin
 from pytorch3d.ops import knn_points
 from pytorch3d.renderer import (
     AbsorptionOnlyRaymarcher,
@@ -28,7 +27,9 @@ from pytorch3d.renderer import (
 )
 from pytorch3d.renderer.implicit.utils import _validate_ray_bundle_variables
 from pytorch3d.structures import Pointclouds, Volumes
-from test_points_to_volumes import init_uniform_y_rotations
+
+from .common_testing import TestCaseMixin
+from .test_points_to_volumes import init_uniform_y_rotations
 
 
 DEBUG = False

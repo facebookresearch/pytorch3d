@@ -21,15 +21,9 @@ from pytorch3d.vis.plotly_vis import plot_scene
 if os.environ.get("INSIDE_RE_WORKER") is None:
     from visdom import Visdom
 
-if os.environ.get("FB_TEST", False):
-    from .common_resources import get_skateboard_data
-else:
-    from common_resources import get_skateboard_data
+from tests.common_testing import interactive_testing_requested
 
-if os.environ.get("FB_TEST", False):
-    from common_testing import interactive_testing_requested
-else:
-    from tests.common_testing import interactive_testing_requested
+from .common_resources import get_skateboard_data
 
 
 class TestDatasetVisualize(unittest.TestCase):

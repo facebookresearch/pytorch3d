@@ -13,7 +13,6 @@ from typing import Optional, Union
 
 import numpy as np
 import torch
-from common_testing import TestCaseMixin
 from pytorch3d.transforms.rotation_conversions import (
     axis_angle_to_matrix,
     axis_angle_to_quaternion,
@@ -31,6 +30,8 @@ from pytorch3d.transforms.rotation_conversions import (
     random_rotations,
     rotation_6d_to_matrix,
 )
+
+from .common_testing import TestCaseMixin
 
 
 class TestRandomRotation(unittest.TestCase):

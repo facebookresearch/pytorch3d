@@ -12,12 +12,7 @@ from os import path
 
 import torch
 
-
-# fmt: off
-# Make the mixin available.
-sys.path.insert(0, path.join(path.dirname(__file__), ".."))
-from common_testing import TestCaseMixin  # isort:skip  # noqa: E402
-# fmt: on
+from ..common_testing import TestCaseMixin
 
 
 sys.path.insert(0, path.join(path.dirname(__file__), "..", ".."))

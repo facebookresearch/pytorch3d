@@ -8,7 +8,6 @@ import unittest
 from math import radians
 
 import torch
-from common_testing import TestCaseMixin
 from pytorch3d.renderer.camera_utils import camera_to_eye_at_up, rotate_on_spot
 from pytorch3d.renderer.cameras import (
     get_world_to_view_transform,
@@ -17,6 +16,8 @@ from pytorch3d.renderer.cameras import (
 )
 from pytorch3d.transforms import axis_angle_to_matrix
 from torch.nn.functional import normalize
+
+from .common_testing import TestCaseMixin
 
 
 def _batched_dotprod(x: torch.Tensor, y: torch.Tensor):

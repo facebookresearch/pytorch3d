@@ -7,7 +7,6 @@
 import unittest
 
 import torch
-from common_testing import TestCaseMixin
 from pytorch3d.renderer.blending import (
     BlendParams,
     hard_rgb_blend,
@@ -17,6 +16,8 @@ from pytorch3d.renderer.blending import (
 from pytorch3d.renderer.cameras import FoVPerspectiveCameras
 from pytorch3d.renderer.mesh.rasterizer import Fragments
 from pytorch3d.renderer.splatter_blend import SplatterBlender
+
+from .common_testing import TestCaseMixin
 
 
 def sigmoid_blend_naive_loop(colors, fragments, blend_params):

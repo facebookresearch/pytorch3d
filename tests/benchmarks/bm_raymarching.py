@@ -8,7 +8,7 @@ import itertools
 
 from fvcore.common.benchmark import benchmark
 from pytorch3d.renderer import AbsorptionOnlyRaymarcher, EmissionAbsorptionRaymarcher
-from test_raymarching import TestRaymarching
+from tests.test_raymarching import TestRaymarching
 
 
 def bm_raymarching() -> None:

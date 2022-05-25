@@ -8,8 +8,9 @@ import unittest
 from itertools import product
 
 import torch
-from common_testing import TestCaseMixin
 from pytorch3d.renderer.implicit.sample_pdf import sample_pdf, sample_pdf_python
+
+from .common_testing import TestCaseMixin
 
 
 class TestSamplePDF(TestCaseMixin, unittest.TestCase):

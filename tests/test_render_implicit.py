@@ -8,7 +8,6 @@ import unittest
 
 import numpy as np
 import torch
-from common_testing import TestCaseMixin
 from pytorch3d.renderer import (
     BlendParams,
     EmissionAbsorptionRaymarcher,
@@ -28,7 +27,9 @@ from pytorch3d.renderer import (
 )
 from pytorch3d.structures import Meshes
 from pytorch3d.utils import ico_sphere
-from test_render_volumes import init_cameras
+
+from .common_testing import TestCaseMixin
+from .test_render_volumes import init_cameras
 
 
 DEBUG = False

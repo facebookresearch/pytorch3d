@@ -8,7 +8,7 @@ from copy import deepcopy
 from itertools import product
 
 from fvcore.common.benchmark import benchmark
-from test_points_alignment import TestCorrespondingPointsAlignment, TestICP
+from tests.test_points_alignment import TestCorrespondingPointsAlignment, TestICP
 
 
 def bm_iterative_closest_point() -> None:

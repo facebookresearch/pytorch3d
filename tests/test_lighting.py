@@ -8,9 +8,10 @@ import unittest
 
 import numpy as np
 import torch
-from common_testing import TestCaseMixin
 from pytorch3d.renderer.lighting import AmbientLights, DirectionalLights, PointLights
 from pytorch3d.transforms import RotateAxisAngle
+
+from .common_testing import TestCaseMixin
 
 
 class TestLights(TestCaseMixin, unittest.TestCase):

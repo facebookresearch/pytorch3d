@@ -9,7 +9,7 @@ from itertools import product
 
 import torch
 from fvcore.common.benchmark import benchmark
-from test_rasterize_meshes import TestRasterizeMeshes
+from tests.test_rasterize_meshes import TestRasterizeMeshes
 
 
 # ico levels:

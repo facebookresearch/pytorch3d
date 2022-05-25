@@ -5,7 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 
 from fvcore.common.benchmark import benchmark
-from test_so3 import TestSO3
+from tests.test_so3 import TestSO3
 
 
 def bm_so3() -> None:

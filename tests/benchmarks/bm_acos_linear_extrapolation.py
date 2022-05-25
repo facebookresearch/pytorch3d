@@ -5,7 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 
 from fvcore.common.benchmark import benchmark
-from test_acos_linear_extrapolation import TestAcosLinearExtrapolation
+from tests.test_acos_linear_extrapolation import TestAcosLinearExtrapolation
 
 
 def bm_acos_linear_extrapolation() -> None:

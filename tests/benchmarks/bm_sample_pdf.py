@@ -7,7 +7,7 @@
 from itertools import product
 
 from fvcore.common.benchmark import benchmark
-from test_sample_pdf import TestSamplePDF
+from tests.test_sample_pdf import TestSamplePDF
 
 
 def bm_sample_pdf() -> None:

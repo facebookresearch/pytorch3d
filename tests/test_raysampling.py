@@ -8,7 +8,6 @@ import unittest
 from typing import Callable
 
 import torch
-from common_testing import TestCaseMixin
 from pytorch3d.common.compat import meshgrid_ij
 from pytorch3d.ops import eyes
 from pytorch3d.renderer import (
@@ -32,7 +31,9 @@ from pytorch3d.renderer.implicit.utils import (
     ray_bundle_variables_to_ray_points,
 )
 from pytorch3d.transforms import Rotate
-from test_cameras import init_random_cameras
+
+from .common_testing import TestCaseMixin
+from .test_cameras import init_random_cameras
 
 
 class TestNDCRaysamplerConvention(TestCaseMixin, unittest.TestCase):

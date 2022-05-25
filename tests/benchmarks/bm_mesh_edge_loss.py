@@ -8,7 +8,7 @@
 from itertools import product
 
 from fvcore.common.benchmark import benchmark
-from test_mesh_edge_loss import TestMeshEdgeLoss
+from tests.test_mesh_edge_loss import TestMeshEdgeLoss
 
 
 def bm_mesh_edge_loss() -> None:

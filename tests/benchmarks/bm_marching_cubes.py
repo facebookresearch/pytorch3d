@@ -5,7 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 
 from fvcore.common.benchmark import benchmark
-from test_marching_cubes import TestMarchingCubes
+from tests.test_marching_cubes import TestMarchingCubes
 
 
 def bm_marching_cubes() -> None:

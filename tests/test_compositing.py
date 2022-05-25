@@ -7,12 +7,13 @@
 import unittest
 
 import torch
-from common_testing import get_random_cuda_device, TestCaseMixin
 from pytorch3d.renderer.compositing import (
     alpha_composite,
     norm_weighted_sum,
     weighted_sum,
 )
+
+from .common_testing import get_random_cuda_device, TestCaseMixin
 
 
 class TestAccumulatePoints(TestCaseMixin, unittest.TestCase):

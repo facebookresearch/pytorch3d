@@ -7,7 +7,6 @@
 import unittest
 
 import torch
-from common_testing import TestCaseMixin
 from pytorch3d.renderer import (
     MeshRasterizer,
     NDCMultinomialRaysampler,
@@ -18,6 +17,8 @@ from pytorch3d.renderer import (
     RasterizationSettings,
 )
 from pytorch3d.structures import Meshes, Pointclouds
+
+from .common_testing import TestCaseMixin
 
 
 """

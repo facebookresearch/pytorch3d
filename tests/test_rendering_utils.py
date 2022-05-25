@@ -9,7 +9,6 @@ import unittest
 
 import numpy as np
 import torch
-from common_testing import TestCaseMixin
 from pytorch3d.common.compat import meshgrid_ij
 from pytorch3d.ops import eyes
 from pytorch3d.renderer import (
@@ -25,6 +24,8 @@ from pytorch3d.renderer.utils import (
     TensorProperties,
 )
 from pytorch3d.structures import Pointclouds
+
+from .common_testing import TestCaseMixin
 
 
 # Example class for testing

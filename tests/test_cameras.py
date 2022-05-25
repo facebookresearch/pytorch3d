@@ -36,7 +36,6 @@ import unittest
 
 import numpy as np
 import torch
-from common_testing import TestCaseMixin
 from pytorch3d.renderer.camera_utils import join_cameras_as_batch
 from pytorch3d.renderer.cameras import (
     camera_position_from_spherical_angles,
@@ -56,6 +55,8 @@ from pytorch3d.renderer.cameras import (
 from pytorch3d.transforms import Transform3d
 from pytorch3d.transforms.rotation_conversions import random_rotations
 from pytorch3d.transforms.so3 import so3_exp_map
+
+from .common_testing import TestCaseMixin
 
 
 # Naive function adapted from SoftRasterizer for test purposes.

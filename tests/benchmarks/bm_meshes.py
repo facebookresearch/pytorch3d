@@ -9,7 +9,7 @@ from itertools import product
 
 import torch
 from fvcore.common.benchmark import benchmark
-from test_meshes import TestMeshes
+from tests.test_meshes import TestMeshes
 
 
 def bm_compute_packed_padded_meshes() -> None:

@@ -12,7 +12,7 @@ import unittest
 import unittest.mock
 from collections import Counter
 
-from common_testing import get_pytorch3d_dir
+from .common_testing import get_pytorch3d_dir
 
 
 # This file groups together tests which look at the code without running it.

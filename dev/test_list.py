@@ -51,7 +51,7 @@ def tests_from_file(path: Path, base: str) -> List[str]:
 
 def main() -> None:
     files = get_test_files()
-    test_root = Path(__file__).parent.parent / "tests"
+    test_root = Path(__file__).parent.parent
     all_tests = []
     for f in files:
         file_base = str(f.relative_to(test_root))[:-3].replace("/", ".")

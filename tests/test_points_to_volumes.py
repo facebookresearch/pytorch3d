@@ -11,7 +11,6 @@ from typing import Tuple
 
 import numpy as np
 import torch
-from common_testing import TestCaseMixin
 from pytorch3d.ops import (
     add_pointclouds_to_volumes,
     add_points_features_to_volume_densities_features,
@@ -22,6 +21,8 @@ from pytorch3d.structures.meshes import Meshes
 from pytorch3d.structures.pointclouds import Pointclouds
 from pytorch3d.structures.volumes import Volumes
 from pytorch3d.transforms.so3 import so3_exp_map
+
+from .common_testing import TestCaseMixin
 
 
 DEBUG = False

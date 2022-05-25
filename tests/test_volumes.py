@@ -11,9 +11,10 @@ import unittest
 
 import numpy as np
 import torch
-from common_testing import TestCaseMixin
 from pytorch3d.structures.volumes import Volumes
 from pytorch3d.transforms import Scale
+
+from .common_testing import TestCaseMixin
 
 
 class TestVolumes(TestCaseMixin, unittest.TestCase):

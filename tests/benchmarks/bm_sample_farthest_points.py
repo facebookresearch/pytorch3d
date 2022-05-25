@@ -7,7 +7,7 @@
 from itertools import product
 
 from fvcore.common.benchmark import benchmark
-from test_sample_farthest_points import TestFPS
+from tests.test_sample_farthest_points import TestFPS
 
 
 def bm_fps() -> None:

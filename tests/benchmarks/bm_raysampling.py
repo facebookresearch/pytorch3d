@@ -16,7 +16,7 @@ from pytorch3d.renderer import (
     OrthographicCameras,
     PerspectiveCameras,
 )
-from test_raysampling import TestRaysampling
+from tests.test_raysampling import TestRaysampling
 
 
 def bm_raysampling() -> None:

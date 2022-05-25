@@ -9,7 +9,7 @@ from itertools import product
 
 import torch
 from fvcore.common.benchmark import benchmark
-from test_packed_to_padded import TestPackedToPadded
+from tests.test_packed_to_padded import TestPackedToPadded
 
 
 def bm_packed_to_padded() -> None:

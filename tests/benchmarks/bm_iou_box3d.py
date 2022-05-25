@@ -7,7 +7,7 @@
 from itertools import product
 
 from fvcore.common.benchmark import benchmark
-from test_iou_box3d import TestIoU3D
+from tests.test_iou_box3d import TestIoU3D
 
 
 def bm_iou_box3d() -> None:

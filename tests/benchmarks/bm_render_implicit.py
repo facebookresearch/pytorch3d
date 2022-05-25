@@ -8,7 +8,7 @@ import itertools
 
 from fvcore.common.benchmark import benchmark
 from pytorch3d.renderer import AbsorptionOnlyRaymarcher, EmissionAbsorptionRaymarcher
-from test_render_implicit import TestRenderImplicit
+from tests.test_render_implicit import TestRenderImplicit
 
 
 def bm_render_volumes() -> None:

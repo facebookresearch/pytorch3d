@@ -13,16 +13,9 @@ from pytorch3d.implicitron.models.generic_model import GenericModel
 from pytorch3d.implicitron.models.renderer.base import EvaluationMode
 from pytorch3d.implicitron.tools.config import expand_args_fields, get_default_args
 from pytorch3d.renderer.cameras import look_at_view_transform, PerspectiveCameras
+from tests.common_testing import get_pytorch3d_dir
 
-if os.environ.get("FB_TEST", False):
-    from .common_resources import provide_resnet34
-else:
-    from common_resources import provide_resnet34
-
-if os.environ.get("FB_TEST", False):
-    from common_testing import get_pytorch3d_dir
-else:
-    from tests.common_testing import get_pytorch3d_dir
+from .common_resources import provide_resnet34
 
 IMPLICITRON_CONFIGS_DIR = (
     get_pytorch3d_dir() / "projects" / "implicitron_trainer" / "configs"

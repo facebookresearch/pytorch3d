@@ -4,7 +4,6 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-import os
 import unittest
 from math import pi
 
@@ -15,12 +14,7 @@ from pytorch3d.implicitron.tools.circle_fitting import (
     fit_circle_in_3d,
 )
 from pytorch3d.transforms import random_rotation
-
-
-if os.environ.get("FB_TEST", False):
-    from common_testing import TestCaseMixin
-else:
-    from tests.common_testing import TestCaseMixin
+from tests.common_testing import TestCaseMixin
 
 
 class TestCircleFitting(TestCaseMixin, unittest.TestCase):

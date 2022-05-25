@@ -9,10 +9,11 @@ import unittest
 
 import torch
 import torch.nn.functional as F
-from common_testing import TestCaseMixin
 from pytorch3d.ops.vert_align import vert_align
 from pytorch3d.structures.meshes import Meshes
 from pytorch3d.structures.pointclouds import Pointclouds
+
+from .common_testing import TestCaseMixin
 
 
 class TestVertAlign(TestCaseMixin, unittest.TestCase):

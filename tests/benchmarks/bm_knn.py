@@ -7,7 +7,7 @@
 from itertools import product
 
 from fvcore.common.benchmark import benchmark
-from test_knn import TestKNN
+from tests.test_knn import TestKNN
 
 
 def bm_knn() -> None:

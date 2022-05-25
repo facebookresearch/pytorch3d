@@ -9,7 +9,7 @@ from itertools import product
 
 import torch
 from fvcore.common.benchmark import benchmark
-from test_face_areas_normals import TestFaceAreasNormals
+from tests.test_face_areas_normals import TestFaceAreasNormals
 
 
 def bm_face_areas_normals() -> None:

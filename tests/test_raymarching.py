@@ -7,8 +7,9 @@
 import unittest
 
 import torch
-from common_testing import TestCaseMixin
 from pytorch3d.renderer import AbsorptionOnlyRaymarcher, EmissionAbsorptionRaymarcher
+
+from .common_testing import TestCaseMixin
 
 
 class TestRaymarching(TestCaseMixin, unittest.TestCase):

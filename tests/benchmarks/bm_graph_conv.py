@@ -9,7 +9,7 @@ from itertools import product
 
 import torch
 from fvcore.common.benchmark import benchmark
-from test_graph_conv import TestGraphConv
+from tests.test_graph_conv import TestGraphConv
 
 
 def bm_graph_conv() -> None:

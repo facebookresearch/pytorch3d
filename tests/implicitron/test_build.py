@@ -5,16 +5,11 @@
 # LICENSE file in the root directory of this source tree.
 
 import importlib
-import os
 import sys
 import unittest
 import unittest.mock
 
-
-if os.environ.get("FB_TEST", False):
-    from common_testing import get_pytorch3d_dir
-else:
-    from tests.common_testing import get_pytorch3d_dir
+from tests.common_testing import get_pytorch3d_dir
 
 
 # This file groups together tests which look at the code without running it.

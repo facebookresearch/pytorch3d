@@ -4,7 +4,6 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-import os
 import unittest
 
 import torch
@@ -16,12 +15,7 @@ from pytorch3d.implicitron.models.implicit_function.scene_representation_network
 from pytorch3d.implicitron.models.renderer.base import ImplicitFunctionWrapper
 from pytorch3d.implicitron.tools.config import get_default_args
 from pytorch3d.renderer import RayBundle
-
-
-if os.environ.get("FB_TEST", False):
-    from common_testing import TestCaseMixin
-else:
-    from tests.common_testing import TestCaseMixin
+from tests.common_testing import TestCaseMixin
 
 _BATCH_SIZE: int = 3
 _N_RAYS: int = 100

@@ -8,10 +8,11 @@
 import unittest
 
 import torch
-from common_testing import get_random_cuda_device, TestCaseMixin
 from pytorch3d.ops import taubin_smoothing
 from pytorch3d.structures import Meshes
 from pytorch3d.utils import ico_sphere
+
+from .common_testing import get_random_cuda_device, TestCaseMixin
 
 
 class TestTaubinSmoothing(TestCaseMixin, unittest.TestCase):

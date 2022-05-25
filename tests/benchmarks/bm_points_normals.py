@@ -9,7 +9,7 @@ import itertools
 import torch
 from fvcore.common.benchmark import benchmark
 from pytorch3d.ops import estimate_pointcloud_normals
-from test_points_normals import TestPCLNormals
+from tests.test_points_normals import TestPCLNormals
 
 
 def to_bm(num_points, use_symeig_workaround):

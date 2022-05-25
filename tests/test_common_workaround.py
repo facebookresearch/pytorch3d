@@ -9,8 +9,9 @@ import unittest
 
 import numpy as np
 import torch
-from common_testing import TestCaseMixin
 from pytorch3d.common.workaround import _safe_det_3x3
+
+from .common_testing import TestCaseMixin
 
 
 class TestSafeDet3x3(TestCaseMixin, unittest.TestCase):

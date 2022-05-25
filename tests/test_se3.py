@@ -9,11 +9,12 @@ import unittest
 
 import numpy as np
 import torch
-from common_testing import TestCaseMixin
 from pytorch3d.common.compat import qr
 from pytorch3d.transforms.rotation_conversions import random_rotations
 from pytorch3d.transforms.se3 import se3_exp_map, se3_log_map
 from pytorch3d.transforms.so3 import so3_exp_map, so3_log_map, so3_rotation_angle
+
+from .common_testing import TestCaseMixin
 
 
 class TestSE3(TestCaseMixin, unittest.TestCase):

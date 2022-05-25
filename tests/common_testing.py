@@ -38,7 +38,7 @@ def get_pytorch3d_dir() -> Path:
     Meta internal systems need a special case here.
     """
     if os.environ.get("INSIDE_RE_WORKER") is not None:
-        return Path(__file__).resolve().parent
+        return Path(__file__).resolve().parent.parent
     elif os.environ.get("CONDA_BUILD_STATE", "") == "TEST":
         return Path(os.environ["SRC_DIR"])
     else:

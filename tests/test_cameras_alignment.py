@@ -8,7 +8,6 @@ import unittest
 
 import numpy as np
 import torch
-from common_testing import TestCaseMixin
 from pytorch3d.ops import corresponding_cameras_alignment
 from pytorch3d.renderer.cameras import (
     OpenGLOrthographicCameras,
@@ -18,7 +17,9 @@ from pytorch3d.renderer.cameras import (
 )
 from pytorch3d.transforms.rotation_conversions import random_rotations
 from pytorch3d.transforms.so3 import so3_exp_map, so3_relative_angle
-from test_cameras import init_random_cameras
+
+from .common_testing import TestCaseMixin
+from .test_cameras import init_random_cameras
 
 
 class TestCamerasAlignment(TestCaseMixin, unittest.TestCase):

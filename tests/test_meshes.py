@@ -10,8 +10,9 @@ import unittest
 
 import numpy as np
 import torch
-from common_testing import TestCaseMixin
 from pytorch3d.structures.meshes import Meshes
+
+from .common_testing import TestCaseMixin
 
 
 def init_mesh(

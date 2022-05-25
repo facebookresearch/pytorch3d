@@ -8,12 +8,13 @@ import unittest
 from typing import Tuple, Union
 
 import torch
-from common_testing import TestCaseMixin
 from pytorch3d.ops import (
     estimate_pointcloud_local_coord_frames,
     estimate_pointcloud_normals,
 )
 from pytorch3d.structures.pointclouds import Pointclouds
+
+from .common_testing import TestCaseMixin
 
 
 DEBUG = False

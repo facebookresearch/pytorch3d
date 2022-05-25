@@ -7,9 +7,10 @@
 import unittest
 
 import torch
-from common_testing import TestCaseMixin
 from pytorch3d.ops import perspective_n_points
 from pytorch3d.transforms import rotation_conversions
+
+from .common_testing import TestCaseMixin
 
 
 def reproj_error(x_world, y, R, T, weight=None):

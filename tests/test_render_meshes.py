@@ -14,12 +14,6 @@ from collections import namedtuple
 
 import numpy as np
 import torch
-from common_testing import (
-    get_pytorch3d_dir,
-    get_tests_dir,
-    load_rgb_image,
-    TestCaseMixin,
-)
 from PIL import Image
 from pytorch3d.io import load_obj
 from pytorch3d.renderer.cameras import (
@@ -51,6 +45,13 @@ from pytorch3d.structures.meshes import (
 )
 from pytorch3d.utils.ico_sphere import ico_sphere
 from pytorch3d.utils.torus import torus
+
+from .common_testing import (
+    get_pytorch3d_dir,
+    get_tests_dir,
+    load_rgb_image,
+    TestCaseMixin,
+)
 
 
 # If DEBUG=True, save out images generated in the tests for debugging.

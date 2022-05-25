@@ -10,7 +10,7 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 DIR=$(dirname "${DIR}")
 
-if [[ -f "${DIR}/tests/TARGETS" ]]
+if [[ -f "${DIR}/TARGETS" ]]
 then
   pyfmt "${DIR}"
 else
@@ -30,7 +30,7 @@ clangformat=$(command -v clang-format-8 || echo clang-format)
 find "${DIR}" -regex ".*\.\(cpp\|c\|cc\|cu\|cuh\|cxx\|h\|hh\|hpp\|hxx\|tcc\|mm\|m\)" -print0 | xargs -0 "${clangformat}" -i
 
 # Run arc and pyre internally only.
-if [[ -f "${DIR}/tests/TARGETS" ]]
+if [[ -f "${DIR}/TARGETS" ]]
 then
   (cd "${DIR}"; command -v arc > /dev/null && arc lint) || true
 

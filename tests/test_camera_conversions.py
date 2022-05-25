@@ -10,7 +10,6 @@ import unittest
 
 import numpy as np
 import torch
-from common_testing import get_tests_dir, TestCaseMixin
 from pytorch3d.ops import eyes
 from pytorch3d.renderer.points.pulsar import Renderer as PulsarRenderer
 from pytorch3d.transforms import so3_exp_map, so3_log_map
@@ -19,6 +18,8 @@ from pytorch3d.utils import (
     opencv_from_cameras_projection,
     pulsar_from_opencv_projection,
 )
+
+from .common_testing import get_tests_dir, TestCaseMixin
 
 
 DATA_DIR = get_tests_dir() / "data"

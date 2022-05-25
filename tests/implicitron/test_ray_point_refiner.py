@@ -4,18 +4,12 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-import os
 import unittest
 
 import torch
 from pytorch3d.implicitron.models.renderer.ray_point_refiner import RayPointRefiner
 from pytorch3d.renderer import RayBundle
-
-
-if os.environ.get("FB_TEST", False):
-    from common_testing import TestCaseMixin
-else:
-    from tests.common_testing import TestCaseMixin
+from tests.common_testing import TestCaseMixin
 
 
 class TestRayPointRefiner(TestCaseMixin, unittest.TestCase):

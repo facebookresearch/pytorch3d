@@ -9,12 +9,6 @@ from itertools import product
 
 import numpy as np
 import torch
-from common_testing import (
-    get_pytorch3d_dir,
-    get_tests_dir,
-    load_rgb_image,
-    TestCaseMixin,
-)
 from PIL import Image
 from pytorch3d.io import load_obj
 from pytorch3d.renderer.cameras import FoVPerspectiveCameras, look_at_view_transform
@@ -47,6 +41,13 @@ from pytorch3d.renderer.points.rasterizer import PointFragments
 from pytorch3d.structures import Meshes, Pointclouds
 from pytorch3d.transforms.transform3d import Transform3d
 from pytorch3d.utils import torus
+
+from .common_testing import (
+    get_pytorch3d_dir,
+    get_tests_dir,
+    load_rgb_image,
+    TestCaseMixin,
+)
 
 
 DEBUG = False

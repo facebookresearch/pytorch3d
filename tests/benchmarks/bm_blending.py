@@ -8,7 +8,7 @@
 from itertools import product
 
 from fvcore.common.benchmark import benchmark
-from test_blending import TestBlending
+from tests.test_blending import TestBlending
 
 
 def bm_blending() -> None:

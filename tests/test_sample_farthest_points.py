@@ -8,18 +8,19 @@ import unittest
 
 import numpy as np
 import torch
-from common_testing import (
-    get_pytorch3d_dir,
-    get_random_cuda_device,
-    get_tests_dir,
-    TestCaseMixin,
-)
 from pytorch3d.io import load_obj
 from pytorch3d.ops.sample_farthest_points import (
     sample_farthest_points,
     sample_farthest_points_naive,
 )
 from pytorch3d.ops.utils import masked_gather
+
+from .common_testing import (
+    get_pytorch3d_dir,
+    get_random_cuda_device,
+    get_tests_dir,
+    TestCaseMixin,
+)
 
 
 DATA_DIR = get_tests_dir() / "data"

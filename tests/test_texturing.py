@@ -9,7 +9,6 @@ import unittest
 
 import torch
 import torch.nn.functional as F
-from common_testing import TestCaseMixin
 from pytorch3d.renderer.mesh.rasterizer import Fragments
 from pytorch3d.renderer.mesh.textures import (
     _list_to_padded_wrapper,
@@ -23,7 +22,9 @@ from pytorch3d.renderer.mesh.utils import (
     Rectangle,
 )
 from pytorch3d.structures import list_to_packed, Meshes, packed_to_list
-from test_meshes import init_mesh
+
+from .common_testing import TestCaseMixin
+from .test_meshes import init_mesh
 
 
 def tryindex(self, index, tex, meshes, source):

@@ -8,7 +8,7 @@ from itertools import product
 
 import torch
 from fvcore.common.benchmark import benchmark
-from test_chamfer import TestChamfer
+from tests.test_chamfer import TestChamfer
 
 
 def bm_chamfer() -> None:

@@ -8,8 +8,9 @@
 import unittest
 
 import torch
-from common_testing import TestCaseMixin
 from pytorch3d.structures import utils as struct_utils
+
+from .common_testing import TestCaseMixin
 
 
 class TestStructUtils(TestCaseMixin, unittest.TestCase):

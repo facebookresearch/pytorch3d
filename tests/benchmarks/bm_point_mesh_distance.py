@@ -8,7 +8,7 @@
 from itertools import product
 
 from fvcore.common.benchmark import benchmark
-from test_point_mesh_distance import TestPointMeshDistance
+from tests.test_point_mesh_distance import TestPointMeshDistance
 
 
 def bm_point_mesh_distance() -> None:

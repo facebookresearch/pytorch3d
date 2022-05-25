@@ -12,7 +12,7 @@ import torch
 from common_testing import get_random_cuda_device
 from fvcore.common.benchmark import benchmark
 from pytorch3d.common.workaround import symeig3x3
-from test_symeig3x3 import TestSymEig3x3
+from tests.test_symeig3x3 import TestSymEig3x3
 
 
 torch.set_num_threads(1)

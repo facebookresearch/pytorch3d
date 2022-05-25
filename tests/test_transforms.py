@@ -9,7 +9,6 @@ import math
 import unittest
 
 import torch
-from common_testing import TestCaseMixin
 from pytorch3d.transforms import random_rotations
 from pytorch3d.transforms.so3 import so3_exp_map
 from pytorch3d.transforms.transform3d import (
@@ -19,6 +18,8 @@ from pytorch3d.transforms.transform3d import (
     Transform3d,
     Translate,
 )
+
+from .common_testing import TestCaseMixin
 
 
 class TestTransform(TestCaseMixin, unittest.TestCase):

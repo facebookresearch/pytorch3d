@@ -5,7 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 
 from fvcore.common.benchmark import benchmark
-from test_cubify import TestCubify
+from tests.test_cubify import TestCubify
 
 
 def bm_cubify() -> None:

@@ -7,7 +7,7 @@
 from itertools import product
 
 from fvcore.common.benchmark import benchmark
-from test_ball_query import TestBallQuery
+from tests.test_ball_query import TestBallQuery
 
 
 def bm_ball_query() -> None:

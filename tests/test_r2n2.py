@@ -13,7 +13,6 @@ import unittest
 
 import numpy as np
 import torch
-from common_testing import get_tests_dir, load_rgb_image, TestCaseMixin
 from PIL import Image
 from pytorch3d.datasets import (
     BlenderCamera,
@@ -31,6 +30,8 @@ from pytorch3d.renderer.cameras import get_world_to_view_transform
 from pytorch3d.transforms import Transform3d
 from pytorch3d.transforms.so3 import so3_exp_map
 from torch.utils.data import DataLoader
+
+from .common_testing import get_tests_dir, load_rgb_image, TestCaseMixin
 
 
 # Set these paths in order to run the tests.

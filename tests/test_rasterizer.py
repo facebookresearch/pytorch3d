@@ -9,7 +9,6 @@ import unittest
 
 import numpy as np
 import torch
-from common_testing import get_tests_dir
 from PIL import Image
 from pytorch3d.renderer.cameras import FoVPerspectiveCameras, look_at_view_transform
 from pytorch3d.renderer.mesh.rasterizer import MeshRasterizer, RasterizationSettings
@@ -19,6 +18,8 @@ from pytorch3d.renderer.points.rasterizer import (
 )
 from pytorch3d.structures import Pointclouds
 from pytorch3d.utils.ico_sphere import ico_sphere
+
+from .common_testing import get_tests_dir
 
 
 DATA_DIR = get_tests_dir() / "data"

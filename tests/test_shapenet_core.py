@@ -12,7 +12,6 @@ import unittest
 
 import numpy as np
 import torch
-from common_testing import get_tests_dir, load_rgb_image, TestCaseMixin
 from PIL import Image
 from pytorch3d.datasets import collate_batched_meshes, ShapeNetCore
 from pytorch3d.renderer import (
@@ -22,6 +21,8 @@ from pytorch3d.renderer import (
     RasterizationSettings,
 )
 from torch.utils.data import DataLoader
+
+from .common_testing import get_tests_dir, load_rgb_image, TestCaseMixin
 
 
 # Set the SHAPENET_PATH to the local path to the dataset

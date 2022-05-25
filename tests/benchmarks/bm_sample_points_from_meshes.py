@@ -9,7 +9,7 @@ from itertools import product
 
 import torch
 from fvcore.common.benchmark import benchmark
-from test_sample_points_from_meshes import TestSamplePoints
+from tests.test_sample_points_from_meshes import TestSamplePoints
 
 
 def bm_sample_points() -> None:

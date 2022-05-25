@@ -7,7 +7,7 @@
 import itertools
 
 from fvcore.common.benchmark import benchmark
-from test_points_to_volumes import TestPointsToVolumes
+from tests.test_points_to_volumes import TestPointsToVolumes
 
 
 def bm_points_to_volumes() -> None:
