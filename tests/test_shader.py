@@ -14,7 +14,9 @@ from pytorch3d.renderer.mesh.shader import (
     HardFlatShader,
     HardGouraudShader,
     HardPhongShader,
+    HardZShader,
     SoftPhongShader,
+    SoftZShader,
 )
 from pytorch3d.structures.meshes import Meshes
 
@@ -30,7 +32,9 @@ class TestShader(TestCaseMixin, unittest.TestCase):
             HardFlatShader,
             HardGouraudShader,
             HardPhongShader,
+            HardZShader,
             SoftPhongShader,
+            SoftZShader,
         ]
 
         for shader_class in shader_classes:
@@ -78,7 +82,9 @@ class TestShader(TestCaseMixin, unittest.TestCase):
             HardFlatShader,
             HardGouraudShader,
             HardPhongShader,
+            HardZShader,
             SoftPhongShader,
+            SoftZShader,
         ]
 
         for shader_class in shader_classes:

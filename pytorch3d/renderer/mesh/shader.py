@@ -375,3 +375,70 @@ class SplatterPhongShader(ShaderBase):
         )
 
         return images
+
+class HardZShader(ShaderBase):
+    """
+    Renders the Z distances of the closest face for each pixel. If no face is
+    found it returns the zfar value of the camera.
+
+    To use the default values, simply initialize the shader with the desired
+    device e.g.
+
+    .. code-block::
+
+        shader = HardZShader(device=torch.device("cuda:0"))
+    """
+    def forward(self, fragments: Fragments, meshes: Meshes, **kwargs) -> torch.Tensor:
+        cameras = kwargs.get("cameras", self.cameras)
+        if cameras is None:
+            msg = "Cameras must be specified either at initialization \
+                or in the forward pass of HardZShader"
+            raise ValueError(msg)
+
+        zfar = kwargs.get("zfar", getattr(cameras, "zfar", 100.0))
+        mask = fragments.pix_to_face < 0
+
+        zbuf = fragments.zbuf[..., 0].clone()
+        zbuf[mask] = zfar
+        return zbuf
+
+
+class SoftZShader(ShaderBase):
+    """
+    Renders the Z distances using an aggregate of the distances of each face
+    based off of the point distance.
+
+    To use the default values, simply initialize the shader with the desired
+    device e.g.
+
+    .. code-block::
+
+        shader = SoftZShader(device=torch.device("cuda:0"))
+    """
+    def forward(self, fragments: Fragments, meshes: Meshes, **kwargs) -> torch.Tensor:
+        cameras = kwargs.get("cameras", self.cameras)
+        if cameras is None:
+            msg = "Cameras must be specified either at initialization \
+                or in the forward pass of SoftZShader"
+            raise ValueError(msg)
+
+        N, H, W, K = fragments.pix_to_face.shape
+        device = fragments.zbuf.device
+        mask = fragments.pix_to_face >= 0
+
+        zfar = kwargs.get("zfar", getattr(cameras, "zfar", 100.0))
+
+        # Sigmoid probability map based on the distance of the pixel to the face.
+        prob_map = torch.sigmoid(-fragments.dists / self.blend_params.sigma) * mask
+
+        # append extra face for zfar
+        dists = torch.cat((fragments.zbuf, torch.ones((N, H, W, 1), device=device) * zfar), dim=3)
+        probs = torch.cat((prob_map, torch.ones((N, H, W, 1), device=device)), dim=3)
+
+        # compute weighting based off of probabilities using cumsum
+        probs = probs.cumsum(dim=3)
+        probs = probs.clamp(max=1)
+        probs = probs.diff(dim=3, prepend=torch.zeros((N, H, W, 1), device=device))
+
+
+        return (probs * dists).sum(dim=3)
