@@ -41,6 +41,7 @@ from pytorch3d.renderer.mesh.shader import (
     HardPhongShader,
     SoftPhongShader,
     SoftSilhouetteShader,
+    SplatterPhongShader,
     TexturedSoftPhongShader,
 )
 from pytorch3d.structures.meshes import (
@@ -325,6 +326,7 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
         shader_tests = [
             ShaderTest(HardPhongShader, "phong", "hard_phong"),
             ShaderTest(SoftPhongShader, "phong", "soft_phong"),
+            ShaderTest(SplatterPhongShader, "phong", "splatter_phong"),
             ShaderTest(HardGouraudShader, "gouraud", "hard_gouraud"),
             ShaderTest(HardFlatShader, "flat", "hard_flat"),
         ]

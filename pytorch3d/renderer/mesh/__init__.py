@@ -22,6 +22,7 @@ from .shader import (  # DEPRECATED
     SoftGouraudShader,
     SoftPhongShader,
     SoftSilhouetteShader,
+    SplatterPhongShader,
     TexturedSoftPhongShader,
 )
 from .shading import gouraud_shading, phong_shading

@@ -20,9 +20,15 @@ from ..blending import (
 )
 from ..lighting import PointLights
 from ..materials import Materials
+from ..splatter_blend import SplatterBlender
 from ..utils import TensorProperties
 from .rasterizer import Fragments
-from .shading import flat_shading, gouraud_shading, phong_shading
+from .shading import (
+    _phong_shading_with_pixels,
+    flat_shading,
+    gouraud_shading,
+    phong_shading,
+)
 
 
 # A Shader should take as input fragments from the output of rasterization
@@ -307,4 +313,65 @@ class SoftSilhouetteShader(nn.Module):
         colors = torch.ones_like(fragments.bary_coords)
         blend_params = kwargs.get("blend_params", self.blend_params)
         images = sigmoid_alpha_blend(colors, fragments, blend_params)
+        return images
+
+
+class SplatterPhongShader(ShaderBase):
+    """
+    Per pixel lighting - the lighting model is applied using the interpolated
+    coordinates and normals for each pixel. The blending function returns the
+    color aggregated using splats from surrounding pixels (see [0]).
+
+    To use the default values, simply initialize the shader with the desired
+    device e.g.
+
+    .. code-block::
+
+        shader = SplatterPhongShader(device=torch.device("cuda:0"))
+
+    Args:
+        detach_rasterizer: If True, stop gradients from flowing through the rasterizer.
+            This simulates the pipeline in [0] which uses a non-differentiable OpenGL
+            rasterizer.
+
+    [0] Cole, F. et al., "Differentiable Surface Rendering via Non-differentiable
+        Sampling".
+    """
+
+    def __init__(self, **kwargs):
+        self.splatter_blender = None
+        super().__init__(**kwargs)
+
+    def forward(self, fragments: Fragments, meshes: Meshes, **kwargs) -> torch.Tensor:
+        cameras = kwargs.get("cameras", self.cameras)
+        if cameras is None:
+            msg = "Cameras must be specified either at initialization \
+                or in the forward pass of SplatterPhongShader."
+            raise ValueError(msg)
+        texels = meshes.sample_textures(fragments)
+        lights = kwargs.get("lights", self.lights)
+        materials = kwargs.get("materials", self.materials)
+
+        colors, pixel_coords_cameras = _phong_shading_with_pixels(
+            meshes=meshes,
+            fragments=fragments.detach(),
+            texels=texels,
+            lights=lights,
+            cameras=cameras,
+            materials=materials,
+        )
+
+        if not self.splatter_blender:
+            # Init only once, to avoid re-computing constants.
+            N, H, W, K, _ = colors.shape
+            self.splatter_blender = SplatterBlender((N, H, W, K), colors.device)
+
+        images = self.splatter_blender(
+            colors,
+            pixel_coords_cameras,
+            cameras,
+            fragments.pix_to_face < 0,
+            self.blend_params,
+        )
+
         return images

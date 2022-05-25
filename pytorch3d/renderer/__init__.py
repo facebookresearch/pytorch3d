@@ -57,6 +57,7 @@ from .mesh import (
     SoftGouraudShader,
     SoftPhongShader,
     SoftSilhouetteShader,
+    SplatterPhongShader,
     Textures,
     TexturesAtlas,
     TexturesUV,
@@ -71,6 +72,7 @@ from .points import (
     PulsarPointsRenderer,
     rasterize_points,
 )
+from .splatter_blend import SplatterBlender
 from .utils import (
     convert_to_tensors_and_broadcast,
     ndc_grid_sample,

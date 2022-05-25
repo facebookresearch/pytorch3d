@@ -4,13 +4,11 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-
 from typing import NamedTuple, Sequence, Union
 
 import torch
 from pytorch3d import _C
 from pytorch3d.common.datatypes import Device
-
 
 # Example functions for blending the top K colors per pixel using the outputs
 # from rasterization.
@@ -22,10 +20,12 @@ class BlendParams(NamedTuple):
     Data class to store blending params with defaults
 
     Members:
-        sigma (float): Controls the width of the sigmoid function used to
-            calculate the 2D distance based probability. Determines the
-            sharpness of the edges of the shape.
-            Higher => faces have less defined edges.
+        sigma (float): For SoftmaxPhong, controls the width of the sigmoid
+            function used to calculate the 2D distance based probability. Determines
+            the sharpness of the edges of the shape. Higher => faces have less defined
+            edges. For SplatterPhong, this is the standard deviation of the Gaussian
+            kernel. Higher => splats have a stronger effect and the rendered image is
+            more blurry.
         gamma (float): Controls the scaling of the exponential function used
             to set the opacity of the color.
             Higher => faces are more transparent.
@@ -36,6 +36,7 @@ class BlendParams(NamedTuple):
     sigma: float = 1e-4
     gamma: float = 1e-4
     background_color: Union[torch.Tensor, Sequence[float]] = (1.0, 1.0, 1.0)
+    background_alpha: float = 0.0
 
 
 def _get_background_color(
