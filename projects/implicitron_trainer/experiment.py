@@ -68,7 +68,7 @@ from pytorch3d.implicitron.dataset.data_loader_map_provider import DataLoaderMap
 from pytorch3d.implicitron.dataset.data_source import ImplicitronDataSource, Task
 from pytorch3d.implicitron.dataset.dataset_base import FrameData
 from pytorch3d.implicitron.dataset.dataset_map_provider import DatasetMap
-from pytorch3d.implicitron.dataset.implicitron_dataset import ImplicitronDataset
+from pytorch3d.implicitron.dataset.json_index_dataset import JsonIndexDataset
 from pytorch3d.implicitron.evaluation import evaluate_new_view_synthesis as evaluate
 from pytorch3d.implicitron.models.generic_model import EvaluationMode, GenericModel
 from pytorch3d.implicitron.tools import model_io, vis_utils
@@ -641,7 +641,7 @@ def _run_eval(model, all_source_cameras, loader, task: Task, device):
 
 
 def _get_all_source_cameras(
-    dataset: ImplicitronDataset,
+    dataset: JsonIndexDataset,
     num_workers: int = 8,
 ) -> CamerasBase:
     """

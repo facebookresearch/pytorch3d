@@ -15,7 +15,7 @@ import unittest
 import lpips
 import torch
 from pytorch3d.implicitron.dataset.dataset_base import FrameData
-from pytorch3d.implicitron.dataset.implicitron_dataset import ImplicitronDataset
+from pytorch3d.implicitron.dataset.json_index_dataset import JsonIndexDataset
 from pytorch3d.implicitron.evaluation.evaluate_new_view_synthesis import eval_batch
 from pytorch3d.implicitron.models.base_model import ImplicitronModelBase
 from pytorch3d.implicitron.models.generic_model import GenericModel  # noqa
@@ -44,7 +44,7 @@ class TestEvaluation(unittest.TestCase):
         frame_file = os.path.join(dataset_root, category, "frame_annotations.jgz")
         sequence_file = os.path.join(dataset_root, category, "sequence_annotations.jgz")
         self.image_size = 64
-        self.dataset = ImplicitronDataset(
+        self.dataset = JsonIndexDataset(
             frame_annotations_file=frame_file,
             sequence_annotations_file=sequence_file,
             dataset_root=dataset_root,

@@ -11,11 +11,11 @@ from pytorch3d.implicitron.tools.point_cloud_utils import get_rgbd_point_cloud
 from pytorch3d.structures import Pointclouds
 
 from .dataset_base import FrameData
-from .implicitron_dataset import ImplicitronDataset
+from .json_index_dataset import JsonIndexDataset
 
 
 def get_implicitron_sequence_pointcloud(
-    dataset: ImplicitronDataset,
+    dataset: JsonIndexDataset,
     sequence_name: Optional[str] = None,
     mask_points: bool = True,
     max_frames: int = -1,

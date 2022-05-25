@@ -14,7 +14,7 @@ from omegaconf import DictConfig
 from pytorch3d.implicitron.tools.config import registry
 
 from .dataset_map_provider import DatasetMap, DatasetMapProviderBase, Task
-from .implicitron_dataset import ImplicitronDataset
+from .json_index_dataset import JsonIndexDataset
 from .utils import (
     DATASET_TYPE_KNOWN,
     DATASET_TYPE_TEST,
@@ -86,7 +86,7 @@ class JsonIndexDatasetMapProvider(DatasetMapProviderBase):  # pyre-ignore [13]
             are present in all generated datasets.
         only_test_set: Load only the test set.
         aux_dataset_kwargs: Specifies additional arguments to the
-            ImplicitronDataset constructor call.
+            JsonIndexDataset constructor call.
         path_manager: Optional[PathManager] for interpreting paths
     """
 
@@ -196,7 +196,7 @@ class JsonIndexDatasetMapProvider(DatasetMapProviderBase):  # pyre-ignore [13]
 
         train_dataset = None
         if not self.only_test_set:
-            train_dataset = ImplicitronDataset(
+            train_dataset = JsonIndexDataset(
                 n_frames_per_sequence=self.n_frames_per_sequence,
                 subsets=set_names_mapping["train"],
                 pick_sequence=restrict_sequence_name,
@@ -206,13 +206,13 @@ class JsonIndexDatasetMapProvider(DatasetMapProviderBase):  # pyre-ignore [13]
             assert train_dataset is not None
             val_dataset = test_dataset = train_dataset
         else:
-            val_dataset = ImplicitronDataset(
+            val_dataset = JsonIndexDataset(
                 n_frames_per_sequence=-1,
                 subsets=set_names_mapping["val"],
                 pick_sequence=restrict_sequence_name,
                 **common_kwargs,
             )
-            test_dataset = ImplicitronDataset(
+            test_dataset = JsonIndexDataset(
                 n_frames_per_sequence=-1,
                 subsets=set_names_mapping["test"],
                 pick_sequence=restrict_sequence_name,

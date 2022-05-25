@@ -14,7 +14,7 @@ import torch
 from iopath.common.file_io import PathManager
 from pytorch3d.implicitron.dataset.data_source import ImplicitronDataSource, Task
 from pytorch3d.implicitron.dataset.dataset_base import DatasetBase, FrameData
-from pytorch3d.implicitron.dataset.implicitron_dataset import ImplicitronDataset
+from pytorch3d.implicitron.dataset.json_index_dataset import JsonIndexDataset
 from pytorch3d.implicitron.dataset.json_index_dataset_map_provider import (
     CO3D_CATEGORIES,
 )
@@ -126,7 +126,7 @@ def evaluate_dbir_for_category(
     if task == Task.SINGLE_SEQUENCE:
         # all_source_cameras are needed for evaluation of the
         # target camera difficulty
-        # pyre-fixme[16]: `ImplicitronDataset` has no attribute `frame_annots`.
+        # pyre-fixme[16]: `JsonIndexDataset` has no attribute `frame_annots`.
         sequence_name = test_dataset.frame_annots[0]["frame_annotation"].sequence_name
         all_source_cameras = _get_all_source_cameras(
             test_dataset, sequence_name, num_workers=num_workers
@@ -134,7 +134,7 @@ def evaluate_dbir_for_category(
     else:
         all_source_cameras = None
 
-    image_size = cast(ImplicitronDataset, test_dataset).image_width
+    image_size = cast(JsonIndexDataset, test_dataset).image_width
 
     if image_size is None:
         raise ValueError("Image size should be set in the dataset")

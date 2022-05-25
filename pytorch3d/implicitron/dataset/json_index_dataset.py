@@ -49,9 +49,10 @@ class FrameAnnotsEntry(TypedDict):
 
 
 @dataclass(eq=False)
-class ImplicitronDataset(DatasetBase):
+class JsonIndexDataset(DatasetBase):
     """
-    A class for the Common Objects in 3D (CO3D) dataset.
+    A dataset with annotations in json files like the Common Objects in 3D
+    (CO3D) dataset.
 
     Args:
         frame_annotations_file: A zipped json file containing metadata of the
@@ -148,7 +149,7 @@ class ImplicitronDataset(DatasetBase):
     seq_annots: Dict[str, types.SequenceAnnotation] = field(init=False)
 
     def __post_init__(self) -> None:
-        # pyre-fixme[16]: `ImplicitronDataset` has no attribute `subset_to_image_path`.
+        # pyre-fixme[16]: `JsonIndexDataset` has no attribute `subset_to_image_path`.
         self.subset_to_image_path = None
         self._load_frames()
         self._load_sequences()
@@ -193,7 +194,7 @@ class ImplicitronDataset(DatasetBase):
         return batches_idx
 
     def __str__(self) -> str:
-        return f"ImplicitronDataset #frames={len(self.frame_annots)}"
+        return f"JsonIndexDataset #frames={len(self.frame_annots)}"
 
     def __len__(self) -> int:
         return len(self.frame_annots)
