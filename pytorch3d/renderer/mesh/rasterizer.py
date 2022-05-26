@@ -16,6 +16,10 @@ from .rasterize_meshes import rasterize_meshes
 @dataclass(frozen=True)
 class Fragments:
     """
+    A dataclass representing the outputs of a rasterizer. Can be detached from the
+    computational graph in order to stop the gradients from flowing through the
+    rasterizer.
+
     Members:
         pix_to_face:
             LongTensor of shape (N, image_size, image_size, faces_per_pixel) giving

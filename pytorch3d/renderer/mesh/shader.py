@@ -55,6 +55,15 @@ class ShaderBase(nn.Module):
         self.cameras = cameras
         self.blend_params = blend_params if blend_params is not None else BlendParams()
 
+    def _get_cameras(self, **kwargs):
+        cameras = kwargs.get("cameras", self.cameras)
+        if cameras is None:
+            msg = "Cameras must be specified either at initialization \
+                or in the forward pass of the shader."
+            raise ValueError(msg)
+
+        return cameras
+
     # pyre-fixme[14]: `to` overrides method defined in `Module` inconsistently.
     def to(self, device: Device):
         # Manually move to device modules which are not subclasses of nn.Module
@@ -81,12 +90,7 @@ class HardPhongShader(ShaderBase):
     """
 
     def forward(self, fragments: Fragments, meshes: Meshes, **kwargs) -> torch.Tensor:
-        cameras = kwargs.get("cameras", self.cameras)
-        if cameras is None:
-            msg = "Cameras must be specified either at initialization \
-                or in the forward pass of HardPhongShader"
-            raise ValueError(msg)
-
+        cameras = super()._get_cameras(**kwargs)
         texels = meshes.sample_textures(fragments)
         lights = kwargs.get("lights", self.lights)
         materials = kwargs.get("materials", self.materials)
@@ -118,12 +122,7 @@ class SoftPhongShader(ShaderBase):
     """
 
     def forward(self, fragments: Fragments, meshes: Meshes, **kwargs) -> torch.Tensor:
-        cameras = kwargs.get("cameras", self.cameras)
-        if cameras is None:
-            msg = "Cameras must be specified either at initialization \
-                or in the forward pass of SoftPhongShader"
-            raise ValueError(msg)
-
+        cameras = super()._get_cameras(**kwargs)
         texels = meshes.sample_textures(fragments)
         lights = kwargs.get("lights", self.lights)
         materials = kwargs.get("materials", self.materials)
@@ -160,11 +159,7 @@ class HardGouraudShader(ShaderBase):
     """
 
     def forward(self, fragments: Fragments, meshes: Meshes, **kwargs) -> torch.Tensor:
-        cameras = kwargs.get("cameras", self.cameras)
-        if cameras is None:
-            msg = "Cameras must be specified either at initialization \
-                or in the forward pass of HardGouraudShader"
-            raise ValueError(msg)
+        cameras = super()._get_cameras(**kwargs)
         lights = kwargs.get("lights", self.lights)
         materials = kwargs.get("materials", self.materials)
         blend_params = kwargs.get("blend_params", self.blend_params)
@@ -201,11 +196,7 @@ class SoftGouraudShader(ShaderBase):
     """
 
     def forward(self, fragments: Fragments, meshes: Meshes, **kwargs) -> torch.Tensor:
-        cameras = kwargs.get("cameras", self.cameras)
-        if cameras is None:
-            msg = "Cameras must be specified either at initialization \
-                or in the forward pass of SoftGouraudShader"
-            raise ValueError(msg)
+        cameras = super()._get_cameras(**kwargs)
         lights = kwargs.get("lights", self.lights)
         materials = kwargs.get("materials", self.materials)
         pixel_colors = gouraud_shading(
@@ -263,11 +254,7 @@ class HardFlatShader(ShaderBase):
     """
 
     def forward(self, fragments: Fragments, meshes: Meshes, **kwargs) -> torch.Tensor:
-        cameras = kwargs.get("cameras", self.cameras)
-        if cameras is None:
-            msg = "Cameras must be specified either at initialization \
-                or in the forward pass of HardFlatShader"
-            raise ValueError(msg)
+        cameras = super()._get_cameras(**kwargs)
         texels = meshes.sample_textures(fragments)
         lights = kwargs.get("lights", self.lights)
         materials = kwargs.get("materials", self.materials)
@@ -329,11 +316,6 @@ class SplatterPhongShader(ShaderBase):
 
         shader = SplatterPhongShader(device=torch.device("cuda:0"))
 
-    Args:
-        detach_rasterizer: If True, stop gradients from flowing through the rasterizer.
-            This simulates the pipeline in [0] which uses a non-differentiable OpenGL
-            rasterizer.
-
     [0] Cole, F. et al., "Differentiable Surface Rendering via Non-differentiable
         Sampling".
     """
@@ -343,11 +325,7 @@ class SplatterPhongShader(ShaderBase):
         super().__init__(**kwargs)
 
     def forward(self, fragments: Fragments, meshes: Meshes, **kwargs) -> torch.Tensor:
-        cameras = kwargs.get("cameras", self.cameras)
-        if cameras is None:
-            msg = "Cameras must be specified either at initialization \
-                or in the forward pass of SplatterPhongShader."
-            raise ValueError(msg)
+        cameras = super()._get_cameras(**kwargs)
         texels = meshes.sample_textures(fragments)
         lights = kwargs.get("lights", self.lights)
         materials = kwargs.get("materials", self.materials)

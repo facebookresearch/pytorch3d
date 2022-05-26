@@ -36,7 +36,6 @@ class BlendParams(NamedTuple):
     sigma: float = 1e-4
     gamma: float = 1e-4
     background_color: Union[torch.Tensor, Sequence[float]] = (1.0, 1.0, 1.0)
-    background_alpha: float = 0.0
 
 
 def _get_background_color(
