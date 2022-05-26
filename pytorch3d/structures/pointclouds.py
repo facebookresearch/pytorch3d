@@ -185,7 +185,6 @@ class Pointclouds:
             self._points_list = points
             self._N = len(self._points_list)
             self.valid = torch.zeros((self._N,), dtype=torch.bool, device=self.device)
-            self._num_points_per_cloud = []
 
             if self._N > 0:
                 self.device = self._points_list[0].device
@@ -208,6 +207,8 @@ class Pointclouds:
                 if len(num_points_per_cloud.unique()) == 1:
                     self.equisized = True
                 self._num_points_per_cloud = num_points_per_cloud
+            else:
+                self._num_points_per_cloud = torch.tensor([], dtype=torch.int64)
 
         elif torch.is_tensor(points):
             if points.dim() != 3 or points.shape[2] != 3:
@@ -525,7 +526,7 @@ class Pointclouds:
         self._compute_packed()
         return self._cloud_to_packed_first_idx
 
-    def num_points_per_cloud(self):
+    def num_points_per_cloud(self) -> torch.Tensor:
         """
         Return a 1D tensor x with length equal to the number of clouds giving
         the number of points in each cloud.

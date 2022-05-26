@@ -197,11 +197,13 @@ def chamfer_distance(
         cham_norm_x = cham_norm_x.sum(1)  # (N,)
         cham_norm_y = cham_norm_y.sum(1)  # (N,)
     if point_reduction == "mean":
-        cham_x /= x_lengths
-        cham_y /= y_lengths
+        x_lengths_clamped = x_lengths.clamp(min=1)
+        y_lengths_clamped = y_lengths.clamp(min=1)
+        cham_x /= x_lengths_clamped
+        cham_y /= y_lengths_clamped
         if return_normals:
-            cham_norm_x /= x_lengths
-            cham_norm_y /= y_lengths
+            cham_norm_x /= x_lengths_clamped
+            cham_norm_y /= y_lengths_clamped
 
     if batch_reduction is not None:
         # batch_reduction == "sum"
@@ -211,7 +213,7 @@ def chamfer_distance(
             cham_norm_x = cham_norm_x.sum()
             cham_norm_y = cham_norm_y.sum()
         if batch_reduction == "mean":
-            div = weights.sum() if weights is not None else N
+            div = weights.sum() if weights is not None else max(N, 1)
             cham_x /= div
             cham_y /= div
             if return_normals:

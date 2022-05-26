@@ -99,7 +99,7 @@ class ModelDBIR(ImplicitronModelBase, torch.nn.Module):
             mask_fg[is_known_idx],
         )
 
-        pcl_size = int(point_cloud.num_points_per_cloud())
+        pcl_size = point_cloud.num_points_per_cloud().item()
         if (self.max_points > 0) and (pcl_size > self.max_points):
             prm = torch.randperm(pcl_size)[: self.max_points]
             point_cloud = Pointclouds(

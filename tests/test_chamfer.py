@@ -778,6 +778,17 @@ class TestChamfer(TestCaseMixin, unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Support for 1 or 2 norm."):
             chamfer_distance(p1, p2, norm=3)
 
+    def test_empty_clouds(self):
+        # Check that point_reduction doesn't divide by zero
+        points1 = Pointclouds(points=[torch.zeros(0, 3), torch.zeros(10, 3)])
+        points2 = Pointclouds(points=torch.ones(2, 40, 3))
+        loss, _ = chamfer_distance(points1, points2, batch_reduction=None)
+        self.assertClose(loss, torch.tensor([0.0, 6.0]))
+
+        # Check that batch_reduction doesn't divide by zero
+        loss2, _ = chamfer_distance(Pointclouds([]), Pointclouds([]))
+        self.assertClose(loss2, torch.tensor(0.0))
+
     @staticmethod
     def chamfer_with_init(
         batch_size: int,
