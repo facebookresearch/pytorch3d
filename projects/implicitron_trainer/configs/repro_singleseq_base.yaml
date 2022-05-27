@@ -10,7 +10,6 @@ data_source_args:
     images_per_seq_options:
     - 2
   dataset_map_provider_JsonIndexDatasetMapProvider_args:
-    dataset_name: singlesequence
     assert_single_seq: true
     n_frames_per_sequence: -1
     test_restrict_sequence_id: 0

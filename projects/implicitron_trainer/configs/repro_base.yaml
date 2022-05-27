@@ -6,7 +6,7 @@ architecture: generic
 visualize_interval: 0
 visdom_port: 8097
 data_source_args:
-  dataset_provider_class_type: JsonIndexDatasetMapProvider
+  dataset_map_provider_class_type: JsonIndexDatasetMapProvider
   data_loader_map_provider_SequenceDataLoaderMapProvider_args:
     batch_size: 10
     dataset_len: 1000
