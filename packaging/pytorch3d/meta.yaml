@@ -47,7 +47,7 @@ test:
     - imageio
   commands:
     #pytest .
-    python -m unittest discover -v -s tests
+    python -m unittest discover -v -s tests -t .
 
 
 about:

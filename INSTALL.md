@@ -147,10 +147,10 @@ After any necessary patching, you can go to "x64 Native Tools Command Prompt for
 cd pytorch3d
 python3 setup.py install
 ```
-After installing, verify whether all unit tests have passed
+
+After installing, you can run **unit tests**
 ```
-cd tests
-python3 -m unittest discover -p *.py
+python3 -m unittest discover -v -s tests -t .
 ```
 
 # FAQ

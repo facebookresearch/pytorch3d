@@ -81,7 +81,7 @@ jobs:
           command: |
             export LD_LIBRARY_PATH=$LD_LIBARY_PATH:/usr/local/cuda-11.3/lib64
             python3 setup.py build_ext --inplace
-      - run: LD_LIBRARY_PATH=$LD_LIBARY_PATH:/usr/local/cuda-11.3/lib64 python -m unittest discover -v -s tests
+      - run: LD_LIBRARY_PATH=$LD_LIBARY_PATH:/usr/local/cuda-11.3/lib64 python -m unittest discover -v -s tests -t .
       - run: python3 setup.py bdist_wheel
 
   binary_linux_wheel:
