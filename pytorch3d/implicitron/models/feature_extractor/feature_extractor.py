@@ -30,7 +30,7 @@ class FeatureExtractorBase(ReplaceableBase, torch.nn.Module):
         self,
         imgs: Optional[torch.Tensor],
         masks: Optional[torch.Tensor] = None,
-        **kwargs
+        **kwargs,
     ) -> Dict[Any, torch.Tensor]:
         """
         Args:

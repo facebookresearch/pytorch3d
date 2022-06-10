@@ -113,7 +113,7 @@ class ShapeNetBase(torch.utils.data.Dataset):  # pragma: no cover
         idxs: Optional[List[int]] = None,
         shader_type=HardPhongShader,
         device: Device = "cpu",
-        **kwargs
+        **kwargs,
     ) -> torch.Tensor:
         """
         If a list of model_ids are supplied, render all the objects by the given model_ids.

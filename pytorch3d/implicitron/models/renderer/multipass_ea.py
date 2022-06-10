@@ -109,7 +109,7 @@ class MultiPassEmissionAbsorptionRenderer(  # pyre-ignore: 13
         ray_bundle: RayBundle,
         implicit_functions: List[ImplicitFunctionWrapper] = [],
         evaluation_mode: EvaluationMode = EvaluationMode.EVALUATION,
-        **kwargs
+        **kwargs,
     ) -> RendererOutput:
         """
         Args:

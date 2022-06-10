@@ -75,7 +75,7 @@ def render_point_cloud_pytorch3d(
     eps: float = 1e-2,
     bg_color=None,
     bin_size: Optional[int] = None,
-    **kwargs
+    **kwargs,
 ):
 
     # feature dimension

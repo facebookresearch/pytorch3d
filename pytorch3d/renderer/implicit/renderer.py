@@ -176,7 +176,7 @@ class ImplicitRenderer(torch.nn.Module):
             rays_densities=rays_densities,
             rays_features=rays_features,
             ray_bundle=ray_bundle,
-            **kwargs
+            **kwargs,
         )
         # images - minibatch x ... x (feature_dim + opacity_dim)
 

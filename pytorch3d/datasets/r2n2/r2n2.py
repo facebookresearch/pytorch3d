@@ -377,7 +377,7 @@ class R2N2(ShapeNetBase):  # pragma: no cover
         view_idxs: Optional[List[int]] = None,
         shader_type=HardPhongShader,
         device: Device = "cpu",
-        **kwargs
+        **kwargs,
     ) -> torch.Tensor:
         """
         Render models with BlenderCamera by default to achieve the same orientations as the
