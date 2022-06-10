@@ -10,6 +10,7 @@ from pathlib import Path
 
 import experiment
 import torch
+from hydra import compose, initialize_config_dir
 from omegaconf import OmegaConf
 
 
@@ -23,6 +24,7 @@ def interactive_testing_requested() -> bool:
 
 
 DATA_DIR = Path(__file__).resolve().parent
+IMPLICITRON_CONFIGS_DIR = Path(__file__).resolve().parent.parent / "configs"
 DEBUG: bool = False
 
 # TODO:
@@ -65,3 +67,20 @@ class TestExperiment(unittest.TestCase):
         if DEBUG:
             (DATA_DIR / "experiment.yaml").write_text(yaml)
         self.assertEqual(yaml, (DATA_DIR / "experiment.yaml").read_text())
+
+    def test_load_configs(self):
+        config_files = []
+
+        for pattern in ("repro_singleseq*.yaml", "repro_multiseq*.yaml"):
+            config_files.extend(
+                [
+                    f
+                    for f in IMPLICITRON_CONFIGS_DIR.glob(pattern)
+                    if not f.name.endswith("_base.yaml")
+                ]
+            )
+
+        for file in config_files:
+            with self.subTest(file.name):
+                with initialize_config_dir(config_dir=str(IMPLICITRON_CONFIGS_DIR)):
+                    compose(file.name)

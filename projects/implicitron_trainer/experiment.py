@@ -708,9 +708,8 @@ class ExperimentConfig(Configurable):
 
 expand_args_fields(ExperimentConfig)
 
-if __name__ == "__main__":
-    cs = hydra.core.config_store.ConfigStore.instance()
-    cs.store(name="default_config", node=ExperimentConfig)
+cs = hydra.core.config_store.ConfigStore.instance()
+cs.store(name="default_config", node=ExperimentConfig)
 
 
 @hydra.main(config_path="./configs/", config_name="default_config")
