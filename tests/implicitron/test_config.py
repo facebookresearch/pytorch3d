@@ -678,6 +678,36 @@ class TestConfig(unittest.TestCase):
         remove_unused_components(args)
         self.assertEqual(OmegaConf.to_yaml(args), "mt_enabled: false\n")
 
+    def test_tweak_hook(self):
+        class A(Configurable):
+            n: int = 9
+
+        class Wrapper(Configurable):
+            fruit: Fruit
+            fruit_class_type: str = "Pear"
+            fruit2: Fruit
+            fruit2_class_type: str = "Pear"
+            a: A
+            a2: A
+
+            @classmethod
+            def a_tweak_args(cls, type, args):
+                assert type == A
+                args.n = 993
+
+            @classmethod
+            def fruit_tweak_args(cls, type, args):
+                assert issubclass(type, Fruit)
+                if type == Pear:
+                    assert args.n_pips == 13
+                    args.n_pips = 19
+
+        args = get_default_args(Wrapper)
+        self.assertEqual(args.a_args.n, 993)
+        self.assertEqual(args.a2_args.n, 9)
+        self.assertEqual(args.fruit_Pear_args.n_pips, 19)
+        self.assertEqual(args.fruit2_Pear_args.n_pips, 13)
+
     def test_impls(self):
         # Check that create_x actually uses create_x_impl to do its work
         # by using all the member types, both with a faked impl function
