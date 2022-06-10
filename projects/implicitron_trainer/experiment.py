@@ -53,7 +53,7 @@ import os
 import random
 import time
 import warnings
-from dataclasses import dataclass, field
+from dataclasses import field
 from typing import Any, Dict, Optional, Tuple
 
 import hydra
@@ -73,7 +73,9 @@ from pytorch3d.implicitron.evaluation import evaluate_new_view_synthesis as eval
 from pytorch3d.implicitron.models.generic_model import EvaluationMode, GenericModel
 from pytorch3d.implicitron.tools import model_io, vis_utils
 from pytorch3d.implicitron.tools.config import (
+    Configurable,
     enable_get_default_args,
+    expand_args_fields,
     get_default_args_field,
     remove_unused_components,
 )
@@ -671,8 +673,7 @@ def _seed_all_random_engines(seed: int):
     random.seed(seed)
 
 
-@dataclass(eq=False)
-class ExperimentConfig:
+class ExperimentConfig(Configurable):
     generic_model_args: DictConfig = get_default_args_field(GenericModel)
     solver_args: DictConfig = get_default_args_field(init_optimizer)
     data_source_args: DictConfig = get_default_args_field(ImplicitronDataSource)
@@ -704,6 +705,8 @@ class ExperimentConfig:
         }
     )
 
+
+expand_args_fields(ExperimentConfig)
 
 if __name__ == "__main__":
     cs = hydra.core.config_store.ConfigStore.instance()
