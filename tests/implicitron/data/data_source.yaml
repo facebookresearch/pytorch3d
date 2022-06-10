@@ -21,7 +21,9 @@ dataset_map_provider_JsonIndexDatasetMapProvider_args:
     image_width: 800
     image_height: 800
     remove_empty_masks: true
-  path_manager: null
+  path_manager_factory_class_type: PathManagerFactory
+  path_manager_factory_PathManagerFactory_args:
+    silence_logs: true
 data_loader_map_provider_SequenceDataLoaderMapProvider_args:
   batch_size: 1
   num_workers: 0

@@ -4,18 +4,13 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-import logging
 import os
 import unittest
 from pathlib import Path
 
 import experiment
 import torch
-from iopath.common.file_io import PathManager
 from omegaconf import OmegaConf
-from pytorch3d.implicitron.dataset.json_index_dataset_map_provider import (
-    JsonIndexDatasetMapProvider,
-)
 
 
 def interactive_testing_requested() -> bool:
@@ -38,38 +33,9 @@ DEBUG: bool = False
 # - deal with the temporary output files this test creates
 
 
-def get_path_manager(silence_logs: bool = False) -> PathManager:
-    """
-    Returns a path manager which can access manifold internally.
-
-    Args:
-        silence_logs: Whether to reduce log output from iopath library.
-    """
-    if silence_logs:
-        logging.getLogger("iopath.fb.manifold").setLevel(logging.CRITICAL)
-        logging.getLogger("iopath.common.file_io").setLevel(logging.CRITICAL)
-
-    if os.environ.get("INSIDE_RE_WORKER", False):
-        raise ValueError("Cannot get to manifold from RE")
-
-    path_manager = PathManager()
-
-    if os.environ.get("FB_TEST", False):
-        from iopath.fb.manifold import ManifoldPathHandler
-
-        path_manager.register_handler(ManifoldPathHandler())
-
-    return path_manager
-
-
-def set_path_manager(self):
-    self.path_manager = get_path_manager()
-
-
 class TestExperiment(unittest.TestCase):
     def setUp(self):
         self.maxDiff = None
-        JsonIndexDatasetMapProvider.__post_init__ = set_path_manager
 
     def test_from_defaults(self):
         # Test making minimal changes to the dataclass defaults.

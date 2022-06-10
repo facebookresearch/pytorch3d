@@ -11,9 +11,14 @@ from dataclasses import field
 from typing import Any, Dict, List, Sequence
 
 from omegaconf import DictConfig
-from pytorch3d.implicitron.tools.config import registry
+from pytorch3d.implicitron.tools.config import registry, run_auto_creation
 
-from .dataset_map_provider import DatasetMap, DatasetMapProviderBase, Task
+from .dataset_map_provider import (
+    DatasetMap,
+    DatasetMapProviderBase,
+    PathManagerFactory,
+    Task,
+)
 from .json_index_dataset import JsonIndexDataset
 from .utils import (
     DATASET_TYPE_KNOWN,
@@ -87,7 +92,6 @@ class JsonIndexDatasetMapProvider(DatasetMapProviderBase):  # pyre-ignore [13]
         only_test_set: Load only the test set.
         aux_dataset_kwargs: Specifies additional arguments to the
             JsonIndexDataset constructor call.
-        path_manager: Optional[PathManager] for interpreting paths
     """
 
     category: str
@@ -105,11 +109,17 @@ class JsonIndexDatasetMapProvider(DatasetMapProviderBase):  # pyre-ignore [13]
     assert_single_seq: bool = False
     only_test_set: bool = False
     aux_dataset_kwargs: DictConfig = field(default_factory=_make_default_config)
-    path_manager: Any = None
+    path_manager_factory: PathManagerFactory
+    path_manager_factory_class_type: str = "PathManagerFactory"
+
+    def __post_init__(self):
+        run_auto_creation(self)
 
     def get_dataset_map(self) -> DatasetMap:
         if self.only_test_set and self.test_on_train:
             raise ValueError("Cannot have only_test_set and test_on_train")
+
+        path_manager = self.path_manager_factory.get()
 
         # TODO:
         # - implement loading multiple categories
@@ -130,7 +140,7 @@ class JsonIndexDatasetMapProvider(DatasetMapProviderBase):  # pyre-ignore [13]
             "load_point_clouds": self.load_point_clouds,
             "mask_images": self.mask_images,
             "mask_depths": self.mask_depths,
-            "path_manager": self.path_manager,
+            "path_manager": path_manager,
             "frame_annotations_file": frame_file,
             "sequence_annotations_file": sequence_file,
             "subset_lists_file": subset_lists_file,
@@ -151,8 +161,8 @@ class JsonIndexDatasetMapProvider(DatasetMapProviderBase):  # pyre-ignore [13]
             self.category,
             f"eval_batches_{self.task_str}.json",
         )
-        if self.path_manager is not None:
-            batch_indices_path = self.path_manager.get_local_path(batch_indices_path)
+        if path_manager is not None:
+            batch_indices_path = path_manager.get_local_path(batch_indices_path)
         if not os.path.isfile(batch_indices_path):
             # The batch indices file does not exist.
             # Most probably the user has not specified the root folder.

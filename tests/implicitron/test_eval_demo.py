@@ -11,7 +11,7 @@ from pytorch3d.implicitron import eval_demo
 
 from tests.common_testing import interactive_testing_requested
 
-from .common_resources import CO3D_MANIFOLD_PATH, get_path_manager
+from .common_resources import CO3D_MANIFOLD_PATH
 
 """
 This test runs a single sequence eval_demo, useful for debugging datasets.
@@ -25,8 +25,5 @@ class TestEvalDemo(unittest.TestCase):
             return
 
         os.environ["CO3D_DATASET_ROOT"] = CO3D_MANIFOLD_PATH
-        path_manager = get_path_manager(silence_logs=True)
 
-        eval_demo.evaluate_dbir_for_category(
-            "donut", single_sequence_id=0, path_manager=path_manager
-        )
+        eval_demo.evaluate_dbir_for_category("donut", single_sequence_id=0)

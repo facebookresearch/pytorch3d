@@ -4,11 +4,14 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+import logging
+import os
 from dataclasses import dataclass
 from enum import Enum
 from typing import Iterator, Optional
 
-from pytorch3d.implicitron.tools.config import ReplaceableBase
+from iopath.common.file_io import PathManager
+from pytorch3d.implicitron.tools.config import registry, ReplaceableBase
 
 from .dataset_base import DatasetBase
 
@@ -69,3 +72,39 @@ class DatasetMapProviderBase(ReplaceableBase):
 
     def get_task(self) -> Task:
         raise NotImplementedError()
+
+
+@registry.register
+class PathManagerFactory(ReplaceableBase):
+    """
+    Base class and default implementation of a tool which dataset_map_provider implementations
+    may use to construct a path manager if needed.
+
+    Args:
+        silence_logs: Whether to reduce log output from iopath library.
+    """
+
+    silence_logs: bool = True
+
+    def get(self) -> Optional[PathManager]:
+        """
+        Makes a PathManager if needed.
+        For open source users, this function should always return None.
+        Internally, this allows manifold access.
+        """
+        if os.environ.get("INSIDE_RE_WORKER", False):
+            return None
+
+        try:
+            from iopath.fb.manifold import ManifoldPathHandler
+        except ImportError:
+            return None
+
+        if self.silence_logs:
+            logging.getLogger("iopath.fb.manifold").setLevel(logging.CRITICAL)
+            logging.getLogger("iopath.common.file_io").setLevel(logging.CRITICAL)
+
+        path_manager = PathManager()
+        path_manager.register_handler(ManifoldPathHandler())
+
+        return path_manager

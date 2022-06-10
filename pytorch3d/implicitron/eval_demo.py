@@ -11,7 +11,6 @@ from typing import Any, cast, Dict, List, Optional, Tuple
 
 import lpips
 import torch
-from iopath.common.file_io import PathManager
 from pytorch3d.implicitron.dataset.data_source import ImplicitronDataSource, Task
 from pytorch3d.implicitron.dataset.dataset_base import DatasetBase, FrameData
 from pytorch3d.implicitron.dataset.json_index_dataset import JsonIndexDataset
@@ -80,7 +79,6 @@ def evaluate_dbir_for_category(
     bg_color: Tuple[float, float, float] = (0.0, 0.0, 0.0),
     single_sequence_id: Optional[int] = None,
     num_workers: int = 16,
-    path_manager: Optional[PathManager] = None,
 ):
     """
     Evaluates new view synthesis metrics of a simple depth-based image rendering
@@ -110,7 +108,6 @@ def evaluate_dbir_for_category(
         "test_on_train": False,
         "load_point_clouds": True,
         "test_restrict_sequence_id": single_sequence_id,
-        "path_manager": path_manager,
     }
     data_source = ImplicitronDataSource(
         dataset_map_provider_JsonIndexDatasetMapProvider_args=dataset_map_provider_args
