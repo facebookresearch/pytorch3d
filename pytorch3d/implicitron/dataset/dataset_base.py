@@ -8,7 +8,6 @@ from collections import defaultdict
 from dataclasses import dataclass, field, fields
 from typing import (
     Any,
-    Dict,
     Iterable,
     Iterator,
     List,
@@ -182,8 +181,28 @@ class FrameData(Mapping[str, Any]):
             return torch.utils.data._utils.collate.default_collate(batch)
 
 
+class _GenericWorkaround:
+    """
+    OmegaConf.structured has a weirdness when you try to apply
+    it to a dataclass whose first base class is a Generic which is not
+    Dict. The issue is with a function called get_dict_key_value_types
+    in omegaconf/_utils.py.
+    For example this fails:
+
+        @dataclass(eq=False)
+        class D(torch.utils.data.Dataset[int]):
+            a: int = 3
+
+        OmegaConf.structured(D)
+
+    We avoid the problem by adding this class as an extra base class.
+    """
+
+    pass
+
+
 @dataclass(eq=False)
-class DatasetBase(torch.utils.data.Dataset[FrameData]):
+class DatasetBase(_GenericWorkaround, torch.utils.data.Dataset[FrameData]):
     """
     Base class to describe a dataset to be used with Implicitron.
 
@@ -195,10 +214,11 @@ class DatasetBase(torch.utils.data.Dataset[FrameData]):
     which will describe one frame in one sequence.
     """
 
-    # Maps sequence name to the sequence's global frame indices.
+    # _seq_to_idx is a member which implementations can define.
+    # It maps sequence name to the sequence's global frame indices.
     # It is used for the default implementations of some functions in this class.
-    # Implementations which override them are free to ignore this member.
-    _seq_to_idx: Dict[str, List[int]] = field(init=False)
+    # Implementations which override them are free to ignore it.
+    # _seq_to_idx: Dict[str, List[int]] = field(init=False)
 
     def __len__(self) -> int:
         raise NotImplementedError
@@ -232,6 +252,7 @@ class DatasetBase(torch.utils.data.Dataset[FrameData]):
 
     def sequence_names(self) -> Iterable[str]:
         """Returns an iterator over sequence names in the dataset."""
+        # pyre-ignore[16]
         return self._seq_to_idx.keys()
 
     def sequence_frames_in_order(
@@ -250,6 +271,7 @@ class DatasetBase(torch.utils.data.Dataset[FrameData]):
                 `dataset_idx` is the index within the dataset.
                 `None` timestamps are replaced with 0s.
         """
+        # pyre-ignore[16]
         seq_frame_indices = self._seq_to_idx[seq_name]
         nos_timestamps = self.get_frame_numbers_and_timestamps(seq_frame_indices)
 

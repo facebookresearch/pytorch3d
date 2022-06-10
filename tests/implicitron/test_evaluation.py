@@ -51,6 +51,7 @@ class TestEvaluation(unittest.TestCase):
             image_height=self.image_size,
             image_width=self.image_size,
             box_crop=True,
+            remove_empty_masks=False,
             path_manager=path_manager,
         )
         self.bg_color = (0.0, 0.0, 0.0)

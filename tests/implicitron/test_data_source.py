@@ -9,6 +9,7 @@ import unittest
 
 from omegaconf import OmegaConf
 from pytorch3d.implicitron.dataset.data_source import ImplicitronDataSource
+from pytorch3d.implicitron.dataset.json_index_dataset import JsonIndexDataset
 from pytorch3d.implicitron.tools.config import get_default_args
 from tests.common_testing import get_tests_dir
 
@@ -19,6 +20,33 @@ DEBUG: bool = False
 class TestDataSource(unittest.TestCase):
     def setUp(self):
         self.maxDiff = None
+
+    def _test_omegaconf_generic_failure(self):
+        # OmegaConf possible bug - this is why we need _GenericWorkaround
+        from dataclasses import dataclass
+
+        import torch
+
+        @dataclass
+        class D(torch.utils.data.Dataset[int]):
+            a: int = 3
+
+        OmegaConf.structured(D)
+
+    def _test_omegaconf_ListList(self):
+        # Demo that OmegaConf doesn't support nested lists
+        from dataclasses import dataclass
+        from typing import Sequence
+
+        @dataclass
+        class A:
+            a: Sequence[Sequence[int]] = ((32,),)
+
+        OmegaConf.structured(A)
+
+    def test_JsonIndexDataset_args(self):
+        # test that JsonIndexDataset works with get_default_args
+        get_default_args(JsonIndexDataset)
 
     def test_one(self):
         with unittest.mock.patch.dict(os.environ, {"CO3D_DATASET_ROOT": ""}):
