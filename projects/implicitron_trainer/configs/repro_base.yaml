@@ -24,12 +24,13 @@ data_source_args:
     - 10
   dataset_map_provider_JsonIndexDatasetMapProvider_args:
     dataset_root: ${oc.env:CO3D_DATASET_ROOT}
-    load_point_clouds: false
-    mask_depths: false
-    mask_images: false
     n_frames_per_sequence: -1
     test_on_train: true
     test_restrict_sequence_id: 0
+    dataset_JsonIndexDataset_args:
+      load_point_clouds: false
+      mask_depths: false
+      mask_images: false
 generic_model_args:
   loss_weights:
     loss_mask_bce: 1.0

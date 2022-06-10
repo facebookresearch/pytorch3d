@@ -7,11 +7,14 @@
 
 import json
 import os
-from dataclasses import field
-from typing import Any, Dict, List, Sequence
+from typing import Dict, List, Sequence, Tuple, Type
 
-from omegaconf import DictConfig
-from pytorch3d.implicitron.tools.config import registry, run_auto_creation
+from omegaconf import DictConfig, open_dict
+from pytorch3d.implicitron.tools.config import (
+    expand_args_fields,
+    registry,
+    run_auto_creation,
+)
 
 from .dataset_map_provider import (
     DatasetMap,
@@ -20,28 +23,13 @@ from .dataset_map_provider import (
     Task,
 )
 from .json_index_dataset import JsonIndexDataset
+
 from .utils import (
     DATASET_TYPE_KNOWN,
     DATASET_TYPE_TEST,
     DATASET_TYPE_TRAIN,
     DATASET_TYPE_UNKNOWN,
 )
-
-
-# TODO from dataset.dataset_configs import DATASET_CONFIGS
-DATASET_CONFIGS: Dict[str, Dict[str, Any]] = {
-    "default": {
-        "box_crop": True,
-        "box_crop_context": 0.3,
-        "image_width": 800,
-        "image_height": 800,
-        "remove_empty_masks": True,
-    }
-}
-
-
-def _make_default_config() -> DictConfig:
-    return DictConfig(DATASET_CONFIGS["default"])
 
 
 # fmt: off
@@ -62,6 +50,21 @@ CO3D_CATEGORIES: List[str] = list(reversed([
 
 _CO3D_DATASET_ROOT: str = os.getenv("CO3D_DATASET_ROOT", "")
 
+# _NEED_CONTROL is a list of those elements of JsonIndexDataset which
+# are not directly specified for it in the config but come from the
+# DatasetMapProvider.
+_NEED_CONTROL: Tuple[str, ...] = (
+    "dataset_root",
+    "eval_batches",
+    "n_frames_per_sequence",
+    "path_manager",
+    "pick_sequence",
+    "subsets",
+    "frame_annotations_file",
+    "sequence_annotations_file",
+    "subset_lists_file",
+)
+
 
 @registry.register
 class JsonIndexDatasetMapProvider(DatasetMapProviderBase):  # pyre-ignore [13]
@@ -73,16 +76,10 @@ class JsonIndexDatasetMapProvider(DatasetMapProviderBase):  # pyre-ignore [13]
         category: The object category of the dataset.
         task_str: "multisequence" or "singlesequence".
         dataset_root: The root folder of the dataset.
-        limit_to: Limit the dataset to the first #limit_to frames.
-        limit_sequences_to: Limit the dataset to the first
-            #limit_sequences_to sequences.
         n_frames_per_sequence: Randomly sample #n_frames_per_sequence frames
             in each sequence.
         test_on_train: Construct validation and test datasets from
             the training subset.
-        load_point_clouds: Enable returning scene point clouds from the dataset.
-        mask_images: Mask the loaded images with segmentation masks.
-        mask_depths: Mask the loaded depths with segmentation masks.
         restrict_sequence_name: Restrict the dataset sequences to the ones
             present in the given list of names.
         test_restrict_sequence_id: The ID of the loaded sequence.
@@ -90,32 +87,45 @@ class JsonIndexDatasetMapProvider(DatasetMapProviderBase):  # pyre-ignore [13]
         assert_single_seq: Assert that only frames from a single sequence
             are present in all generated datasets.
         only_test_set: Load only the test set.
-        aux_dataset_kwargs: Specifies additional arguments to the
-            JsonIndexDataset constructor call.
+        dataset_class_type: name of class (JsonIndexDataset or a subclass)
+                            to use for the dataset.
+        dataset_X_args (e.g. dataset_JsonIndexDataset_args): arguments passed
+            to all the dataset constructors.
     """
 
     category: str
     task_str: str = "singlesequence"
     dataset_root: str = _CO3D_DATASET_ROOT
-    limit_to: int = -1
-    limit_sequences_to: int = -1
     n_frames_per_sequence: int = -1
     test_on_train: bool = False
-    load_point_clouds: bool = False
-    mask_images: bool = False
-    mask_depths: bool = False
     restrict_sequence_name: Sequence[str] = ()
     test_restrict_sequence_id: int = -1
     assert_single_seq: bool = False
     only_test_set: bool = False
-    aux_dataset_kwargs: DictConfig = field(default_factory=_make_default_config)
+    dataset: JsonIndexDataset
+    dataset_class_type: str = "JsonIndexDataset"
     path_manager_factory: PathManagerFactory
     path_manager_factory_class_type: str = "PathManagerFactory"
 
-    def __post_init__(self):
-        run_auto_creation(self)
+    @classmethod
+    def dataset_tweak_args(cls, type, args: DictConfig) -> None:
+        """
+        Called by get_default_args(JsonIndexDatasetMapProvider) to
+        not expose certain fields of each dataset class.
+        """
+        with open_dict(args):
+            for key in _NEED_CONTROL:
+                del args[key]
 
-    def get_dataset_map(self) -> DatasetMap:
+    def create_dataset(self):
+        """
+        Prevent the member named dataset from being created.
+        """
+        return
+
+    def __post_init__(self):
+        super().__init__()
+        run_auto_creation(self)
         if self.only_test_set and self.test_on_train:
             raise ValueError("Cannot have only_test_set and test_on_train")
 
@@ -135,16 +145,11 @@ class JsonIndexDatasetMapProvider(DatasetMapProviderBase):  # pyre-ignore [13]
         )
         common_kwargs = {
             "dataset_root": self.dataset_root,
-            "limit_to": self.limit_to,
-            "limit_sequences_to": self.limit_sequences_to,
-            "load_point_clouds": self.load_point_clouds,
-            "mask_images": self.mask_images,
-            "mask_depths": self.mask_depths,
             "path_manager": path_manager,
             "frame_annotations_file": frame_file,
             "sequence_annotations_file": sequence_file,
             "subset_lists_file": subset_lists_file,
-            **self.aux_dataset_kwargs,
+            **getattr(self, f"dataset_{self.dataset_class_type}_args"),
         }
 
         # This maps the common names of the dataset subsets ("train"/"val"/"test")
@@ -204,9 +209,13 @@ class JsonIndexDatasetMapProvider(DatasetMapProviderBase):  # pyre-ignore [13]
             # overwrite the restrict_sequence_name
             restrict_sequence_name = [eval_sequence_name]
 
+        dataset_type: Type[JsonIndexDataset] = registry.get(
+            JsonIndexDataset, self.dataset_class_type
+        )
+        expand_args_fields(dataset_type)
         train_dataset = None
         if not self.only_test_set:
-            train_dataset = JsonIndexDataset(
+            train_dataset = dataset_type(
                 n_frames_per_sequence=self.n_frames_per_sequence,
                 subsets=set_names_mapping["train"],
                 pick_sequence=restrict_sequence_name,
@@ -216,13 +225,13 @@ class JsonIndexDatasetMapProvider(DatasetMapProviderBase):  # pyre-ignore [13]
             assert train_dataset is not None
             val_dataset = test_dataset = train_dataset
         else:
-            val_dataset = JsonIndexDataset(
+            val_dataset = dataset_type(
                 n_frames_per_sequence=-1,
                 subsets=set_names_mapping["val"],
                 pick_sequence=restrict_sequence_name,
                 **common_kwargs,
             )
-            test_dataset = JsonIndexDataset(
+            test_dataset = dataset_type(
                 n_frames_per_sequence=-1,
                 subsets=set_names_mapping["test"],
                 pick_sequence=restrict_sequence_name,
@@ -235,19 +244,25 @@ class JsonIndexDatasetMapProvider(DatasetMapProviderBase):  # pyre-ignore [13]
             test_dataset.eval_batches = test_dataset.seq_frame_index_to_dataset_index(
                 eval_batch_index
             )
-        datasets = DatasetMap(train=train_dataset, val=val_dataset, test=test_dataset)
+        dataset_map = DatasetMap(
+            train=train_dataset, val=val_dataset, test=test_dataset
+        )
 
         if self.assert_single_seq:
             # check there's only one sequence in all datasets
             sequence_names = {
                 sequence_name
-                for dset in datasets.iter_datasets()
+                for dset in dataset_map.iter_datasets()
                 for sequence_name in dset.sequence_names()
             }
             if len(sequence_names) > 1:
                 raise ValueError("Multiple sequences loaded but expected one")
 
-        return datasets
+        self.dataset_map = dataset_map
+
+    def get_dataset_map(self) -> DatasetMap:
+        # pyre-ignore[16]
+        return self.dataset_map
 
     def get_task(self) -> Task:
         return Task(self.task_str)

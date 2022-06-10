@@ -26,8 +26,6 @@ DATA_DIR = Path(__file__).resolve().parent
 DEBUG: bool = False
 
 # TODO:
-# - sort out path_manager config. Here we monkeypatch to avoid
-#    the problem.
 # - add enough files to skateboard_first_5 that this works on RE.
 # - share common code with PyTorch3D tests?
 # - deal with the temporary output files this test creates
@@ -54,7 +52,7 @@ class TestExperiment(unittest.TestCase):
         dataset_args.category = "skateboard"
         dataset_args.test_restrict_sequence_id = 0
         dataset_args.dataset_root = "manifold://co3d/tree/extracted"
-        dataset_args.limit_sequences_to = 5
+        dataset_args.dataset_JsonIndexDataset_args.limit_sequences_to = 5
         dataloader_args.dataset_len = 1
         cfg.solver_args.max_epochs = 2
 

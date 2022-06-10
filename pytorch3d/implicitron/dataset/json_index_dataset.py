@@ -13,7 +13,6 @@ import os
 import random
 import warnings
 from collections import defaultdict
-from dataclasses import dataclass
 from itertools import islice
 from pathlib import Path
 from typing import (
@@ -31,6 +30,7 @@ from typing import (
 import numpy as np
 import torch
 from PIL import Image
+from pytorch3d.implicitron.tools.config import registry, ReplaceableBase
 from pytorch3d.io import IO
 from pytorch3d.renderer.cameras import PerspectiveCameras
 from pytorch3d.structures.pointclouds import Pointclouds
@@ -47,8 +47,8 @@ class FrameAnnotsEntry(TypedDict):
     frame_annotation: types.FrameAnnotation
 
 
-@dataclass(eq=False)
-class JsonIndexDataset(DatasetBase):
+@registry.register
+class JsonIndexDataset(DatasetBase, ReplaceableBase):
     """
     A dataset with annotations in json files like the Common Objects in 3D
     (CO3D) dataset.

@@ -4,24 +4,35 @@ dataset_map_provider_JsonIndexDatasetMapProvider_args:
   category: ???
   task_str: singlesequence
   dataset_root: ''
-  limit_to: -1
-  limit_sequences_to: -1
   n_frames_per_sequence: -1
   test_on_train: false
-  load_point_clouds: false
-  mask_images: false
-  mask_depths: false
   restrict_sequence_name: []
   test_restrict_sequence_id: -1
   assert_single_seq: false
   only_test_set: false
-  aux_dataset_kwargs:
-    box_crop: true
-    box_crop_context: 0.3
-    image_width: 800
-    image_height: 800
-    remove_empty_masks: true
+  dataset_class_type: JsonIndexDataset
   path_manager_factory_class_type: PathManagerFactory
+  dataset_JsonIndexDataset_args:
+    limit_to: 0
+    limit_sequences_to: 0
+    exclude_sequence: []
+    limit_category_to: []
+    load_images: true
+    load_depths: true
+    load_depth_masks: true
+    load_masks: true
+    load_point_clouds: false
+    max_points: 0
+    mask_images: false
+    mask_depths: false
+    image_height: 800
+    image_width: 800
+    box_crop: true
+    box_crop_mask_thr: 0.4
+    box_crop_context: 0.3
+    remove_empty_masks: true
+    seed: 0
+    sort_frames: false
   path_manager_factory_PathManagerFactory_args:
     silence_logs: true
 data_loader_map_provider_SequenceDataLoaderMapProvider_args:

@@ -20,9 +20,6 @@ data_source_args:
   dataset_map_provider_JsonIndexDatasetMapProvider_args:
     assert_single_seq: false
     task_str: multisequence
-    load_point_clouds: false
-    mask_depths: false
-    mask_images: false
     n_frames_per_sequence: -1
     test_on_train: true
     test_restrict_sequence_id: 0

@@ -106,8 +106,8 @@ def evaluate_dbir_for_category(
         "assert_single_seq": task == Task.SINGLE_SEQUENCE,
         "task_str": task.value,
         "test_on_train": False,
-        "load_point_clouds": True,
         "test_restrict_sequence_id": single_sequence_id,
+        "dataset_JsonIndexDataset_args": {"load_point_clouds": True},
     }
     data_source = ImplicitronDataSource(
         dataset_map_provider_JsonIndexDatasetMapProvider_args=dataset_map_provider_args
