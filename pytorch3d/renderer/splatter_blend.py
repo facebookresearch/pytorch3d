@@ -130,12 +130,15 @@ def _get_splat_kernel_normalization(
 
     epsilon = 0.05
     normalization_constant = torch.exp(
-        -(offsets**2).sum(dim=1) / (2 * sigma**2)
+        # pyre-fixme[58]: `**` is not supported for operand types `Tensor` and `int`.
+        -(offsets**2).sum(dim=1)
+        / (2 * sigma**2)
     ).sum()
 
     # We add an epsilon to the normalization constant to ensure the gradient will travel
     # through non-boundary pixels' normalization factor, see Sec. 3.3.1 in "Differentia-
     # ble Surface Rendering via Non-Differentiable Sampling", Cole et al.
+    # pyre-fixme[58]: `/` is not supported for operand types `float` and `Tensor`.
     return (1 + epsilon) / normalization_constant
 
 
@@ -260,6 +263,7 @@ def _compute_splatting_colors_and_weights(
         torch.floor(pixel_coords_screen[..., :2]) - pixel_coords_screen[..., :2] + 0.5
     ).view((N, H, W, K, 1, 2))
 
+    # pyre-fixme[58]: `**` is not supported for operand types `Tensor` and `int`.
     dist2_p_q = torch.sum((q_to_px_center + offsets) ** 2, dim=5)  # (N, H, W, K, 9)
     splat_weights = torch.exp(-dist2_p_q / (2 * sigma**2))
     alpha = colors[..., 3:4]
@@ -413,6 +417,7 @@ def _normalize_and_compose_all_layers(
 
     # Normalize each of bg/surface/fg splat layers separately.
     normalization_scales = 1.0 / (
+        # pyre-fixme[58]: `/` is not supported for operand types `float` and `Tensor`.
         torch.maximum(
             splatted_weights_per_occlusion_layer,
             torch.tensor([1.0], device=device),

@@ -117,13 +117,7 @@ class LSTMRenderer(BaseRenderer, torch.nn.Module):
                 msg = (
                     f"{t}: mu={float(signed_distance.mean()):1.2e};"
                     + f" std={float(signed_distance.std()):1.2e};"
-                    # pyre-fixme[6]: Expected `Union[bytearray, bytes, str,
-                    #  typing.SupportsFloat, typing_extensions.SupportsIndex]` for 1st
-                    #  param but got `Tensor`.
                     + f" mu_d={float(ray_bundle_t.lengths.mean()):1.2e};"
-                    # pyre-fixme[6]: Expected `Union[bytearray, bytes, str,
-                    #  typing.SupportsFloat, typing_extensions.SupportsIndex]` for 1st
-                    #  param but got `Tensor`.
                     + f" std_d={float(ray_bundle_t.lengths.std()):1.2e};"
                 )
                 logger.info(msg)

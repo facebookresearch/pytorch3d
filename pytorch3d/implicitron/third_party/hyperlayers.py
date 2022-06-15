@@ -215,7 +215,6 @@ class BatchLinear(nn.Module):
 def last_hyper_layer_init(m) -> None:
     if type(m) == nn.Linear:
         nn.init.kaiming_normal_(m.weight, a=0.0, nonlinearity="relu", mode="fan_in")
-        # pyre-fixme[41]: `data` cannot be reassigned. It is a read-only property.
         m.weight.data *= 1e-1
 
 

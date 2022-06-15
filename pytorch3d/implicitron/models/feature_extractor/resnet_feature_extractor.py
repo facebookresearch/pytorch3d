@@ -169,8 +169,6 @@ class ResNetFeatureExtractor(FeatureExtractorBase):
         if self.image_rescale != 1.0 and imgs_input is not None:
             imgs_resized = Fu.interpolate(
                 imgs_input,
-                # pyre-fixme[6]: For 2nd param expected `Optional[List[float]]` but
-                #  got `float`.
                 scale_factor=self.image_rescale,
                 mode="bilinear",
             )

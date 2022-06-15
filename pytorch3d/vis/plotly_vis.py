@@ -780,7 +780,7 @@ def _add_ray_bundle_trace(
     """
 
     n_pts_per_ray = ray_bundle.lengths.shape[-1]
-    n_rays = ray_bundle.lengths.shape[:-1].numel()  # pyre-ignore[16]
+    n_rays = ray_bundle.lengths.shape[:-1].numel()
 
     # flatten all batches of rays into a single big bundle
     ray_bundle_flat = RayBundle(

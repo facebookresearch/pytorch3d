@@ -158,7 +158,6 @@ class AbsorptionOnlyRaymarcher(torch.nn.Module):
         _check_density_bounds(rays_densities)
         total_transmission = torch.prod(1 - rays_densities, dim=-1, keepdim=True)
         opacities = 1.0 - total_transmission
-        # pyre-fixme[7]: Expected `Optional[torch.Tensor]` but got `float`.
         return opacities
 
 

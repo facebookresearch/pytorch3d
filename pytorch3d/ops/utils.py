@@ -89,6 +89,8 @@ def wmean(
     args = {"dim": dim, "keepdim": keepdim}
 
     if weight is None:
+        # pyre-fixme[6]: For 1st param expected `Optional[dtype]` but got
+        #  `Union[Tuple[int], int]`.
         return x.mean(**args)
 
     if any(
@@ -97,6 +99,8 @@ def wmean(
     ):
         raise ValueError("wmean: weights are not compatible with the tensor")
 
+    # pyre-fixme[6]: For 1st param expected `Optional[dtype]` but got
+    #  `Union[Tuple[int], int]`.
     return (x * weight[..., None]).sum(**args) / weight[..., None].sum(**args).clamp(
         eps
     )

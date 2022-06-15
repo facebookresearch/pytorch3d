@@ -65,6 +65,7 @@ def eval_depth(
 
     df = gt - pred
 
+    # pyre-fixme[58]: `**` is not supported for operand types `Tensor` and `int`.
     mse_depth = (dmask * (df**2)).sum((1, 2, 3)) / dmask_mass
     abs_depth = (dmask * df.abs()).sum((1, 2, 3)) / dmask_mass
 
@@ -100,8 +101,10 @@ def calc_mse(
     Calculates the mean square error between tensors `x` and `y`.
     """
     if mask is None:
+        # pyre-fixme[58]: `**` is not supported for operand types `Tensor` and `int`.
         return torch.mean((x - y) ** 2)
     else:
+        # pyre-fixme[58]: `**` is not supported for operand types `Tensor` and `int`.
         return (((x - y) ** 2) * mask).sum() / mask.expand_as(x).sum().clamp(1e-5)
 
 
@@ -128,6 +131,7 @@ def calc_bce(
         mask_bg = (1 - mask_fg) * mask
         weight = mask_fg / mask_fg.sum().clamp(1.0) + mask_bg / mask_bg.sum().clamp(1.0)
         # weight sum should be at this point ~2
+        # pyre-fixme[58]: `/` is not supported for operand types `int` and `Tensor`.
         weight = weight * (weight.numel() / weight.sum().clamp(1.0))
     else:
         weight = torch.ones_like(gt) * mask

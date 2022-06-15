@@ -160,6 +160,7 @@ def _so3_exp_map(
     nrms = (log_rot * log_rot).sum(1)
     # phis ... rotation angles
     rot_angles = torch.clamp(nrms, eps).sqrt()
+    # pyre-fixme[58]: `/` is not supported for operand types `float` and `Tensor`.
     rot_angles_inv = 1.0 / rot_angles
     fac1 = rot_angles_inv * rot_angles.sin()
     fac2 = rot_angles_inv * rot_angles_inv * (1.0 - rot_angles.cos())
@@ -167,8 +168,8 @@ def _so3_exp_map(
     skews_square = torch.bmm(skews, skews)
 
     R = (
-        # pyre-fixme[16]: `float` has no attribute `__getitem__`.
         fac1[:, None, None] * skews
+        # pyre-fixme[16]: `float` has no attribute `__getitem__`.
         + fac2[:, None, None] * skews_square
         + torch.eye(3, dtype=log_rot.dtype, device=log_rot.device)[None]
     )
@@ -216,6 +217,7 @@ def so3_log_map(
     # 2nd order Taylor expansion: phi_factor = 0.5 + (1.0 / 12) * phi**2
     phi_factor = torch.empty_like(phi)
     ok_denom = phi_sin.abs() > (0.5 * eps)
+    # pyre-fixme[58]: `**` is not supported for operand types `Tensor` and `int`.
     phi_factor[~ok_denom] = 0.5 + (phi[~ok_denom] ** 2) * (1.0 / 12)
     phi_factor[ok_denom] = phi[ok_denom] / (2.0 * phi_sin[ok_denom])
 

@@ -406,6 +406,8 @@ class TransformerWithInputSkips(torch.nn.Module):
         self.last = torch.nn.Linear(dimout, output_dim)
         _xavier_init(self.last)
 
+        # pyre-fixme[8]: Attribute has type `Tuple[ModuleList, ModuleList]`; used as
+        #  `ModuleList`.
         self.layers_pool, self.layers_ray = (
             torch.nn.ModuleList(layers_pool),
             torch.nn.ModuleList(layers_ray),

@@ -288,7 +288,6 @@ def make_material_atlas(
     # w0, w1
     bary[below_diag, slc] = ((grid[below_diag] + 1.0 / 3.0) / R).T
     # w0, w1 for above diagonal grid cells.
-    # pyre-fixme[16]: `float` has no attribute `T`.
     bary[~below_diag, slc] = (((R - 1.0 - grid[~below_diag]) + 2.0 / 3.0) / R).T
     # w2 = 1. - w0 - w1
     bary[..., -1] = 1 - bary[..., :2].sum(dim=-1)

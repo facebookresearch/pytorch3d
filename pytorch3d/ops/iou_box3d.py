@@ -47,7 +47,6 @@ _box_triangles = [
 
 def _check_coplanar(boxes: torch.Tensor, eps: float = 1e-4) -> None:
     faces = torch.tensor(_box_planes, dtype=torch.int64, device=boxes.device)
-    # pyre-fixme[16]: `boxes` has no attribute `index_select`.
     verts = boxes.index_select(index=faces.view(-1), dim=1)
     B = boxes.shape[0]
     P, V = faces.shape
@@ -74,7 +73,6 @@ def _check_nonzero(boxes: torch.Tensor, eps: float = 1e-4) -> None:
     Checks that the sides of the box have a non zero area
     """
     faces = torch.tensor(_box_triangles, dtype=torch.int64, device=boxes.device)
-    # pyre-fixme[16]: `boxes` has no attribute `index_select`.
     verts = boxes.index_select(index=faces.view(-1), dim=1)
     B = boxes.shape[0]
     T, V = faces.shape

@@ -103,7 +103,11 @@ class IdrFeatureField(ImplicitFunctionBase, torch.nn.Module):
             self.embed_fn is None and fun_viewpool is None and global_code is None
         ):
             return torch.tensor(
-                [], device=rays_points_world.device, dtype=rays_points_world.dtype
+                [],
+                device=rays_points_world.device,
+                dtype=rays_points_world.dtype
+                # pyre-fixme[6]: For 2nd param expected `int` but got `Union[Module,
+                #  Tensor]`.
             ).view(0, self.out_dim)
 
         embedding = None
@@ -128,6 +132,7 @@ class IdrFeatureField(ImplicitFunctionBase, torch.nn.Module):
             )
 
         x = embedding
+        # pyre-fixme[29]: `Union[BoundMethod[typing.Callable(torch._C._TensorBase.__s...
         for layer_idx in range(self.num_layers - 1):
             if layer_idx in self.skip_in:
                 x = torch.cat([x, embedding], dim=-1) / 2**0.5
@@ -135,6 +140,7 @@ class IdrFeatureField(ImplicitFunctionBase, torch.nn.Module):
             # pyre-fixme[29]: `Union[torch.Tensor, torch.nn.Module]` is not a function.
             x = self.linear_layers[layer_idx](x)
 
+            # pyre-fixme[29]: `Union[BoundMethod[typing.Callable(torch._C._TensorBase...
             if layer_idx < self.num_layers - 2:
                 # pyre-fixme[29]: `Union[torch.Tensor, torch.nn.Module]` is not a function.
                 x = self.softplus(x)

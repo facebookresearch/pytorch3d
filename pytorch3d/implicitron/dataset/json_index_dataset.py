@@ -640,14 +640,16 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
         )
         imre = torch.nn.functional.interpolate(
             torch.from_numpy(image)[None],
-            # pyre-ignore[6]
             scale_factor=minscale,
             mode=mode,
             align_corners=False if mode == "bilinear" else None,
             recompute_scale_factor=True,
         )[0]
+        # pyre-fixme[19]: Expected 1 positional argument.
         imre_ = torch.zeros(image.shape[0], self.image_height, self.image_width)
         imre_[:, 0 : imre.shape[1], 0 : imre.shape[2]] = imre
+        # pyre-fixme[6]: For 2nd param expected `int` but got `Optional[int]`.
+        # pyre-fixme[6]: For 3rd param expected `int` but got `Optional[int]`.
         mask = torch.zeros(1, self.image_height, self.image_width)
         mask[:, 0 : imre.shape[1] - 1, 0 : imre.shape[2] - 1] = 1.0
         return imre_, minscale, mask

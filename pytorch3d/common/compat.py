@@ -23,6 +23,7 @@ def solve(A: torch.Tensor, B: torch.Tensor) -> torch.Tensor:  # pragma: no cover
         # PyTorch version >= 1.8.0
         return torch.linalg.solve(A, B)
 
+    # pyre-fixme[16]: `Tuple` has no attribute `solution`.
     return torch.solve(B, A).solution
 
 
@@ -67,9 +68,14 @@ def meshgrid_ij(
     Like torch.meshgrid was before PyTorch 1.10.0, i.e. with indexing set to ij
     """
     if (
+        # pyre-fixme[16]: Callable `meshgrid` has no attribute `__kwdefaults__`.
         torch.meshgrid.__kwdefaults__ is not None
         and "indexing" in torch.meshgrid.__kwdefaults__
     ):
         # PyTorch >= 1.10.0
+        # pyre-fixme[6]: For 1st param expected `Union[List[Tensor], Tensor]` but
+        #  got `Union[Sequence[Tensor], Tensor]`.
         return torch.meshgrid(*A, indexing="ij")
+    # pyre-fixme[6]: For 1st param expected `Union[List[Tensor], Tensor]` but got
+    #  `Union[Sequence[Tensor], Tensor]`.
     return torch.meshgrid(*A)

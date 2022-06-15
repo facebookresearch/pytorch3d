@@ -132,7 +132,11 @@ class SignedDistanceFunctionRenderer(BaseRenderer, torch.nn.Module):
             eik_bounding_box: float = self.object_bounding_sphere
             n_eik_points = batch_size * num_pixels // 2
             eikonal_points = torch.empty(
-                n_eik_points, 3, device=self._bg_color.device
+                n_eik_points,
+                3,
+                # pyre-fixme[6]: For 3rd param expected `Union[None, str, device]`
+                #  but got `Union[device, Tensor, Module]`.
+                device=self._bg_color.device,
             ).uniform_(-eik_bounding_box, eik_bounding_box)
             eikonal_pixel_points = points.clone()
             eikonal_pixel_points = eikonal_pixel_points.detach()
@@ -196,7 +200,9 @@ class SignedDistanceFunctionRenderer(BaseRenderer, torch.nn.Module):
                 pooling_fn=None,  # TODO
             )
             mask_full.view(-1, 1)[~surface_mask] = torch.sigmoid(
-                -self.soft_mask_alpha * sdf_output[~surface_mask]
+                # pyre-fixme[6]: For 1st param expected `Tensor` but got `float`.
+                -self.soft_mask_alpha
+                * sdf_output[~surface_mask]
             )
 
         # scatter points with surface_mask

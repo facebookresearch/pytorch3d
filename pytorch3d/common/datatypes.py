@@ -26,7 +26,7 @@ def make_device(device: Device) -> torch.device:
         A matching torch.device object
     """
     device = torch.device(device) if isinstance(device, str) else device
-    if device.type == "cuda" and device.index is None:  # pyre-ignore[16]
+    if device.type == "cuda" and device.index is None:
         # If cuda but with no index, then the current cuda device is indicated.
         # In that case, we fix to that device
         device = torch.device(f"cuda:{torch.cuda.current_device()}")

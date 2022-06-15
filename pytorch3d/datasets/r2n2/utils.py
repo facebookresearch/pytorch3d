@@ -140,7 +140,6 @@ def compute_extrinsic_matrix(
     # rotates the model 90 degrees about the x axis. To compensate for this quirk we
     # roll that rotation into the extrinsic matrix here
     rot = torch.tensor([[1, 0, 0, 0], [0, 0, -1, 0], [0, 1, 0, 0], [0, 0, 0, 1]])
-    # pyre-fixme[16]: `Tensor` has no attribute `mm`.
     RT = RT.mm(rot.to(RT))
 
     return RT
@@ -180,6 +179,7 @@ def read_binvox_coords(
     size, translation, scale = _read_binvox_header(f)
     storage = torch.ByteStorage.from_buffer(f.read())
     data = torch.tensor([], dtype=torch.uint8)
+    # pyre-fixme[28]: Unexpected keyword argument `source`.
     data.set_(source=storage)
     vals, counts = data[::2], data[1::2]
     idxs = _compute_idxs(vals, counts)

@@ -890,7 +890,6 @@ class Meshes:
 
             # NOTE: this is already applying the area weighting as the magnitude
             # of the cross product is 2 x area of the triangle.
-            # pyre-fixme[16]: `Tensor` has no attribute `index_add`.
             verts_normals = verts_normals.index_add(
                 0,
                 faces_packed[:, 1],

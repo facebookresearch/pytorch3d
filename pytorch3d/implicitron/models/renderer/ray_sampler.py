@@ -164,8 +164,6 @@ class AbstractMaskRaySampler(RaySamplerBase, torch.nn.Module):
         ):
             sample_mask = torch.nn.functional.interpolate(
                 mask,
-                # pyre-fixme[6]: Expected `Optional[int]` for 2nd param but got
-                #  `List[int]`.
                 size=[self.image_height, self.image_width],
                 mode="nearest",
             )[:, 0]

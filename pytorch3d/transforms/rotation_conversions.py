@@ -50,6 +50,7 @@ def quaternion_to_matrix(quaternions: torch.Tensor) -> torch.Tensor:
         Rotation matrices as tensor of shape (..., 3, 3).
     """
     r, i, j, k = torch.unbind(quaternions, -1)
+    # pyre-fixme[58]: `/` is not supported for operand types `float` and `Tensor`.
     two_s = 2.0 / (quaternions * quaternions).sum(-1)
 
     o = torch.stack(
@@ -131,9 +132,17 @@ def matrix_to_quaternion(matrix: torch.Tensor) -> torch.Tensor:
     # we produce the desired quaternion multiplied by each of r, i, j, k
     quat_by_rijk = torch.stack(
         [
+            # pyre-fixme[58]: `**` is not supported for operand types `Tensor` and
+            #  `int`.
             torch.stack([q_abs[..., 0] ** 2, m21 - m12, m02 - m20, m10 - m01], dim=-1),
+            # pyre-fixme[58]: `**` is not supported for operand types `Tensor` and
+            #  `int`.
             torch.stack([m21 - m12, q_abs[..., 1] ** 2, m10 + m01, m02 + m20], dim=-1),
+            # pyre-fixme[58]: `**` is not supported for operand types `Tensor` and
+            #  `int`.
             torch.stack([m02 - m20, m10 + m01, q_abs[..., 2] ** 2, m12 + m21], dim=-1),
+            # pyre-fixme[58]: `**` is not supported for operand types `Tensor` and
+            #  `int`.
             torch.stack([m10 - m01, m20 + m02, m21 + m12, q_abs[..., 3] ** 2], dim=-1),
         ],
         dim=-2,
@@ -148,7 +157,7 @@ def matrix_to_quaternion(matrix: torch.Tensor) -> torch.Tensor:
     # forall i; we pick the best-conditioned one (with the largest denominator)
 
     return quat_candidates[
-        F.one_hot(q_abs.argmax(dim=-1), num_classes=4) > 0.5, :  # pyre-ignore[16]
+        F.one_hot(q_abs.argmax(dim=-1), num_classes=4) > 0.5, :
     ].reshape(batch_dim + (4,))
 
 
@@ -314,6 +323,7 @@ def random_quaternions(
     """
     if isinstance(device, str):
         device = torch.device(device)
+    # pyre-fixme[6]: For 2nd param expected `dtype` but got `Optional[dtype]`.
     o = torch.randn((n, 4), dtype=dtype, device=device)
     s = (o * o).sum(1)
     o = o / _copysign(torch.sqrt(s), o[:, 0])[:, None]

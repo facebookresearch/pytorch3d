@@ -84,7 +84,6 @@ class _knn_points(Function):
                 dists[mask] = 0
             else:
                 dists, sort_idx = dists.sort(dim=2)
-            # pyre-fixme[16]: `Tensor` has no attribute `gather`.
             idx = idx.gather(2, sort_idx)
 
         ctx.save_for_backward(p1, p2, lengths1, lengths2, idx)

@@ -58,7 +58,6 @@ def _check_faces_indices(
     if pad_value is None:
         mask = torch.ones(faces_indices.shape[:-1]).bool()  # Keep all faces
     else:
-        # pyre-fixme[16]: `torch.ByteTensor` has no attribute `any`
         mask = faces_indices.ne(pad_value).any(dim=-1)
     if torch.any(faces_indices[mask] >= max_index) or torch.any(
         faces_indices[mask] < 0

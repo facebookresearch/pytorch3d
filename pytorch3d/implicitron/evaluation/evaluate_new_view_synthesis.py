@@ -205,11 +205,7 @@ def eval_batch(
 
         imode = "bilinear" if k == "image_render" else "nearest"
         cloned_render[k] = (
-            # pyre-fixme[6]: For 2nd param expected `Optional[int]` but got
-            #  `Tuple[Any, ...]`.
-            F.interpolate(field[:1], size=image_resol, mode=imode)
-            .detach()
-            .clone()
+            F.interpolate(field[:1], size=image_resol, mode=imode).detach().clone()
         )
 
     frame_data = copy.deepcopy(frame_data)
@@ -408,7 +404,6 @@ def _reduce_camera_iou_overlap(ious: torch.Tensor, topk: int = 2) -> torch.Tenso
     Returns:
         single-element Tensor
     """
-    # pyre-ignore[16]  topk not recognized
     return ious.topk(k=min(topk, len(ious) - 1)).values.mean()
 
 

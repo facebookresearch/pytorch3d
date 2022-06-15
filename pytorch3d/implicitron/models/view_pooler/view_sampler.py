@@ -205,7 +205,11 @@ def handle_seq_id(
     if not torch.is_tensor(seq_id):
         if isinstance(seq_id[0], str):
             seq_id = [hash(s) for s in seq_id]
+        # pyre-fixme[9]: seq_id has type `Union[List[int], List[str], LongTensor]`;
+        #  used as `Tensor`.
         seq_id = torch.tensor(seq_id, dtype=torch.long, device=device)
+    # pyre-fixme[16]: Item `List` of `Union[List[int], List[str], LongTensor]` has
+    #  no attribute `to`.
     return seq_id.to(device)
 
 
@@ -287,5 +291,7 @@ def cameras_points_cartesian_product(
         )
         .reshape(batch_pts * n_cameras)
     )
+    # pyre-fixme[6]: For 1st param expected `Union[List[int], int, LongTensor]` but
+    #  got `Tensor`.
     camera_rep = camera[idx_cams]
     return camera_rep, pts_rep

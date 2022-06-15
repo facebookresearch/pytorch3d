@@ -401,6 +401,7 @@ class CamerasBase(TensorProperties):
 
         kwargs = {}
 
+        # pyre-fixme[16]: Module `cuda` has no attribute `LongTensor`.
         if not isinstance(index, (int, list, torch.LongTensor, torch.cuda.LongTensor)):
             msg = "Invalid index type, expected int, List[int] or torch.LongTensor; got %r"
             raise ValueError(msg % type(index))
@@ -600,7 +601,9 @@ class FoVPerspectiveCameras(CamerasBase):
         # so the so the z sign is 1.0.
         z_sign = 1.0
 
+        # pyre-fixme[58]: `/` is not supported for operand types `float` and `Tensor`.
         K[:, 0, 0] = 2.0 * znear / (max_x - min_x)
+        # pyre-fixme[58]: `/` is not supported for operand types `float` and `Tensor`.
         K[:, 1, 1] = 2.0 * znear / (max_y - min_y)
         K[:, 0, 2] = (max_x + min_x) / (max_x - min_x)
         K[:, 1, 2] = (max_y + min_y) / (max_y - min_y)
@@ -1755,6 +1758,8 @@ def get_ndc_to_screen_transform(
     K = torch.zeros((cameras._N, 4, 4), device=cameras.device, dtype=torch.float32)
     if not torch.is_tensor(image_size):
         image_size = torch.tensor(image_size, device=cameras.device)
+    # pyre-fixme[16]: Item `List` of `Union[List[typing.Any], Tensor, Tuple[Any,
+    #  ...]]` has no attribute `view`.
     image_size = image_size.view(-1, 2)  # of shape (1 or B)x2
     height, width = image_size.unbind(1)
 

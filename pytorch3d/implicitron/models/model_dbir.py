@@ -93,6 +93,8 @@ class ModelDBIR(ImplicitronModelBase, torch.nn.Module):
         mask_fg = (fg_probability > 0.5).type_as(image_rgb)
 
         point_cloud = get_rgbd_point_cloud(
+            # pyre-fixme[6]: For 1st param expected `Union[List[int], int,
+            #  LongTensor]` but got `Tensor`.
             camera[is_known_idx],
             image_rgb[is_known_idx],
             depth_map[is_known_idx],
@@ -101,6 +103,8 @@ class ModelDBIR(ImplicitronModelBase, torch.nn.Module):
 
         pcl_size = point_cloud.num_points_per_cloud().item()
         if (self.max_points > 0) and (pcl_size > self.max_points):
+            # pyre-fixme[6]: For 1st param expected `int` but got `Union[bool,
+            #  float, int]`.
             prm = torch.randperm(pcl_size)[: self.max_points]
             point_cloud = Pointclouds(
                 point_cloud.points_padded()[:, prm, :],

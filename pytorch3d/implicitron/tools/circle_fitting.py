@@ -108,6 +108,7 @@ def fit_circle_in_2d(
         raise ValueError(f"{n_provided} points are not enough to determine a circle")
     solution = lstsq(design, rhs[:, None])
     center = solution[:2, 0] / 2
+    # pyre-fixme[58]: `**` is not supported for operand types `Tensor` and `int`.
     radius = torch.sqrt(solution[2, 0] + (center**2).sum())
     if n_points > 0:
         if angles is not None:

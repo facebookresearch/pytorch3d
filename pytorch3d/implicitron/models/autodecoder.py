@@ -99,6 +99,8 @@ class Autodecoder(Configurable, torch.nn.Module):
 
         if isinstance(x[0], str):
             try:
+                # pyre-fixme[9]: x has type `Union[List[str], LongTensor]`; used as
+                #  `Tensor`.
                 x = torch.tensor(
                     # pyre-ignore[29]
                     [self._sequence_map[elem] for elem in x],

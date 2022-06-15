@@ -180,6 +180,7 @@ def iterative_closest_point(
         t_history.append(SimilarityTransform(R, T, s))
 
         # compute the root mean squared error
+        # pyre-fixme[58]: `**` is not supported for operand types `Tensor` and `int`.
         Xt_sq_diff = ((Xt - Xt_nn_points) ** 2).sum(2)
         rmse = oputil.wmean(Xt_sq_diff[:, :, None], mask_X).sqrt()[:, 0, 0]
 

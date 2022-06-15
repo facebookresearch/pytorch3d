@@ -394,6 +394,7 @@ def ndc_grid_sample(
 
     grid_ndc_flat = grid_ndc.reshape(batch, -1, 1, 2)
 
+    # pyre-fixme[6]: For 2nd param expected `Tuple[int, int]` but got `Size`.
     grid_flat = ndc_to_grid_sample_coords(grid_ndc_flat, input.shape[2:])
 
     sampled_input_flat = torch.nn.functional.grid_sample(

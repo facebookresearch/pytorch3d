@@ -180,6 +180,8 @@ class MultinomialRaysampler(torch.nn.Module):
                 # is not batched and does not support partial permutation
                 _, width, height, _ = xy_grid.shape
                 weights = xy_grid.new_ones(batch_size, width * height)
+            # pyre-fixme[6]: For 2nd param expected `int` but got `Union[bool,
+            #  float, int]`.
             rays_idx = _safe_multinomial(weights, num_rays)[..., None].expand(-1, -1, 2)
 
             xy_grid = torch.gather(xy_grid.reshape(batch_size, -1, 2), 1, rays_idx)[
@@ -478,7 +480,6 @@ def _safe_multinomial(input: torch.Tensor, num_samples: int) -> torch.Tensor:
     # in some versions of Pytorch, zero probabilty samples can be drawn without an error
     # due to this bug: https://github.com/pytorch/pytorch/issues/50034. Handle this case:
     repl = (input > 0.0).sum(dim=-1) < num_samples
-    # pyre-fixme[16]: Undefined attribute `torch.ByteTensor` has no attribute `any`.
     if repl.any():
         res[repl] = torch.multinomial(input[repl], num_samples, replacement=True)
 
@@ -515,7 +516,7 @@ def _xy_to_ray_bundle(
     """
     batch_size = xy_grid.shape[0]
     spatial_size = xy_grid.shape[1:-1]
-    n_rays_per_image = spatial_size.numel()  # pyre-ignore
+    n_rays_per_image = spatial_size.numel()
 
     # ray z-coords
     rays_zs = xy_grid.new_empty((0,))

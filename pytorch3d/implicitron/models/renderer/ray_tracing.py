@@ -123,12 +123,12 @@ class RayTracing(Configurable, nn.Module):
 
         ray_directions = ray_directions.reshape(-1, 3)
         mask_intersect = mask_intersect.reshape(-1)
+        # pyre-fixme[9]: object_mask has type `BoolTensor`; used as `Tensor`.
         object_mask = object_mask.reshape(-1)
 
         in_mask = ~network_object_mask & object_mask & ~sampler_mask
         out_mask = ~object_mask & ~sampler_mask
 
-        # pyre-fixme[16]: `Tensor` has no attribute `__invert__`.
         mask_left_out = (in_mask | out_mask) & ~mask_intersect
         if (
             mask_left_out.sum() > 0
@@ -410,10 +410,17 @@ class RayTracing(Configurable, nn.Module):
         if n_p_out > 0:
             out_pts_idx = torch.argmin(sdf_val[p_out_mask, :], -1)
             sampler_pts[mask_intersect_idx[p_out_mask]] = points[p_out_mask, :, :][
-                torch.arange(n_p_out), out_pts_idx, :
+                # pyre-fixme[6]: For 1st param expected `Union[bool, float, int]`
+                #  but got `Tensor`.
+                torch.arange(n_p_out),
+                out_pts_idx,
+                :,
             ]
             sampler_dists[mask_intersect_idx[p_out_mask]] = pts_intervals[
-                p_out_mask, :
+                p_out_mask,
+                :
+                # pyre-fixme[6]: For 1st param expected `Union[bool, float, int]` but
+                #  got `Tensor`.
             ][torch.arange(n_p_out), out_pts_idx]
 
         # Get Network object mask
@@ -434,10 +441,16 @@ class RayTracing(Configurable, nn.Module):
                 secant_pts
             ]
             z_low = pts_intervals[secant_pts][
-                torch.arange(n_secant_pts), sampler_pts_ind[secant_pts] - 1
+                # pyre-fixme[6]: For 1st param expected `Union[bool, float, int]`
+                #  but got `Tensor`.
+                torch.arange(n_secant_pts),
+                sampler_pts_ind[secant_pts] - 1,
             ]
             sdf_low = sdf_val[secant_pts][
-                torch.arange(n_secant_pts), sampler_pts_ind[secant_pts] - 1
+                # pyre-fixme[6]: For 1st param expected `Union[bool, float, int]`
+                #  but got `Tensor`.
+                torch.arange(n_secant_pts),
+                sampler_pts_ind[secant_pts] - 1,
             ]
             cam_loc_secant = cam_loc.reshape(-1, 3)[mask_intersect_idx[secant_pts]]
             ray_directions_secant = ray_directions.reshape((-1, 3))[
@@ -514,6 +527,7 @@ class RayTracing(Configurable, nn.Module):
         mask_max_dis = max_dis[mask].unsqueeze(-1)
         mask_min_dis = min_dis[mask].unsqueeze(-1)
         steps = (
+            # pyre-fixme[6]: For 1st param expected `int` but got `Tensor`.
             steps.unsqueeze(0).repeat(n_mask_points, 1) * (mask_max_dis - mask_min_dis)
             + mask_min_dis
         )
@@ -533,8 +547,13 @@ class RayTracing(Configurable, nn.Module):
         mask_sdf_all = torch.cat(mask_sdf_all).reshape(-1, n)
         min_vals, min_idx = mask_sdf_all.min(-1)
         min_mask_points = mask_points_all.reshape(-1, n, 3)[
-            torch.arange(0, n_mask_points), min_idx
+            # pyre-fixme[6]: For 2nd param expected `Union[bool, float, int]` but
+            #  got `Tensor`.
+            torch.arange(0, n_mask_points),
+            min_idx,
         ]
+        # pyre-fixme[6]: For 2nd param expected `Union[bool, float, int]` but got
+        #  `Tensor`.
         min_mask_dist = steps.reshape(-1, n)[torch.arange(0, n_mask_points), min_idx]
 
         return min_mask_points, min_mask_dist
@@ -553,6 +572,7 @@ def _get_sphere_intersection(
     # cam_loc = cam_loc.unsqueeze(-1)
     # ray_cam_dot = torch.bmm(ray_directions, cam_loc).squeeze()
     ray_cam_dot = (ray_directions * cam_loc).sum(-1)  # n_images x n_rays
+    # pyre-fixme[58]: `**` is not supported for operand types `Tensor` and `int`.
     under_sqrt = ray_cam_dot**2 - (cam_loc.norm(2, dim=-1) ** 2 - r**2)
 
     under_sqrt = under_sqrt.reshape(-1)

@@ -276,6 +276,7 @@ def add_pointclouds_to_volumes(
 
     # obtain the conversion mask
     n_per_pcl = pointclouds.num_points_per_cloud().type_as(pcl_feats)
+    # pyre-fixme[6]: For 1st param expected `Union[bool, float, int]` but got `Tensor`.
     mask = torch.arange(n_per_pcl.max(), dtype=pcl_feats.dtype, device=pcl_feats.device)
     mask = (mask[None, :] < n_per_pcl[:, None]).type_as(mask)
 
@@ -388,6 +389,7 @@ def add_points_features_to_volume_densities_features(
             mode=mode,
             min_weight=min_weight,
             mask=mask,
+            # pyre-fixme[6]: For 8th param expected `LongTensor` but got `Tensor`.
             grid_sizes=grid_sizes,
         )
 
@@ -595,7 +597,6 @@ def _splat_points_to_volumes(
     rX, rY, rZ = rXYZ.split(1, dim=2)
 
     # get random indices for the purpose of adding out-of-bounds values
-    # pyre-fixme[16]: `Tensor` has no attribute `new_zeros`.
     rand_idx = X.new_zeros(X.shape).random_(0, n_voxels)
 
     # iterate over the x, y, z indices of the 8-neighborhood (xdiff, ydiff, zdiff)
@@ -635,7 +636,6 @@ def _splat_points_to_volumes(
 
                 # scatter add casts the votes into the weight accumulator
                 # and the feature accumulator
-                # pyre-fixme[16]: `Tensor` has no attribute `scatter_add_`.
                 volume_densities.scatter_add_(1, idx_valid, w_valid)
 
                 # reshape idx_valid -> (minibatch, feature_dim, n_points)
@@ -719,6 +719,7 @@ def _round_points_to_volumes(
     X, Y, Z = XYZ.split(1, dim=2)
 
     # valid - binary indicators of votes that fall into the volume
+    # pyre-fixme[9]: grid_sizes has type `LongTensor`; used as `Tensor`.
     grid_sizes = grid_sizes.type_as(XYZ)
     valid = (
         (0 <= X)
@@ -743,7 +744,6 @@ def _round_points_to_volumes(
 
     # scatter add casts the votes into the weight accumulator
     # and the feature accumulator
-    # pyre-fixme[16]: `Tensor` has no attribute `scatter_add_`.
     volume_densities.scatter_add_(1, idx_valid, w_valid)
 
     # reshape idx_valid -> (minibatch, feature_dim, n_points)

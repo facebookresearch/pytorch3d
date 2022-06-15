@@ -347,4 +347,5 @@ def _get_value(point: Tuple[int, int, int], volume_data: torch.Tensor) -> float:
         data: scalar value in the volume at the given point
     """
     x, y, z = point
+    # pyre-fixme[7]: Expected `float` but got `Tensor`.
     return volume_data[z][y][x]

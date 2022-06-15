@@ -66,8 +66,11 @@ def _list_to_padded_wrapper(
                 "list_to_padded requires tensors to have the same number of dimensions"
             )
             raise ValueError(msg)
+        # pyre-fixme[6]: For 2nd param expected `int` but got `Union[bool, float, int]`.
         x_reshaped.append(y.reshape(-1, D))
     x_padded = list_to_padded(x_reshaped, pad_size=pad_size, pad_value=pad_value)
+    # pyre-fixme[58]: `+` is not supported for operand types `Tuple[int, int]` and
+    #  `Size`.
     return x_padded.reshape((N, -1) + reshape_dims)
 
 
@@ -96,8 +99,11 @@ def _padded_to_list_wrapper(
     N, M = x.shape[:2]
     reshape_dims = x.shape[2:]
     D = torch.prod(torch.tensor(reshape_dims)).item()
+    # pyre-fixme[6]: For 3rd param expected `int` but got `Union[bool, float, int]`.
     x_reshaped = x.reshape(N, M, D)
     x_list = padded_to_list(x_reshaped, split_size=split_size)
+    # pyre-fixme[58]: `+` is not supported for operand types `Tuple[typing.Any]` and
+    #  `Size`.
     x_list = [xl.reshape((xl.shape[0],) + reshape_dims) for xl in x_list]
     return x_list
 
@@ -132,8 +138,6 @@ def _pad_texture_maps(
             image_BCHW = image.permute(2, 0, 1)[None]
             new_image_BCHW = interpolate(
                 image_BCHW,
-                # pyre-fixme[6]: Expected `Optional[int]` for 2nd param but got
-                #  `Tuple[int, int]`.
                 size=max_shape,
                 mode="bilinear",
                 align_corners=align_corners,

@@ -99,8 +99,6 @@ def visualize_basics(
             v = v.repeat(1, 3, 1, 1)
         v = torch.nn.functional.interpolate(
             v,
-            # pyre-fixme[6]: Expected `Optional[typing.List[float]]` for 2nd param
-            #  but got `float`.
             scale_factor=(
                 600.0
                 if (

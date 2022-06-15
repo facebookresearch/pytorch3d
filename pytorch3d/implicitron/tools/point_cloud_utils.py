@@ -55,8 +55,6 @@ def get_rgbd_point_cloud(
 
     pts_colors = torch.nn.functional.interpolate(
         image_rgb,
-        # pyre-fixme[6]: Expected `Optional[int]` for 2nd param but got
-        #  `List[typing.Any]`.
         size=[imh, imw],
         mode="bilinear",
         align_corners=False,
@@ -133,6 +131,7 @@ def render_point_cloud_pytorch3d(
     cumprod = torch.cat((torch.ones_like(cumprod[..., :1]), cumprod[..., :-1]), dim=-1)
     depths = (weights * cumprod * fragments.zbuf).sum(dim=-1)
     # add the rendering mask
+    # pyre-fixme[6]: For 1st param expected `Tensor` but got `float`.
     render_mask = -torch.prod(1.0 - weights, dim=-1) + 1.0
 
     # cat depths and render mask
@@ -141,8 +140,6 @@ def render_point_cloud_pytorch3d(
     # reshape back
     rendered_blob = Fu.interpolate(
         rendered_blob,
-        # pyre-fixme[6]: Expected `Optional[int]` for 2nd param but got `Tuple[int,
-        #  ...]`.
         size=tuple(render_size),
         mode="bilinear",
     )

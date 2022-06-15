@@ -550,7 +550,6 @@ def _get_ray_dir_dot_prods(camera: CamerasBase, pts: torch.Tensor):
         #  torch.Tensor, torch.nn.modules.module.Module]` is not a function.
         # pyre-fixme[29]: `Union[BoundMethod[typing.Callable(torch.Tensor.permute)[[N...
         camera_rep.T[:, None],
-        # pyre-fixme[29]: `Union[BoundMethod[typing.Callable(torch.Tensor.permute)[[N...
         camera_rep.R.permute(0, 2, 1),
     ).reshape(-1, *([1] * (pts.ndim - 2)), 3)
     # cam_centers_rep = camera_rep.get_camera_center().reshape(
@@ -649,6 +648,7 @@ def _avgmaxstd_reduction_function(
     x_aggr = torch.cat(pooled_features, dim=-1)
 
     # zero out features that were all masked out
+    # pyre-fixme[16]: `bool` has no attribute `type_as`.
     any_active = (w.max(dim=dim, keepdim=True).values > 1e-4).type_as(x_aggr)
     x_aggr = x_aggr * any_active[..., None]
 
@@ -676,6 +676,7 @@ def _std_reduction_function(
 ):
     if mu is None:
         mu = _avg_reduction_function(x, w, dim=dim)
+    # pyre-fixme[58]: `**` is not supported for operand types `Tensor` and `int`.
     std = wmean((x - mu) ** 2, w, dim=dim, eps=1e-2).clamp(1e-4).sqrt()
     # FIXME: somehow this is extremely heavy in mem?
     return std

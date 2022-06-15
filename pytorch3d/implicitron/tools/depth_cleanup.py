@@ -50,6 +50,7 @@ def cleanup_eval_depth(
     # the threshold is a sigma-multiple of the standard deviation of the depth
     mu = wmean(depth.view(ba, -1, 1), mask.view(ba, -1)).view(ba, 1)
     std = (
+        # pyre-fixme[58]: `**` is not supported for operand types `Tensor` and `int`.
         wmean((depth.view(ba, -1) - mu).view(ba, -1, 1) ** 2, mask.view(ba, -1))
         .clamp(1e-4)
         .sqrt()
@@ -62,7 +63,6 @@ def cleanup_eval_depth(
     # print(f'Kept {100.0 * perc_kept.mean():1.3f} % points')
 
     good_depth_raster = torch.zeros_like(depth).view(ba, -1)
-    # pyre-ignore[16]: scatter_add_
     good_depth_raster.scatter_add_(1, torch.round(idx_sampled[:, 0]).long(), good_depth)
 
     good_depth_mask = (good_depth_raster.view(ba, 1, H, W) > 0).float()

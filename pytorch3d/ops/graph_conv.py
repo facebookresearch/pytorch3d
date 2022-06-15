@@ -119,7 +119,6 @@ def gather_scatter_python(input, edges, directed: bool = False):
     idx0 = edges[:, 0].view(num_edges, 1).expand(num_edges, input_feature_dim)
     idx1 = edges[:, 1].view(num_edges, 1).expand(num_edges, input_feature_dim)
 
-    # pyre-fixme[16]: `Tensor` has no attribute `scatter_add`.
     output = output.scatter_add(0, idx0, input.gather(0, idx1))
     if not directed:
         output = output.scatter_add(0, idx1, input.gather(0, idx0))

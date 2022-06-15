@@ -57,7 +57,6 @@ def _format_faces_indices(faces_indices, max_index: int, device, pad_value=None)
     )
 
     if pad_value is not None:
-        # pyre-fixme[28]: Unexpected keyword argument `dim`.
         mask = faces_indices.eq(pad_value).all(dim=-1)
 
     # Change to 0 based indexing.

@@ -441,6 +441,8 @@ def _create_faces_index(faces_per_mesh: torch.Tensor, device=None):
 
     switch123_offset = F - faces_per_mesh  # e.g. (8, 5, 7)
 
+    # pyre-fixme[6]: For 1st param expected `Union[List[int], Size,
+    #  typing.Tuple[int, ...]]` but got `Tensor`.
     idx_diffs = torch.ones(4 * F, device=device, dtype=torch.int64)
     idx_diffs[switch1_idx] += switch123_offset
     idx_diffs[switch2_idx] += switch123_offset

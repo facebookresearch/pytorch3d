@@ -227,6 +227,8 @@ class ShapeNetBase(torch.utils.data.Dataset):  # pragma: no cover
                 sampled_idxs = self._sample_idxs_from_category(
                     sample_num=sample_num, category=category
                 )
+                # pyre-fixme[6]: For 1st param expected `Union[List[Tensor],
+                #  typing.Tuple[Tensor, ...]]` but got `Tuple[Tensor, List[int]]`.
                 idxs_tensor = torch.cat((idxs_tensor, sampled_idxs))
             idxs = idxs_tensor.tolist()
         # Check if the indices are valid if idxs are supplied.
@@ -283,4 +285,5 @@ class ShapeNetBase(torch.utils.data.Dataset):  # pragma: no cover
                 "category " + category if category is not None else "all categories",
             )
             warnings.warn(msg)
+        # pyre-fixme[7]: Expected `List[int]` but got `Tensor`.
         return sampled_idxs

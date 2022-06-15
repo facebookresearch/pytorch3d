@@ -254,7 +254,6 @@ def _find_verts_intersecting_clipping_plane(
 
     # p1, p2, p3 are (T, 3) tensors storing the corresponding (x, y, z) coordinates
     # of p1_face_ind, p2_face_ind, p3_face_ind
-    # pyre-ignore[16]
     p1 = face_verts.gather(1, p1_face_ind[:, None, None].expand(-1, -1, 3)).squeeze(1)
     p2 = face_verts.gather(1, p2_face_ind[:, None, None].expand(-1, -1, 3)).squeeze(1)
     p3 = face_verts.gather(1, p3_face_ind[:, None, None].expand(-1, -1, 3)).squeeze(1)
@@ -398,7 +397,6 @@ def clip_faces(
     #      into a smaller quadrilateral and split into two triangles)
     #####################################################################################
 
-    # pyre-ignore[16]:
     faces_unculled = ~faces_culled
     # Case 1:  no clipped verts or culled faces
     cases1_unclipped = (faces_num_clipped_verts == 0) & faces_unculled
@@ -434,7 +432,13 @@ def clip_faces(
     # These will then be filled in for each case.
     ###########################################
     F_clipped = (
-        F + faces_delta_cum[-1].item() + faces_delta[-1].item()
+        F
+        # pyre-fixme[58]: `+` is not supported for operand types `int` and
+        #  `Union[bool, float, int]`.
+        + faces_delta_cum[-1].item()
+        # pyre-fixme[58]: `+` is not supported for operand types `int` and
+        #  `Union[bool, float, int]`.
+        + faces_delta[-1].item()
     )  # Total number of faces in the new Meshes
     face_verts_clipped = torch.zeros(
         (F_clipped, 3, 3), dtype=face_verts_unclipped.dtype, device=device

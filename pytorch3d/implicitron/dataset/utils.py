@@ -23,6 +23,7 @@ def is_known_frame(
     Given a list `frame_type` of frame types in a batch, return a tensor
     of boolean flags expressing whether the corresponding frame is a known frame.
     """
+    # pyre-fixme[7]: Expected `BoolTensor` but got `Tensor`.
     return torch.tensor(
         [ft.endswith(DATASET_TYPE_KNOWN) for ft in frame_type],
         dtype=torch.bool,
@@ -37,6 +38,7 @@ def is_train_frame(
     Given a list `frame_type` of frame types in a batch, return a tensor
     of boolean flags expressing whether the corresponding frame is a training frame.
     """
+    # pyre-fixme[7]: Expected `BoolTensor` but got `Tensor`.
     return torch.tensor(
         [ft.startswith(DATASET_TYPE_TRAIN) for ft in frame_type],
         dtype=torch.bool,
