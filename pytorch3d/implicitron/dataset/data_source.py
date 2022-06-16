@@ -8,9 +8,11 @@ from typing import Tuple
 
 from pytorch3d.implicitron.tools.config import ReplaceableBase, run_auto_creation
 
-from . import json_index_dataset_map_provider  # noqa
+from .blender_dataset_map_provider import BlenderDatasetMapProvider  # noqa
 from .data_loader_map_provider import DataLoaderMap, DataLoaderMapProviderBase
 from .dataset_map_provider import DatasetMap, DatasetMapProviderBase, Task
+from .json_index_dataset_map_provider import JsonIndexDatasetMapProvider  # noqa
+from .llff_dataset_map_provider import LlffDatasetMapProvider  # noqa
 
 
 class DataSourceBase(ReplaceableBase):

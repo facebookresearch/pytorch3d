@@ -13,6 +13,7 @@ from .blending import (
 from .camera_utils import join_cameras_as_batch, rotate_on_spot
 from .cameras import (  # deprecated  # deprecated  # deprecated  # deprecated
     camera_position_from_spherical_angles,
+    CamerasBase,
     FoVOrthographicCameras,
     FoVPerspectiveCameras,
     get_world_to_view_transform,

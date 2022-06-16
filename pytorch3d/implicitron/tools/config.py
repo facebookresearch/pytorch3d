@@ -220,6 +220,7 @@ class Configurable:
 
 
 _X = TypeVar("X", bound=ReplaceableBase)
+_Y = TypeVar("Y", bound=Union[ReplaceableBase, Configurable])
 
 
 class _Registry:
@@ -307,20 +308,23 @@ class _Registry:
                         It determines the namespace.
                         This will typically be a direct subclass of ReplaceableBase.
         Returns:
-            list of class types
+            list of class types in alphabetical order of registered name.
         """
         if self._is_base_class(base_class_wanted):
-            return list(self._mapping[base_class_wanted].values())
+            source = self._mapping[base_class_wanted]
+            return [source[key] for key in sorted(source)]
 
         base_class = self._base_class_from_class(base_class_wanted)
         if base_class is None:
             raise ValueError(
                 f"Cannot look up {base_class_wanted}. Cannot tell what it is."
             )
+        source = self._mapping[base_class]
         return [
-            class_
-            for class_ in self._mapping[base_class].values()
-            if issubclass(class_, base_class_wanted) and class_ is not base_class_wanted
+            source[key]
+            for key in sorted(source)
+            if issubclass(source[key], base_class_wanted)
+            and source[key] is not base_class_wanted
         ]
 
     @staticmethod
@@ -647,8 +651,8 @@ def _is_actually_dataclass(some_class) -> bool:
 
 
 def expand_args_fields(
-    some_class: Type[_X], *, _do_not_process: Tuple[type, ...] = ()
-) -> Type[_X]:
+    some_class: Type[_Y], *, _do_not_process: Tuple[type, ...] = ()
+) -> Type[_Y]:
     """
     This expands a class which inherits Configurable or ReplaceableBase classes,
     including dataclass processing. some_class is modified in place by this function.

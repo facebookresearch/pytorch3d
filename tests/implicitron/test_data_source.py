@@ -6,6 +6,7 @@
 
 import os
 import unittest
+import unittest.mock
 
 from omegaconf import OmegaConf
 from pytorch3d.implicitron.dataset.data_source import ImplicitronDataSource

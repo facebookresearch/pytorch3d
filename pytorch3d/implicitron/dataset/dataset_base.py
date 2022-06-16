@@ -36,10 +36,11 @@ class FrameData(Mapping[str, Any]):
     Args:
         frame_number: The number of the frame within its sequence.
             0-based continuous integers.
-        frame_timestamp: The time elapsed since the start of a sequence in sec.
         sequence_name: The unique name of the frame's sequence.
         sequence_category: The object category of the sequence.
-        image_size_hw: The size of the image in pixels; (height, width) tuple.
+        frame_timestamp: The time elapsed since the start of a sequence in sec.
+        image_size_hw: The size of the image in pixels; (height, width) tensor
+                        of shape (2,).
         image_path: The qualified path to the loaded image (with dataset_root).
         image_rgb: A Tensor of shape `(3, H, W)` holding the RGB image
             of the frame; elements are floats in [0, 1].
@@ -81,9 +82,9 @@ class FrameData(Mapping[str, Any]):
     """
 
     frame_number: Optional[torch.LongTensor]
-    frame_timestamp: Optional[torch.Tensor]
     sequence_name: Union[str, List[str]]
     sequence_category: Union[str, List[str]]
+    frame_timestamp: Optional[torch.Tensor] = None
     image_size_hw: Optional[torch.Tensor] = None
     image_path: Union[str, List[str], None] = None
     image_rgb: Optional[torch.Tensor] = None
@@ -101,7 +102,7 @@ class FrameData(Mapping[str, Any]):
     sequence_point_cloud_path: Union[str, List[str], None] = None
     sequence_point_cloud: Optional[Pointclouds] = None
     sequence_point_cloud_idx: Optional[torch.Tensor] = None
-    frame_type: Union[str, List[str], None] = None  # seen | unseen
+    frame_type: Union[str, List[str], None] = None  # known | unseen
     meta: dict = field(default_factory=lambda: {})
 
     def to(self, *args, **kwargs):

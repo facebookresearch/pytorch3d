@@ -95,18 +95,18 @@ generic_model_args:
     append_coarse_samples_to_fine: true
     density_noise_std_train: 0.0
     return_weights: false
-    raymarcher_EmissionAbsorptionRaymarcher_args:
-      surface_thickness: 1
-      bg_color:
-      - 0.0
-      background_opacity: 10000000000.0
-      density_relu: true
-      blend_output: false
     raymarcher_CumsumRaymarcher_args:
       surface_thickness: 1
       bg_color:
       - 0.0
       background_opacity: 0.0
+      density_relu: true
+      blend_output: false
+    raymarcher_EmissionAbsorptionRaymarcher_args:
+      surface_thickness: 1
+      bg_color:
+      - 0.0
+      background_opacity: 10000000000.0
       density_relu: true
       blend_output: false
   renderer_SignedDistanceFunctionRenderer_args:
@@ -157,6 +157,21 @@ generic_model_args:
     view_sampler_args:
       masked_sampling: false
       sampling_mode: bilinear
+    feature_aggregator_AngleWeightedIdentityFeatureAggregator_args:
+      exclude_target_view: true
+      exclude_target_view_mask_features: true
+      concatenate_output: true
+      weight_by_ray_angle_gamma: 1.0
+      min_ray_angle_weight: 0.1
+    feature_aggregator_AngleWeightedReductionFeatureAggregator_args:
+      exclude_target_view: true
+      exclude_target_view_mask_features: true
+      concatenate_output: true
+      reduction_functions:
+      - AVG
+      - STD
+      weight_by_ray_angle_gamma: 1.0
+      min_ray_angle_weight: 0.1
     feature_aggregator_IdentityFeatureAggregator_args:
       exclude_target_view: true
       exclude_target_view_mask_features: true
@@ -168,21 +183,6 @@ generic_model_args:
       reduction_functions:
       - AVG
       - STD
-    feature_aggregator_AngleWeightedReductionFeatureAggregator_args:
-      exclude_target_view: true
-      exclude_target_view_mask_features: true
-      concatenate_output: true
-      reduction_functions:
-      - AVG
-      - STD
-      weight_by_ray_angle_gamma: 1.0
-      min_ray_angle_weight: 0.1
-    feature_aggregator_AngleWeightedIdentityFeatureAggregator_args:
-      exclude_target_view: true
-      exclude_target_view_mask_features: true
-      concatenate_output: true
-      weight_by_ray_angle_gamma: 1.0
-      min_ray_angle_weight: 0.1
   implicit_function_IdrFeatureField_args:
     feature_vector_size: 3
     d_in: 3
@@ -203,19 +203,6 @@ generic_model_args:
     n_harmonic_functions_xyz: 0
     pooled_feature_dim: 0
     encoding_dim: 0
-  implicit_function_NeuralRadianceFieldImplicitFunction_args:
-    n_harmonic_functions_xyz: 10
-    n_harmonic_functions_dir: 4
-    n_hidden_neurons_dir: 128
-    latent_dim: 0
-    input_xyz: true
-    xyz_ray_dir_in_camera_coords: false
-    color_dim: 3
-    transformer_dim_down_factor: 1.0
-    n_hidden_neurons_xyz: 256
-    n_layers_xyz: 8
-    append_xyz:
-    - 5
   implicit_function_NeRFormerImplicitFunction_args:
     n_harmonic_functions_xyz: 10
     n_harmonic_functions_dir: 4
@@ -229,24 +216,19 @@ generic_model_args:
     n_layers_xyz: 2
     append_xyz:
     - 1
-  implicit_function_SRNImplicitFunction_args:
-    raymarch_function_args:
-      n_harmonic_functions: 3
-      n_hidden_units: 256
-      n_layers: 2
-      in_features: 3
-      out_features: 256
-      latent_dim: 0
-      xyz_in_camera_coords: false
-      raymarch_function: null
-    pixel_generator_args:
-      n_harmonic_functions: 4
-      n_hidden_units: 256
-      n_hidden_units_color: 128
-      n_layers: 2
-      in_features: 256
-      out_features: 3
-      ray_dir_in_camera_coords: false
+  implicit_function_NeuralRadianceFieldImplicitFunction_args:
+    n_harmonic_functions_xyz: 10
+    n_harmonic_functions_dir: 4
+    n_hidden_neurons_dir: 128
+    latent_dim: 0
+    input_xyz: true
+    xyz_ray_dir_in_camera_coords: false
+    color_dim: 3
+    transformer_dim_down_factor: 1.0
+    n_hidden_neurons_xyz: 256
+    n_layers_xyz: 8
+    append_xyz:
+    - 5
   implicit_function_SRNHyperNetImplicitFunction_args:
     hypernet_args:
       n_harmonic_functions: 3
@@ -259,6 +241,24 @@ generic_model_args:
       latent_dim_hypernet: 0
       latent_dim: 0
       xyz_in_camera_coords: false
+    pixel_generator_args:
+      n_harmonic_functions: 4
+      n_hidden_units: 256
+      n_hidden_units_color: 128
+      n_layers: 2
+      in_features: 256
+      out_features: 3
+      ray_dir_in_camera_coords: false
+  implicit_function_SRNImplicitFunction_args:
+    raymarch_function_args:
+      n_harmonic_functions: 3
+      n_hidden_units: 256
+      n_layers: 2
+      in_features: 3
+      out_features: 256
+      latent_dim: 0
+      xyz_in_camera_coords: false
+      raymarch_function: null
     pixel_generator_args:
       n_harmonic_functions: 4
       n_hidden_units: 256
@@ -282,6 +282,13 @@ solver_args:
 data_source_args:
   dataset_map_provider_class_type: ???
   data_loader_map_provider_class_type: SequenceDataLoaderMapProvider
+  dataset_map_provider_BlenderDatasetMapProvider_args:
+    base_dir: ???
+    object_name: ???
+    path_manager_factory_class_type: PathManagerFactory
+    n_known_frames_for_test: null
+    path_manager_factory_PathManagerFactory_args:
+      silence_logs: true
   dataset_map_provider_JsonIndexDatasetMapProvider_args:
     category: ???
     task_str: singlesequence
@@ -315,6 +322,13 @@ data_source_args:
       remove_empty_masks: true
       seed: 0
       sort_frames: false
+    path_manager_factory_PathManagerFactory_args:
+      silence_logs: true
+  dataset_map_provider_LlffDatasetMapProvider_args:
+    base_dir: ???
+    object_name: ???
+    path_manager_factory_class_type: PathManagerFactory
+    n_known_frames_for_test: null
     path_manager_factory_PathManagerFactory_args:
       silence_logs: true
   data_loader_map_provider_SequenceDataLoaderMapProvider_args:

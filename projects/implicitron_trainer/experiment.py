@@ -315,7 +315,7 @@ def trainvalidate(
     epoch,
     loader,
     optimizer,
-    validation,
+    validation: bool,
     bp_var: str = "objective",
     metric_print_interval: int = 5,
     visualize_interval: int = 100,
