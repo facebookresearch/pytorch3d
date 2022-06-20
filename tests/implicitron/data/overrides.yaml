@@ -72,6 +72,7 @@ renderer_LSTMRenderer_args:
   init_depth_noise_std: 0.0005
   hidden_size: 16
   n_feature_channels: 256
+  bg_color: null
   verbose: false
 image_feature_extractor_ResNetFeatureExtractor_args:
   name: resnet34

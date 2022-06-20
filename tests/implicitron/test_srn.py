@@ -7,14 +7,14 @@
 import unittest
 
 import torch
+from pytorch3d.implicitron.models.generic_model import GenericModel
 from pytorch3d.implicitron.models.implicit_function.scene_representation_networks import (
     SRNHyperNetImplicitFunction,
     SRNImplicitFunction,
     SRNPixelGenerator,
 )
-from pytorch3d.implicitron.models.renderer.base import ImplicitFunctionWrapper
 from pytorch3d.implicitron.tools.config import get_default_args
-from pytorch3d.renderer import RayBundle
+from pytorch3d.renderer import PerspectiveCameras, RayBundle
 from tests.common_testing import TestCaseMixin
 
 _BATCH_SIZE: int = 3
@@ -69,40 +69,23 @@ class TestSRN(TestCaseMixin, unittest.TestCase):
         )
         self.assertIsNone(rays_colors)
 
-    def test_srn_hypernet_implicit_function_optim(self):
-        # Test optimization loop, requiring that the cache is properly
-        # cleared in new_args_bound
-        latent_dim_hypernet = 39
-        hyper_args = {"latent_dim_hypernet": latent_dim_hypernet}
-        device = torch.device("cuda:0")
-        global_code = torch.rand(_BATCH_SIZE, latent_dim_hypernet, device=device)
-        bundle = self._get_bundle(device=device)
-
-        implicit_function = SRNHyperNetImplicitFunction(hypernet_args=hyper_args)
-        implicit_function2 = SRNHyperNetImplicitFunction(hypernet_args=hyper_args)
-        implicit_function.to(device)
-        implicit_function2.to(device)
-
-        wrapper = ImplicitFunctionWrapper(implicit_function)
-        optimizer = torch.optim.Adam(implicit_function.parameters())
-        for _step in range(3):
-            optimizer.zero_grad()
-            wrapper.bind_args(global_code=global_code)
-            rays_densities, _rays_colors = wrapper(bundle)
-            wrapper.unbind_args()
-            loss = rays_densities.sum()
-            loss.backward()
-            optimizer.step()
-
-        wrapper2 = ImplicitFunctionWrapper(implicit_function)
-        optimizer2 = torch.optim.Adam(implicit_function2.parameters())
-        implicit_function2.load_state_dict(implicit_function.state_dict())
-        optimizer2.load_state_dict(optimizer.state_dict())
-        for _step in range(3):
-            optimizer2.zero_grad()
-            wrapper2.bind_args(global_code=global_code)
-            rays_densities, _rays_colors = wrapper2(bundle)
-            wrapper2.unbind_args()
-            loss = rays_densities.sum()
-            loss.backward()
-            optimizer2.step()
+    def test_lstm(self):
+        args = get_default_args(GenericModel)
+        args.render_image_height = 80
+        args.render_image_width = 80
+        args.implicit_function_class_type = "SRNImplicitFunction"
+        args.renderer_class_type = "LSTMRenderer"
+        args.raysampler_class_type = "NearFarRaySampler"
+        args.raysampler_NearFarRaySampler_args.n_pts_per_ray_training = 1
+        args.raysampler_NearFarRaySampler_args.n_pts_per_ray_evaluation = 1
+        args.renderer_LSTMRenderer_args.bg_color = [0.4, 0.4, 0.2]
+        gm = GenericModel(**args)
+        camera = PerspectiveCameras()
+        gm.forward(
+            camera=camera,
+            image_rgb=None,
+            fg_probability=None,
+            sequence_name="",
+            mask_crop=None,
+            depth_map=None,
+        )
