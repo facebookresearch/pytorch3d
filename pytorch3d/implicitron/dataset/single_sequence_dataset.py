@@ -116,9 +116,11 @@ class SingleSceneDatasetMapProviderBase(DatasetMapProviderBase):
             if set_eval_batches:
                 generator = np.random.default_rng(seed=0)
                 for batch in eval_batches:
-                    to_add = generator.choice(
-                        len(train_split), self.n_known_frames_for_test
-                    )
+                    # using permutation so that changes to n_known_frames_for_test
+                    # result in consistent batches.
+                    to_add = generator.permutation(len(train_split))[
+                        : self.n_known_frames_for_test
+                    ]
                     batch.extend((to_add + len(split)).tolist())
             split = np.concatenate([split, train_split])
             frame_types.extend([DATASET_TYPE_KNOWN] * len(train_split))
