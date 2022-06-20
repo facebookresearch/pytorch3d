@@ -16,6 +16,30 @@ logger = logging.getLogger(__name__)
 
 
 class RayNormalColoringNetwork(torch.nn.Module):
+    """
+    Members:
+        d_in and feature_vector_size: Sum of these is the input
+            dimension. These must add up to the sum of
+                - 3 [for the points]
+                - 3 unless mode=no_normal [for the normals]
+                - 3 unless mode=no_view_dir [for view directions]
+                - the feature size, [number of channels in feature_vectors]
+
+        d_out: dimension of output.
+        mode: One of "idr", "no_view_dir" or "no_normal" to allow omitting
+            part of the network input.
+        dims: list of hidden layer sizes.
+        weight_norm: whether to apply weight normalization to each layer.
+        n_harmonic_functions_dir:
+            If >0, use a harmonic embedding with this number of
+            harmonic functions for the view direction. Otherwise view directions
+            are fed without embedding, unless mode is `no_view_dir`.
+        pooled_feature_dim: If a pooling function is in use (provided as
+            pooling_fn to forward()) this must be its number of features.
+            Otherwise this must be set to 0. (If used from GenericModel,
+            this will be set automatically.)
+    """
+
     def __init__(
         self,
         feature_vector_size: int = 3,

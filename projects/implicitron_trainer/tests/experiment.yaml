@@ -201,7 +201,7 @@ generic_model_args:
     bias: 1.0
     skip_in: []
     weight_norm: true
-    n_harmonic_functions_xyz: 0
+    n_harmonic_functions_xyz: -1
     pooled_feature_dim: 0
     encoding_dim: 0
   implicit_function_NeRFormerImplicitFunction_args:
