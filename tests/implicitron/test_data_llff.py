@@ -41,6 +41,10 @@ class TestDataLlff(TestCaseMixin, unittest.TestCase):
             # try getting a value
             value = dataset[0]
             self.assertEqual(value.image_rgb.shape, (3, 800, 800))
+            self.assertEqual(value.fg_probability.shape, (1, 800, 800))
+            # corner of image is background
+            self.assertEqual(value.fg_probability[0, 0, 0], 0)
+            self.assertEqual(value.fg_probability.max(), 1.0)
             self.assertIsInstance(value, FrameData)
 
     def test_llff(self):
@@ -90,6 +94,7 @@ class TestDataLlff(TestCaseMixin, unittest.TestCase):
             for i, frame_type in enumerate(types):
                 value = dataset[i]
                 self.assertEqual(value.frame_type, frame_type)
+                self.assertIsNone(value.fg_probability)
 
         self.assertEqual(len(dataset_map.test.get_eval_batches()), 3)
         for batch in dataset_map.test.get_eval_batches():

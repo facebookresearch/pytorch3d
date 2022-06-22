@@ -58,4 +58,6 @@ class LlffDatasetMapProvider(SingleSceneDatasetMapProviderBase):
         # pyre-ignore[16]
         self.images = images
         # pyre-ignore[16]
+        self.fg_probabilities = None
+        # pyre-ignore[16]
         self.i_split = i_split

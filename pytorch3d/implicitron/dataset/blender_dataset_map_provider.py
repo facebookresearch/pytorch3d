@@ -42,11 +42,13 @@ class BlenderDatasetMapProvider(SingleSceneDatasetMapProviderBase):
         )
         H, W, focal = hwf
         H, W = int(H), int(W)
-        images = torch.from_numpy(images).permute(0, 3, 1, 2)[:, :3]
+        images_masks = torch.from_numpy(images).permute(0, 3, 1, 2)
 
         # pyre-ignore[16]
         self.poses = _interpret_blender_cameras(poses, H, W, focal)
         # pyre-ignore[16]
-        self.images = images
+        self.images = images_masks[:, :3]
+        # pyre-ignore[16]
+        self.fg_probabilities = images_masks[:, 3:4]
         # pyre-ignore[16]
         self.i_split = i_split
