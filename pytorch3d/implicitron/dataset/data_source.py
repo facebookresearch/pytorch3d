@@ -6,7 +6,11 @@
 
 from typing import Tuple
 
-from pytorch3d.implicitron.tools.config import ReplaceableBase, run_auto_creation
+from pytorch3d.implicitron.tools.config import (
+    registry,
+    ReplaceableBase,
+    run_auto_creation,
+)
 
 from .blender_dataset_map_provider import BlenderDatasetMapProvider  # noqa
 from .data_loader_map_provider import DataLoaderMap, DataLoaderMapProviderBase
@@ -25,6 +29,7 @@ class DataSourceBase(ReplaceableBase):
         raise NotImplementedError()
 
 
+@registry.register
 class ImplicitronDataSource(DataSourceBase):  # pyre-ignore[13]
     """
     Represents the data used in Implicitron. This is the only implementation
