@@ -50,7 +50,7 @@ class LlffDatasetMapProvider(SingleSceneDatasetMapProviderBase):
         i_split = (i_train, i_test, i_test)
         H, W, focal = hwf
         H, W = int(H), int(W)
-        images = torch.from_numpy(images)
+        images = torch.from_numpy(images).permute(0, 3, 1, 2)
         poses = torch.from_numpy(poses)
 
         # pyre-ignore[16]

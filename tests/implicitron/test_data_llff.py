@@ -40,6 +40,7 @@ class TestDataLlff(TestCaseMixin, unittest.TestCase):
             self.assertEqual(len(dataset), length)
             # try getting a value
             value = dataset[0]
+            self.assertEqual(value.image_rgb.shape, (3, 800, 800))
             self.assertIsInstance(value, FrameData)
 
     def test_llff(self):
@@ -62,6 +63,7 @@ class TestDataLlff(TestCaseMixin, unittest.TestCase):
             value = dataset[0]
             self.assertIsInstance(value, FrameData)
             self.assertEqual(value.frame_type, frame_type)
+            self.assertEqual(value.image_rgb.shape, (3, 378, 504))
 
         self.assertEqual(len(dataset_map.test.get_eval_batches()), 3)
         for batch in dataset_map.test.get_eval_batches():
