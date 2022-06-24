@@ -7,7 +7,7 @@
 
 import json
 import os
-from typing import Dict, List, Sequence, Tuple, Type
+from typing import Dict, List, Tuple, Type
 
 from omegaconf import DictConfig, open_dict
 from pytorch3d.implicitron.tools.config import (
@@ -98,7 +98,7 @@ class JsonIndexDatasetMapProvider(DatasetMapProviderBase):  # pyre-ignore [13]
     dataset_root: str = _CO3D_DATASET_ROOT
     n_frames_per_sequence: int = -1
     test_on_train: bool = False
-    restrict_sequence_name: Sequence[str] = ()
+    restrict_sequence_name: Tuple[str, ...] = ()
     test_restrict_sequence_id: int = -1
     assert_single_seq: bool = False
     only_test_set: bool = False

@@ -9,7 +9,7 @@ import textwrap
 import unittest
 from dataclasses import dataclass, field, is_dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from omegaconf import DictConfig, ListConfig, OmegaConf, ValidationError
 from pytorch3d.implicitron.tools.config import (
@@ -484,16 +484,14 @@ class TestConfig(unittest.TestCase):
             none_field: Optional[int] = None
             float_field: float = 9.3
             bool_field: bool = True
-            tuple_field: tuple = (3, True, "j")
+            tuple_field: Tuple[int, ...] = (3,)
 
         class SimpleClass:
             def __init__(
                 self,
                 tuple_member_: Tuple[int, int] = (3, 4),
-                set_member_: Set[int] = {2},  # noqa
             ):
                 self.tuple_member = tuple_member_
-                self.set_member = set_member_
 
             def get_tuple(self):
                 return self.tuple_member
@@ -524,11 +522,9 @@ class TestConfig(unittest.TestCase):
         self.assertEqual(simple.get_tuple(), [3, 4])
         self.assertTrue(isinstance(simple.get_tuple(), ListConfig))
         # get_default_args converts sets to ListConfigs (which act like lists).
-        self.assertEqual(simple.set_member, [2])
-        self.assertTrue(isinstance(simple.set_member, ListConfig))
         self.assertEqual(c.a_tuple, [4.0, 3.0])
         self.assertTrue(isinstance(c.a_tuple, ListConfig))
-        self.assertEqual(mydata.tuple_field, (3, True, "j"))
+        self.assertEqual(mydata.tuple_field, (3,))
         self.assertTrue(isinstance(mydata.tuple_field, ListConfig))
         f(**c.f_args)
 

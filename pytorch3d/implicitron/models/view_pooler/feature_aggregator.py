@@ -6,7 +6,7 @@
 
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Dict, Optional, Sequence, Union
+from typing import Dict, Optional, Sequence, Tuple, Union
 
 import torch
 import torch.nn.functional as F
@@ -176,7 +176,7 @@ class ReductionFeatureAggregator(torch.nn.Module, FeatureAggregatorBase):
             the stack of source-view-specific features to a single feature.
     """
 
-    reduction_functions: Sequence[ReductionFunction] = (
+    reduction_functions: Tuple[ReductionFunction, ...] = (
         ReductionFunction.AVG,
         ReductionFunction.STD,
     )
@@ -269,7 +269,7 @@ class AngleWeightedReductionFeatureAggregator(torch.nn.Module, FeatureAggregator
             used when calculating the angle-based aggregation weights.
     """
 
-    reduction_functions: Sequence[ReductionFunction] = (
+    reduction_functions: Tuple[ReductionFunction, ...] = (
         ReductionFunction.AVG,
         ReductionFunction.STD,
     )

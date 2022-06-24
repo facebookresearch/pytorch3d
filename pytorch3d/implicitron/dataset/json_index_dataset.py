@@ -122,9 +122,9 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
     subsets: Optional[List[str]] = None
     limit_to: int = 0
     limit_sequences_to: int = 0
-    pick_sequence: Sequence[str] = ()
-    exclude_sequence: Sequence[str] = ()
-    limit_category_to: Sequence[int] = ()
+    pick_sequence: Tuple[str, ...] = ()
+    exclude_sequence: Tuple[str, ...] = ()
+    limit_category_to: Tuple[int, ...] = ()
     dataset_root: str = ""
     load_images: bool = True
     load_depths: bool = True

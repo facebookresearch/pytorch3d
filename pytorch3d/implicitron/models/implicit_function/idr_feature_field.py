@@ -3,7 +3,7 @@
 #              implicit_differentiable_renderer.py
 # Copyright (c) 2020 Lior Yariv
 import math
-from typing import Sequence
+from typing import Tuple
 
 import torch
 from pytorch3d.implicitron.tools.config import registry
@@ -53,10 +53,10 @@ class IdrFeatureField(ImplicitFunctionBase, torch.nn.Module):
     feature_vector_size: int = 3
     d_in: int = 3
     d_out: int = 1
-    dims: Sequence[int] = (512, 512, 512, 512, 512, 512, 512, 512)
+    dims: Tuple[int, ...] = (512, 512, 512, 512, 512, 512, 512, 512)
     geometric_init: bool = True
     bias: float = 1.0
-    skip_in: Sequence[int] = ()
+    skip_in: Tuple[int, ...] = ()
     weight_norm: bool = True
     n_harmonic_functions_xyz: int = 0
     pooled_feature_dim: int = 0

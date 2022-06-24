@@ -5,7 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 
 from dataclasses import dataclass
-from typing import Optional, Sequence
+from typing import Optional, Tuple
 
 import torch
 from pytorch3d.implicitron.tools.config import registry, ReplaceableBase
@@ -86,7 +86,7 @@ class SequenceDataLoaderMapProvider(DataLoaderMapProviderBase):
     num_workers: int = 0
     dataset_len: int = 1000
     dataset_len_val: int = 1
-    images_per_seq_options: Sequence[int] = (2,)
+    images_per_seq_options: Tuple[int, ...] = (2,)
     sample_consecutive_frames: bool = False
     consecutive_frames_max_gap: int = 0
     consecutive_frames_max_gap_seconds: float = 0.1
