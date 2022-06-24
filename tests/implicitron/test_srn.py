@@ -69,6 +69,7 @@ class TestSRN(TestCaseMixin, unittest.TestCase):
         )
         self.assertIsNone(rays_colors)
 
+    @torch.no_grad()
     def test_lstm(self):
         args = get_default_args(GenericModel)
         args.render_image_height = 80
@@ -80,12 +81,31 @@ class TestSRN(TestCaseMixin, unittest.TestCase):
         args.raysampler_NearFarRaySampler_args.n_pts_per_ray_evaluation = 1
         args.renderer_LSTMRenderer_args.bg_color = [0.4, 0.4, 0.2]
         gm = GenericModel(**args)
+
         camera = PerspectiveCameras()
-        gm.forward(
+        image = gm.forward(
             camera=camera,
             image_rgb=None,
             fg_probability=None,
             sequence_name="",
             mask_crop=None,
             depth_map=None,
-        )
+        )["images_render"]
+        self.assertEqual(image.shape, (1, 3, 80, 80))
+        self.assertGreater(image.max(), 0.8)
+
+        # Force everything to be background
+        pixel_generator = gm._implicit_functions[0]._fn.pixel_generator
+        pixel_generator._density_layer.weight.zero_()
+        pixel_generator._density_layer.bias.fill_(-1.0e6)
+
+        image = gm.forward(
+            camera=camera,
+            image_rgb=None,
+            fg_probability=None,
+            sequence_name="",
+            mask_crop=None,
+            depth_map=None,
+        )["images_render"]
+        self.assertConstant(image[:, :2], 0.4)
+        self.assertConstant(image[:, 2], 0.2)

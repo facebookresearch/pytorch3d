@@ -58,7 +58,7 @@ class IdrFeatureField(ImplicitFunctionBase, torch.nn.Module):
     bias: float = 1.0
     skip_in: Sequence[int] = ()
     weight_norm: bool = True
-    n_harmonic_functions_xyz: int = -1
+    n_harmonic_functions_xyz: int = 0
     pooled_feature_dim: int = 0
     encoding_dim: int = 0
 
