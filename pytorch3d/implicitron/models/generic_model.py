@@ -121,7 +121,7 @@ class GenericModel(ImplicitronModelBase, torch.nn.Module):  # pyre-ignore: 13
     this sequence of steps. Currently, steps 1, 3, 4, 5, 6
     can be customized by intializing a subclass of the appropriate
     baseclass and adding the newly created module to the registry.
-    Please see https://github.com/fairinternal/pytorch3d/blob/co3d/projects/implicitron_trainer/README.md#custom-plugins
+    Please see https://github.com/facebookresearch/pytorch3d/blob/main/projects/implicitron_trainer/README.md#custom-plugins
     for more details on how to create and register a custom component.
 
     In the config .yaml files for experiments, the parameters below are
@@ -189,7 +189,7 @@ class GenericModel(ImplicitronModelBase, torch.nn.Module):  # pyre-ignore: 13
         log_vars: A list of variable names which should be logged.
             The names should correspond to a subset of the keys of the
             dict `preds` output by the `forward` function.
-    """
+    """  # noqa: B950
 
     mask_images: bool = True
     mask_depths: bool = True
