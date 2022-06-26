@@ -10,9 +10,11 @@ import torch
 from pytorch3d.renderer.cameras import look_at_view_transform, PerspectiveCameras
 from pytorch3d.renderer.mesh.rasterizer import Fragments
 from pytorch3d.renderer.mesh.shader import (
+    HardDepthShader,
     HardFlatShader,
     HardGouraudShader,
     HardPhongShader,
+    SoftDepthShader,
     SoftPhongShader,
     SplatterPhongShader,
 )
@@ -24,9 +26,11 @@ from .common_testing import TestCaseMixin
 class TestShader(TestCaseMixin, unittest.TestCase):
     def setUp(self):
         self.shader_classes = [
+            HardDepthShader,
             HardFlatShader,
             HardGouraudShader,
             HardPhongShader,
+            SoftDepthShader,
             SoftPhongShader,
             SplatterPhongShader,
         ]
