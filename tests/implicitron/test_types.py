@@ -73,8 +73,8 @@ class TestDatasetTypes(unittest.TestCase):
         )
 
         # dict
-        parsed = types._dataclass_from_dict({"k": dct}, Dict[str, FrameAnnotation])
-        self.assertEqual(parsed, {"k": self.entry})
+        parsed = types._dataclass_from_dict({"key": dct}, Dict[str, FrameAnnotation])
+        self.assertEqual(parsed, {"key": self.entry})
 
     def test_parsing_vectorized(self):
         dct = dataclasses.asdict(self.entry)
@@ -83,10 +83,10 @@ class TestDatasetTypes(unittest.TestCase):
         self._compare_with_scalar(_NT(dct), _NT)
         self._compare_with_scalar((dct,), Tuple[FrameAnnotation])
         self._compare_with_scalar([dct], List[FrameAnnotation])
-        self._compare_with_scalar({"k": dct}, Dict[str, FrameAnnotation])
+        self._compare_with_scalar({"key": dct}, Dict[str, FrameAnnotation])
 
         dct2 = dct.copy()
-        dct2["meta"] = {"d": 76}
+        dct2["meta"] = {"aux": 76}
         self._compare_with_scalar(dct2, FrameAnnotation)
 
     def _compare_with_scalar(self, obj, typeannot, repeat=3):
