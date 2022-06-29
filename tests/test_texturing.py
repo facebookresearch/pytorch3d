@@ -131,7 +131,7 @@ class TestTexturesVertex(TestCaseMixin, unittest.TestCase):
         )
 
         # define TexturesVertex
-        verts_texture = torch.rand(verts.shape)
+        verts_texture = torch.rand(verts.shape, device=device)
         textures = TexturesVertex(verts_features=verts_texture)
 
         # compute packed faces
