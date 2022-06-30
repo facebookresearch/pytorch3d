@@ -38,7 +38,8 @@ class ImplicitronRender:
 
 
 class ImplicitronModelBase(ReplaceableBase):
-    """Replaceable abstract base for all image generation / rendering models.
+    """
+    Replaceable abstract base for all image generation / rendering models.
     `forward()` method produces a render with a depth map.
     """
 

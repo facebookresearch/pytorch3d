@@ -20,6 +20,8 @@ renderer_class_type: LSTMRenderer
 image_feature_extractor_class_type: ResNetFeatureExtractor
 view_pooler_enabled: true
 implicit_function_class_type: IdrFeatureField
+view_metrics_class_type: ViewMetrics
+regularization_metrics_class_type: RegularizationMetrics
 loss_weights:
   loss_rgb_mse: 1.0
   loss_prev_stage_rgb_mse: 1.0
@@ -122,3 +124,5 @@ implicit_function_IdrFeatureField_args:
   n_harmonic_functions_xyz: 1729
   pooled_feature_dim: 0
   encoding_dim: 0
+view_metrics_ViewMetrics_args: {}
+regularization_metrics_RegularizationMetrics_args: {}

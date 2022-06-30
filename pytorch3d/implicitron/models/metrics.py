@@ -6,64 +6,180 @@
 
 
 import warnings
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 import torch
 from pytorch3d.implicitron.tools import metric_utils as utils
+from pytorch3d.implicitron.tools.config import registry, ReplaceableBase
 from pytorch3d.renderer import utils as rend_utils
 
+from .renderer.base import RendererOutput
 
-class ViewMetrics(torch.nn.Module):
+
+class RegularizationMetricsBase(ReplaceableBase, torch.nn.Module):
+    """
+    Replaceable abstract base for regularization metrics.
+    `forward()` method produces regularization metrics and (unlike ViewMetrics) can
+    depend on the model's parameters.
+    """
+
+    def __post_init__(self) -> None:
+        super().__init__()
+
+    def forward(
+        self, model: Any, keys_prefix: str = "loss_", **kwargs
+    ) -> Dict[str, Any]:
+        """
+        Calculates various regularization terms useful for supervising differentiable
+        rendering pipelines.
+
+        Args:
+            model: A model instance. Useful, for example, to implement
+                weights-based regularization.
+            keys_prefix: A common prefix for all keys in the output dictionary
+                containing all regularization metrics.
+
+        Returns:
+            A dictionary with the resulting regularization metrics. The items
+                will have form `{metric_name_i: metric_value_i}` keyed by the
+                names of the output metrics `metric_name_i` with their corresponding
+                values `metric_value_i` represented as 0-dimensional float tensors.
+        """
+        raise NotImplementedError
+
+
+class ViewMetricsBase(ReplaceableBase, torch.nn.Module):
+    """
+    Replaceable abstract base for model metrics.
+    `forward()` method produces losses and other metrics.
+    """
+
+    def __post_init__(self) -> None:
+        super().__init__()
+
     def forward(
         self,
-        image_sampling_grid: torch.Tensor,
-        images: Optional[torch.Tensor] = None,
-        images_pred: Optional[torch.Tensor] = None,
-        depths: Optional[torch.Tensor] = None,
-        depths_pred: Optional[torch.Tensor] = None,
-        masks: Optional[torch.Tensor] = None,
-        masks_pred: Optional[torch.Tensor] = None,
-        masks_crop: Optional[torch.Tensor] = None,
-        grad_theta: Optional[torch.Tensor] = None,
-        density_grid: Optional[torch.Tensor] = None,
+        raymarched: RendererOutput,
+        xys: torch.Tensor,
+        image_rgb: Optional[torch.Tensor] = None,
+        depth_map: Optional[torch.Tensor] = None,
+        fg_probability: Optional[torch.Tensor] = None,
+        mask_crop: Optional[torch.Tensor] = None,
         keys_prefix: str = "loss_",
-        mask_renders_by_pred: bool = False,
         **kwargs,
-    ) -> Dict[str, torch.Tensor]:
+    ) -> Dict[str, Any]:
+        """
+        Calculates various metrics and loss functions useful for supervising
+        differentiable rendering pipelines. Any additional parameters can be passed
+        in the `raymarched.aux` dictionary.
+
+        Args:
+            results: A dictionary with the resulting view metrics. The items
+                will have form `{metric_name_i: metric_value_i}` keyed by the
+                names of the output metrics `metric_name_i` with their corresponding
+                values `metric_value_i` represented as 0-dimensional float tensors.
+            raymarched: Output of the renderer.
+            xys: A tensor of shape `(B, ..., 2)` containing 2D image locations at which
+                the predictions are defined. All ground truth inputs are sampled at
+                these locations in order to extract values that correspond to the
+                predictions.
+            image_rgb: A tensor of shape `(B, H, W, 3)` containing ground truth rgb
+                values.
+            depth_map: A tensor of shape `(B, Hd, Wd, 1)` containing ground truth depth
+                values.
+            fg_probability: A tensor of shape `(B, Hm, Wm, 1)` containing ground truth
+                foreground masks.
+            keys_prefix: A common prefix for all keys in the output dictionary
+                containing all view metrics.
+
+        Returns:
+            A dictionary with the resulting view metrics. The items
+                will have form `{metric_name_i: metric_value_i}` keyed by the
+                names of the output metrics `metric_name_i` with their corresponding
+                values `metric_value_i` represented as 0-dimensional float tensors.
+        """
+        raise NotImplementedError()
+
+
+@registry.register
+class RegularizationMetrics(RegularizationMetricsBase):
+    def forward(
+        self, model: Any, keys_prefix: str = "loss_", **kwargs
+    ) -> Dict[str, Any]:
+        """
+        Calculates the AD penalty, or returns an empty dict if the model's autoencoder
+        is inactive.
+
+        Args:
+            model: A model instance.
+            keys_prefix: A common prefix for all keys in the output dictionary
+                containing all regularization metrics.
+
+        Returns:
+            A dictionary with the resulting regularization metrics. The items
+                will have form `{metric_name_i: metric_value_i}` keyed by the
+                names of the output metrics `metric_name_i` with their corresponding
+                values `metric_value_i` represented as 0-dimensional float tensors.
+
+            The calculated metric is:
+                autoencoder_norm: Autoencoder weight norm regularization term.
+        """
+        metrics = {}
+        if getattr(model, "sequence_autodecoder", None) is not None:
+            ad_penalty = model.sequence_autodecoder.calc_squared_encoding_norm()
+            if ad_penalty is not None:
+                metrics["autodecoder_norm"] = ad_penalty
+
+        if keys_prefix is not None:
+            metrics = {(keys_prefix + k): v for k, v in metrics.items()}
+
+        return metrics
+
+
+@registry.register
+class ViewMetrics(ViewMetricsBase):
+    def forward(
+        self,
+        raymarched: RendererOutput,
+        xys: torch.Tensor,
+        image_rgb: Optional[torch.Tensor] = None,
+        depth_map: Optional[torch.Tensor] = None,
+        fg_probability: Optional[torch.Tensor] = None,
+        mask_crop: Optional[torch.Tensor] = None,
+        keys_prefix: str = "loss_",
+        **kwargs,
+    ) -> Dict[str, Any]:
         """
         Calculates various differentiable metrics useful for supervising
         differentiable rendering pipelines.
 
         Args:
-            image_sampling_grid: A tensor of shape `(B, ..., 2)` containing 2D
-                    image locations at which the predictions are defined.
-                    All ground truth inputs are sampled at these
-                    locations in order to extract values that correspond
-                    to the predictions.
-            images: A tensor of shape `(B, H, W, 3)` containing ground truth
-                rgb values.
-            images_pred: A tensor of shape `(B, ..., 3)` containing predicted
-                rgb values.
-            depths: A tensor of shape `(B, Hd, Wd, 1)` containing ground truth
-                depth values.
-            depths_pred: A tensor of shape `(B, ..., 1)` containing predicted
-                depth values.
-            masks: A tensor of shape `(B, Hm, Wm, 1)` containing ground truth
-                foreground masks.
-            masks_pred: A tensor of shape `(B, ..., 1)` containing predicted
-                foreground masks.
-            grad_theta: A tensor of shape `(B, ..., 3)` containing an evaluation
-                of a gradient of a signed distance function w.r.t.
+            results: A dict to store the results in.
+            raymarched.features: Predicted rgb or feature values.
+            raymarched.depths: A tensor of shape `(B, ..., 1)` containing
+                predicted depth values.
+            raymarched.masks: A tensor of shape `(B, ..., 1)` containing
+                predicted foreground masks.
+            raymarched.aux["grad_theta"]: A tensor of shape `(B, ..., 3)` containing an
+                evaluation of a gradient of a signed distance function w.r.t.
                 input 3D coordinates used to compute the eikonal loss.
-            density_grid: A tensor of shape `(B, Hg, Wg, Dg, 1)` containing a
-                `Hg x Wg x Dg` voxel grid of density values.
+            raymarched.aux["density_grid"]: A tensor of shape `(B, Hg, Wg, Dg, 1)`
+                containing a `Hg x Wg x Dg` voxel grid of density values.
+            xys: A tensor of shape `(B, ..., 2)` containing 2D image locations at which
+                the predictions are defined. All ground truth inputs are sampled at
+                these locations in order to extract values that correspond to the
+                predictions.
+            image_rgb: A tensor of shape `(B, H, W, 3)` containing ground truth rgb
+                values.
+            depth_map: A tensor of shape `(B, Hd, Wd, 1)` containing ground truth depth
+                values.
+            fg_probability: A tensor of shape `(B, Hm, Wm, 1)` containing ground truth
+                foreground masks.
             keys_prefix: A common prefix for all keys in the output dictionary
-                containing all metrics.
-            mask_renders_by_pred: If `True`, masks rendered images by the predicted
-                `masks_pred` prior to computing all rgb metrics.
+                containing all view metrics.
 
         Returns:
-            metrics: A dictionary `{metric_name_i: metric_value_i}` keyed by the
+            A dictionary `{metric_name_i: metric_value_i}` keyed by the
                 names of the output metrics `metric_name_i` with their corresponding
                 values `metric_value_i` represented as 0-dimensional float tensors.
 
@@ -91,109 +207,142 @@ class ViewMetrics(torch.nn.Module):
                     depth_neg_penalty: `min(depth_pred, 0)**2` penalizing negative
                         predicted depth values.
         """
+        metrics = self._calculate_stage(
+            raymarched,
+            xys,
+            image_rgb,
+            depth_map,
+            fg_probability,
+            mask_crop,
+            keys_prefix,
+        )
 
+        if raymarched.prev_stage:
+            metrics.update(
+                self(
+                    raymarched.prev_stage,
+                    xys,
+                    image_rgb,
+                    depth_map,
+                    fg_probability,
+                    mask_crop,
+                    keys_prefix=(keys_prefix + "prev_stage_"),
+                )
+            )
+
+        return metrics
+
+    def _calculate_stage(
+        self,
+        raymarched: RendererOutput,
+        xys: torch.Tensor,
+        image_rgb: Optional[torch.Tensor] = None,
+        depth_map: Optional[torch.Tensor] = None,
+        fg_probability: Optional[torch.Tensor] = None,
+        mask_crop: Optional[torch.Tensor] = None,
+        keys_prefix: str = "loss_",
+        **kwargs,
+    ) -> Dict[str, Any]:
+        """
+        Calculate metrics for the current stage.
+        """
         # TODO: extract functions
 
         # reshape from B x ... x DIM to B x DIM x -1 x 1
-        images_pred, masks_pred, depths_pred = [
-            _reshape_nongrid_var(x) for x in [images_pred, masks_pred, depths_pred]
+        image_rgb_pred, fg_probability_pred, depth_map_pred = [
+            _reshape_nongrid_var(x)
+            for x in [raymarched.features, raymarched.masks, raymarched.depths]
         ]
         # reshape the sampling grid as well
         # TODO: we can get rid of the singular dimension here and in _reshape_nongrid_var
         # now that we use rend_utils.ndc_grid_sample
-        image_sampling_grid = image_sampling_grid.reshape(
-            image_sampling_grid.shape[0], -1, 1, 2
-        )
+        xys = xys.reshape(xys.shape[0], -1, 1, 2)
 
-        # closure with the given image_sampling_grid
+        # closure with the given xys
         def sample(tensor, mode):
             if tensor is None:
                 return tensor
-            return rend_utils.ndc_grid_sample(tensor, image_sampling_grid, mode=mode)
+            return rend_utils.ndc_grid_sample(tensor, xys, mode=mode)
 
         # eval all results in this size
-        images = sample(images, mode="bilinear")
-        depths = sample(depths, mode="nearest")
-        masks = sample(masks, mode="nearest")
-        masks_crop = sample(masks_crop, mode="nearest")
-        if masks_crop is None and images_pred is not None:
-            masks_crop = torch.ones_like(images_pred[:, :1])
-        if masks_crop is None and depths_pred is not None:
-            masks_crop = torch.ones_like(depths_pred[:, :1])
+        image_rgb = sample(image_rgb, mode="bilinear")
+        depth_map = sample(depth_map, mode="nearest")
+        fg_probability = sample(fg_probability, mode="nearest")
+        mask_crop = sample(mask_crop, mode="nearest")
+        if mask_crop is None and image_rgb_pred is not None:
+            mask_crop = torch.ones_like(image_rgb_pred[:, :1])
+        if mask_crop is None and depth_map_pred is not None:
+            mask_crop = torch.ones_like(depth_map_pred[:, :1])
 
-        preds = {}
-        if images is not None and images_pred is not None:
-            # TODO: mask_renders_by_pred is always false; simplify
-            preds.update(
+        metrics = {}
+        if image_rgb is not None and image_rgb_pred is not None:
+            metrics.update(
                 _rgb_metrics(
-                    images,
-                    images_pred,
-                    masks,
-                    masks_pred,
-                    masks_crop,
-                    mask_renders_by_pred,
+                    image_rgb,
+                    image_rgb_pred,
+                    fg_probability,
+                    fg_probability_pred,
+                    mask_crop,
                 )
             )
 
-        if masks_pred is not None:
-            preds["mask_beta_prior"] = utils.beta_prior(masks_pred)
-        if masks is not None and masks_pred is not None:
-            preds["mask_neg_iou"] = utils.neg_iou_loss(
-                masks_pred, masks, mask=masks_crop
+        if fg_probability_pred is not None:
+            metrics["mask_beta_prior"] = utils.beta_prior(fg_probability_pred)
+        if fg_probability is not None and fg_probability_pred is not None:
+            metrics["mask_neg_iou"] = utils.neg_iou_loss(
+                fg_probability_pred, fg_probability, mask=mask_crop
             )
-            preds["mask_bce"] = utils.calc_bce(masks_pred, masks, mask=masks_crop)
+            metrics["mask_bce"] = utils.calc_bce(
+                fg_probability_pred, fg_probability, mask=mask_crop
+            )
 
-        if depths is not None and depths_pred is not None:
-            assert masks_crop is not None
+        if depth_map is not None and depth_map_pred is not None:
+            assert mask_crop is not None
             _, abs_ = utils.eval_depth(
-                depths_pred, depths, get_best_scale=True, mask=masks_crop, crop=0
+                depth_map_pred, depth_map, get_best_scale=True, mask=mask_crop, crop=0
             )
-            preds["depth_abs"] = abs_.mean()
+            metrics["depth_abs"] = abs_.mean()
 
-            if masks is not None:
-                mask = masks * masks_crop
+            if fg_probability is not None:
+                mask = fg_probability * mask_crop
                 _, abs_ = utils.eval_depth(
-                    depths_pred, depths, get_best_scale=True, mask=mask, crop=0
+                    depth_map_pred, depth_map, get_best_scale=True, mask=mask, crop=0
                 )
-                preds["depth_abs_fg"] = abs_.mean()
+                metrics["depth_abs_fg"] = abs_.mean()
 
         # regularizers
+        grad_theta = raymarched.aux.get("grad_theta")
         if grad_theta is not None:
-            preds["eikonal"] = _get_eikonal_loss(grad_theta)
+            metrics["eikonal"] = _get_eikonal_loss(grad_theta)
 
+        density_grid = raymarched.aux.get("density_grid")
         if density_grid is not None:
-            preds["density_tv"] = _get_grid_tv_loss(density_grid)
+            metrics["density_tv"] = _get_grid_tv_loss(density_grid)
 
-        if depths_pred is not None:
-            preds["depth_neg_penalty"] = _get_depth_neg_penalty_loss(depths_pred)
+        if depth_map_pred is not None:
+            metrics["depth_neg_penalty"] = _get_depth_neg_penalty_loss(depth_map_pred)
 
         if keys_prefix is not None:
-            preds = {(keys_prefix + k): v for k, v in preds.items()}
+            metrics = {(keys_prefix + k): v for k, v in metrics.items()}
 
-        return preds
+        return metrics
 
 
-def _rgb_metrics(
-    images, images_pred, masks, masks_pred, masks_crop, mask_renders_by_pred
-):
+def _rgb_metrics(images, images_pred, masks, masks_pred, masks_crop):
     assert masks_crop is not None
-    if mask_renders_by_pred:
-        images = images[..., masks_pred.reshape(-1), :]
-        masks_crop = masks_crop[..., masks_pred.reshape(-1), :]
-        masks = masks is not None and masks[..., masks_pred.reshape(-1), :]
     rgb_squared = ((images_pred - images) ** 2).mean(dim=1, keepdim=True)
     rgb_loss = utils.huber(rgb_squared, scaling=0.03)
     crop_mass = masks_crop.sum().clamp(1.0)
-    preds = {
+    results = {
         "rgb_huber": (rgb_loss * masks_crop).sum() / crop_mass,
         "rgb_mse": (rgb_squared * masks_crop).sum() / crop_mass,
         "rgb_psnr": utils.calc_psnr(images_pred, images, mask=masks_crop),
     }
     if masks is not None:
         masks = masks_crop * masks
-        preds["rgb_psnr_fg"] = utils.calc_psnr(images_pred, images, mask=masks)
-        preds["rgb_mse_fg"] = (rgb_squared * masks).sum() / masks.sum().clamp(1.0)
-    return preds
+        results["rgb_psnr_fg"] = utils.calc_psnr(images_pred, images, mask=masks)
+        results["rgb_mse_fg"] = (rgb_squared * masks).sum() / masks.sum().clamp(1.0)
+    return results
 
 
 def _get_eikonal_loss(grad_theta):

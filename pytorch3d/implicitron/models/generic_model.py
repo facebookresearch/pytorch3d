@@ -16,6 +16,12 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import torch
 import tqdm
+from pytorch3d.implicitron.models.metrics import (  # noqa
+    RegularizationMetrics,
+    RegularizationMetricsBase,
+    ViewMetrics,
+    ViewMetricsBase,
+)
 from pytorch3d.implicitron.tools import image_utils, vis_utils
 from pytorch3d.implicitron.tools.config import (
     expand_args_fields,
@@ -42,7 +48,7 @@ from .implicit_function.scene_representation_networks import (  # noqa
     SRNHyperNetImplicitFunction,
     SRNImplicitFunction,
 )
-from .metrics import ViewMetrics
+
 from .renderer.base import (
     BaseRenderer,
     EvaluationMode,
@@ -184,6 +190,14 @@ class GenericModel(ImplicitronModelBase, torch.nn.Module):  # pyre-ignore: 13
             is available in the global registry.
         implicit_function: An instance of ImplicitFunctionBase. The actual implicit functions
             are initialised to be in self._implicit_functions.
+        view_metrics: An instance of ViewMetricsBase used to compute loss terms which
+            are independent of the model's parameters.
+        view_metrics_class_type: The type of view metrics to use, must be available in
+            the global registry.
+        regularization_metrics: An instance of RegularizationMetricsBase used to compute
+            regularization terms which can depend on the model's parameters.
+        regularization_metrics_class_type: The type of regularization metrics to use,
+            must be available in the global registry.
         loss_weights: A dictionary with a {loss_name: weight} mapping; see documentation
             for `ViewMetrics` class for available loss functions.
         log_vars: A list of variable names which should be logged.
@@ -232,6 +246,13 @@ class GenericModel(ImplicitronModelBase, torch.nn.Module):  # pyre-ignore: 13
     # The actual implicit functions live in self._implicit_functions
     implicit_function: ImplicitFunctionBase
 
+    # ----- metrics
+    view_metrics: ViewMetricsBase
+    view_metrics_class_type: str = "ViewMetrics"
+
+    regularization_metrics: RegularizationMetricsBase
+    regularization_metrics_class_type: str = "RegularizationMetrics"
+
     # ---- loss weights
     loss_weights: Dict[str, float] = field(
         default_factory=lambda: {
@@ -269,7 +290,6 @@ class GenericModel(ImplicitronModelBase, torch.nn.Module):  # pyre-ignore: 13
 
     def __post_init__(self):
         super().__init__()
-        self.view_metrics = ViewMetrics()
 
         if self.view_pooler_enabled:
             if self.image_feature_extractor_class_type is None:
@@ -424,15 +444,31 @@ class GenericModel(ImplicitronModelBase, torch.nn.Module):  # pyre-ignore: 13
         for func in self._implicit_functions:
             func.unbind_args()
 
-        preds = self._get_view_metrics(
-            raymarched=rendered,
-            xys=ray_bundle.xys,
-            image_rgb=None if image_rgb is None else image_rgb[:n_targets],
-            depth_map=None if depth_map is None else depth_map[:n_targets],
-            fg_probability=None
-            if fg_probability is None
-            else fg_probability[:n_targets],
-            mask_crop=None if mask_crop is None else mask_crop[:n_targets],
+        # A dict to store losses as well as rendering results.
+        preds: Dict[str, Any] = {}
+
+        def safe_slice_targets(
+            tensor: Optional[torch.Tensor],
+        ) -> Optional[torch.Tensor]:
+            return None if tensor is None else tensor[:n_targets]
+
+        preds.update(
+            self.view_metrics(
+                results=preds,
+                raymarched=rendered,
+                xys=ray_bundle.xys,
+                image_rgb=safe_slice_targets(image_rgb),
+                depth_map=safe_slice_targets(depth_map),
+                fg_probability=safe_slice_targets(fg_probability),
+                mask_crop=safe_slice_targets(mask_crop),
+            )
+        )
+
+        preds.update(
+            self.regularization_metrics(
+                results=preds,
+                model=self,
+            )
         )
 
         if sampling_mode == RenderSamplingMode.MASK_SAMPLE:
@@ -461,11 +497,6 @@ class GenericModel(ImplicitronModelBase, torch.nn.Module):  # pyre-ignore: 13
             )
         else:
             raise AssertionError("Unreachable state")
-
-        # calc the AD penalty, returns None if autodecoder is not active
-        ad_penalty = self.sequence_autodecoder.calc_squared_encoding_norm()
-        if ad_penalty is not None:
-            preds["loss_autodecoder_norm"] = ad_penalty
 
         # (7) Compute losses
         # finally get the optimization objective using self.loss_weights
@@ -743,45 +774,6 @@ class GenericModel(ImplicitronModelBase, torch.nn.Module):  # pyre-ignore: 13
             depth_map = depth_map * fg_mask
 
         return image_rgb, fg_mask, depth_map
-
-    def _get_view_metrics(
-        self,
-        raymarched: RendererOutput,
-        xys: torch.Tensor,
-        image_rgb: Optional[torch.Tensor] = None,
-        depth_map: Optional[torch.Tensor] = None,
-        fg_probability: Optional[torch.Tensor] = None,
-        mask_crop: Optional[torch.Tensor] = None,
-        keys_prefix: str = "loss_",
-    ):
-        # pyre-fixme[29]: `Union[torch.Tensor, torch.nn.Module]` is not a function.
-        metrics = self.view_metrics(
-            image_sampling_grid=xys,
-            images_pred=raymarched.features,
-            images=image_rgb,
-            depths_pred=raymarched.depths,
-            depths=depth_map,
-            masks_pred=raymarched.masks,
-            masks=fg_probability,
-            masks_crop=mask_crop,
-            keys_prefix=keys_prefix,
-            **raymarched.aux,
-        )
-
-        if raymarched.prev_stage:
-            metrics.update(
-                self._get_view_metrics(
-                    raymarched.prev_stage,
-                    xys,
-                    image_rgb,
-                    depth_map,
-                    fg_probability,
-                    mask_crop,
-                    keys_prefix=(keys_prefix + "prev_stage_"),
-                )
-            )
-
-        return metrics
 
     @torch.no_grad()
     def _rasterize_mc_samples(

@@ -21,6 +21,8 @@ generic_model_args:
   image_feature_extractor_class_type: null
   view_pooler_enabled: false
   implicit_function_class_type: NeuralRadianceFieldImplicitFunction
+  view_metrics_class_type: ViewMetrics
+  regularization_metrics_class_type: RegularizationMetrics
   loss_weights:
     loss_rgb_mse: 1.0
     loss_prev_stage_rgb_mse: 1.0
@@ -268,6 +270,8 @@ generic_model_args:
       in_features: 256
       out_features: 3
       ray_dir_in_camera_coords: false
+  view_metrics_ViewMetrics_args: {}
+  regularization_metrics_RegularizationMetrics_args: {}
 solver_args:
   breed: adam
   weight_decay: 0.0
