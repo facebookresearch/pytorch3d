@@ -12,10 +12,9 @@ import torch
 from pytorch3d.implicitron.tools.config import Configurable
 
 
-# TODO: probabilistic embeddings?
 class Autodecoder(Configurable, torch.nn.Module):
     """
-    Autodecoder module
+    Autodecoder which maps a list of integer or string keys to optimizable embeddings.
 
     Settings:
         encoding_dim: Embedding dimension for the decoder.
@@ -43,32 +42,32 @@ class Autodecoder(Configurable, torch.nn.Module):
             # weight has been initialised from Normal(0, 1)
             self._autodecoder_codes.weight *= self.init_scale
 
-        self._sequence_map = self._build_sequence_map()
+        self._key_map = self._build_key_map()
         # Make sure to register hooks for correct handling of saving/loading
-        # the module's _sequence_map.
-        self._register_load_state_dict_pre_hook(self._load_sequence_map_hook)
-        self._register_state_dict_hook(_save_sequence_map_hook)
+        # the module's _key_map.
+        self._register_load_state_dict_pre_hook(self._load_key_map_hook)
+        self._register_state_dict_hook(_save_key_map_hook)
 
-    def _build_sequence_map(
-        self, sequence_map_dict: Optional[Dict[str, int]] = None
+    def _build_key_map(
+        self, key_map_dict: Optional[Dict[str, int]] = None
     ) -> Dict[str, int]:
         """
         Args:
-            sequence_map_dict: A dictionary used to initialize the sequence_map.
+            key_map_dict: A dictionary used to initialize the key_map.
 
         Returns:
-            sequence_map: a dictionary of key: id pairs.
+            key_map: a dictionary of key: id pairs.
         """
         # increments the counter when asked for a new value
-        sequence_map = defaultdict(iter(range(self.n_instances)).__next__)
-        if sequence_map_dict is not None:
-            # Assign all keys from the loaded sequence_map_dict to self._sequence_map.
+        key_map = defaultdict(iter(range(self.n_instances)).__next__)
+        if key_map_dict is not None:
+            # Assign all keys from the loaded key_map_dict to self._key_map.
             # Since this is done in the original order, it should generate
             # the same set of key:id pairs. We check this with an assert to be sure.
-            for x, x_id in sequence_map_dict.items():
-                x_id_ = sequence_map[x]
+            for x, x_id in key_map_dict.items():
+                x_id_ = key_map[x]
                 assert x_id == x_id_
-        return sequence_map
+        return key_map
 
     def calc_squared_encoding_norm(self):
         if self.n_instances <= 0:
@@ -83,13 +82,13 @@ class Autodecoder(Configurable, torch.nn.Module):
     def forward(self, x: Union[torch.LongTensor, List[str]]) -> Optional[torch.Tensor]:
         """
         Args:
-            x: A batch of `N` sequence identifiers. Either a long tensor of size
+            x: A batch of `N` identifiers. Either a long tensor of size
             `(N,)` keys in [0, n_instances), or a list of `N` string keys that
             are hashed to codes (without collisions).
 
         Returns:
             codes: A tensor of shape `(N, self.encoding_dim)` containing the
-                sequence-specific autodecoder codes.
+                key-specific autodecoder codes.
         """
         if self.n_instances == 0:
             return None
@@ -103,7 +102,7 @@ class Autodecoder(Configurable, torch.nn.Module):
                 #  `Tensor`.
                 x = torch.tensor(
                     # pyre-ignore[29]
-                    [self._sequence_map[elem] for elem in x],
+                    [self._key_map[elem] for elem in x],
                     dtype=torch.long,
                     device=next(self.parameters()).device,
                 )
@@ -113,7 +112,7 @@ class Autodecoder(Configurable, torch.nn.Module):
         # pyre-fixme[29]: `Union[torch.Tensor, torch.nn.Module]` is not a function.
         return self._autodecoder_codes(x)
 
-    def _load_sequence_map_hook(
+    def _load_key_map_hook(
         self,
         state_dict,
         prefix,
@@ -142,20 +141,18 @@ class Autodecoder(Configurable, torch.nn.Module):
                 :meth:`~torch.nn.Module.load_state_dict`
 
         Returns:
-            Constructed sequence_map if it exists in the state_dict
+            Constructed key_map if it exists in the state_dict
             else raises a warning only.
         """
-        sequence_map_key = prefix + "_sequence_map"
-        if sequence_map_key in state_dict:
-            sequence_map_dict = state_dict.pop(sequence_map_key)
-            self._sequence_map = self._build_sequence_map(
-                sequence_map_dict=sequence_map_dict
-            )
+        key_map_key = prefix + "_key_map"
+        if key_map_key in state_dict:
+            key_map_dict = state_dict.pop(key_map_key)
+            self._key_map = self._build_key_map(key_map_dict=key_map_dict)
         else:
-            warnings.warn("No sequence map in Autodecoder state dict!")
+            warnings.warn("No key map in Autodecoder state dict!")
 
 
-def _save_sequence_map_hook(
+def _save_key_map_hook(
     self,
     state_dict,
     prefix,
@@ -169,6 +166,6 @@ def _save_sequence_map_hook(
             module
         local_metadata (dict): a dict containing the metadata for this module.
     """
-    sequence_map_key = prefix + "_sequence_map"
-    sequence_map_dict = dict(self._sequence_map.items())
-    state_dict[sequence_map_key] = sequence_map_dict
+    key_map_key = prefix + "_key_map"
+    key_map_dict = dict(self._key_map.items())
+    state_dict[key_map_key] = key_map_dict

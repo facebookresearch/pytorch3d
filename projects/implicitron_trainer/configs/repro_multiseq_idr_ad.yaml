@@ -11,10 +11,12 @@ generic_model_args:
   num_passes: 1
   output_rasterized_mc: true
   sampling_mode_training: mask_sample
-  sequence_autodecoder_args:
-    n_instances: 20000
-    init_scale: 1.0
-    encoding_dim: 256
+  global_encoder_class_type: SequenceAutodecoder
+  global_encoder_SequenceAutodecoder_args:
+    autodecoder_args:
+      n_instances: 20000
+      init_scale: 1.0
+      encoding_dim: 256
   implicit_function_IdrFeatureField_args:
     n_harmonic_functions_xyz: 6
     bias: 0.6

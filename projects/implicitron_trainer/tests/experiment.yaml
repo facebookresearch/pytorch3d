@@ -16,6 +16,7 @@ generic_model_args:
   n_train_target_views: 1
   sampling_mode_training: mask_sample
   sampling_mode_evaluation: full_grid
+  global_encoder_class_type: null
   raysampler_class_type: AdaptiveRaySampler
   renderer_class_type: MultiPassEmissionAbsorptionRenderer
   image_feature_extractor_class_type: null
@@ -49,11 +50,16 @@ generic_model_args:
   - objective
   - epoch
   - sec/it
-  sequence_autodecoder_args:
-    encoding_dim: 0
-    n_instances: 0
-    init_scale: 1.0
-    ignore_input: false
+  global_encoder_HarmonicTimeEncoder_args:
+    n_harmonic_functions: 10
+    append_input: true
+    time_divisor: 1.0
+  global_encoder_SequenceAutodecoder_args:
+    autodecoder_args:
+      encoding_dim: 0
+      n_instances: 0
+      init_scale: 1.0
+      ignore_input: false
   raysampler_AdaptiveRaySampler_args:
     image_width: 400
     image_height: 400

@@ -13,9 +13,11 @@ generic_model_args:
     loss_prev_stage_mask_bce: 0.0
     loss_autodecoder_norm: 0.001
     depth_neg_penalty: 10000.0
-  sequence_autodecoder_args:
-    encoding_dim: 256
-    n_instances: 20000
+  global_encoder_class_type: SequenceAutodecoder
+  global_encoder_SequenceAutodecoder_args:
+    autodecoder_args:
+      encoding_dim: 256
+      n_instances: 20000
   raysampler_class_type: NearFarRaySampler
   raysampler_NearFarRaySampler_args:
     n_rays_per_image_sampled_from_mask: 2048

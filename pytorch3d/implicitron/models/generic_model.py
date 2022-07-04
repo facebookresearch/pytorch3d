@@ -12,7 +12,7 @@ import logging
 import math
 import warnings
 from dataclasses import field
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
 import tqdm
@@ -34,10 +34,10 @@ from pytorch3d.renderer import RayBundle, utils as rend_utils
 from pytorch3d.renderer.cameras import CamerasBase
 from visdom import Visdom
 
-from .autodecoder import Autodecoder
 from .base_model import ImplicitronModelBase, ImplicitronRender
 from .feature_extractor import FeatureExtractorBase
 from .feature_extractor.resnet_feature_extractor import ResNetFeatureExtractor  # noqa
+from .global_encoder.global_encoder import GlobalEncoderBase
 from .implicit_function.base import ImplicitFunctionBase
 from .implicit_function.idr_feature_field import IdrFeatureField  # noqa
 from .implicit_function.neural_radiance_field import (  # noqa
@@ -63,7 +63,6 @@ from .renderer.sdf_renderer import SignedDistanceFunctionRenderer  # noqa
 from .view_pooler.view_pooler import ViewPooler
 
 
-STD_LOG_VARS = ["objective", "epoch", "sec/it"]
 logger = logging.getLogger(__name__)
 
 
@@ -109,6 +108,7 @@ class GenericModel(ImplicitronModelBase, torch.nn.Module):  # pyre-ignore: 13
         ------------------
         Evaluate the implicit function(s) at the sampled ray points
         (optionally pass in the aggregated image features from (4)).
+        (also optionally pass in a global encoding from global_encoder).
                 │
                 ▼
         (6) Rendering
@@ -163,7 +163,9 @@ class GenericModel(ImplicitronModelBase, torch.nn.Module):  # pyre-ignore: 13
         sampling_mode_training: The sampling method to use during training. Must be
             a value from the RenderSamplingMode Enum.
         sampling_mode_evaluation: Same as above but for evaluation.
-        sequence_autodecoder: An instance of `Autodecoder`. This is used to generate an encoding
+        global_encoder_class_type: The name of the class to use for global_encoder,
+            which must be available in the registry. Or `None` to disable global encoder.
+        global_encoder: An instance of `GlobalEncoder`. This is used to generate an encoding
             of the image (referred to as the global_code) that can be used to model aspects of
             the scene such as multiple objects or morphing objects. It is up to the implicit
             function definition how to use it, but the most typical way is to broadcast and
@@ -221,8 +223,9 @@ class GenericModel(ImplicitronModelBase, torch.nn.Module):  # pyre-ignore: 13
     sampling_mode_training: str = "mask_sample"
     sampling_mode_evaluation: str = "full_grid"
 
-    # ---- autodecoder settings
-    sequence_autodecoder: Autodecoder
+    # ---- global encoder settings
+    global_encoder_class_type: Optional[str] = None
+    global_encoder: Optional[GlobalEncoderBase]
 
     # ---- raysampler
     raysampler_class_type: str = "AdaptiveRaySampler"
@@ -284,7 +287,10 @@ class GenericModel(ImplicitronModelBase, torch.nn.Module):  # pyre-ignore: 13
             "loss_prev_stage_rgb_psnr_fg",
             "loss_prev_stage_rgb_psnr",
             "loss_prev_stage_mask_bce",
-            *STD_LOG_VARS,
+            # basic metrics
+            "objective",
+            "epoch",
+            "sec/it",
         ]
     )
 
@@ -307,10 +313,11 @@ class GenericModel(ImplicitronModelBase, torch.nn.Module):  # pyre-ignore: 13
         *,  # force keyword-only arguments
         image_rgb: Optional[torch.Tensor],
         camera: CamerasBase,
-        fg_probability: Optional[torch.Tensor],
-        mask_crop: Optional[torch.Tensor],
-        depth_map: Optional[torch.Tensor],
-        sequence_name: Optional[List[str]],
+        fg_probability: Optional[torch.Tensor] = None,
+        mask_crop: Optional[torch.Tensor] = None,
+        depth_map: Optional[torch.Tensor] = None,
+        sequence_name: Optional[List[str]] = None,
+        frame_timestamp: Optional[torch.Tensor] = None,
         evaluation_mode: EvaluationMode = EvaluationMode.EVALUATION,
         **kwargs,
     ) -> Dict[str, Any]:
@@ -333,6 +340,8 @@ class GenericModel(ImplicitronModelBase, torch.nn.Module):  # pyre-ignore: 13
             sequence_name: A list of `B` strings corresponding to the sequence names
                 from which images `image_rgb` were extracted. They are used to match
                 target frames with relevant source frames.
+            frame_timestamp: Optionally a tensor of shape `(B,)` containing a batch
+                of frame timestamps.
             evaluation_mode: one of EvaluationMode.TRAINING or
                 EvaluationMode.EVALUATION which determines the settings used for
                 rendering.
@@ -356,6 +365,13 @@ class GenericModel(ImplicitronModelBase, torch.nn.Module):  # pyre-ignore: 13
             if self.n_train_target_views <= 0
             else min(self.n_train_target_views, batch_size)
         )
+
+        # A helper function for selecting n_target first elements from the input
+        # where the latter can be None.
+        def _safe_slice_targets(
+            tensor: Optional[Union[torch.Tensor, List[str]]],
+        ) -> Optional[Union[torch.Tensor, List[str]]]:
+            return None if tensor is None else tensor[:n_targets]
 
         # Select the target cameras.
         target_cameras = camera[list(range(n_targets))]
@@ -405,10 +421,11 @@ class GenericModel(ImplicitronModelBase, torch.nn.Module):  # pyre-ignore: 13
             custom_args["fun_viewpool"] = curried_viewpooler
 
         global_code = None
-        if self.sequence_autodecoder.n_instances > 0:
-            if sequence_name is None:
-                raise ValueError("sequence_name must be provided for autodecoder.")
-            global_code = self.sequence_autodecoder(sequence_name[:n_targets])
+        if self.global_encoder is not None:
+            global_code = self.global_encoder(  # pyre-fixme[29]
+                sequence_name=_safe_slice_targets(sequence_name),
+                frame_timestamp=_safe_slice_targets(frame_timestamp),
+            )
         custom_args["global_code"] = global_code
 
         # pyre-fixme[29]:
@@ -447,20 +464,15 @@ class GenericModel(ImplicitronModelBase, torch.nn.Module):  # pyre-ignore: 13
         # A dict to store losses as well as rendering results.
         preds: Dict[str, Any] = {}
 
-        def safe_slice_targets(
-            tensor: Optional[torch.Tensor],
-        ) -> Optional[torch.Tensor]:
-            return None if tensor is None else tensor[:n_targets]
-
         preds.update(
             self.view_metrics(
                 results=preds,
                 raymarched=rendered,
                 xys=ray_bundle.xys,
-                image_rgb=safe_slice_targets(image_rgb),
-                depth_map=safe_slice_targets(depth_map),
-                fg_probability=safe_slice_targets(fg_probability),
-                mask_crop=safe_slice_targets(mask_crop),
+                image_rgb=_safe_slice_targets(image_rgb),
+                depth_map=_safe_slice_targets(depth_map),
+                fg_probability=_safe_slice_targets(fg_probability),
+                mask_crop=_safe_slice_targets(mask_crop),
             )
         )
 
@@ -592,6 +604,11 @@ class GenericModel(ImplicitronModelBase, torch.nn.Module):  # pyre-ignore: 13
                 **kwargs,
             )
 
+    def _get_global_encoder_encoding_dim(self) -> int:
+        if self.global_encoder is None:
+            return 0
+        return self.global_encoder.get_encoding_dim()
+
     def _get_viewpooled_feature_dim(self) -> int:
         if self.view_pooler is None:
             return 0
@@ -668,8 +685,7 @@ class GenericModel(ImplicitronModelBase, torch.nn.Module):  # pyre-ignore: 13
         nerf_args = self.implicit_function_NeuralRadianceFieldImplicitFunction_args
         nerformer_args = self.implicit_function_NeRFormerImplicitFunction_args
         nerf_args["latent_dim"] = nerformer_args["latent_dim"] = (
-            self._get_viewpooled_feature_dim()
-            + self.sequence_autodecoder.get_encoding_dim()
+            self._get_viewpooled_feature_dim() + self._get_global_encoder_encoding_dim()
         )
         nerf_args["color_dim"] = nerformer_args[
             "color_dim"
@@ -678,21 +694,18 @@ class GenericModel(ImplicitronModelBase, torch.nn.Module):  # pyre-ignore: 13
         # idr preprocessing
         idr = self.implicit_function_IdrFeatureField_args
         idr["feature_vector_size"] = self.render_features_dimensions
-        idr["encoding_dim"] = self.sequence_autodecoder.get_encoding_dim()
+        idr["encoding_dim"] = self._get_global_encoder_encoding_dim()
 
         # srn preprocessing
         srn = self.implicit_function_SRNImplicitFunction_args
         srn.raymarch_function_args.latent_dim = (
-            self._get_viewpooled_feature_dim()
-            + self.sequence_autodecoder.get_encoding_dim()
+            self._get_viewpooled_feature_dim() + self._get_global_encoder_encoding_dim()
         )
 
         # srn_hypernet preprocessing
         srn_hypernet = self.implicit_function_SRNHyperNetImplicitFunction_args
         srn_hypernet_args = srn_hypernet.hypernet_args
-        srn_hypernet_args.latent_dim_hypernet = (
-            self.sequence_autodecoder.get_encoding_dim()
-        )
+        srn_hypernet_args.latent_dim_hypernet = self._get_global_encoder_encoding_dim()
         srn_hypernet_args.latent_dim = self._get_viewpooled_feature_dim()
 
         # check that for srn, srn_hypernet, idr we have self.num_passes=1

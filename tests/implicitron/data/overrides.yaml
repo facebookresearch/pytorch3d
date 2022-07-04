@@ -15,6 +15,7 @@ tqdm_trigger_threshold: 16
 n_train_target_views: 1
 sampling_mode_training: mask_sample
 sampling_mode_evaluation: full_grid
+global_encoder_class_type: SequenceAutodecoder
 raysampler_class_type: AdaptiveRaySampler
 renderer_class_type: LSTMRenderer
 image_feature_extractor_class_type: ResNetFeatureExtractor
@@ -48,11 +49,12 @@ log_vars:
 - objective
 - epoch
 - sec/it
-sequence_autodecoder_args:
-  encoding_dim: 0
-  n_instances: 0
-  init_scale: 1.0
-  ignore_input: false
+global_encoder_SequenceAutodecoder_args:
+  autodecoder_args:
+    encoding_dim: 0
+    n_instances: 0
+    init_scale: 1.0
+    ignore_input: false
 raysampler_AdaptiveRaySampler_args:
   image_width: 400
   image_height: 400
