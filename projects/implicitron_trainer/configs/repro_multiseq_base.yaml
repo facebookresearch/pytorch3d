@@ -27,3 +27,6 @@ solver_args:
   max_epochs: 3000
   milestones:
   - 1000
+camera_difficulty_bin_breaks:
+  - 0.666667
+  - 0.833334

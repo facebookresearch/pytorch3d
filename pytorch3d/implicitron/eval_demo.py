@@ -153,8 +153,13 @@ def evaluate_dbir_for_category(
             )
         )
 
+    if task == Task.SINGLE_SEQUENCE:
+        camera_difficulty_bin_breaks = 0.97, 0.98
+    else:
+        camera_difficulty_bin_breaks = 2.0 / 3, 5.0 / 6
+
     category_result_flat, category_result = summarize_nvs_eval_results(
-        per_batch_eval_results, task
+        per_batch_eval_results, task, camera_difficulty_bin_breaks
     )
 
     return category_result["results"]

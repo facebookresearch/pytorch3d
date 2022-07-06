@@ -375,6 +375,9 @@ visdom_port: 8097
 visdom_server: http://127.0.0.1
 visualize_interval: 1000
 clip_grad: 0.0
+camera_difficulty_bin_breaks:
+- 0.97
+- 0.98
 hydra:
   run:
     dir: .
