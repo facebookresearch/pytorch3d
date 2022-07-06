@@ -182,23 +182,23 @@ workflows:
       #     context: DOCKERHUB_TOKEN
       {{workflows()}}
       - binary_linux_conda_cuda:
-          name: testrun_conda_cuda_py37_cu102_pyt170
+          name: testrun_conda_cuda_py37_cu102_pyt190
           context: DOCKERHUB_TOKEN
           python_version: "3.7"
-          pytorch_version: '1.7.0'
+          pytorch_version: '1.9.0'
           cu_version: "cu102"
       - binary_macos_wheel:
           cu_version: cpu
           name: macos_wheel_py37_cpu
           python_version: '3.7'
-          pytorch_version: '1.9.0'
+          pytorch_version: '1.12.0'
       - binary_macos_wheel:
           cu_version: cpu
           name: macos_wheel_py38_cpu
           python_version: '3.8'
-          pytorch_version: '1.9.0'
+          pytorch_version: '1.12.0'
       - binary_macos_wheel:
           cu_version: cpu
           name: macos_wheel_py39_cpu
           python_version: '3.9'
-          pytorch_version: '1.9.0'
+          pytorch_version: '1.12.0'

@@ -9,7 +9,7 @@ The core library is written in PyTorch. Several components have underlying imple
 
 - Linux or macOS or Windows
 - Python 3.6, 3.7, 3.8 or 3.9
-- PyTorch 1.7.0, 1.7.1, 1.8.0, 1.8.1, 1.9.0, 1.9.1, 1.10.0, 1.10.1, 1.10.2 or 1.11.0.
+- PyTorch 1.8.0, 1.8.1, 1.9.0, 1.9.1, 1.10.0, 1.10.1, 1.10.2, 1.11.0 or 1.12.0.
 - torchvision that matches the PyTorch installation. You can install them together as explained at pytorch.org to make sure of this.
 - gcc & g++ ≥ 4.9
 - [fvcore](https://github.com/facebookresearch/fvcore)
@@ -78,7 +78,7 @@ Or, to install a nightly (non-official, alpha) build:
 conda install pytorch3d -c pytorch3d-nightly
 ```
 ### 2. Install from PyPI, on Mac only.
-This works with pytorch 1.9.0 only. The build is CPU only.
+This works with pytorch 1.12.0 only. The build is CPU only.
 ```
 pip install pytorch3d
 ```

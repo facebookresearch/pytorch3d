@@ -60,7 +60,7 @@ do
 
         for cu_version in ${CONDA_CUDA_VERSIONS[$pytorch_version]}
         do
-            if [[ "cu113 cu115" == *$cu_version* ]]
+            if [[ "cu113 cu115 cu116" == *$cu_version* ]]
             #       ^^^ CUDA versions listed here have to be built
             # in their own containers.
             then
@@ -74,6 +74,11 @@ do
             fi
 
             case "$cu_version" in
+                cu116)
+                    export CUDA_HOME=/usr/local/cuda-11.6/
+                    export CUDA_TAG=11.6
+                    export NVCC_FLAGS="-gencode=arch=compute_35,code=sm_35 -gencode=arch=compute_50,code=sm_50 -gencode=arch=compute_60,code=sm_60 -gencode=arch=compute_70,code=sm_70 -gencode=arch=compute_75,code=sm_75 -gencode=arch=compute_80,code=sm_80 -gencode=arch=compute_86,code=sm_86 -gencode=arch=compute_50,code=compute_50"
+                ;;
                 cu115)
                     export CUDA_HOME=/usr/local/cuda-11.5/
                     export CUDA_TAG=11.5
@@ -124,6 +129,7 @@ do
 
             conda create -y -n "$tag" "python=$python_version"
             conda activate "$tag"
+            # shellcheck disable=SC2086
             conda install -y -c pytorch $extra_channel "pytorch=$pytorch_version" "cudatoolkit=$CUDA_TAG" torchvision
             pip install fvcore iopath
             echo "python version" "$python_version" "pytorch version" "$pytorch_version" "cuda version" "$cu_version" "tag" "$tag"

@@ -20,8 +20,6 @@ from packaging import version
 # version of pytorch.
 # Pytorch 1.4 also supports cuda 10.0 but we no longer build for cuda 10.0 at all.
 CONDA_CUDA_VERSIONS = {
-    "1.7.0": ["cu101", "cu102", "cu110"],
-    "1.7.1": ["cu101", "cu102", "cu110"],
     "1.8.0": ["cu101", "cu102", "cu111"],
     "1.8.1": ["cu101", "cu102", "cu111"],
     "1.9.0": ["cu102", "cu111"],
@@ -30,6 +28,7 @@ CONDA_CUDA_VERSIONS = {
     "1.10.1": ["cu102", "cu111", "cu113"],
     "1.10.2": ["cu102", "cu111", "cu113"],
     "1.11.0": ["cu102", "cu111", "cu113", "cu115"],
+    "1.12.0": ["cu102", "cu113", "cu116"],
 }
 
 
