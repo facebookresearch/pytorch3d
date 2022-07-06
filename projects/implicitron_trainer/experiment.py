@@ -220,7 +220,7 @@ def init_optimizer(
     lr: float = 0.0005,
     gamma: float = 0.1,
     momentum: float = 0.9,
-    betas: Tuple[float] = (0.9, 0.999),
+    betas: Tuple[float, ...] = (0.9, 0.999),
     milestones: tuple = (),
     max_epochs: int = 1000,
 ):
@@ -257,6 +257,7 @@ def init_optimizer(
 
     # Get the parameters to optimize
     if hasattr(model, "_get_param_groups"):  # use the model function
+        # pyre-ignore[29]
         p_groups = model._get_param_groups(lr, wd=weight_decay)
     else:
         allprm = [prm for prm in model.parameters() if prm.requires_grad]
@@ -296,9 +297,6 @@ def init_optimizer(
     # lr is correctly set even after returning
     for _ in range(last_epoch):
         scheduler.step()
-
-    # Add the max epochs here
-    scheduler.max_epochs = max_epochs
 
     optimizer.zero_grad()
     return optimizer, scheduler
@@ -421,7 +419,7 @@ def trainvalidate(
                 if total_norm > clip_grad:
                     logger.info(
                         f"Clipping gradient: {total_norm}"
-                        + f" with coef {clip_grad / total_norm}."
+                        + f" with coef {clip_grad / float(total_norm)}."
                     )
 
             optimizer.step()
