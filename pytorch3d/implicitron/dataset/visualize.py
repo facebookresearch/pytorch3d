@@ -69,7 +69,7 @@ def get_implicitron_sequence_pointcloud(
         batch_size=len(sequence_dataset),
         shuffle=False,
         num_workers=num_workers,
-        collate_fn=FrameData.collate,
+        collate_fn=dataset.frame_data_type.collate,
     )
 
     frame_data = next(iter(loader))  # there's only one batch

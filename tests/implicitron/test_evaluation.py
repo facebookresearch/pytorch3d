@@ -44,6 +44,7 @@ class TestEvaluation(unittest.TestCase):
         frame_file = os.path.join(dataset_root, category, "frame_annotations.jgz")
         sequence_file = os.path.join(dataset_root, category, "sequence_annotations.jgz")
         self.image_size = 64
+        expand_args_fields(JsonIndexDataset)
         self.dataset = JsonIndexDataset(
             frame_annotations_file=frame_file,
             sequence_annotations_file=sequence_file,

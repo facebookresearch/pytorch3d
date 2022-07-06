@@ -8,6 +8,7 @@ import os
 import unittest
 import unittest.mock
 
+import torch
 from omegaconf import OmegaConf
 from pytorch3d.implicitron.dataset.data_source import ImplicitronDataSource
 from pytorch3d.implicitron.dataset.json_index_dataset import JsonIndexDataset
@@ -21,6 +22,7 @@ DEBUG: bool = False
 class TestDataSource(unittest.TestCase):
     def setUp(self):
         self.maxDiff = None
+        torch.manual_seed(42)
 
     def _test_omegaconf_generic_failure(self):
         # OmegaConf possible bug - this is why we need _GenericWorkaround
@@ -56,3 +58,23 @@ class TestDataSource(unittest.TestCase):
             if DEBUG:
                 (DATA_DIR / "data_source.yaml").write_text(yaml)
             self.assertEqual(yaml, (DATA_DIR / "data_source.yaml").read_text())
+
+    def test_default(self):
+        if os.environ.get("INSIDE_RE_WORKER") is not None:
+            return
+        args = get_default_args(ImplicitronDataSource)
+        args.dataset_map_provider_class_type = "JsonIndexDatasetMapProvider"
+        args.data_loader_map_provider_class_type = "SequenceDataLoaderMapProvider"
+        dataset_args = args.dataset_map_provider_JsonIndexDatasetMapProvider_args
+        dataset_args.category = "skateboard"
+        dataset_args.test_restrict_sequence_id = 0
+        dataset_args.n_frames_per_sequence = -1
+
+        dataset_args.dataset_root = "manifold://co3d/tree/extracted"
+
+        data_source = ImplicitronDataSource(**args)
+        _, data_loaders = data_source.get_datasets_and_dataloaders()
+        self.assertEqual(len(data_loaders.train), 81)
+        for i in data_loaders.train:
+            self.assertEqual(i.frame_type, ["test_known"])
+            break

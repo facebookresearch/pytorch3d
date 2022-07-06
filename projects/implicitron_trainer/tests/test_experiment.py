@@ -55,7 +55,7 @@ class TestExperiment(unittest.TestCase):
         dataset_args.test_restrict_sequence_id = 0
         dataset_args.dataset_root = "manifold://co3d/tree/extracted"
         dataset_args.dataset_JsonIndexDataset_args.limit_sequences_to = 5
-        dataloader_args.dataset_len = 1
+        dataloader_args.dataset_length_train = 1
         cfg.solver_args.max_epochs = 2
 
         device = torch.device("cuda:0")

@@ -12,7 +12,7 @@ from typing import Any, cast, Dict, List, Optional, Tuple
 import lpips
 import torch
 from pytorch3d.implicitron.dataset.data_source import ImplicitronDataSource, Task
-from pytorch3d.implicitron.dataset.dataset_base import DatasetBase, FrameData
+from pytorch3d.implicitron.dataset.dataset_base import DatasetBase
 from pytorch3d.implicitron.dataset.json_index_dataset import JsonIndexDataset
 from pytorch3d.implicitron.dataset.json_index_dataset_map_provider import (
     CO3D_CATEGORIES,
@@ -207,7 +207,7 @@ def _get_all_source_cameras(
         shuffle=False,
         batch_size=len(dataset_for_loader),
         num_workers=num_workers,
-        collate_fn=FrameData.collate,
+        collate_fn=dataset.frame_data_type.collate,
     )
     is_known = is_known_frame(all_frame_data.frame_type)
     source_cameras = all_frame_data.camera[torch.where(is_known)[0]]

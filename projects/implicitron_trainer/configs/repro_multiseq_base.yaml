@@ -4,8 +4,8 @@ defaults:
 data_source_args:
   data_loader_map_provider_SequenceDataLoaderMapProvider_args:
     batch_size: 10
-    dataset_len: 1000
-    dataset_len_val: 1
+    dataset_length_train: 1000
+    dataset_length_val: 1
     num_workers: 8
     images_per_seq_options:
     - 2

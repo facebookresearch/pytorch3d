@@ -8,6 +8,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field, fields
 from typing import (
     Any,
+    ClassVar,
     Iterable,
     Iterator,
     List,
@@ -15,6 +16,7 @@ from typing import (
     Optional,
     Sequence,
     Tuple,
+    Type,
     Union,
 )
 
@@ -289,3 +291,7 @@ class DatasetBase(_GenericWorkaround, torch.utils.data.Dataset[FrameData]):
         """
         for _, _, idx in self.sequence_frames_in_order(seq_name):
             yield idx
+
+    # frame_data_type is the actual type of frames returned by the dataset.
+    # Collation uses its classmethod `collate`
+    frame_data_type: ClassVar[Type[FrameData]] = FrameData

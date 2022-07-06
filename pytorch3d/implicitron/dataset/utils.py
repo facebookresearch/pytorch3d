@@ -16,6 +16,14 @@ DATASET_TYPE_KNOWN = "known"
 DATASET_TYPE_UNKNOWN = "unseen"
 
 
+def is_known_frame_scalar(frame_type: str) -> bool:
+    """
+    Given a single frame type corresponding to a single frame, return whether
+    the frame is a known frame.
+    """
+    return frame_type.endswith(DATASET_TYPE_KNOWN)
+
+
 def is_known_frame(
     frame_type: List[str], device: Optional[str] = None
 ) -> torch.BoolTensor:
@@ -25,7 +33,7 @@ def is_known_frame(
     """
     # pyre-fixme[7]: Expected `BoolTensor` but got `Tensor`.
     return torch.tensor(
-        [ft.endswith(DATASET_TYPE_KNOWN) for ft in frame_type],
+        [is_known_frame_scalar(ft) for ft in frame_type],
         dtype=torch.bool,
         device=device,
     )
