@@ -7,7 +7,7 @@
 
 import json
 import os
-from typing import Dict, List, Tuple, Type
+from typing import Dict, List, Optional, Tuple, Type
 
 from omegaconf import DictConfig, open_dict
 from pytorch3d.implicitron.tools.config import (
@@ -15,6 +15,7 @@ from pytorch3d.implicitron.tools.config import (
     registry,
     run_auto_creation,
 )
+from pytorch3d.renderer.cameras import CamerasBase
 
 from .dataset_map_provider import (
     DatasetMap,
@@ -266,6 +267,15 @@ class JsonIndexDatasetMapProvider(DatasetMapProviderBase):  # pyre-ignore [13]
 
     def get_task(self) -> Task:
         return Task(self.task_str)
+
+    def get_all_train_cameras(self) -> Optional[CamerasBase]:
+        if Task(self.task_str) == Task.MULTI_SEQUENCE:
+            return None
+
+        # pyre-ignore[16]
+        train_dataset = self.dataset_map.train
+        assert isinstance(train_dataset, JsonIndexDataset)
+        return train_dataset.get_all_train_cameras()
 
 
 def _get_co3d_set_names_mapping(

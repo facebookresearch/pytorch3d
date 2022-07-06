@@ -24,11 +24,7 @@ from pytorch3d.implicitron.tools.config import expand_args_fields, registry
 from pytorch3d.implicitron.tools.metric_utils import calc_psnr, eval_depth
 from pytorch3d.implicitron.tools.utils import dataclass_to_cuda_
 
-
-if os.environ.get("FB_TEST", False):
-    from .common_resources import get_skateboard_data, provide_lpips_vgg
-else:
-    from common_resources import get_skateboard_data, provide_lpips_vgg
+from .common_resources import get_skateboard_data, provide_lpips_vgg
 
 
 class TestEvaluation(unittest.TestCase):

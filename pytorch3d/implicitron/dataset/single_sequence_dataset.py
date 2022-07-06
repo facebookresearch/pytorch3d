@@ -18,7 +18,7 @@ from pytorch3d.implicitron.tools.config import (
     expand_args_fields,
     run_auto_creation,
 )
-from pytorch3d.renderer import PerspectiveCameras
+from pytorch3d.renderer import CamerasBase, join_cameras_as_batch, PerspectiveCameras
 
 from .dataset_base import DatasetBase, FrameData
 from .dataset_map_provider import (
@@ -110,7 +110,7 @@ class SingleSceneDatasetMapProviderBase(DatasetMapProviderBase):
         # - images: [N, 3, H, W] tensor of rgb images - floats in [0,1]
         # - fg_probabilities: None or [N, 1, H, W] of floats in [0,1]
         # - splits: List[List[int]] of indices for train/val/test subsets.
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def _get_dataset(
         self, split_idx: int, frame_type: str, set_eval_batches: bool = False
@@ -161,6 +161,11 @@ class SingleSceneDatasetMapProviderBase(DatasetMapProviderBase):
 
     def get_task(self) -> Task:
         return Task.SINGLE_SEQUENCE
+
+    def get_all_train_cameras(self) -> Optional[CamerasBase]:
+        # pyre-ignore[16]
+        cameras = [self.poses[i] for i in self.i_split[0]]
+        return join_cameras_as_batch(cameras)
 
 
 def _interpret_blender_cameras(

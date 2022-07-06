@@ -12,12 +12,10 @@ from typing import Any, cast, Dict, List, Optional, Tuple
 import lpips
 import torch
 from pytorch3d.implicitron.dataset.data_source import ImplicitronDataSource, Task
-from pytorch3d.implicitron.dataset.dataset_base import DatasetBase
 from pytorch3d.implicitron.dataset.json_index_dataset import JsonIndexDataset
 from pytorch3d.implicitron.dataset.json_index_dataset_map_provider import (
     CO3D_CATEGORIES,
 )
-from pytorch3d.implicitron.dataset.utils import is_known_frame
 from pytorch3d.implicitron.evaluation.evaluate_new_view_synthesis import (
     aggregate_nvs_results,
     eval_batch,
@@ -120,16 +118,7 @@ def evaluate_dbir_for_category(
     if test_dataset is None or test_dataloader is None:
         raise ValueError("must have a test dataset.")
 
-    if task == Task.SINGLE_SEQUENCE:
-        # all_source_cameras are needed for evaluation of the
-        # target camera difficulty
-        # pyre-fixme[16]: `JsonIndexDataset` has no attribute `frame_annots`.
-        sequence_name = test_dataset.frame_annots[0]["frame_annotation"].sequence_name
-        all_source_cameras = _get_all_source_cameras(
-            test_dataset, sequence_name, num_workers=num_workers
-        )
-    else:
-        all_source_cameras = None
+    all_train_cameras = data_source.get_all_train_cameras()
 
     image_size = cast(JsonIndexDataset, test_dataset).image_width
 
@@ -160,7 +149,7 @@ def evaluate_dbir_for_category(
                 preds["implicitron_render"],
                 bg_color=bg_color,
                 lpips_model=lpips_model,
-                source_cameras=all_source_cameras,
+                source_cameras=all_train_cameras,
             )
         )
 
@@ -182,36 +171,6 @@ def _print_aggregate_results(
     print(f"Aggregate results for task={task}:")
     pretty_print_nvs_metrics(aggregate_task_result)
     print("")
-
-
-def _get_all_source_cameras(
-    dataset: DatasetBase, sequence_name: str, num_workers: int = 8
-):
-    """
-    Loads all training cameras of a given sequence.
-
-    The set of all seen cameras is needed for evaluating the viewpoint difficulty
-    for the singlescene evaluation.
-
-    Args:
-        dataset: Co3D dataset object.
-        sequence_name: The name of the sequence.
-        num_workers: The number of for the utilized dataloader.
-    """
-
-    # load all source cameras of the sequence
-    seq_idx = list(dataset.sequence_indices_in_order(sequence_name))
-    dataset_for_loader = torch.utils.data.Subset(dataset, seq_idx)
-    (all_frame_data,) = torch.utils.data.DataLoader(
-        dataset_for_loader,
-        shuffle=False,
-        batch_size=len(dataset_for_loader),
-        num_workers=num_workers,
-        collate_fn=dataset.frame_data_type.collate,
-    )
-    is_known = is_known_frame(all_frame_data.frame_type)
-    source_cameras = all_frame_data.camera[torch.where(is_known)[0]]
-    return source_cameras
 
 
 if __name__ == "__main__":

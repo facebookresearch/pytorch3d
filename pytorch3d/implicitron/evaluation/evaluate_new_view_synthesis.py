@@ -143,7 +143,7 @@ def eval_batch(
     visualize: bool = False,
     visualize_visdom_env: str = "eval_debug",
     break_after_visualising: bool = True,
-    source_cameras: Optional[List[CamerasBase]] = None,
+    source_cameras: Optional[CamerasBase] = None,
 ) -> Dict[str, Any]:
     """
     Produce performance metrics for a single batch of new-view synthesis

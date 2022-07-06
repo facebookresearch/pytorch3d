@@ -12,6 +12,7 @@ from typing import Iterator, Optional
 
 from iopath.common.file_io import PathManager
 from pytorch3d.implicitron.tools.config import registry, ReplaceableBase
+from pytorch3d.renderer.cameras import CamerasBase
 
 from .dataset_base import DatasetBase
 
@@ -71,6 +72,15 @@ class DatasetMapProviderBase(ReplaceableBase):
         raise NotImplementedError()
 
     def get_task(self) -> Task:
+        raise NotImplementedError()
+
+    def get_all_train_cameras(self) -> Optional[CamerasBase]:
+        """
+        If the data is all for a single scene, returns a list
+        of the known training cameras for that scene, which is
+        used for evaluating the difficulty of the unknown
+        cameras. Otherwise return None.
+        """
         raise NotImplementedError()
 
 

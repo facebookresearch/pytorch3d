@@ -32,11 +32,13 @@ import torch
 from PIL import Image
 from pytorch3d.implicitron.tools.config import registry, ReplaceableBase
 from pytorch3d.io import IO
-from pytorch3d.renderer.cameras import PerspectiveCameras
+from pytorch3d.renderer.camera_utils import join_cameras_as_batch
+from pytorch3d.renderer.cameras import CamerasBase, PerspectiveCameras
 from pytorch3d.structures.pointclouds import Pointclouds
 
 from . import types
 from .dataset_base import DatasetBase, FrameData
+from .utils import is_known_frame_scalar
 
 
 logger = logging.getLogger(__name__)
@@ -205,6 +207,20 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
 
     def _get_frame_type(self, entry: FrameAnnotsEntry) -> Optional[str]:
         return entry["subset"]
+
+    def get_all_train_cameras(self) -> CamerasBase:
+        """
+        Returns the cameras corresponding to all the known frames.
+        """
+        cameras = []
+        # pyre-ignore[16]
+        for frame_idx, frame_annot in enumerate(self.frame_annots):
+            frame_type = self._get_frame_type(frame_annot)
+            if frame_type is None:
+                raise ValueError("subsets not loaded")
+            if is_known_frame_scalar(frame_type):
+                cameras.append(self[frame_idx].camera)
+        return join_cameras_as_batch(cameras)
 
     def __getitem__(self, index) -> FrameData:
         # pyre-ignore[16]

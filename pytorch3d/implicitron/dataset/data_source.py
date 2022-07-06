@@ -4,13 +4,14 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-from typing import Tuple
+from typing import Optional, Tuple
 
 from pytorch3d.implicitron.tools.config import (
     registry,
     ReplaceableBase,
     run_auto_creation,
 )
+from pytorch3d.renderer.cameras import CamerasBase
 
 from .blender_dataset_map_provider import BlenderDatasetMapProvider  # noqa
 from .data_loader_map_provider import DataLoaderMap, DataLoaderMapProviderBase
@@ -26,6 +27,15 @@ class DataSourceBase(ReplaceableBase):
     """
 
     def get_datasets_and_dataloaders(self) -> Tuple[DatasetMap, DataLoaderMap]:
+        raise NotImplementedError()
+
+    def get_all_train_cameras(self) -> Optional[CamerasBase]:
+        """
+        If the data is all for a single scene, returns a list
+        of the known training cameras for that scene, which is
+        used for evaluating the viewpoint difficulty of the
+        unseen cameras.
+        """
         raise NotImplementedError()
 
 
@@ -56,3 +66,6 @@ class ImplicitronDataSource(DataSourceBase):  # pyre-ignore[13]
 
     def get_task(self) -> Task:
         return self.dataset_map_provider.get_task()
+
+    def get_all_train_cameras(self) -> Optional[CamerasBase]:
+        return self.dataset_map_provider.get_all_train_cameras()

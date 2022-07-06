@@ -16,6 +16,7 @@ from pytorch3d.implicitron.dataset.llff_dataset_map_provider import (
     LlffDatasetMapProvider,
 )
 from pytorch3d.implicitron.tools.config import expand_args_fields, get_default_args
+from pytorch3d.renderer import PerspectiveCameras
 from tests.common_testing import TestCaseMixin
 
 
@@ -123,3 +124,7 @@ class TestDataLlff(TestCaseMixin, unittest.TestCase):
         for i in data_loaders.test:
             self.assertEqual(i.frame_type, ["unseen"])
             self.assertEqual(i.image_rgb.shape, (1, 3, 800, 800))
+
+        cameras = data_source.get_all_train_cameras()
+        self.assertIsInstance(cameras, PerspectiveCameras)
+        self.assertEqual(len(cameras), 100)

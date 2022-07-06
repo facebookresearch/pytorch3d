@@ -224,7 +224,7 @@ class DatasetBase(_GenericWorkaround, torch.utils.data.Dataset[FrameData]):
     # _seq_to_idx: Dict[str, List[int]] = field(init=False)
 
     def __len__(self) -> int:
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def get_frame_numbers_and_timestamps(
         self, idxs: Sequence[int]
