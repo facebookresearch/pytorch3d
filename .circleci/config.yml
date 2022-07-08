@@ -337,6 +337,7 @@ workflows:
           python_version: '3.7'
           pytorch_version: 1.12.0
       - binary_linux_conda:
+          conda_docker_image: pytorch/conda-builder:cuda116
           context: DOCKERHUB_TOKEN
           cu_version: cu116
           name: linux_conda_py37_cu116_pyt1120
@@ -499,6 +500,7 @@ workflows:
           python_version: '3.8'
           pytorch_version: 1.12.0
       - binary_linux_conda:
+          conda_docker_image: pytorch/conda-builder:cuda116
           context: DOCKERHUB_TOKEN
           cu_version: cu116
           name: linux_conda_py38_cu116_pyt1120
@@ -661,6 +663,7 @@ workflows:
           python_version: '3.9'
           pytorch_version: 1.12.0
       - binary_linux_conda:
+          conda_docker_image: pytorch/conda-builder:cuda116
           context: DOCKERHUB_TOKEN
           cu_version: cu116
           name: linux_conda_py39_cu116_pyt1120
@@ -706,6 +709,7 @@ workflows:
           python_version: '3.10'
           pytorch_version: 1.12.0
       - binary_linux_conda:
+          conda_docker_image: pytorch/conda-builder:cuda116
           context: DOCKERHUB_TOKEN
           cu_version: cu116
           name: linux_conda_py310_cu116_pyt1120
