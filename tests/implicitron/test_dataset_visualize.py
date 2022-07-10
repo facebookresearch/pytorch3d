@@ -14,6 +14,7 @@ import torch
 import torchvision
 from pytorch3d.implicitron.dataset.json_index_dataset import JsonIndexDataset
 from pytorch3d.implicitron.dataset.visualize import get_implicitron_sequence_pointcloud
+from pytorch3d.implicitron.tools.config import expand_args_fields
 from pytorch3d.implicitron.tools.point_cloud_utils import render_point_cloud_pytorch3d
 from pytorch3d.vis.plotly_vis import plot_scene
 
@@ -37,6 +38,7 @@ class TestDatasetVisualize(unittest.TestCase):
         frame_file = os.path.join(dataset_root, category, "frame_annotations.jgz")
         sequence_file = os.path.join(dataset_root, category, "sequence_annotations.jgz")
         self.image_size = 256
+        expand_args_fields(JsonIndexDataset)
         self.datasets = {
             "simple": JsonIndexDataset(
                 frame_annotations_file=frame_file,

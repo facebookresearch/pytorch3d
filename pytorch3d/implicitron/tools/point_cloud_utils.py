@@ -142,6 +142,7 @@ def render_point_cloud_pytorch3d(
         rendered_blob,
         size=tuple(render_size),
         mode="bilinear",
+        align_corners=False,
     )
 
     data_rendered, depth_rendered, render_mask = rendered_blob.split(

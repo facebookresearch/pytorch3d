@@ -61,8 +61,16 @@ class FrameData(Mapping[str, Any]):
         fg_probability: A Tensor of `(1, H, W)` denoting the probability of the
             pixels belonging to the captured object; elements are floats
             in [0, 1].
-        bbox_xywh: The bounding box capturing the object in the
-            format (x0, y0, width, height).
+        bbox_xywh: The bounding box tightly enclosing the foreground object in the
+            format (x0, y0, width, height). The convention assumes that
+            `x0+width` and `y0+height` includes the boundary of the box.
+            I.e., to slice out the corresponding crop from an image tensor `I`
+            we execute `crop = I[..., y0:y0+height, x0:x0+width]`
+        crop_bbox_xywh: The bounding box denoting the boundaries of `image_rgb`
+            in the original image coordinates in the format (x0, y0, width, height).
+            The convention is the same as for `bbox_xywh`. `crop_bbox_xywh` differs
+            from `bbox_xywh` due to padding (which can happen e.g. due to
+            setting `JsonIndexDataset.box_crop_context > 0`)
         camera: A PyTorch3D camera object corresponding the frame's viewpoint,
             corrected for cropping if it happened.
         camera_quality_score: The score proportional to the confidence of the
@@ -98,6 +106,7 @@ class FrameData(Mapping[str, Any]):
     mask_path: Union[str, List[str], None] = None
     fg_probability: Optional[torch.Tensor] = None
     bbox_xywh: Optional[torch.Tensor] = None
+    crop_bbox_xywh: Optional[torch.Tensor] = None
     camera: Optional[PerspectiveCameras] = None
     camera_quality_score: Optional[torch.Tensor] = None
     point_cloud_quality_score: Optional[torch.Tensor] = None
