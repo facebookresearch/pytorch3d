@@ -92,6 +92,9 @@ class JsonIndexDatasetMapProvider(DatasetMapProviderBase):  # pyre-ignore [13]
                             to use for the dataset.
         dataset_X_args (e.g. dataset_JsonIndexDataset_args): arguments passed
             to all the dataset constructors.
+        path_manager_factory: (Optional) An object that generates an instance of
+            PathManager that can translate provided file paths.
+        path_manager_factory_class_type: The class type of `path_manager_factory`.
     """
 
     category: str

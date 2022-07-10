@@ -4,6 +4,7 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+import copy
 import functools
 import gzip
 import hashlib
@@ -254,6 +255,47 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
             ]
 
         return dataset_idx
+
+    def subset_from_frame_index(
+        self,
+        frame_index: List[Union[Tuple[str, int], Tuple[str, int, str]]],
+        allow_missing_indices: bool = True,
+    ) -> "JsonIndexDataset":
+        # Get the indices into the frame annots.
+        dataset_indices = self.seq_frame_index_to_dataset_index(
+            [frame_index],
+            allow_missing_indices=self.is_filtered() and allow_missing_indices,
+        )[0]
+        valid_dataset_indices = [i for i in dataset_indices if i is not None]
+
+        # Deep copy the whole dataset except frame_annots, which are large so we
+        # deep copy only the requested subset of frame_annots.
+        memo = {id(self.frame_annots): None}  # pyre-ignore[16]
+        dataset_new = copy.deepcopy(self, memo)
+        dataset_new.frame_annots = copy.deepcopy(
+            [self.frame_annots[i] for i in valid_dataset_indices]
+        )
+
+        # This will kill all unneeded sequence annotations.
+        dataset_new._invalidate_indexes(filter_seq_annots=True)
+
+        # Finally annotate the frame annotations with the name of the subset
+        # stored in meta.
+        for frame_annot in dataset_new.frame_annots:
+            frame_annotation = frame_annot["frame_annotation"]
+            if frame_annotation.meta is not None:
+                frame_annot["subset"] = frame_annotation.meta.get("frame_type", None)
+
+        # A sanity check - this will crash in case some entries from frame_index are missing
+        # in dataset_new.
+        valid_frame_index = [
+            fi for fi, di in zip(frame_index, dataset_indices) if di is not None
+        ]
+        dataset_new.seq_frame_index_to_dataset_index(
+            [valid_frame_index], allow_missing_indices=False
+        )
+
+        return dataset_new
 
     def __str__(self) -> str:
         # pyre-ignore[16]
