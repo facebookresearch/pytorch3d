@@ -427,13 +427,14 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
                     image_path=entry.image.path,
                     box_crop_context=self.box_crop_context,
                 )
-                mask = _crop_around_box(mask, clamp_bbox_xyxy, full_path)
 
                 crop_box_xyxy = _clamp_box_to_image_bounds_and_round(
                     clamp_bbox_xyxy,
                     image_size_hw=tuple(mask.shape[-2:]),
                 )
                 crop_box_xywh = _bbox_xyxy_to_xywh(crop_box_xyxy)
+
+                mask = _crop_around_box(mask, clamp_bbox_xyxy, full_path)
 
             fg_probability, _, _ = self._resize_image(mask, mode="nearest")
 
