@@ -1236,3 +1236,84 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
                 "test_simple_sphere_light_phong_%s.png" % cam_type.__name__, DATA_DIR
             )
             self.assertClose(rgb, image_ref, atol=0.05)
+
+    def test_nd_sphere(self):
+        """
+        Test that the render can handle higher dimensional textures and not just
+        3 channel RGB.
+        """
+        torch.manual_seed(1)
+        device = torch.device("cuda:0")
+        C = 5
+        WHITE = ((1.0,) * C,)
+        BLACK = ((0.0,) * C,)
+
+        # Init mesh
+        sphere_mesh = ico_sphere(5, device)
+        verts_padded = sphere_mesh.verts_padded()
+        faces_padded = sphere_mesh.faces_padded()
+        feats = torch.ones(*verts_padded.shape[:-1], C, device=device)
+        n_verts = feats.shape[1]
+        # make some non-uniform pattern
+        feats *= torch.arange(0, 10, step=10/n_verts, device=device).unsqueeze(1)
+        textures = TexturesVertex(verts_features=feats)
+        sphere_mesh = Meshes(verts=verts_padded, faces=faces_padded, textures=textures)
+
+        # No elevation or azimuth rotation
+        R, T = look_at_view_transform(2.7, 0.0, 0.0)
+        postfix = "_"
+
+        cameras = PerspectiveCameras(device=device, R=R, T=T)
+
+        # Init shader settings
+        materials = Materials(
+            device=device,
+            ambient_color=WHITE,
+            diffuse_color=WHITE,
+            specular_color=WHITE,
+        )
+        lights = AmbientLights(
+            device=device,
+            ambient_color=WHITE,
+        )
+        lights.location = torch.tensor([0.0, 0.0, +2.0], device=device)[None]
+
+        raster_settings = RasterizationSettings(
+            image_size=512, blur_radius=0.0, faces_per_pixel=1
+        )
+        rasterizer = MeshRasterizer(
+            cameras=cameras, raster_settings=raster_settings
+        )
+        blend_params = BlendParams(
+            1e-4,
+            1e-4,
+            background_color=BLACK[0],
+        )
+
+        # only test HardFlatShader since that's the only one that makes
+        # sense for classification
+        shader = HardFlatShader(
+            lights=lights,
+            cameras=cameras,
+            materials=materials,
+            blend_params=blend_params,
+        )
+        renderer = MeshRenderer(rasterizer=rasterizer, shader=shader)
+        images = renderer(sphere_mesh)
+
+        self.assertEqual(images.shape[-1], C+1)
+        self.assertClose(images.amax(), torch.tensor(10.0), atol=0.01)
+        self.assertClose(images.amin(), torch.tensor(0.0), atol=0.01)
+
+        # grab last 3 color channels
+        rgb = (images[0, ..., C-3:C] / 10).squeeze().cpu()
+        filename = "test_nd_sphere.png"
+
+        if DEBUG:
+            debug_filename = "DEBUG_%s" % filename
+            Image.fromarray((rgb.numpy() * 255).astype(np.uint8)).save(
+                DATA_DIR / debug_filename
+            )
+
+        image_ref = load_rgb_image(filename, DATA_DIR)
+        self.assertClose(rgb, image_ref, atol=0.05)
