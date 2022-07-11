@@ -23,12 +23,13 @@ from tests.common_testing import TestCaseMixin
 # These tests are only run internally, where the data is available.
 internal = os.environ.get("FB_TEST", False)
 inside_re_worker = os.environ.get("INSIDE_RE_WORKER", False)
-skip_tests = not internal or inside_re_worker
 
 
-@unittest.skipIf(skip_tests, "no data")
+@unittest.skipUnless(internal, "no data")
 class TestDataLlff(TestCaseMixin, unittest.TestCase):
     def test_synthetic(self):
+        if inside_re_worker:
+            return
         expand_args_fields(BlenderDatasetMapProvider)
 
         provider = BlenderDatasetMapProvider(
@@ -50,6 +51,8 @@ class TestDataLlff(TestCaseMixin, unittest.TestCase):
             self.assertIsInstance(value, FrameData)
 
     def test_llff(self):
+        if inside_re_worker:
+            return
         expand_args_fields(LlffDatasetMapProvider)
 
         provider = LlffDatasetMapProvider(
@@ -77,6 +80,8 @@ class TestDataLlff(TestCaseMixin, unittest.TestCase):
             self.assertEqual(dataset_map.test[batch[0]].frame_type, "unseen")
 
     def test_include_known_frames(self):
+        if inside_re_worker:
+            return
         expand_args_fields(LlffDatasetMapProvider)
 
         provider = LlffDatasetMapProvider(
@@ -106,9 +111,10 @@ class TestDataLlff(TestCaseMixin, unittest.TestCase):
                 self.assertEqual(dataset_map.test[i].frame_type, "known")
 
     def test_loaders(self):
+        if inside_re_worker:
+            return
         args = get_default_args(ImplicitronDataSource)
         args.dataset_map_provider_class_type = "BlenderDatasetMapProvider"
-        args.data_loader_map_provider_class_type = "RandomDataLoaderMapProvider"
         dataset_args = args.dataset_map_provider_BlenderDatasetMapProvider_args
         dataset_args.object_name = "lego"
         dataset_args.base_dir = "manifold://co3d/tree/nerf_data/nerf_synthetic/lego"
