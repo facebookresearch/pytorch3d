@@ -9,6 +9,7 @@ import logging
 import os
 import shutil
 import tempfile
+from typing import Optional
 
 import torch
 
@@ -99,14 +100,14 @@ def save_model(model, stats, fl, optimizer=None, cfg=None):
     return flstats, flmodel, flopt
 
 
-def load_model(fl):
+def load_model(fl, map_location: Optional[dict]):
     flstats = get_stats_path(fl)
     flmodel = get_model_path(fl)
     flopt = get_optimizer_path(fl)
-    model_state_dict = torch.load(flmodel)
+    model_state_dict = torch.load(flmodel, map_location=map_location)
     stats = load_stats(flstats)
     if os.path.isfile(flopt):
-        optimizer = torch.load(flopt)
+        optimizer = torch.load(flopt, map_location=map_location)
     else:
         optimizer = None
 

@@ -21,7 +21,6 @@ from typing import Optional, Tuple
 import numpy as np
 import torch
 import torch.nn.functional as Fu
-from experiment import init_model
 from omegaconf import OmegaConf
 from pytorch3d.implicitron.dataset.data_source import ImplicitronDataSource
 from pytorch3d.implicitron.dataset.dataset_base import DatasetBase, FrameData
@@ -37,6 +36,8 @@ from pytorch3d.implicitron.tools.vis_utils import (
     make_depth_image,
 )
 from tqdm import tqdm
+
+from .experiment import init_model
 
 
 def render_sequence(

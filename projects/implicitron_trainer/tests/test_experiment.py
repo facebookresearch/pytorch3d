@@ -8,10 +8,11 @@ import os
 import unittest
 from pathlib import Path
 
-import experiment
 import torch
 from hydra import compose, initialize_config_dir
 from omegaconf import OmegaConf
+
+from .. import experiment
 
 
 def interactive_testing_requested() -> bool:
