@@ -292,6 +292,9 @@ class AmbientLights(TensorProperties):
     A light object representing the same color of light everywhere.
     By default, this is white, which effectively means lighting is
     not used in rendering.
+
+    Unlike other lights this supports an arbitrary number of channels, not just 3 for RGB.
+    The ambient_color input determines the number of channels.
     """
 
     def __init__(self, *, ambient_color=None, device: Device = "cpu") -> None:
@@ -304,9 +307,11 @@ class AmbientLights(TensorProperties):
             device: Device (as str or torch.device) on which the tensors should be located
 
         The ambient_color if provided, should be
-            - 3 element tuple/list or list of lists
-            - torch tensor of shape (1, 3)
-            - torch tensor of shape (N, 3)
+            - tuple/list of C-element tuples of floats
+            - torch tensor of shape (1, C)
+            - torch tensor of shape (N, C)
+        where C is the number of channels and N is batch size.
+        For RGB, C is 3.
         """
         if ambient_color is None:
             ambient_color = ((1.0, 1.0, 1.0),)
@@ -317,10 +322,14 @@ class AmbientLights(TensorProperties):
         return super().clone(other)
 
     def diffuse(self, normals, points) -> torch.Tensor:
-        return torch.zeros_like(points)
+        return self._zeros_channels(points)
 
     def specular(self, normals, points, camera_position, shininess) -> torch.Tensor:
-        return torch.zeros_like(points)
+        return self._zeros_channels(points)
+
+    def _zeros_channels(self, points: torch.Tensor) -> torch.Tensor:
+        ch = self.ambient_color.shape[-1]
+        return torch.zeros(*points.shape[:-1], ch, device=points.device)
 
 
 def _validate_light_properties(obj) -> None:

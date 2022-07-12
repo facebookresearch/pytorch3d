@@ -27,9 +27,9 @@ class Materials(TensorProperties):
     ) -> None:
         """
         Args:
-            ambient_color: RGB ambient reflectivity of the material
-            diffuse_color: RGB diffuse reflectivity of the material
-            specular_color: RGB specular reflectivity of the material
+            ambient_color: ambient reflectivity of the material
+            diffuse_color: diffuse reflectivity of the material
+            specular_color: specular reflectivity of the material
             shininess: The specular exponent for the material. This defines
                 the focus of the specular highlight with a high value
                 resulting in a concentrated highlight. Shininess values
@@ -37,7 +37,8 @@ class Materials(TensorProperties):
             device: Device (as str or torch.device) on which the tensors should be located
 
         ambient_color, diffuse_color and specular_color can be of shape
-        (1, 3) or (N, 3). shininess can be of shape (1) or (N).
+        (1, C) or (N, C) where C is typically 3 (for RGB). shininess can be of shape (1,)
+        or (N,).
 
         The colors and shininess are broadcast against each other so need to
         have either the same batch dimension or batch dimension = 1.
@@ -49,11 +50,12 @@ class Materials(TensorProperties):
             specular_color=specular_color,
             shininess=shininess,
         )
+        C = self.ambient_color.shape[-1]
         for n in ["ambient_color", "diffuse_color", "specular_color"]:
             t = getattr(self, n)
-            if t.shape[-1] != 3:
-                msg = "Expected %s to have shape (N, 3); got %r"
-                raise ValueError(msg % (n, t.shape))
+            if t.shape[-1] != C:
+                msg = "Expected %s to have shape (N, %d); got %r"
+                raise ValueError(msg % (n, C, t.shape))
         if self.shininess.shape != torch.Size([self._N]):
             msg = "shininess should have shape (N); got %r"
             raise ValueError(msg % repr(self.shininess.shape))
