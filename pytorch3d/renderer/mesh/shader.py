@@ -374,11 +374,11 @@ class HardDepthShader(ShaderBase):
         cameras = super()._get_cameras(**kwargs)
 
         zfar = kwargs.get("zfar", getattr(cameras, "zfar", 100.0))
-        mask = fragments.pix_to_face < 0
+        mask = fragments.pix_to_face[..., 0:1] < 0
 
-        zbuf = fragments.zbuf[..., 0].clone()
+        zbuf = fragments.zbuf[..., 0:1].clone()
         zbuf[mask] = zfar
-        return zbuf.unsqueeze(3)
+        return zbuf
 
 
 class SoftDepthShader(ShaderBase):
