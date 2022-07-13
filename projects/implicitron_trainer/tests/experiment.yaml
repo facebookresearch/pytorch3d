@@ -335,6 +335,47 @@ data_source_args:
       sort_frames: false
     path_manager_factory_PathManagerFactory_args:
       silence_logs: true
+  dataset_map_provider_JsonIndexDatasetMapProviderV2_args:
+    category: ???
+    subset_name: ???
+    dataset_root: ''
+    test_on_train: false
+    only_test_set: false
+    load_eval_batches: true
+    dataset_class_type: JsonIndexDataset
+    path_manager_factory_class_type: PathManagerFactory
+    dataset_JsonIndexDataset_args:
+      path_manager: null
+      frame_annotations_file: ''
+      sequence_annotations_file: ''
+      subset_lists_file: ''
+      subsets: null
+      limit_to: 0
+      limit_sequences_to: 0
+      pick_sequence: []
+      exclude_sequence: []
+      limit_category_to: []
+      dataset_root: ''
+      load_images: true
+      load_depths: true
+      load_depth_masks: true
+      load_masks: true
+      load_point_clouds: false
+      max_points: 0
+      mask_images: false
+      mask_depths: false
+      image_height: 800
+      image_width: 800
+      box_crop: true
+      box_crop_mask_thr: 0.4
+      box_crop_context: 0.3
+      remove_empty_masks: true
+      n_frames_per_sequence: -1
+      seed: 0
+      sort_frames: false
+      eval_batches: null
+    path_manager_factory_PathManagerFactory_args:
+      silence_logs: true
   dataset_map_provider_LlffDatasetMapProvider_args:
     base_dir: ???
     object_name: ???

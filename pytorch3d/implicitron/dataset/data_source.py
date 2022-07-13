@@ -17,6 +17,7 @@ from .blender_dataset_map_provider import BlenderDatasetMapProvider  # noqa
 from .data_loader_map_provider import DataLoaderMap, DataLoaderMapProviderBase
 from .dataset_map_provider import DatasetMap, DatasetMapProviderBase, Task
 from .json_index_dataset_map_provider import JsonIndexDatasetMapProvider  # noqa
+from .json_index_dataset_map_provider_v2 import JsonIndexDatasetMapProviderV2  # noqa
 from .llff_dataset_map_provider import LlffDatasetMapProvider  # noqa
 
 

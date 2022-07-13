@@ -9,12 +9,13 @@ import json
 import logging
 import os
 import warnings
-from typing import Dict, List, Type
+from typing import Dict, List, Optional, Type
 
 from pytorch3d.implicitron.dataset.dataset_map_provider import (
     DatasetMap,
     DatasetMapProviderBase,
     PathManagerFactory,
+    Task,
 )
 from pytorch3d.implicitron.dataset.json_index_dataset import JsonIndexDataset
 from pytorch3d.implicitron.tools.config import (
@@ -22,6 +23,8 @@ from pytorch3d.implicitron.tools.config import (
     registry,
     run_auto_creation,
 )
+
+from pytorch3d.renderer.cameras import CamerasBase
 
 
 _CO3DV2_DATASET_ROOT: str = os.getenv("CO3DV2_DATASET_ROOT", "")
@@ -295,6 +298,18 @@ class JsonIndexDatasetMapProviderV2(DatasetMapProviderBase):  # pyre-ignore [13]
             category_to_subset_name_list_json
         )
         return category_to_subset_name_list
+
+    def get_task(self) -> Task:  # TODO: we plan to get rid of tasks
+        return {
+            "manyview": Task.SINGLE_SEQUENCE,
+            "fewview": Task.MULTI_SEQUENCE,
+        }[self.subset_name.split("_")[0]]
+
+    def get_all_train_cameras(self) -> Optional[CamerasBase]:
+        # pyre-ignore[16]
+        train_dataset = self.dataset_map.train
+        assert isinstance(train_dataset, JsonIndexDataset)
+        return train_dataset.get_all_train_cameras()
 
     def _load_annotation_json(self, json_filename: str):
         full_path = os.path.join(

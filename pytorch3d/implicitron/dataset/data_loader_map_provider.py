@@ -354,9 +354,13 @@ class SequenceDataLoaderMapProvider(DataLoaderMapProviderBase):
         """
         if num_batches > 0:
             num_samples = self.batch_size * num_batches
+            replacement = True
         else:
             num_samples = None
-        sampler = RandomSampler(dataset, replacement=False, num_samples=num_samples)
+            replacement = False
+        sampler = RandomSampler(
+            dataset, replacement=replacement, num_samples=num_samples
+        )
         batch_sampler = BatchSampler(sampler, self.batch_size, drop_last=True)
         return DataLoader(
             dataset,
