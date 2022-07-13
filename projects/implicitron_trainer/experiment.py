@@ -638,7 +638,7 @@ def _seed_all_random_engines(seed: int) -> None:
     random.seed(seed)
 
 
-def _setup_envvars_for_cluster(cfg) -> bool:
+def _setup_envvars_for_cluster() -> bool:
     """
     Prepares to run on cluster if relevant.
     Returns whether FAIR cluster in use.

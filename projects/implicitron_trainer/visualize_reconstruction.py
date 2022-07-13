@@ -251,7 +251,7 @@ def show_predictions(
 def generate_prediction_videos(
     preds,
     sequence_name,
-    viz,
+    viz=None,
     viz_env="visualizer",
     predicted_keys=(
         "images_render",
@@ -279,19 +279,20 @@ def generate_prediction_videos(
     for rendered_pred in tqdm(preds):
         for k in predicted_keys:
             vws[k].write_frame(
-                rendered_pred[k][0].detach().cpu().numpy(),
+                rendered_pred[k][0].clip(0.0, 1.0).detach().cpu().numpy(),
                 resize=resize,
             )
 
     for k in predicted_keys:
         vws[k].get_video(quiet=True)
         print(f"Generated {vws[k].out_path}.")
-        viz.video(
-            videofile=vws[k].out_path,
-            env=viz_env,
-            win=k,  # we reuse the same window otherwise visdom dies
-            opts={"title": sequence_name + " " + k},
-        )
+        if viz is not None:
+            viz.video(
+                videofile=vws[k].out_path,
+                env=viz_env,
+                win=k,  # we reuse the same window otherwise visdom dies
+                opts={"title": sequence_name + " " + k},
+            )
 
 
 def export_scenes(
