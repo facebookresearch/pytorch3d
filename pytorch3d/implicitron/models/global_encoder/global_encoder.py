@@ -4,7 +4,7 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-from typing import List, Union
+from typing import List, Optional, Union
 
 import torch
 from pytorch3d.implicitron.tools.config import (
@@ -35,9 +35,10 @@ class GlobalEncoderBase(ReplaceableBase):
         """
         raise NotImplementedError()
 
-    def calc_squared_encoding_norm(self):
+    def calculate_squared_encoding_norm(self) -> Optional[torch.Tensor]:
         """
-        Calculates the squared norm of the encoding.
+        Calculates the squared norm of the encoding to report as the
+        `autodecoder_norm` loss of the model, as a zero dimensional tensor.
         """
         raise NotImplementedError()
 
@@ -75,8 +76,8 @@ class SequenceAutodecoder(GlobalEncoderBase, torch.nn.Module):  # pyre-ignore: 1
         # run dtype checks and pass sequence_name to self.autodecoder
         return self.autodecoder(sequence_name)
 
-    def calc_squared_encoding_norm(self):
-        return self.autodecoder.calc_squared_encoding_norm()
+    def calculate_squared_encoding_norm(self) -> Optional[torch.Tensor]:
+        return self.autodecoder.calculate_squared_encoding_norm()
 
 
 @registry.register
@@ -106,5 +107,5 @@ class HarmonicTimeEncoder(GlobalEncoderBase, torch.nn.Module):
         time = frame_timestamp / self.time_divisor
         return self._harmonic_embedding(time)  # pyre-ignore: 29
 
-    def calc_squared_encoding_norm(self):
-        return 0.0
+    def calculate_squared_encoding_norm(self) -> Optional[torch.Tensor]:
+        return None

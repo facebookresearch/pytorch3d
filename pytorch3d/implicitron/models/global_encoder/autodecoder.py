@@ -69,10 +69,10 @@ class Autodecoder(Configurable, torch.nn.Module):
                 assert x_id == x_id_
         return key_map
 
-    def calc_squared_encoding_norm(self):
+    def calculate_squared_encoding_norm(self) -> Optional[torch.Tensor]:
         if self.n_instances <= 0:
             return None
-        return (self._autodecoder_codes.weight**2).mean()
+        return (self._autodecoder_codes.weight**2).mean()  # pyre-ignore[16]
 
     def get_encoding_dim(self) -> int:
         if self.n_instances <= 0:

@@ -368,7 +368,7 @@ class GenericModel(ImplicitronModelBase, torch.nn.Module):  # pyre-ignore: 13
 
         # A helper function for selecting n_target first elements from the input
         # where the latter can be None.
-        def _safe_slice_targets(
+        def safe_slice_targets(
             tensor: Optional[Union[torch.Tensor, List[str]]],
         ) -> Optional[Union[torch.Tensor, List[str]]]:
             return None if tensor is None else tensor[:n_targets]
@@ -423,8 +423,8 @@ class GenericModel(ImplicitronModelBase, torch.nn.Module):  # pyre-ignore: 13
         global_code = None
         if self.global_encoder is not None:
             global_code = self.global_encoder(  # pyre-fixme[29]
-                sequence_name=_safe_slice_targets(sequence_name),
-                frame_timestamp=_safe_slice_targets(frame_timestamp),
+                sequence_name=safe_slice_targets(sequence_name),
+                frame_timestamp=safe_slice_targets(frame_timestamp),
             )
         custom_args["global_code"] = global_code
 
@@ -469,10 +469,10 @@ class GenericModel(ImplicitronModelBase, torch.nn.Module):  # pyre-ignore: 13
                 results=preds,
                 raymarched=rendered,
                 xys=ray_bundle.xys,
-                image_rgb=_safe_slice_targets(image_rgb),
-                depth_map=_safe_slice_targets(depth_map),
-                fg_probability=_safe_slice_targets(fg_probability),
-                mask_crop=_safe_slice_targets(mask_crop),
+                image_rgb=safe_slice_targets(image_rgb),
+                depth_map=safe_slice_targets(depth_map),
+                fg_probability=safe_slice_targets(fg_probability),
+                mask_crop=safe_slice_targets(mask_crop),
             )
         )
 

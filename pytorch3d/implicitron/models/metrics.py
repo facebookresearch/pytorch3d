@@ -126,7 +126,7 @@ class RegularizationMetrics(RegularizationMetricsBase):
         """
         metrics = {}
         if getattr(model, "sequence_autodecoder", None) is not None:
-            ad_penalty = model.sequence_autodecoder.calc_squared_encoding_norm()
+            ad_penalty = model.sequence_autodecoder.calculate_squared_encoding_norm()
             if ad_penalty is not None:
                 metrics["autodecoder_norm"] = ad_penalty
 
