@@ -143,8 +143,15 @@ setup(
     install_requires=["fvcore", "iopath"],
     extras_require={
         "all": ["matplotlib", "tqdm>4.29.0", "imageio", "ipywidgets"],
-        "dev": ["flake8", "usort", "black==22.3"],
-        "implicitron": ["hydra-core>=1.1", "visdom", "lpips", "matplotlib"],
+        "dev": ["flake8", "usort"],
+        "implicitron": [
+            "hydra-core>=1.1",
+            "visdom",
+            "lpips",
+            "tqdm>4.29.0",
+            "matplotlib",
+            "accelerate",
+        ],
     },
     entry_points={
         "console_scripts": [

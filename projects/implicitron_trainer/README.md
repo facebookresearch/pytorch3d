@@ -27,7 +27,7 @@ Only configuration can be changed (see [Configuration system](#configuration-sys
 For this setup, install the dependencies and PyTorch3D from conda following [the guide](https://github.com/facebookresearch/pytorch3d/blob/master/INSTALL.md#1-install-with-cuda-support-from-anaconda-cloud-on-linux-only). Then, install implicitron-specific dependencies:
 
 ```shell
-pip install "hydra-core>=1.1" visdom lpips matplotlib
+pip install "hydra-core>=1.1" visdom lpips matplotlib accelerate
 ```
 
 Runner executable is available as `pytorch3d_implicitron_runner` shell command.
@@ -49,7 +49,7 @@ Please follow the instructions to [install PyTorch3D from a local clone](https:/
 Then, install Implicitron-specific dependencies:
 
 ```shell
-pip install "hydra-core>=1.1" visdom lpips matplotlib
+pip install "hydra-core>=1.1" visdom lpips matplotlib accelerate
 ```
 
 You are still encouraged to implement custom plugins as above where possible as it makes reusing the code easier.
