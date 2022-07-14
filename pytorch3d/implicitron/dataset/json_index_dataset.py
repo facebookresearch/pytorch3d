@@ -779,7 +779,7 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
         # pyre-fixme[6]: For 2nd param expected `int` but got `Optional[int]`.
         # pyre-fixme[6]: For 3rd param expected `int` but got `Optional[int]`.
         mask = torch.zeros(1, self.image_height, self.image_width)
-        mask[:, 0 : imre.shape[1] - 1, 0 : imre.shape[2] - 1] = 1.0
+        mask[:, 0 : imre.shape[1], 0 : imre.shape[2]] = 1.0
         return imre_, minscale, mask
 
     def _local_path(self, path: str) -> str:
