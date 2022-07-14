@@ -141,7 +141,7 @@ def iterative_closest_point(
                 "(minibatch, dim, dim), T is a batch of dim-dimensional "
                 "translations of shape (minibatch, dim) and s is a batch "
                 "of scalars of shape (minibatch,)."
-            )
+            ) from None
         # apply the init transform to the input point cloud
         Xt = _apply_similarity_transform(Xt, R, T, s)
     else:

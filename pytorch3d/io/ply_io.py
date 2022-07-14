@@ -236,7 +236,7 @@ class _PlyHeader:
             count = int(items[2])
         except ValueError:
             msg = "Number of items for %s was not a number."
-            raise ValueError(msg % items[1])
+            raise ValueError(msg % items[1]) from None
         self.elements.append(_PlyElementType(items[1], count))
 
 
@@ -409,12 +409,12 @@ def _parse_heterogeneous_property_ascii(datum, line_iter, property: _Property):
             else:
                 datum.append(int(value))
         except ValueError:
-            raise ValueError("Bad numerical data.")
+            raise ValueError("Bad numerical data.") from None
     else:
         try:
             length = int(value)
         except ValueError:
-            raise ValueError("A list length was not a number.")
+            raise ValueError("A list length was not a number.") from None
         list_value = np.zeros(length, dtype=_PLY_TYPES[property.data_type].np_type)
         for i in range(length):
             inner_value = next(line_iter, None)
@@ -423,7 +423,7 @@ def _parse_heterogeneous_property_ascii(datum, line_iter, property: _Property):
             try:
                 list_value[i] = float(inner_value)
             except ValueError:
-                raise ValueError("Bad numerical data.")
+                raise ValueError("Bad numerical data.") from None
         datum.append(list_value)
 
 

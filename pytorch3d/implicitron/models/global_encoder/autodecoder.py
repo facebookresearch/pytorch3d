@@ -107,7 +107,7 @@ class Autodecoder(Configurable, torch.nn.Module):
                     device=next(self.parameters()).device,
                 )
             except StopIteration:
-                raise ValueError("Not enough n_instances in the autodecoder")
+                raise ValueError("Not enough n_instances in the autodecoder") from None
 
         # pyre-fixme[29]: `Union[torch.Tensor, torch.nn.Module]` is not a function.
         return self._autodecoder_codes(x)

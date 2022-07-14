@@ -238,7 +238,7 @@ class Stats(object):
                             "could not extract prediction %s\
                                           from the prediction dictionary"
                             % stat
-                        )
+                        ) from None
                 else:
                     val = None
 

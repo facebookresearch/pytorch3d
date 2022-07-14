@@ -276,7 +276,7 @@ def _read_binvox_header(f):  # pragma: no cover
     try:
         dims = [int(d) for d in dims[1:]]
     except ValueError:
-        raise ValueError("Invalid header (line 2)")
+        raise ValueError("Invalid header (line 2)") from None
     if len(dims) != 3 or dims[0] != dims[1] or dims[0] != dims[2]:
         raise ValueError("Invalid header (line 2)")
     size = dims[0]
@@ -291,7 +291,7 @@ def _read_binvox_header(f):  # pragma: no cover
     try:
         translation = tuple(float(t) for t in translation[1:])
     except ValueError:
-        raise ValueError("Invalid header (line 3)")
+        raise ValueError("Invalid header (line 3)") from None
 
     # Fourth line of the header should be "scale [float]"
     line = f.readline().strip()
