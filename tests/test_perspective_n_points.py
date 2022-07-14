@@ -54,9 +54,7 @@ class TestPerspectiveNPoints(TestCaseMixin, unittest.TestCase):
         R_quat = rotation_conversions.matrix_to_quaternion(R)
 
         num_pts = x_world.shape[-2]
-        # quadratic part is more stable with fewer points
-        num_pts_thresh = 5 if skip_q else 4
-        if check_output and num_pts > num_pts_thresh:
+        if check_output:
             assert_msg = (
                 f"test_perspective_n_points assertion failure for "
                 f"n_points={num_pts}, "
@@ -90,7 +88,12 @@ class TestPerspectiveNPoints(TestCaseMixin, unittest.TestCase):
                 print("R_hat | R_gt\n", R_gt)
                 print("T_hat | T_gt\n", T_gt)
 
-    def _testcase_from_2d(self, y, print_stats, benchmark, skip_q=False):
+    def _testcase_from_2d(
+        self, y, print_stats, benchmark, skip_q=False, skip_check_thresh=5
+    ):
+        """
+        In case num_pts < 6, EPnP gets unstable, so we check it doesn't crash
+        """
         x_cam, x_world, R, T = TestPerspectiveNPoints._generate_epnp_test_from_2d(
             y[None].repeat(16, 1, 1)
         )
@@ -107,7 +110,15 @@ class TestPerspectiveNPoints(TestCaseMixin, unittest.TestCase):
 
             return result
 
-        self._run_and_print(x_world, y, R, T, print_stats, skip_q, check_output=True)
+        self._run_and_print(
+            x_world,
+            y,
+            R,
+            T,
+            print_stats,
+            skip_q,
+            check_output=True if y.shape[1] > skip_check_thresh else False,
+        )
 
         # in the noisy case, there are no guarantees, so we check it doesn't crash
         if print_stats:
