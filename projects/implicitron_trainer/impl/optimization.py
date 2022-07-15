@@ -25,7 +25,7 @@ def init_optimizer(
     gamma: float = 0.1,
     momentum: float = 0.9,
     betas: Tuple[float, ...] = (0.9, 0.999),
-    milestones: tuple = (),
+    milestones: Tuple[int, ...] = (),
     max_epochs: int = 1000,
 ):
     """

@@ -5,7 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 
 from dataclasses import field
-from typing import Tuple
+from typing import Any, Dict, Tuple
 
 from omegaconf import DictConfig
 from pytorch3d.implicitron.dataset.data_source import ImplicitronDataSource
@@ -41,7 +41,7 @@ class ExperimentConfig(Configurable):
     clip_grad: float = 0.0
     camera_difficulty_bin_breaks: Tuple[float, ...] = 0.97, 0.98
 
-    hydra: dict = field(
+    hydra: Dict[str, Any] = field(
         default_factory=lambda: {
             "run": {"dir": "."},  # Make hydra not change the working dir.
             "output_subdir": None,  # disable storing the .hydra logs
