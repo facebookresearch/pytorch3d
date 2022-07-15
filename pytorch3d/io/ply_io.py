@@ -1395,6 +1395,10 @@ class MeshPlyFormat(MeshFormatInterpreter):
                     texture_map = torch.tensor(texture_map, dtype=torch.float32) / 255.
                     texture = TexturesUV(
                         [texture_map.to(device)], [faces.to(device)], [data.verts_texture_uvs.to(device)])
+            else:
+                texture = TexturesVertex([torch.ones_like(data.verts).to(device)])
+                print('Warning: No texture found, init the texture with white color')
+
 
         verts_normals = None
         if data.verts_normals is not None:
