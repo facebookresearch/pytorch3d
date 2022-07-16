@@ -12,6 +12,6 @@ from .camera_conversions import (
 )
 from .ico_sphere import ico_sphere
 from .torus import torus
-
+from .plane import plane
 
 __all__ = [k for k in globals().keys() if not k.startswith("_")]
