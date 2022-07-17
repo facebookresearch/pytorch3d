@@ -344,7 +344,7 @@ def export_scenes(
     os.environ["CUDA_VISIBLE_DEVICES"] = str(config.gpu_idx)
 
     # Load the previously trained model
-    model, _, _ = init_model(config, force_load=True, load_model_only=True)
+    model, _, _ = init_model(cfg=config, force_load=True, load_model_only=True)
     model.cuda()
     model.eval()
 
