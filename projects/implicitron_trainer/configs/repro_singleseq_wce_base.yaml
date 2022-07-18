@@ -7,6 +7,9 @@ data_source_args:
     dataset_length_train: 1000
     dataset_length_val: 1
     num_workers: 8
+    train_conditioning_type: SAME
+    val_conditioning_type: SAME
+    test_conditioning_type: SAME
     images_per_seq_options:
     - 2
     - 3
