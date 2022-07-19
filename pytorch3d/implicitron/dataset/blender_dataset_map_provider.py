@@ -41,11 +41,10 @@ class BlenderDatasetMapProvider(SingleSceneDatasetMapProviderBase):
             path_manager=path_manager,
         )
         H, W, focal = hwf
-        H, W = int(H), int(W)
         images_masks = torch.from_numpy(images).permute(0, 3, 1, 2)
 
         # pyre-ignore[16]
-        self.poses = _interpret_blender_cameras(poses, H, W, focal)
+        self.poses = _interpret_blender_cameras(poses, focal)
         # pyre-ignore[16]
         self.images = images_masks[:, :3]
         # pyre-ignore[16]

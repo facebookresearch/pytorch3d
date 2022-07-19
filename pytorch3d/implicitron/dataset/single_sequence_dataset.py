@@ -169,7 +169,7 @@ class SingleSceneDatasetMapProviderBase(DatasetMapProviderBase):
 
 
 def _interpret_blender_cameras(
-    poses: torch.Tensor, H: int, W: int, focal: float
+    poses: torch.Tensor, focal: float
 ) -> List[PerspectiveCameras]:
     """
     Convert 4x4 matrices representing cameras in blender format
@@ -177,6 +177,7 @@ def _interpret_blender_cameras(
 
     Args:
         poses: N x 3 x 4 camera matrices
+        focal: ndc space focal length
     """
     pose_target_cameras = []
     for pose_target in poses:
@@ -191,8 +192,8 @@ def _interpret_blender_cameras(
 
         Rpt3, Tpt3 = mtx[:, :3].split([3, 1], dim=0)
 
-        focal_length_pt3 = torch.FloatTensor([[-focal, focal]])
-        principal_point_pt3 = torch.FloatTensor([[W / 2, H / 2]])
+        focal_length_pt3 = torch.FloatTensor([[focal, focal]])
+        principal_point_pt3 = torch.FloatTensor([[0.0, 0.0]])
 
         cameras = PerspectiveCameras(
             focal_length=focal_length_pt3,

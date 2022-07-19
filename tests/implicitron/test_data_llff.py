@@ -7,6 +7,7 @@
 import os
 import unittest
 
+import torch
 from pytorch3d.implicitron.dataset.blender_dataset_map_provider import (
     BlenderDatasetMapProvider,
 )
@@ -37,6 +38,11 @@ class TestDataLlff(TestCaseMixin, unittest.TestCase):
             object_name="lego",
         )
         dataset_map = provider.get_dataset_map()
+        known_matrix = torch.zeros(1, 4, 4)
+        known_matrix[0, 0, 0] = 2.7778
+        known_matrix[0, 1, 1] = 2.7778
+        known_matrix[0, 2, 3] = 1
+        known_matrix[0, 3, 2] = 1
 
         for name, length in [("train", 100), ("val", 100), ("test", 200)]:
             dataset = getattr(dataset_map, name)
@@ -48,6 +54,11 @@ class TestDataLlff(TestCaseMixin, unittest.TestCase):
             # corner of image is background
             self.assertEqual(value.fg_probability[0, 0, 0], 0)
             self.assertEqual(value.fg_probability.max(), 1.0)
+            self.assertIsInstance(value.camera, PerspectiveCameras)
+            self.assertEqual(len(value.camera), 1)
+            self.assertIsNone(value.camera.K)
+            matrix = value.camera.get_projection_transform().get_matrix()
+            self.assertClose(matrix, known_matrix, atol=1e-4)
             self.assertIsInstance(value, FrameData)
 
     def test_llff(self):
@@ -60,6 +71,11 @@ class TestDataLlff(TestCaseMixin, unittest.TestCase):
             object_name="fern",
         )
         dataset_map = provider.get_dataset_map()
+        known_matrix = torch.zeros(1, 4, 4)
+        known_matrix[0, 0, 0] = 2.1564
+        known_matrix[0, 1, 1] = 2.1564
+        known_matrix[0, 2, 3] = 1
+        known_matrix[0, 3, 2] = 1
 
         for name, length, frame_type in [
             ("train", 17, "known"),
@@ -73,6 +89,11 @@ class TestDataLlff(TestCaseMixin, unittest.TestCase):
             self.assertIsInstance(value, FrameData)
             self.assertEqual(value.frame_type, frame_type)
             self.assertEqual(value.image_rgb.shape, (3, 378, 504))
+            self.assertIsInstance(value.camera, PerspectiveCameras)
+            self.assertEqual(len(value.camera), 1)
+            self.assertIsNone(value.camera.K)
+            matrix = value.camera.get_projection_transform().get_matrix()
+            self.assertClose(matrix, known_matrix, atol=1e-4)
 
         self.assertEqual(len(dataset_map.test.get_eval_batches()), 3)
         for batch in dataset_map.test.get_eval_batches():

@@ -46,7 +46,12 @@ def _local_path(path_manager, path):
 
 
 def load_blender_data(
-    basedir, half_res=False, testskip=1, debug=False, path_manager=None
+    basedir,
+    half_res=False,
+    testskip=1,
+    debug=False,
+    path_manager=None,
+    focal_length_in_screen_space=False,
 ):
     splits = ["train", "val", "test"]
     metas = {}
@@ -84,7 +89,10 @@ def load_blender_data(
 
     H, W = imgs[0].shape[:2]
     camera_angle_x = float(meta["camera_angle_x"])
-    focal = 0.5 * W / np.tan(0.5 * camera_angle_x)
+    if focal_length_in_screen_space:
+        focal = 0.5 * W / np.tan(0.5 * camera_angle_x)
+    else:
+        focal = 1 / np.tan(0.5 * camera_angle_x)
 
     render_poses = torch.stack(
         [
@@ -100,7 +108,8 @@ def load_blender_data(
 
         H = H // 32
         W = W // 32
-        focal = focal / 32.0
+        if focal_length_in_screen_space:
+            focal = focal / 32.0
         imgs = [
             torch.from_numpy(
                 cv2.resize(imgs[i], dsize=(25, 25), interpolation=cv2.INTER_AREA)
@@ -117,7 +126,8 @@ def load_blender_data(
         # TODO: resize images using INTER_AREA (cv2)
         H = H // 2
         W = W // 2
-        focal = focal / 2.0
+        if focal_length_in_screen_space:
+            focal = focal / 2.0
         imgs = [
             torch.from_numpy(
                 cv2.resize(imgs[i], dsize=(400, 400), interpolation=cv2.INTER_AREA)
