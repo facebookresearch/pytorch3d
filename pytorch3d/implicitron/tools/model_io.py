@@ -20,12 +20,10 @@ logger = logging.getLogger(__name__)
 def load_stats(flstats):
     from pytorch3d.implicitron.tools.stats import Stats
 
-    try:
-        stats = Stats.load(flstats)
-    except:
-        logger.info("Cant load stats! %s" % flstats)
-        stats = None
-    return stats
+    if not os.path.isfile(flstats):
+        return None
+
+    return Stats.load(flstats)
 
 
 def get_model_path(fl) -> str:
@@ -40,7 +38,7 @@ def get_optimizer_path(fl) -> str:
     return flopt
 
 
-def get_stats_path(fl, eval_results: bool = False):
+def get_stats_path(fl, eval_results: bool = False) -> str:
     fl = os.path.splitext(fl)[0]
     if eval_results:
         for postfix in ("_2", ""):

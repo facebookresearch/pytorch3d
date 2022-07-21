@@ -202,7 +202,7 @@ def neg_iou_loss(
     return 1.0 - iou(predict, target, mask=mask)
 
 
-def safe_sqrt(A: torch.Tensor, eps: float = float(1e-4)) -> torch.Tensor:
+def safe_sqrt(A: torch.Tensor, eps: float = 1e-4) -> torch.Tensor:
     """
     performs safe differentiable sqrt
     """

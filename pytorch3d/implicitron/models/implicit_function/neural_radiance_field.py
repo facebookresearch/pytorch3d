@@ -5,8 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import logging
-from dataclasses import field
-from typing import List, Optional
+from typing import Optional, Tuple
 
 import torch
 from pytorch3d.common.linear_with_repeat import LinearWithRepeat
@@ -206,7 +205,7 @@ class NeuralRadianceFieldImplicitFunction(NeuralRadianceFieldBase):
     transformer_dim_down_factor: float = 1.0
     n_hidden_neurons_xyz: int = 256
     n_layers_xyz: int = 8
-    append_xyz: List[int] = field(default_factory=lambda: [5])
+    append_xyz: Tuple[int, ...] = (5,)
 
     def _construct_xyz_encoder(self, input_dim: int):
         return MLPWithInputSkips(
@@ -224,7 +223,7 @@ class NeRFormerImplicitFunction(NeuralRadianceFieldBase):
     transformer_dim_down_factor: float = 2.0
     n_hidden_neurons_xyz: int = 80
     n_layers_xyz: int = 2
-    append_xyz: List[int] = field(default_factory=lambda: [1])
+    append_xyz: Tuple[int, ...] = (1,)
 
     def _construct_xyz_encoder(self, input_dim: int):
         return TransformerWithInputSkips(
@@ -286,7 +285,7 @@ class MLPWithInputSkips(torch.nn.Module):
         output_dim: int = 256,
         skip_dim: int = 39,
         hidden_dim: int = 256,
-        input_skips: List[int] = [5],
+        input_skips: Tuple[int, ...] = (5,),
         skip_affine_trans: bool = False,
         no_last_relu=False,
     ):
@@ -362,7 +361,7 @@ class TransformerWithInputSkips(torch.nn.Module):
         output_dim: int = 256,
         skip_dim: int = 39,
         hidden_dim: int = 64,
-        input_skips: List[int] = [5],
+        input_skips: Tuple[int, ...] = (5,),
         dim_down_factor: float = 1,
     ):
         """

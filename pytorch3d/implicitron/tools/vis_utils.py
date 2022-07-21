@@ -5,7 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import logging
-from typing import Any, Dict, List
+from typing import Any, Dict, Tuple
 
 import torch
 from visdom import Visdom
@@ -60,14 +60,14 @@ def visualize_basics(
     preds: Dict[str, Any],
     visdom_env_imgs: str,
     title: str = "",
-    visualize_preds_keys: List[str] = [
+    visualize_preds_keys: Tuple[str, ...] = (
         "image_rgb",
         "images_render",
         "fg_probability",
         "masks_render",
         "depths_render",
         "depth_map",
-    ],
+    ),
     store_history: bool = False,
 ) -> None:
     """

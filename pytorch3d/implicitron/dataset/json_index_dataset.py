@@ -833,7 +833,7 @@ def _load_1bit_png_mask(file: str) -> np.ndarray:
     return mask
 
 
-def _load_depth_mask(path) -> np.ndarray:
+def _load_depth_mask(path: str) -> np.ndarray:
     if not path.lower().endswith(".png"):
         raise ValueError('unsupported depth mask file name "%s"' % path)
     m = _load_1bit_png_mask(path)

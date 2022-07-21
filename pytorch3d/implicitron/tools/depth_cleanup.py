@@ -59,7 +59,7 @@ def cleanup_eval_depth(
     good_df_thr = std * sigma
     good_depth = (df <= good_df_thr).float() * pcl_mask
 
-    perc_kept = good_depth.sum(dim=1) / pcl_mask.sum(dim=1).clamp(1)
+    # perc_kept = good_depth.sum(dim=1) / pcl_mask.sum(dim=1).clamp(1)
     # print(f'Kept {100.0 * perc_kept.mean():1.3f} % points')
 
     good_depth_raster = torch.zeros_like(depth).view(ba, -1)

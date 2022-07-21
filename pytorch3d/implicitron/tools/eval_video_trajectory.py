@@ -200,9 +200,6 @@ def _visdom_plot_scene(
 
     viz = Visdom()
     viz.plotlyplot(p, env="cam_traj_dbg", win="cam_trajs")
-    import pdb
-
-    pdb.set_trace()
 
 
 def _figure_eight_knot(t: torch.Tensor, z_scale: float = 0.5):
