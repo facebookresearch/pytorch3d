@@ -10,6 +10,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from itertools import product
 
+import numpy as np
 from pytorch3d.implicitron.dataset.data_loader_map_provider import (
     DoublePoolBatchSampler,
 )
@@ -53,6 +54,7 @@ class MockDataset(DatasetBase):
 
 class TestSceneBatchSampler(unittest.TestCase):
     def setUp(self):
+        np.random.seed(42)
         self.dataset_overfit = MockDataset(1)
 
     def test_overfit(self):

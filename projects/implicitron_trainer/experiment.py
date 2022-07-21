@@ -391,7 +391,6 @@ def run_training(cfg: DictConfig) -> None:
     datasource = ImplicitronDataSource(**cfg.data_source_args)
     datasets, dataloaders = datasource.get_datasets_and_dataloaders()
     task = datasource.get_task()
-    all_train_cameras = datasource.get_all_train_cameras()
 
     # init the model
     model, stats, optimizer_state = init_model(cfg=cfg, accelerator=accelerator)
@@ -405,7 +404,7 @@ def run_training(cfg: DictConfig) -> None:
         _eval_and_dump(
             cfg,
             task,
-            all_train_cameras,
+            datasource.all_train_cameras,
             datasets,
             dataloaders,
             model,
@@ -490,7 +489,7 @@ def run_training(cfg: DictConfig) -> None:
             ):
                 _run_eval(
                     model,
-                    all_train_cameras,
+                    datasource.all_train_cameras,
                     dataloaders.test,
                     task,
                     camera_difficulty_bin_breaks=cfg.camera_difficulty_bin_breaks,
@@ -525,7 +524,7 @@ def run_training(cfg: DictConfig) -> None:
         _eval_and_dump(
             cfg,
             task,
-            all_train_cameras,
+            datasource.all_train_cameras,
             datasets,
             dataloaders,
             model,

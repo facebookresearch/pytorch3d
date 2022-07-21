@@ -152,6 +152,6 @@ class TestDataLlff(TestCaseMixin, unittest.TestCase):
             self.assertEqual(i.frame_type, ["unseen"])
             self.assertEqual(i.image_rgb.shape, (1, 3, 800, 800))
 
-        cameras = data_source.get_all_train_cameras()
+        cameras = data_source.all_train_cameras
         self.assertIsInstance(cameras, PerspectiveCameras)
         self.assertEqual(len(cameras), 100)

@@ -118,8 +118,6 @@ def evaluate_dbir_for_category(
     if test_dataset is None or test_dataloader is None:
         raise ValueError("must have a test dataset.")
 
-    all_train_cameras = data_source.get_all_train_cameras()
-
     image_size = cast(JsonIndexDataset, test_dataset).image_width
 
     if image_size is None:
@@ -149,7 +147,7 @@ def evaluate_dbir_for_category(
                 preds["implicitron_render"],
                 bg_color=bg_color,
                 lpips_model=lpips_model,
-                source_cameras=all_train_cameras,
+                source_cameras=data_source.all_train_cameras,
             )
         )
 

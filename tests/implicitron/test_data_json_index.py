@@ -31,7 +31,7 @@ class TestDataJsonIndex(TestCaseMixin, unittest.TestCase):
 
         data_source = ImplicitronDataSource(**args)
 
-        cameras = data_source.get_all_train_cameras()
+        cameras = data_source.all_train_cameras
         self.assertIsInstance(cameras, PerspectiveCameras)
         self.assertEqual(len(cameras), 81)
 

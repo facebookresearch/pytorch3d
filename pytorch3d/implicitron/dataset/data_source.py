@@ -30,9 +30,10 @@ class DataSourceBase(ReplaceableBase):
     def get_datasets_and_dataloaders(self) -> Tuple[DatasetMap, DataLoaderMap]:
         raise NotImplementedError()
 
-    def get_all_train_cameras(self) -> Optional[CamerasBase]:
+    @property
+    def all_train_cameras(self) -> Optional[CamerasBase]:
         """
-        If the data is all for a single scene, returns a list
+        If the data is all for a single scene, a list
         of the known training cameras for that scene, which is
         used for evaluating the viewpoint difficulty of the
         unseen cameras.
@@ -59,6 +60,7 @@ class ImplicitronDataSource(DataSourceBase):  # pyre-ignore[13]
 
     def __post_init__(self):
         run_auto_creation(self)
+        self._all_train_cameras_cache: Optional[Tuple[Optional[CamerasBase]]] = None
 
     def get_datasets_and_dataloaders(self) -> Tuple[DatasetMap, DataLoaderMap]:
         datasets = self.dataset_map_provider.get_dataset_map()
@@ -68,5 +70,10 @@ class ImplicitronDataSource(DataSourceBase):  # pyre-ignore[13]
     def get_task(self) -> Task:
         return self.dataset_map_provider.get_task()
 
-    def get_all_train_cameras(self) -> Optional[CamerasBase]:
-        return self.dataset_map_provider.get_all_train_cameras()
+    @property
+    def all_train_cameras(self) -> Optional[CamerasBase]:
+        if self._all_train_cameras_cache is None:  # pyre-ignore[16]
+            all_train_cameras = self.dataset_map_provider.get_all_train_cameras()
+            self._all_train_cameras_cache = (all_train_cameras,)
+
+        return self._all_train_cameras_cache[0]
