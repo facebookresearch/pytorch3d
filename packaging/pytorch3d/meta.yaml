@@ -45,6 +45,9 @@ test:
     - docs
   requires:
     - imageio
+    - hydra-core
+    - accelerate
+    - lpips
   commands:
     #pytest .
     python -m unittest discover -v -s tests -t .
