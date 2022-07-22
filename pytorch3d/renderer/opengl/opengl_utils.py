@@ -224,11 +224,13 @@ class EGLContext:
         """
         self.lock.acquire()
         egl.eglMakeCurrent(self.dpy, self.surface, self.surface, self.context)
-        yield
-        egl.eglMakeCurrent(
-            self.dpy, egl.EGL_NO_SURFACE, egl.EGL_NO_SURFACE, egl.EGL_NO_CONTEXT
-        )
-        self.lock.release()
+        try:
+            yield
+        finally:
+            egl.eglMakeCurrent(
+                self.dpy, egl.EGL_NO_SURFACE, egl.EGL_NO_SURFACE, egl.EGL_NO_CONTEXT
+            )
+            self.lock.release()
 
     def get_context_info(self) -> Dict[str, Any]:
         """
@@ -416,6 +418,30 @@ def _init_cuda_context(device_id: int = 0):
     device = cuda.Device(device_id)
     cuda_context = device.make_context()
     return cuda_context
+
+
+def _torch_to_opengl(torch_tensor, cuda_context, cuda_buffer):
+    # CUDA access to the OpenGL buffer is only allowed within a map-unmap block.
+    cuda_context.push()
+    mapping_obj = cuda_buffer.map()
+
+    # data_ptr points to the OpenGL shader storage buffer memory.
+    data_ptr, sz = mapping_obj.device_ptr_and_size()
+
+    # Copy the torch tensor to the OpenGL buffer directly on device.
+    cuda_copy = cuda.Memcpy2D()
+    cuda_copy.set_src_device(torch_tensor.data_ptr())
+    cuda_copy.set_dst_device(data_ptr)
+    cuda_copy.width_in_bytes = cuda_copy.src_pitch = cuda_copy.dst_ptch = (
+        torch_tensor.shape[1] * 4
+    )
+    cuda_copy.height = torch_tensor.shape[0]
+    cuda_copy(False)
+
+    # Unmap and pop the cuda context to make sure OpenGL won't interfere with
+    # PyTorch ops down the line.
+    mapping_obj.unmap()
+    cuda_context.pop()
 
 
 # Initialize a global _DeviceContextStore. Almost always we will only need a single one.

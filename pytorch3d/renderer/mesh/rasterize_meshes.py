@@ -11,6 +11,8 @@ import numpy as np
 import torch
 from pytorch3d import _C
 
+from ..utils import parse_image_size
+
 from .clip import (
     clip_faces,
     ClipFrustum,
@@ -149,20 +151,8 @@ def rasterize_meshes(
     # If the ratio of H:W is large this might cause issues as the smaller
     # dimension will have fewer bins.
     # TODO: consider a better way of setting the bin size.
-    if isinstance(image_size, (tuple, list)):
-        if len(image_size) != 2:
-            raise ValueError("Image size can only be a tuple/list of (H, W)")
-        if not all(i > 0 for i in image_size):
-            raise ValueError(
-                "Image sizes must be greater than 0; got %d, %d" % image_size
-            )
-        if not all(type(i) == int for i in image_size):
-            raise ValueError("Image sizes must be integers; got %f, %f" % image_size)
-        max_image_size = max(*image_size)
-        im_size = image_size
-    else:
-        im_size = (image_size, image_size)
-        max_image_size = image_size
+    im_size = parse_image_size(image_size)
+    max_image_size = max(*im_size)
 
     clipped_faces_neighbor_idx = None
 

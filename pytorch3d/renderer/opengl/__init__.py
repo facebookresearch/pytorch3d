@@ -32,5 +32,6 @@ def _can_import_egl_and_pycuda():
 
 if _can_import_egl_and_pycuda():
     from .opengl_utils import EGLContext, global_device_context_store
+    from .rasterizer_opengl import MeshRasterizerOpenGL
 
 __all__ = [k for k in globals().keys() if not k.startswith("_")]

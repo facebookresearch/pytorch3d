@@ -57,14 +57,14 @@ class Fragments:
     pix_to_face: torch.Tensor
     zbuf: torch.Tensor
     bary_coords: torch.Tensor
-    dists: torch.Tensor
+    dists: Optional[torch.Tensor]
 
     def detach(self) -> "Fragments":
         return Fragments(
             pix_to_face=self.pix_to_face,
             zbuf=self.zbuf.detach(),
             bary_coords=self.bary_coords.detach(),
-            dists=self.dists.detach(),
+            dists=self.dists.detach() if self.dists is not None else self.dists,
         )
 
 
@@ -85,6 +85,8 @@ class RasterizationSettings:
             bin_size=0 uses naive rasterization; setting bin_size=None attempts
             to set it heuristically based on the shape of the input. This should
             not affect the output, but can affect the speed of the forward pass.
+        max_faces_opengl: Max number of faces in any mesh we will rasterize. Used only by
+            MeshRasterizerOpenGL to pre-allocate OpenGL memory.
         max_faces_per_bin: Only applicable when using coarse-to-fine
             rasterization (bin_size != 0); this is the maximum number of faces
             allowed within each bin. This should not affect the output values,
@@ -122,6 +124,7 @@ class RasterizationSettings:
     blur_radius: float = 0.0
     faces_per_pixel: int = 1
     bin_size: Optional[int] = None
+    max_faces_opengl: int = 10_000_000
     max_faces_per_bin: Optional[int] = None
     perspective_correct: Optional[bool] = None
     clip_barycentric_coords: Optional[bool] = None
@@ -237,6 +240,10 @@ class MeshRasterizer(nn.Module):
                 znear = znear.min().item()
             z_clip = None if not perspective_correct or znear is None else znear / 2
 
+        # By default, turn on clip_barycentric_coords if blur_radius > 0.
+        # When blur_radius > 0, a face can be matched to a pixel that is outside the
+        # face, resulting in negative barycentric coordinates.
+
         pix_to_face, zbuf, bary_coords, dists = rasterize_meshes(
             meshes_proj,
             image_size=raster_settings.image_size,
@@ -250,6 +257,10 @@ class MeshRasterizer(nn.Module):
             z_clip_value=z_clip,
             cull_to_frustum=raster_settings.cull_to_frustum,
         )
+
         return Fragments(
-            pix_to_face=pix_to_face, zbuf=zbuf, bary_coords=bary_coords, dists=dists
+            pix_to_face=pix_to_face,
+            zbuf=zbuf,
+            bary_coords=bary_coords,
+            dists=dists,
         )

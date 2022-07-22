@@ -26,8 +26,15 @@ class TestBuild(unittest.TestCase):
                     sys.modules.pop(module, None)
 
             root_dir = get_pytorch3d_dir() / "pytorch3d"
+            # Exclude opengl-related files, as Implicitron is decoupled from opengl
+            # components which will not work without adding a dep on pytorch3d_opengl.
             for module_file in root_dir.glob("**/*.py"):
-                if module_file.stem in ("__init__", "plotly_vis", "opengl_utils"):
+                if module_file.stem in (
+                    "__init__",
+                    "plotly_vis",
+                    "opengl_utils",
+                    "rasterizer_opengl",
+                ):
                     continue
                 relative_module = str(module_file.relative_to(root_dir))[:-3]
                 module = "pytorch3d." + relative_module.replace("/", ".")

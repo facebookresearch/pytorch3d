@@ -349,6 +349,9 @@ class SplatterPhongShader(ShaderBase):
             N, H, W, K, _ = colors.shape
             self.splatter_blender = SplatterBlender((N, H, W, K), colors.device)
 
+        blend_params = kwargs.get("blend_params", self.blend_params)
+        self.check_blend_params(blend_params)
+
         images = self.splatter_blender(
             colors,
             pixel_coords_cameras,
@@ -358,6 +361,14 @@ class SplatterPhongShader(ShaderBase):
         )
 
         return images
+
+    def check_blend_params(self, blend_params):
+        if blend_params.sigma != 0.5:
+            warnings.warn(
+                f"SplatterPhongShader received sigma={blend_params.sigma}. sigma is "
+                "defined in pixel units, and any value other than 0.5 is highly "
+                "unexpected. Only use other values if you know what you are doing. "
+            )
 
 
 class HardDepthShader(ShaderBase):

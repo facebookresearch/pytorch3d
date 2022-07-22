@@ -11,15 +11,18 @@ import numpy as np
 import torch
 from PIL import Image
 from pytorch3d.io import load_obj
-from pytorch3d.renderer.cameras import FoVPerspectiveCameras, look_at_view_transform
-from pytorch3d.renderer.lighting import PointLights
-from pytorch3d.renderer.materials import Materials
-from pytorch3d.renderer.mesh import (
+from pytorch3d.renderer import (
     BlendParams,
+    FoVPerspectiveCameras,
+    look_at_view_transform,
+    Materials,
     MeshRasterizer,
+    MeshRasterizerOpenGL,
     MeshRenderer,
+    PointLights,
     RasterizationSettings,
     SoftPhongShader,
+    SplatterPhongShader,
     TexturesUV,
 )
 from pytorch3d.renderer.mesh.rasterize_meshes import (
@@ -454,6 +457,12 @@ class TestRasterizeRectangleImagesMeshes(TestCaseMixin, unittest.TestCase):
             )
 
     def test_render_cow(self):
+        self._render_cow(MeshRasterizer)
+
+    def test_render_cow_opengl(self):
+        self._render_cow(MeshRasterizerOpenGL)
+
+    def _render_cow(self, rasterizer_type):
         """
         Test a larger textured mesh is rendered correctly in a non square image.
         """
@@ -473,38 +482,55 @@ class TestRasterizeRectangleImagesMeshes(TestCaseMixin, unittest.TestCase):
         mesh = Meshes(verts=[verts], faces=[faces.verts_idx], textures=textures)
 
         # Init rasterizer settings
-        R, T = look_at_view_transform(2.7, 0, 180)
+        R, T = look_at_view_transform(1.2, 0, 90)
         cameras = FoVPerspectiveCameras(device=device, R=R, T=T)
 
         raster_settings = RasterizationSettings(
-            image_size=(512, 1024), blur_radius=0.0, faces_per_pixel=1
+            image_size=(500, 800), blur_radius=0.0, faces_per_pixel=1
         )
 
         # Init shader settings
         materials = Materials(device=device)
         lights = PointLights(device=device)
         lights.location = torch.tensor([0.0, 0.0, -2.0], device=device)[None]
-        blend_params = BlendParams(
-            sigma=1e-1,
-            gamma=1e-4,
-            background_color=torch.tensor([1.0, 1.0, 1.0], device=device),
-        )
 
         # Init renderer
-        renderer = MeshRenderer(
-            rasterizer=MeshRasterizer(cameras=cameras, raster_settings=raster_settings),
-            shader=SoftPhongShader(
+        rasterizer = rasterizer_type(cameras=cameras, raster_settings=raster_settings)
+        if rasterizer_type == MeshRasterizer:
+            blend_params = BlendParams(
+                sigma=1e-1,
+                gamma=1e-4,
+                background_color=torch.tensor([1.0, 1.0, 1.0], device=device),
+            )
+            shader = SoftPhongShader(
                 lights=lights,
                 cameras=cameras,
                 materials=materials,
                 blend_params=blend_params,
-            ),
-        )
+            )
+        else:
+            blend_params = BlendParams(
+                sigma=0.5,
+                background_color=torch.tensor([1.0, 1.0, 1.0], device=device),
+            )
+            shader = SplatterPhongShader(
+                lights=lights,
+                cameras=cameras,
+                materials=materials,
+                blend_params=blend_params,
+            )
+
+        renderer = MeshRenderer(rasterizer=rasterizer, shader=shader)
 
         # Load reference image
-        image_ref = load_rgb_image("test_cow_image_rectangle.png", DATA_DIR)
+        image_ref = load_rgb_image(
+            f"test_cow_image_rectangle_{rasterizer_type.__name__}.png", DATA_DIR
+        )
 
         for bin_size in [0, None]:
+            if bin_size == 0 and rasterizer_type == MeshRasterizerOpenGL:
+                continue
+
             # Check both naive and coarse to fine produce the same output.
             renderer.rasterizer.raster_settings.bin_size = bin_size
             images = renderer(mesh)
@@ -512,7 +538,8 @@ class TestRasterizeRectangleImagesMeshes(TestCaseMixin, unittest.TestCase):
 
             if DEBUG:
                 Image.fromarray((rgb.numpy() * 255).astype(np.uint8)).save(
-                    DATA_DIR / "DEBUG_cow_image_rectangle.png"
+                    DATA_DIR
+                    / f"DEBUG_cow_image_rectangle_{rasterizer_type.__name__}.png"
                 )
 
             # NOTE some pixels can be flaky
