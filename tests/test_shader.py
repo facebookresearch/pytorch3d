@@ -60,7 +60,7 @@ class TestShader(TestCaseMixin, unittest.TestCase):
                 self.assertIs(cpu_shader, cuda_shader)
                 if cameras is None:
                     self.assertIsNone(cuda_shader.cameras)
-                    with self.assertRaisesRegexp(ValueError, "Cameras must be"):
+                    with self.assertRaisesRegex(ValueError, "Cameras must be"):
                         cuda_shader._get_cameras()
                 else:
                     self.assertEqual(cuda_device, cuda_shader.cameras.device)

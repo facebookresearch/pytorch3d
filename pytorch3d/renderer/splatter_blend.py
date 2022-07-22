@@ -464,6 +464,12 @@ class SplatterBlender(torch.nn.Module):
             input_shape, device
         )
 
+    def to(self, device):
+        self.offsets = self.offsets.to(device)
+        self.crop_ids_h = self.crop_ids_h.to(device)
+        self.crop_ids_w = self.crop_ids_w.to(device)
+        super().to(device)
+
     def forward(
         self,
         colors: torch.Tensor,

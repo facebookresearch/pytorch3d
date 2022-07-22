@@ -324,6 +324,11 @@ class SplatterPhongShader(ShaderBase):
         self.splatter_blender = None
         super().__init__(**kwargs)
 
+    def to(self, device: Device):
+        if self.splatter_blender:
+            self.splatter_blender.to(device)
+        return super().to(device)
+
     def forward(self, fragments: Fragments, meshes: Meshes, **kwargs) -> torch.Tensor:
         cameras = super()._get_cameras(**kwargs)
         texels = meshes.sample_textures(fragments)
@@ -349,7 +354,7 @@ class SplatterPhongShader(ShaderBase):
             pixel_coords_cameras,
             cameras,
             fragments.pix_to_face < 0,
-            self.blend_params,
+            kwargs.get("blend_params", self.blend_params),
         )
 
         return images
@@ -398,6 +403,9 @@ class SoftDepthShader(ShaderBase):
     """
 
     def forward(self, fragments: Fragments, meshes: Meshes, **kwargs) -> torch.Tensor:
+        if fragments.dists is None:
+            raise ValueError("SoftDepthShader requires Fragments.dists to be present.")
+
         cameras = super()._get_cameras(**kwargs)
 
         N, H, W, K = fragments.pix_to_face.shape
