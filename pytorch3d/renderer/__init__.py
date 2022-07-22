@@ -64,6 +64,12 @@ from .mesh import (
     TexturesUV,
     TexturesVertex,
 )
+
+try:
+    from .opengl import EGLContext, global_device_context_store
+except (ImportError, ModuleNotFoundError):
+    pass  # opengl or pycuda.gl not available, or pytorch3_opengl not in TARGETS.
+
 from .points import (
     AlphaCompositor,
     NormWeightedCompositor,
