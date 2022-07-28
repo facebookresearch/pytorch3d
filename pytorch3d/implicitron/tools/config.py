@@ -887,6 +887,40 @@ def get_default_args_field(
     return dataclasses.field(default_factory=create)
 
 
+def _get_default_args_field_from_registry(
+    *,
+    base_class_wanted: Type[_X],
+    name: str,
+    _do_not_process: Tuple[type, ...] = (),
+    _hook: Optional[Callable[[DictConfig], None]] = None,
+):
+    """
+    Get a dataclass field which defaults to
+    get_default_args(registry.get(base_class_wanted, name)).
+
+    This is used internally in place of get_default_args_field in
+    order that default values are updated if a class is redefined.
+
+    Args:
+        base_class_wanted: As for registry.get.
+        name: As for registry.get.
+        _do_not_process: As for get_default_args
+        _hook: Function called on the result before returning.
+
+    Returns:
+        function to return new DictConfig object
+    """
+
+    def create():
+        C = registry.get(base_class_wanted=base_class_wanted, name=name)
+        args = get_default_args(C, _do_not_process=_do_not_process)
+        if _hook is not None:
+            _hook(args)
+        return args
+
+    return dataclasses.field(default_factory=create)
+
+
 def _get_type_to_process(type_) -> Optional[Tuple[Type, _ProcessType]]:
     """
     If a member is annotated as `type_`, and that should expanded in
@@ -978,8 +1012,9 @@ def _process_member(
             setattr(
                 some_class,
                 args_name,
-                get_default_args_field(
-                    derived_type,
+                _get_default_args_field_from_registry(
+                    base_class_wanted=type_,
+                    name=derived_type.__name__,
                     _do_not_process=_do_not_process + (some_class,),
                     _hook=hook_closed,
                 ),

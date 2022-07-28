@@ -378,14 +378,20 @@ class TestConfig(unittest.TestCase):
         with self.assertWarnsRegex(
             UserWarning, "New implementation of Grape is being chosen."
         ):
-            bowl = FruitBowl(**bowl_args)
-        self.assertIsInstance(bowl.main_fruit, Grape)
+            defaulted_bowl = FruitBowl()
+        self.assertIsInstance(defaulted_bowl.main_fruit, Grape)
+        self.assertEqual(defaulted_bowl.main_fruit.large, True)
+        self.assertEqual(defaulted_bowl.main_fruit.get_color(), "green")
 
+        with self.assertWarnsRegex(
+            UserWarning, "New implementation of Grape is being chosen."
+        ):
+            args_bowl = FruitBowl(**bowl_args)
+        self.assertIsInstance(args_bowl.main_fruit, Grape)
         # Redefining the same class won't help with defaults because encoded in args
-        self.assertEqual(bowl.main_fruit.large, False)
-
+        self.assertEqual(args_bowl.main_fruit.large, False)
         # But the override worked.
-        self.assertEqual(bowl.main_fruit.get_color(), "green")
+        self.assertEqual(args_bowl.main_fruit.get_color(), "green")
 
         # 2. Try redefining without the dataclass modifier
         # This relies on the fact that default creation processes the class.
@@ -397,7 +403,7 @@ class TestConfig(unittest.TestCase):
         with self.assertWarnsRegex(
             UserWarning, "New implementation of Grape is being chosen."
         ):
-            bowl = FruitBowl(**bowl_args)
+            FruitBowl(**bowl_args)
 
         # 3. Adding a new class doesn't get picked up, because the first
         # get_default_args call has frozen FruitBowl. This is intrinsic to
