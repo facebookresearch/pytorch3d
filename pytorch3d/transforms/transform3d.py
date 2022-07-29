@@ -343,7 +343,7 @@ class Transform3d:
         points_batch = torch.cat([points_batch, ones], dim=2)
 
         composed_matrix = self.get_matrix()
-        points_out = _broadcast_bmm(points_batch, composed_matrix)
+        points_out = _broadcast_bmm(points_batch, composed_matrix.to(points_batch.dtype))
         denom = points_out[..., 3:]  # denominator
         if eps is not None:
             denom_sign = denom.sign() + (denom == 0.0).type_as(denom)
