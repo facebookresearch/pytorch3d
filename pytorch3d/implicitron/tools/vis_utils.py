@@ -14,20 +14,22 @@ from visdom import Visdom
 logger = logging.getLogger(__name__)
 
 
-def get_visdom_env(cfg):
+def get_visdom_env(visdom_env: str, exp_dir: str) -> str:
     """
     Parse out visdom environment name from the input config.
 
     Args:
-        cfg: The global config file.
+        visdom_env: Name of the wisdom environment, could be empty string.
+        exp_dir: Root experiment directory.
 
     Returns:
-        visdom_env: The name of the visdom environment.
+        visdom_env: The name of the visdom environment. If the given visdom_env is
+            empty, return the name of the bottom directory in exp_dir.
     """
-    if len(cfg.visdom_env) == 0:
-        visdom_env = cfg.exp_dir.split("/")[-1]
+    if len(visdom_env) == 0:
+        visdom_env = exp_dir.split("/")[-1]
     else:
-        visdom_env = cfg.visdom_env
+        visdom_env = visdom_env
     return visdom_env
 
 

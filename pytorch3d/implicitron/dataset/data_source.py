@@ -40,6 +40,9 @@ class DataSourceBase(ReplaceableBase):
         """
         raise NotImplementedError()
 
+    def get_task(self) -> Task:
+        raise NotImplementedError()
+
 
 @registry.register
 class ImplicitronDataSource(DataSourceBase):  # pyre-ignore[13]

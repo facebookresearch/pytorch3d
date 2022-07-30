@@ -22,7 +22,6 @@ import numpy as np
 import torch
 import torch.nn.functional as Fu
 from omegaconf import OmegaConf
-from pytorch3d.implicitron.dataset.data_source import ImplicitronDataSource
 from pytorch3d.implicitron.dataset.dataset_base import DatasetBase, FrameData
 from pytorch3d.implicitron.dataset.utils import is_train_frame
 from pytorch3d.implicitron.models.base_model import EvaluationMode
@@ -37,7 +36,7 @@ from pytorch3d.implicitron.tools.vis_utils import (
 )
 from tqdm import tqdm
 
-from .experiment import init_model
+from .experiment import Experiment
 
 
 def render_sequence(
@@ -344,13 +343,14 @@ def export_scenes(
     os.environ["CUDA_VISIBLE_DEVICES"] = str(config.gpu_idx)
 
     # Load the previously trained model
-    model, _, _ = init_model(cfg=config, force_load=True, load_model_only=True)
+    experiment = Experiment(config)
+    model = experiment.model_factory(force_load=True, load_model_only=True)
     model.cuda()
     model.eval()
 
     # Setup the dataset
-    datasource = ImplicitronDataSource(**config.data_source_args)
-    dataset_map = datasource.dataset_map_provider.get_dataset_map()
+    data_source = experiment.data_source
+    dataset_map, _ = data_source.get_datasets_and_dataloaders()
     dataset = dataset_map[split]
     if dataset is None:
         raise ValueError(f"{split} dataset not provided")

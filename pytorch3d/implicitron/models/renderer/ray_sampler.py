@@ -218,7 +218,7 @@ class AdaptiveRaySampler(AbstractMaskRaySampler):
 
     def _get_min_max_depth_bounds(self, cameras: CamerasBase) -> Tuple[float, float]:
         """
-        Returns the adaptivelly calculated near/far planes.
+        Returns the adaptively calculated near/far planes.
         """
         min_depth, max_depth = camera_utils.get_min_max_depth_bounds(
             cameras, self._scene_center, self.scene_extent

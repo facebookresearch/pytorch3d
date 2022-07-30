@@ -2,28 +2,29 @@ defaults:
 - repro_singleseq_wce_base
 - repro_feat_extractor_normed.yaml
 - _self_
-generic_model_args:
-  num_passes: 1
-  chunk_size_grid: 32000
-  view_pooler_enabled: true
-  loss_weights:
-    loss_rgb_mse: 200.0
-    loss_prev_stage_rgb_mse: 0.0
-    loss_mask_bce: 1.0
-    loss_prev_stage_mask_bce: 0.0
-    loss_autodecoder_norm: 0.0
-    depth_neg_penalty: 10000.0
-  raysampler_class_type: NearFarRaySampler
-  raysampler_NearFarRaySampler_args:
-    n_rays_per_image_sampled_from_mask: 2048
-    min_depth: 0.05
-    max_depth: 0.05
-    n_pts_per_ray_training: 1
-    n_pts_per_ray_evaluation: 1
-    stratified_point_sampling_training: false
-    stratified_point_sampling_evaluation: false
-  renderer_class_type: LSTMRenderer
-  implicit_function_class_type: SRNImplicitFunction
-solver_args:
-  breed: adam
+model_factory_ImplicitronModelFactory_args:
+  model_GenericModel_args:
+    num_passes: 1
+    chunk_size_grid: 32000
+    view_pooler_enabled: true
+    loss_weights:
+      loss_rgb_mse: 200.0
+      loss_prev_stage_rgb_mse: 0.0
+      loss_mask_bce: 1.0
+      loss_prev_stage_mask_bce: 0.0
+      loss_autodecoder_norm: 0.0
+      depth_neg_penalty: 10000.0
+    raysampler_class_type: NearFarRaySampler
+    raysampler_NearFarRaySampler_args:
+      n_rays_per_image_sampled_from_mask: 2048
+      min_depth: 0.05
+      max_depth: 0.05
+      n_pts_per_ray_training: 1
+      n_pts_per_ray_evaluation: 1
+      stratified_point_sampling_training: false
+      stratified_point_sampling_evaluation: false
+    renderer_class_type: LSTMRenderer
+    implicit_function_class_type: SRNImplicitFunction
+optimizer_factory_ImplicitronOptimizerFactory_args:
+  breed: Adam
   lr: 5.0e-05

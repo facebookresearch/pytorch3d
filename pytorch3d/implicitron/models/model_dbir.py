@@ -22,7 +22,7 @@ from .renderer.base import EvaluationMode
 
 
 @registry.register
-class ModelDBIR(ImplicitronModelBase, torch.nn.Module):
+class ModelDBIR(ImplicitronModelBase):
     """
     A simple depth-based image rendering model.
 

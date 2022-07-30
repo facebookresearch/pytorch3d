@@ -1,7 +1,7 @@
 defaults:
 - repro_base
 - _self_
-data_source_args:
+data_source_ImplicitronDataSource_args:
   data_loader_map_provider_SequenceDataLoaderMapProvider_args:
     batch_size: 1
     dataset_length_train: 1000
@@ -12,28 +12,30 @@ data_source_args:
     n_frames_per_sequence: -1
     test_restrict_sequence_id: 0
     test_on_train: false
-generic_model_args:
-  render_image_height: 800
-  render_image_width: 800
-  log_vars:
-  - loss_rgb_psnr_fg
-  - loss_rgb_psnr
-  - loss_eikonal
-  - loss_prev_stage_rgb_psnr
-  - loss_mask_bce
-  - loss_prev_stage_mask_bce
-  - loss_rgb_mse
-  - loss_prev_stage_rgb_mse
-  - loss_depth_abs
-  - loss_depth_abs_fg
-  - loss_kl
-  - loss_mask_neg_iou
-  - objective
-  - epoch
-  - sec/it
-solver_args:
+model_factory_ImplicitronModelFactory_args:
+  model_GenericModel_args:
+    render_image_height: 800
+    render_image_width: 800
+    log_vars:
+    - loss_rgb_psnr_fg
+    - loss_rgb_psnr
+    - loss_eikonal
+    - loss_prev_stage_rgb_psnr
+    - loss_mask_bce
+    - loss_prev_stage_mask_bce
+    - loss_rgb_mse
+    - loss_prev_stage_rgb_mse
+    - loss_depth_abs
+    - loss_depth_abs_fg
+    - loss_kl
+    - loss_mask_neg_iou
+    - objective
+    - epoch
+    - sec/it
+optimizer_factory_ImplicitronOptimizerFactory_args:
   lr: 0.0005
-  max_epochs: 400
-  milestones:
+  multistep_lr_milestones:
   - 200
   - 300
+training_loop_ImplicitronTrainingLoop_args:
+  max_epochs: 400

@@ -16,10 +16,8 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
 import tqdm
-from pytorch3d.implicitron.models.metrics import (  # noqa
-    RegularizationMetrics,
+from pytorch3d.implicitron.models.metrics import (
     RegularizationMetricsBase,
-    ViewMetrics,
     ViewMetricsBase,
 )
 from pytorch3d.implicitron.tools import image_utils, vis_utils
@@ -67,7 +65,7 @@ logger = logging.getLogger(__name__)
 
 
 @registry.register
-class GenericModel(ImplicitronModelBase, torch.nn.Module):  # pyre-ignore: 13
+class GenericModel(ImplicitronModelBase):  # pyre-ignore: 13
     """
     GenericModel is a wrapper for the neural implicit
     rendering and reconstruction pipeline which consists

@@ -37,10 +37,12 @@ class ImplicitronRender:
         )
 
 
-class ImplicitronModelBase(ReplaceableBase):
+class ImplicitronModelBase(ReplaceableBase, torch.nn.Module):
     """
     Replaceable abstract base for all image generation / rendering models.
-    `forward()` method produces a render with a depth map.
+    `forward()` method produces a render with a depth map. Derives from Module
+    so we can rely on basic functionality provided to torch for model
+    optimization.
     """
 
     def __init__(self) -> None:

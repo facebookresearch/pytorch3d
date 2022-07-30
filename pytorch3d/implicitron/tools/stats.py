@@ -74,6 +74,7 @@ class Stats(object):
     """
     stats logging object useful for gathering statistics of training a deep net in pytorch
     Example:
+    ```
     # init stats structure that logs statistics 'objective' and 'top1e'
     stats = Stats( ('objective','top1e') )
     network = init_net() # init a pytorch module (=nueral network)
@@ -94,6 +95,7 @@ class Stats(object):
         # stores the training plots into '/tmp/epoch_stats.pdf'
         # and plots into a visdom server running at localhost (if running)
         stats.plot_stats(plot_file='/tmp/epoch_stats.pdf')
+    ```
     """
 
     def __init__(

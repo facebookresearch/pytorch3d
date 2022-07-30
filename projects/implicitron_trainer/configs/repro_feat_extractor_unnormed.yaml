@@ -1,18 +1,19 @@
-generic_model_args:
-  image_feature_extractor_class_type: ResNetFeatureExtractor
-  image_feature_extractor_ResNetFeatureExtractor_args:
-    stages:
-    - 1
-    - 2
-    - 3
-    first_max_pool: false
-    proj_dim: -1
-    l2_norm: false
-    image_rescale: 0.375
-    name: resnet34
-    normalize_image: true
-    pretrained: true
-  view_pooler_args:
-    feature_aggregator_AngleWeightedReductionFeatureAggregator_args:
-      reduction_functions:
-      - AVG
+model_factory_ImplicitronModelFactory_args:
+  model_GenericModel_args:
+    image_feature_extractor_class_type: ResNetFeatureExtractor
+    image_feature_extractor_ResNetFeatureExtractor_args:
+      stages:
+      - 1
+      - 2
+      - 3
+      first_max_pool: false
+      proj_dim: -1
+      l2_norm: false
+      image_rescale: 0.375
+      name: resnet34
+      normalize_image: true
+      pretrained: true
+    view_pooler_args:
+      feature_aggregator_AngleWeightedReductionFeatureAggregator_args:
+        reduction_functions:
+        - AVG

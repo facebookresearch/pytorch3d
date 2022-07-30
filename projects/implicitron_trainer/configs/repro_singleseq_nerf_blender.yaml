@@ -1,0 +1,38 @@
+defaults:
+- repro_singleseq_base
+- _self_
+exp_dir: "./data/nerf_blender_publ/${oc.env:BLENDER_SINGLESEQ_CLASS}"
+data_source_ImplicitronDataSource_args:
+  data_loader_map_provider_SequenceDataLoaderMapProvider_args:
+    dataset_length_train: 100
+  dataset_map_provider_class_type: BlenderDatasetMapProvider
+  dataset_map_provider_BlenderDatasetMapProvider_args:
+    base_dir: ${oc.env:BLENDER_DATASET_ROOT}
+    object_name: ${oc.env:BLENDER_SINGLESEQ_CLASS}
+    path_manager_factory_class_type: PathManagerFactory
+    n_known_frames_for_test: null
+    path_manager_factory_PathManagerFactory_args:
+      silence_logs: true
+
+model_factory_ImplicitronModelFactory_args:
+  model_GenericModel_args:
+    raysampler_AdaptiveRaySampler_args:
+      n_rays_per_image_sampled_from_mask: 4096
+      scene_extent: 2.0
+    renderer_MultiPassEmissionAbsorptionRenderer_args:
+      n_pts_per_ray_fine_training: 128
+      n_pts_per_ray_fine_evaluation: 128
+    loss_weights:
+      loss_rgb_mse: 1.0
+      loss_prev_stage_rgb_mse: 1.0
+      loss_mask_bce: 0.0
+      loss_prev_stage_mask_bce: 0.0
+      loss_autodecoder_norm: 0.00
+
+optimizer_factory_ImplicitronOptimizerFactory_args:
+  exponential_lr_step_size: 2000
+
+training_loop_ImplicitronTrainingLoop_args:
+  max_epochs: 2000
+  visualize_interval: 0
+  validation_interval: 30
