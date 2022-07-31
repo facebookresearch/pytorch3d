@@ -24,7 +24,7 @@ def _can_import_egl_and_pycuda():
     try:
         import pycuda.gl
     except (ImportError, ImportError, ModuleNotFoundError):
-        warnings.warn("Can't import pucuda.gl, not importing MeshRasterizerOpenGL.")
+        warnings.warn("Can't import pycuda.gl, not importing MeshRasterizerOpenGL.")
         return False
 
     return True
