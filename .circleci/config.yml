@@ -145,7 +145,7 @@ jobs:
           docker pull $TESTRUN_DOCKER_IMAGE
     - run:
         name: Build and run tests
-        no_output_timeout: 20m
+        no_output_timeout: 40m
         command: |
           set -e
 
