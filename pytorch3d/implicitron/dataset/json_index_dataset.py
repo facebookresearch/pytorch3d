@@ -112,6 +112,11 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
         eval_batches: A list of batches that form the evaluation set;
             list of batch-sized lists of indices corresponding to __getitem__
             of this class, thus it can be used directly as a batch sampler.
+        eval_batch_index:
+            ( Optional[List[List[Union[Tuple[str, int, str], Tuple[str, int]]]] )
+            A list of batches of frames described as (sequence_name, frame_idx)
+            that can form the evaluation set, `eval_batches` will be set from this.
+
     """
 
     frame_annotations_type: ClassVar[
@@ -147,6 +152,7 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
     seed: int = 0
     sort_frames: bool = False
     eval_batches: Any = None
+    eval_batch_index: Any = None
     # frame_annots: List[FrameAnnotsEntry] = field(init=False)
     # seq_annots: Dict[str, types.SequenceAnnotation] = field(init=False)
 
@@ -159,7 +165,19 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
             self._sort_frames()
         self._load_subset_lists()
         self._filter_db()  # also computes sequence indices
+        self._extract_and_set_eval_batches()
         logger.info(str(self))
+
+    def _extract_and_set_eval_batches(self):
+        """
+        Sets eval_batches based on input eval_batch_index.
+        """
+        if self.eval_batch_index is not None:
+            if self.eval_batches is not None:
+                raise ValueError(
+                    "Cannot define both eval_batch_index and eval_batches."
+                )
+            self.eval_batches = self.seq_frame_index_to_dataset_index()
 
     def is_filtered(self):
         """

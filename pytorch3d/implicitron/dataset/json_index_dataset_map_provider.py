@@ -57,6 +57,7 @@ _CO3D_DATASET_ROOT: str = os.getenv("CO3D_DATASET_ROOT", "")
 _NEED_CONTROL: Tuple[str, ...] = (
     "dataset_root",
     "eval_batches",
+    "eval_batch_index",
     "n_frames_per_sequence",
     "path_manager",
     "pick_sequence",
@@ -212,6 +213,10 @@ class JsonIndexDatasetMapProvider(DatasetMapProviderBase):  # pyre-ignore [13]
             ]
             # overwrite the restrict_sequence_name
             restrict_sequence_name = [eval_sequence_name]
+        if len(restrict_sequence_name) > 0:
+            eval_batch_index = [
+                b for b in eval_batch_index if b[0][0] in restrict_sequence_name
+            ]
 
         dataset_type: Type[JsonIndexDataset] = registry.get(
             JsonIndexDataset, self.dataset_class_type
@@ -239,14 +244,8 @@ class JsonIndexDatasetMapProvider(DatasetMapProviderBase):  # pyre-ignore [13]
                 n_frames_per_sequence=-1,
                 subsets=set_names_mapping["test"],
                 pick_sequence=restrict_sequence_name,
+                eval_batch_index=eval_batch_index,
                 **common_kwargs,
-            )
-            if len(restrict_sequence_name) > 0:
-                eval_batch_index = [
-                    b for b in eval_batch_index if b[0][0] in restrict_sequence_name
-                ]
-            test_dataset.eval_batches = test_dataset.seq_frame_index_to_dataset_index(
-                eval_batch_index
             )
         dataset_map = DatasetMap(
             train=train_dataset, val=val_dataset, test=test_dataset

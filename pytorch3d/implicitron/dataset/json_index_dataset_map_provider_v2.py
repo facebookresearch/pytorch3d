@@ -11,6 +11,7 @@ import os
 import warnings
 from typing import Dict, List, Optional, Type
 
+from omegaconf import DictConfig, open_dict
 from pytorch3d.implicitron.dataset.dataset_map_provider import (
     DatasetMap,
     DatasetMapProviderBase,
@@ -268,6 +269,15 @@ class JsonIndexDatasetMapProviderV2(DatasetMapProviderBase):  # pyre-ignore [13]
         self.dataset_map = DatasetMap(
             train=train_dataset, val=val_dataset, test=test_dataset
         )
+
+    @classmethod
+    def dataset_tweak_args(cls, type, args: DictConfig) -> None:
+        """
+        Called by get_default_args(JsonIndexDatasetMapProviderV2) to
+        not expose certain fields of each dataset class.
+        """
+        with open_dict(args):
+            del args["eval_batch_index"]
 
     def create_dataset(self):
         # The dataset object is created inside `self.get_dataset_map`
