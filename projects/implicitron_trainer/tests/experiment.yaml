@@ -2,6 +2,7 @@ data_source_class_type: ImplicitronDataSource
 model_factory_class_type: ImplicitronModelFactory
 optimizer_factory_class_type: ImplicitronOptimizerFactory
 training_loop_class_type: ImplicitronTrainingLoop
+seed: 42
 detect_anomaly: false
 exp_dir: ./data/default_experiment/
 hydra:
@@ -429,7 +430,6 @@ training_loop_ImplicitronTrainingLoop_args:
   eval_only: false
   evaluator_class_type: ImplicitronEvaluator
   max_epochs: 1000
-  seed: 0
   store_checkpoints: true
   store_checkpoints_purge: 1
   test_interval: -1
