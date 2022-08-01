@@ -838,7 +838,7 @@ class GenericModel(ImplicitronModelBase):  # pyre-ignore: 13
 
         # Estimate the rasterization point radius so that we approximately fill
         # the whole image given the number of rasterized points.
-        pt_radius = 2.0 * math.sqrt(xys.shape[1])
+        pt_radius = 2.0 / math.sqrt(xys.shape[1])
 
         # Rasterize the samples.
         features_depth_render, masks_render = rasterize_mc_samples(
