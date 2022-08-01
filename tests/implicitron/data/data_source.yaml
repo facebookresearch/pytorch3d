@@ -90,6 +90,15 @@ dataset_map_provider_LlffDatasetMapProvider_args:
   n_known_frames_for_test: null
   path_manager_factory_PathManagerFactory_args:
     silence_logs: true
+dataset_map_provider_RenderedMeshDatasetMapProvider_args:
+  num_views: 40
+  data_file: null
+  azimuth_range: 180.0
+  resolution: 128
+  use_point_light: true
+  path_manager_factory_class_type: PathManagerFactory
+  path_manager_factory_PathManagerFactory_args:
+    silence_logs: true
 data_loader_map_provider_SequenceDataLoaderMapProvider_args:
   batch_size: 1
   num_workers: 0

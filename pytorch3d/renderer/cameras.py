@@ -1661,9 +1661,9 @@ def look_at_rotation(
 
 
 def look_at_view_transform(
-    dist: float = 1.0,
-    elev: float = 0.0,
-    azim: float = 0.0,
+    dist: _BatchFloatType = 1.0,
+    elev: _BatchFloatType = 0.0,
+    azim: _BatchFloatType = 0.0,
     degrees: bool = True,
     eye: Optional[Union[Sequence, torch.Tensor]] = None,
     at=((0, 0, 0),),  # (1, 3)

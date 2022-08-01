@@ -44,6 +44,8 @@ def generate_cow_renders(
         data_dir: The folder that contains the cow mesh files. If the cow mesh
             files do not exist in the folder, this function will automatically
             download them.
+        azimuth_range: number of degrees on each side of the start position to
+            take samples
 
     Returns:
         cameras: A batch of `num_views` `FoVPerspectiveCameras` from which the

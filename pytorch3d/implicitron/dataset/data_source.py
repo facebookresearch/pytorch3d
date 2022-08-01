@@ -19,6 +19,7 @@ from .dataset_map_provider import DatasetMap, DatasetMapProviderBase, Task
 from .json_index_dataset_map_provider import JsonIndexDatasetMapProvider  # noqa
 from .json_index_dataset_map_provider_v2 import JsonIndexDatasetMapProviderV2  # noqa
 from .llff_dataset_map_provider import LlffDatasetMapProvider  # noqa
+from .rendered_mesh_dataset_map_provider import RenderedMeshDatasetMapProvider  # noqa
 
 
 class DataSourceBase(ReplaceableBase):
