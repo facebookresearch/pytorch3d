@@ -61,6 +61,84 @@ class DataLoaderMapProviderBase(ReplaceableBase):
         raise NotImplementedError()
 
 
+@registry.register
+class SimpleDataLoaderMapProvider(DataLoaderMapProviderBase):
+    """
+    Trivial implementation of DataLoaderMapProviderBase.
+
+    If a dataset returns batches from get_eval_batches(), then
+    they will be what the corresponding dataloader returns,
+    independently of any of the fields on this class.
+
+    Otherwise, returns shuffled batches.
+    """
+
+    batch_size: int = 1
+    num_workers: int = 0
+    dataset_length_train: int = 0
+    dataset_length_val: int = 0
+    dataset_length_test: int = 0
+
+    def get_data_loader_map(self, datasets: DatasetMap) -> DataLoaderMap:
+        """
+        Returns a collection of data loaders for a given collection of datasets.
+        """
+        return DataLoaderMap(
+            train=self._make_data_loader(
+                datasets.train,
+                self.dataset_length_train,
+            ),
+            val=self._make_data_loader(
+                datasets.val,
+                self.dataset_length_val,
+            ),
+            test=self._make_data_loader(
+                datasets.test,
+                self.dataset_length_test,
+            ),
+        )
+
+    def _make_data_loader(
+        self,
+        dataset: Optional[DatasetBase],
+        num_batches: int,
+    ) -> Optional[DataLoader[FrameData]]:
+        """
+        Returns the dataloader for a dataset.
+
+        Args:
+            dataset: the dataset
+            num_batches: possible ceiling on number of batches per epoch
+        """
+        if dataset is None:
+            return None
+
+        data_loader_kwargs = {
+            "num_workers": self.num_workers,
+            "collate_fn": dataset.frame_data_type.collate,
+        }
+
+        eval_batches = dataset.get_eval_batches()
+        if eval_batches is not None:
+            return DataLoader(
+                dataset,
+                batch_sampler=eval_batches,
+                **data_loader_kwargs,
+            )
+
+        if num_batches > 0:
+            num_samples = self.batch_size * num_batches
+        else:
+            num_samples = None
+        sampler = RandomSampler(dataset, replacement=True, num_samples=num_samples)
+        batch_sampler = BatchSampler(sampler, self.batch_size, drop_last=True)
+        return DataLoader(
+            dataset,
+            batch_sampler=batch_sampler,
+            **data_loader_kwargs,
+        )
+
+
 class DoublePoolBatchSampler(Sampler[List[int]]):
     """
     Batch sampler for making random batches of a single frame

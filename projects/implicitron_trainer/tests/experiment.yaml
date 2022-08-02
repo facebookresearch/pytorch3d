@@ -117,6 +117,12 @@ data_source_ImplicitronDataSource_args:
     sample_consecutive_frames: false
     consecutive_frames_max_gap: 0
     consecutive_frames_max_gap_seconds: 0.1
+  data_loader_map_provider_SimpleDataLoaderMapProvider_args:
+    batch_size: 1
+    num_workers: 0
+    dataset_length_train: 0
+    dataset_length_val: 0
+    dataset_length_test: 0
 model_factory_ImplicitronModelFactory_args:
   force_load: false
   model_class_type: GenericModel

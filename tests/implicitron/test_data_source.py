@@ -10,6 +10,10 @@ import unittest.mock
 
 import torch
 from omegaconf import OmegaConf
+from pytorch3d.implicitron.dataset.data_loader_map_provider import (
+    SequenceDataLoaderMapProvider,
+    SimpleDataLoaderMapProvider,
+)
 from pytorch3d.implicitron.dataset.data_source import ImplicitronDataSource
 from pytorch3d.implicitron.dataset.json_index_dataset import JsonIndexDataset
 from pytorch3d.implicitron.tools.config import get_default_args
@@ -64,7 +68,6 @@ class TestDataSource(unittest.TestCase):
             return
         args = get_default_args(ImplicitronDataSource)
         args.dataset_map_provider_class_type = "JsonIndexDatasetMapProvider"
-        args.data_loader_map_provider_class_type = "SequenceDataLoaderMapProvider"
         dataset_args = args.dataset_map_provider_JsonIndexDatasetMapProvider_args
         dataset_args.category = "skateboard"
         dataset_args.test_restrict_sequence_id = 0
@@ -73,7 +76,34 @@ class TestDataSource(unittest.TestCase):
         dataset_args.dataset_root = "manifold://co3d/tree/extracted"
 
         data_source = ImplicitronDataSource(**args)
+        self.assertIsInstance(
+            data_source.data_loader_map_provider, SequenceDataLoaderMapProvider
+        )
         _, data_loaders = data_source.get_datasets_and_dataloaders()
+        self.assertEqual(len(data_loaders.train), 81)
+        for i in data_loaders.train:
+            self.assertEqual(i.frame_type, ["test_known"])
+            break
+
+    def test_simple(self):
+        if os.environ.get("INSIDE_RE_WORKER") is not None:
+            return
+        args = get_default_args(ImplicitronDataSource)
+        args.dataset_map_provider_class_type = "JsonIndexDatasetMapProvider"
+        args.data_loader_map_provider_class_type = "SimpleDataLoaderMapProvider"
+        dataset_args = args.dataset_map_provider_JsonIndexDatasetMapProvider_args
+        dataset_args.category = "skateboard"
+        dataset_args.test_restrict_sequence_id = 0
+        dataset_args.n_frames_per_sequence = -1
+
+        dataset_args.dataset_root = "manifold://co3d/tree/extracted"
+
+        data_source = ImplicitronDataSource(**args)
+        self.assertIsInstance(
+            data_source.data_loader_map_provider, SimpleDataLoaderMapProvider
+        )
+        _, data_loaders = data_source.get_datasets_and_dataloaders()
+
         self.assertEqual(len(data_loaders.train), 81)
         for i in data_loaders.train:
             self.assertEqual(i.frame_type, ["test_known"])
