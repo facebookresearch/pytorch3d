@@ -177,7 +177,9 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
                 raise ValueError(
                     "Cannot define both eval_batch_index and eval_batches."
                 )
-            self.eval_batches = self.seq_frame_index_to_dataset_index()
+            self.eval_batches = self.seq_frame_index_to_dataset_index(
+                self.eval_batch_index
+            )
 
     def is_filtered(self):
         """
