@@ -126,6 +126,7 @@ class ImplicitronEvaluator(EvaluatorBase):
         )
 
         results = category_result["results"]
+        evaluate.pretty_print_nvs_metrics(results)
         if dump_to_json:
             _dump_to_json(epoch, exp_dir, results)
 
@@ -140,7 +141,6 @@ def _dump_to_json(
             r["eval_epoch"] = int(epoch)
     logger.info("Evaluation results")
 
-    evaluate.pretty_print_nvs_metrics(results)
     if exp_dir is None:
         raise ValueError("Cannot save results to json without a specified save path.")
     with open(os.path.join(exp_dir, "results_test.json"), "w") as f:
@@ -156,6 +156,7 @@ def _get_eval_frame_data(frame_data: Any) -> Any:
         frame_data.image_rgb
     )[:, None, None, None]
     for k in ("image_rgb", "depth_map", "fg_probability", "mask_crop"):
-        value_masked = getattr(frame_data_for_eval, k).clone() * is_known
+        value = getattr(frame_data_for_eval, k)
+        value_masked = value.clone() * is_known if value is not None else None
         setattr(frame_data_for_eval, k, value_masked)
     return frame_data_for_eval

@@ -242,14 +242,24 @@ def eval_batch(
     if frame_data.depth_map is None or frame_data.depth_map.sum() <= 0:
         warnings.warn("Empty or missing depth map in evaluation!")
 
+    if frame_data.mask_crop is None:
+        warnings.warn("mask_crop is None, assuming the whole image is valid.")
+
     # threshold the masks to make ground truth binary masks
-    mask_fg, mask_crop = [
-        (getattr(frame_data, k) >= mask_thr) for k in ("fg_probability", "mask_crop")
-    ]
+    # pyre-ignore [58]
+    mask_fg = frame_data.fg_probability >= mask_thr
+    mask_crop = (
+        frame_data.mask_crop
+        if frame_data.mask_crop is not None
+        # pyre-ignore [6]
+        else torch.ones_like(mask_fg)
+    )
+
     image_rgb_masked = mask_background(
         # pyre-fixme[6]: Expected `Tensor` for 1st param but got
         #  `Optional[torch.Tensor]`.
         frame_data.image_rgb,
+        # pyre-ignore [6]
         mask_fg,
         bg_color=bg_color,
     )
@@ -274,7 +284,7 @@ def eval_batch(
 
     results["iou"] = iou(
         cloned_render["mask_render"],
-        mask_fg,
+        mask_fg,  # pyre-ignore [6]
         mask=mask_crop,
     )
 
@@ -297,7 +307,7 @@ def eval_batch(
                     results[metric_name].item(), metric_name, loss_mask_now
                 )
 
-        if name_postfix == "_fg":
+        if name_postfix == "_fg" and frame_data.depth_map is not None:
             # only record depth metrics for the foreground
             _, abs_ = eval_depth(
                 cloned_render["depth_render"],
@@ -313,9 +323,7 @@ def eval_batch(
             if visualize:
                 visualizer.show_depth(abs_.mean().item(), name_postfix, loss_mask_now)
                 if break_after_visualising:
-                    import pdb  # noqa: B602
-
-                    pdb.set_trace()
+                    breakpoint()  # noqa: B601
 
     if lpips_model is not None:
         im1, im2 = [

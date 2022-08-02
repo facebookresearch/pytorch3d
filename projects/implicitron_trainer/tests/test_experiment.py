@@ -161,7 +161,7 @@ class TestExperiment(unittest.TestCase):
 
 
 class TestNerfRepro(unittest.TestCase):
-    @unittest.skip("This test reproduces full NERF training.")
+    @unittest.skip("This runs full NeRF training on Blender data.")
     def test_nerf_blender(self):
         # Train vanilla NERF.
         # Set env vars BLENDER_DATASET_ROOT and BLENDER_SINGLESEQ_CLASS first!
