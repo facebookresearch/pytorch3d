@@ -7,7 +7,6 @@
 import logging
 import os
 from dataclasses import dataclass
-from enum import Enum
 from typing import Iterator, Optional
 
 from iopath.common.file_io import PathManager
@@ -53,11 +52,6 @@ class DatasetMap:
             yield self.test
 
 
-class Task(Enum):
-    SINGLE_SEQUENCE = "singlesequence"
-    MULTI_SEQUENCE = "multisequence"
-
-
 class DatasetMapProviderBase(ReplaceableBase):
     """
     Base class for a provider of training / validation and testing
@@ -69,9 +63,6 @@ class DatasetMapProviderBase(ReplaceableBase):
         Returns:
             An object containing the torch.Dataset objects in train/val/test fields.
         """
-        raise NotImplementedError()
-
-    def get_task(self) -> Task:
         raise NotImplementedError()
 
     def get_all_train_cameras(self) -> Optional[CamerasBase]:

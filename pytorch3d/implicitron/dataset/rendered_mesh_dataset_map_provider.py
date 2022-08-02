@@ -28,12 +28,7 @@ from pytorch3d.renderer import (
 )
 from pytorch3d.structures.meshes import Meshes
 
-from .dataset_map_provider import (
-    DatasetMap,
-    DatasetMapProviderBase,
-    PathManagerFactory,
-    Task,
-)
+from .dataset_map_provider import DatasetMap, DatasetMapProviderBase, PathManagerFactory
 from .single_sequence_dataset import SingleSceneDataset
 from .utils import DATASET_TYPE_KNOWN
 
@@ -82,9 +77,6 @@ class RenderedMeshDatasetMapProvider(DatasetMapProviderBase):  # pyre-ignore [13
     def get_dataset_map(self) -> DatasetMap:
         # pyre-ignore[16]
         return DatasetMap(train=self.train_dataset, val=None, test=None)
-
-    def get_task(self) -> Task:
-        return Task.SINGLE_SEQUENCE
 
     def get_all_train_cameras(self) -> CamerasBase:
         # pyre-ignore[16]

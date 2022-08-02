@@ -17,12 +17,7 @@ from pytorch3d.implicitron.tools.config import (
 )
 from pytorch3d.renderer.cameras import CamerasBase
 
-from .dataset_map_provider import (
-    DatasetMap,
-    DatasetMapProviderBase,
-    PathManagerFactory,
-    Task,
-)
+from .dataset_map_provider import DatasetMap, DatasetMapProviderBase, PathManagerFactory
 from .json_index_dataset import JsonIndexDataset
 
 from .utils import (
@@ -160,7 +155,7 @@ class JsonIndexDatasetMapProvider(DatasetMapProviderBase):  # pyre-ignore [13]
         # This maps the common names of the dataset subsets ("train"/"val"/"test")
         # to the names of the subsets in the CO3D dataset.
         set_names_mapping = _get_co3d_set_names_mapping(
-            self.get_task(),
+            self.task_str,
             self.test_on_train,
             self.only_test_set,
         )
@@ -185,7 +180,7 @@ class JsonIndexDatasetMapProvider(DatasetMapProviderBase):  # pyre-ignore [13]
             eval_batch_index = json.load(f)
         restrict_sequence_name = self.restrict_sequence_name
 
-        if self.get_task() == Task.SINGLE_SEQUENCE:
+        if self.task_str == "singlesequence":
             if (
                 self.test_restrict_sequence_id is None
                 or self.test_restrict_sequence_id < 0
@@ -267,12 +262,11 @@ class JsonIndexDatasetMapProvider(DatasetMapProviderBase):  # pyre-ignore [13]
         # pyre-ignore[16]
         return self.dataset_map
 
-    def get_task(self) -> Task:
-        return Task(self.task_str)
-
     def get_all_train_cameras(self) -> Optional[CamerasBase]:
-        if Task(self.task_str) == Task.MULTI_SEQUENCE:
+        if self.task_str == "multisequence":
             return None
+
+        assert self.task_str == "singlesequence"
 
         # pyre-ignore[16]
         train_dataset = self.dataset_map.train
@@ -281,7 +275,7 @@ class JsonIndexDatasetMapProvider(DatasetMapProviderBase):  # pyre-ignore [13]
 
 
 def _get_co3d_set_names_mapping(
-    task: Task,
+    task_str: str,
     test_on_train: bool,
     only_test: bool,
 ) -> Dict[str, List[str]]:
@@ -295,7 +289,7 @@ def _get_co3d_set_names_mapping(
         - val (if not test_on_train)
         - test (if not test_on_train)
     """
-    single_seq = task == Task.SINGLE_SEQUENCE
+    single_seq = task_str == "singlesequence"
 
     if only_test:
         set_names_mapping = {}

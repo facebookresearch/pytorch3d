@@ -14,7 +14,6 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 import numpy as np
 import torch
 import torch.nn.functional as F
-from pytorch3d.implicitron.dataset.data_source import Task
 from pytorch3d.implicitron.dataset.dataset_base import FrameData
 from pytorch3d.implicitron.dataset.utils import is_known_frame, is_train_frame
 from pytorch3d.implicitron.models.base_model import ImplicitronRender
@@ -420,16 +419,16 @@ def _get_camera_difficulty_bin_edges(camera_difficulty_bin_breaks: Tuple[float, 
 
 def summarize_nvs_eval_results(
     per_batch_eval_results: List[Dict[str, Any]],
-    task: Task,
-    camera_difficulty_bin_breaks: Tuple[float, float] = (0.97, 0.98),
+    is_multisequence: bool,
+    camera_difficulty_bin_breaks: Tuple[float, float],
 ):
     """
     Compile the per-batch evaluation results `per_batch_eval_results` into
-    a set of aggregate metrics. The produced metrics depend on the task.
+    a set of aggregate metrics. The produced metrics depend on is_multisequence.
 
     Args:
         per_batch_eval_results: Metrics of each per-batch evaluation.
-        task: The type of the new-view synthesis task.
+        is_multisequence: Whether to evaluate as a multisequence task
         camera_difficulty_bin_breaks: edge hard-medium and medium-easy
 
 
@@ -439,14 +438,9 @@ def summarize_nvs_eval_results(
     """
     n_batches = len(per_batch_eval_results)
     eval_sets: List[Optional[str]] = []
-    if task == Task.SINGLE_SEQUENCE:
-        eval_sets = [None]
-        # assert n_batches==100
-    elif task == Task.MULTI_SEQUENCE:
+    eval_sets = [None]
+    if is_multisequence:
         eval_sets = ["train", "test"]
-        # assert n_batches==1000
-    else:
-        raise ValueError(task)
     batch_sizes = torch.tensor(
         [r["meta"]["batch_size"] for r in per_batch_eval_results]
     ).long()
@@ -466,11 +460,9 @@ def summarize_nvs_eval_results(
     # add per set averages
     for SET in eval_sets:
         if SET is None:
-            assert task == Task.SINGLE_SEQUENCE
             ok_set = torch.ones(n_batches, dtype=torch.bool)
             set_name = "test"
         else:
-            assert task == Task.MULTI_SEQUENCE
             ok_set = is_train == int(SET == "train")
             set_name = SET
 
@@ -495,7 +487,7 @@ def summarize_nvs_eval_results(
                 }
             )
 
-        if task == Task.MULTI_SEQUENCE:
+        if is_multisequence:
             # split based on n_src_views
             n_src_views = batch_sizes - 1
             for n_src in EVAL_N_SRC_VIEWS:

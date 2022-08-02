@@ -16,7 +16,6 @@ import torch
 import tqdm
 
 from pytorch3d.implicitron.dataset import utils as ds_utils
-from pytorch3d.implicitron.dataset.data_source import Task
 
 from pytorch3d.implicitron.evaluation import evaluate_new_view_synthesis as evaluate
 from pytorch3d.implicitron.models.base_model import EvaluationMode, ImplicitronModelBase
@@ -57,6 +56,7 @@ class ImplicitronEvaluator(EvaluatorBase):
     """
 
     camera_difficulty_bin_breaks: Tuple[float, ...] = 0.97, 0.98
+    is_multisequence: bool = False
 
     def __post_init__(self):
         run_auto_creation(self)
@@ -65,7 +65,6 @@ class ImplicitronEvaluator(EvaluatorBase):
         self,
         model: ImplicitronModelBase,
         dataloader: DataLoader,
-        task: Task,
         all_train_cameras: Optional[CamerasBase],
         device: torch.device,
         dump_to_json: bool = False,
@@ -80,7 +79,6 @@ class ImplicitronEvaluator(EvaluatorBase):
         Args:
             model: A (trained) model to evaluate.
             dataloader: A test dataloader.
-            task: Type of the novel-view synthesis task we're working on.
             all_train_cameras: Camera instances we used for training.
             device: A torch device.
             dump_to_json: If True, will dump the results to a json file.
@@ -122,7 +120,9 @@ class ImplicitronEvaluator(EvaluatorBase):
                 )
 
         _, category_result = evaluate.summarize_nvs_eval_results(
-            per_batch_eval_results, task, self.camera_difficulty_bin_breaks
+            per_batch_eval_results,
+            self.is_multisequence,
+            self.camera_difficulty_bin_breaks,
         )
 
         results = category_result["results"]

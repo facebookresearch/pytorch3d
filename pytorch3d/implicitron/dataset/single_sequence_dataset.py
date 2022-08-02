@@ -21,12 +21,7 @@ from pytorch3d.implicitron.tools.config import (
 from pytorch3d.renderer import CamerasBase, join_cameras_as_batch, PerspectiveCameras
 
 from .dataset_base import DatasetBase, FrameData
-from .dataset_map_provider import (
-    DatasetMap,
-    DatasetMapProviderBase,
-    PathManagerFactory,
-    Task,
-)
+from .dataset_map_provider import DatasetMap, DatasetMapProviderBase, PathManagerFactory
 from .utils import DATASET_TYPE_KNOWN, DATASET_TYPE_UNKNOWN
 
 _SINGLE_SEQUENCE_NAME: str = "one_sequence"
@@ -158,9 +153,6 @@ class SingleSceneDatasetMapProviderBase(DatasetMapProviderBase):
             val=self._get_dataset(1, DATASET_TYPE_UNKNOWN),
             test=self._get_dataset(2, DATASET_TYPE_UNKNOWN, True),
         )
-
-    def get_task(self) -> Task:
-        return Task.SINGLE_SEQUENCE
 
     def get_all_train_cameras(self) -> Optional[CamerasBase]:
         # pyre-ignore[16]

@@ -435,3 +435,4 @@ training_loop_ImplicitronTrainingLoop_args:
     camera_difficulty_bin_breaks:
     - 0.97
     - 0.98
+    is_multisequence: false

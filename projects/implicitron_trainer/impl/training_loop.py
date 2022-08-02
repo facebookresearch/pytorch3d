@@ -10,7 +10,6 @@ from typing import Any, Optional
 
 import torch
 from accelerate import Accelerator
-from pytorch3d.implicitron.dataset.data_source import Task
 from pytorch3d.implicitron.evaluation.evaluator import EvaluatorBase
 from pytorch3d.implicitron.models.base_model import ImplicitronModelBase
 from pytorch3d.implicitron.models.generic_model import EvaluationMode
@@ -101,7 +100,6 @@ class ImplicitronTrainingLoop(TrainingLoopBase):  # pyre-ignore [13]
         exp_dir: str,
         stats: Stats,
         seed: int,
-        task: Task,
         **kwargs,
     ):
         """
@@ -123,7 +121,6 @@ class ImplicitronTrainingLoop(TrainingLoopBase):  # pyre-ignore [13]
                     epoch=stats.epoch,
                     exp_dir=exp_dir,
                     model=model,
-                    task=task,
                 )
                 return
             else:
@@ -179,7 +176,6 @@ class ImplicitronTrainingLoop(TrainingLoopBase):  # pyre-ignore [13]
                         device=device,
                         dataloader=test_loader,
                         model=model,
-                        task=task,
                     )
 
                 assert stats.epoch == epoch, "inconsistent stats!"
@@ -200,7 +196,6 @@ class ImplicitronTrainingLoop(TrainingLoopBase):  # pyre-ignore [13]
                     exp_dir=exp_dir,
                     dataloader=test_loader,
                     model=model,
-                    task=task,
                 )
             else:
                 raise ValueError(

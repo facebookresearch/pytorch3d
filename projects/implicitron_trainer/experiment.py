@@ -206,7 +206,6 @@ class Experiment(Configurable):  # pyre-ignore: 13
                 val_loader,
             ) = accelerator.prepare(model, optimizer, train_loader, val_loader)
 
-        task = self.data_source.get_task()
         all_train_cameras = self.data_source.all_train_cameras
 
         # Enter the main training loop.
@@ -223,7 +222,6 @@ class Experiment(Configurable):  # pyre-ignore: 13
             exp_dir=self.exp_dir,
             stats=stats,
             seed=self.seed,
-            task=task,
         )
 
     def _check_config_consistent(self) -> None:

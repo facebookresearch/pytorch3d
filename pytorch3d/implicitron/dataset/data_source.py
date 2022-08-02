@@ -15,7 +15,7 @@ from pytorch3d.renderer.cameras import CamerasBase
 
 from .blender_dataset_map_provider import BlenderDatasetMapProvider  # noqa
 from .data_loader_map_provider import DataLoaderMap, DataLoaderMapProviderBase
-from .dataset_map_provider import DatasetMap, DatasetMapProviderBase, Task
+from .dataset_map_provider import DatasetMap, DatasetMapProviderBase
 from .json_index_dataset_map_provider import JsonIndexDatasetMapProvider  # noqa
 from .json_index_dataset_map_provider_v2 import JsonIndexDatasetMapProviderV2  # noqa
 from .llff_dataset_map_provider import LlffDatasetMapProvider  # noqa
@@ -39,9 +39,6 @@ class DataSourceBase(ReplaceableBase):
         used for evaluating the viewpoint difficulty of the
         unseen cameras.
         """
-        raise NotImplementedError()
-
-    def get_task(self) -> Task:
         raise NotImplementedError()
 
 
@@ -70,9 +67,6 @@ class ImplicitronDataSource(DataSourceBase):  # pyre-ignore[13]
         datasets = self.dataset_map_provider.get_dataset_map()
         dataloaders = self.data_loader_map_provider.get_data_loader_map(datasets)
         return datasets, dataloaders
-
-    def get_task(self) -> Task:
-        return self.dataset_map_provider.get_task()
 
     @property
     def all_train_cameras(self) -> Optional[CamerasBase]:

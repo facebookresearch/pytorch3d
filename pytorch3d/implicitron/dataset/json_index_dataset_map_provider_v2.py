@@ -16,7 +16,6 @@ from pytorch3d.implicitron.dataset.dataset_map_provider import (
     DatasetMap,
     DatasetMapProviderBase,
     PathManagerFactory,
-    Task,
 )
 from pytorch3d.implicitron.dataset.json_index_dataset import JsonIndexDataset
 from pytorch3d.implicitron.tools.config import (
@@ -334,12 +333,6 @@ class JsonIndexDatasetMapProviderV2(DatasetMapProviderBase):  # pyre-ignore [13]
             category_to_subset_name_list_json
         )
         return category_to_subset_name_list
-
-    def get_task(self) -> Task:  # TODO: we plan to get rid of tasks
-        return {
-            "manyview": Task.SINGLE_SEQUENCE,
-            "fewview": Task.MULTI_SEQUENCE,
-        }[self.subset_name.split("_")[0]]
 
     def get_all_train_cameras(self) -> Optional[CamerasBase]:
         # pyre-ignore[16]

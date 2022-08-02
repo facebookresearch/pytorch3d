@@ -7,11 +7,12 @@
 
 import dataclasses
 import os
+from enum import Enum
 from typing import Any, cast, Dict, List, Optional, Tuple
 
 import lpips
 import torch
-from pytorch3d.implicitron.dataset.data_source import ImplicitronDataSource, Task
+from pytorch3d.implicitron.dataset.data_source import ImplicitronDataSource
 from pytorch3d.implicitron.dataset.json_index_dataset import JsonIndexDataset
 from pytorch3d.implicitron.dataset.json_index_dataset_map_provider import (
     CO3D_CATEGORIES,
@@ -25,6 +26,11 @@ from pytorch3d.implicitron.evaluation.evaluate_new_view_synthesis import (
 from pytorch3d.implicitron.models.model_dbir import ModelDBIR
 from pytorch3d.implicitron.tools.utils import dataclass_to_cuda_
 from tqdm import tqdm
+
+
+class Task(Enum):
+    SINGLE_SEQUENCE = "singlesequence"
+    MULTI_SEQUENCE = "multisequence"
 
 
 def main() -> None:
@@ -153,11 +159,15 @@ def evaluate_dbir_for_category(
 
     if task == Task.SINGLE_SEQUENCE:
         camera_difficulty_bin_breaks = 0.97, 0.98
+        multisequence_evaluation = False
     else:
         camera_difficulty_bin_breaks = 2.0 / 3, 5.0 / 6
+        multisequence_evaluation = True
 
     category_result_flat, category_result = summarize_nvs_eval_results(
-        per_batch_eval_results, task, camera_difficulty_bin_breaks
+        per_batch_eval_results,
+        camera_difficulty_bin_breaks=camera_difficulty_bin_breaks,
+        is_multisequence=multisequence_evaluation,
     )
 
     return category_result["results"]
