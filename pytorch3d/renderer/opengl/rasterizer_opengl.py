@@ -130,8 +130,9 @@ class MeshRasterizerOpenGL(nn.Module):
 
     Fragments output by MeshRasterizerOpenGL and MeshRasterizer should have near
     identical pix_to_face, bary_coords and zbuf. However, MeshRasterizerOpenGL does not
-    return Fragments.dists which is only relevant to SoftPhongShader which doesn't work
-    with MeshRasterizerOpenGL (because it is not differentiable).
+    return Fragments.dists which is only relevant to SoftPhongShader and
+    SoftSilhouetteShader. These do not work with MeshRasterizerOpenGL (because it is
+    not differentiable).
     """
 
     def __init__(

@@ -7,7 +7,6 @@
 import contextlib
 import logging
 import re
-from typing import List
 
 
 @contextlib.contextmanager

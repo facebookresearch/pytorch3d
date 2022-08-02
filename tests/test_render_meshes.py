@@ -23,7 +23,6 @@ from pytorch3d.renderer import (
     look_at_view_transform,
     Materials,
     MeshRasterizer,
-    MeshRasterizerOpenGL,
     MeshRenderer,
     MeshRendererWithFragments,
     OrthographicCameras,
@@ -44,6 +43,7 @@ from pytorch3d.renderer.mesh.shader import (
     SplatterPhongShader,
     TexturedSoftPhongShader,
 )
+from pytorch3d.renderer.opengl import MeshRasterizerOpenGL
 from pytorch3d.structures.meshes import (
     join_meshes_as_batch,
     join_meshes_as_scene,

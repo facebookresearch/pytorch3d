@@ -14,7 +14,6 @@ from pytorch3d.renderer import (
     HardGouraudShader,
     Materials,
     MeshRasterizer,
-    MeshRasterizerOpenGL,
     MeshRenderer,
     PointLights,
     PointsRasterizationSettings,
@@ -26,6 +25,7 @@ from pytorch3d.renderer import (
     TexturesVertex,
 )
 from pytorch3d.renderer.cameras import FoVPerspectiveCameras, look_at_view_transform
+from pytorch3d.renderer.opengl import MeshRasterizerOpenGL
 from pytorch3d.structures import Meshes, Pointclouds
 from pytorch3d.utils.ico_sphere import ico_sphere
 

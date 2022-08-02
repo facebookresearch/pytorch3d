@@ -10,8 +10,6 @@ import torch
 import torch.nn as nn
 
 from ...structures.meshes import Meshes
-from .rasterizer import MeshRasterizer
-
 
 # A renderer class should be initialized with a
 # function for rasterization and a function for shading.
@@ -32,11 +30,11 @@ from .rasterizer import MeshRasterizer
 class MeshRenderer(nn.Module):
     """
     A class for rendering a batch of heterogeneous meshes. The class should
-    be initialized with a rasterizer and shader class which each have a forward
-    function.
+    be initialized with a rasterizer (a MeshRasterizer or a MeshRasterizerOpenGL)
+    and shader class which each have a forward function.
     """
 
-    def __init__(self, rasterizer: MeshRasterizer, shader) -> None:
+    def __init__(self, rasterizer, shader) -> None:
         super().__init__()
         self.rasterizer = rasterizer
         self.shader = shader
@@ -69,8 +67,8 @@ class MeshRenderer(nn.Module):
 class MeshRendererWithFragments(nn.Module):
     """
     A class for rendering a batch of heterogeneous meshes. The class should
-    be initialized with a rasterizer and shader class which each have a forward
-    function.
+    be initialized with a rasterizer (a MeshRasterizer or a MeshRasterizerOpenGL)
+    and shader class which each have a forward function.
 
     In the forward pass this class returns the `fragments` from which intermediate
     values such as the depth map can be easily extracted e.g.
@@ -80,7 +78,7 @@ class MeshRendererWithFragments(nn.Module):
         depth = fragments.zbuf
     """
 
-    def __init__(self, rasterizer: MeshRasterizer, shader) -> None:
+    def __init__(self, rasterizer, shader) -> None:
         super().__init__()
         self.rasterizer = rasterizer
         self.shader = shader

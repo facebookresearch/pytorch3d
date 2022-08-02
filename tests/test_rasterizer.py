@@ -15,7 +15,6 @@ from pytorch3d.renderer import (
     FoVPerspectiveCameras,
     look_at_view_transform,
     MeshRasterizer,
-    MeshRasterizerOpenGL,
     OrthographicCameras,
     PerspectiveCameras,
     PointsRasterizationSettings,
@@ -27,6 +26,7 @@ from pytorch3d.renderer.opengl.rasterizer_opengl import (
     _check_raster_settings,
     _convert_meshes_to_gl_ndc,
     _parse_and_verify_image_size,
+    MeshRasterizerOpenGL,
 )
 from pytorch3d.structures import Pointclouds
 from pytorch3d.structures.meshes import Meshes

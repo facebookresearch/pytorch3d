@@ -17,7 +17,6 @@ from pytorch3d.renderer import (
     look_at_view_transform,
     Materials,
     MeshRasterizer,
-    MeshRasterizerOpenGL,
     MeshRenderer,
     PointLights,
     RasterizationSettings,
@@ -30,6 +29,7 @@ from pytorch3d.renderer.mesh.rasterize_meshes import (
     rasterize_meshes_python,
 )
 from pytorch3d.renderer.mesh.rasterizer import Fragments
+from pytorch3d.renderer.opengl import MeshRasterizerOpenGL
 from pytorch3d.renderer.points import (
     AlphaCompositor,
     PointsRasterizationSettings,
