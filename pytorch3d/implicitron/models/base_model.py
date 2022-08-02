@@ -4,7 +4,7 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
 import torch
@@ -44,6 +44,10 @@ class ImplicitronModelBase(ReplaceableBase, torch.nn.Module):
     so we can rely on basic functionality provided to torch for model
     optimization.
     """
+
+    # The keys from `preds` (output of ImplicitronModelBase.forward) to be logged in
+    # the training loop.
+    log_vars: List[str] = field(default_factory=lambda: ["objective"])
 
     def __init__(self) -> None:
         super().__init__()

@@ -344,7 +344,7 @@ def export_scenes(
 
     # Load the previously trained model
     experiment = Experiment(config)
-    model = experiment.model_factory(force_load=True, load_model_only=True)
+    model = experiment.model_factory(force_resume=True)
     model.cuda()
     model.eval()
 

@@ -1,3 +1,24 @@
+log_vars:
+- loss_rgb_psnr_fg
+- loss_rgb_psnr
+- loss_rgb_mse
+- loss_rgb_huber
+- loss_depth_abs
+- loss_depth_abs_fg
+- loss_mask_neg_iou
+- loss_mask_bce
+- loss_mask_beta_prior
+- loss_eikonal
+- loss_density_tv
+- loss_depth_neg_penalty
+- loss_autodecoder_norm
+- loss_prev_stage_rgb_mse
+- loss_prev_stage_rgb_psnr_fg
+- loss_prev_stage_rgb_psnr
+- loss_prev_stage_mask_bce
+- objective
+- epoch
+- sec/it
 mask_images: true
 mask_depths: true
 render_image_width: 400
@@ -28,27 +49,6 @@ loss_weights:
   loss_prev_stage_rgb_mse: 1.0
   loss_mask_bce: 0.0
   loss_prev_stage_mask_bce: 0.0
-log_vars:
-- loss_rgb_psnr_fg
-- loss_rgb_psnr
-- loss_rgb_mse
-- loss_rgb_huber
-- loss_depth_abs
-- loss_depth_abs_fg
-- loss_mask_neg_iou
-- loss_mask_bce
-- loss_mask_beta_prior
-- loss_eikonal
-- loss_density_tv
-- loss_depth_neg_penalty
-- loss_autodecoder_norm
-- loss_prev_stage_rgb_mse
-- loss_prev_stage_rgb_psnr_fg
-- loss_prev_stage_rgb_psnr
-- loss_prev_stage_mask_bce
-- objective
-- epoch
-- sec/it
 global_encoder_SequenceAutodecoder_args:
   autodecoder_args:
     encoding_dim: 0

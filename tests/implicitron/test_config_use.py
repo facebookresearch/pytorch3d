@@ -90,5 +90,5 @@ class TestGenericModel(unittest.TestCase):
         remove_unused_components(instance_args)
         yaml = OmegaConf.to_yaml(instance_args, sort_keys=False)
         if DEBUG:
-            (DATA_DIR / "overrides.yaml_").write_text(yaml)
+            (DATA_DIR / "overrides_.yaml").write_text(yaml)
         self.assertEqual(yaml, (DATA_DIR / "overrides.yaml").read_text())

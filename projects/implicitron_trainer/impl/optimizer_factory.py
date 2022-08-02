@@ -60,11 +60,6 @@ class ImplicitronOptimizerFactory(OptimizerFactoryBase):
         multistep_lr_milestones: With MultiStepLR policy only: list of
             increasing epoch indices at which the learning rate is modified.
         momentum: Momentum factor for SGD optimizer.
-        resume: If True, attempt to load the last checkpoint from `exp_dir`
-            passed to __call__. Failure to do so will return a newly initialized
-            optimizer.
-        resume_epoch: If `resume` is True: Resume optimizer at this epoch. If
-            `resume_epoch` <= 0, then resume from the latest checkpoint.
         weight_decay: The optimizer weight_decay (L2 penalty on model weights).
     """
 
@@ -76,8 +71,6 @@ class ImplicitronOptimizerFactory(OptimizerFactoryBase):
     lr_policy: str = "MultiStepLR"
     momentum: float = 0.9
     multistep_lr_milestones: tuple = ()
-    resume: bool = False
-    resume_epoch: int = -1
     weight_decay: float = 0.0
 
     def __post_init__(self):
@@ -89,6 +82,8 @@ class ImplicitronOptimizerFactory(OptimizerFactoryBase):
         model: ImplicitronModelBase,
         accelerator: Optional[Accelerator] = None,
         exp_dir: Optional[str] = None,
+        resume: bool = True,
+        resume_epoch: int = -1,
         **kwargs,
     ) -> Tuple[torch.optim.Optimizer, Any]:
         """
@@ -100,7 +95,10 @@ class ImplicitronOptimizerFactory(OptimizerFactoryBase):
             model: The model with optionally loaded weights.
             accelerator: An optional Accelerator instance.
             exp_dir: Root experiment directory.
-
+            resume: If True, attempt to load optimizer checkpoint from exp_dir.
+                Failure to do so will return a newly initialized optimizer.
+            resume_epoch: If `resume` is True: Resume optimizer at this epoch. If
+                `resume_epoch` <= 0, then resume from the latest checkpoint.
         Returns:
             An optimizer module (optionally loaded from a checkpoint) and
             a learning rate scheduler module (should be a subclass of torch.optim's
@@ -131,13 +129,18 @@ class ImplicitronOptimizerFactory(OptimizerFactoryBase):
                 p_groups, lr=self.lr, betas=self.betas, weight_decay=self.weight_decay
             )
         else:
-            raise ValueError("no such solver type %s" % self.breed)
-        logger.info("  -> solver type = %s" % self.breed)
+            raise ValueError(f"No such solver type {self.breed}")
+        logger.info(f"Solver type = {self.breed}")
 
         # Load state from checkpoint
-        optimizer_state = self._get_optimizer_state(exp_dir, accelerator)
+        optimizer_state = self._get_optimizer_state(
+            exp_dir,
+            accelerator,
+            resume_epoch=resume_epoch,
+            resume=resume,
+        )
         if optimizer_state is not None:
-            logger.info("  -> setting loaded optimizer state")
+            logger.info("Setting loaded optimizer state.")
             optimizer.load_state_dict(optimizer_state)
 
         # Initialize the learning rate scheduler
@@ -169,20 +172,31 @@ class ImplicitronOptimizerFactory(OptimizerFactoryBase):
         self,
         exp_dir: Optional[str],
         accelerator: Optional[Accelerator] = None,
+        resume: bool = True,
+        resume_epoch: int = -1,
     ) -> Optional[Dict[str, Any]]:
         """
         Load an optimizer state from a checkpoint.
+
+        resume: If True, attempt to load the last checkpoint from `exp_dir`
+            passed to __call__. Failure to do so will return a newly initialized
+            optimizer.
+        resume_epoch: If `resume` is True: Resume optimizer at this epoch. If
+            `resume_epoch` <= 0, then resume from the latest checkpoint.
         """
-        if exp_dir is None or not self.resume:
+        if exp_dir is None or not resume:
             return None
-        if self.resume_epoch > 0:
-            save_path = model_io.get_checkpoint(exp_dir, self.resume_epoch)
+        if resume_epoch > 0:
+            save_path = model_io.get_checkpoint(exp_dir, resume_epoch)
+            if not os.path.isfile(save_path):
+                raise FileNotFoundError(
+                    f"Cannot find optimizer from epoch {resume_epoch}."
+                )
         else:
             save_path = model_io.find_last_checkpoint(exp_dir)
         optimizer_state = None
         if save_path is not None:
-            logger.info(f"Found previous optimizer state {save_path}.")
-            logger.info("   -> resuming")
+            logger.info(f"Found previous optimizer state {save_path} -> resuming.")
             opt_path = model_io.get_optimizer_path(save_path)
 
             if os.path.isfile(opt_path):
@@ -193,5 +207,5 @@ class ImplicitronOptimizerFactory(OptimizerFactoryBase):
                     }
                 optimizer_state = torch.load(opt_path, map_location)
             else:
-                optimizer_state = None
+                raise FileNotFoundError(f"Optimizer state {opt_path} does not exist.")
         return optimizer_state

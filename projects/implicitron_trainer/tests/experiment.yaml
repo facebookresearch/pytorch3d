@@ -124,14 +124,32 @@ data_source_ImplicitronDataSource_args:
     dataset_length_val: 0
     dataset_length_test: 0
 model_factory_ImplicitronModelFactory_args:
-  force_load: false
+  resume: true
   model_class_type: GenericModel
-  resume: false
   resume_epoch: -1
-  visdom_env: ''
-  visdom_port: 8097
-  visdom_server: http://127.0.0.1
+  force_resume: false
   model_GenericModel_args:
+    log_vars:
+    - loss_rgb_psnr_fg
+    - loss_rgb_psnr
+    - loss_rgb_mse
+    - loss_rgb_huber
+    - loss_depth_abs
+    - loss_depth_abs_fg
+    - loss_mask_neg_iou
+    - loss_mask_bce
+    - loss_mask_beta_prior
+    - loss_eikonal
+    - loss_density_tv
+    - loss_depth_neg_penalty
+    - loss_autodecoder_norm
+    - loss_prev_stage_rgb_mse
+    - loss_prev_stage_rgb_psnr_fg
+    - loss_prev_stage_rgb_psnr
+    - loss_prev_stage_mask_bce
+    - objective
+    - epoch
+    - sec/it
     mask_images: true
     mask_depths: true
     render_image_width: 400
@@ -162,27 +180,6 @@ model_factory_ImplicitronModelFactory_args:
       loss_prev_stage_rgb_mse: 1.0
       loss_mask_bce: 0.0
       loss_prev_stage_mask_bce: 0.0
-    log_vars:
-    - loss_rgb_psnr_fg
-    - loss_rgb_psnr
-    - loss_rgb_mse
-    - loss_rgb_huber
-    - loss_depth_abs
-    - loss_depth_abs_fg
-    - loss_mask_neg_iou
-    - loss_mask_bce
-    - loss_mask_beta_prior
-    - loss_eikonal
-    - loss_density_tv
-    - loss_depth_neg_penalty
-    - loss_autodecoder_norm
-    - loss_prev_stage_rgb_mse
-    - loss_prev_stage_rgb_psnr_fg
-    - loss_prev_stage_rgb_psnr
-    - loss_prev_stage_mask_bce
-    - objective
-    - epoch
-    - sec/it
     global_encoder_HarmonicTimeEncoder_args:
       n_harmonic_functions: 10
       append_input: true
@@ -422,8 +419,6 @@ optimizer_factory_ImplicitronOptimizerFactory_args:
   lr_policy: MultiStepLR
   momentum: 0.9
   multistep_lr_milestones: []
-  resume: false
-  resume_epoch: -1
   weight_decay: 0.0
 training_loop_ImplicitronTrainingLoop_args:
   eval_only: false
@@ -437,6 +432,9 @@ training_loop_ImplicitronTrainingLoop_args:
   clip_grad: 0.0
   metric_print_interval: 5
   visualize_interval: 1000
+  visdom_env: ''
+  visdom_port: 8097
+  visdom_server: http://127.0.0.1
   evaluator_ImplicitronEvaluator_args:
     camera_difficulty_bin_breaks:
     - 0.97

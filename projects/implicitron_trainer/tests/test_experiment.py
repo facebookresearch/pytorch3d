@@ -5,6 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import os
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -172,3 +173,48 @@ class TestNerfRepro(unittest.TestCase):
             experiment_runner = experiment.Experiment(**cfg)
             experiment.dump_cfg(cfg)
             experiment_runner.run()
+
+    @unittest.skip("This test checks resuming of the NeRF training.")
+    def test_nerf_blender_resume(self):
+        # Train one train batch of NeRF, then resume for one more batch.
+        # Set env vars BLENDER_DATASET_ROOT and BLENDER_SINGLESEQ_CLASS first!
+        if not interactive_testing_requested():
+            return
+        with initialize_config_dir(config_dir=str(IMPLICITRON_CONFIGS_DIR)):
+            with tempfile.TemporaryDirectory() as exp_dir:
+                cfg = compose(config_name="repro_singleseq_nerf_blender", overrides=[])
+                cfg.exp_dir = exp_dir
+
+                # set dataset len to 1
+
+                # fmt: off
+                (
+                    cfg
+                    .data_source_ImplicitronDataSource_args
+                    .data_loader_map_provider_SequenceDataLoaderMapProvider_args
+                    .dataset_length_train
+                ) = 1
+                # fmt: on
+
+                # run for one epoch
+                cfg.training_loop_ImplicitronTrainingLoop_args.max_epochs = 1
+                experiment_runner = experiment.Experiment(**cfg)
+                experiment.dump_cfg(cfg)
+                experiment_runner.run()
+
+                # update num epochs + 2, let the optimizer resume
+                cfg.training_loop_ImplicitronTrainingLoop_args.max_epochs = 3
+                experiment_runner = experiment.Experiment(**cfg)
+                experiment_runner.run()
+
+                # start from scratch
+                cfg.model_factory_ImplicitronModelFactory_args.resume = False
+                experiment_runner = experiment.Experiment(**cfg)
+                experiment_runner.run()
+
+                # force resume from epoch 1
+                cfg.model_factory_ImplicitronModelFactory_args.resume = True
+                cfg.model_factory_ImplicitronModelFactory_args.force_resume = True
+                cfg.model_factory_ImplicitronModelFactory_args.resume_epoch = 1
+                experiment_runner = experiment.Experiment(**cfg)
+                experiment_runner.run()

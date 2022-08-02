@@ -3,6 +3,7 @@ defaults:
 - _self_
 exp_dir: ./data/exps/base/
 training_loop_ImplicitronTrainingLoop_args:
+  visdom_port: 8097
   visualize_interval: 0
   max_epochs: 1000
 data_source_ImplicitronDataSource_args:
@@ -22,7 +23,6 @@ data_source_ImplicitronDataSource_args:
       mask_depths: false
       mask_images: false
 model_factory_ImplicitronModelFactory_args:
-  visdom_port: 8097
   model_GenericModel_args:
     loss_weights:
       loss_mask_bce: 1.0
