@@ -64,17 +64,11 @@ data_source_ImplicitronDataSource_args:
     dataset_class_type: JsonIndexDataset
     path_manager_factory_class_type: PathManagerFactory
     dataset_JsonIndexDataset_args:
-      path_manager: null
-      frame_annotations_file: ''
-      sequence_annotations_file: ''
-      subset_lists_file: ''
-      subsets: null
       limit_to: 0
       limit_sequences_to: 0
       pick_sequence: []
       exclude_sequence: []
       limit_category_to: []
-      dataset_root: ''
       load_images: true
       load_depths: true
       load_depth_masks: true
@@ -92,7 +86,6 @@ data_source_ImplicitronDataSource_args:
       n_frames_per_sequence: -1
       seed: 0
       sort_frames: false
-      eval_batches: null
     path_manager_factory_PathManagerFactory_args:
       silence_logs: true
   dataset_map_provider_LlffDatasetMapProvider_args:

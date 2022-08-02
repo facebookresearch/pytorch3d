@@ -9,7 +9,7 @@ import json
 import logging
 import os
 import warnings
-from typing import Dict, List, Optional, Type
+from typing import Dict, List, Optional, Tuple, Type
 
 from omegaconf import DictConfig, open_dict
 from pytorch3d.implicitron.dataset.dataset_map_provider import (
@@ -30,6 +30,19 @@ from pytorch3d.renderer.cameras import CamerasBase
 
 _CO3DV2_DATASET_ROOT: str = os.getenv("CO3DV2_DATASET_ROOT", "")
 
+# _NEED_CONTROL is a list of those elements of JsonIndexDataset which
+# are not directly specified for it in the config but come from the
+# DatasetMapProvider.
+_NEED_CONTROL: Tuple[str, ...] = (
+    "dataset_root",
+    "eval_batches",
+    "eval_batch_index",
+    "path_manager",
+    "subsets",
+    "frame_annotations_file",
+    "sequence_annotations_file",
+    "subset_lists_file",
+)
 
 logger = logging.getLogger(__name__)
 
@@ -289,7 +302,8 @@ class JsonIndexDatasetMapProviderV2(DatasetMapProviderBase):  # pyre-ignore [13]
         not expose certain fields of each dataset class.
         """
         with open_dict(args):
-            del args["eval_batch_index"]
+            for key in _NEED_CONTROL:
+                del args[key]
 
     def create_dataset(self):
         # The dataset object is created inside `self.get_dataset_map`
