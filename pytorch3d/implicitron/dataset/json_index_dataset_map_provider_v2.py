@@ -11,7 +11,7 @@ import os
 import warnings
 from typing import Dict, List, Optional, Tuple, Type
 
-from omegaconf import DictConfig, open_dict
+from omegaconf import DictConfig
 from pytorch3d.implicitron.dataset.dataset_map_provider import (
     DatasetMap,
     DatasetMapProviderBase,

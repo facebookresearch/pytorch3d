@@ -56,10 +56,6 @@ global_encoder_SequenceAutodecoder_args:
     init_scale: 1.0
     ignore_input: false
 raysampler_AdaptiveRaySampler_args:
-  image_width: 400
-  image_height: 400
-  sampling_mode_training: mask_sample
-  sampling_mode_evaluation: full_grid
   n_pts_per_ray_training: 64
   n_pts_per_ray_evaluation: 64
   n_rays_per_image_sampled_from_mask: 1024

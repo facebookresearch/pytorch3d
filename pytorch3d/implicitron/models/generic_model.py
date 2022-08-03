@@ -16,6 +16,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
 import tqdm
+from omegaconf import DictConfig
 from pytorch3d.implicitron.models.metrics import (
     RegularizationMetricsBase,
     ViewMetricsBase,
@@ -27,7 +28,7 @@ from pytorch3d.implicitron.tools.config import (
     run_auto_creation,
 )
 from pytorch3d.implicitron.tools.rasterize_mc import rasterize_mc_samples
-from pytorch3d.implicitron.tools.utils import cat_dataclass, setattr_if_hasattr
+from pytorch3d.implicitron.tools.utils import cat_dataclass
 from pytorch3d.renderer import RayBundle, utils as rend_utils
 from pytorch3d.renderer.cameras import CamerasBase
 from visdom import Visdom
@@ -615,20 +616,29 @@ class GenericModel(ImplicitronModelBase):  # pyre-ignore: 13
             self.image_feature_extractor.get_feat_dims()
         )
 
+    @classmethod
+    def raysampler_tweak_args(cls, type, args: DictConfig) -> None:
+        """
+        We don't expose certain fields of the raysampler because we want to set
+        them from our own members.
+        """
+        del args["sampling_mode_training"]
+        del args["sampling_mode_evaluation"]
+        del args["image_width"]
+        del args["image_height"]
+
     def create_raysampler(self):
+        extra_args = {
+            "sampling_mode_training": self.sampling_mode_training,
+            "sampling_mode_evaluation": self.sampling_mode_evaluation,
+            "image_width": self.render_image_width,
+            "image_height": self.render_image_height,
+        }
         raysampler_args = getattr(
             self, "raysampler_" + self.raysampler_class_type + "_args"
         )
-        setattr_if_hasattr(
-            raysampler_args, "sampling_mode_training", self.sampling_mode_training
-        )
-        setattr_if_hasattr(
-            raysampler_args, "sampling_mode_evaluation", self.sampling_mode_evaluation
-        )
-        setattr_if_hasattr(raysampler_args, "image_width", self.render_image_width)
-        setattr_if_hasattr(raysampler_args, "image_height", self.render_image_height)
         self.raysampler = registry.get(RaySamplerBase, self.raysampler_class_type)(
-            **raysampler_args
+            **raysampler_args, **extra_args
         )
 
     def create_renderer(self):
