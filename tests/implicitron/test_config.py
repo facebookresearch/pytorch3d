@@ -691,11 +691,16 @@ class TestConfig(unittest.TestCase):
             fruit2_class_type: str = "Pear"
             a: A
             a2: A
+            a3: A
 
             @classmethod
             def a_tweak_args(cls, type, args):
                 assert type == A
                 args.n = 993
+
+            @classmethod
+            def a3_tweak_args(cls, type, args):
+                del args["n"]
 
             @classmethod
             def fruit_tweak_args(cls, type, args):
@@ -707,6 +712,7 @@ class TestConfig(unittest.TestCase):
         args = get_default_args(Wrapper)
         self.assertEqual(args.a_args.n, 993)
         self.assertEqual(args.a2_args.n, 9)
+        self.assertEqual(args.a3_args, {})
         self.assertEqual(args.fruit_Pear_args.n_pips, 19)
         self.assertEqual(args.fruit2_Pear_args.n_pips, 13)
 

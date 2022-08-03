@@ -881,7 +881,8 @@ def get_default_args_field(
     def create():
         args = get_default_args(C, _do_not_process=_do_not_process)
         if _hook is not None:
-            _hook(args)
+            with open_dict(args):
+                _hook(args)
         return args
 
     return dataclasses.field(default_factory=create)
@@ -915,7 +916,8 @@ def _get_default_args_field_from_registry(
         C = registry.get(base_class_wanted=base_class_wanted, name=name)
         args = get_default_args(C, _do_not_process=_do_not_process)
         if _hook is not None:
-            _hook(args)
+            with open_dict(args):
+                _hook(args)
         return args
 
     return dataclasses.field(default_factory=create)

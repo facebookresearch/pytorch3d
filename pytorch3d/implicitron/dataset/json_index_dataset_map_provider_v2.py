@@ -300,9 +300,8 @@ class JsonIndexDatasetMapProviderV2(DatasetMapProviderBase):  # pyre-ignore [13]
         Called by get_default_args(JsonIndexDatasetMapProviderV2) to
         not expose certain fields of each dataset class.
         """
-        with open_dict(args):
-            for key in _NEED_CONTROL:
-                del args[key]
+        for key in _NEED_CONTROL:
+            del args[key]
 
     def create_dataset(self):
         # The dataset object is created inside `self.get_dataset_map`
