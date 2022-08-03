@@ -55,9 +55,10 @@ class TestSRN(TestCaseMixin, unittest.TestCase):
     def test_srn_hypernet_implicit_function(self):
         # TODO investigate: If latent_dim_hypernet=0, why does this crash and dump core?
         latent_dim_hypernet = 39
-        hypernet_args = {"latent_dim_hypernet": latent_dim_hypernet}
         device = torch.device("cuda:0")
-        implicit_function = SRNHyperNetImplicitFunction(hypernet_args=hypernet_args)
+        implicit_function = SRNHyperNetImplicitFunction(
+            latent_dim_hypernet=latent_dim_hypernet
+        )
         implicit_function.to(device)
         global_code = torch.rand(_BATCH_SIZE, latent_dim_hypernet, device=device)
         bundle = self._get_bundle(device=device)

@@ -43,7 +43,6 @@ model_factory_ImplicitronModelFactory_args:
       n_layers_xyz: 8
       append_xyz:
       - 5
-      latent_dim: 0
     raysampler_AdaptiveRaySampler_args:
       n_rays_per_image_sampled_from_mask: 1024
       scene_extent: 8.0

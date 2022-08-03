@@ -4,6 +4,7 @@
 from typing import Any, cast, Optional, Tuple
 
 import torch
+from omegaconf import DictConfig
 from pytorch3d.common.linear_with_repeat import LinearWithRepeat
 from pytorch3d.implicitron.third_party import hyperlayers, pytorch_prototyping
 from pytorch3d.implicitron.tools.config import Configurable, registry, run_auto_creation
@@ -327,12 +328,24 @@ class SRNRaymarchHyperNet(Configurable, torch.nn.Module):
 @registry.register
 # pyre-fixme[13]: Uninitialized attribute
 class SRNImplicitFunction(ImplicitFunctionBase, torch.nn.Module):
+    latent_dim: int = 0
     raymarch_function: SRNRaymarchFunction
     pixel_generator: SRNPixelGenerator
 
     def __post_init__(self):
         super().__init__()
         run_auto_creation(self)
+
+    def create_raymarch_function(self) -> None:
+        self.raymarch_function = SRNRaymarchFunction(
+            latent_dim=self.latent_dim,
+            # pyre-ignore[32]
+            **self.raymarch_function_args,
+        )
+
+    @classmethod
+    def raymarch_function_tweak_args(cls, type, args: DictConfig) -> None:
+        args.pop("latent_dim", None)
 
     def forward(
         self,
@@ -371,12 +384,27 @@ class SRNHyperNetImplicitFunction(ImplicitFunctionBase, torch.nn.Module):
     the cache.
     """
 
+    latent_dim_hypernet: int = 0
+    latent_dim: int = 0
     hypernet: SRNRaymarchHyperNet
     pixel_generator: SRNPixelGenerator
 
     def __post_init__(self):
         super().__init__()
         run_auto_creation(self)
+
+    def create_hypernet(self) -> None:
+        self.hypernet = SRNRaymarchHyperNet(
+            latent_dim=self.latent_dim,
+            latent_dim_hypernet=self.latent_dim_hypernet,
+            # pyre-ignore[32]
+            **self.hypernet_args,
+        )
+
+    @classmethod
+    def hypernet_tweak_args(cls, type, args: DictConfig) -> None:
+        args.pop("latent_dim", None)
+        args.pop("latent_dim_hypernet", None)
 
     def forward(
         self,

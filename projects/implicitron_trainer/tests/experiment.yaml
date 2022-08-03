@@ -313,7 +313,6 @@ model_factory_ImplicitronModelFactory_args:
         - AVG
         - STD
     implicit_function_IdrFeatureField_args:
-      feature_vector_size: 3
       d_in: 3
       d_out: 1
       dims:
@@ -331,15 +330,12 @@ model_factory_ImplicitronModelFactory_args:
       weight_norm: true
       n_harmonic_functions_xyz: 0
       pooled_feature_dim: 0
-      encoding_dim: 0
     implicit_function_NeRFormerImplicitFunction_args:
       n_harmonic_functions_xyz: 10
       n_harmonic_functions_dir: 4
       n_hidden_neurons_dir: 128
-      latent_dim: 0
       input_xyz: true
       xyz_ray_dir_in_camera_coords: false
-      color_dim: 3
       transformer_dim_down_factor: 2.0
       n_hidden_neurons_xyz: 80
       n_layers_xyz: 2
@@ -349,10 +345,8 @@ model_factory_ImplicitronModelFactory_args:
       n_harmonic_functions_xyz: 10
       n_harmonic_functions_dir: 4
       n_hidden_neurons_dir: 128
-      latent_dim: 0
       input_xyz: true
       xyz_ray_dir_in_camera_coords: false
-      color_dim: 3
       transformer_dim_down_factor: 1.0
       n_hidden_neurons_xyz: 256
       n_layers_xyz: 8
@@ -367,8 +361,6 @@ model_factory_ImplicitronModelFactory_args:
         n_layers_hypernet: 1
         in_features: 3
         out_features: 256
-        latent_dim_hypernet: 0
-        latent_dim: 0
         xyz_in_camera_coords: false
       pixel_generator_args:
         n_harmonic_functions: 4
@@ -385,7 +377,6 @@ model_factory_ImplicitronModelFactory_args:
         n_layers: 2
         in_features: 3
         out_features: 256
-        latent_dim: 0
         xyz_in_camera_coords: false
         raymarch_function: null
       pixel_generator_args:

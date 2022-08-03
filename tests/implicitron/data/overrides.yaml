@@ -103,7 +103,6 @@ view_pooler_args:
     weight_by_ray_angle_gamma: 1.0
     min_ray_angle_weight: 0.1
 implicit_function_IdrFeatureField_args:
-  feature_vector_size: 3
   d_in: 3
   d_out: 1
   dims:
@@ -121,6 +120,5 @@ implicit_function_IdrFeatureField_args:
   weight_norm: true
   n_harmonic_functions_xyz: 1729
   pooled_feature_dim: 0
-  encoding_dim: 0
 view_metrics_ViewMetrics_args: {}
 regularization_metrics_RegularizationMetrics_args: {}

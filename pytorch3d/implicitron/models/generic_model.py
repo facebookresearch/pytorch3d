@@ -677,6 +677,18 @@ class GenericModel(ImplicitronModelBase):  # pyre-ignore: 13
         """
         pass
 
+    @classmethod
+    def implicit_function_tweak_args(cls, type, args: DictConfig) -> None:
+        """
+        We don't expose certain implicit_function fields because we want to set
+        them based on other inputs.
+        """
+        args.pop("feature_vector_size", None)
+        args.pop("encoding_dim", None)
+        args.pop("latent_dim", None)
+        args.pop("latent_dim_hypernet", None)
+        args.pop("color_dim", None)
+
     def _construct_implicit_functions(self):
         """
         After run_auto_creation has been called, the arguments
@@ -686,32 +698,31 @@ class GenericModel(ImplicitronModelBase):  # pyre-ignore: 13
         implicit function method. Then the required implicit
         function(s) are initialized.
         """
-        # nerf preprocessing
-        nerf_args = self.implicit_function_NeuralRadianceFieldImplicitFunction_args
-        nerformer_args = self.implicit_function_NeRFormerImplicitFunction_args
-        nerf_args["latent_dim"] = nerformer_args["latent_dim"] = (
-            self._get_viewpooled_feature_dim() + self._get_global_encoder_encoding_dim()
-        )
-        nerf_args["color_dim"] = nerformer_args[
-            "color_dim"
-        ] = self.render_features_dimensions
+        extra_args = {}
+        if self.implicit_function_class_type in (
+            "NeuralRadianceFieldImplicitFunction",
+            "NeRFormerImplicitFunction",
+        ):
+            extra_args["latent_dim"] = (
+                self._get_viewpooled_feature_dim()
+                + self._get_global_encoder_encoding_dim()
+            )
+            extra_args["color_dim"] = self.render_features_dimensions
 
-        # idr preprocessing
-        idr = self.implicit_function_IdrFeatureField_args
-        idr["feature_vector_size"] = self.render_features_dimensions
-        idr["encoding_dim"] = self._get_global_encoder_encoding_dim()
+        if self.implicit_function_class_type == "IdrFeatureField":
+            extra_args["feature_vector_size"] = self.render_features_dimensions
+            extra_args["encoding_dim"] = self._get_global_encoder_encoding_dim()
 
-        # srn preprocessing
-        srn = self.implicit_function_SRNImplicitFunction_args
-        srn.raymarch_function_args.latent_dim = (
-            self._get_viewpooled_feature_dim() + self._get_global_encoder_encoding_dim()
-        )
+        if self.implicit_function_class_type == "SRNImplicitFunction":
+            extra_args["latent_dim"] = (
+                self._get_viewpooled_feature_dim()
+                + self._get_global_encoder_encoding_dim()
+            )
 
         # srn_hypernet preprocessing
-        srn_hypernet = self.implicit_function_SRNHyperNetImplicitFunction_args
-        srn_hypernet_args = srn_hypernet.hypernet_args
-        srn_hypernet_args.latent_dim_hypernet = self._get_global_encoder_encoding_dim()
-        srn_hypernet_args.latent_dim = self._get_viewpooled_feature_dim()
+        if self.implicit_function_class_type == "SRNHyperNetImplicitFunction":
+            extra_args["latent_dim"] = self._get_viewpooled_feature_dim()
+            extra_args["latent_dim_hypernet"] = self._get_global_encoder_encoding_dim()
 
         # check that for srn, srn_hypernet, idr we have self.num_passes=1
         implicit_function_type = registry.get(
@@ -734,7 +745,7 @@ class GenericModel(ImplicitronModelBase):  # pyre-ignore: 13
         if config is None:
             raise ValueError(f"{config_name} not present")
         implicit_functions_list = [
-            ImplicitFunctionWrapper(implicit_function_type(**config))
+            ImplicitFunctionWrapper(implicit_function_type(**config, **extra_args))
             for _ in range(self.num_passes)
         ]
         return torch.nn.ModuleList(implicit_functions_list)
