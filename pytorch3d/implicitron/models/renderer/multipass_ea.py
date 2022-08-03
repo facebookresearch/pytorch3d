@@ -53,10 +53,12 @@ class MultiPassEmissionAbsorptionRenderer(  # pyre-ignore: 13
             fine rendering pass during training.
         n_pts_per_ray_fine_evaluation: The number of points sampled per ray for the
             fine rendering pass during evaluation.
-        stratified_sampling_coarse_training: Enable/disable stratified sampling during
-            training.
-        stratified_sampling_coarse_evaluation: Enable/disable stratified sampling during
-            evaluation.
+        stratified_sampling_coarse_training: Enable/disable stratified sampling in the
+            refiner during training. Only matters if there are multiple implicit
+            functions (i.e. in GenericModel if num_passes>1).
+        stratified_sampling_coarse_evaluation: Enable/disable stratified sampling in
+            the refiner during evaluation. Only matters if there are multiple implicit
+            functions (i.e. in GenericModel if num_passes>1).
         append_coarse_samples_to_fine: Add the fine ray points to the coarse points
             after sampling.
         density_noise_std_train: Standard deviation of the noise added to the

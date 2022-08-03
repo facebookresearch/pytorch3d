@@ -36,7 +36,6 @@ model_factory_ImplicitronModelFactory_args:
         line_step_iters: 3
         n_secant_steps: 8
         n_steps: 100
-        object_bounding_sphere: 8.0
         sdf_threshold: 5.0e-05
       ray_normal_coloring_network_args:
         d_in: 9

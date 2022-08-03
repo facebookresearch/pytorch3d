@@ -241,15 +241,6 @@ model_factory_ImplicitronModelFactory_args:
         density_relu: true
         blend_output: false
     renderer_SignedDistanceFunctionRenderer_args:
-      render_features_dimensions: 3
-      ray_tracer_args:
-        object_bounding_sphere: 1.0
-        sdf_threshold: 5.0e-05
-        line_search_step: 0.5
-        line_step_iters: 1
-        sphere_tracing_iters: 10
-        n_steps: 100
-        n_secant_steps: 8
       ray_normal_coloring_network_args:
         feature_vector_size: 3
         mode: idr
@@ -266,6 +257,13 @@ model_factory_ImplicitronModelFactory_args:
       bg_color:
       - 0.0
       soft_mask_alpha: 50.0
+      ray_tracer_args:
+        sdf_threshold: 5.0e-05
+        line_search_step: 0.5
+        line_step_iters: 1
+        sphere_tracing_iters: 10
+        n_steps: 100
+        n_secant_steps: 8
     image_feature_extractor_ResNetFeatureExtractor_args:
       name: resnet34
       pretrained: true

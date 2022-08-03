@@ -641,35 +641,32 @@ class GenericModel(ImplicitronModelBase):  # pyre-ignore: 13
             **raysampler_args, **extra_args
         )
 
+    @classmethod
+    def renderer_tweak_args(cls, type, args: DictConfig) -> None:
+        """
+        We don't expose certain fields of the renderer because we want to set
+        them based on other inputs.
+        """
+        args.pop("render_features_dimensions", None)
+        args.pop("object_bounding_sphere", None)
+
     def create_renderer(self):
-        raysampler_args = getattr(
-            self, "raysampler_" + self.raysampler_class_type + "_args"
-        )
-        self.renderer_MultiPassEmissionAbsorptionRenderer_args[
-            "stratified_sampling_coarse_training"
-        ] = raysampler_args["stratified_point_sampling_training"]
-        self.renderer_MultiPassEmissionAbsorptionRenderer_args[
-            "stratified_sampling_coarse_evaluation"
-        ] = raysampler_args["stratified_point_sampling_evaluation"]
-        self.renderer_SignedDistanceFunctionRenderer_args[
-            "render_features_dimensions"
-        ] = self.render_features_dimensions
+        extra_args = {}
 
         if self.renderer_class_type == "SignedDistanceFunctionRenderer":
-            if "scene_extent" not in raysampler_args:
+            extra_args["render_features_dimensions"] = self.render_features_dimensions
+            if not hasattr(self.raysampler, "scene_extent"):
                 raise ValueError(
                     "SignedDistanceFunctionRenderer requires"
                     + " a raysampler that defines the 'scene_extent' field"
                     + " (this field is supported by, e.g., the adaptive raysampler - "
                     + " self.raysampler_class_type='AdaptiveRaySampler')."
                 )
-            self.renderer_SignedDistanceFunctionRenderer_args.ray_tracer_args[
-                "object_bounding_sphere"
-            ] = self.raysampler_AdaptiveRaySampler_args["scene_extent"]
+            extra_args["object_bounding_sphere"] = self.raysampler.scene_extent
 
         renderer_args = getattr(self, "renderer_" + self.renderer_class_type + "_args")
         self.renderer = registry.get(BaseRenderer, self.renderer_class_type)(
-            **renderer_args
+            **renderer_args, **extra_args
         )
 
     def create_implicit_function(self) -> None:

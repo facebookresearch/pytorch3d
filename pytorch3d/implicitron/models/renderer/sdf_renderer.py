@@ -8,7 +8,11 @@ from typing import List, Optional, Tuple
 
 import torch
 from omegaconf import DictConfig
-from pytorch3d.implicitron.tools.config import get_default_args_field, registry
+from pytorch3d.implicitron.tools.config import (
+    get_default_args_field,
+    registry,
+    run_auto_creation,
+)
 from pytorch3d.implicitron.tools.utils import evaluating
 from pytorch3d.renderer import RayBundle
 
@@ -18,9 +22,10 @@ from .rgb_net import RayNormalColoringNetwork
 
 
 @registry.register
-class SignedDistanceFunctionRenderer(BaseRenderer, torch.nn.Module):
+class SignedDistanceFunctionRenderer(BaseRenderer, torch.nn.Module):  # pyre-ignore[13]
     render_features_dimensions: int = 3
-    ray_tracer_args: DictConfig = get_default_args_field(RayTracing)
+    object_bounding_sphere: float = 1.0
+    ray_tracer: RayTracing
     ray_normal_coloring_network_args: DictConfig = get_default_args_field(
         RayNormalColoringNetwork
     )
@@ -37,8 +42,7 @@ class SignedDistanceFunctionRenderer(BaseRenderer, torch.nn.Module):
                 f"Background color should have {render_features_dimensions} entries."
             )
 
-        self.ray_tracer = RayTracing(**self.ray_tracer_args)
-        self.object_bounding_sphere = self.ray_tracer_args.get("object_bounding_sphere")
+        run_auto_creation(self)
 
         self.ray_normal_coloring_network_args[
             "feature_vector_size"
@@ -48,6 +52,17 @@ class SignedDistanceFunctionRenderer(BaseRenderer, torch.nn.Module):
         )
 
         self.register_buffer("_bg_color", torch.tensor(self.bg_color), persistent=False)
+
+    @classmethod
+    def ray_tracer_tweak_args(cls, type, args: DictConfig) -> None:
+        del args["object_bounding_sphere"]
+
+    def create_ray_tracer(self) -> None:
+        self.ray_tracer = RayTracing(
+            # pyre-ignore[32]
+            **self.ray_tracer_args,
+            object_bounding_sphere=self.object_bounding_sphere,
+        )
 
     def requires_object_mask(self) -> bool:
         return True
@@ -97,7 +112,6 @@ class SignedDistanceFunctionRenderer(BaseRenderer, torch.nn.Module):
         object_mask = object_mask.reshape(batch_size, -1)
 
         with torch.no_grad(), evaluating(implicit_function):
-            # pyre-fixme[29]: `Union[torch.Tensor, torch.nn.Module]` is not a function.
             points, network_object_mask, dists = self.ray_tracer(
                 sdf=lambda x: implicit_function(x)[
                     :, 0
@@ -128,7 +142,6 @@ class SignedDistanceFunctionRenderer(BaseRenderer, torch.nn.Module):
             N = surface_points.shape[0]
 
             # Sample points for the eikonal loss
-            # pyre-fixme[9]
             eik_bounding_box: float = self.object_bounding_sphere
             n_eik_points = batch_size * num_pixels // 2
             eikonal_points = torch.empty(
