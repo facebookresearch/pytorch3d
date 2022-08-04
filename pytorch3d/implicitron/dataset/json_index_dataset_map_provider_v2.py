@@ -191,15 +191,17 @@ class JsonIndexDatasetMapProviderV2(DatasetMapProviderBase):  # pyre-ignore [13]
 
         if path_manager is not None:
             path_managed_frame_file = path_manager.get_local_path(frame_file)
-            if not os.path.isfile(path_managed_frame_file):
-                # The frame_file does not exist.
-                # Most probably the user has not specified the root folder.
-                raise ValueError(
-                    f"Looking for frame annotations in {path_managed_frame_file}."
-                    + " Please specify a correct dataset_root folder."
-                    + " Note: By default the root folder is taken from the"
-                    + " CO3DV2_DATASET_ROOT environment variable."
-                )
+        else:
+            path_managed_frame_file = frame_file
+        if not os.path.isfile(path_managed_frame_file):
+            # The frame_file does not exist.
+            # Most probably the user has not specified the root folder.
+            raise ValueError(
+                f"Looking for frame annotations in {path_managed_frame_file}."
+                + " Please specify a correct dataset_root folder."
+                + " Note: By default the root folder is taken from the"
+                + " CO3DV2_DATASET_ROOT environment variable."
+            )
 
         # setup the common dataset arguments
         common_dataset_kwargs = getattr(self, f"dataset_{self.dataset_class_type}_args")
