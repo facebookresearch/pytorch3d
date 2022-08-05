@@ -24,15 +24,16 @@ class Autodecoder(Configurable, torch.nn.Module):
     """
 
     encoding_dim: int = 0
-    n_instances: int = 0
+    n_instances: int = 1
     init_scale: float = 1.0
     ignore_input: bool = False
 
     def __post_init__(self):
         super().__init__()
+
         if self.n_instances <= 0:
-            # Do not init the codes at all in case we have 0 instances.
-            return
+            raise ValueError(f"Invalid n_instances {self.n_instances}")
+
         self._autodecoder_codes = torch.nn.Embedding(
             self.n_instances,
             self.encoding_dim,
@@ -70,13 +71,9 @@ class Autodecoder(Configurable, torch.nn.Module):
         return key_map
 
     def calculate_squared_encoding_norm(self) -> Optional[torch.Tensor]:
-        if self.n_instances <= 0:
-            return None
         return (self._autodecoder_codes.weight**2).mean()  # pyre-ignore[16]
 
     def get_encoding_dim(self) -> int:
-        if self.n_instances <= 0:
-            return 0
         return self.encoding_dim
 
     def forward(self, x: Union[torch.LongTensor, List[str]]) -> Optional[torch.Tensor]:
@@ -90,9 +87,6 @@ class Autodecoder(Configurable, torch.nn.Module):
             codes: A tensor of shape `(N, self.encoding_dim)` containing the
                 key-specific autodecoder codes.
         """
-        if self.n_instances == 0:
-            return None
-
         if self.ignore_input:
             x = ["singleton"]
 

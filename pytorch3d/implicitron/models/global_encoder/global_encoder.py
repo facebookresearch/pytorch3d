@@ -42,7 +42,13 @@ class GlobalEncoderBase(ReplaceableBase):
         """
         raise NotImplementedError()
 
-    def forward(self, **kwargs) -> torch.Tensor:
+    def forward(
+        self,
+        *,
+        frame_timestamp: Optional[torch.Tensor] = None,
+        sequence_name: Optional[Union[torch.LongTensor, List[str]]] = None,
+        **kwargs,
+    ) -> torch.Tensor:
         """
         Given a set of inputs to encode, generates a tensor containing the encoding.
 
@@ -70,9 +76,14 @@ class SequenceAutodecoder(GlobalEncoderBase, torch.nn.Module):  # pyre-ignore: 1
         return self.autodecoder.get_encoding_dim()
 
     def forward(
-        self, sequence_name: Union[torch.LongTensor, List[str]], **kwargs
+        self,
+        *,
+        frame_timestamp: Optional[torch.Tensor] = None,
+        sequence_name: Optional[Union[torch.LongTensor, List[str]]] = None,
+        **kwargs,
     ) -> torch.Tensor:
-
+        if sequence_name is None:
+            raise ValueError("sequence_name must be provided.")
         # run dtype checks and pass sequence_name to self.autodecoder
         return self.autodecoder(sequence_name)
 
@@ -101,7 +112,15 @@ class HarmonicTimeEncoder(GlobalEncoderBase, torch.nn.Module):
     def get_encoding_dim(self):
         return self._harmonic_embedding.get_output_dim(1)
 
-    def forward(self, frame_timestamp: torch.Tensor, **kwargs) -> torch.Tensor:
+    def forward(
+        self,
+        *,
+        frame_timestamp: Optional[torch.Tensor] = None,
+        sequence_name: Optional[Union[torch.LongTensor, List[str]]] = None,
+        **kwargs,
+    ) -> torch.Tensor:
+        if frame_timestamp is None:
+            raise ValueError("frame_timestamp must be provided.")
         if frame_timestamp.shape[-1] != 1:
             raise ValueError("Frame timestamp's last dimensions should be one.")
         time = frame_timestamp / self.time_divisor

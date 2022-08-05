@@ -187,7 +187,7 @@ model_factory_ImplicitronModelFactory_args:
     global_encoder_SequenceAutodecoder_args:
       autodecoder_args:
         encoding_dim: 0
-        n_instances: 0
+        n_instances: 1
         init_scale: 1.0
         ignore_input: false
     raysampler_AdaptiveRaySampler_args:
