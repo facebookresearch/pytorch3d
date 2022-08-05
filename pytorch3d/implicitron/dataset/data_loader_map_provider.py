@@ -199,7 +199,7 @@ class DoublePoolBatchSampler(Sampler[List[int]]):
                 torch.randperm(len(self.first_indices), generator=self.generator)
                 for _ in range(n_copies)
             ]
-            i_first = torch.concat(raw_indices)[:num_batches]
+            i_first = torch.cat(raw_indices)[:num_batches]
         else:
             i_first = torch.randperm(len(self.first_indices), generator=self.generator)
         first_indices = [self.first_indices[i] for i in i_first]

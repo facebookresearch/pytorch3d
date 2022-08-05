@@ -24,7 +24,7 @@ from typing import (
     Sequence,
     Tuple,
     Type,
-    TypedDict,
+    TYPE_CHECKING,
     Union,
 )
 
@@ -45,9 +45,15 @@ from .utils import is_known_frame_scalar
 logger = logging.getLogger(__name__)
 
 
-class FrameAnnotsEntry(TypedDict):
-    subset: Optional[str]
-    frame_annotation: types.FrameAnnotation
+if TYPE_CHECKING:
+    from typing import TypedDict
+
+    class FrameAnnotsEntry(TypedDict):
+        subset: Optional[str]
+        frame_annotation: types.FrameAnnotation
+
+else:
+    FrameAnnotsEntry = dict
 
 
 @registry.register
