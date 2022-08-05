@@ -147,7 +147,9 @@ class GenericModel(ImplicitronModelBase):  # pyre-ignore: 13
             thresholded by this value before being applied to the RGB/Depth images
         output_rasterized_mc: If True, visualize the Monte-Carlo pixel renders by
             splatting onto an image grid. Default: False.
-        bg_color: RGB values for the background color. Default (0.0, 0.0, 0.0)
+        bg_color: RGB values for setting the background color of input image
+            if mask_images=True. Defaults to (0.0, 0.0, 0.0). Each renderer has its own
+            way to determine the background color of its output, unrelated to this.
         num_passes: The specified implicit_function is initialized num_passes
             times and run sequentially.
         chunk_size_grid: The total number of points which can be rendered
