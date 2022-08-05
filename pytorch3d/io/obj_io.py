@@ -215,8 +215,6 @@ def load_obj(
     """
     data_dir = "./"
     if isinstance(f, (str, bytes, Path)):
-        # pyre-fixme[6]: For 1st param expected `PathLike[Variable[AnyStr <: [str,
-        #  bytes]]]` but got `Union[Path, bytes, str]`.
         data_dir = os.path.dirname(f)
     if path_manager is None:
         path_manager = PathManager()
