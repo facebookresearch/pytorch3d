@@ -294,7 +294,7 @@ def _local_path(path_manager, path):
 
 def _ls(path_manager, path):
     if path_manager is None:
-        return os.path.listdir(path)
+        return os.listdir(path)
     return path_manager.ls(path)
 
 
