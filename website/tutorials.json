@@ -37,5 +37,14 @@
           "id": "dataloaders_ShapeNetCore_R2N2",
           "title": "Data loaders for ShapeNetCore and R2N2"
        }
-    ]
- }
+    ],
+    "Implicitron": [
+      {
+         "id": "implicitron_volumes",
+         "title": "Training a custom volumes function with implicitron"
+      }, {
+         "id": "implicitron_config_system",
+         "title": "Implicitron config system deep dive"
+      }
+   ]
+}
