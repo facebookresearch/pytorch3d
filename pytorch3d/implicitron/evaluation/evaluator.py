@@ -115,7 +115,9 @@ class ImplicitronEvaluator(EvaluatorBase):
                         implicitron_render,
                         bg_color="black",
                         lpips_model=lpips_model,
-                        source_cameras=all_train_cameras,
+                        source_cameras=(  # None will make it use batch’s known cameras
+                            None if self.is_multisequence else all_train_cameras
+                        ),
                     )
                 )
 
