@@ -8,6 +8,7 @@
 import glob
 import os
 import runpy
+import sys
 import warnings
 from typing import List, Optional
 
@@ -35,6 +36,13 @@ def get_existing_ccbin(nvcc_args: List[str]) -> Optional[str]:
 
 
 def get_extensions():
+    no_extension = os.getenv("PYTORCH3D_NO_EXTENSION", "0") == "1"
+    if no_extension:
+        msg = "SKIPPING EXTENSION BUILD. PYTORCH3D WILL NOT WORK!"
+        print(msg, file=sys.stderr)
+        warnings.warn(msg)
+        return []
+
     this_dir = os.path.dirname(os.path.abspath(__file__))
     extensions_dir = os.path.join(this_dir, "pytorch3d", "csrc")
     sources = glob.glob(os.path.join(extensions_dir, "**", "*.cpp"), recursive=True)
@@ -46,7 +54,10 @@ def get_extensions():
     include_dirs = [extensions_dir]
 
     force_cuda = os.getenv("FORCE_CUDA", "0") == "1"
-    if (torch.cuda.is_available() and CUDA_HOME is not None) or force_cuda:
+    force_no_cuda = os.getenv("PYTORCH3D_FORCE_NO_CUDA", "0") == "1"
+    if (
+        not force_no_cuda and torch.cuda.is_available() and CUDA_HOME is not None
+    ) or force_cuda:
         extension = CUDAExtension
         sources += source_cuda
         define_macros += [("WITH_CUDA", None)]
