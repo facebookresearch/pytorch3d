@@ -323,7 +323,6 @@ def random_quaternions(
     """
     if isinstance(device, str):
         device = torch.device(device)
-    # pyre-fixme[6]: For 2nd param expected `dtype` but got `Optional[dtype]`.
     o = torch.randn((n, 4), dtype=dtype, device=device)
     s = (o * o).sum(1)
     o = o / _copysign(torch.sqrt(s), o[:, 0])[:, None]
