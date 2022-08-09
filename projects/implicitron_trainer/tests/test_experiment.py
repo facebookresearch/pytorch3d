@@ -162,7 +162,7 @@ class TestExperiment(unittest.TestCase):
 
 
 class TestNerfRepro(unittest.TestCase):
-    @unittest.skip("This runs full NeRF training on Blender data.")
+    @unittest.skip("This test runs full blender training.")
     def test_nerf_blender(self):
         # Train vanilla NERF.
         # Set env vars BLENDER_DATASET_ROOT and BLENDER_SINGLESEQ_CLASS first!
@@ -170,6 +170,22 @@ class TestNerfRepro(unittest.TestCase):
             return
         with initialize_config_dir(config_dir=str(IMPLICITRON_CONFIGS_DIR)):
             cfg = compose(config_name="repro_singleseq_nerf_blender", overrides=[])
+            experiment_runner = experiment.Experiment(**cfg)
+            experiment.dump_cfg(cfg)
+            experiment_runner.run()
+
+    @unittest.skip("This test runs full llff training.")
+    def test_nerf_llff(self):
+        # Train vanilla NERF.
+        # Set env vars LLFF_DATASET_ROOT and LLFF_SINGLESEQ_CLASS first!
+        LLFF_SINGLESEQ_CLASS = os.environ["LLFF_SINGLESEQ_CLASS"]
+        if not interactive_testing_requested():
+            return
+        with initialize_config_dir(config_dir=str(IMPLICITRON_CONFIGS_DIR)):
+            cfg = compose(
+                config_name=f"repro_singleseq_nerf_llff_{LLFF_SINGLESEQ_CLASS}",
+                overrides=[],
+            )
             experiment_runner = experiment.Experiment(**cfg)
             experiment.dump_cfg(cfg)
             experiment_runner.run()

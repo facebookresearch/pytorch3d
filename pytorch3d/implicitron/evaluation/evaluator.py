@@ -13,8 +13,8 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import lpips
 import torch
-import tqdm
 
+import tqdm
 from pytorch3d.implicitron.dataset import utils as ds_utils
 
 from pytorch3d.implicitron.evaluation import evaluate_new_view_synthesis as evaluate

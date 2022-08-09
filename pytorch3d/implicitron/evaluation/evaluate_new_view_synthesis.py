@@ -245,13 +245,20 @@ def eval_batch(
     if frame_data.mask_crop is None:
         warnings.warn("mask_crop is None, assuming the whole image is valid.")
 
+    if frame_data.fg_probability is None:
+        warnings.warn("fg_probability is None, assuming the whole image is fg.")
+
     # threshold the masks to make ground truth binary masks
-    # pyre-ignore [58]
-    mask_fg = frame_data.fg_probability >= mask_thr
+    mask_fg = (
+        frame_data.fg_probability >= mask_thr
+        if frame_data.fg_probability is not None
+        # pyre-ignore [16]
+        else torch.ones_like(frame_data.image_rgb[:, :1, ...]).bool()
+    )
+
     mask_crop = (
         frame_data.mask_crop
         if frame_data.mask_crop is not None
-        # pyre-ignore [6]
         else torch.ones_like(mask_fg)
     )
 
@@ -259,7 +266,6 @@ def eval_batch(
         # pyre-fixme[6]: Expected `Tensor` for 1st param but got
         #  `Optional[torch.Tensor]`.
         frame_data.image_rgb,
-        # pyre-ignore [6]
         mask_fg,
         bg_color=bg_color,
     )
@@ -275,7 +281,6 @@ def eval_batch(
             # pyre-fixme[6]: Expected `Tensor` for 4th param but got
             #  `Optional[torch.Tensor]`.
             depth_map=frame_data.depth_map,
-            # pyre-fixme[16]: `Optional` has no attribute `__getitem__`.
             depth_mask=frame_data.depth_mask[:1],
             visdom_env=visualize_visdom_env,
         )
@@ -284,7 +289,7 @@ def eval_batch(
 
     results["iou"] = iou(
         cloned_render["mask_render"],
-        mask_fg,  # pyre-ignore [6]
+        mask_fg,
         mask=mask_crop,
     )
 

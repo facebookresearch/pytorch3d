@@ -198,7 +198,6 @@ class Stats(object):
                 if verbose:
                     print(f"Adding {add_log_var}")
                 self.log_vars.append(add_log_var)
-        # self.synchronize_logged_vars(self.log_vars, verbose=verbose)
 
     def update(self, preds, time_start=None, freeze_iter=False, stat_set="train"):
 
@@ -230,7 +229,6 @@ class Stats(object):
                     elapsed = time.time() - time_start
                 time_per_it = float(elapsed) / float(it + 1)
                 val = time_per_it
-                # self.stats[stat_set]['sec/it'].update(time_per_it,epoch=epoch,n=1)
             else:
                 if stat in preds:
                     try:
@@ -441,7 +439,6 @@ class Stats(object):
         self.log_vars = log_vars  # !!!
 
         for stat_set in stat_sets:
-            reference_stat = list(self.stats[stat_set].keys())[0]
             for stat in log_vars:
                 if stat not in self.stats[stat_set]:
                     if verbose:
@@ -468,12 +465,11 @@ class Stats(object):
                 lastep = self.epoch + 1
                 for ep in range(lastep):
                     self.stats[stat_set][stat].update(default_val, n=1, epoch=ep)
-                epoch_self = self.stats[stat_set][reference_stat].get_epoch()
                 epoch_generated = self.stats[stat_set][stat].get_epoch()
                 assert (
-                    epoch_self == epoch_generated
+                    epoch_generated == self.epoch + 1
                 ), "bad epoch of synchronized log_var! %d vs %d" % (
-                    epoch_self,
+                    self.epoch + 1,
                     epoch_generated,
                 )
 

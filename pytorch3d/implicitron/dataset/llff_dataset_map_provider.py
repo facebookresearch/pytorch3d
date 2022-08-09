@@ -32,17 +32,21 @@ class LlffDatasetMapProvider(SingleSceneDatasetMapProviderBase):
             and test datasets, and this many random training frames are added to
             each test batch. If not set, test batches each contain just a single
             testing frame.
+        downscale_factor: determines image sizes.
     """
+
+    downscale_factor: int = 4
 
     def _load_data(self) -> None:
         path_manager = self.path_manager_factory.get()
         images, poses, _ = load_llff_data(
-            self.base_dir, factor=8, path_manager=path_manager
+            self.base_dir, factor=self.downscale_factor, path_manager=path_manager
         )
         hwf = poses[0, :3, -1]
         poses = poses[:, :3, :4]
 
-        i_test = np.arange(images.shape[0])[::8]
+        llffhold = 8
+        i_test = np.arange(images.shape[0])[::llffhold]
         i_test_index = set(i_test.tolist())
         i_train = np.array(
             [i for i in np.arange(images.shape[0]) if i not in i_test_index]

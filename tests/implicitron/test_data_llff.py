@@ -69,6 +69,7 @@ class TestDataLlff(TestCaseMixin, unittest.TestCase):
         provider = LlffDatasetMapProvider(
             base_dir="manifold://co3d/tree/nerf_data/nerf_llff_data/fern",
             object_name="fern",
+            downscale_factor=8,
         )
         dataset_map = provider.get_dataset_map()
         known_matrix = torch.zeros(1, 4, 4)

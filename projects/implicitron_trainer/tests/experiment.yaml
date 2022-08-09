@@ -95,6 +95,7 @@ data_source_ImplicitronDataSource_args:
     n_known_frames_for_test: null
     path_manager_factory_PathManagerFactory_args:
       silence_logs: true
+    downscale_factor: 4
   dataset_map_provider_RenderedMeshDatasetMapProvider_args:
     num_views: 40
     data_file: null

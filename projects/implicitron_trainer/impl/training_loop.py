@@ -249,6 +249,7 @@ class ImplicitronTrainingLoop(TrainingLoopBase):  # pyre-ignore [13]
         stats = Stats(
             # log_vars should be a list, but OmegaConf might load them as ListConfig
             list(log_vars),
+            plot_file=os.path.join(exp_dir, "train_stats.pdf"),
             visdom_env=visdom_env_charts,
             verbose=False,
             visdom_server=self.visdom_server,

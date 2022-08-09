@@ -27,6 +27,7 @@ from .utils import DATASET_TYPE_KNOWN, DATASET_TYPE_UNKNOWN
 _SINGLE_SEQUENCE_NAME: str = "one_sequence"
 
 
+@expand_args_fields
 class SingleSceneDataset(DatasetBase, Configurable):
     """
     A dataset from images from a single scene.
@@ -110,7 +111,6 @@ class SingleSceneDatasetMapProviderBase(DatasetMapProviderBase):
     def _get_dataset(
         self, split_idx: int, frame_type: str, set_eval_batches: bool = False
     ) -> SingleSceneDataset:
-        expand_args_fields(SingleSceneDataset)
         # pyre-ignore[16]
         split = self.i_split[split_idx]
         frame_types = [frame_type] * len(split)
