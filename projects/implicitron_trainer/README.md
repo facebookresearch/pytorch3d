@@ -203,14 +203,29 @@ to replace the implementation and potentially override the parameters.
 
 # Code and config structure
 
-As per above, the config structure is parsed automatically from the module hierarchy.
-In particular, model parameters are contained in `generic_model_args` node, and dataset parameters in `data_source_args` node.
+The main object for this trainer loop is `Experiment`. It has four top-level replaceable components.
 
-Here is the class structure (single-line edges show aggregation, while double lines show available implementations):
+* `data_source`: This is a `DataSourceBase` which defaults to `ImplicitronDataSource`.
+It constructs the data sets and dataloaders.
+* `model_factory`: This is a `ModelFactoryBase` which defaults to `ImplicitronModelFactory`.
+It constructs the model, which is usually an instance of implicitron's main `GenericModel` class, and can load its weights from a checkpoint.
+* `optimizer_factory`: This is an `OptimizerFactoryBase` which defaults to `ImplicitronOptimizerFactory`.
+It constructs the optimizer and can load its weights from a checkpoint.
+* `training_loop`: This is a `TrainingLoopBase` which defaults to `ImplicitronTrainingLoop` and defines the main training loop.
+
+As per above, the config structure is parsed automatically from the module hierarchy.
+In particular, for ImplicitronModelFactory with generic model, model parameters are contained in the `model_factory_ImplicitronModelFactory_args.model_GenericModel_args` node, and dataset parameters in `data_source_ImplicitronDataSource_args` node.
+
+Here is the class structure of GenericModel (single-line edges show aggregation, while double lines show available implementations):
 ```
-generic_model_args: GenericModel
-└-- sequence_autodecoder_args: Autodecoder
-└-- raysampler_args: RaySampler
+model_GenericModel_args: GenericModel
+└-- global_encoder_*_args: GlobalEncoderBase
+    ╘== SequenceAutodecoder
+        └-- autodecoder_args: Autodecoder
+    ╘== HarmonicTimeEncoder
+└-- raysampler_*_args: RaySampler
+    ╘== AdaptiveRaysampler
+    ╘== NearFarRaysampler
 └-- renderer_*_args: BaseRenderer
     ╘== MultiPassEmissionAbsorptionRenderer
     ╘== LSTMRenderer
@@ -228,19 +243,16 @@ generic_model_args: GenericModel
     ╘== IdrFeatureField
 └-- image_feature_extractor_*_args: FeatureExtractorBase
     ╘== ResNetFeatureExtractor
-└-- view_sampler_args: ViewSampler
-└-- feature_aggregator_*_args: FeatureAggregatorBase
-    ╘== IdentityFeatureAggregator
-    ╘== AngleWeightedIdentityFeatureAggregator
-    ╘== AngleWeightedReductionFeatureAggregator
-    ╘== ReductionFeatureAggregator
-solver_args: init_optimizer
-data_source_args: ImplicitronDataSource
-└-- dataset_map_provider_*_args
-└-- data_loader_map_provider_*_args
+└-- view_pooler_args: ViewPooler
+    └-- view_sampler_args: ViewSampler
+    └-- feature_aggregator_*_args: FeatureAggregatorBase
+        ╘== IdentityFeatureAggregator
+        ╘== AngleWeightedIdentityFeatureAggregator
+        ╘== AngleWeightedReductionFeatureAggregator
+        ╘== ReductionFeatureAggregator
 ```
 
-Please look at the annotations of the respective classes or functions for the lists of hyperparameters.
+Please look at the annotations of the respective classes or functions for the lists of hyperparameters. `tests/experiment.yaml` shows every possible option if you have no user-defined classes.
 
 # Reproducing CO3D experiments
 
