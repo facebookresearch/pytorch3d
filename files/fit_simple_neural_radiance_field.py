@@ -42,7 +42,7 @@ try:
 except ModuleNotFoundError:
     need_pytorch3d=True
 if need_pytorch3d:
-    if torch.__version__.startswith("1.10.") and sys.platform.startswith("linux"):
+    if torch.__version__.startswith("1.12.") and sys.platform.startswith("linux"):
         # We try to install PyTorch3D via a released wheel.
         pyt_version_str=torch.__version__.split("+")[0].replace(".", "")
         version_str="".join([
@@ -744,7 +744,7 @@ for iteration in range(n_iter):
         )
 
 
-# ## 5. Visualizing the optimized neural radiance field
+# ## 6. Visualizing the optimized neural radiance field
 # 
 # Finally, we visualize the neural radiance field by rendering from multiple viewpoints that rotate around the volume's y-axis.
 
@@ -786,6 +786,6 @@ image_grid(rotating_nerf_frames.clamp(0., 1.).cpu().numpy(), rows=3, cols=5, rgb
 plt.show()
 
 
-# ## 6. Conclusion
+# ## 7. Conclusion
 # 
 # In this tutorial, we have shown how to optimize an implicit representation of a scene such that the renders of the scene from known viewpoints match the observed images for each viewpoint. The rendering was carried out using the PyTorch3D's implicit function renderer composed of either a `MonteCarloRaysampler` or `NDCMultinomialRaysampler`, and an `EmissionAbsorptionRaymarcher`.

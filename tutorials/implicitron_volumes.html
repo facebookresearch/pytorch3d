@@ -1,0 +1,669 @@
+<!DOCTYPE html><html lang=""><head><meta charSet="utf-8"/><meta http-equiv="X-UA-Compatible" content="IE=edge"/><title>PyTorch3D · A library for deep learning with 3D data</title><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="generator" content="Docusaurus"/><meta name="description" content="A library for deep learning with 3D data"/><meta property="og:title" content="PyTorch3D · A library for deep learning with 3D data"/><meta property="og:type" content="website"/><meta property="og:url" content="https://pytorch3d.org/"/><meta property="og:description" content="A library for deep learning with 3D data"/><meta property="og:image" content="https://pytorch3d.org/img/pytorch3dlogoicon.svg"/><meta name="twitter:card" content="summary"/><meta name="twitter:image" content="https://pytorch3d.org/img/pytorch3dlogoicon.svg"/><link rel="shortcut icon" href="/img/pytorch3dfavicon.png"/><link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css"/><script>
+              (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+              (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+              m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+              })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+              ga('create', 'UA-157376881-1', 'auto');
+              ga('send', 'pageview');
+            </script><script type="text/javascript" src="https://buttons.github.io/buttons.js"></script><script src="/js/scrollSpy.js"></script><link rel="stylesheet" href="/css/main.css"/><script src="/js/codetabs.js"></script></head><body><div class="fixedHeaderContainer"><div class="headerWrapper wrapper"><header><a href="/"><img class="logo" src="/img/pytorch3dfavicon.png" alt="PyTorch3D"/><h2 class="headerTitleWithLogo">PyTorch3D</h2></a><div class="navigationWrapper navigationSlider"><nav class="slidingNav"><ul class="nav-site nav-site-internal"><li class=""><a href="/docs/why_pytorch3d" target="_self">Docs</a></li><li class=""><a href="/tutorials" target="_self">Tutorials</a></li><li class=""><a href="https://pytorch3d.readthedocs.io/" target="_self">API</a></li><li class=""><a href="https://github.com/facebookresearch/pytorch3d" target="_self">GitHub</a></li></ul></nav></div></header></div></div><div class="navPusher"><div class="docMainWrapper wrapper"><div class="container docsNavContainer" id="docsNav"><nav class="toc"><div class="toggleNav"><section class="navWrapper wrapper"><div class="navBreadcrumb wrapper"><div class="navToggle" id="navToggler"><div class="hamburger-menu"><div class="line1"></div><div class="line2"></div><div class="line3"></div></div></div><h2><i>›</i><span></span></h2><div class="tocToggler" id="tocToggler"><i class="icon-toc"></i></div></div><div class="navGroups"><div class="navGroup"><h3 class="navGroupCategoryTitle">Tutorials</h3><ul class=""><li class="navListItem"><a class="navItem" href="/tutorials/">Overview</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">3D operators</h3><ul class=""><li class="navListItem"><a class="navItem" href="/tutorials/deform_source_mesh_to_target_mesh">Fit Mesh</a></li><li class="navListItem"><a class="navItem" href="/tutorials/bundle_adjustment">Bundle Adjustment</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Rendering</h3><ul class=""><li class="navListItem"><a class="navItem" href="/tutorials/render_textured_meshes">Render Textured Meshes</a></li><li class="navListItem"><a class="navItem" href="/tutorials/render_densepose">Render DensePose Meshes</a></li><li class="navListItem"><a class="navItem" href="/tutorials/render_colored_points">Render Colored Pointclouds</a></li><li class="navListItem"><a class="navItem" href="/tutorials/fit_textured_mesh">Fit a Mesh with Texture via Rendering</a></li><li class="navListItem"><a class="navItem" href="/tutorials/camera_position_optimization_with_differentiable_rendering">Camera Position Optimization with Differentiable Rendering</a></li><li class="navListItem"><a class="navItem" href="/tutorials/fit_textured_volume">Fit a volume via raymarching</a></li><li class="navListItem"><a class="navItem" href="/tutorials/fit_simple_neural_radiance_field">Fit a simplified NeRF via raymarching</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Dataloaders</h3><ul class=""><li class="navListItem"><a class="navItem" href="/tutorials/dataloaders_ShapeNetCore_R2N2">Data loaders for ShapeNetCore and R2N2</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Implicitron</h3><ul class=""><li class="navListItem navListItemActive"><a class="navItem" href="/tutorials/implicitron_volumes">Training a custom volumes function with implicitron</a></li><li class="navListItem"><a class="navItem" href="/tutorials/implicitron_config_system">Implicitron config system deep dive</a></li></ul></div></div></section></div><script>
+            var coll = document.getElementsByClassName('collapsible');
+            var checkActiveCategory = true;
+            for (var i = 0; i < coll.length; i++) {
+              var links = coll[i].nextElementSibling.getElementsByTagName('*');
+              if (checkActiveCategory){
+                for (var j = 0; j < links.length; j++) {
+                  if (links[j].classList.contains('navListItemActive')){
+                    coll[i].nextElementSibling.classList.toggle('hide');
+                    coll[i].childNodes[1].classList.toggle('rotate');
+                    checkActiveCategory = false;
+                    break;
+                  }
+                }
+              }
+
+              coll[i].addEventListener('click', function() {
+                var arrow = this.childNodes[1];
+                arrow.classList.toggle('rotate');
+                var content = this.nextElementSibling;
+                content.classList.toggle('hide');
+              });
+            }
+
+            document.addEventListener('DOMContentLoaded', function() {
+              createToggler('#navToggler', '#docsNav', 'docsSliderActive');
+              createToggler('#tocToggler', 'body', 'tocActive');
+
+              var headings = document.querySelector('.toc-headings');
+              headings && headings.addEventListener('click', function(event) {
+                var el = event.target;
+                while(el !== headings){
+                  if (el.tagName === 'A') {
+                    document.body.classList.remove('tocActive');
+                    break;
+                  } else{
+                    el = el.parentNode;
+                  }
+                }
+              }, false);
+
+              function createToggler(togglerSelector, targetSelector, className) {
+                var toggler = document.querySelector(togglerSelector);
+                var target = document.querySelector(targetSelector);
+
+                if (!toggler) {
+                  return;
+                }
+
+                toggler.onclick = function(event) {
+                  event.preventDefault();
+
+                  target.classList.toggle(className);
+                };
+              }
+            });
+        </script></nav></div><div class="container mainContainer"><div class="wrapper"><div class="tutorialButtonsWrapper"><div class="tutorialButtonWrapper buttonWrapper"><a class="tutorialButton button" download="" href="https://colab.research.google.com/github/facebookresearch/pytorch3d/blob/stable/docs/tutorials/implicitron_volumes.ipynb" target="_blank"><img class="colabButton" align="left" src="/img/colab_icon.png"/>Run in Google Colab</a></div><div class="tutorialButtonWrapper buttonWrapper"><a class="tutorialButton button" download="" href="/files/implicitron_volumes.ipynb" target="_blank"><svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="file-download" class="svg-inline--fa fa-file-download fa-w-12" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path fill="currentColor" d="M224 136V0H24C10.7 0 0 10.7 0 24v464c0 13.3 10.7 24 24 24h336c13.3 0 24-10.7 24-24V160H248c-13.2 0-24-10.8-24-24zm76.45 211.36l-96.42 95.7c-6.65 6.61-17.39 6.61-24.04 0l-96.42-95.7C73.42 337.29 80.54 320 94.82 320H160v-80c0-8.84 7.16-16 16-16h32c8.84 0 16 7.16 16 16v80h65.18c14.28 0 21.4 17.29 11.27 27.36zM377 105L279.1 7c-4.5-4.5-10.6-7-17-7H256v128h128v-6.1c0-6.3-2.5-12.4-7-16.9z"></path></svg>Download Tutorial Jupyter Notebook</a></div><div class="tutorialButtonWrapper buttonWrapper"><a class="tutorialButton button" download="" href="/files/implicitron_volumes.py" target="_blank"><svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="file-download" class="svg-inline--fa fa-file-download fa-w-12" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path fill="currentColor" d="M224 136V0H24C10.7 0 0 10.7 0 24v464c0 13.3 10.7 24 24 24h336c13.3 0 24-10.7 24-24V160H248c-13.2 0-24-10.8-24-24zm76.45 211.36l-96.42 95.7c-6.65 6.61-17.39 6.61-24.04 0l-96.42-95.7C73.42 337.29 80.54 320 94.82 320H160v-80c0-8.84 7.16-16 16-16h32c8.84 0 16 7.16 16 16v80h65.18c14.28 0 21.4 17.29 11.27 27.36zM377 105L279.1 7c-4.5-4.5-10.6-7-17-7H256v128h128v-6.1c0-6.3-2.5-12.4-7-16.9z"></path></svg>Download Tutorial Source Code</a></div></div><div class="tutorialBody">
+<script
+  src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js">
+</script>
+<script
+  src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js">
+</script>
+<div class="notebook">
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Copyright (c) Meta Platforms, Inc. and affiliates. All rights reserved.</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h1 id="A-simple-model-using-Implicitron">A simple model using Implicitron<a class="anchor-link" href="#A-simple-model-using-Implicitron">¶</a></h1><p>In this demo, we use the VolumeRenderer from PyTorch3D as a custom implicit function in Implicitron. We will see</p>
+<ul>
+<li>some of the main objects in Implicitron</li>
+<li>how to plug in a custom part of a model</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="0.-Install-and-import-modules">0. Install and import modules<a class="anchor-link" href="#0.-Install-and-import-modules">¶</a></h2><p>Ensure <code>torch</code> and <code>torchvision</code> are installed. If <code>pytorch3d</code> is not installed, install it using the following cell:</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="n">need_pytorch3d</span><span class="o">=</span><span class="kc">False</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">pytorch3d</span>
+<span class="k">except</span> <span class="ne">ModuleNotFoundError</span><span class="p">:</span>
+    <span class="n">need_pytorch3d</span><span class="o">=</span><span class="kc">True</span>
+<span class="k">if</span> <span class="n">need_pytorch3d</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"1.12."</span><span class="p">)</span> <span class="ow">and</span> <span class="n">sys</span><span class="o">.</span><span class="n">platform</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"linux"</span><span class="p">):</span>
+        <span class="c1"># We try to install PyTorch3D via a released wheel.</span>
+        <span class="n">pyt_version_str</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"+"</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"."</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
+        <span class="n">version_str</span><span class="o">=</span><span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">([</span>
+            <span class="sa">f</span><span class="s2">"py3</span><span class="si">{</span><span class="n">sys</span><span class="o">.</span><span class="n">version_info</span><span class="o">.</span><span class="n">minor</span><span class="si">}</span><span class="s2">_cu"</span><span class="p">,</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">version</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"."</span><span class="p">,</span><span class="s2">""</span><span class="p">),</span>
+            <span class="sa">f</span><span class="s2">"_pyt</span><span class="si">{</span><span class="n">pyt_version_str</span><span class="si">}</span><span class="s2">"</span>
+        <span class="p">])</span>
+        <span class="o">!</span>pip install fvcore iopath
+        <span class="o">!</span>pip install --no-index --no-cache-dir pytorch3d -f https://dl.fbaipublicfiles.com/pytorch3d/packaging/wheels/<span class="o">{</span>version_str<span class="o">}</span>/download.html
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># We try to install PyTorch3D from source.</span>
+        <span class="o">!</span>curl -LO https://github.com/NVIDIA/cub/archive/1.10.0.tar.gz
+        <span class="o">!</span>tar xzf <span class="m">1</span>.10.0.tar.gz
+        <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">"CUB_HOME"</span><span class="p">]</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span> <span class="o">+</span> <span class="s2">"/cub-1.10.0"</span>
+        <span class="o">!</span>pip install <span class="s1">'git+https://github.com/facebookresearch/pytorch3d.git@stable'</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Ensure omegaconf and visdom are installed. If not, run this cell. (It should not be necessary to restart the runtime.)</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="o">!</span>pip install omegaconf visdom
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span>
+
+<span class="kn">import</span> <span class="nn">matplotlib.animation</span> <span class="k">as</span> <span class="nn">animation</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">tqdm</span>
+<span class="kn">from</span> <span class="nn">IPython.display</span> <span class="kn">import</span> <span class="n">HTML</span>
+<span class="kn">from</span> <span class="nn">omegaconf</span> <span class="kn">import</span> <span class="n">OmegaConf</span>
+<span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">Image</span>
+<span class="kn">from</span> <span class="nn">pytorch3d.implicitron.dataset.dataset_base</span> <span class="kn">import</span> <span class="n">FrameData</span>
+<span class="kn">from</span> <span class="nn">pytorch3d.implicitron.dataset.rendered_mesh_dataset_map_provider</span> <span class="kn">import</span> <span class="n">RenderedMeshDatasetMapProvider</span>
+<span class="kn">from</span> <span class="nn">pytorch3d.implicitron.models.generic_model</span> <span class="kn">import</span> <span class="n">GenericModel</span>
+<span class="kn">from</span> <span class="nn">pytorch3d.implicitron.models.implicit_function.base</span> <span class="kn">import</span> <span class="n">ImplicitFunctionBase</span>
+<span class="kn">from</span> <span class="nn">pytorch3d.implicitron.models.renderer.base</span> <span class="kn">import</span> <span class="n">EvaluationMode</span>
+<span class="kn">from</span> <span class="nn">pytorch3d.implicitron.tools.config</span> <span class="kn">import</span> <span class="n">expand_args_fields</span><span class="p">,</span> <span class="n">get_default_args</span><span class="p">,</span> <span class="n">registry</span><span class="p">,</span> <span class="n">remove_unused_components</span>
+<span class="kn">from</span> <span class="nn">pytorch3d.renderer</span> <span class="kn">import</span> <span class="n">RayBundle</span>
+<span class="kn">from</span> <span class="nn">pytorch3d.renderer.implicit.renderer</span> <span class="kn">import</span> <span class="n">VolumeSampler</span>
+<span class="kn">from</span> <span class="nn">pytorch3d.structures</span> <span class="kn">import</span> <span class="n">Volumes</span>
+<span class="kn">from</span> <span class="nn">pytorch3d.vis.plotly_vis</span> <span class="kn">import</span> <span class="n">plot_batch_individually</span><span class="p">,</span> <span class="n">plot_scene</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">output_resolution</span> <span class="o">=</span> <span class="mi">80</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">torch</span><span class="o">.</span><span class="n">set_printoptions</span><span class="p">(</span><span class="n">sci_mode</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="1.-Load-renders-of-a-mesh-(the-cow-mesh)-as-a-dataset">1. Load renders of a mesh (the cow mesh) as a dataset<a class="anchor-link" href="#1.-Load-renders-of-a-mesh-(the-cow-mesh)-as-a-dataset">¶</a></h2><p>A dataset's train, val and test parts in Implicitron are represented as a <code>dataset_map</code>, and provided by an implementation of <code>DatasetMapProvider</code>. 
+<code>RenderedMeshDatasetMapProvider</code> is one which generates a single-scene dataset with only a train component by taking a mesh and rendering it.
+We use it with the cow mesh.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>If running this notebook using <strong>Google Colab</strong>, run the following cell to fetch the mesh obj and texture files and save it at the path data/cow_mesh.
+If running locally, the data is already available at the correct path.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="o">!</span>mkdir -p data/cow_mesh
+<span class="o">!</span>wget -P data/cow_mesh https://dl.fbaipublicfiles.com/pytorch3d/data/cow_mesh/cow.obj
+<span class="o">!</span>wget -P data/cow_mesh https://dl.fbaipublicfiles.com/pytorch3d/data/cow_mesh/cow.mtl
+<span class="o">!</span>wget -P data/cow_mesh https://dl.fbaipublicfiles.com/pytorch3d/data/cow_mesh/cow_texture.png
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>If we want to instantiate one of Implicitron's configurable objects, such as <code>RenderedMeshDatasetMapProvider</code>, without using the OmegaConf initialisation (get_default_args), we need to call <code>expand_args_fields</code> on the class first.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">expand_args_fields</span><span class="p">(</span><span class="n">RenderedMeshDatasetMapProvider</span><span class="p">)</span>
+<span class="n">cow_provider</span> <span class="o">=</span> <span class="n">RenderedMeshDatasetMapProvider</span><span class="p">(</span>
+    <span class="n">data_file</span><span class="o">=</span><span class="s2">"data/cow_mesh/cow.obj"</span><span class="p">,</span>
+    <span class="n">use_point_light</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">resolution</span><span class="o">=</span><span class="n">output_resolution</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">dataset_map</span> <span class="o">=</span> <span class="n">cow_provider</span><span class="o">.</span><span class="n">get_dataset_map</span><span class="p">()</span>
+<span class="n">tr_cameras</span> <span class="o">=</span> <span class="p">[</span><span class="n">training_frame</span><span class="o">.</span><span class="n">camera</span> <span class="k">for</span> <span class="n">training_frame</span> <span class="ow">in</span> <span class="n">dataset_map</span><span class="o">.</span><span class="n">train</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># The cameras are all in the XZ plane, in a circle about 2.7 from the origin</span>
+<span class="n">centers</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">i</span><span class="o">.</span><span class="n">get_camera_center</span><span class="p">()</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">tr_cameras</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">centers</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">centers</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># visualization of the cameras</span>
+<span class="n">plot</span> <span class="o">=</span> <span class="n">plot_scene</span><span class="p">({</span><span class="s2">"k"</span><span class="p">:</span> <span class="p">{</span><span class="n">i</span><span class="p">:</span> <span class="n">camera</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">camera</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">tr_cameras</span><span class="p">)}},</span> <span class="n">camera_scale</span><span class="o">=</span><span class="mf">0.25</span><span class="p">)</span>
+<span class="n">plot</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">scene</span><span class="o">.</span><span class="n">aspectmode</span> <span class="o">=</span> <span class="s2">"data"</span>
+<span class="n">plot</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="2.-Custom-implicit-function-🧊">2. Custom implicit function 🧊<a class="anchor-link" href="#2.-Custom-implicit-function-🧊">¶</a></h2><p>At the core of neural rendering methods are functions of spatial coordinates called implicit functions, which are used in some kind of rendering process.
+(Often those functions can additionally take other data as well, such as view direction.)
+A common rendering process is ray marching over densities and colors provided by an implicit function.
+In our case, taking samples from a 3D volume grid is a very simple function of spatial coordinates.</p>
+<p>Here we define our own implicit function, which uses PyTorch3D's existing functionality for sampling from a volume grid.
+We do this by subclassing <code>ImplicitFunctionBase</code>.
+We need to register our subclass with a special decorator.
+We use Python's dataclass annotations for configuring the module.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="nd">@registry</span><span class="o">.</span><span class="n">register</span>
+<span class="k">class</span> <span class="nc">MyVolumes</span><span class="p">(</span><span class="n">ImplicitFunctionBase</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="n">grid_resolution</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span>  <span class="c1"># common HWD of volumes, the number of voxels in each direction</span>
+    <span class="n">extent</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span>  <span class="c1"># In world coordinates, the volume occupies is [-extent, extent] along each axis</span>
+
+    <span class="k">def</span> <span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># We have to call this explicitly if there are other base classes like Module</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="c1"># We define parameters like other torch.nn.Module objects.</span>
+        <span class="c1"># In this case, both our parameter tensors are trainable; they govern the contents of the volume grid.</span>
+        <span class="n">density</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">grid_resolution</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid_resolution</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid_resolution</span><span class="p">),</span> <span class="o">-</span><span class="mf">2.0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">density</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">density</span><span class="p">)</span>
+        <span class="n">color</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid_resolution</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid_resolution</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid_resolution</span><span class="p">),</span> <span class="mf">0.0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">color</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">color</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">density_activation</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Softplus</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">ray_bundle</span><span class="p">:</span> <span class="n">RayBundle</span><span class="p">,</span>
+        <span class="n">fun_viewpool</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">global_code</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="n">densities</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">density_activation</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">density</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">])</span>
+        <span class="n">voxel_size</span> <span class="o">=</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">extent</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid_resolution</span>
+        <span class="n">features</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">color</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">()[</span><span class="kc">None</span><span class="p">]</span>
+
+        <span class="c1"># Like other PyTorch3D structures, the actual Volumes object should only exist as long</span>
+        <span class="c1"># as one iteration of training. It is local to this function.</span>
+
+        <span class="n">volume</span> <span class="o">=</span> <span class="n">Volumes</span><span class="p">(</span><span class="n">densities</span><span class="o">=</span><span class="n">densities</span><span class="p">,</span> <span class="n">features</span><span class="o">=</span><span class="n">features</span><span class="p">,</span> <span class="n">voxel_size</span><span class="o">=</span><span class="n">voxel_size</span><span class="p">)</span>
+        <span class="n">sampler</span> <span class="o">=</span> <span class="n">VolumeSampler</span><span class="p">(</span><span class="n">volumes</span><span class="o">=</span><span class="n">volume</span><span class="p">)</span>
+        <span class="n">densities</span><span class="p">,</span> <span class="n">features</span> <span class="o">=</span> <span class="n">sampler</span><span class="p">(</span><span class="n">ray_bundle</span><span class="p">)</span>
+
+        <span class="c1"># When an implicit function is used for raymarching, i.e. for MultiPassEmissionAbsorptionRenderer,</span>
+        <span class="c1"># it must return (densities, features, an auxiliary tuple)</span>
+        <span class="k">return</span> <span class="n">densities</span><span class="p">,</span> <span class="n">features</span><span class="p">,</span> <span class="p">{}</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="3.-Construct-the-model-object.">3. Construct the model object.<a class="anchor-link" href="#3.-Construct-the-model-object.">¶</a></h2><p>The main model object in PyTorch3D is <code>GenericModel</code>, which has pluggable components for the major steps, including the renderer and the implicit function(s).
+There are two ways to construct it which are equivalent here.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">CONSTRUCT_MODEL_FROM_CONFIG</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="k">if</span> <span class="n">CONSTRUCT_MODEL_FROM_CONFIG</span><span class="p">:</span>
+    <span class="c1"># Via a DictConfig - this is how our training loop with hydra works</span>
+    <span class="n">cfg</span> <span class="o">=</span> <span class="n">get_default_args</span><span class="p">(</span><span class="n">GenericModel</span><span class="p">)</span>
+    <span class="n">cfg</span><span class="o">.</span><span class="n">implicit_function_class_type</span> <span class="o">=</span> <span class="s2">"MyVolumes"</span>
+    <span class="n">cfg</span><span class="o">.</span><span class="n">render_image_height</span><span class="o">=</span><span class="n">output_resolution</span>
+    <span class="n">cfg</span><span class="o">.</span><span class="n">render_image_width</span><span class="o">=</span><span class="n">output_resolution</span>
+    <span class="n">cfg</span><span class="o">.</span><span class="n">loss_weights</span><span class="o">=</span><span class="p">{</span><span class="s2">"loss_rgb_huber"</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">}</span>
+    <span class="n">cfg</span><span class="o">.</span><span class="n">tqdm_trigger_threshold</span><span class="o">=</span><span class="mi">19000</span>
+    <span class="n">cfg</span><span class="o">.</span><span class="n">raysampler_AdaptiveRaySampler_args</span><span class="o">.</span><span class="n">scene_extent</span><span class="o">=</span> <span class="mf">4.0</span>
+    <span class="n">gm</span> <span class="o">=</span> <span class="n">GenericModel</span><span class="p">(</span><span class="o">**</span><span class="n">cfg</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="c1"># constructing GenericModel directly</span>
+    <span class="n">expand_args_fields</span><span class="p">(</span><span class="n">GenericModel</span><span class="p">)</span>
+    <span class="n">gm</span> <span class="o">=</span> <span class="n">GenericModel</span><span class="p">(</span>
+        <span class="n">implicit_function_class_type</span><span class="o">=</span><span class="s2">"MyVolumes"</span><span class="p">,</span>
+        <span class="n">render_image_height</span><span class="o">=</span><span class="n">output_resolution</span><span class="p">,</span>
+        <span class="n">render_image_width</span><span class="o">=</span><span class="n">output_resolution</span><span class="p">,</span>
+        <span class="n">loss_weights</span><span class="o">=</span><span class="p">{</span><span class="s2">"loss_rgb_huber"</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">},</span>
+        <span class="n">tqdm_trigger_threshold</span><span class="o">=</span><span class="mi">19000</span><span class="p">,</span>
+        <span class="n">raysampler_AdaptiveRaySampler_args</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"scene_extent"</span><span class="p">:</span> <span class="mf">4.0</span><span class="p">}</span>
+    <span class="p">)</span>
+
+    <span class="c1"># In this case we can get the equivalent DictConfig cfg object to the way gm is configured as follows</span>
+    <span class="n">cfg</span> <span class="o">=</span> <span class="n">OmegaConf</span><span class="o">.</span><span class="n">structured</span><span class="p">(</span><span class="n">gm</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>The default renderer is an emission-absorbtion raymarcher. We keep that default.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># We can display the configuration in use as follows.</span>
+<span class="n">remove_unused_components</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
+<span class="n">yaml</span> <span class="o">=</span> <span class="n">OmegaConf</span><span class="o">.</span><span class="n">to_yaml</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="o">%</span><span class="k">page</span> -r yaml
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">"cuda:0"</span><span class="p">)</span>
+<span class="n">gm</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+<span class="k">assert</span> <span class="nb">next</span><span class="p">(</span><span class="n">gm</span><span class="o">.</span><span class="n">parameters</span><span class="p">())</span><span class="o">.</span><span class="n">is_cuda</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="4.-train-the-model">4. train the model<a class="anchor-link" href="#4.-train-the-model">¶</a></h2>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">train_data_collated</span> <span class="o">=</span> <span class="p">[</span><span class="n">FrameData</span><span class="o">.</span><span class="n">collate</span><span class="p">([</span><span class="n">frame</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)])</span> <span class="k">for</span> <span class="n">frame</span> <span class="ow">in</span> <span class="n">dataset_map</span><span class="o">.</span><span class="n">train</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">gm</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
+<span class="n">optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">gm</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">iterator</span> <span class="o">=</span> <span class="n">tqdm</span><span class="o">.</span><span class="n">tqdm</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">2000</span><span class="p">))</span>
+<span class="k">for</span> <span class="n">n_batch</span> <span class="ow">in</span> <span class="n">iterator</span><span class="p">:</span>
+    <span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+
+    <span class="n">frame</span> <span class="o">=</span> <span class="n">train_data_collated</span><span class="p">[</span><span class="n">n_batch</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">dataset_map</span><span class="o">.</span><span class="n">train</span><span class="p">)]</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">gm</span><span class="p">(</span><span class="o">**</span><span class="n">frame</span><span class="p">,</span> <span class="n">evaluation_mode</span><span class="o">=</span><span class="n">EvaluationMode</span><span class="o">.</span><span class="n">TRAINING</span><span class="p">)</span>
+    <span class="n">out</span><span class="p">[</span><span class="s2">"objective"</span><span class="p">]</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">n_batch</span> <span class="o">%</span> <span class="mi">100</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">iterator</span><span class="o">.</span><span class="n">set_postfix_str</span><span class="p">(</span><span class="sa">f</span><span class="s2">"loss: </span><span class="si">{</span><span class="nb">float</span><span class="p">(</span><span class="n">out</span><span class="p">[</span><span class="s1">'objective'</span><span class="p">])</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="5.-Evaluate-the-module">5. Evaluate the module<a class="anchor-link" href="#5.-Evaluate-the-module">¶</a></h2><p>We generate complete images from all the viewpoints to see how they look.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">to_numpy_image</span><span class="p">(</span><span class="n">image</span><span class="p">):</span>
+    <span class="c1"># Takes an image of shape (C, H, W) in [0,1], where C=3 or 1</span>
+    <span class="c1"># to a numpy uint image of shape (H, W, 3)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">image</span> <span class="o">*</span> <span class="mi">255</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span><span class="o">.</span><span class="n">permute</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">resize_image</span><span class="p">(</span><span class="n">image</span><span class="p">):</span>
+    <span class="c1"># Takes images of shape (B, C, H, W) to (B, C, output_resolution, output_resolution)</span>
+    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">interpolate</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">output_resolution</span><span class="p">,</span> <span class="n">output_resolution</span><span class="p">))</span>
+
+<span class="n">gm</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+<span class="n">images</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">expected</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">masks</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">masks_expected</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">frame</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="o">.</span><span class="n">tqdm</span><span class="p">(</span><span class="n">train_data_collated</span><span class="p">):</span>
+    <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">gm</span><span class="p">(</span><span class="o">**</span><span class="n">frame</span><span class="p">,</span> <span class="n">evaluation_mode</span><span class="o">=</span><span class="n">EvaluationMode</span><span class="o">.</span><span class="n">EVALUATION</span><span class="p">)</span>
+
+    <span class="n">image_rgb</span> <span class="o">=</span> <span class="n">to_numpy_image</span><span class="p">(</span><span class="n">out</span><span class="p">[</span><span class="s2">"images_render"</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">to_numpy_image</span><span class="p">(</span><span class="n">out</span><span class="p">[</span><span class="s2">"masks_render"</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">expd</span> <span class="o">=</span> <span class="n">to_numpy_image</span><span class="p">(</span><span class="n">resize_image</span><span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">image_rgb</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">mask_expected</span> <span class="o">=</span> <span class="n">to_numpy_image</span><span class="p">(</span><span class="n">resize_image</span><span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">fg_probability</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="n">images</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">image_rgb</span><span class="p">)</span>
+    <span class="n">masks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span>
+    <span class="n">expected</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">expd</span><span class="p">)</span>
+    <span class="n">masks_expected</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mask_expected</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>We draw a grid showing predicted image and expected image, followed by predicted mask and expected mask, from each viewpoint. 
+This is a grid of four rows of images, wrapped in to several large rows, i.e..
+<small><center></center></small></p>
+<pre><code>┌────────┬────────┐           ┌────────┐
+│pred    │pred    │           │pred    │
+│image   │image   │           │image   │
+│1       │2       │           │n       │
+├────────┼────────┤           ├────────┤
+│expected│expected│           │expected│
+│image   │image   │  ...      │image   │
+│1       │2       │           │n       │
+├────────┼────────┤           ├────────┤
+│pred    │pred    │           │pred    │
+│mask    │mask    │           │mask    │
+│1       │2       │           │n       │
+├────────┼────────┤           ├────────┤
+│expected│expected│           │expected│
+│mask    │mask    │           │mask    │
+│1       │2       │           │n       │
+├────────┼────────┤           ├────────┤
+│pred    │pred    │           │pred    │
+│image   │image   │           │image   │
+│n+1     │n+1     │           │2n      │
+├────────┼────────┤           ├────────┤
+│expected│expected│           │expected│
+│image   │image   │  ...      │image   │
+│n+1     │n+2     │           │2n      │
+├────────┼────────┤           ├────────┤
+│pred    │pred    │           │pred    │
+│mask    │mask    │           │mask    │
+│n+1     │n+2     │           │2n      │
+├────────┼────────┤           ├────────┤
+│expected│expected│           │expected│
+│mask    │mask    │           │mask    │
+│n+1     │n+2     │           │2n      │
+└────────┴────────┘           └────────┘
+           ...</code></pre>
+<p>&lt;/center&gt;&lt;/small&gt;</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">images_to_display</span> <span class="o">=</span> <span class="p">[</span><span class="n">images</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span> <span class="n">expected</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span> <span class="n">masks</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span> <span class="n">masks_expected</span><span class="o">.</span><span class="n">copy</span><span class="p">()]</span>
+<span class="n">n_rows</span> <span class="o">=</span> <span class="mi">4</span>
+<span class="n">n_images</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">images</span><span class="p">)</span>
+<span class="n">blank_image</span> <span class="o">=</span> <span class="n">images</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">0</span>
+<span class="n">n_per_row</span> <span class="o">=</span> <span class="mi">1</span><span class="o">+</span><span class="p">(</span><span class="n">n_images</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">//</span><span class="n">n_rows</span>
+<span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_per_row</span><span class="o">*</span><span class="n">n_rows</span> <span class="o">-</span> <span class="n">n_images</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">images_to_display</span><span class="p">:</span>
+        <span class="n">group</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">blank_image</span><span class="p">)</span>
+
+<span class="n">images_to_display_listed</span> <span class="o">=</span> <span class="p">[[[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">j</span><span class="p">]</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">images_to_display</span><span class="p">]</span>
+<span class="n">split</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_rows</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">images_to_display_listed</span><span class="p">:</span>
+        <span class="n">split</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">group</span><span class="p">[</span><span class="n">row</span><span class="o">*</span><span class="n">n_per_row</span><span class="p">:(</span><span class="n">row</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">n_per_row</span><span class="p">])</span>  
+
+<span class="n">Image</span><span class="o">.</span><span class="n">fromarray</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">block</span><span class="p">(</span><span class="n">split</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Print the maximum channel intensity in the first image.</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">images</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">/</span><span class="mi">255</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">ioff</span><span class="p">()</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+<span class="n">ims</span> <span class="o">=</span> <span class="p">[[</span><span class="n">ax</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">im</span><span class="p">,</span> <span class="n">animated</span><span class="o">=</span><span class="kc">True</span><span class="p">)]</span> <span class="k">for</span> <span class="n">im</span> <span class="ow">in</span> <span class="n">images</span><span class="p">]</span>
+<span class="n">ani</span> <span class="o">=</span> <span class="n">animation</span><span class="o">.</span><span class="n">ArtistAnimation</span><span class="p">(</span><span class="n">fig</span><span class="p">,</span> <span class="n">ims</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">80</span><span class="p">,</span> <span class="n">blit</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">ani_html</span> <span class="o">=</span> <span class="n">ani</span><span class="o">.</span><span class="n">to_jshtml</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">HTML</span><span class="p">(</span><span class="n">ani_html</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># If you want to see the output of the model with the volume forced to opaque white, run this and re-evaluate</span>
+<span class="c1"># with torch.no_grad():</span>
+<span class="c1">#      gm._implicit_functions[0]._fn.density.fill_(9.0)</span>
+<span class="c1">#      gm._implicit_functions[0]._fn.color.fill_(9.0)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div></div></div></div></div><footer class="nav-footer" id="footer"><section class="sitemap"><div class="footerSection"><div class="social"><a class="github-button" href="https://github.com/facebookresearch/pytorch3d" data-count-href="https://github.com/facebookresearch/pytorch3d/stargazers" data-show-count="true" data-count-aria-label="# stargazers on GitHub" aria-label="Star PyTorch3D on GitHub">pytorch3d</a></div></div></section><a href="https://opensource.facebook.com/" target="_blank" rel="noreferrer noopener" class="fbOpenSource"><img src="/img/oss_logo.png" alt="Facebook Open Source" width="170" height="45"/></a><section class="copyright">Copyright © 2022 Meta Platforms, Inc<br/>Legal:<a href="https://opensource.facebook.com/legal/privacy/" target="_blank" rel="noreferrer noopener">Privacy</a><a href="https://opensource.facebook.com/legal/terms/" target="_blank" rel="noreferrer noopener">Terms</a></section></footer></div></body></html>

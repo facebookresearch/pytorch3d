@@ -31,7 +31,7 @@ try:
 except ModuleNotFoundError:
     need_pytorch3d=True
 if need_pytorch3d:
-    if torch.__version__.startswith("1.10.") and sys.platform.startswith("linux"):
+    if torch.__version__.startswith("1.12.") and sys.platform.startswith("linux"):
         # We try to install PyTorch3D via a released wheel.
         pyt_version_str=torch.__version__.split("+")[0].replace(".", "")
         version_str="".join([
@@ -74,7 +74,7 @@ from pytorch3d.loss import (
 from pytorch3d.structures import Meshes
 from pytorch3d.renderer import (
     look_at_view_transform,
-    OpenGLPerspectiveCameras, 
+    FoVPerspectiveCameras, 
     PointLights, 
     DirectionalLights, 
     Materials, 
@@ -185,11 +185,11 @@ lights = PointLights(device=device, location=[[0.0, 0.0, -3.0]])
 # broadcasting. So we can view the camera from the a distance of dist=2.7, and 
 # then specify elevation and azimuth angles for each viewpoint as tensors. 
 R, T = look_at_view_transform(dist=2.7, elev=elev, azim=azim)
-cameras = OpenGLPerspectiveCameras(device=device, R=R, T=T)
+cameras = FoVPerspectiveCameras(device=device, R=R, T=T)
 
 # We arbitrarily choose one particular view that will be used to visualize 
 # results
-camera = OpenGLPerspectiveCameras(device=device, R=R[None, 1, ...], 
+camera = FoVPerspectiveCameras(device=device, R=R[None, 1, ...], 
                                   T=T[None, 1, ...]) 
 
 # Define the settings for rasterization and shading. Here we set the output 
@@ -232,7 +232,7 @@ target_images = renderer(meshes, cameras=cameras, lights=lights)
 # Our multi-view cow dataset will be represented by these 2 lists of tensors,
 # each of length num_views.
 target_rgb = [target_images[i, ..., :3] for i in range(num_views)]
-target_cameras = [OpenGLPerspectiveCameras(device=device, R=R[None, i, ...], 
+target_cameras = [FoVPerspectiveCameras(device=device, R=R[None, i, ...], 
                                            T=T[None, i, ...]) for i in range(num_views)]
 
 
@@ -461,6 +461,7 @@ raster_settings_soft = RasterizationSettings(
     image_size=128, 
     blur_radius=np.log(1. / 1e-4 - 1.)*sigma, 
     faces_per_pixel=50, 
+    perspective_correct=False, 
 )
 
 # Differentiable soft renderer using per vertex RGB colors for texture
