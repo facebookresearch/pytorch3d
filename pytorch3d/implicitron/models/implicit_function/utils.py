@@ -4,10 +4,10 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-import math
 from typing import Callable, Optional
 
 import torch
+from pytorch3d.common.compat import prod
 from pytorch3d.renderer.cameras import CamerasBase
 
 
@@ -52,7 +52,7 @@ def create_embeddings_for_implicit_function(
         embeds = torch.empty(
             bs,
             1,
-            math.prod(spatial_size),
+            prod(spatial_size),
             pts_per_ray,
             0,
             dtype=xyz_world.dtype,
@@ -62,7 +62,7 @@ def create_embeddings_for_implicit_function(
         embeds = xyz_embedding_function(ray_points_for_embed).reshape(
             bs,
             1,
-            math.prod(spatial_size),
+            prod(spatial_size),
             pts_per_ray,
             -1,
         )  # flatten spatial, add n_src dim
@@ -73,7 +73,7 @@ def create_embeddings_for_implicit_function(
         embed_shape = (
             bs,
             embeds_viewpooled.shape[1],
-            math.prod(spatial_size),
+            prod(spatial_size),
             pts_per_ray,
             -1,
         )

@@ -17,6 +17,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import torch
 import tqdm
 from omegaconf import DictConfig
+from pytorch3d.common.compat import prod
 from pytorch3d.implicitron.models.metrics import (
     RegularizationMetricsBase,
     ViewMetricsBase,
@@ -919,7 +920,7 @@ def _chunk_generator(
             f"by n_pts_per_ray ({n_pts_per_ray})"
         )
 
-    n_rays = math.prod(spatial_dim)
+    n_rays = prod(spatial_dim)
     # special handling for raytracing-based methods
     n_chunks = -(-n_rays * max(n_pts_per_ray, 1) // chunk_size)
     chunk_size_in_rays = -(-n_rays // n_chunks)
@@ -935,9 +936,9 @@ def _chunk_generator(
             directions=ray_bundle.directions.reshape(batch_size, -1, 3)[
                 :, start_idx:end_idx
             ],
-            lengths=ray_bundle.lengths.reshape(
-                batch_size, math.prod(spatial_dim), n_pts_per_ray
-            )[:, start_idx:end_idx],
+            lengths=ray_bundle.lengths.reshape(batch_size, n_rays, n_pts_per_ray)[
+                :, start_idx:end_idx
+            ],
             xys=ray_bundle.xys.reshape(batch_size, -1, 2)[:, start_idx:end_idx],
         )
         extra_args = kwargs.copy()

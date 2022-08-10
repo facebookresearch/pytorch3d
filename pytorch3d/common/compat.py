@@ -10,7 +10,7 @@ import torch
 
 
 """
-Some functions which depend on PyTorch versions.
+Some functions which depend on PyTorch or Python versions.
 """
 
 
@@ -79,3 +79,12 @@ def meshgrid_ij(
     # pyre-fixme[6]: For 1st param expected `Union[List[Tensor], Tensor]` but got
     #  `Union[Sequence[Tensor], Tensor]`.
     return torch.meshgrid(*A)
+
+
+def prod(iterable, *, start=1):
+    """
+    Like math.prod in Python 3.8 and later.
+    """
+    for i in iterable:
+        start *= i
+    return start

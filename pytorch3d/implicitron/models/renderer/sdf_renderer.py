@@ -3,11 +3,11 @@
 #              implicit_differentiable_renderer.py
 # Copyright (c) 2020 Lior Yariv
 import functools
-import math
 from typing import List, Optional, Tuple
 
 import torch
 from omegaconf import DictConfig
+from pytorch3d.common.compat import prod
 from pytorch3d.implicitron.tools.config import (
     get_default_args_field,
     registry,
@@ -105,7 +105,7 @@ class SignedDistanceFunctionRenderer(BaseRenderer, torch.nn.Module):  # pyre-ign
 
         # object_mask: silhouette of the object
         batch_size, *spatial_size, _ = ray_bundle.lengths.shape
-        num_pixels = math.prod(spatial_size)
+        num_pixels = prod(spatial_size)
 
         cam_loc = ray_bundle.origins.reshape(batch_size, -1, 3)
         ray_dirs = ray_bundle.directions.reshape(batch_size, -1, 3)
