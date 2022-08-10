@@ -402,6 +402,8 @@ optimizer_factory_ImplicitronOptimizerFactory_args:
   momentum: 0.9
   multistep_lr_milestones: []
   weight_decay: 0.0
+  linear_exponential_lr_milestone: 200
+  linear_exponential_start_gamma: 0.1
 training_loop_ImplicitronTrainingLoop_args:
   eval_only: false
   evaluator_class_type: ImplicitronEvaluator

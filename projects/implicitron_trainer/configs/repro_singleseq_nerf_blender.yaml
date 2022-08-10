@@ -36,12 +36,13 @@ model_factory_ImplicitronModelFactory_args:
       loss_autodecoder_norm: 0.00
 
 optimizer_factory_ImplicitronOptimizerFactory_args:
-  exponential_lr_step_size: 2500
-  lr_policy: Exponential
+  exponential_lr_step_size: 3001
+  lr_policy: LinearExponential
+  linear_exponential_lr_milestone: 200
 
 training_loop_ImplicitronTrainingLoop_args:
-  max_epochs: 2000
-  metric_print_interval: 100
+  max_epochs: 3201
+  metric_print_interval: 10
   store_checkpoints_purge: 3
   test_when_finished: true
   validation_interval: 100

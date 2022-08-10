@@ -72,6 +72,8 @@ class ImplicitronOptimizerFactory(OptimizerFactoryBase):
     momentum: float = 0.9
     multistep_lr_milestones: tuple = ()
     weight_decay: float = 0.0
+    linear_exponential_lr_milestone: int = 200
+    linear_exponential_start_gamma: float = 0.1
 
     def __post_init__(self):
         run_auto_creation(self)
@@ -155,6 +157,23 @@ class ImplicitronOptimizerFactory(OptimizerFactoryBase):
                 optimizer,
                 lambda epoch: self.gamma ** (epoch / self.exponential_lr_step_size),
                 verbose=False,
+            )
+        elif self.lr_policy.casefold() == "LinearExponential".casefold():
+            # linear learning rate progression between epochs 0 to
+            # self.linear_exponential_lr_milestone, followed by exponential
+            # lr decay for the rest of the epochs
+            def _get_lr(epoch: int):
+                m = self.linear_exponential_lr_milestone
+                if epoch < m:
+                    w = (m - epoch) / m
+                    gamma = w * self.linear_exponential_start_gamma + (1 - w)
+                else:
+                    epoch_rest = epoch - m
+                    gamma = self.gamma ** (epoch_rest / self.exponential_lr_step_size)
+                return gamma
+
+            scheduler = torch.optim.lr_scheduler.LambdaLR(
+                optimizer, _get_lr, verbose=False
             )
         else:
             raise ValueError("no such lr policy %s" % self.lr_policy)
