@@ -253,7 +253,7 @@ class MLPWithInputSkips(torch.nn.Module):
         output_dim: int,
         skip_dim: int,
         hidden_dim: int,
-        input_skips: Tuple[int] = (),
+        input_skips: Tuple[int,...] = (),
     ):
         """
         Args:
