@@ -12,6 +12,7 @@ Key features include:
 - Data structure for storing and manipulating triangle meshes
 - Efficient operations on triangle meshes (projective transformations, graph convolution, sampling, loss functions)
 - A differentiable mesh renderer
+- Implicitron, see [its README](projects/implicitron_trainer), a framework for new-view synthesis via implicit representations.
 
 PyTorch3D is designed to integrate smoothly with deep learning methods for predicting and manipulating 3D data.
 For this reason, all operators in PyTorch3D:
@@ -93,6 +94,7 @@ In alphabetical order:
 
 * Amitav Baruah
 * Steve Branson
+* Krzysztof Chalupka
 * Luya Gao
 * Georgia Gkioxari
 * Taylor Gordon

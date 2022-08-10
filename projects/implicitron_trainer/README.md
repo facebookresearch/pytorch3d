@@ -37,7 +37,7 @@ See [Running](#running) section below for examples of training and evaluation co
 
 To plug in custom implementations, for example, of renderer or implicit-function protocols, you need to create your own runner script and import the plug-in implementations there.
 First, install PyTorch3D and Implicitron dependencies as described in the previous section.
-Then, implement the custom script; copying `pytorch3d/projects/implicitron_trainer/experiment.py` is a good place to start.
+Then, implement the custom script; copying `pytorch3d/projects/implicitron_trainer` is a good place to start.
 See [Custom plugins](#custom-plugins) for more information on how to import implementations and enable them in the configs.
 
 
