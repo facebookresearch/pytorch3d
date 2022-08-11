@@ -26,7 +26,7 @@ class NeuralRadianceField(torch.nn.Module):
         n_hidden_neurons_xyz: int = 256,
         n_hidden_neurons_dir: int = 128,
         n_layers_xyz: int = 8,
-        append_xyz: Tuple[int] = (5,),
+        append_xyz: Tuple[int, ...] = (5,),
         use_multiple_streams: bool = True,
         **kwargs,
     ):
@@ -253,7 +253,7 @@ class MLPWithInputSkips(torch.nn.Module):
         output_dim: int,
         skip_dim: int,
         hidden_dim: int,
-        input_skips: Tuple[int] = (),
+        input_skips: Tuple[int, ...] = (),
     ):
         """
         Args:

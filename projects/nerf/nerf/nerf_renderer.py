@@ -67,7 +67,7 @@ class RadianceFieldRenderer(torch.nn.Module):
         n_hidden_neurons_xyz: int = 256,
         n_hidden_neurons_dir: int = 128,
         n_layers_xyz: int = 8,
-        append_xyz: Tuple[int] = (5,),
+        append_xyz: Tuple[int, ...] = (5,),
         density_noise_std: float = 0.0,
         visualization: bool = False,
     ):
