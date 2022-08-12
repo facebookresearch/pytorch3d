@@ -256,10 +256,13 @@ class TestEvaluation(unittest.TestCase):
         lower_better = {
             "psnr": False,
             "psnr_fg": False,
+            "psnr_full_image": False,
             "depth_abs_fg": True,
             "iou": False,
             "rgb_l1": True,
             "rgb_l1_fg": True,
+            "lpips": True,
+            "lpips_full_image": True,
         }
 
         for metric in lower_better:

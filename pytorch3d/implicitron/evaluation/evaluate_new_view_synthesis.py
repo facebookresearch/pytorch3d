@@ -262,6 +262,10 @@ def eval_batch(
         else torch.ones_like(mask_fg)
     )
 
+    # unmasked g.t. image
+    image_rgb = frame_data.image_rgb
+
+    # fg-masked g.t. image
     image_rgb_masked = mask_background(
         # pyre-fixme[6]: Expected `Tensor` for 1st param but got
         #  `Optional[torch.Tensor]`.
@@ -330,12 +334,26 @@ def eval_batch(
                 if break_after_visualising:
                     breakpoint()  # noqa: B601
 
+    # add the rgb metrics between the render and the unmasked image
+    for rgb_metric_name, rgb_metric_fun in zip(
+        ("psnr_full_image", "rgb_l1_full_image"), (calc_psnr, rgb_l1)
+    ):
+        results[rgb_metric_name] = rgb_metric_fun(
+            image_render,
+            image_rgb,
+            mask=mask_crop,
+        )
+
     if lpips_model is not None:
-        im1, im2 = [
-            2.0 * im.clamp(0.0, 1.0) - 1.0
-            for im in (image_rgb_masked, cloned_render["image_render"])
-        ]
-        results["lpips"] = lpips_model.forward(im1, im2).item()
+        for gt_image_type in ("_full_image", ""):
+            im1, im2 = [
+                2.0 * im.clamp(0.0, 1.0) - 1.0  # pyre-ignore[16]
+                for im in (
+                    image_rgb_masked if gt_image_type == "" else image_rgb,
+                    cloned_render["image_render"],
+                )
+            ]
+            results["lpips" + gt_image_type] = lpips_model.forward(im1, im2).item()
 
     # convert all metrics to floats
     results = {k: float(v) for k, v in results.items()}
