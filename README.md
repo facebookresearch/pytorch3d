@@ -138,6 +138,10 @@ If you are using the pulsar backend for sphere-rendering (the `PulsarPointRender
 
 Please see below for a timeline of the codebase updates in reverse chronological order. We are sharing updates on the releases as well as research projects which are built with PyTorch3D. The changelogs for the releases are available under [`Releases`](https://github.com/facebookresearch/pytorch3d/releases),  and the builds can be installed using `conda` as per the instructions in [INSTALL.md](INSTALL.md).
 
+**[Aug 10th 2022]:**   PyTorch3D [v0.7.0](https://github.com/facebookresearch/pytorch3d/releases/tag/v0.7.0) released with Implicitron and MeshRasterizerOpenGL.
+
+**[Apr 28th 2022]:**   PyTorch3D [v0.6.2](https://github.com/facebookresearch/pytorch3d/releases/tag/v0.6.2) released
+
 **[Dec 16th 2021]:**   PyTorch3D [v0.6.1](https://github.com/facebookresearch/pytorch3d/releases/tag/v0.6.1) released
 
 **[Oct 6th 2021]:**   PyTorch3D [v0.6.0](https://github.com/facebookresearch/pytorch3d/releases/tag/v0.6.0) released
