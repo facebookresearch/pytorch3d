@@ -297,7 +297,7 @@ def eval_batch(
         mask=mask_crop,
     )
 
-    for loss_fg_mask, name_postfix in zip((mask_crop, mask_fg), ("", "_fg")):
+    for loss_fg_mask, name_postfix in zip((mask_crop, mask_fg), ("_masked", "_fg")):
 
         loss_mask_now = mask_crop * loss_fg_mask
 
@@ -345,11 +345,11 @@ def eval_batch(
         )
 
     if lpips_model is not None:
-        for gt_image_type in ("_full_image", ""):
+        for gt_image_type in ("_full_image", "_masked"):
             im1, im2 = [
                 2.0 * im.clamp(0.0, 1.0) - 1.0  # pyre-ignore[16]
                 for im in (
-                    image_rgb_masked if gt_image_type == "" else image_rgb,
+                    image_rgb_masked if gt_image_type == "_masked" else image_rgb,
                     cloned_render["image_render"],
                 )
             ]
