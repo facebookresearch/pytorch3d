@@ -115,7 +115,7 @@ def box3d_overlap(
     Computes the intersection of 3D boxes1 and boxes2.
 
     Inputs boxes1, boxes2 are tensors of shape (B, 8, 3)
-    (where B doesn't have to be the same for boxes1 and boxes1),
+    (where B doesn't have to be the same for boxes1 and boxes2),
     containing the 8 corners of the boxes, as follows:
 
         (4) +---------+. (5)
