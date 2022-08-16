@@ -360,7 +360,10 @@ class Pointclouds:
     def __len__(self) -> int:
         return self._N
 
-    def __getitem__(self, index) -> "Pointclouds":
+    def __getitem__(
+        self,
+        index: Union[int, List[int], slice, torch.BoolTensor, torch.LongTensor],
+    ) -> "Pointclouds":
         """
         Args:
             index: Specifying the index of the cloud to retrieve.

@@ -501,7 +501,10 @@ class Volumes:
         return self._densities.shape[0]
 
     def __getitem__(
-        self, index: Union[int, List[int], Tuple[int], slice, torch.Tensor]
+        self,
+        index: Union[
+            int, List[int], Tuple[int], slice, torch.BoolTensor, torch.LongTensor
+        ],
     ) -> "Volumes":
         """
         Args:

@@ -385,31 +385,45 @@ class CamerasBase(TensorProperties):
         return self.image_size if hasattr(self, "image_size") else None
 
     def __getitem__(
-        self, index: Union[int, List[int], torch.LongTensor]
+        self, index: Union[int, List[int], torch.BoolTensor, torch.LongTensor]
     ) -> "CamerasBase":
         """
         Override for the __getitem__ method in TensorProperties which needs to be
         refactored.
 
         Args:
-            index: an int/list/long tensor used to index all the fields in the cameras given by
-                self._FIELDS.
+            index: an integer index, list/tensor of integer indices, or tensor of boolean
+                indicators used to filter all the fields in the cameras given by self._FIELDS.
         Returns:
-            if `index` is an index int/list/long tensor return an instance of the current
-            cameras class with only the values at the selected index.
+            an instance of the current cameras class with only the values at the selected index.
         """
 
         kwargs = {}
 
-        # pyre-fixme[16]: Module `cuda` has no attribute `LongTensor`.
-        if not isinstance(index, (int, list, torch.LongTensor, torch.cuda.LongTensor)):
-            msg = "Invalid index type, expected int, List[int] or torch.LongTensor; got %r"
+        tensor_types = {
+            "bool": (torch.BoolTensor, torch.cuda.BoolTensor),
+            "long": (torch.LongTensor, torch.cuda.LongTensor),
+        }
+        if not isinstance(
+            index, (int, list, *tensor_types["bool"], *tensor_types["long"])
+        ) or (
+            isinstance(index, list)
+            and not all(isinstance(i, int) and not isinstance(i, bool) for i in index)
+        ):
+            msg = (
+                "Invalid index type, expected int, List[int] or Bool/LongTensor; got %r"
+            )
             raise ValueError(msg % type(index))
 
         if isinstance(index, int):
             index = [index]
 
-        if max(index) >= len(self):
+        if isinstance(index, tensor_types["bool"]):
+            if index.ndim != 1 or index.shape[0] != len(self):
+                raise ValueError(
+                    f"Boolean index of shape {index.shape} does not match cameras"
+                )
+        elif max(index) >= len(self):
             raise ValueError(f"Index {max(index)} is out of bounds for select cameras")
 
         for field in self._FIELDS:

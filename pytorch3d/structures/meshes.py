@@ -472,7 +472,9 @@ class Meshes:
     def __len__(self) -> int:
         return self._N
 
-    def __getitem__(self, index) -> "Meshes":
+    def __getitem__(
+        self, index: Union[int, List[int], slice, torch.BoolTensor, torch.LongTensor]
+    ) -> "Meshes":
         """
         Args:
             index: Specifying the index of the mesh to retrieve.
