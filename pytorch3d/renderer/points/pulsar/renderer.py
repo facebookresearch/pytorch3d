@@ -474,12 +474,6 @@ class Renderer(torch.nn.Module):
             rot_mat = axis_angle_to_matrix(rot_vec)
         if first_R_then_T:
             pos_vec = torch.matmul(rot_mat, pos_vec[..., None])[:, :, 0]
-        LOGGER.debug(
-            "Camera position: %s, rotation: %s. Focal length: %s.",
-            str(pos_vec),
-            str(rot_vec),
-            str(focal_length),
-        )
         sensor_dir_x = torch.matmul(
             rot_mat,
             torch.tensor(
@@ -500,56 +494,20 @@ class Renderer(torch.nn.Module):
         )[:, :, 0]
         if right_handed:
             sensor_dir_z *= -1
-        LOGGER.debug(
-            "Sensor direction vectors: %s, %s, %s.",
-            str(sensor_dir_x),
-            str(sensor_dir_y),
-            str(sensor_dir_z),
-        )
         if orthogonal:
             sensor_center = pos_vec
         else:
             sensor_center = pos_vec + focal_length * sensor_dir_z
-        LOGGER.debug("Sensor center: %s.", str(sensor_center))
         sensor_luc = (  # Sensor left upper corner.
             sensor_center
             - sensor_dir_x * (sensor_size_x / 2.0)
             - sensor_dir_y * (sensor_size_y / 2.0)
         )
-        LOGGER.debug("Sensor luc: %s.", str(sensor_luc))
         pixel_size_x = sensor_size_x / float(width)
         pixel_size_y = sensor_size_y / float(height)
-        LOGGER.debug(
-            "Pixel sizes (x): %s, (y) %s.", str(pixel_size_x), str(pixel_size_y)
-        )
         pixel_vec_x: torch.Tensor = sensor_dir_x * pixel_size_x
         pixel_vec_y: torch.Tensor = sensor_dir_y * pixel_size_y
         pixel_0_0_center = sensor_luc + 0.5 * pixel_vec_x + 0.5 * pixel_vec_y
-        LOGGER.debug(
-            "Pixel 0 centers: %s, vec x: %s, vec y: %s.",
-            str(pixel_0_0_center),
-            str(pixel_vec_x),
-            str(pixel_vec_y),
-        )
-        if not orthogonal:
-            LOGGER.debug(
-                "Camera horizontal fovs: %s deg.",
-                str(
-                    2.0
-                    * torch.atan(0.5 * sensor_size_x / focal_length)
-                    / math.pi
-                    * 180.0
-                ),
-            )
-            LOGGER.debug(
-                "Camera vertical fovs: %s deg.",
-                str(
-                    2.0
-                    * torch.atan(0.5 * sensor_size_y / focal_length)
-                    / math.pi
-                    * 180.0
-                ),
-            )
         # Reduce dimension.
         focal_length: torch.Tensor = focal_length[:, 0]
         if batch_processing:
