@@ -4,14 +4,19 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+import logging
 import math
 from typing import Optional, Tuple
 
 import torch
 from pytorch3d.common.compat import eigh
+from pytorch3d.implicitron.tools import utils
 from pytorch3d.implicitron.tools.circle_fitting import fit_circle_in_3d
 from pytorch3d.renderer import look_at_view_transform, PerspectiveCameras
 from pytorch3d.transforms import Scale
+
+
+logger = logging.getLogger(__name__)
 
 
 def generate_eval_video_cameras(
@@ -27,6 +32,7 @@ def generate_eval_video_cameras(
     infer_up_as_plane_normal: bool = True,
     traj_offset: Optional[Tuple[float, float, float]] = None,
     traj_offset_canonical: Optional[Tuple[float, float, float]] = None,
+    remove_outliers_rate: float = 0.0,
 ) -> PerspectiveCameras:
     """
     Generate a camera trajectory rendering a scene from multiple viewpoints.
@@ -50,9 +56,16 @@ def generate_eval_video_cameras(
             Active for the `trajectory_type="circular"`.
         scene_center: The center of the scene in world coordinates which all
             the cameras from the generated trajectory look at.
+        remove_outliers_rate: the number between 0 and 1; if > 0,
+            some outlier train_cameras will be removed from trajectory estimation;
+            the filtering is based on camera center coordinates; top and
+            bottom `remove_outliers_rate` cameras on each dimension are removed.
     Returns:
         Dictionary of camera instances which can be used as the test dataset
     """
+    if remove_outliers_rate > 0.0:
+        train_cameras = _remove_outlier_cameras(train_cameras, remove_outliers_rate)
+
     if trajectory_type in ("figure_eight", "trefoil_knot", "figure_eight_knot"):
         cam_centers = train_cameras.get_camera_center()
         # get the nearest camera center to the mean of centers
@@ -165,6 +178,20 @@ def generate_eval_video_cameras(
     # )
 
     return test_cameras
+
+
+def _remove_outlier_cameras(
+    cameras: PerspectiveCameras, outlier_rate: float
+) -> PerspectiveCameras:
+    keep_indices = utils.get_inlier_indicators(
+        cameras.get_camera_center(), dim=0, outlier_rate=outlier_rate
+    )
+    clean_cameras = cameras[keep_indices]
+    logger.info(
+        "Filtered outlier cameras when estimating the trajectory: "
+        f"{len(cameras)} → {len(clean_cameras)}"
+    )
+    return clean_cameras
 
 
 def _disambiguate_normal(normal, up):

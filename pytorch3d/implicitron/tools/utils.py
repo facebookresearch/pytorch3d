@@ -9,7 +9,7 @@ import collections
 import dataclasses
 import time
 from contextlib import contextmanager
-from typing import Any, Callable, Dict
+from typing import Any, Callable, Dict, Iterable, Iterator
 
 import torch
 
@@ -155,6 +155,26 @@ def cat_dataclass(batch, tensor_collator: Callable):
             raise ValueError("Unsupported field type for concatenation")
 
     return type(elem)(**collated)
+
+
+def recursive_visitor(it: Iterable[Any]) -> Iterator[Any]:
+    for x in it:
+        if isinstance(x, Iterable) and not isinstance(x, (str, bytes)):
+            yield from recursive_visitor(x)
+        else:
+            yield x
+
+
+def get_inlier_indicators(
+    tensor: torch.Tensor, dim: int, outlier_rate: float
+) -> torch.Tensor:
+    remove_elements = int(min(outlier_rate, 1.0) * tensor.shape[dim] / 2)
+    hi = torch.topk(tensor, remove_elements, dim=dim).indices.tolist()
+    lo = torch.topk(-tensor, remove_elements, dim=dim).indices.tolist()
+    remove_indices = set(recursive_visitor([hi, lo]))
+    keep_indices = tensor.new_ones(tensor.shape[dim : dim + 1], dtype=torch.bool)
+    keep_indices[list(remove_indices)] = False
+    return keep_indices
 
 
 class Timer:
