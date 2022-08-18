@@ -333,8 +333,10 @@ def export_scenes(
     )
     dataset_args.test_on_train = False
     # Set the rendering image size
-    config.generic_model_args.render_image_width = render_size[0]
-    config.generic_model_args.render_image_height = render_size[1]
+    model_factory_args = config.model_factory_ImplicitronModelFactory_args
+    model_args = model_factory_args.model_GenericModel_args
+    model_args.render_image_width = render_size[0]
+    model_args.render_image_height = render_size[1]
     if restrict_sequence_name is not None:
         dataset_args.restrict_sequence_name = restrict_sequence_name
 

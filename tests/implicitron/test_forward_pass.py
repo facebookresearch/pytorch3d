@@ -207,10 +207,11 @@ def _load_model_config_from_yaml(config_path, strict=True) -> DictConfig:
 
 def _load_model_config_from_yaml_rec(cfg: DictConfig, config_path: str) -> DictConfig:
     cfg_loaded = OmegaConf.load(config_path)
-    if "generic_model_args" in cfg_loaded:
-        cfg_model_loaded = cfg_loaded.generic_model_args
-    else:
-        cfg_model_loaded = None
+    cfg_model_loaded = None
+    if "model_factory_ImplicitronModelFactory_args" in cfg_loaded:
+        factory_args = cfg_loaded.model_factory_ImplicitronModelFactory_args
+        if "model_GenericModel_args" in factory_args:
+            cfg_model_loaded = factory_args.model_GenericModel_args
     defaults = cfg_loaded.pop("defaults", None)
     if defaults is not None:
         for default_name in defaults:

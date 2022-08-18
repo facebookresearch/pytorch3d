@@ -67,7 +67,9 @@ To run training, pass a yaml config file, followed by a list of overridden argum
 For example, to train NeRF on the first skateboard sequence from CO3D dataset, you can run:
 ```shell
 dataset_args=data_source_args.dataset_map_provider_JsonIndexDatasetMapProvider_args
-pytorch3d_implicitron_runner --config-path ./configs/ --config-name repro_singleseq_nerf $dataset_args.dataset_root=<DATASET_ROOT> $dataset_args.category='skateboard' $dataset_args.test_restrict_sequence_id=0 test_when_finished=True exp_dir=<CHECKPOINT_DIR>
+pytorch3d_implicitron_runner --config-path ./configs/ --config-name repro_singleseq_nerf \
+    $dataset_args.dataset_root=<DATASET_ROOT> $dataset_args.category='skateboard' \
+    $dataset_args.test_restrict_sequence_id=0 test_when_finished=True exp_dir=<CHECKPOINT_DIR>
 ```
 
 Here, `--config-path` points to the config path relative to `pytorch3d_implicitron_runner` location;
@@ -86,7 +88,9 @@ To run evaluation on the latest checkpoint after (or during) training, simply ad
 E.g. for executing the evaluation on the NeRF skateboard sequence, you can run:
 ```shell
 dataset_args=data_source_args.dataset_map_provider_JsonIndexDatasetMapProvider_args
-pytorch3d_implicitron_runner --config-path ./configs/ --config-name repro_singleseq_nerf $dataset_args.dataset_root=<CO3D_DATASET_ROOT> $dataset_args.category='skateboard' $dataset_args.test_restrict_sequence_id=0 exp_dir=<CHECKPOINT_DIR> eval_only=True
+pytorch3d_implicitron_runner --config-path ./configs/ --config-name repro_singleseq_nerf \
+    $dataset_args.dataset_root=<CO3D_DATASET_ROOT> $dataset_args.category='skateboard' \
+    $dataset_args.test_restrict_sequence_id=0 exp_dir=<CHECKPOINT_DIR> eval_only=True
 ```
 Evaluation prints the metrics to `stdout` and dumps them to a json file in `exp_dir`.
 
@@ -101,7 +105,8 @@ conda install ffmpeg
 
 Here is an example of calling the script:
 ```shell
-projects/implicitron_trainer/visualize_reconstruction.py exp_dir=<CHECKPOINT_DIR> visdom_show_preds=True n_eval_cameras=40 render_size="[64,64]" video_size="[256,256]"
+projects/implicitron_trainer/visualize_reconstruction.py exp_dir=<CHECKPOINT_DIR> \
+    visdom_show_preds=True n_eval_cameras=40 render_size="[64,64]" video_size="[256,256]"
 ```
 
 The argument `n_eval_cameras` sets the number of renderring viewpoints sampled on a trajectory, which defaults to a circular fly-around;
@@ -124,18 +129,21 @@ In the config, inner parameters can be propagated using `_args` postfix, e.g. to
 
 The root of the hierarchy is defined by `ExperimentConfig` dataclass.
 It has top-level fields like `eval_only` which was used above for running evaluation by adding a CLI override.
-Additionally, it has non-leaf nodes like `generic_model_args`, which dispatches the config parameters to `GenericModel`. Thus, changing the model parameters may be achieved in two ways: either by editing the config file, e.g.
+Additionally, it has non-leaf nodes like `model_factory_ImplicitronModelFactory_args.model_GenericModel_args`, which dispatches the config parameters to `GenericModel`.
+Thus, changing the model parameters may be achieved in two ways: either by editing the config file, e.g.
 ```yaml
-generic_model_args:
-    render_image_width: 800
-    raysampler_args:
-        n_pts_per_ray_training: 128
+model_factory_ImplicitronModelFactory_args:
+    model_GenericModel_args:
+        render_image_width: 800
+        raysampler_args:
+            n_pts_per_ray_training: 128
 ```
 
 or, equivalently, by adding the following to `pytorch3d_implicitron_runner` arguments:
 
 ```shell
-generic_model_args.render_image_width=800 generic_model_args.raysampler_args.n_pts_per_ray_training=128
+model_args=model_factory_ImplicitronModelFactory_args.model_GenericModel_args
+$model_args.render_image_width=800 $model_args.raysampler_args.n_pts_per_ray_training=128
 ```
 
 See the documentation in `pytorch3d/implicitron/tools/config.py` for more details.
@@ -149,11 +157,12 @@ This means that other Configurables can refer to them using the base type, while
 In that case, `_args` node name has to include the implementation type.
 More specifically, to change renderer settings, the config will look like this:
 ```yaml
-generic_model_args:
-    renderer_class_type: LSTMRenderer
-    renderer_LSTMRenderer_args:
-        num_raymarch_steps: 10
-        hidden_size: 16
+model_factory_ImplicitronModelFactory_args:
+    model_GenericModel_args:
+        renderer_class_type: LSTMRenderer
+        renderer_LSTMRenderer_args:
+            num_raymarch_steps: 10
+            hidden_size: 16
 ```
 
 See the documentation in `pytorch3d/implicitron/tools/config.py` for more details on the configuration system.
@@ -188,15 +197,17 @@ class XRayRenderer(BaseRenderer, torch.nn.Module):
 ```
 
 Please note `@registry.register` decorator that registers the plug-in as an implementation of `Renderer`.
-IMPORTANT: In order for it to run, the class (or its enclosing module) has to be imported in your launch script. Additionally, this has to be done before parsing the root configuration class `ExperimentConfig`.
+IMPORTANT: In order for it to run, the class (or its enclosing module) has to be imported in your launch script.
+Additionally, this has to be done before parsing the root configuration class `ExperimentConfig`.
 Simply add `import .x_ray_renderer` in the beginning of `experiment.py`.
 
 After that, you should be able to change the config with:
 ```yaml
-generic_model_args:
-    renderer_class_type: XRayRenderer
-    renderer_XRayRenderer_args:
-        n_pts_per_ray: 128
+model_factory_ImplicitronModelFactory_args:
+    model_GenericModel_args:
+        renderer_class_type: XRayRenderer
+        renderer_XRayRenderer_args:
+            n_pts_per_ray: 128
 ```
 
 to replace the implementation and potentially override the parameters.
@@ -252,7 +263,8 @@ model_GenericModel_args: GenericModel
         ╘== ReductionFeatureAggregator
 ```
 
-Please look at the annotations of the respective classes or functions for the lists of hyperparameters. `tests/experiment.yaml` shows every possible option if you have no user-defined classes.
+Please look at the annotations of the respective classes or functions for the lists of hyperparameters.
+`tests/experiment.yaml` shows every possible option if you have no user-defined classes.
 
 # Reproducing CO3D experiments
 

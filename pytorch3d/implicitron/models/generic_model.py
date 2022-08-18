@@ -131,8 +131,9 @@ class GenericModel(ImplicitronModelBase):  # pyre-ignore: 13
     for more details on how to create and register a custom component.
 
     In the config .yaml files for experiments, the parameters below are
-    contained in the `generic_model_args` node. As GenericModel
-    derives from Configurable, the input arguments are
+    contained in the
+    `model_factory_ImplicitronModelFactory_args.model_GenericModel_args`
+    node. As GenericModel derives from ReplaceableBase, the input arguments are
     parsed by the run_auto_creation function to initialize the
     necessary member modules. Please see implicitron_trainer/README.md
     for more details on this process.
