@@ -17,13 +17,20 @@ data_source_ImplicitronDataSource_args:
 model_factory_ImplicitronModelFactory_args:
   model_GenericModel_args:
     mask_images: false
-    raysampler_class_type: NearFarRaySampler
-    raysampler_NearFarRaySampler_args:
+    raysampler_class_type: AdaptiveRaySampler
+    raysampler_AdaptiveRaySampler_args:
+      n_pts_per_ray_training: 64
+      n_pts_per_ray_evaluation: 64
       n_rays_per_image_sampled_from_mask: 4096
-      min_depth: 2
-      max_depth: 6
+      stratified_point_sampling_training: true
+      stratified_point_sampling_evaluation: false
+      scene_extent: 2.0
+      scene_center:
+      - 0.0
+      - 0.0
+      - 0.0
     renderer_MultiPassEmissionAbsorptionRenderer_args:
-      density_noise_std_train: 1.0
+      density_noise_std_train: 0.0
       n_pts_per_ray_fine_training: 128
       n_pts_per_ray_fine_evaluation: 128
       raymarcher_EmissionAbsorptionRaymarcher_args:
@@ -41,7 +48,7 @@ optimizer_factory_ImplicitronOptimizerFactory_args:
   linear_exponential_lr_milestone: 200
 
 training_loop_ImplicitronTrainingLoop_args:
-  max_epochs: 3201
+  max_epochs: 6000
   metric_print_interval: 10
   store_checkpoints_purge: 3
   test_when_finished: true
