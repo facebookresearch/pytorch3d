@@ -80,9 +80,9 @@ std::tuple<at::Tensor, at::Tensor> IoUBox3DCpu(
         for (int b1 = 0; b1 < box1_intersect.size(); ++b1) {
           for (int b2 = 0; b2 < box2_intersect.size(); ++b2) {
             const bool is_coplanar =
-                IsCoplanarFace(box1_intersect[b1], box2_intersect[b2]);
+                IsCoplanarTriTri(box1_intersect[b1], box2_intersect[b2]);
             const float area = FaceArea(box1_intersect[b1]);
-            if ((is_coplanar) && (area > kEpsilon)) {
+            if ((is_coplanar) && (area > aEpsilon)) {
               tri2_keep[b2] = 0;
             }
           }

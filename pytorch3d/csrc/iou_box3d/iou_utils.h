@@ -18,7 +18,15 @@
 #include <type_traits>
 #include "utils/vec3.h"
 
-const auto kEpsilon = 1e-5;
+// dEpsilon: Used in dot products and is used to assess whether two unit vectors
+// are orthogonal (or coplanar). It's an epsilon on cos(θ).
+// With dEpsilon = 0.001, two unit vectors are considered co-planar
+// if their θ = 2.5 deg.
+const auto dEpsilon = 1e-3;
+// aEpsilon: Used once in main function to check for small face areas
+const auto aEpsilon = 1e-4;
+// kEpsilon: Used only for norm(u) = u/max(||u||, kEpsilon)
+const auto kEpsilon = 1e-8;
 
 /*
 _PLANES and _TRIS define the 4- and 3-connectivity
@@ -129,20 +137,108 @@ inline face_verts GetBoxPlanes(const Box& box) {
   return box_planes;
 }
 
-// The normal of the face defined by vertices (v0, v1, v2)
-// Define e0 to be the edge connecting (v1, v0)
-// Define e1 to be the edge connecting (v2, v0)
-// normal is the cross product of e0, e1
+// The normal of a plane spanned by vectors e0 and e1
 //
 // Args
-//    v0, v1, v2: vec3 coordinates of the vertices of the face
+//    e0, e1: vec3 vectors defining a plane
+//
+// Returns
+//    vec3: normal of the plane
+//
+inline vec3<float> GetNormal(const vec3<float> e0, const vec3<float> e1) {
+  vec3<float> n = cross(e0, e1);
+  n = n / std::fmaxf(norm(n), kEpsilon);
+  return n;
+}
+
+// The center of a triangle tri
+//
+// Args
+//    tri: vec3 coordinates of the vertices of the triangle
+//
+// Returns
+//    vec3: center of the triangle
+//
+inline vec3<float> TriCenter(const std::vector<vec3<float>>& tri) {
+  // Vertices of the triangle
+  const vec3<float> v0 = tri[0];
+  const vec3<float> v1 = tri[1];
+  const vec3<float> v2 = tri[2];
+
+  return (v0 + v1 + v2) / 3.0f;
+}
+
+// The normal of the triangle defined by vertices (v0, v1, v2)
+// We find the "best" edges connecting the face center to the vertices,
+// such that the cross product between the edges is maximized.
+//
+// Args
+//    tri: vec3 coordinates of the vertices of the face
 //
 // Returns
 //    vec3: normal for the face
 //
-inline vec3<float> FaceNormal(vec3<float> v0, vec3<float> v1, vec3<float> v2) {
-  vec3<float> n = cross(v1 - v0, v2 - v0);
-  n = n / std::fmaxf(norm(n), kEpsilon);
+inline vec3<float> TriNormal(const std::vector<vec3<float>>& tri) {
+  // Get center of triangle
+  const vec3<float> ctr = TriCenter(tri);
+
+  // find the "best" normal as cross product of edges from center
+  float max_dist = -1.0f;
+  vec3<float> n = {0.0f, 0.0f, 0.0f};
+  for (int i = 0; i < 2; ++i) {
+    for (int j = i + 1; j < 3; ++j) {
+      const float dist = norm(cross(tri[i] - ctr, tri[j] - ctr));
+      if (dist > max_dist) {
+        n = GetNormal(tri[i] - ctr, tri[j] - ctr);
+      }
+    }
+  }
+  return n;
+}
+
+// The center of a plane
+//
+// Args
+//    plane: vec3 coordinates of the vertices of the plane
+//
+// Returns
+//    vec3: center of the plane
+//
+inline vec3<float> PlaneCenter(const std::vector<vec3<float>>& plane) {
+  // Vertices of the plane
+  const vec3<float> v0 = plane[0];
+  const vec3<float> v1 = plane[1];
+  const vec3<float> v2 = plane[2];
+  const vec3<float> v3 = plane[3];
+
+  return (v0 + v1 + v2 + v3) / 4.0f;
+}
+
+// The normal of a planar face with vertices (v0, v1, v2, v3)
+// We find the "best" edges connecting the face center to the vertices,
+// such that the cross product between the edges is maximized.
+//
+// Args
+//    plane: vec3 coordinates of the vertices of the planar face
+//
+// Returns
+//    vec3: normal of the planar face
+//
+inline vec3<float> PlaneNormal(const std::vector<vec3<float>>& plane) {
+  // Get center of planar face
+  vec3<float> ctr = PlaneCenter(plane);
+
+  // find the "best" normal as cross product of edges from center
+  float max_dist = -1.0f;
+  vec3<float> n = {0.0f, 0.0f, 0.0f};
+  for (int i = 0; i < 3; ++i) {
+    for (int j = i + 1; j < 4; ++j) {
+      const float dist = norm(cross(plane[i] - ctr, plane[j] - ctr));
+      if (dist > max_dist) {
+        n = GetNormal(plane[i] - ctr, plane[j] - ctr);
+      }
+    }
+  }
   return n;
 }
 
@@ -166,8 +262,9 @@ inline float FaceArea(const std::vector<vec3<float>>& tri) {
   return norm(n) / 2.0;
 }
 
-// The normal of a box plane defined by the verts in `plane` with
-// the centroid of the box given by `center`.
+// The normal of a box plane defined by the verts in `plane` such that it
+// points toward the centroid of the box given by `center`.
+//
 // Args
 //    plane: vec3 coordinates of the vertices of the plane
 //    center: vec3 coordinates of the center of the box from
@@ -180,23 +277,22 @@ inline float FaceArea(const std::vector<vec3<float>>& tri) {
 inline vec3<float> PlaneNormalDirection(
     const std::vector<vec3<float>>& plane,
     const vec3<float>& center) {
-  // Only need the first 3 verts of the plane
-  const vec3<float> v0 = plane[0];
-  const vec3<float> v1 = plane[1];
-  const vec3<float> v2 = plane[2];
+  // The plane's center & normal
+  const vec3<float> plane_center = PlaneCenter(plane);
+  vec3<float> n = PlaneNormal(plane);
 
-  // We project the center on the plane defined by (v0, v1, v2)
-  // We can write center = v0 + a * e0 + b * e1 + c * n
+  // We project the center on the plane defined by (v0, v1, v2, v3)
+  // We can write center = plane_center + a * e0 + b * e1 + c * n
   // We know that <e0, n> = 0 and <e1, n> = 0 and
   // <a, b> is the dot product between a and b.
   // This means we can solve for c as:
-  // c = <center - v0 - a * e0 - b * e1, n> = <center - v0, n>
-  vec3<float> n = FaceNormal(v0, v1, v2);
-  const float c = dot((center - v0), n);
+  // c = <center - plane_center - a * e0 - b * e1, n>
+  //   = <center - plane_center, n>
+  const float c = dot((center - plane_center), n);
 
   // If c is negative, then we revert the direction of n such that n
   // points "inside"
-  if (c < kEpsilon) {
+  if (c < 0.0f) {
     n = -1.0f * n;
   }
 
@@ -308,16 +404,16 @@ inline bool IsInside(
     const std::vector<vec3<float>>& plane,
     const vec3<float>& normal,
     const vec3<float>& point) {
-  // Get one vert of the plane
-  const vec3<float> v0 = plane[0];
+  // The center of the plane
+  const vec3<float> plane_ctr = PlaneCenter(plane);
 
-  // Every point p can be written as p = v0 + a e0 + b e1 + c n
+  // Every point p can be written as p = plane_ctr + a e0 + b e1 + c n
   // Solving for c:
-  // c = (point - v0 - a * e0 - b * e1).dot(n)
+  // c = (point - plane_ctr - a * e0 - b * e1).dot(n)
   // We know that <e0, n> = 0 and <e1, n> = 0
   // So the calculation can be simplified as:
-  const float c = dot((point - v0), normal);
-  const bool inside = c > -1.0f * kEpsilon;
+  const float c = dot((point - plane_ctr), normal);
+  const bool inside = c >= 0.0f;
   return inside;
 }
 
@@ -338,18 +434,122 @@ inline vec3<float> PlaneEdgeIntersection(
     const vec3<float>& normal,
     const vec3<float>& p0,
     const vec3<float>& p1) {
-  // Get one vert of the plane
-  const vec3<float> v0 = plane[0];
+  // The center of the plane
+  const vec3<float> plane_ctr = PlaneCenter(plane);
 
   // The point of intersection can be parametrized
   // p = p0 + a (p1 - p0) where a in [0, 1]
   // We want to find a such that p is on plane
-  // <p - v0, n> = 0
-  const float top = dot(-1.0f * (p0 - v0), normal);
-  const float bot = dot(p1 - p0, normal);
-  const float a = top / bot;
-  const vec3<float> p = p0 + a * (p1 - p0);
+  // <p - ctr, n> = 0
+
+  vec3<float> direc = p1 - p0;
+  direc = direc / std::fmaxf(norm(direc), kEpsilon);
+
+  vec3<float> p = (p1 + p0) / 2.0f;
+
+  if (std::abs(dot(direc, normal)) >= dEpsilon) {
+    const float top = -1.0f * dot(p0 - plane_ctr, normal);
+    const float bot = dot(p1 - p0, normal);
+    const float a = top / bot;
+    p = p0 + a * (p1 - p0);
+  }
   return p;
+}
+
+// Compute the most distant points between two sets of vertices
+//
+// Args
+//    verts1, verts2: vec3 defining the list of vertices
+//
+// Returns
+//    v1m, v2m: vec3 vectors of the most distant points
+//          in verts1 and verts2 respectively
+//
+inline std::tuple<vec3<float>, vec3<float>> ArgMaxVerts(
+    const std::vector<vec3<float>>& verts1,
+    const std::vector<vec3<float>>& verts2) {
+  vec3<float> v1m = {0.0f, 0.0f, 0.0f};
+  vec3<float> v2m = {0.0f, 0.0f, 0.0f};
+  float maxdist = -1.0f;
+
+  for (const auto& v1 : verts1) {
+    for (const auto& v2 : verts2) {
+      if (norm(v1 - v2) > maxdist) {
+        v1m = v1;
+        v2m = v2;
+        maxdist = norm(v1 - v2);
+      }
+    }
+  }
+  return std::make_tuple(v1m, v2m);
+}
+
+// Compute a boolean indicator for whether or not two faces
+// are coplanar
+//
+// Args
+//    tri1, tri2: std:vector<vec3> of the vertex coordinates of
+//        triangle faces
+//
+// Returns
+//    bool: whether or not the two faces are coplanar
+//
+inline bool IsCoplanarTriTri(
+    const std::vector<vec3<float>>& tri1,
+    const std::vector<vec3<float>>& tri2) {
+  // Get normal for tri 1
+  const vec3<float> n1 = TriNormal(tri1);
+
+  // Get normal for tri 2
+  const vec3<float> n2 = TriNormal(tri2);
+
+  // Check if parallel
+  const bool check1 = std::abs(dot(n1, n2)) > 1 - dEpsilon;
+
+  // Compute most distant points
+  auto argvs = ArgMaxVerts(tri1, tri2);
+  const auto [v1m, v2m] = argvs;
+
+  vec3<float> n12m = v1m - v2m;
+  n12m = n12m / std::fmaxf(norm(n12m), kEpsilon);
+
+  const bool check2 = (std::abs(dot(n12m, n1)) < dEpsilon) ||
+      (std::abs(dot(n12m, n2)) < dEpsilon);
+
+  return (check1 && check2);
+}
+
+// Compute a boolean indicator for whether or not a triangular and a planar
+// face are coplanar
+//
+// Args
+//    tri, plane: std:vector<vec3> of the vertex coordinates of
+//        triangular face and planar face
+//    normal: the normal direction of the plane pointing "inside"
+//
+// Returns
+//    bool: whether or not the two faces are coplanar
+//
+inline bool IsCoplanarTriPlane(
+    const std::vector<vec3<float>>& tri,
+    const std::vector<vec3<float>>& plane,
+    const vec3<float>& normal) {
+  // Get normal for tri
+  const vec3<float> nt = TriNormal(tri);
+
+  // check if parallel
+  const bool check1 = std::abs(dot(nt, normal)) > 1 - dEpsilon;
+
+  // Compute most distant points
+  auto argvs = ArgMaxVerts(tri, plane);
+  const auto [v1m, v2m] = argvs;
+
+  vec3<float> n12m = v1m - v2m;
+  n12m = n12m / std::fmaxf(norm(n12m), kEpsilon);
+
+  const bool check2 = std::abs(dot(n12m, normal)) < dEpsilon;
+
+  return (check1 && check2);
 }
 
 // Triangle is clipped into a quadrilateral
@@ -436,6 +636,14 @@ inline face_verts ClipTriByPlane(
   const vec3<float> v1 = tri[1];
   const vec3<float> v2 = tri[2];
 
+  // Check coplanar
+  const bool iscoplanar = IsCoplanarTriPlane(tri, plane, normal);
+  if (iscoplanar) {
+    // Return input vertices
+    face_verts tris = {{v0, v1, v2}};
+    return tris;
+  }
+
   // Check each of the triangle vertices to see if it is inside the plane
   const bool isin0 = IsInside(plane, normal, v0);
   const bool isin1 = IsInside(plane, normal, v1);
@@ -478,35 +686,6 @@ inline face_verts ClipTriByPlane(
 
   // Else return empty (should not be reached)
   return empty_tris;
-}
-
-// Compute a boolean indicator for whether or not two faces
-// are coplanar
-//
-// Args
-//    tri1, tri2: std:vector<vec3> of the vertex coordinates of
-//        triangle faces
-//
-// Returns
-//    bool: whether or not the two faces are coplanar
-//
-inline bool IsCoplanarFace(
-    const std::vector<vec3<float>>& tri1,
-    const std::vector<vec3<float>>& tri2) {
-  // Get verts for face 1
-  const vec3<float> v0 = tri1[0];
-  const vec3<float> v1 = tri1[1];
-  const vec3<float> v2 = tri1[2];
-
-  const vec3<float> n1 = FaceNormal(v0, v1, v2);
-  int coplanar_count = 0;
-  for (int i = 0; i < 3; ++i) {
-    float d = std::abs(dot(tri2[i] - v0, n1));
-    if (d < kEpsilon) {
-      coplanar_count = coplanar_count + 1;
-    }
-  }
-  return (coplanar_count == 3);
 }
 
 // Get the triangles from each box which are part of the
