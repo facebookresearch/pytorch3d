@@ -890,34 +890,22 @@ class Meshes:
             verts_normals = torch.zeros_like(verts_packed)
             vertices_faces = verts_packed[faces_packed]
 
+            faces_normals = torch.cross(
+                vertices_faces[:, 2] - vertices_faces[:, 1],
+                vertices_faces[:, 0] - vertices_faces[:, 1],
+                dim=1,
+            )
+
             # NOTE: this is already applying the area weighting as the magnitude
             # of the cross product is 2 x area of the triangle.
             verts_normals = verts_normals.index_add(
-                0,
-                faces_packed[:, 1],
-                torch.cross(
-                    vertices_faces[:, 2] - vertices_faces[:, 1],
-                    vertices_faces[:, 0] - vertices_faces[:, 1],
-                    dim=1,
-                ),
+                0, faces_packed[:, 0], faces_normals
             )
             verts_normals = verts_normals.index_add(
-                0,
-                faces_packed[:, 2],
-                torch.cross(
-                    vertices_faces[:, 0] - vertices_faces[:, 2],
-                    vertices_faces[:, 1] - vertices_faces[:, 2],
-                    dim=1,
-                ),
+                0, faces_packed[:, 1], faces_normals
             )
             verts_normals = verts_normals.index_add(
-                0,
-                faces_packed[:, 0],
-                torch.cross(
-                    vertices_faces[:, 1] - vertices_faces[:, 0],
-                    vertices_faces[:, 2] - vertices_faces[:, 0],
-                    dim=1,
-                ),
+                0, faces_packed[:, 2], faces_normals
             )
 
             self._verts_normals_packed = torch.nn.functional.normalize(
