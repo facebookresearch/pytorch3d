@@ -29,14 +29,17 @@ __global__ void IoUBox3DKernel(
   const size_t tid = blockIdx.x * blockDim.x + threadIdx.x;
   const size_t stride = gridDim.x * blockDim.x;
 
+  std::array<FaceVerts, NUM_TRIS> box1_tris{};
+  std::array<FaceVerts, NUM_TRIS> box2_tris{};
+  std::array<FaceVerts, NUM_PLANES> box1_planes{};
+  std::array<FaceVerts, NUM_PLANES> box2_planes{};
+
   for (size_t i = tid; i < N * M; i += stride) {
     const size_t n = i / M; // box1 index
     const size_t m = i % M; // box2 index
 
     // Convert to array of structs of face vertices i.e. effectively (F, 3, 3)
     // FaceVerts is a data type defined in iou_utils.cuh
-    FaceVerts box1_tris[NUM_TRIS];
-    FaceVerts box2_tris[NUM_TRIS];
     GetBoxTris(boxes1[n], box1_tris);
     GetBoxTris(boxes2[m], box2_tris);
 
@@ -46,9 +49,7 @@ __global__ void IoUBox3DKernel(
     const float3 box2_center = BoxCenter(boxes2[m]);
 
     // Convert to an array of face vertices
-    FaceVerts box1_planes[NUM_PLANES];
     GetBoxPlanes(boxes1[n], box1_planes);
-    FaceVerts box2_planes[NUM_PLANES];
     GetBoxPlanes(boxes2[m], box2_planes);
 
     // Get Box Volumes
