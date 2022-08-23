@@ -36,15 +36,15 @@ class CamerasBase(TensorProperties):
 
     For cameras, there are four different coordinate systems (or spaces)
     - World coordinate system: This is the system the object lives - the world.
-    - Camera view coordinate system: This is the system that has its origin on the camera
-        and the and the Z-axis perpendicular to the image plane.
+    - Camera view coordinate system: This is the system that has its origin on
+        the camera and the Z-axis perpendicular to the image plane.
         In PyTorch3D, we assume that +X points left, and +Y points up and
         +Z points out from the image plane.
         The transformation from world --> view happens after applying a rotation (R)
         and translation (T)
     - NDC coordinate system: This is the normalized coordinate system that confines
-        in a volume the rendered part of the object or scene. Also known as view volume.
-        For square images, given the PyTorch3D convention, (+1, +1, znear)
+        points in a volume the rendered part of the object or scene, also known as
+        view volume. For square images, given the PyTorch3D convention, (+1, +1, znear)
         is the top left near corner, and (-1, -1, zfar) is the bottom right far
         corner of the volume.
         The transformation from view --> NDC happens after applying the camera
@@ -54,10 +54,9 @@ class CamerasBase(TensorProperties):
     - Screen coordinate system: This is another representation of the view volume with
         the XY coordinates defined in image space instead of a normalized space.
 
-    A better illustration of the coordinate systems can be found in
-    pytorch3d/docs/notes/cameras.md.
+    An illustration of the coordinate systems can be found in pytorch3d/docs/notes/cameras.md.
 
-    It defines methods that are common to all camera models:
+    CameraBase defines methods that are common to all camera models:
         - `get_camera_center` that returns the optical center of the camera in
             world coordinates
         - `get_world_to_view_transform` which returns a 3D transform from
@@ -167,8 +166,8 @@ class CamerasBase(TensorProperties):
                 as keyword arguments to override the default values
                 set in __init__.
 
-        Setting T here will update the values set in init as this
-        value may be needed later on in the rendering pipeline e.g. for
+        Setting R or T here will update the values set in init as these
+        values may be needed later on in the rendering pipeline e.g. for
         lighting calculations.
 
         Returns:
@@ -237,8 +236,9 @@ class CamerasBase(TensorProperties):
         self, points, eps: Optional[float] = None, **kwargs
     ) -> torch.Tensor:
         """
-        Transform input points from world to camera space with the
-        projection matrix defined by the camera.
+        Transform input points from world to camera space.
+        If camera is defined in NDC space, the projected points are in NDC space.
+        If camera is defined in screen space, the projected points are in screen space.
 
         For `CamerasBase.transform_points`, setting `eps > 0`
         stabilizes gradients since it leads to avoiding division
@@ -492,7 +492,7 @@ class FoVPerspectiveCameras(CamerasBase):
     """
     A class which stores a batch of parameters to generate a batch of
     projection matrices by specifying the field of view.
-    The definition of the parameters follow the OpenGL perspective camera.
+    The definitions of the parameters follow the OpenGL perspective camera.
 
     The extrinsics of the camera (R and T matrices) can also be set in the
     initializer or passed in to `get_full_projection_transform` to get
@@ -780,7 +780,7 @@ class FoVOrthographicCameras(CamerasBase):
     """
     A class which stores a batch of parameters to generate a batch of
     projection matrices by specifying the field of view.
-    The definition of the parameters follow the OpenGL orthographic camera.
+    The definitions of the parameters follow the OpenGL orthographic camera.
     """
 
     # For __getitem__

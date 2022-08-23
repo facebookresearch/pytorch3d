@@ -39,20 +39,20 @@ def corresponding_cameras_alignment(
     such that the following holds:
 
         Under the change of coordinates using a similarity transform
-        (R_A, T_A, s_A) a 3D point X' is mapped to X with:
-            ```
+        (R_A, T_A, s_A) a 3D point X' is mapped to X with: ::
+
             X = (X' R_A + T_A) / s_A
-            ```
-        Then, for all cameras `i`, we assume that the following holds:
-            ```
+
+        Then, for all cameras `i`, we assume that the following holds: ::
+
             X R_i + T_i = s' (X' R_i' + T_i'),
-            ```
+
         i.e. an adjusted point X' is mapped by a camera (R_i', T_i')
         to the same point as imaged from camera (R_i, T_i) after resolving
         the scale ambiguity with a global scalar factor s'.
 
-        Substituting for X above gives rise to the following:
-            ```
+        Substituting for X above gives rise to the following: ::
+
             (X' R_A + T_A) / s_A R_i + T_i = s' (X' R_i' + T_i')       // · s_A
             (X' R_A + T_A) R_i + T_i s_A = (s' s_A) (X' R_i' + T_i')
             s' := 1 / s_A  # without loss of generality
@@ -60,10 +60,11 @@ def corresponding_cameras_alignment(
             X' R_A R_i + T_A R_i + T_i s_A = X' R_i' + T_i'
                ^^^^^^^   ^^^^^^^^^^^^^^^^^
                ~= R_i'        ~= T_i'
-            ```
+
         i.e. after estimating R_A, T_A, s_A, the aligned source cameras have
-        extrinsics:
-            `cameras_src_align = (R_A R_i, T_A R_i + T_i s_A) ~= (R_i', T_i')`
+        extrinsics: ::
+
+            cameras_src_align = (R_A R_i, T_A R_i + T_i s_A) ~= (R_i', T_i')
 
     We support two ways `R_A, T_A, s_A` can be estimated:
         1) `mode=='centers'`
@@ -73,12 +74,12 @@ def corresponding_cameras_alignment(
 
         2) `mode=='extrinsics'`
             Defines the alignment problem as a system
-            of the following equations:
-                ```
+            of the following equations: ::
+
                 for all i:
                 [ R_A   0 ] x [ R_i         0 ] = [ R_i' 0 ]
                 [ T_A^T 1 ]   [ (s_A T_i^T) 1 ]   [ T_i' 1 ]
-                ```
+
             `R_A, T_A` and `s_A` are then obtained by solving the
             system in the least squares sense.
 

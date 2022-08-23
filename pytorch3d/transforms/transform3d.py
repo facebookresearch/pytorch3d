@@ -165,7 +165,7 @@ class Transform3d:
                 raise ValueError('"matrix" has to be a 2- or a 3-dimensional tensor.')
             if matrix.shape[-2] != 4 or matrix.shape[-1] != 4:
                 raise ValueError(
-                    '"matrix" has to be a tensor of shape (minibatch, 4, 4)'
+                    '"matrix" has to be a tensor of shape (minibatch, 4, 4) or (4, 4).'
                 )
             # set dtype and device from matrix
             dtype = matrix.dtype
