@@ -7,6 +7,8 @@
 from typing import Callable, Optional
 
 import torch
+
+import torch.nn.functional as F
 from pytorch3d.common.compat import prod
 from pytorch3d.renderer.cameras import CamerasBase
 
@@ -88,3 +90,98 @@ def create_embeddings_for_implicit_function(
         embeds = broadcast_global_code(embeds, global_code)
 
     return embeds
+
+
+def interpolate_line(
+    points: torch.Tensor,
+    source: torch.Tensor,
+    **kwargs,
+) -> torch.Tensor:
+    """
+    Linearly interpolates values of source grids. The first dimension of points represents
+    number of points and the second coordinate, for example ([[x0], [x1], ...]). The first
+    dimension of argument source represents feature and ones after that the spatial
+    dimension.
+
+    Arguments:
+        points: shape (n_grids, n_points, 1),
+        source: tensor of shape (n_grids, features, width),
+    Returns:
+        interpolated tensor of shape (n_grids, n_points, features)
+    """
+    # To enable sampling of the source using the torch.functional.grid_sample
+    # points need to have 2 coordinates.
+    expansion = points.new_zeros(points.shape)
+    points = torch.cat((points, expansion), dim=-1)
+
+    source = source[:, :, None, :]
+    points = points[:, :, None, :]
+
+    out = F.grid_sample(
+        grid=points,
+        input=source,
+        **kwargs,
+    )
+    return out[:, :, :, 0].permute(0, 2, 1)
+
+
+def interpolate_plane(
+    points: torch.Tensor,
+    source: torch.Tensor,
+    **kwargs,
+) -> torch.Tensor:
+    """
+    Bilinearly interpolates values of source grids. The first dimension of points represents
+    number of points and the second coordinates, for example ([[x0, y0], [x1, y1], ...]).
+    The first dimension of argument source represents feature and ones after that the
+    spatial dimension.
+
+    Arguments:
+        points: shape (n_grids, n_points, 2),
+        source: tensor of shape (n_grids, features, width, height),
+    Returns:
+        interpolated tensor of shape (n_grids, n_points, features)
+    """
+    # permuting because torch.nn.functional.grid_sample works with
+    # (features, height, width) and not
+    # (features, width, height)
+    source = source.permute(0, 1, 3, 2)
+    points = points[:, :, None, :]
+
+    out = F.grid_sample(
+        grid=points,
+        input=source,
+        **kwargs,
+    )
+    return out[:, :, :, 0].permute(0, 2, 1)
+
+
+def interpolate_volume(
+    points: torch.Tensor, source: torch.Tensor, **kwargs
+) -> torch.Tensor:
+    """
+    Interpolates values of source grids. The first dimension of points represents
+    number of points and the second coordinates, for example
+    [[x0, y0, z0], [x1, y1, z1], ...]. The first dimension of a source represents features
+    and ones after that the spatial dimension.
+
+    Arguments:
+        points: shape (n_grids, n_points, 3),
+        source: tensor of shape (n_grids, features, width, height, depth),
+    Returns:
+        interpolated tensor of shape (n_grids, n_points, features)
+    """
+    if "mode" in kwargs and kwargs["mode"] == "trilinear":
+        kwargs = kwargs.copy()
+        kwargs["mode"] = "bilinear"
+    # permuting because torch.nn.functional.grid_sample works with
+    # (features, depth, height, width) and not (features, width, height, depth)
+    source = source.permute(0, 1, 4, 3, 2)
+    grid = points[:, :, None, None, :]
+
+    out = F.grid_sample(
+        grid=grid,
+        input=source,
+        **kwargs,
+    )
+    return out[:, :, :, 0, 0].permute(0, 2, 1)
