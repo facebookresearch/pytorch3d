@@ -110,8 +110,9 @@ class BaseRenderer(ABC, ReplaceableBase):
                     xy locations of each ray's pixel in the NDC screen space.
             implicit_functions: List of ImplicitFunctionWrappers which define the
                 implicit function methods to be used. Most Renderers only allow
-                a single implicit function. Currently, only the MultiPassEARenderer
-                allows specifying mulitple values in the list.
+                a single implicit function. Currently, only the
+                MultiPassEmissionAbsorptionRenderer allows specifying mulitple
+                values in the list.
             evaluation_mode: one of EvaluationMode.TRAINING or
                 EvaluationMode.EVALUATION which determines the settings used for
                 rendering.
