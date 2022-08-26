@@ -4,16 +4,66 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+"""
+This file contains
+    - modules which get used by ImplicitFunction objects for decoding an embedding defined in
+        space, e.g. to color or opacity.
+    - DecoderFunctionBase and its subclasses, which wrap some of those modules, providing
+        some such modules as an extension point which an ImplicitFunction object could use.
+"""
+
 import logging
 
 from typing import Optional, Tuple
 
 import torch
 
+from pytorch3d.implicitron.tools.config import (
+    Configurable,
+    registry,
+    ReplaceableBase,
+    run_auto_creation,
+)
+
 logger = logging.getLogger(__name__)
 
 
-class MLPWithInputSkips(torch.nn.Module):
+class DecoderFunctionBase(ReplaceableBase, torch.nn.Module):
+    """
+    Decoding function is a torch.nn.Module which takes the embedding of a location in
+    space and transforms it into the required quantity (for example density and color).
+    """
+
+    def __post_init__(self):
+        super().__init__()
+
+    def forward(
+        self, features: torch.Tensor, z: Optional[torch.Tensor] = None
+    ) -> torch.Tensor:
+        """
+        Args:
+            features (torch.Tensor): tensor of shape (batch, ..., num_in_features)
+            z: optional tensor to append to parts of the decoding function
+        Returns:
+            decoded_features (torch.Tensor) : tensor of
+                shape (batch, ..., num_out_features)
+        """
+        raise NotImplementedError()
+
+
+@registry.register
+class IdentityDecoder(DecoderFunctionBase):
+    """
+    Decoding function which returns its input.
+    """
+
+    def forward(
+        self, features: torch.Tensor, z: Optional[torch.Tensor] = None
+    ) -> torch.Tensor:
+        return features
+
+
+class MLPWithInputSkips(Configurable, torch.nn.Module):
     """
     Implements the multi-layer perceptron architecture of the Neural Radiance Field.
 
@@ -31,7 +81,55 @@ class MLPWithInputSkips(torch.nn.Module):
             and Jonathan T. Barron and Ravi Ramamoorthi and Ren Ng:
             NeRF: Representing Scenes as Neural Radiance Fields for View
             Synthesis, ECCV2020
+
+    Members:
+        n_layers: The number of linear layers of the MLP.
+        input_dim: The number of channels of the input tensor.
+        output_dim: The number of channels of the output.
+        skip_dim: The number of channels of the tensor `z` appended when
+            evaluating the skip layers.
+        hidden_dim: The number of hidden units of the MLP.
+        input_skips: The list of layer indices at which we append the skip
+            tensor `z`.
     """
+
+    n_layers: int = 8
+    input_dim: int = 39
+    output_dim: int = 256
+    skip_dim: int = 39
+    hidden_dim: int = 256
+    input_skips: Tuple[int, ...] = (5,)
+    skip_affine_trans: bool = False
+    no_last_relu = False
+
+    def __post_init__(self):
+        super().__init__()
+        layers = []
+        skip_affine_layers = []
+        for layeri in range(self.n_layers):
+            dimin = self.hidden_dim if layeri > 0 else self.input_dim
+            dimout = self.hidden_dim if layeri + 1 < self.n_layers else self.output_dim
+
+            if layeri > 0 and layeri in self.input_skips:
+                if self.skip_affine_trans:
+                    skip_affine_layers.append(
+                        self._make_affine_layer(self.skip_dim, self.hidden_dim)
+                    )
+                else:
+                    dimin = self.hidden_dim + self.skip_dim
+
+            linear = torch.nn.Linear(dimin, dimout)
+            _xavier_init(linear)
+            layers.append(
+                torch.nn.Sequential(linear, torch.nn.ReLU(True))
+                if not self.no_last_relu or layeri + 1 < self.n_layers
+                else linear
+            )
+        self.mlp = torch.nn.ModuleList(layers)
+        if self.skip_affine_trans:
+            self.skip_affines = torch.nn.ModuleList(skip_affine_layers)
+        self._input_skips = set(self.input_skips)
+        self._skip_affine_trans = self.skip_affine_trans
 
     def _make_affine_layer(self, input_dim, hidden_dim):
         l1 = torch.nn.Linear(input_dim, hidden_dim * 2)
@@ -45,56 +143,6 @@ class MLPWithInputSkips(torch.nn.Module):
         mu, log_std = mu_log_std.split(mu_log_std.shape[-1] // 2, dim=-1)
         std = torch.nn.functional.softplus(log_std)
         return (x - mu) * std
-
-    def __init__(
-        self,
-        n_layers: int = 8,
-        input_dim: int = 39,
-        output_dim: int = 256,
-        skip_dim: int = 39,
-        hidden_dim: int = 256,
-        input_skips: Tuple[int, ...] = (5,),
-        skip_affine_trans: bool = False,
-        no_last_relu=False,
-    ):
-        """
-        Args:
-            n_layers: The number of linear layers of the MLP.
-            input_dim: The number of channels of the input tensor.
-            output_dim: The number of channels of the output.
-            skip_dim: The number of channels of the tensor `z` appended when
-                evaluating the skip layers.
-            hidden_dim: The number of hidden units of the MLP.
-            input_skips: The list of layer indices at which we append the skip
-                tensor `z`.
-        """
-        super().__init__()
-        layers = []
-        skip_affine_layers = []
-        for layeri in range(n_layers):
-            dimin = hidden_dim if layeri > 0 else input_dim
-            dimout = hidden_dim if layeri + 1 < n_layers else output_dim
-
-            if layeri > 0 and layeri in input_skips:
-                if skip_affine_trans:
-                    skip_affine_layers.append(
-                        self._make_affine_layer(skip_dim, hidden_dim)
-                    )
-                else:
-                    dimin = hidden_dim + skip_dim
-
-            linear = torch.nn.Linear(dimin, dimout)
-            _xavier_init(linear)
-            layers.append(
-                torch.nn.Sequential(linear, torch.nn.ReLU(True))
-                if not no_last_relu or layeri + 1 < n_layers
-                else linear
-            )
-        self.mlp = torch.nn.ModuleList(layers)
-        if skip_affine_trans:
-            self.skip_affines = torch.nn.ModuleList(skip_affine_layers)
-        self._input_skips = set(input_skips)
-        self._skip_affine_trans = skip_affine_trans
 
     def forward(self, x: torch.Tensor, z: Optional[torch.Tensor] = None):
         """
@@ -119,6 +167,24 @@ class MLPWithInputSkips(torch.nn.Module):
                 skipi += 1
             y = layer(y)
         return y
+
+
+@registry.register
+class MLPDecoder(DecoderFunctionBase):
+    """
+    Decoding function which uses `MLPWithIputSkips` to convert the embedding to output.
+    """
+
+    network: MLPWithInputSkips
+
+    def __post_init__(self):
+        super().__post_init__()
+        run_auto_creation(self)
+
+    def forward(
+        self, features: torch.Tensor, z: Optional[torch.Tensor] = None
+    ) -> torch.Tensor:
+        return self.network(features, z)
 
 
 class TransformerWithInputSkips(torch.nn.Module):
