@@ -36,6 +36,7 @@ import unittest
 
 import numpy as np
 import torch
+from pytorch3d.common.datatypes import Device
 from pytorch3d.renderer.camera_utils import join_cameras_as_batch
 from pytorch3d.renderer.cameras import (
     camera_position_from_spherical_angles,
@@ -149,14 +150,17 @@ def ndc_to_screen_points_naive(points, imsize):
 
 
 def init_random_cameras(
-    cam_type: typing.Type[CamerasBase], batch_size: int, random_z: bool = False
+    cam_type: typing.Type[CamerasBase],
+    batch_size: int,
+    random_z: bool = False,
+    device: Device = "cpu",
 ):
     cam_params = {}
     T = torch.randn(batch_size, 3) * 0.03
     if not random_z:
         T[:, 2] = 4
     R = so3_exp_map(torch.randn(batch_size, 3) * 3.0)
-    cam_params = {"R": R, "T": T}
+    cam_params = {"R": R, "T": T, "device": device}
     if cam_type in (OpenGLPerspectiveCameras, OpenGLOrthographicCameras):
         cam_params["znear"] = torch.rand(batch_size) * 10 + 0.1
         cam_params["zfar"] = torch.rand(batch_size) * 4 + 1 + cam_params["znear"]
@@ -613,15 +617,33 @@ class TestCamerasCommon(TestCaseMixin, unittest.TestCase):
                     self.assertTrue(torch.allclose(xyz_unproj, matching_xyz, atol=1e-4))
 
     @staticmethod
-    def unproject_points(cam_type, batch_size=50, num_points=100):
+    def unproject_points(
+        cam_type, batch_size=50, num_points=100, device: Device = "cpu"
+    ):
         """
         Checks that an unprojection of a randomly projected point cloud
         stays the same.
         """
+        if device == "cuda":
+            device = torch.device("cuda:0")
+        else:
+            device = torch.device("cpu")
+
+        str2cls = {  # noqa
+            "OpenGLOrthographicCameras": OpenGLOrthographicCameras,
+            "OpenGLPerspectiveCameras": OpenGLPerspectiveCameras,
+            "SfMOrthographicCameras": SfMOrthographicCameras,
+            "SfMPerspectiveCameras": SfMPerspectiveCameras,
+            "FoVOrthographicCameras": FoVOrthographicCameras,
+            "FoVPerspectiveCameras": FoVPerspectiveCameras,
+            "OrthographicCameras": OrthographicCameras,
+            "PerspectiveCameras": PerspectiveCameras,
+            "FishEyeCameras": FishEyeCameras,
+        }
 
         def run_cameras():
             # init the cameras
-            cameras = init_random_cameras(cam_type, batch_size)
+            cameras = init_random_cameras(str2cls[cam_type], batch_size, device=device)
             # xyz - the ground truth point cloud
             xyz = torch.randn(num_points, 3) * 0.3
             xyz = cameras.unproject_points(xyz, scaled_depth_input=True)
@@ -666,15 +688,33 @@ class TestCamerasCommon(TestCaseMixin, unittest.TestCase):
             self.assertClose(xyz_project_screen, xyz_project_screen_naive, atol=1e-4)
 
     @staticmethod
-    def transform_points(cam_type, batch_size=50, num_points=100):
+    def transform_points(
+        cam_type, batch_size=50, num_points=100, device: Device = "cpu"
+    ):
         """
         Checks that an unprojection of a randomly projected point cloud
         stays the same.
         """
 
+        if device == "cuda":
+            device = torch.device("cuda:0")
+        else:
+            device = torch.device("cpu")
+        str2cls = {  # noqa
+            "OpenGLOrthographicCameras": OpenGLOrthographicCameras,
+            "OpenGLPerspectiveCameras": OpenGLPerspectiveCameras,
+            "SfMOrthographicCameras": SfMOrthographicCameras,
+            "SfMPerspectiveCameras": SfMPerspectiveCameras,
+            "FoVOrthographicCameras": FoVOrthographicCameras,
+            "FoVPerspectiveCameras": FoVPerspectiveCameras,
+            "OrthographicCameras": OrthographicCameras,
+            "PerspectiveCameras": PerspectiveCameras,
+            "FishEyeCameras": FishEyeCameras,
+        }
+
         def run_cameras():
             # init the cameras
-            cameras = init_random_cameras(cam_type, batch_size)
+            cameras = init_random_cameras(str2cls[cam_type], batch_size, device=device)
             # xyz - the ground truth point cloud
             xy = torch.randn(num_points, 2) * 2.0 - 1.0
             z = torch.randn(num_points, 1) * 3.0 + 1.0
