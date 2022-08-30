@@ -190,6 +190,34 @@ class TestNerfRepro(unittest.TestCase):
             experiment.dump_cfg(cfg)
             experiment_runner.run()
 
+    @unittest.skip("This test runs nerf training on co3d v2 - manyview.")
+    def test_nerf_co3dv2_manyview(self):
+        # Train NERF
+        if not interactive_testing_requested():
+            return
+        with initialize_config_dir(config_dir=str(IMPLICITRON_CONFIGS_DIR)):
+            cfg = compose(
+                config_name="repro_singleseq_v2_nerf",
+                overrides=[],
+            )
+            experiment_runner = experiment.Experiment(**cfg)
+            experiment.dump_cfg(cfg)
+            experiment_runner.run()
+
+    @unittest.skip("This test runs nerformer training on co3d v2 - fewview.")
+    def test_nerformer_co3dv2_fewview(self):
+        # Train NeRFormer
+        if not interactive_testing_requested():
+            return
+        with initialize_config_dir(config_dir=str(IMPLICITRON_CONFIGS_DIR)):
+            cfg = compose(
+                config_name="repro_multiseq_v2_nerformer",
+                overrides=[],
+            )
+            experiment_runner = experiment.Experiment(**cfg)
+            experiment.dump_cfg(cfg)
+            experiment_runner.run()
+
     @unittest.skip("This test checks resuming of the NeRF training.")
     def test_nerf_blender_resume(self):
         # Train one train batch of NeRF, then resume for one more batch.

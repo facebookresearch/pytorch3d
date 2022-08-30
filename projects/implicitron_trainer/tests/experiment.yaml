@@ -406,8 +406,13 @@ optimizer_factory_ImplicitronOptimizerFactory_args:
   linear_exponential_lr_milestone: 200
   linear_exponential_start_gamma: 0.1
 training_loop_ImplicitronTrainingLoop_args:
-  eval_only: false
   evaluator_class_type: ImplicitronEvaluator
+  evaluator_ImplicitronEvaluator_args:
+    is_multisequence: false
+    camera_difficulty_bin_breaks:
+    - 0.97
+    - 0.98
+  eval_only: false
   max_epochs: 1000
   store_checkpoints: true
   store_checkpoints_purge: 1
@@ -420,8 +425,3 @@ training_loop_ImplicitronTrainingLoop_args:
   visdom_env: ''
   visdom_port: 8097
   visdom_server: http://127.0.0.1
-  evaluator_ImplicitronEvaluator_args:
-    camera_difficulty_bin_breaks:
-    - 0.97
-    - 0.98
-    is_multisequence: false

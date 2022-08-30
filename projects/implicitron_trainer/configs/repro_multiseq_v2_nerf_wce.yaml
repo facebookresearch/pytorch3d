@@ -1,0 +1,4 @@
+defaults:
+- repro_multiseq_nerf_wce.yaml
+- repro_multiseq_co3dv2_base.yaml
+- _self_

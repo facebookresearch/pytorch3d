@@ -1,0 +1,4 @@
+defaults:
+- repro_singleseq_nerf.yaml
+- repro_singleseq_co3dv2_base.yaml
+- _self_

@@ -1,0 +1,8 @@
+data_source_ImplicitronDataSource_args:
+  dataset_map_provider_class_type: JsonIndexDatasetMapProviderV2
+  dataset_map_provider_JsonIndexDatasetMapProviderV2_args:
+    category: teddybear
+    subset_name: manyview_dev_0
+training_loop_ImplicitronTrainingLoop_args:
+  evaluator_ImplicitronEvaluator_args:
+    is_multisequence: false

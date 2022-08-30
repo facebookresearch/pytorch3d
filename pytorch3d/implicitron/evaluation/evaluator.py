@@ -36,6 +36,8 @@ class EvaluatorBase(ReplaceableBase):
     names and their values.
     """
 
+    is_multisequence: bool = False
+
     def run(
         self, model: ImplicitronModelBase, dataloader: DataLoader, **kwargs
     ) -> Dict[str, Any]:
@@ -56,7 +58,6 @@ class ImplicitronEvaluator(EvaluatorBase):
     """
 
     camera_difficulty_bin_breaks: Tuple[float, ...] = 0.97, 0.98
-    is_multisequence: bool = False
 
     def __post_init__(self):
         run_auto_creation(self)

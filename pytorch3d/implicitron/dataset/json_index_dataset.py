@@ -36,6 +36,7 @@ from pytorch3d.io import IO
 from pytorch3d.renderer.camera_utils import join_cameras_as_batch
 from pytorch3d.renderer.cameras import CamerasBase, PerspectiveCameras
 from pytorch3d.structures.pointclouds import Pointclouds
+from tqdm import tqdm
 
 from . import types
 from .dataset_base import DatasetBase, FrameData
@@ -338,9 +339,10 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
         """
         Returns the cameras corresponding to all the known frames.
         """
+        logger.info("Loading all train cameras.")
         cameras = []
         # pyre-ignore[16]
-        for frame_idx, frame_annot in enumerate(self.frame_annots):
+        for frame_idx, frame_annot in enumerate(tqdm(self.frame_annots)):
             frame_type = self._get_frame_type(frame_annot)
             if frame_type is None:
                 raise ValueError("subsets not loaded")

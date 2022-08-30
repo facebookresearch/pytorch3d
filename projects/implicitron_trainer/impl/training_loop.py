@@ -30,6 +30,14 @@ logger = logging.getLogger(__name__)
 
 
 class TrainingLoopBase(ReplaceableBase):
+    """
+    Members:
+        evaluator: An EvaluatorBase instance, used to evaluate training results.
+    """
+
+    evaluator: Optional[EvaluatorBase]
+    evaluator_class_type: Optional[str] = "ImplicitronEvaluator"
+
     def run(
         self,
         train_loader: DataLoader,
@@ -58,7 +66,6 @@ class ImplicitronTrainingLoop(TrainingLoopBase):  # pyre-ignore [13]
     """
     Members:
         eval_only: If True, only run evaluation using the test dataloader.
-        evaluator: An EvaluatorBase instance, used to evaluate training results.
         max_epochs: Train for this many epochs. Note that if the model was
             loaded from a checkpoint, we will restart training at the appropriate
             epoch and run for (max_epochs - checkpoint_epoch) epochs.
@@ -82,8 +89,6 @@ class ImplicitronTrainingLoop(TrainingLoopBase):  # pyre-ignore [13]
 
     # Parameters of the outer training loop.
     eval_only: bool = False
-    evaluator: EvaluatorBase
-    evaluator_class_type: str = "ImplicitronEvaluator"
     max_epochs: int = 1000
     store_checkpoints: bool = True
     store_checkpoints_purge: int = 1

@@ -14,6 +14,7 @@ from collections import defaultdict
 from typing import Dict, List, Optional, Tuple, Type, Union
 
 import numpy as np
+from iopath.common.file_io import PathManager
 
 from omegaconf import DictConfig
 from pytorch3d.implicitron.dataset.dataset_map_provider import (
@@ -383,12 +384,11 @@ class JsonIndexDatasetMapProviderV2(DatasetMapProviderBase):  # pyre-ignore [13]
         return data
 
     def _get_available_subset_names(self):
-        path_manager = self.path_manager_factory.get()
-        if path_manager is not None:
-            dataset_root = path_manager.get_local_path(self.dataset_root)
-        else:
-            dataset_root = self.dataset_root
-        return get_available_subset_names(dataset_root, self.category)
+        return get_available_subset_names(
+            self.dataset_root,
+            self.category,
+            path_manager=self.path_manager_factory.get(),
+        )
 
     def _extend_test_data_with_known_views(
         self,
@@ -425,18 +425,30 @@ class JsonIndexDatasetMapProviderV2(DatasetMapProviderBase):  # pyre-ignore [13]
         return eval_batch_index_out, list(test_subset_mapping_set)
 
 
-def get_available_subset_names(dataset_root: str, category: str) -> List[str]:
+def get_available_subset_names(
+    dataset_root: str,
+    category: str,
+    path_manager: Optional[PathManager] = None,
+) -> List[str]:
     """
     Get the available subset names for a given category folder inside a root dataset
     folder `dataset_root`.
     """
     category_dir = os.path.join(dataset_root, category)
-    if not os.path.isdir(category_dir):
+    category_dir_exists = (
+        (path_manager is not None) and path_manager.isdir(category_dir)
+    ) or os.path.isdir(category_dir)
+    if not category_dir_exists:
         raise ValueError(
             f"Looking for dataset files in {category_dir}. "
             + "Please specify a correct dataset_root folder."
         )
-    set_list_jsons = os.listdir(os.path.join(category_dir, "set_lists"))
+
+    set_list_dir = os.path.join(category_dir, "set_lists")
+    set_list_jsons = (os.listdir if path_manager is None else path_manager.ls)(
+        set_list_dir
+    )
+
     return [
         json_file.replace("set_lists_", "").replace(".json", "")
         for json_file in set_list_jsons
