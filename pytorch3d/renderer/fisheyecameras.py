@@ -425,7 +425,7 @@ class FishEyeCameras(CamerasBase):
         # do Newton iterations to find xr_yr
         for _ in range(self.num_distortion_iters):
             # compute the estimated uvDistorted
-            uv_distorted_est = xr_yr
+            uv_distorted_est = xr_yr.clone()
             xr_yr_squared_norm = torch.pow(xr_yr, 2).sum(dim=-1, keepdim=True)
 
             if self.use_tangential:
@@ -479,7 +479,6 @@ class FishEyeCameras(CamerasBase):
             th: angle theta (in radians) of shape (...), E.g., (P), (1, P), (M, P)
         """
         sh = list(th_radial_desired.shape)
-        # th = th_radial_desired.clone()
         th = th_radial_desired
         c = torch.tensor(
             [2.0 * i + 3 for i in range(self.num_radial)], device=self.device
@@ -552,7 +551,7 @@ class FishEyeCameras(CamerasBase):
                 + 2.0 * xr_yr[..., 0] * tangential_params[..., 0]
             )
         else:
-            duv_distorted_dxryr = torch.eye(2).view(*sh, 2, 2).expand(*sh, 1, 1)
+            duv_distorted_dxryr = torch.eye(2).repeat(*sh, 1, 1)
 
         if self.use_thin_prism:
             temp1 = 2.0 * (
