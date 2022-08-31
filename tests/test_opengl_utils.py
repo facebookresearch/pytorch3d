@@ -322,6 +322,10 @@ class TestOpenGLMultiThreaded(TestCaseMixin, unittest.TestCase):
 
 
 class TestOpenGLUtils(TestCaseMixin, unittest.TestCase):
+    @classmethod
+    def tearDownClass(cls):
+        global_device_context_store.set_context_data(torch.device("cuda:0"), None)
+
     def test_device_context_store(self):
         # Most of DCS's functionality is tested in the tests above, test the remainder.
         device = torch.device("cuda:0")
