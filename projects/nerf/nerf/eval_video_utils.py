@@ -87,7 +87,7 @@ def generate_eval_video_cameras(
             plane_normal = torch.FloatTensor(up)
         else:
             cov = (cam_centers_c.t() @ cam_centers_c) / cam_centers_c.shape[0]
-            _, e_vec = torch.symeig(cov, eigenvectors=True)
+            _, e_vec = torch.linalg.eigh(cov, UPLO="U")
             plane_normal = e_vec[:, 0]
 
         plane_dist = (plane_normal[None] * cam_centers_c).sum(dim=-1)
@@ -96,7 +96,7 @@ def generate_eval_video_cameras(
         cov = (
             cam_centers_on_plane.t() @ cam_centers_on_plane
         ) / cam_centers_on_plane.shape[0]
-        _, e_vec = torch.symeig(cov, eigenvectors=True)
+        _, e_vec = torch.linalg.eigh(cov, UPLO="U")
         traj_radius = (cam_centers_on_plane**2).sum(dim=1).sqrt().mean()
         angle = torch.linspace(0, 2.0 * math.pi, n_eval_cams)
         traj = traj_radius * torch.stack(
