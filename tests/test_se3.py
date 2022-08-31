@@ -9,7 +9,6 @@ import unittest
 
 import numpy as np
 import torch
-from pytorch3d.common.compat import qr
 from pytorch3d.transforms.rotation_conversions import random_rotations
 from pytorch3d.transforms.se3 import se3_exp_map, se3_log_map
 from pytorch3d.transforms.so3 import so3_exp_map, so3_log_map, so3_rotation_angle
@@ -199,7 +198,7 @@ class TestSE3(TestCaseMixin, unittest.TestCase):
         r = [identity, rot180]
         r.extend(
             [
-                qr(identity + torch.randn_like(identity) * 1e-6)[0]
+                torch.linalg.qr(identity + torch.randn_like(identity) * 1e-6)[0]
                 + float(i > batch_size // 2) * (0.5 - torch.rand_like(identity)) * 1e-8
                 # this adds random noise to the second half
                 # of the random orthogonal matrices to generate

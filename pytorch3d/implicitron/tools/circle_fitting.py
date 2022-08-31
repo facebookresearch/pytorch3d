@@ -10,7 +10,6 @@ from math import pi
 from typing import Optional
 
 import torch
-from pytorch3d.common.compat import eigh, lstsq
 
 
 def _get_rotation_to_best_fit_xy(
@@ -28,7 +27,7 @@ def _get_rotation_to_best_fit_xy(
         (3,3) tensor rotation matrix
     """
     points_centered = points - centroid[None]
-    return eigh(points_centered.t() @ points_centered)[1][:, [1, 2, 0]]
+    return torch.linalg.eigh(points_centered.t() @ points_centered)[1][:, [1, 2, 0]]
 
 
 def _signed_area(path: torch.Tensor) -> torch.Tensor:
@@ -106,9 +105,8 @@ def fit_circle_in_2d(
     n_provided = points2d.shape[0]
     if n_provided < 3:
         raise ValueError(f"{n_provided} points are not enough to determine a circle")
-    solution = lstsq(design, rhs[:, None])
+    solution = torch.linalg.lstsq(design, rhs[:, None]).solution
     center = solution[:2, 0] / 2
-    # pyre-fixme[58]: `**` is not supported for operand types `Tensor` and `int`.
     radius = torch.sqrt(solution[2, 0] + (center**2).sum())
     if n_points > 0:
         if angles is not None:

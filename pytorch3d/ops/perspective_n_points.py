@@ -16,7 +16,6 @@ from typing import NamedTuple, Optional
 
 import torch
 import torch.nn.functional as F
-from pytorch3d.common.compat import eigh
 from pytorch3d.ops import points_alignment, utils as oputil
 
 
@@ -106,7 +105,7 @@ def _null_space(m, kernel_dim):
             kernel vectors, of size B x kernel_dim
     """
     mTm = torch.bmm(m.transpose(1, 2), m)
-    s, v = eigh(mTm)
+    s, v = torch.linalg.eigh(mTm)
     return v[:, :, :kernel_dim].reshape(-1, 4, 3, kernel_dim), s[:, :kernel_dim]
 
 

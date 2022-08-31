@@ -7,7 +7,6 @@
 from typing import Tuple, TYPE_CHECKING, Union
 
 import torch
-from pytorch3d.common.compat import eigh
 from pytorch3d.common.workaround import symeig3x3
 
 from .utils import convert_pointclouds_to_tensor, get_point_covariances
@@ -147,7 +146,7 @@ def estimate_pointcloud_local_coord_frames(
     if use_symeig_workaround:
         curvatures, local_coord_frames = symeig3x3(cov, eigenvectors=True)
     else:
-        curvatures, local_coord_frames = eigh(cov)
+        curvatures, local_coord_frames = torch.linalg.eigh(cov)
 
     # disambiguate the directions of individual principal vectors
     if disambiguate_directions:

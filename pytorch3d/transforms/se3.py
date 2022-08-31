@@ -5,7 +5,6 @@
 # LICENSE file in the root directory of this source tree.
 
 import torch
-from pytorch3d.common.compat import solve
 
 from .so3 import _so3_exp_map, hat, so3_log_map
 
@@ -174,7 +173,7 @@ def se3_log_map(
     # log_translation is V^-1 @ T
     T = transform[:, 3, :3]
     V = _se3_V_matrix(*_get_se3_V_input(log_rotation), eps=eps)
-    log_translation = solve(V, T[:, :, None])[:, :, 0]
+    log_translation = torch.linalg.solve(V, T[:, :, None])[:, :, 0]
 
     return torch.cat((log_translation, log_rotation), dim=1)
 

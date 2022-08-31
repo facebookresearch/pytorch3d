@@ -9,7 +9,6 @@ import math
 from typing import Optional, Tuple
 
 import torch
-from pytorch3d.common.compat import eigh
 from pytorch3d.implicitron.tools import utils
 from pytorch3d.implicitron.tools.circle_fitting import fit_circle_in_3d
 from pytorch3d.renderer import look_at_view_transform, PerspectiveCameras
@@ -205,7 +204,7 @@ def _disambiguate_normal(normal, up):
 def _fit_plane(x):
     x = x - x.mean(dim=0)[None]
     cov = (x.t() @ x) / x.shape[0]
-    _, e_vec = eigh(cov)
+    _, e_vec = torch.linalg.eigh(cov)
     return e_vec
 
 
