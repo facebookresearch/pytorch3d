@@ -29,10 +29,10 @@ __global__ void IoUBox3DKernel(
   const size_t tid = blockIdx.x * blockDim.x + threadIdx.x;
   const size_t stride = gridDim.x * blockDim.x;
 
-  std::array<FaceVerts, NUM_TRIS> box1_tris{};
-  std::array<FaceVerts, NUM_TRIS> box2_tris{};
-  std::array<FaceVerts, NUM_PLANES> box1_planes{};
-  std::array<FaceVerts, NUM_PLANES> box2_planes{};
+  FaceVerts box1_tris[NUM_TRIS];
+  FaceVerts box2_tris[NUM_TRIS];
+  FaceVerts box1_planes[NUM_PLANES];
+  FaceVerts box2_planes[NUM_PLANES];
 
   for (size_t i = tid; i < N * M; i += stride) {
     const size_t n = i / M; // box1 index

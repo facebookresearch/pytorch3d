@@ -175,7 +175,7 @@ __device__ inline float3 FaceNormal(
   auto normal = float3();
   auto maxDist = -1;
   for (auto v1 = vertices.begin(); v1 != vertices.end() - 1; ++v1) {
-    for (auto v2 = std::next(v1); v2 != vertices.end(); ++v2) {
+    for (auto v2 = v1 + 1; v2 != vertices.end(); ++v2) {
       const auto v1ToCenter = *v1 - faceCenter;
       const auto v2ToCenter = *v2 - faceCenter;
       const auto dist = norm(cross(v1ToCenter, v2ToCenter));
@@ -472,8 +472,10 @@ __device__ inline bool IsCoplanarTriTri(
   const bool check1 = abs(dot(tri1_n, tri2_n)) > 1 - dEpsilon;
 
   // Compute most distant points
-  const auto [v1m, v2m] =
+  const auto v1mAndv2m =
       ArgMaxVerts({tri1.v0, tri1.v1, tri1.v2}, {tri2.v0, tri2.v1, tri2.v2});
+  const auto v1m = std::get<0>(v1mAndv2m);
+  const auto v2m = std::get<1>(v1mAndv2m);
 
   float3 n12m = v1m - v2m;
   n12m = n12m / fmaxf(norm(n12m), kEpsilon);
@@ -506,8 +508,10 @@ __device__ inline bool IsCoplanarTriPlane(
   const bool check1 = abs(dot(nt, normal)) > 1 - dEpsilon;
 
   // Compute most distant points
-  const auto [v1m, v2m] = ArgMaxVerts(
+  const auto v1mAndv2m = ArgMaxVerts(
       {tri.v0, tri.v1, tri.v2}, {plane.v0, plane.v1, plane.v2, plane.v3});
+  const auto v1m = std::get<0>(v1mAndv2m);
+  const auto v2m = std::get<1>(v1mAndv2m);
 
   float3 n12m = v1m - v2m;
   n12m = n12m / fmaxf(norm(n12m), kEpsilon);
