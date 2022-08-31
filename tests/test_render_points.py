@@ -23,6 +23,7 @@ from pytorch3d.renderer.cameras import (
     PerspectiveCameras,
 )
 from pytorch3d.renderer.compositing import alpha_composite, norm_weighted_sum
+from pytorch3d.renderer.fisheyecameras import FishEyeCameras
 from pytorch3d.renderer.points import (
     AlphaCompositor,
     NormWeightedCompositor,
@@ -70,6 +71,49 @@ class TestRenderPoints(TestCaseMixin, unittest.TestCase):
 
         # Load reference image
         filename = "simple_pointcloud_sphere.png"
+        image_ref = load_rgb_image("test_%s" % filename, DATA_DIR)
+
+        for bin_size in [0, None]:
+            # Check both naive and coarse to fine produce the same output.
+            renderer.rasterizer.raster_settings.bin_size = bin_size
+            images = renderer(pointclouds)
+            rgb = images[0, ..., :3].squeeze().cpu()
+            if DEBUG:
+                filename = "DEBUG_%s" % filename
+                Image.fromarray((rgb.numpy() * 255).astype(np.uint8)).save(
+                    DATA_DIR / filename
+                )
+            self.assertClose(rgb, image_ref)
+
+    def test_simple_sphere_fisheye(self):
+        device = torch.device("cuda:0")
+        sphere_mesh = ico_sphere(1, device)
+        verts_padded = sphere_mesh.verts_padded()
+        # Shift vertices to check coordinate frames are correct.
+        verts_padded[..., 1] += 0.2
+        verts_padded[..., 0] += 0.2
+        pointclouds = Pointclouds(
+            points=verts_padded, features=torch.ones_like(verts_padded)
+        )
+        R, T = look_at_view_transform(2.7, 0.0, 0.0)
+        cameras = FishEyeCameras(
+            device=device,
+            R=R,
+            T=T,
+            use_radial=False,
+            use_tangential=False,
+            use_thin_prism=False,
+            world_coordinates=True,
+        )
+        raster_settings = PointsRasterizationSettings(
+            image_size=256, radius=5e-2, points_per_pixel=1
+        )
+        rasterizer = PointsRasterizer(cameras=cameras, raster_settings=raster_settings)
+        compositor = NormWeightedCompositor()
+        renderer = PointsRenderer(rasterizer=rasterizer, compositor=compositor)
+
+        # Load reference image
+        filename = "render_fisheye_sphere_points.png"
         image_ref = load_rgb_image("test_%s" % filename, DATA_DIR)
 
         for bin_size in [0, None]:

@@ -21,6 +21,7 @@ from pytorch3d.renderer import (
     PointsRasterizer,
     RasterizationSettings,
 )
+from pytorch3d.renderer.fisheyecameras import FishEyeCameras
 from pytorch3d.renderer.opengl.rasterizer_opengl import (
     _check_cameras,
     _check_raster_settings,
@@ -50,6 +51,9 @@ def convert_image_to_binary_mask(filename):
 class TestMeshRasterizer(unittest.TestCase):
     def test_simple_sphere(self):
         self._simple_sphere(MeshRasterizer)
+
+    def test_simple_sphere_fisheye(self):
+        self._simple_sphere_fisheye_against_perspective(MeshRasterizer)
 
     def test_simple_sphere_opengl(self):
         self._simple_sphere(MeshRasterizerOpenGL)
@@ -154,6 +158,91 @@ class TestMeshRasterizer(unittest.TestCase):
             )
 
         self.assertTrue(torch.allclose(image, image_ref))
+
+    def _simple_sphere_fisheye_against_perspective(self, rasterizer_type):
+        device = torch.device("cuda:0")
+
+        # Init mesh
+        sphere_mesh = ico_sphere(5, device)
+
+        # Init rasterizer settings
+        R, T = look_at_view_transform(2.7, 0, 0)
+
+        # Init Fisheye camera params
+        focal = torch.tensor([[1.7321]], dtype=torch.float32)
+        principal_point = torch.tensor([[0.0101, -0.0101]])
+        perspective_cameras = PerspectiveCameras(
+            R=R,
+            T=T,
+            focal_length=focal,
+            principal_point=principal_point,
+            device="cuda:0",
+        )
+        fisheye_cameras = FishEyeCameras(
+            device=device,
+            R=R,
+            T=T,
+            focal_length=focal,
+            principal_point=principal_point,
+            world_coordinates=True,
+            use_radial=False,
+            use_tangential=False,
+            use_thin_prism=False,
+        )
+        raster_settings = RasterizationSettings(
+            image_size=512, blur_radius=0.0, faces_per_pixel=1, bin_size=0
+        )
+
+        # Init rasterizer
+        perspective_rasterizer = rasterizer_type(
+            cameras=perspective_cameras, raster_settings=raster_settings
+        )
+        fisheye_rasterizer = rasterizer_type(
+            cameras=fisheye_cameras, raster_settings=raster_settings
+        )
+
+        ####################################################################################
+        # Test rasterizing a single mesh comparing fisheye camera against perspective camera
+        ####################################################################################
+
+        perspective_fragments = perspective_rasterizer(sphere_mesh)
+        perspective_image = perspective_fragments.pix_to_face[0, ..., 0].squeeze().cpu()
+        # Convert pix_to_face to a binary mask
+        perspective_image[perspective_image >= 0] = 1.0
+        perspective_image[perspective_image < 0] = 0.0
+
+        if DEBUG:
+            Image.fromarray((perspective_image.numpy() * 255).astype(np.uint8)).save(
+                DATA_DIR
+                / f"DEBUG_test_perspective_rasterized_sphere_{rasterizer_type.__name__}.png"
+            )
+
+        fisheye_fragments = fisheye_rasterizer(sphere_mesh)
+        fisheye_image = fisheye_fragments.pix_to_face[0, ..., 0].squeeze().cpu()
+        # Convert pix_to_face to a binary mask
+        fisheye_image[fisheye_image >= 0] = 1.0
+        fisheye_image[fisheye_image < 0] = 0.0
+
+        if DEBUG:
+            Image.fromarray((fisheye_image.numpy() * 255).astype(np.uint8)).save(
+                DATA_DIR
+                / f"DEBUG_test_fisheye_rasterized_sphere_{rasterizer_type.__name__}.png"
+            )
+
+        self.assertTrue(torch.allclose(fisheye_image, perspective_image))
+
+        ##################################
+        #  2. Test with a batch of meshes
+        ##################################
+
+        batch_size = 10
+        sphere_meshes = sphere_mesh.extend(batch_size)
+        fragments = fisheye_rasterizer(sphere_meshes)
+        for i in range(batch_size):
+            image = fragments.pix_to_face[i, ..., 0].squeeze().cpu()
+            image[image >= 0] = 1.0
+            image[image < 0] = 0.0
+            self.assertTrue(torch.allclose(image, perspective_image))
 
     def test_simple_to(self):
         # Check that to() works without a cameras object.
@@ -411,6 +500,76 @@ class TestPointRasterizer(unittest.TestCase):
             image[image >= 0] = 1.0
             image[image < 0] = 0.0
             self.assertTrue(torch.allclose(image, image_ref[..., 0]))
+
+    def test_simple_sphere_fisheye_against_perspective(self):
+        device = torch.device("cuda:0")
+
+        # Rescale image_ref to the 0 - 1 range and convert to a binary mask.
+        sphere_mesh = ico_sphere(1, device)
+        verts_padded = sphere_mesh.verts_padded()
+        verts_padded[..., 1] += 0.2
+        verts_padded[..., 0] += 0.2
+        pointclouds = Pointclouds(points=verts_padded)
+        R, T = look_at_view_transform(2.7, 0.0, 0.0)
+        perspective_cameras = PerspectiveCameras(
+            R=R,
+            T=T,
+            device=device,
+        )
+        fisheye_cameras = FishEyeCameras(
+            device=device,
+            R=R,
+            T=T,
+            world_coordinates=True,
+            use_radial=False,
+            use_tangential=False,
+            use_thin_prism=False,
+        )
+        raster_settings = PointsRasterizationSettings(
+            image_size=256, radius=5e-2, points_per_pixel=1
+        )
+
+        #################################
+        #  1. Test init without cameras.
+        ##################################
+
+        # Initialize without passing in the cameras
+        rasterizer = PointsRasterizer()
+
+        # Check that omitting the cameras in both initialization
+        # and the forward pass throws an error:
+        with self.assertRaisesRegex(ValueError, "Cameras must be specified"):
+            rasterizer(pointclouds)
+
+        ########################################################################################
+        # 2. Test rasterizing a single pointcloud with fisheye camera agasint perspective camera
+        ########################################################################################
+
+        perspective_fragments = rasterizer(
+            pointclouds, cameras=perspective_cameras, raster_settings=raster_settings
+        )
+        fisheye_fragments = rasterizer(
+            pointclouds, cameras=fisheye_cameras, raster_settings=raster_settings
+        )
+
+        # Convert idx to a binary mask
+        perspective_image = perspective_fragments.idx[0, ..., 0].squeeze().cpu()
+        perspective_image[perspective_image >= 0] = 1.0
+        perspective_image[perspective_image < 0] = 0.0
+
+        fisheye_image = fisheye_fragments.idx[0, ..., 0].squeeze().cpu()
+        fisheye_image[fisheye_image >= 0] = 1.0
+        fisheye_image[fisheye_image < 0] = 0.0
+
+        if DEBUG:
+            Image.fromarray((perspective_image.numpy() * 255).astype(np.uint8)).save(
+                DATA_DIR / "DEBUG_test_rasterized_perspective_sphere_points.png"
+            )
+            Image.fromarray((fisheye_image.numpy() * 255).astype(np.uint8)).save(
+                DATA_DIR / "DEBUG_test_rasterized_fisheye_sphere_points.png"
+            )
+
+        self.assertTrue(torch.allclose(fisheye_image, perspective_image))
 
     def test_simple_to(self):
         # Check that to() works without a cameras object.

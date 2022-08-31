@@ -10,6 +10,7 @@ from typing import NamedTuple, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
+from pytorch3d.renderer.cameras import try_get_projection_transform
 from pytorch3d.structures import Pointclouds
 
 from .rasterize_points import rasterize_points
@@ -103,12 +104,16 @@ class PointsRasterizer(nn.Module):
         pts_view = cameras.get_world_to_view_transform(**kwargs).transform_points(
             pts_world, eps=eps
         )
-        # view to NDC transform
         to_ndc_transform = cameras.get_ndc_camera_transform(**kwargs)
-        projection_transform = cameras.get_projection_transform(**kwargs).compose(
-            to_ndc_transform
-        )
-        pts_ndc = projection_transform.transform_points(pts_view, eps=eps)
+        projection_transform = try_get_projection_transform(cameras, kwargs)
+        if projection_transform is not None:
+            projection_transform = projection_transform.compose(to_ndc_transform)
+            pts_ndc = projection_transform.transform_points(pts_view, eps=eps)
+        else:
+            # Call transform_points instead of explicitly composing transforms to handle
+            # the case, where camera class does not have a projection matrix form.
+            pts_proj = cameras.transform_points(pts_world, eps=eps)
+            pts_ndc = to_ndc_transform.transform_points(pts_proj, eps=eps)
 
         pts_ndc[..., 2] = pts_view[..., 2]
         point_clouds = point_clouds.update_padded(pts_ndc)

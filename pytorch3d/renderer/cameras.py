@@ -6,7 +6,7 @@
 
 import math
 import warnings
-from typing import List, Optional, Sequence, Tuple, Union
+from typing import Callable, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import torch
@@ -91,7 +91,7 @@ class CamerasBase(TensorProperties):
     # When joining objects into a batch, they will have to agree.
     _SHARED_FIELDS: Tuple[str, ...] = ()
 
-    def get_projection_transform(self):
+    def get_projection_transform(self, **kwargs):
         """
         Calculate the projective transformation matrix.
 
@@ -1840,4 +1840,24 @@ def get_screen_to_ndc_transform(
         with_xyflip=with_xyflip,
         image_size=image_size,
     ).inverse()
+    return transform
+
+
+def try_get_projection_transform(cameras, kwargs) -> Optional[Callable]:
+    """
+    Try block to get projection transform.
+
+    Args:
+        cameras instance, can be linear cameras or nonliear cameras
+
+    Returns:
+        If the camera implemented projection_transform, return the
+        projection transform; Otherwise, return None
+    """
+
+    transform = None
+    try:
+        transform = cameras.get_projection_transform(**kwargs)
+    except NotImplementedError:
+        pass
     return transform
