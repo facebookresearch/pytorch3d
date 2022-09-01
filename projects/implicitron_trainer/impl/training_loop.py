@@ -29,6 +29,7 @@ from .utils import seed_all_random_engines
 logger = logging.getLogger(__name__)
 
 
+# pyre-fixme[13]: Attribute `evaluator` is never initialized.
 class TrainingLoopBase(ReplaceableBase):
     """
     Members:
@@ -62,7 +63,7 @@ class TrainingLoopBase(ReplaceableBase):
 
 
 @registry.register
-class ImplicitronTrainingLoop(TrainingLoopBase):  # pyre-ignore [13]
+class ImplicitronTrainingLoop(TrainingLoopBase):
     """
     Members:
         eval_only: If True, only run evaluation using the test dataloader.
@@ -137,6 +138,7 @@ class ImplicitronTrainingLoop(TrainingLoopBase):  # pyre-ignore [13]
         # only run evaluation on the test dataloader
         if self.eval_only:
             if test_loader is not None:
+                # pyre-fixme[16]: `Optional` has no attribute `run`.
                 self.evaluator.run(
                     all_train_cameras=all_train_cameras,
                     dataloader=test_loader,

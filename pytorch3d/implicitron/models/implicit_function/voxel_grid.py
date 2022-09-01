@@ -89,7 +89,6 @@ class VoxelGridBase(ReplaceableBase, torch.nn.Module):
             torch.Tensor: shape (n_grids, n_points, n_features)
         """
         points_local = locator.world_to_local_coords(points)
-        # pyre-ignore[29]
         return self.evaluate_local(points_local, grid_values)
 
     def evaluate_local(
@@ -139,6 +138,8 @@ class FullResolutionVoxelGrid(VoxelGridBase):
     # the type of grid_values argument needed to run evaluate_local()
     values_type: ClassVar[Type[VoxelGridValuesBase]] = FullResolutionVoxelGridValues
 
+    # pyre-fixme[14]: `evaluate_local` overrides method defined in `VoxelGridBase`
+    #  inconsistently.
     def evaluate_local(
         self, points: torch.Tensor, grid_values: FullResolutionVoxelGridValues
     ) -> torch.Tensor:
@@ -213,6 +214,8 @@ class CPFactorizedVoxelGrid(VoxelGridBase):
     n_components: int = 24
     matrix_reduction: bool = True
 
+    # pyre-fixme[14]: `evaluate_local` overrides method defined in `VoxelGridBase`
+    #  inconsistently.
     def evaluate_local(
         self, points: torch.Tensor, grid_values: CPFactorizedVoxelGridValues
     ) -> torch.Tensor:
@@ -318,6 +321,8 @@ class VMFactorizedVoxelGrid(VoxelGridBase):
     distribution_of_components: Optional[Tuple[int, int, int]] = None
     matrix_reduction: bool = True
 
+    # pyre-fixme[14]: `evaluate_local` overrides method defined in `VoxelGridBase`
+    #  inconsistently.
     def evaluate_local(
         self, points: torch.Tensor, grid_values: VMFactorizedVoxelGridValues
     ) -> torch.Tensor:
@@ -392,9 +397,11 @@ class VMFactorizedVoxelGrid(VoxelGridBase):
         if self.distribution_of_components is None and self.n_components % 3 != 0:
             raise ValueError("n_components must be divisible by 3")
         if self.distribution_of_components is None:
-            # pyre-ignore[58]
             calculated_distribution_of_components = [
-                self.n_components // 3 for _ in range(3)
+                # pyre-fixme[58]: `//` is not supported for operand types
+                #  `Optional[int]` and `int`.
+                self.n_components // 3
+                for _ in range(3)
             ]
         else:
             calculated_distribution_of_components = self.distribution_of_components
@@ -437,6 +444,7 @@ class VMFactorizedVoxelGrid(VoxelGridBase):
         return shape_dict
 
 
+# pyre-fixme[13]: Attribute `voxel_grid` is never initialized.
 class VoxelGridModule(Configurable, torch.nn.Module):
     """
     A wrapper torch.nn.Module for the VoxelGrid classes, which
@@ -459,6 +467,7 @@ class VoxelGridModule(Configurable, torch.nn.Module):
     voxel_grid_class_type: str = "FullResolutionVoxelGrid"
     voxel_grid: VoxelGridBase
 
+    # pyre-fixme[8]: Attribute has type `Tuple[float, float, float]`; used as `float`.
     extents: Tuple[float, float, float] = 1.0
     translation: Tuple[float, float, float] = (0.0, 0.0, 0.0)
 
@@ -505,8 +514,11 @@ class VoxelGridModule(Configurable, torch.nn.Module):
             # voxel size and translation.
             voxel_size=self.extents,
             volume_translation=self.translation,
+            # pyre-fixme[29]: `Union[BoundMethod[typing.Callable(torch._C._TensorBase...
             device=next(self.params.values()).device,
         )
+        # pyre-fixme[29]: `Union[torch._tensor.Tensor,
+        #  torch.nn.modules.module.Module]` is not a function.
         grid_values = self.voxel_grid.values_type(**self.params)
         # voxel grids operate with extra n_grids dimension, which we fix to one
         return self.voxel_grid.evaluate_world(points[None], grid_values, locator)[0]

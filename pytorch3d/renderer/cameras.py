@@ -401,7 +401,9 @@ class CamerasBase(TensorProperties):
         kwargs = {}
 
         tensor_types = {
+            # pyre-fixme[16]: Module `cuda` has no attribute `BoolTensor`.
             "bool": (torch.BoolTensor, torch.cuda.BoolTensor),
+            # pyre-fixme[16]: Module `cuda` has no attribute `LongTensor`.
             "long": (torch.LongTensor, torch.cuda.LongTensor),
         }
         if not isinstance(
@@ -419,8 +421,14 @@ class CamerasBase(TensorProperties):
             index = [index]
 
         if isinstance(index, tensor_types["bool"]):
+            # pyre-fixme[16]: Item `List` of `Union[List[int], BoolTensor,
+            #  LongTensor]` has no attribute `ndim`.
+            # pyre-fixme[16]: Item `List` of `Union[List[int], BoolTensor,
+            #  LongTensor]` has no attribute `shape`.
             if index.ndim != 1 or index.shape[0] != len(self):
                 raise ValueError(
+                    # pyre-fixme[16]: Item `List` of `Union[List[int], BoolTensor,
+                    #  LongTensor]` has no attribute `shape`.
                     f"Boolean index of shape {index.shape} does not match cameras"
                 )
         elif max(index) >= len(self):

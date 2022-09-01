@@ -207,6 +207,7 @@ class Experiment(Configurable):  # pyre-ignore: 13
                 val_loader,
             ) = accelerator.prepare(model, optimizer, train_loader, val_loader)
 
+        # pyre-fixme[16]: Optional type has no attribute `is_multisequence`.
         if not self.training_loop.evaluator.is_multisequence:
             all_train_cameras = self.data_source.all_train_cameras
         else:

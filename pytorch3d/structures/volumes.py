@@ -981,6 +981,9 @@ class VolumeLocator:
         device = device if device is not None else self.device
         other._grid_sizes = self._grid_sizes[index].to(device)
         other._local_to_world_transform = self.get_local_to_world_coords_transform()[
+            # pyre-fixme[6]: For 1st param expected `Union[List[int], int, slice,
+            #  BoolTensor, LongTensor]` but got `Union[None, List[int], Tuple[int],
+            #  int, slice, Tensor]`.
             index
         ].to(device)
 

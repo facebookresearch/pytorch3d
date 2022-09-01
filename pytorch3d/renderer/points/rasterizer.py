@@ -107,6 +107,7 @@ class PointsRasterizer(nn.Module):
         to_ndc_transform = cameras.get_ndc_camera_transform(**kwargs)
         projection_transform = try_get_projection_transform(cameras, kwargs)
         if projection_transform is not None:
+            # pyre-fixme[16]: Anonymous callable has no attribute `compose`.
             projection_transform = projection_transform.compose(to_ndc_transform)
             pts_ndc = projection_transform.transform_points(pts_view, eps=eps)
         else:

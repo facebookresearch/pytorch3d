@@ -185,11 +185,14 @@ def _remove_outlier_cameras(
     keep_indices = utils.get_inlier_indicators(
         cameras.get_camera_center(), dim=0, outlier_rate=outlier_rate
     )
+    # pyre-fixme[6]: For 1st param expected `Union[List[int], int, BoolTensor,
+    #  LongTensor]` but got `Tensor`.
     clean_cameras = cameras[keep_indices]
     logger.info(
         "Filtered outlier cameras when estimating the trajectory: "
         f"{len(cameras)} → {len(clean_cameras)}"
     )
+    # pyre-fixme[7]: Expected `PerspectiveCameras` but got `CamerasBase`.
     return clean_cameras
 
 
