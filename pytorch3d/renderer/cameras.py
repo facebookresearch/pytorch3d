@@ -6,7 +6,7 @@
 
 import math
 import warnings
-from typing import Callable, List, Optional, Sequence, Tuple, Union
+from typing import List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import torch
@@ -1851,7 +1851,7 @@ def get_screen_to_ndc_transform(
     return transform
 
 
-def try_get_projection_transform(cameras, kwargs) -> Optional[Callable]:
+def try_get_projection_transform(cameras: CamerasBase, kwargs) -> Optional[Transform3d]:
     """
     Try block to get projection transform.
 
