@@ -124,7 +124,7 @@ class MultinomialRaysampler(torch.nn.Module):
         max_depth: Optional[float] = None,
         n_rays_per_image: Optional[int] = None,
         n_pts_per_ray: Optional[int] = None,
-        stratified_sampling: bool = False,
+        stratified_sampling: bool = None,
         **kwargs,
     ) -> RayBundle:
         """
@@ -313,7 +313,7 @@ class MonteCarloRaysampler(torch.nn.Module):
         self._stratified_sampling = stratified_sampling
 
     def forward(
-        self, cameras: CamerasBase, *, stratified_sampling: bool = False, **kwargs
+        self, cameras: CamerasBase, *, stratified_sampling: bool = None, **kwargs
     ) -> RayBundle:
         """
         Args:
