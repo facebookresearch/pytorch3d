@@ -1626,7 +1626,7 @@ def camera_position_from_spherical_angles(
     x = dist * torch.cos(elev) * torch.sin(azim)
     y = dist * torch.sin(elev)
     z = dist * torch.cos(elev) * torch.cos(azim)
-    camera_position = torch.stack([x, y, z], dim=1)
+    camera_position = torch.stack([x, y, z], dim=-1)
     if camera_position.dim() == 0:
         camera_position = camera_position.view(1, -1)  # add batch dim.
     return camera_position.view(-1, 3)
