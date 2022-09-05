@@ -101,7 +101,7 @@ class SignedDistanceFunctionRenderer(BaseRenderer, torch.nn.Module):  # pyre-ign
         object_mask = object_mask.bool()
 
         implicit_function = implicit_functions[0]
-        implicit_function_gradient = functools.partial(gradient, implicit_function)
+        implicit_function_gradient = functools.partial(_gradient, implicit_function)
 
         # object_mask: silhouette of the object
         batch_size, *spatial_size, _ = ray_bundle.lengths.shape
@@ -113,7 +113,7 @@ class SignedDistanceFunctionRenderer(BaseRenderer, torch.nn.Module):  # pyre-ign
 
         with torch.no_grad(), evaluating(implicit_function):
             points, network_object_mask, dists = self.ray_tracer(
-                sdf=lambda x: implicit_function(x)[
+                sdf=lambda x: implicit_function(rays_points_world=x)[
                     :, 0
                 ],  # TODO: get rid of this wrapper
                 cam_loc=cam_loc,
@@ -125,7 +125,7 @@ class SignedDistanceFunctionRenderer(BaseRenderer, torch.nn.Module):  # pyre-ign
         depth = dists.reshape(batch_size, num_pixels, 1)
         points = (cam_loc + depth * ray_dirs).reshape(-1, 3)
 
-        sdf_output = implicit_function(points)[:, 0:1]
+        sdf_output = implicit_function(rays_points_world=points)[:, 0:1]
         # NOTE most of the intermediate variables are flattened for
         # no apparent reason (here and in the ray tracer)
         ray_dirs = ray_dirs.reshape(-1, 3)
@@ -157,7 +157,7 @@ class SignedDistanceFunctionRenderer(BaseRenderer, torch.nn.Module):  # pyre-ign
 
             points_all = torch.cat([surface_points, eikonal_points], dim=0)
 
-            output = implicit_function(surface_points)
+            output = implicit_function(rays_points_world=surface_points)
             surface_sdf_values = output[
                 :N, 0:1
             ].detach()  # how is it different from sdf_output?
@@ -181,7 +181,9 @@ class SignedDistanceFunctionRenderer(BaseRenderer, torch.nn.Module):  # pyre-ign
             grad_theta = None
 
         empty_render = differentiable_surface_points.shape[0] == 0
-        features = implicit_function(differentiable_surface_points)[None, :, 1:]
+        features = implicit_function(rays_points_world=differentiable_surface_points)[
+            None, :, 1:
+        ]
         normals_full = features.new_zeros(
             batch_size, *spatial_size, 3, requires_grad=empty_render
         )
@@ -260,13 +262,13 @@ def _sample_network(
 
 
 @torch.enable_grad()
-def gradient(module, x):
-    x.requires_grad_(True)
-    y = module.forward(x)[:, :1]
+def _gradient(module, rays_points_world):
+    rays_points_world.requires_grad_(True)
+    y = module.forward(rays_points_world=rays_points_world)[:, :1]
     d_output = torch.ones_like(y, requires_grad=False, device=y.device)
     gradients = torch.autograd.grad(
         outputs=y,
-        inputs=x,
+        inputs=rays_points_world,
         grad_outputs=d_output,
         create_graph=True,
         retain_graph=True,

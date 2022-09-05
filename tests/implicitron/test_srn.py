@@ -44,7 +44,7 @@ class TestSRN(TestCaseMixin, unittest.TestCase):
         implicit_function = SRNImplicitFunction()
         device = torch.device("cpu")
         bundle = self._get_bundle(device=device)
-        rays_densities, rays_colors = implicit_function(bundle)
+        rays_densities, rays_colors = implicit_function(ray_bundle=bundle)
         out_features = implicit_function.raymarch_function.out_features
         self.assertEqual(
             rays_densities.shape,
@@ -62,7 +62,9 @@ class TestSRN(TestCaseMixin, unittest.TestCase):
         implicit_function.to(device)
         global_code = torch.rand(_BATCH_SIZE, latent_dim_hypernet, device=device)
         bundle = self._get_bundle(device=device)
-        rays_densities, rays_colors = implicit_function(bundle, global_code=global_code)
+        rays_densities, rays_colors = implicit_function(
+            ray_bundle=bundle, global_code=global_code
+        )
         out_features = implicit_function.hypernet.out_features
         self.assertEqual(
             rays_densities.shape,

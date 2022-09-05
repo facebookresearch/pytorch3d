@@ -349,6 +349,7 @@ class SRNImplicitFunction(ImplicitFunctionBase, torch.nn.Module):
 
     def forward(
         self,
+        *,
         ray_bundle: RayBundle,
         fun_viewpool=None,
         camera: Optional[CamerasBase] = None,
@@ -408,6 +409,7 @@ class SRNHyperNetImplicitFunction(ImplicitFunctionBase, torch.nn.Module):
 
     def forward(
         self,
+        *,
         ray_bundle: RayBundle,
         fun_viewpool=None,
         camera: Optional[CamerasBase] = None,

@@ -10,7 +10,9 @@ import torch
 
 import torch.nn.functional as F
 from pytorch3d.common.compat import prod
+from pytorch3d.renderer import ray_bundle_to_ray_points
 from pytorch3d.renderer.cameras import CamerasBase
+from pytorch3d.renderer.implicit import RayBundle
 
 
 def broadcast_global_code(embeds: torch.Tensor, global_code: torch.Tensor):
@@ -185,3 +187,31 @@ def interpolate_volume(
         **kwargs,
     )
     return out[:, :, :, 0, 0].permute(0, 2, 1)
+
+
+def get_rays_points_world(
+    ray_bundle: Optional[RayBundle] = None,
+    rays_points_world: Optional[torch.Tensor] = None,
+) -> torch.Tensor:
+    """
+    Converts the ray_bundle to rays_points_world if rays_points_world is not defined
+    and raises error if both are defined.
+
+    Args:
+        ray_bundle: A RayBundle object or None
+        rays_points_world: A torch.Tensor representing ray points converted to
+            world coordinates
+    Returns:
+        A torch.Tensor representing ray points converted to world coordinates
+            of shape [minibatch x ... x pts_per_ray x 3].
+    """
+    if rays_points_world is not None and ray_bundle is not None:
+        raise ValueError(
+            "Cannot define both rays_points_world and ray_bundle,"
+            + " one has to be None."
+        )
+    if rays_points_world is not None:
+        return rays_points_world
+    if ray_bundle is not None:
+        return ray_bundle_to_ray_points(ray_bundle)
+    raise ValueError("ray_bundle and rays_points_world cannot both be None")

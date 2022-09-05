@@ -148,7 +148,7 @@ class MultiPassEmissionAbsorptionRenderer(  # pyre-ignore: 13
         )
 
         output = self.raymarcher(
-            *implicit_functions[0](ray_bundle),
+            *implicit_functions[0](ray_bundle=ray_bundle),
             ray_lengths=ray_bundle.lengths,
             density_noise_std=density_noise_std,
         )

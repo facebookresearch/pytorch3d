@@ -3,14 +3,15 @@
 #              implicit_differentiable_renderer.py
 # Copyright (c) 2020 Lior Yariv
 import math
-from typing import Tuple
+from typing import Optional, Tuple
 
 import torch
 from pytorch3d.implicitron.tools.config import registry
-from pytorch3d.renderer.implicit import HarmonicEmbedding
+from pytorch3d.renderer.implicit import HarmonicEmbedding, RayBundle
 from torch import nn
 
 from .base import ImplicitFunctionBase
+from .utils import get_rays_points_world
 
 
 @registry.register
@@ -125,14 +126,16 @@ class IdrFeatureField(ImplicitFunctionBase, torch.nn.Module):
     #  inconsistently.
     def forward(
         self,
-        # ray_bundle: RayBundle,
-        rays_points_world: torch.Tensor,  # TODO: unify the APIs
+        *,
+        ray_bundle: Optional[RayBundle] = None,
+        rays_points_world: Optional[torch.Tensor] = None,
         fun_viewpool=None,
         global_code=None,
+        **kwargs,
     ):
         # this field only uses point locations
-        # rays_points_world = ray_bundle_to_ray_points(ray_bundle)
         # rays_points_world.shape = [minibatch x ... x pts_per_ray x 3]
+        rays_points_world = get_rays_points_world(ray_bundle, rays_points_world)
 
         if rays_points_world.numel() == 0 or (
             self.embed_fn is None and fun_viewpool is None and global_code is None
@@ -179,4 +182,4 @@ class IdrFeatureField(ImplicitFunctionBase, torch.nn.Module):
                 # pyre-fixme[29]: `Union[torch.Tensor, torch.nn.Module]` is not a function.
                 x = self.softplus(x)
 
-        return x  # TODO: unify the APIs
+        return x

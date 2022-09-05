@@ -19,6 +19,7 @@ class ImplicitFunctionBase(ABC, ReplaceableBase):
     @abstractmethod
     def forward(
         self,
+        *,
         ray_bundle: RayBundle,
         fun_viewpool=None,
         camera: Optional[CamerasBase] = None,

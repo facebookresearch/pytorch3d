@@ -118,7 +118,7 @@ class LSTMRenderer(BaseRenderer, torch.nn.Module):
 
             # eval the raymarching function
             raymarch_features, _ = implicit_function(
-                ray_bundle_t,
+                ray_bundle=ray_bundle_t,
                 raymarch_features=None,
             )
             if self.verbose:

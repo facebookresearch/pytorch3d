@@ -129,6 +129,7 @@ class NeuralRadianceFieldBase(ImplicitFunctionBase, torch.nn.Module):
 
     def forward(
         self,
+        *,
         ray_bundle: RayBundle,
         fun_viewpool=None,
         camera: Optional[CamerasBase] = None,
