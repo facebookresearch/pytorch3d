@@ -89,7 +89,7 @@ class MultinomialRaysampler(torch.nn.Module):
             max_depth: The maximum depth of a ray-point.
             n_rays_per_image: If given, this amount of rays are sampled from the grid.
             unit_directions: whether to normalize direction vectors in ray bundle.
-            stratified_sampling: if set, performs stratified random sampling
+            stratified_sampling: if True, performs stratified random sampling
                 along the ray; otherwise takes ray points at deterministic offsets.
         """
         super().__init__()
@@ -136,9 +136,8 @@ class MultinomialRaysampler(torch.nn.Module):
             max_depth: The maximum depth of a ray-point.
             n_rays_per_image: If given, this amount of rays are sampled from the grid.
             n_pts_per_ray: The number of points sampled along each ray.
-            stratified_sampling: if set, performs stratified sampling in n_pts_per_ray
-                bins for each ray; otherwise takes n_pts_per_ray deterministic points
-                on each ray with uniform offsets.
+            stratified_sampling: if set, overrides stratified_sampling provided
+                in __init__.
         Returns:
             A named tuple RayBundle with the following fields:
             origins: A tensor of shape
@@ -296,7 +295,7 @@ class MonteCarloRaysampler(torch.nn.Module):
             min_depth: The minimum depth of each ray-point.
             max_depth: The maximum depth of each ray-point.
             unit_directions: whether to normalize direction vectors in ray bundle.
-            stratified_sampling: if set, performs stratified sampling in n_pts_per_ray
+            stratified_sampling: if True, performs stratified sampling in n_pts_per_ray
                 bins for each ray; otherwise takes n_pts_per_ray deterministic points
                 on each ray with uniform offsets.
         """
@@ -322,9 +321,9 @@ class MonteCarloRaysampler(torch.nn.Module):
         """
         Args:
             cameras: A batch of `batch_size` cameras from which the rays are emitted.
-            stratified_sampling: if set, performs stratified sampling in n_pts_per_ray
-                bins for each ray; otherwise takes n_pts_per_ray deterministic points
-                on each ray with uniform offsets.
+            stratified_sampling: if set, overrides stratified_sampling provided
+                in __init__.
+
         Returns:
             A named tuple RayBundle with the following fields:
             origins: A tensor of shape
@@ -514,7 +513,7 @@ def _xy_to_ray_bundle(
         max_depth: The maximum depth of each ray-point.
         n_pts_per_ray: The number of points sampled along each ray.
         unit_directions: whether to normalize direction vectors in ray bundle.
-        stratified_sampling: if set, performs stratified sampling in n_pts_per_ray
+        stratified_sampling: if True, performs stratified sampling in n_pts_per_ray
             bins for each ray; otherwise takes n_pts_per_ray deterministic points
             on each ray with uniform offsets.
     """
@@ -583,7 +582,7 @@ def _jiggle_within_stratas(bin_centers: torch.Tensor) -> torch.Tensor:
 
     More specifically, it replaces each point's value `z`
     with a sample from a uniform random distribution on
-    `[z - delta_−, z + delta_+]`, where `delta_−` is half of the difference
+    `[z - delta_-, z + delta_+]`, where `delta_-` is half of the difference
     between `z` and the previous point, and `delta_+` is half of the difference
     between the next point and `z`. For the first and last items, the
     corresponding boundary deltas are assumed zero.
