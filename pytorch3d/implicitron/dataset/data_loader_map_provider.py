@@ -130,7 +130,14 @@ class SimpleDataLoaderMapProvider(DataLoaderMapProviderBase):
             num_samples = self.batch_size * num_batches
         else:
             num_samples = None
-        sampler = RandomSampler(dataset, replacement=True, num_samples=num_samples)
+
+        # sample with replacement only if a custom number of samples is specified
+        sampler = RandomSampler(
+            dataset,
+            replacement=num_samples is not None,
+            num_samples=num_samples,
+        )
+
         batch_sampler = BatchSampler(sampler, self.batch_size, drop_last=True)
         return DataLoader(
             dataset,
