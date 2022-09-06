@@ -80,35 +80,36 @@ class TestModelVisualize(unittest.TestCase):
 
             os.makedirs(output_dir, exist_ok=True)
 
-            render_flyaround(
-                train_dataset,
-                show_sequence_name,
-                model,
-                video_path,
-                n_flyaround_poses=40,
-                fps=20,
-                max_angle=2 * math.pi,
-                trajectory_type="circular_lsq_fit",
-                trajectory_scale=1.1,
-                scene_center=(0.0, 0.0, 0.0),
-                up=(0.0, 1.0, 0.0),
-                traj_offset=1.0,
-                n_source_views=1,
-                visdom_show_preds=visdom_show_preds,
-                visdom_environment="test_model_visalize",
-                visdom_server="http://127.0.0.1",
-                visdom_port=8097,
-                num_workers=10,
-                seed=None,
-                video_resize=None,
-                visualize_preds_keys=[
-                    "images_render",
-                    "depths_render",
-                    "masks_render",
-                    "_all_source_images",
-                ],
-                output_video_frames_dir=video_path,
-            )
+            for output_video_frames_dir in [None, video_path]:
+                render_flyaround(
+                    train_dataset,
+                    show_sequence_name,
+                    model,
+                    video_path,
+                    n_flyaround_poses=10,
+                    fps=5,
+                    max_angle=2 * math.pi,
+                    trajectory_type="circular_lsq_fit",
+                    trajectory_scale=1.1,
+                    scene_center=(0.0, 0.0, 0.0),
+                    up=(0.0, 1.0, 0.0),
+                    traj_offset=1.0,
+                    n_source_views=1,
+                    visdom_show_preds=visdom_show_preds,
+                    visdom_environment="test_model_visalize",
+                    visdom_server="http://127.0.0.1",
+                    visdom_port=8097,
+                    num_workers=10,
+                    seed=None,
+                    video_resize=None,
+                    visualize_preds_keys=[
+                        "images_render",
+                        "depths_render",
+                        "masks_render",
+                        "_all_source_images",
+                    ],
+                    output_video_frames_dir=output_video_frames_dir,
+                )
 
 
 class _PointcloudRenderingModel(torch.nn.Module):

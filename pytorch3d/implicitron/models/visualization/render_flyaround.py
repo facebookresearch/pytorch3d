@@ -190,6 +190,7 @@ def render_flyaround(
                     sequence_name=batch.sequence_name[0],
                     viz=viz,
                     viz_env=visdom_environment,
+                    predicted_keys=visualize_preds_keys,
                 )
 
     logger.info(f"Exporting videos for sequence {sequence_name} ...")
@@ -202,6 +203,7 @@ def render_flyaround(
         video_path=output_video_path,
         resize=video_resize,
         video_frames_dir=output_video_frames_dir,
+        predicted_keys=visualize_preds_keys,
     )
 
 
@@ -338,10 +340,15 @@ def _generate_prediction_videos(
     # init a video writer for each predicted key
     vws = {}
     for k in predicted_keys:
+        cache_dir = (
+            None
+            if video_frames_dir is None
+            else os.path.join(video_frames_dir, f"{sequence_name}_{k}")
+        )
         vws[k] = VideoWriter(
             fps=fps,
             out_path=f"{video_path}_{sequence_name}_{k}.mp4",
-            cache_dir=os.path.join(video_frames_dir, f"{sequence_name}_{k}"),
+            cache_dir=cache_dir,
         )
 
     for rendered_pred in tqdm(preds):
