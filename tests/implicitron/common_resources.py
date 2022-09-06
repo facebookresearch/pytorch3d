@@ -68,7 +68,7 @@ def get_skateboard_data(
     if not os.environ.get("FB_TEST", False):
         if os.getenv("FAIR_ENV_CLUSTER", "") == "":
             raise unittest.SkipTest("Unknown environment. Data not available.")
-        yield "/checkpoint/dnovotny/datasets/co3d/download_aws_22_02_18", PathManager()
+        yield "/datasets01/co3d/081922", PathManager()
 
     elif avoid_manifold or os.environ.get("INSIDE_RE_WORKER", False):
         from libfb.py.parutil import get_file_path

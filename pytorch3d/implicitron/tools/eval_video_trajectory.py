@@ -37,7 +37,7 @@ def generate_eval_video_cameras(
     Generate a camera trajectory rendering a scene from multiple viewpoints.
 
     Args:
-        train_dataset: The training dataset object.
+        train_cameras: The set of cameras from the training dataset object.
         n_eval_cams: Number of cameras in the trajectory.
         trajectory_type: The type of the camera trajectory. Can be one of:
             circular_lsq_fit: Camera centers follow a trajectory obtained
@@ -51,16 +51,30 @@ def generate_eval_video_cameras(
                 of a figure-eight knot
                 (https://en.wikipedia.org/wiki/Figure-eight_knot_(mathematics)).
         trajectory_scale: The extent of the trajectory.
-        up: The "up" vector of the scene (=the normal of the scene floor).
-            Active for the `trajectory_type="circular"`.
         scene_center: The center of the scene in world coordinates which all
             the cameras from the generated trajectory look at.
+        up: The "circular_lsq_fit" vector of the scene (=the normal of the scene floor).
+            Active for the `trajectory_type="circular"`.
+        focal_length: The focal length of the output cameras. If `None`, an average
+            focal length of the train_cameras is used.
+        principal_point: The principal point of the output cameras. If `None`, an average
+            principal point of all train_cameras is used.
+        time: Defines the total length of the generated camera trajectory. All possible
+            trajectories (set with the `trajectory_type` argument) are periodic with
+            the period of `time=2pi`.
+            E.g. setting `trajectory_type=circular_lsq_fit` and `time=4pi`, will generate
+            a trajectory of camera poses rotating the total of 720 deg around the object.
+        infer_up_as_plane_normal: Infer the camera `up` vector automatically as the normal
+            of the plane fit to the optical centers of `train_cameras`.
+        traj_offset: 3D offset vector added to each point of the trajectory.
+        traj_offset_canonical: 3D offset vector expressed in the local coordinates of
+            the estimated trajectory which is added to each point of the trajectory.
         remove_outliers_rate: the number between 0 and 1; if > 0,
             some outlier train_cameras will be removed from trajectory estimation;
             the filtering is based on camera center coordinates; top and
             bottom `remove_outliers_rate` cameras on each dimension are removed.
     Returns:
-        Dictionary of camera instances which can be used as the test dataset
+        Batch of camera instances which can be used as the test dataset
     """
     if remove_outliers_rate > 0.0:
         train_cameras = _remove_outlier_cameras(train_cameras, remove_outliers_rate)
