@@ -17,7 +17,8 @@ It has no dependencies.
 
 def get_test_files() -> List[Path]:
     root = Path(__file__).parent.parent
-    return list((root / "tests").glob("**/test*.py"))
+    dirs = ["tests", "projects/implicitron_trainer"]
+    return [i for dir in dirs for i in (root / dir).glob("**/test*.py")]
 
 
 def tests_from_file(path: Path, base: str) -> List[str]:
