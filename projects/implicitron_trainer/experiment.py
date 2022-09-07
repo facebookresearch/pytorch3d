@@ -83,6 +83,9 @@ from .impl.utils import seed_all_random_engines
 
 logger = logging.getLogger(__name__)
 
+# workaround for https://github.com/facebookresearch/hydra/issues/2262
+_RUN = hydra.types.RunMode.RUN
+
 if version.parse(hydra.__version__) < version.Version("1.1"):
     raise ValueError(
         f"Hydra version {hydra.__version__} is too old."
@@ -136,6 +139,7 @@ class Experiment(Configurable):  # pyre-ignore: 13
         default_factory=lambda: {
             "run": {"dir": "."},  # Make hydra not change the working dir.
             "output_subdir": None,  # disable storing the .hydra logs
+            "mode": _RUN,
         }
     )
 

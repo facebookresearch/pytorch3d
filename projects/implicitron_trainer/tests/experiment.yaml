@@ -9,6 +9,7 @@ hydra:
   run:
     dir: .
   output_subdir: null
+  mode: RUN
 data_source_ImplicitronDataSource_args:
   dataset_map_provider_class_type: ???
   data_loader_map_provider_class_type: SequenceDataLoaderMapProvider
