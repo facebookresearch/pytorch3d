@@ -9,7 +9,7 @@
 # provide data for a single scene.
 
 from dataclasses import field
-from typing import Iterable, List, Optional
+from typing import Iterable, Iterator, List, Optional, Tuple
 
 import numpy as np
 import torch
@@ -45,6 +45,12 @@ class SingleSceneDataset(DatasetBase, Configurable):
 
     def __len__(self) -> int:
         return len(self.poses)
+
+    def sequence_frames_in_order(
+        self, seq_name: str
+    ) -> Iterator[Tuple[float, int, int]]:
+        for i in range(len(self)):
+            yield (0.0, i, i)
 
     def __getitem__(self, index) -> FrameData:
         if index >= len(self):

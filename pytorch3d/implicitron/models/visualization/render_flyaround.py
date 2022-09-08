@@ -61,7 +61,7 @@ def render_flyaround(
         "depths_render",
         "_all_source_images",
     ),
-):
+) -> None:
     """
     Uses `model` to generate a video consisting of renders of a scene imaged from
     a camera flying around the scene. The scene is specified with the `dataset` object and
@@ -133,6 +133,7 @@ def render_flyaround(
     seq_idx = list(dataset.sequence_indices_in_order(sequence_name))
     train_data = _load_whole_dataset(dataset, seq_idx, num_workers=num_workers)
     assert all(train_data.sequence_name[0] == sn for sn in train_data.sequence_name)
+    # pyre-ignore[6]
     sequence_set_name = "train" if is_train_frame(train_data.frame_type)[0] else "test"
     logger.info(f"Sequence set = {sequence_set_name}.")
     train_cameras = train_data.camera
@@ -209,7 +210,7 @@ def render_flyaround(
 
 def _load_whole_dataset(
     dataset: torch.utils.data.Dataset, idx: Sequence[int], num_workers: int = 10
-):
+) -> FrameData:
     load_all_dataloader = torch.utils.data.DataLoader(
         torch.utils.data.Subset(dataset, idx),
         batch_size=len(idx),
@@ -220,7 +221,7 @@ def _load_whole_dataset(
     return next(iter(load_all_dataloader))
 
 
-def _images_from_preds(preds: Dict[str, Any]):
+def _images_from_preds(preds: Dict[str, Any]) -> Dict[str, torch.Tensor]:
     imout = {}
     for k in (
         "image_rgb",
@@ -253,7 +254,7 @@ def _images_from_preds(preds: Dict[str, Any]):
     return imout
 
 
-def _stack_images(ims: torch.Tensor, size: Optional[Tuple[int, int]]):
+def _stack_images(ims: torch.Tensor, size: Optional[Tuple[int, int]]) -> torch.Tensor:
     ba = ims.shape[0]
     H = int(np.ceil(np.sqrt(ba)))
     W = H
@@ -281,7 +282,7 @@ def _show_predictions(
     ),
     n_samples=10,
     one_image_width=200,
-):
+) -> None:
     """Given a list of predictions visualize them into a single image using visdom."""
     assert isinstance(preds, list)
 
@@ -329,7 +330,7 @@ def _generate_prediction_videos(
     video_path: str = "/tmp/video",
     video_frames_dir: Optional[str] = None,
     resize: Optional[Tuple[int, int]] = None,
-):
+) -> None:
     """Given a list of predictions create and visualize rotating videos of the
     objects using visdom.
     """
@@ -359,7 +360,7 @@ def _generate_prediction_videos(
             )
 
     for k in predicted_keys:
-        vws[k].get_video(quiet=True)
+        vws[k].get_video()
         logger.info(f"Generated {vws[k].out_path}.")
         if viz is not None:
             viz.video(

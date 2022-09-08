@@ -6,6 +6,7 @@
 
 import os
 import shutil
+import subprocess
 import tempfile
 import warnings
 from typing import Optional, Tuple, Union
@@ -15,6 +16,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
 
+_DEFAULT_FFMPEG = os.environ.get("FFMPEG", "ffmpeg")
 
 matplotlib.use("Agg")
 
@@ -27,13 +29,13 @@ class VideoWriter:
     def __init__(
         self,
         cache_dir: Optional[str] = None,
-        ffmpeg_bin: str = "ffmpeg",
+        ffmpeg_bin: str = _DEFAULT_FFMPEG,
         out_path: str = "/tmp/video.mp4",
         fps: int = 20,
         output_format: str = "visdom",
         rmdir_allowed: bool = False,
         **kwargs,
-    ):
+    ) -> None:
         """
         Args:
             cache_dir: A directory for storing the video frames. If `None`,
@@ -74,7 +76,7 @@ class VideoWriter:
         self,
         frame: Union[matplotlib.figure.Figure, np.ndarray, Image.Image, str],
         resize: Optional[Union[float, Tuple[int, int]]] = None,
-    ):
+    ) -> None:
         """
         Write a frame to the video.
 
@@ -114,7 +116,7 @@ class VideoWriter:
         self.frames.append(outfile)
         self.frame_num += 1
 
-    def get_video(self, quiet: bool = True):
+    def get_video(self) -> str:
         """
         Generate the video from the written frames.
 
@@ -127,23 +129,39 @@ class VideoWriter:
 
         regexp = os.path.join(self.cache_dir, self.regexp)
 
-        if self.output_format == "visdom":  # works for ppt too
-            ffmcmd_ = (
-                "%s -r %d -i %s -vcodec h264 -f mp4 \
-                       -y -crf 18 -b 2000k -pix_fmt yuv420p '%s'"
-                % (self.ffmpeg_bin, self.fps, regexp, self.out_path)
+        if shutil.which(self.ffmpeg_bin) is None:
+            raise ValueError(
+                f"Cannot find ffmpeg as `{self.ffmpeg_bin}`. "
+                + "Please set FFMPEG in the environment or ffmpeg_bin on this class."
             )
+
+        if self.output_format == "visdom":  # works for ppt too
+            args = [
+                self.ffmpeg_bin,
+                "-r",
+                str(self.fps),
+                "-i",
+                regexp,
+                "-vcodec",
+                "h264",
+                "-f",
+                "mp4",
+                "-y",
+                "-crf",
+                "18",
+                "-b",
+                "2000k",
+                "-pix_fmt",
+                "yuv420p",
+                self.out_path,
+            ]
+
+            subprocess.check_call(args)
         else:
             raise ValueError("no such output type %s" % str(self.output_format))
 
-        if quiet:
-            ffmcmd_ += " > /dev/null 2>&1"
-        else:
-            print(ffmcmd_)
-        os.system(ffmcmd_)
-
         return self.out_path
 
-    def __del__(self):
+    def __del__(self) -> None:
         if self.tmp_dir is not None:
             self.tmp_dir.cleanup()

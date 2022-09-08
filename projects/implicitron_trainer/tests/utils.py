@@ -6,6 +6,7 @@
 
 import contextlib
 import logging
+import os
 import re
 
 
@@ -28,3 +29,12 @@ def intercept_logs(logger_name: str, regexp: str):
         yield intercepted_messages
     finally:
         logger.removeFilter(interceptor)
+
+
+def interactive_testing_requested() -> bool:
+    """
+    Certain tests are only useful when run interactively, and so are not regularly run.
+    These are activated by this funciton returning True, which the user requests by
+    setting the environment variable `PYTORCH3D_INTERACTIVE_TESTING` to 1.
+    """
+    return os.environ.get("PYTORCH3D_INTERACTIVE_TESTING", "") == "1"
