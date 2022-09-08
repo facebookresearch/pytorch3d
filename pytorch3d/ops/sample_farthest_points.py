@@ -56,9 +56,11 @@ def sample_farthest_points(
     # Validate inputs
     if lengths is None:
         lengths = torch.full((N,), P, dtype=torch.int64, device=device)
-
-    if lengths.shape != (N,):
-        raise ValueError("points and lengths must have same batch dimension.")
+    else:
+        if lengths.shape != (N,):
+            raise ValueError("points and lengths must have same batch dimension.")
+        if lengths.max() > P:
+            raise ValueError("A value in lengths was too large.")
 
     # TODO: support providing K as a ratio of the total number of points instead of as an int
     if isinstance(K, int):
@@ -107,9 +109,11 @@ def sample_farthest_points_naive(
     # Validate inputs
     if lengths is None:
         lengths = torch.full((N,), P, dtype=torch.int64, device=device)
-
-    if lengths.shape[0] != N:
-        raise ValueError("points and lengths must have same batch dimension.")
+    else:
+        if lengths.shape != (N,):
+            raise ValueError("points and lengths must have same batch dimension.")
+        if lengths.max() > P:
+            raise ValueError("Invalid lengths.")
 
     # TODO: support providing K as a ratio of the total number of points instead of as an int
     if isinstance(K, int):

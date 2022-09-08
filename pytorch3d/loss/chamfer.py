@@ -48,10 +48,11 @@ def _handle_pointcloud_input(
         if points.ndim != 3:
             raise ValueError("Expected points to be of shape (N, P, D)")
         X = points
-        if lengths is not None and (
-            lengths.ndim != 1 or lengths.shape[0] != X.shape[0]
-        ):
-            raise ValueError("Expected lengths to be of shape (N,)")
+        if lengths is not None:
+            if lengths.ndim != 1 or lengths.shape[0] != X.shape[0]:
+                raise ValueError("Expected lengths to be of shape (N,)")
+            if lengths.max() > X.shape[1]:
+                raise ValueError("A length value was too long")
         if lengths is None:
             lengths = torch.full(
                 (X.shape[0],), X.shape[1], dtype=torch.int64, device=points.device
