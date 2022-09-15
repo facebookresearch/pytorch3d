@@ -168,7 +168,7 @@ class TestConfig(unittest.TestCase):
         self.assertIn(Banana, all_fruit)
         self.assertIn(Pear, all_fruit)
         self.assertIn(LargePear, all_fruit)
-        self.assertEqual(set(registry.get_all(Pear)), {LargePear})
+        self.assertEqual(registry.get_all(Pear), [LargePear])
 
         @registry.register
         class Apple(Fruit):
@@ -178,7 +178,7 @@ class TestConfig(unittest.TestCase):
         class CrabApple(Apple):
             pass
 
-        self.assertEqual(set(registry.get_all(Apple)), {CrabApple})
+        self.assertEqual(registry.get_all(Apple), [CrabApple])
 
         self.assertIs(registry.get(Fruit, "CrabApple"), CrabApple)
 
@@ -601,6 +601,7 @@ class TestConfig(unittest.TestCase):
 
         for C_ in [C, C_fn, C_cl]:
             base = get_default_args(C_)
+            self.assertEqual(OmegaConf.to_yaml(base), "a: B1\n")
             self.assertEqual(base.a, A.B1)
             replaced = OmegaConf.merge(base, {"a": "B2"})
             self.assertEqual(replaced.a, A.B2)
