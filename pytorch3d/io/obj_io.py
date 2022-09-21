@@ -334,12 +334,25 @@ class MeshObjFormat(MeshFormatInterpreter):
 
         verts = data.verts_list()[0]
         faces = data.faces_list()[0]
+
+        verts_uvs: Optional[torch.Tensor] = None
+        faces_uvs: Optional[torch.Tensor] = None
+        texture_map: Optional[torch.Tensor] = None
+
+        if isinstance(data.textures, TexturesUV):
+            verts_uvs = data.textures.verts_uvs_padded()[0]
+            faces_uvs = data.textures.faces_uvs_padded()[0]
+            texture_map = data.textures.maps_padded()[0]
+
         save_obj(
             f=path,
             verts=verts,
             faces=faces,
             decimal_places=decimal_places,
             path_manager=path_manager,
+            verts_uvs=verts_uvs,
+            faces_uvs=faces_uvs,
+            texture_map=texture_map,
         )
         return True
 
