@@ -315,6 +315,9 @@ class TestConfig(unittest.TestCase):
         ]
         self.assertEqual(sorted(large_args.keys()), needed_args)
 
+        with self.assertRaisesRegex(ValueError, "NotAFruit has not been registered."):
+            LargeFruitBowl(extra_fruit_class_type="NotAFruit")
+
     def test_inheritance2(self):
         # This is a case where a class could contain an instance
         # of a subclass, which is ignored.
@@ -564,16 +567,19 @@ class TestConfig(unittest.TestCase):
 
     def test_unprocessed(self):
         # behavior of Configurable classes which need processing in __new__,
-        class Unprocessed(Configurable):
+        class UnprocessedConfigurable(Configurable):
             a: int = 9
 
         class UnprocessedReplaceable(ReplaceableBase):
-            a: int = 1
+            a: int = 9
 
-        with self.assertWarnsRegex(UserWarning, "must be processed"):
-            Unprocessed()
-        with self.assertWarnsRegex(UserWarning, "must be processed"):
-            UnprocessedReplaceable()
+        for Unprocessed in [UnprocessedConfigurable, UnprocessedReplaceable]:
+
+            self.assertFalse(_is_actually_dataclass(Unprocessed))
+            unprocessed = Unprocessed()
+            self.assertTrue(_is_actually_dataclass(Unprocessed))
+            self.assertTrue(isinstance(unprocessed, Unprocessed))
+            self.assertEqual(unprocessed.a, 9)
 
     def test_enum(self):
         # Test that enum values are kept, i.e. that OmegaConf's runtime checks

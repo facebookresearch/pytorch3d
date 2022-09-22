@@ -167,12 +167,6 @@ thing as the default for a member of another configured class,
 """
 
 
-_unprocessed_warning: str = (
-    " must be processed before it can be used."
-    + " This is done by calling expand_args_fields "
-    + "or get_default_args on it."
-)
-
 TYPE_SUFFIX: str = "_class_type"
 ARGS_SUFFIX: str = "_args"
 ENABLED_SUFFIX: str = "_enabled"
@@ -183,39 +177,42 @@ TWEAK_SUFFIX: str = "_tweak_args"
 
 class ReplaceableBase:
     """
-    Base class for dataclass-style classes which
-    can be stored in the registry.
+    Base class for a class (a "replaceable") which is a base class for
+    dataclass-style implementations. The implementations can be stored
+    in the registry. They get expanded into dataclasses with expand_args_fields.
+    This expansion is delayed.
     """
 
     def __new__(cls, *args, **kwargs):
         """
-        This function only exists to raise a
-        warning if class construction is attempted
-        without processing.
+        These classes should be expanded only when needed (because processing
+        fixes the list of replaceable subclasses of members of the class). It
+        is safer if users expand the classes explicitly. But if the class gets
+        instantiated when it hasn't been processed, we expand it here.
         """
         obj = super().__new__(cls)
         if cls is not ReplaceableBase and not _is_actually_dataclass(cls):
-            warnings.warn(cls.__name__ + _unprocessed_warning)
+            expand_args_fields(cls)
         return obj
 
 
 class Configurable:
     """
-    This indicates a class which is not ReplaceableBase
-    but still needs to be
+    Base class for dataclass-style classes which are not replaceable. These get
     expanded into a dataclass with expand_args_fields.
     This expansion is delayed.
     """
 
     def __new__(cls, *args, **kwargs):
         """
-        This function only exists to raise a
-        warning if class construction is attempted
-        without processing.
+        These classes should be expanded only when needed (because processing
+        fixes the list of replaceable subclasses of members of the class). It
+        is safer if users expand the classes explicitly. But if the class gets
+        instantiated when it hasn't been processed, we expand it here.
         """
         obj = super().__new__(cls)
         if cls is not Configurable and not _is_actually_dataclass(cls):
-            warnings.warn(cls.__name__ + _unprocessed_warning)
+            expand_args_fields(cls)
         return obj
 
 
