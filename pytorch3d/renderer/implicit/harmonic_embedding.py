@@ -88,7 +88,7 @@ class HarmonicEmbedding(torch.nn.Module):
             embedding: a harmonic embedding of `x`
                 of shape [..., (n_harmonic_functions * 2 + int(append_input)) * dim]
         """
-        embed = (x[..., None] * self._frequencies).view(*x.shape[:-1], -1)
+        embed = (x[..., None] * self._frequencies).reshape(*x.shape[:-1], -1)
         embed = torch.cat(
             (embed.sin(), embed.cos(), x)
             if self.append_input

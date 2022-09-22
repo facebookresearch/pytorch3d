@@ -65,7 +65,7 @@ class VoxelGridBase(ReplaceableBase, torch.nn.Module):
     padding: str = "zeros"
     mode: str = "bilinear"
     n_features: int = 1
-    resolution: Tuple[int, int, int] = (64, 64, 64)
+    resolution: Tuple[int, int, int] = (128, 128, 128)
 
     def __post_init__(self):
         super().__init__()
@@ -507,8 +507,7 @@ class VoxelGridModule(Configurable, torch.nn.Module):
     voxel_grid_class_type: str = "FullResolutionVoxelGrid"
     voxel_grid: VoxelGridBase
 
-    # pyre-fixme[8]: Attribute has type `Tuple[float, float, float]`; used as `float`.
-    extents: Tuple[float, float, float] = 1.0
+    extents: Tuple[float, float, float] = (1.0, 1.0, 1.0)
     translation: Tuple[float, float, float] = (0.0, 0.0, 0.0)
 
     init_std: float = 0.1
@@ -552,9 +551,9 @@ class VoxelGridModule(Configurable, torch.nn.Module):
             grid_sizes=(2, 2, 2),
             # The locator object uses (x, y, z) convention for the
             # voxel size and translation.
-            voxel_size=self.extents,
-            volume_translation=self.translation,
-            # pyre-fixme[29]: `Union[BoundMethod[typing.Callable(torch._C._TensorBase...
+            voxel_size=tuple(self.extents),
+            volume_translation=tuple(self.translation),
+            # pyre-ignore[29]
             device=next(self.params.values()).device,
         )
         # pyre-fixme[29]: `Union[torch._tensor.Tensor,
@@ -562,3 +561,18 @@ class VoxelGridModule(Configurable, torch.nn.Module):
         grid_values = self.voxel_grid.values_type(**self.params)
         # voxel grids operate with extra n_grids dimension, which we fix to one
         return self.voxel_grid.evaluate_world(points[None], grid_values, locator)[0]
+
+    @staticmethod
+    def get_output_dim(args: DictConfig) -> int:
+        """
+        Utility to help predict the shape of the output of `forward`.
+
+        Args:
+            args: DictConfig which would be used to initialize the object
+        Returns:
+            int: the length of the last dimension of the output tensor
+        """
+        grid = registry.get(VoxelGridBase, args["voxel_grid_class_type"])
+        return grid.get_output_dim(
+            args["voxel_grid_" + args["voxel_grid_class_type"] + "_args"]
+        )

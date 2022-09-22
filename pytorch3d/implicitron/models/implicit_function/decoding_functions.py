@@ -18,6 +18,8 @@ from typing import Optional, Tuple
 
 import torch
 
+from omegaconf import DictConfig
+
 from pytorch3d.implicitron.tools.config import (
     Configurable,
     registry,
@@ -179,8 +181,11 @@ class MLPWithInputSkips(Configurable, torch.nn.Module):
 class MLPDecoder(DecoderFunctionBase):
     """
     Decoding function which uses `MLPWithIputSkips` to convert the embedding to output.
+    If using Implicitron config system `input_dim` of the `network` is changed to the
+    value of `input_dim` member and `input_skips` is removed.
     """
 
+    input_dim: int = 3
     network: MLPWithInputSkips
 
     def __post_init__(self):
@@ -191,6 +196,20 @@ class MLPDecoder(DecoderFunctionBase):
         self, features: torch.Tensor, z: Optional[torch.Tensor] = None
     ) -> torch.Tensor:
         return self.network(features, z)
+
+    @classmethod
+    def network_tweak_args(cls, type, args: DictConfig) -> None:
+        """
+        Special method to stop get_default_args exposing member's `input_dim`.
+        """
+        args.pop("input_dim", None)
+
+    def create_network_impl(self, type, args: DictConfig) -> None:
+        """
+        Set the input dimension of the `network` to the input dimension of the
+        decoding function.
+        """
+        self.network = MLPWithInputSkips(input_dim=self.input_dim, **args)
 
 
 class TransformerWithInputSkips(torch.nn.Module):
