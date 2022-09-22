@@ -31,6 +31,7 @@
 # SOFTWARE.
 
 import math
+import pickle
 import typing
 import unittest
 from itertools import product
@@ -1332,6 +1333,11 @@ class TestPerspectiveProjection(TestCaseMixin, unittest.TestCase):
 
         # Check in_ndc is handled correctly
         self.assertEqual(cam._in_ndc, c0._in_ndc)
+
+    def test_clone_picklable(self):
+        camera = PerspectiveCameras()
+        pickle.dumps(camera)
+        pickle.dumps(camera.clone())
 
 
 ############################################################

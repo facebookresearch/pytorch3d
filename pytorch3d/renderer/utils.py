@@ -8,7 +8,7 @@
 import copy
 import inspect
 import warnings
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any, List, Optional, Tuple, TypeVar, Union
 
 import numpy as np
 import torch
@@ -191,7 +191,7 @@ class TensorProperties(nn.Module):
         """
         for k in dir(self):
             v = getattr(self, k)
-            if inspect.ismethod(v) or k.startswith("__"):
+            if inspect.ismethod(v) or k.startswith("__") or type(v) is TypeVar:
                 continue
             if torch.is_tensor(v):
                 v_clone = v.clone()
