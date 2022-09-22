@@ -9,12 +9,16 @@ import tempfile
 import unittest
 from pathlib import Path
 
+import torch
+
 from hydra import compose, initialize_config_dir
 from omegaconf import OmegaConf
+from projects.implicitron_trainer.impl.optimizer_factory import (
+    ImplicitronOptimizerFactory,
+)
 
 from .. import experiment
 from .utils import interactive_testing_requested, intercept_logs
-
 
 internal = os.environ.get("FB_TEST", False)
 
@@ -150,6 +154,16 @@ class TestExperiment(unittest.TestCase):
             with self.subTest(file.name):
                 with initialize_config_dir(config_dir=str(IMPLICITRON_CONFIGS_DIR)):
                     compose(file.name)
+
+    def test_optimizer_factory(self):
+        model = torch.nn.Linear(2, 2)
+
+        adam, sched = ImplicitronOptimizerFactory(breed="Adam")(0, model)
+        self.assertIsInstance(adam, torch.optim.Adam)
+        sgd, sched = ImplicitronOptimizerFactory(breed="SGD")(0, model)
+        self.assertIsInstance(sgd, torch.optim.SGD)
+        adagrad, sched = ImplicitronOptimizerFactory(breed="Adagrad")(0, model)
+        self.assertIsInstance(adagrad, torch.optim.Adagrad)
 
 
 class TestNerfRepro(unittest.TestCase):
