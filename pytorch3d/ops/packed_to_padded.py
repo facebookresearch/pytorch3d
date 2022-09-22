@@ -65,7 +65,7 @@ def packed_to_padded(inputs, first_idxs, max_size):
     Torch wrapper that handles allowed input shapes. See description below.
 
     Args:
-        inputs: FloatTensor of shape (F,) or (F, D), representing the packed
+        inputs: FloatTensor of shape (F,) or (F, ...), representing the packed
             batch tensor, e.g. areas for faces in a batch of meshes.
         first_idxs: LongTensor of shape (N,) where N is the number of
             elements in the batch and `first_idxs[i] = f`
@@ -73,7 +73,7 @@ def packed_to_padded(inputs, first_idxs, max_size):
         max_size: Max length of an element in the batch.
 
     Returns:
-        inputs_padded: FloatTensor of shape (N, max_size) or (N, max_size, D)
+        inputs_padded: FloatTensor of shape (N, max_size) or (N, max_size, ...)
             where max_size is  max of `sizes`. The values for batch element i
             which start at `inputs[first_idxs[i]]` will be copied to
             `inputs_padded[i, :]`, with zeros padding out the extra inputs.
@@ -83,15 +83,20 @@ def packed_to_padded(inputs, first_idxs, max_size):
     (N, max_size, 1).
     """
     # if inputs is of shape (F,), reshape into (F, 1)
-    flat = False
-    if inputs.dim() == 1:
-        flat = True
+    input_shape = inputs.shape
+    n_dims = inputs.dim()
+    if n_dims == 1:
         inputs = inputs.unsqueeze(1)
+    else:
+        inputs = inputs.reshape(input_shape[0], -1)
     inputs_padded = _PackedToPadded.apply(inputs, first_idxs, max_size)
     # if flat is True, reshape output to (N, max_size) from (N, max_size, 1)
-    if flat:
-        inputs_padded = inputs_padded.squeeze(2)
-    return inputs_padded
+    # else reshape output to (N, max_size, ...)
+    if n_dims == 1:
+        return inputs_padded.squeeze(2)
+    if n_dims == 2:
+        return inputs_padded
+    return inputs_padded.view(*inputs_padded.shape[:2], *input_shape[1:])
 
 
 class _PaddedToPacked(Function):
@@ -147,7 +152,7 @@ def padded_to_packed(inputs, first_idxs, num_inputs):
     Torch wrapper that handles allowed input shapes. See description below.
 
     Args:
-        inputs: FloatTensor of shape (N, max_size) or (N, max_size, D),
+        inputs: FloatTensor of shape (N, max_size) or (N, max_size, ...),
             representing the padded tensor, e.g. areas for faces in a batch of
             meshes.
         first_idxs: LongTensor of shape (N,) where N is the number of
@@ -156,20 +161,25 @@ def padded_to_packed(inputs, first_idxs, num_inputs):
         num_inputs: Number of packed entries (= F)
 
     Returns:
-        inputs_packed: FloatTensor of shape (F,) or (F, D) where
-            `inputs_packed[first_idx[i]:] = inputs[i, :]`.
+        inputs_packed: FloatTensor of shape (F,) or (F, ...) where
+            `inputs_packed[first_idx[i]:first_idx[i+1]] = inputs[i, :]`.
 
     To handle the allowed input shapes, we convert the inputs tensor of shape
     (N, max_size)  to (N, max_size, 1). We reshape the output back to (F,) from
     (F, 1).
     """
     # if inputs is of shape (N, max_size), reshape into (N, max_size, 1))
-    flat = False
-    if inputs.dim() == 2:
-        flat = True
+    input_shape = inputs.shape
+    n_dims = inputs.dim()
+    if n_dims == 2:
         inputs = inputs.unsqueeze(2)
+    else:
+        inputs = inputs.reshape(*input_shape[:2], -1)
     inputs_packed = _PaddedToPacked.apply(inputs, first_idxs, num_inputs)
-    # if flat is True, reshape output to (F,) from (F, 1)
-    if flat:
-        inputs_packed = inputs_packed.squeeze(1)
-    return inputs_packed
+    # if input is flat, reshape output to (F,) from (F, 1)
+    # else reshape output to (F, ...)
+    if n_dims == 2:
+        return inputs_packed.squeeze(1)
+    if n_dims == 3:
+        return inputs_packed
+    return inputs_packed.view(-1, *input_shape[2:])
