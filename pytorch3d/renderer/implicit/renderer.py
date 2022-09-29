@@ -165,6 +165,7 @@ class ImplicitRenderer(torch.nn.Module):
         # given sampled rays, call the volumetric function that
         # evaluates the densities and features at the locations of the
         # ray points
+        # pyre-fixme[23]: Unable to unpack `object` into 2 values.
         rays_densities, rays_features = volumetric_function(
             ray_bundle=ray_bundle, cameras=cameras, **kwargs
         )
