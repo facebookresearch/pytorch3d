@@ -12,8 +12,9 @@ from pytorch3d.implicitron.tools.circle_fitting import (
     _signed_area,
     fit_circle_in_2d,
     fit_circle_in_3d,
+    get_rotation_to_best_fit_xy,
 )
-from pytorch3d.transforms import random_rotation
+from pytorch3d.transforms import random_rotation, random_rotations
 from tests.common_testing import TestCaseMixin
 
 
@@ -27,6 +28,32 @@ class TestCircleFitting(TestCaseMixin, unittest.TestCase):
         assert that correspnding vectors are parallel. Changed sign is ok.
         """
         self.assertClose(torch.cross(a, b, dim=-1), torch.zeros_like(a), **kwargs)
+
+    def test_plane_levelling(self):
+        device = torch.device("cuda:0")
+        B = 16
+        N = 1024
+        random = torch.randn((B, N, 3), device=device)
+
+        # first, check that we always return a vaild rotation
+        rot = get_rotation_to_best_fit_xy(random)
+        self.assertClose(rot.det(), torch.ones_like(rot[:, 0, 0]))
+        self.assertClose(rot.norm(dim=-1), torch.ones_like(rot[:, 0]))
+
+        # then, check the result is what we expect
+        z_squeeze = 0.1
+        random[..., -1] *= z_squeeze
+        rot_gt = random_rotations(B, device=device)
+        rotated = random @ rot_gt.transpose(-1, -2)
+        rot_hat = get_rotation_to_best_fit_xy(rotated)
+        self.assertClose(rot.det(), torch.ones_like(rot[:, 0, 0]))
+        self.assertClose(rot.norm(dim=-1), torch.ones_like(rot[:, 0]))
+        # covariance matrix of the levelled points is by design diag(1, 1, z_squeeze²)
+        self.assertClose(
+            (rotated @ rot_hat)[..., -1].std(dim=-1),
+            torch.ones_like(rot_hat[:, 0, 0]) * z_squeeze,
+            rtol=0.1,
+        )
 
     def test_simple_3d(self):
         device = torch.device("cuda:0")
