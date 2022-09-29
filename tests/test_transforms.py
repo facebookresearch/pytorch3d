@@ -10,6 +10,7 @@ import unittest
 
 import torch
 from pytorch3d.transforms import random_rotations
+from pytorch3d.transforms.se3 import se3_log_map
 from pytorch3d.transforms.so3 import so3_exp_map
 from pytorch3d.transforms.transform3d import (
     Rotate,
@@ -160,6 +161,16 @@ class TestTransform(TestCaseMixin, unittest.TestCase):
         for bad_shape in bad_shapes:
             matrix = torch.randn(*bad_shape).float()
             self.assertRaises(ValueError, Transform3d, matrix=matrix)
+
+    def test_get_se3(self):
+        N = 16
+        random_rotations(N)
+        tr = Translate(torch.rand((N, 3)))
+        R = Rotate(random_rotations(N))
+        transform = Transform3d().compose(R, tr)
+        se3_log = transform.get_se3_log()
+        gt_se3_log = se3_log_map(transform.get_matrix())
+        self.assertClose(se3_log, gt_se3_log)
 
     def test_translate(self):
         t = Transform3d().translate(1, 2, 3)
