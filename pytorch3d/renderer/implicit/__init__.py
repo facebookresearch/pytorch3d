@@ -15,6 +15,7 @@ from .raysampling import (
 )
 from .renderer import ImplicitRenderer, VolumeRenderer, VolumeSampler
 from .utils import (
+    HeterogeneousRayBundle,
     ray_bundle_to_ray_points,
     ray_bundle_variables_to_ray_points,
     RayBundle,

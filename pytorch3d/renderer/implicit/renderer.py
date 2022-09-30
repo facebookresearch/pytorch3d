@@ -4,7 +4,7 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-from typing import Callable, Tuple
+from typing import Callable, Tuple, Union
 
 import torch
 
@@ -12,7 +12,7 @@ from ...ops.utils import eyes
 from ...structures import Volumes
 from ...transforms import Transform3d
 from ..cameras import CamerasBase
-from .raysampling import RayBundle
+from .raysampling import HeterogeneousRayBundle, RayBundle
 from .utils import _validate_ray_bundle_variables, ray_bundle_variables_to_ray_points
 
 
@@ -44,12 +44,14 @@ class ImplicitRenderer(torch.nn.Module):
     A standard `volumetric_function` has the following signature:
     ```
     def volumetric_function(
-        ray_bundle: RayBundle,
+        ray_bundle: Union[RayBundle, HeterogeneousRayBundle],
         **kwargs,
     ) -> Tuple[torch.Tensor, torch.Tensor]
     ```
     With the following arguments:
-        `ray_bundle`: A RayBundle object containing the following variables:
+        `ray_bundle`: A RayBundle or HeterogeneousRayBundle object
+            containing the following variables:
+
             `origins`: A tensor of shape `(minibatch, ..., 3)` denoting
                 the origins of the rendering rays.
             `directions`: A tensor of shape `(minibatch, ..., 3)`
@@ -80,7 +82,7 @@ class ImplicitRenderer(torch.nn.Module):
         RGB sphere with a unit diameter is defined as follows:
         ```
         def volumetric_function(
-            ray_bundle: RayBundle,
+            ray_bundle: Union[RayBundle, HeterogeneousRayBundle],
             **kwargs,
         ) -> Tuple[torch.Tensor, torch.Tensor]:
 
@@ -109,7 +111,8 @@ class ImplicitRenderer(torch.nn.Module):
         """
         Args:
             raysampler: A `Callable` that takes as input scene cameras
-                (an instance of `CamerasBase`) and returns a `RayBundle` that
+                (an instance of `CamerasBase`) and returns a
+                RayBundle or HeterogeneousRayBundle, that
                 describes the rays emitted from the cameras.
             raymarcher: A `Callable` that receives the response of the
                 `volumetric_function` (an input to `self.forward`) evaluated
@@ -128,7 +131,7 @@ class ImplicitRenderer(torch.nn.Module):
 
     def forward(
         self, cameras: CamerasBase, volumetric_function: Callable, **kwargs
-    ) -> Tuple[torch.Tensor, RayBundle]:
+    ) -> Tuple[torch.Tensor, Union[RayBundle, HeterogeneousRayBundle]]:
         """
         Render a batch of images using a volumetric function
         represented as a callable (e.g. a Pytorch module).
@@ -145,15 +148,15 @@ class ImplicitRenderer(torch.nn.Module):
         Returns:
             images: A tensor of shape `(minibatch, ..., feature_dim + opacity_dim)`
                 containing the result of the rendering.
-            ray_bundle: A `RayBundle` containing the parametrizations of the
-                sampled rendering rays.
+            ray_bundle: A `Union[RayBundle, HeterogeneousRayBundle]` containing
+                the parametrizations of the sampled rendering rays.
         """
 
         if not callable(volumetric_function):
             raise ValueError('"volumetric_function" has to be a "Callable" object.')
 
-        # first call the ray sampler that returns the RayBundle parametrizing
-        # the rendering rays.
+        # first call the ray sampler that returns the RayBundle or HeterogeneousRayBundle
+        # parametrizing the rendering rays.
         ray_bundle = self.raysampler(
             cameras=cameras, volumetric_function=volumetric_function, **kwargs
         )
@@ -211,7 +214,8 @@ class VolumeRenderer(torch.nn.Module):
         """
         Args:
             raysampler: A `Callable` that takes as input scene cameras
-                (an instance of `CamerasBase`) and returns a `RayBundle` that
+                (an instance of `CamerasBase`) and returns a
+                `Union[RayBundle, HeterogeneousRayBundle],` that
                 describes the rays emitted from the cameras.
             raymarcher: A `Callable` that receives the `volumes`
                 (an instance of `Volumes` input to `self.forward`)
@@ -227,7 +231,7 @@ class VolumeRenderer(torch.nn.Module):
 
     def forward(
         self, cameras: CamerasBase, volumes: Volumes, **kwargs
-    ) -> Tuple[torch.Tensor, RayBundle]:
+    ) -> Tuple[torch.Tensor, Union[RayBundle, HeterogeneousRayBundle]]:
         """
         Render a batch of images using raymarching over rays cast through
         input `Volumes`.
@@ -242,8 +246,8 @@ class VolumeRenderer(torch.nn.Module):
         Returns:
             images: A tensor of shape `(minibatch, ..., (feature_dim + opacity_dim)`
                 containing the result of the rendering.
-            ray_bundle: A `RayBundle` containing the parametrizations of the
-                sampled rendering rays.
+            ray_bundle: A `RayBundle` or `HeterogeneousRayBundle` containing the
+                parametrizations of the sampled rendering rays.
         """
         volumetric_function = VolumeSampler(volumes, sample_mode=self._sample_mode)
         return self.renderer(
@@ -288,14 +292,14 @@ class VolumeSampler(torch.nn.Module):
         return directions_transform
 
     def forward(
-        self, ray_bundle: RayBundle, **kwargs
+        self, ray_bundle: Union[RayBundle, HeterogeneousRayBundle], **kwargs
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Given an input ray parametrization, the forward function samples
         `self._volumes` at the respective 3D ray-points.
 
         Args:
-            ray_bundle: A RayBundle object with the following fields:
+            ray_bundle: A RayBundle or HeterogeneousRayBundle object with the following fields:
                 rays_origins_world: A tensor of shape `(minibatch, ..., 3)` denoting the
                     origins of the sampling rays in world coords.
                 rays_directions_world: A tensor of shape `(minibatch, ..., 3)`

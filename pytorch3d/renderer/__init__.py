@@ -31,6 +31,7 @@ from .implicit import (
     EmissionAbsorptionRaymarcher,
     GridRaysampler,
     HarmonicEmbedding,
+    HeterogeneousRayBundle,
     ImplicitRenderer,
     MonteCarloRaysampler,
     MultinomialRaysampler,
