@@ -222,6 +222,7 @@ class Experiment(Configurable):  # pyre-ignore: 13
             train_loader=train_loader,
             val_loader=val_loader,
             test_loader=test_loader,
+            # pyre-ignore[6]
             train_dataset=datasets.train,
             model=model,
             optimizer=optimizer,

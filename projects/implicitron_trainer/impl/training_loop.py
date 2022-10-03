@@ -22,7 +22,7 @@ from pytorch3d.implicitron.tools.config import (
 )
 from pytorch3d.implicitron.tools.stats import Stats
 from pytorch3d.renderer.cameras import CamerasBase
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Dataset
 
 from .utils import seed_all_random_engines
 
@@ -44,6 +44,7 @@ class TrainingLoopBase(ReplaceableBase):
         train_loader: DataLoader,
         val_loader: Optional[DataLoader],
         test_loader: Optional[DataLoader],
+        train_dataset: Dataset,
         model: ImplicitronModelBase,
         optimizer: torch.optim.Optimizer,
         scheduler: Any,
@@ -116,6 +117,7 @@ class ImplicitronTrainingLoop(TrainingLoopBase):
         train_loader: DataLoader,
         val_loader: Optional[DataLoader],
         test_loader: Optional[DataLoader],
+        train_dataset: Dataset,
         model: ImplicitronModelBase,
         optimizer: torch.optim.Optimizer,
         scheduler: Any,

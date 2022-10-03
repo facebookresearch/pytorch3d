@@ -389,7 +389,8 @@ class GenericModel(ImplicitronModelBase):  # pyre-ignore: 13
         )
 
         # (1) Sample rendering rays with the ray sampler.
-        ray_bundle: ImplicitronRayBundle = self.raysampler(  # pyre-fixme[29]
+        # pyre-ignore[29]
+        ray_bundle: ImplicitronRayBundle = self.raysampler(
             target_cameras,
             evaluation_mode,
             mask=mask_crop[:n_targets]
