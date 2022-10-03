@@ -9,8 +9,10 @@ import warnings
 from typing import Any, Dict, Optional
 
 import torch
+from pytorch3d.implicitron.models.renderer.ray_sampler import ImplicitronRayBundle
 from pytorch3d.implicitron.tools import metric_utils as utils
 from pytorch3d.implicitron.tools.config import registry, ReplaceableBase
+from pytorch3d.ops import packed_to_padded, padded_to_packed
 from pytorch3d.renderer import utils as rend_utils
 
 from .renderer.base import RendererOutput
@@ -60,7 +62,7 @@ class ViewMetricsBase(ReplaceableBase, torch.nn.Module):
     def forward(
         self,
         raymarched: RendererOutput,
-        xys: torch.Tensor,
+        ray_bundle: ImplicitronRayBundle,
         image_rgb: Optional[torch.Tensor] = None,
         depth_map: Optional[torch.Tensor] = None,
         fg_probability: Optional[torch.Tensor] = None,
@@ -79,10 +81,8 @@ class ViewMetricsBase(ReplaceableBase, torch.nn.Module):
                 names of the output metrics `metric_name_i` with their corresponding
                 values `metric_value_i` represented as 0-dimensional float tensors.
             raymarched: Output of the renderer.
-            xys: A tensor of shape `(B, ..., 2)` containing 2D image locations at which
-                the predictions are defined. All ground truth inputs are sampled at
-                these locations in order to extract values that correspond to the
-                predictions.
+            ray_bundle: ImplicitronRayBundle object which was used to produce the raymarched
+                object
             image_rgb: A tensor of shape `(B, H, W, 3)` containing ground truth rgb
                 values.
             depth_map: A tensor of shape `(B, Hd, Wd, 1)` containing ground truth depth
@@ -141,7 +141,7 @@ class ViewMetrics(ViewMetricsBase):
     def forward(
         self,
         raymarched: RendererOutput,
-        xys: torch.Tensor,
+        ray_bundle: ImplicitronRayBundle,
         image_rgb: Optional[torch.Tensor] = None,
         depth_map: Optional[torch.Tensor] = None,
         fg_probability: Optional[torch.Tensor] = None,
@@ -165,10 +165,8 @@ class ViewMetrics(ViewMetricsBase):
                 input 3D coordinates used to compute the eikonal loss.
             raymarched.aux["density_grid"]: A tensor of shape `(B, Hg, Wg, Dg, 1)`
                 containing a `Hg x Wg x Dg` voxel grid of density values.
-            xys: A tensor of shape `(B, ..., 2)` containing 2D image locations at which
-                the predictions are defined. All ground truth inputs are sampled at
-                these locations in order to extract values that correspond to the
-                predictions.
+            ray_bundle: ImplicitronRayBundle object which was used to produce the raymarched
+                object
             image_rgb: A tensor of shape `(B, H, W, 3)` containing ground truth rgb
                 values.
             depth_map: A tensor of shape `(B, Hd, Wd, 1)` containing ground truth depth
@@ -209,7 +207,7 @@ class ViewMetrics(ViewMetricsBase):
         """
         metrics = self._calculate_stage(
             raymarched,
-            xys,
+            ray_bundle,
             image_rgb,
             depth_map,
             fg_probability,
@@ -221,7 +219,7 @@ class ViewMetrics(ViewMetricsBase):
             metrics.update(
                 self(
                     raymarched.prev_stage,
-                    xys,
+                    ray_bundle,
                     image_rgb,
                     depth_map,
                     fg_probability,
@@ -235,7 +233,7 @@ class ViewMetrics(ViewMetricsBase):
     def _calculate_stage(
         self,
         raymarched: RendererOutput,
-        xys: torch.Tensor,
+        ray_bundle: ImplicitronRayBundle,
         image_rgb: Optional[torch.Tensor] = None,
         depth_map: Optional[torch.Tensor] = None,
         fg_probability: Optional[torch.Tensor] = None,
@@ -253,6 +251,27 @@ class ViewMetrics(ViewMetricsBase):
             _reshape_nongrid_var(x)
             for x in [raymarched.features, raymarched.masks, raymarched.depths]
         ]
+        xys = ray_bundle.xys
+
+        # If ray_bundle is packed than we can sample images in padded state to lower
+        # memory requirements. Instead of having one image for every element in
+        # ray_bundle we can than have one image per unique sampled camera.
+        if ray_bundle.is_packed():
+            # pyre-ignore[6]
+            cumsum = torch.cumsum(ray_bundle.camera_counts, dim=0, dtype=torch.long)
+            first_idxs = torch.cat(
+                (
+                    # pyre-ignore[16]
+                    ray_bundle.camera_counts.new_zeros((1,), dtype=torch.long),
+                    cumsum[:-1],
+                )
+            )
+            # pyre-ignore[16]
+            num_inputs = int(ray_bundle.camera_counts.sum())
+            # pyre-ignore[6]
+            max_size = int(torch.max(ray_bundle.camera_counts))
+            xys = packed_to_padded(xys, first_idxs, max_size)
+
         # reshape the sampling grid as well
         # TODO: we can get rid of the singular dimension here and in _reshape_nongrid_var
         # now that we use rend_utils.ndc_grid_sample
@@ -262,7 +281,20 @@ class ViewMetrics(ViewMetricsBase):
         def sample(tensor, mode):
             if tensor is None:
                 return tensor
-            return rend_utils.ndc_grid_sample(tensor, xys, mode=mode)
+            if ray_bundle.is_packed():
+                # select images that corespond to sampled cameras if raybundle is packed
+                tensor = tensor[ray_bundle.camera_ids]
+            result = rend_utils.ndc_grid_sample(tensor, xys, mode=mode)
+            if ray_bundle.is_packed():
+                # Images after sampling are in a form [batch, 3, max_num_rays, 1],
+                # packed_to_padded combines first two dimensions so we need to swap 1st
+                # and 2nd dimension. the result is [n_rays_total_training, 1, 3, 1]
+                # (we use keepdim=True).
+                result = result.transpose(1, 2)
+                result = padded_to_packed(result, first_idxs, num_inputs)[:, None]
+                result = result.transpose(1, 2)
+
+            return result
 
         # eval all results in this size
         image_rgb = sample(image_rgb, mode="bilinear")

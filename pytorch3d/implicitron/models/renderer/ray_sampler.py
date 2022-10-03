@@ -72,7 +72,17 @@ class AbstractMaskRaySampler(RaySamplerBase, torch.nn.Module):
         sampling_mode_evaluation: Same as above but for evaluation.
         n_pts_per_ray_training: The number of points sampled along each ray during training.
         n_pts_per_ray_evaluation: The number of points sampled along each ray during evaluation.
-        n_rays_per_image_sampled_from_mask: The amount of rays to be sampled from the image grid
+        n_rays_per_image_sampled_from_mask: The amount of rays to be sampled from the image
+            grid. Given a batch of image grids, this many is sampled from each.
+            `n_rays_per_image_sampled_from_mask` and `n_rays_total_training` cannot both be
+            defined.
+        n_rays_total_training: (optional) How many rays in total to sample from the entire
+            batch of provided image grid. The result is as if `n_rays_total_training`
+            cameras/image grids were sampled with replacement from the cameras / image grids
+            provided and for every camera one ray was sampled.
+            `n_rays_per_image_sampled_from_mask` and `n_rays_total_training` cannot both be
+            defined, to use you have to set `n_rays_per_image` to None.
+            Used only for EvaluationMode.TRAINING.
         stratified_point_sampling_training: if set, performs stratified random sampling
             along the ray; otherwise takes ray points at deterministic offsets.
         stratified_point_sampling_evaluation: Same as above but for evaluation.
@@ -85,13 +95,22 @@ class AbstractMaskRaySampler(RaySamplerBase, torch.nn.Module):
     sampling_mode_evaluation: str = "full_grid"
     n_pts_per_ray_training: int = 64
     n_pts_per_ray_evaluation: int = 64
-    n_rays_per_image_sampled_from_mask: int = 1024
+    n_rays_per_image_sampled_from_mask: Optional[int] = 1024
+    n_rays_total_training: Optional[int] = None
     # stratified sampling vs taking points at deterministic offsets
     stratified_point_sampling_training: bool = True
     stratified_point_sampling_evaluation: bool = False
 
     def __post_init__(self):
         super().__init__()
+
+        if (self.n_rays_per_image_sampled_from_mask is not None) and (
+            self.n_rays_total_training is not None
+        ):
+            raise ValueError(
+                "Cannot both define n_rays_total_training and "
+                "n_rays_per_image_sampled_from_mask."
+            )
 
         self._sampling_mode = {
             EvaluationMode.TRAINING: RenderSamplingMode(self.sampling_mode_training),
@@ -110,9 +129,11 @@ class AbstractMaskRaySampler(RaySamplerBase, torch.nn.Module):
             if self._sampling_mode[EvaluationMode.TRAINING]
             == RenderSamplingMode.MASK_SAMPLE
             else None,
+            n_rays_total=self.n_rays_total_training,
             unit_directions=True,
             stratified_sampling=self.stratified_point_sampling_training,
         )
+
         self._evaluation_raysampler = NDCMultinomialRaysampler(
             image_width=self.image_width,
             image_height=self.image_height,

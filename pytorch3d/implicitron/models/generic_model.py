@@ -473,7 +473,7 @@ class GenericModel(ImplicitronModelBase):  # pyre-ignore: 13
             self.view_metrics(
                 results=preds,
                 raymarched=rendered,
-                xys=ray_bundle.xys,
+                ray_bundle=ray_bundle,
                 image_rgb=safe_slice_targets(image_rgb),
                 depth_map=safe_slice_targets(depth_map),
                 fg_probability=safe_slice_targets(fg_probability),
@@ -932,6 +932,11 @@ def _chunk_generator(
     if len(iter) >= tqdm_trigger_threshold:
         iter = tqdm.tqdm(iter)
 
+    def _safe_slice(
+        tensor: Optional[torch.Tensor], start_idx: int, end_idx: int
+    ) -> Optional[torch.Tensor]:
+        return tensor[start_idx:end_idx] if tensor is not None else None
+
     for start_idx in iter:
         end_idx = min(start_idx + chunk_size_in_rays, n_rays)
         ray_bundle_chunk = ImplicitronRayBundle(
@@ -943,6 +948,8 @@ def _chunk_generator(
                 :, start_idx:end_idx
             ],
             xys=ray_bundle.xys.reshape(batch_size, -1, 2)[:, start_idx:end_idx],
+            camera_ids=_safe_slice(ray_bundle.camera_ids, start_idx, end_idx),
+            camera_counts=_safe_slice(ray_bundle.camera_counts, start_idx, end_idx),
         )
         extra_args = kwargs.copy()
         for k, v in chunked_inputs.items():
