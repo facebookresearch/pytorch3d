@@ -7,9 +7,10 @@
 from abc import ABC, abstractmethod
 from typing import Optional
 
+from pytorch3d.implicitron.models.renderer.base import ImplicitronRayBundle
+
 from pytorch3d.implicitron.tools.config import ReplaceableBase
 from pytorch3d.renderer.cameras import CamerasBase
-from pytorch3d.renderer.implicit import RayBundle
 
 
 class ImplicitFunctionBase(ABC, ReplaceableBase):
@@ -20,7 +21,7 @@ class ImplicitFunctionBase(ABC, ReplaceableBase):
     def forward(
         self,
         *,
-        ray_bundle: RayBundle,
+        ray_bundle: ImplicitronRayBundle,
         fun_viewpool=None,
         camera: Optional[CamerasBase] = None,
         global_code=None,

@@ -149,9 +149,8 @@ class MultinomialRaysampler(torch.nn.Module):
                 in __init__.
             n_rays_total: How many rays in total to sample from the cameras provided. The result
                 is as if `n_rays_total_training` cameras were sampled with replacement from the
-                cameras provided and for every camera one ray was sampled. If set, this disables
-                `n_rays_per_image` and returns the HeterogeneousRayBundle with
-                batch_size=n_rays_total.
+                cameras provided and for every camera one ray was sampled. If set, returns the
+                HeterogeneousRayBundle with batch_size=n_rays_total.
         Returns:
             A named tuple RayBundle or dataclass HeterogeneousRayBundle with the
             following fields:
@@ -188,9 +187,10 @@ class MultinomialRaysampler(torch.nn.Module):
         """
         n_rays_total = n_rays_total or self._n_rays_total
         n_rays_per_image = n_rays_per_image or self._n_rays_per_image
-        assert (n_rays_total is None) or (
-            n_rays_per_image is None
-        ), "`n_rays_total` and `n_rays_per_image` cannot both be defined."
+        if (n_rays_total is not None) and (n_rays_per_image is not None):
+            raise ValueError(
+                "`n_rays_total` and `n_rays_per_image` cannot both be defined."
+            )
         if n_rays_total:
             (
                 cameras,
@@ -357,9 +357,8 @@ class MonteCarloRaysampler(torch.nn.Module):
             max_depth: The maximum depth of each ray-point.
             n_rays_total: How many rays in total to sample from the cameras provided. The result
                 is as if `n_rays_total_training` cameras were sampled with replacement from the
-                cameras provided and for every camera one ray was sampled. If set, this disables
-                `n_rays_per_image` and returns the HeterogeneousRayBundleyBundle with
-                batch_size=n_rays_total.
+                cameras provided and for every camera one ray was sampled. If set, this returns
+                the HeterogeneousRayBundleyBundle with batch_size=n_rays_total.
             unit_directions: whether to normalize direction vectors in ray bundle.
             stratified_sampling: if True, performs stratified sampling in n_pts_per_ray
                 bins for each ray; otherwise takes n_pts_per_ray deterministic points
@@ -416,9 +415,14 @@ class MonteCarloRaysampler(torch.nn.Module):
                 - camera_counts: tensor of shape (M,), where `M` is the number of unique sampled
                     cameras. Represents how many times each camera from `camera_ids` was sampled
         """
-        assert (self._n_rays_total is None) or (
-            self._n_rays_per_image is None
-        ), "`self.n_rays_total` and `self.n_rays_per_image` cannot both be defined."
+        if (
+            sum(x is not None for x in [self._n_rays_total, self._n_rays_per_image])
+            != 1
+        ):
+            raise ValueError(
+                "Exactly one of `self.n_rays_total` and `self.n_rays_per_image` "
+                "must be given."
+            )
 
         if self._n_rays_total:
             (

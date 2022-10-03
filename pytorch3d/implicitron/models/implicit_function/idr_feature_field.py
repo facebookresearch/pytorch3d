@@ -6,8 +6,10 @@ import math
 from typing import Optional, Tuple
 
 import torch
+from pytorch3d.implicitron.models.renderer.base import ImplicitronRayBundle
 from pytorch3d.implicitron.tools.config import registry
-from pytorch3d.renderer.implicit import HarmonicEmbedding, RayBundle
+from pytorch3d.renderer.implicit import HarmonicEmbedding
+
 from torch import nn
 
 from .base import ImplicitFunctionBase
@@ -127,7 +129,7 @@ class IdrFeatureField(ImplicitFunctionBase, torch.nn.Module):
     def forward(
         self,
         *,
-        ray_bundle: Optional[RayBundle] = None,
+        ray_bundle: Optional[ImplicitronRayBundle] = None,
         rays_points_world: Optional[torch.Tensor] = None,
         fun_viewpool=None,
         global_code=None,

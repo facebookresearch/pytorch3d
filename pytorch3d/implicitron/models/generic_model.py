@@ -22,6 +22,7 @@ from pytorch3d.implicitron.models.metrics import (
     RegularizationMetricsBase,
     ViewMetricsBase,
 )
+from pytorch3d.implicitron.models.renderer.base import ImplicitronRayBundle
 from pytorch3d.implicitron.tools import image_utils, vis_utils
 from pytorch3d.implicitron.tools.config import (
     expand_args_fields,
@@ -30,7 +31,8 @@ from pytorch3d.implicitron.tools.config import (
 )
 from pytorch3d.implicitron.tools.rasterize_mc import rasterize_mc_samples
 from pytorch3d.implicitron.tools.utils import cat_dataclass
-from pytorch3d.renderer import RayBundle, utils as rend_utils
+from pytorch3d.renderer import utils as rend_utils
+
 from pytorch3d.renderer.cameras import CamerasBase
 from visdom import Visdom
 
@@ -387,7 +389,7 @@ class GenericModel(ImplicitronModelBase):  # pyre-ignore: 13
         )
 
         # (1) Sample rendering rays with the ray sampler.
-        ray_bundle: RayBundle = self.raysampler(  # pyre-fixme[29]
+        ray_bundle: ImplicitronRayBundle = self.raysampler(  # pyre-fixme[29]
             target_cameras,
             evaluation_mode,
             mask=mask_crop[:n_targets]
@@ -568,14 +570,14 @@ class GenericModel(ImplicitronModelBase):  # pyre-ignore: 13
     def _render(
         self,
         *,
-        ray_bundle: RayBundle,
+        ray_bundle: ImplicitronRayBundle,
         chunked_inputs: Dict[str, torch.Tensor],
         sampling_mode: RenderSamplingMode,
         **kwargs,
     ) -> RendererOutput:
         """
         Args:
-            ray_bundle: A `RayBundle` object containing the parametrizations of the
+            ray_bundle: A `ImplicitronRayBundle` object containing the parametrizations of the
                 sampled rendering rays.
             chunked_inputs: A collection of tensor of shape `(B, _, H, W)`. E.g.
                 SignedDistanceFunctionRenderer requires "object_mask", shape
@@ -899,7 +901,7 @@ def _tensor_collator(batch, new_dims) -> torch.Tensor:
 
 def _chunk_generator(
     chunk_size: int,
-    ray_bundle: RayBundle,
+    ray_bundle: ImplicitronRayBundle,
     chunked_inputs: Dict[str, torch.Tensor],
     tqdm_trigger_threshold: int,
     *args,
@@ -932,7 +934,7 @@ def _chunk_generator(
 
     for start_idx in iter:
         end_idx = min(start_idx + chunk_size_in_rays, n_rays)
-        ray_bundle_chunk = RayBundle(
+        ray_bundle_chunk = ImplicitronRayBundle(
             origins=ray_bundle.origins.reshape(batch_size, -1, 3)[:, start_idx:end_idx],
             directions=ray_bundle.directions.reshape(batch_size, -1, 3)[
                 :, start_idx:end_idx

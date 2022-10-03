@@ -9,10 +9,10 @@ from typing import Optional, Tuple
 import torch
 from pytorch3d.implicitron.tools import camera_utils
 from pytorch3d.implicitron.tools.config import registry, ReplaceableBase
-from pytorch3d.renderer import NDCMultinomialRaysampler, RayBundle
+from pytorch3d.renderer import NDCMultinomialRaysampler
 from pytorch3d.renderer.cameras import CamerasBase
 
-from .base import EvaluationMode, RenderSamplingMode
+from .base import EvaluationMode, ImplicitronRayBundle, RenderSamplingMode
 
 
 class RaySamplerBase(ReplaceableBase):
@@ -28,7 +28,7 @@ class RaySamplerBase(ReplaceableBase):
         cameras: CamerasBase,
         evaluation_mode: EvaluationMode,
         mask: Optional[torch.Tensor] = None,
-    ) -> RayBundle:
+    ) -> ImplicitronRayBundle:
         """
         Args:
             cameras: A batch of `batch_size` cameras from which the rays are emitted.
@@ -42,7 +42,7 @@ class RaySamplerBase(ReplaceableBase):
                 corresponding pixel's ray.
 
         Returns:
-            ray_bundle: A `RayBundle` object containing the parametrizations of the
+            ray_bundle: A `ImplicitronRayBundle` object containing the parametrizations of the
                 sampled rendering rays.
         """
         raise NotImplementedError()
@@ -135,7 +135,7 @@ class AbstractMaskRaySampler(RaySamplerBase, torch.nn.Module):
         cameras: CamerasBase,
         evaluation_mode: EvaluationMode,
         mask: Optional[torch.Tensor] = None,
-    ) -> RayBundle:
+    ) -> ImplicitronRayBundle:
         """
 
         Args:
@@ -150,7 +150,7 @@ class AbstractMaskRaySampler(RaySamplerBase, torch.nn.Module):
                 corresponding pixel's ray.
 
         Returns:
-            ray_bundle: A `RayBundle` object containing the parametrizations of the
+            ray_bundle: A `ImplicitronRayBundle` object containing the parametrizations of the
                 sampled rendering rays.
         """
         sample_mask = None
@@ -180,7 +180,19 @@ class AbstractMaskRaySampler(RaySamplerBase, torch.nn.Module):
             max_depth=max_depth,
         )
 
-        return ray_bundle
+        if isinstance(ray_bundle, tuple):
+            return ImplicitronRayBundle(
+                # pyre-ignore[16]
+                **{k: v for k, v in ray_bundle._asdict().items()}
+            )
+        return ImplicitronRayBundle(
+            directions=ray_bundle.directions,
+            origins=ray_bundle.origins,
+            lengths=ray_bundle.lengths,
+            xys=ray_bundle.xys,
+            camera_ids=ray_bundle.camera_ids,
+            camera_counts=ray_bundle.camera_counts,
+        )
 
 
 @registry.register

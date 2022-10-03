@@ -6,6 +6,8 @@
 
 from __future__ import annotations
 
+import dataclasses
+
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
@@ -23,6 +25,38 @@ class EvaluationMode(Enum):
 class RenderSamplingMode(Enum):
     MASK_SAMPLE = "mask_sample"
     FULL_GRID = "full_grid"
+
+
+@dataclasses.dataclass
+class ImplicitronRayBundle:
+    """
+    Parametrizes points along projection rays by storing ray `origins`,
+    `directions` vectors and `lengths` at which the ray-points are sampled.
+    Furthermore, the xy-locations (`xys`) of the ray pixels are stored as well.
+    Note that `directions` don't have to be normalized; they define unit vectors
+    in the respective 1D coordinate systems; see documentation for
+    :func:`ray_bundle_to_ray_points` for the conversion formula.
+
+    camera_ids: A tensor of shape (N, ) which indicates which camera
+        was used to sample the rays. `N` is the number of different
+        sampled cameras.
+    camera_counts: A tensor of shape (N, ) which how many times the
+        coresponding camera in `camera_ids` was sampled.
+        `sum(camera_counts)==minibatch`
+    """
+
+    origins: torch.Tensor
+    directions: torch.Tensor
+    lengths: torch.Tensor
+    xys: torch.Tensor
+    camera_ids: Optional[torch.Tensor] = None
+    camera_counts: Optional[torch.Tensor] = None
+
+    def is_packed(self) -> bool:
+        """
+        Returns whether the ImplicitronRayBundle carries data in packed state
+        """
+        return self.camera_ids is not None and self.camera_counts is not None
 
 
 @dataclass
@@ -85,7 +119,7 @@ class BaseRenderer(ABC, ReplaceableBase):
     @abstractmethod
     def forward(
         self,
-        ray_bundle,
+        ray_bundle: ImplicitronRayBundle,
         implicit_functions: List[ImplicitFunctionWrapper],
         evaluation_mode: EvaluationMode = EvaluationMode.EVALUATION,
         **kwargs,
@@ -95,7 +129,7 @@ class BaseRenderer(ABC, ReplaceableBase):
         that returns an instance of RendererOutput.
 
         Args:
-            ray_bundle: A RayBundle object containing the following variables:
+            ray_bundle: An ImplicitronRayBundle object containing the following variables:
                 origins: A tensor of shape (minibatch, ..., 3) denoting
                     the origins of the rendering rays.
                 directions: A tensor of shape (minibatch, ..., 3)
@@ -108,6 +142,12 @@ class BaseRenderer(ABC, ReplaceableBase):
                 xys: A tensor of shape
                     (minibatch, ..., 2) containing the
                     xy locations of each ray's pixel in the NDC screen space.
+                camera_ids: A tensor of shape (N, ) which indicates which camera
+                    was used to sample the rays. `N` is the number of different
+                    sampled cameras.
+                camera_counts: A tensor of shape (N, ) which how many times the
+                    coresponding camera in `camera_ids` was sampled.
+                    `sum(camera_counts)==minibatch`
             implicit_functions: List of ImplicitFunctionWrappers which define the
                 implicit function methods to be used. Most Renderers only allow
                 a single implicit function. Currently, only the

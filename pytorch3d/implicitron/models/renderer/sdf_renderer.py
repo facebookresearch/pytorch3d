@@ -8,13 +8,13 @@ from typing import List, Optional, Tuple
 import torch
 from omegaconf import DictConfig
 from pytorch3d.common.compat import prod
+from pytorch3d.implicitron.models.renderer.base import ImplicitronRayBundle
 from pytorch3d.implicitron.tools.config import (
     get_default_args_field,
     registry,
     run_auto_creation,
 )
 from pytorch3d.implicitron.tools.utils import evaluating
-from pytorch3d.renderer import RayBundle
 
 from .base import BaseRenderer, EvaluationMode, ImplicitFunctionWrapper, RendererOutput
 from .ray_tracing import RayTracing
@@ -69,7 +69,7 @@ class SignedDistanceFunctionRenderer(BaseRenderer, torch.nn.Module):  # pyre-ign
 
     def forward(
         self,
-        ray_bundle: RayBundle,
+        ray_bundle: ImplicitronRayBundle,
         implicit_functions: List[ImplicitFunctionWrapper],
         evaluation_mode: EvaluationMode = EvaluationMode.EVALUATION,
         object_mask: Optional[torch.Tensor] = None,
@@ -77,7 +77,7 @@ class SignedDistanceFunctionRenderer(BaseRenderer, torch.nn.Module):  # pyre-ign
     ) -> RendererOutput:
         """
         Args:
-            ray_bundle: A `RayBundle` object containing the parametrizations of the
+            ray_bundle: A `ImplicitronRayBundle` object containing the parametrizations of the
                 sampled rendering rays.
             implicit_functions: single element list of ImplicitFunctionWrappers which
                 defines the implicit function to be used.

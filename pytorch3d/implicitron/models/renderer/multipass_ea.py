@@ -7,8 +7,8 @@
 from typing import List
 
 import torch
+from pytorch3d.implicitron.models.renderer.base import ImplicitronRayBundle
 from pytorch3d.implicitron.tools.config import registry, run_auto_creation
-from pytorch3d.renderer import RayBundle
 
 from .base import BaseRenderer, EvaluationMode, ImplicitFunctionWrapper, RendererOutput
 from .ray_point_refiner import RayPointRefiner
@@ -107,14 +107,14 @@ class MultiPassEmissionAbsorptionRenderer(  # pyre-ignore: 13
 
     def forward(
         self,
-        ray_bundle: RayBundle,
+        ray_bundle: ImplicitronRayBundle,
         implicit_functions: List[ImplicitFunctionWrapper],
         evaluation_mode: EvaluationMode = EvaluationMode.EVALUATION,
         **kwargs,
     ) -> RendererOutput:
         """
         Args:
-            ray_bundle: A `RayBundle` object containing the parametrizations of the
+            ray_bundle: A `ImplicitronRayBundle` object containing the parametrizations of the
                 sampled rendering rays.
             implicit_functions: List of ImplicitFunctionWrappers which
                 define the implicit functions to be used sequentially in

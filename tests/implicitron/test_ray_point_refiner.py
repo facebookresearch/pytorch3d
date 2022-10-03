@@ -8,7 +8,7 @@ import unittest
 
 import torch
 from pytorch3d.implicitron.models.renderer.ray_point_refiner import RayPointRefiner
-from pytorch3d.renderer import RayBundle
+from pytorch3d.implicitron.models.renderer.ray_sampler import ImplicitronRayBundle
 from tests.common_testing import TestCaseMixin
 
 
@@ -24,7 +24,14 @@ class TestRayPointRefiner(TestCaseMixin, unittest.TestCase):
                 add_input_samples=add_input_samples,
             )
             lengths = torch.arange(length, dtype=torch.float32).expand(3, 25, length)
-            bundle = RayBundle(lengths=lengths, origins=None, directions=None, xys=None)
+            bundle = ImplicitronRayBundle(
+                lengths=lengths,
+                origins=None,
+                directions=None,
+                xys=None,
+                camera_ids=None,
+                camera_counts=None,
+            )
             weights = torch.ones(3, 25, length)
             refined = ray_point_refiner(bundle, weights)
 

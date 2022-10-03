@@ -297,6 +297,7 @@ class VolumeSampler(torch.nn.Module):
         """
         Given an input ray parametrization, the forward function samples
         `self._volumes` at the respective 3D ray-points.
+        Can also accept ImplicitronRayBundle as argument for ray_bundle.
 
         Args:
             ray_bundle: A RayBundle or HeterogeneousRayBundle object with the following fields:

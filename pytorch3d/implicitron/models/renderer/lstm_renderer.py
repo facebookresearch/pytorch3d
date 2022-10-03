@@ -4,12 +4,13 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+import dataclasses
 import logging
 from typing import List, Optional, Tuple
 
 import torch
+from pytorch3d.implicitron.models.renderer.base import ImplicitronRayBundle
 from pytorch3d.implicitron.tools.config import registry
-from pytorch3d.renderer import RayBundle
 
 from .base import BaseRenderer, EvaluationMode, ImplicitFunctionWrapper, RendererOutput
 
@@ -71,7 +72,7 @@ class LSTMRenderer(BaseRenderer, torch.nn.Module):
 
     def forward(
         self,
-        ray_bundle: RayBundle,
+        ray_bundle: ImplicitronRayBundle,
         implicit_functions: List[ImplicitFunctionWrapper],
         evaluation_mode: EvaluationMode = EvaluationMode.EVALUATION,
         **kwargs,
@@ -79,7 +80,7 @@ class LSTMRenderer(BaseRenderer, torch.nn.Module):
         """
 
         Args:
-            ray_bundle: A `RayBundle` object containing the parametrizations of the
+            ray_bundle: A `ImplicitronRayBundle` object containing the parametrizations of the
                 sampled rendering rays.
             implicit_functions: A single-element list of ImplicitFunctionWrappers which
                 defines the implicit function to be used.
@@ -102,9 +103,12 @@ class LSTMRenderer(BaseRenderer, torch.nn.Module):
             )
 
         # jitter the initial depths
-        ray_bundle_t = ray_bundle._replace(
-            lengths=ray_bundle.lengths
-            + torch.randn_like(ray_bundle.lengths) * self.init_depth_noise_std
+        ray_bundle_t = dataclasses.replace(
+            ray_bundle,
+            lengths=(
+                ray_bundle.lengths
+                + torch.randn_like(ray_bundle.lengths) * self.init_depth_noise_std
+            ),
         )
 
         states: List[Optional[Tuple[torch.Tensor, torch.Tensor]]] = [None]
@@ -112,9 +116,7 @@ class LSTMRenderer(BaseRenderer, torch.nn.Module):
         raymarch_features = None
         for t in range(self.num_raymarch_steps + 1):
             # move signed_distance along each ray
-            ray_bundle_t = ray_bundle_t._replace(
-                lengths=ray_bundle_t.lengths + signed_distance
-            )
+            ray_bundle_t.lengths += signed_distance
 
             # eval the raymarching function
             raymarch_features, _ = implicit_function(

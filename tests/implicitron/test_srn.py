@@ -13,8 +13,10 @@ from pytorch3d.implicitron.models.implicit_function.scene_representation_network
     SRNImplicitFunction,
     SRNPixelGenerator,
 )
+from pytorch3d.implicitron.models.renderer.ray_sampler import ImplicitronRayBundle
 from pytorch3d.implicitron.tools.config import get_default_args
-from pytorch3d.renderer import PerspectiveCameras, RayBundle
+from pytorch3d.renderer import PerspectiveCameras
+
 from tests.common_testing import TestCaseMixin
 
 _BATCH_SIZE: int = 3
@@ -31,12 +33,17 @@ class TestSRN(TestCaseMixin, unittest.TestCase):
     def test_pixel_generator(self):
         SRNPixelGenerator()
 
-    def _get_bundle(self, *, device) -> RayBundle:
+    def _get_bundle(self, *, device) -> ImplicitronRayBundle:
         origins = torch.rand(_BATCH_SIZE, _N_RAYS, 3, device=device)
         directions = torch.rand(_BATCH_SIZE, _N_RAYS, 3, device=device)
         lengths = torch.rand(_BATCH_SIZE, _N_RAYS, _N_POINTS_ON_RAY, device=device)
-        bundle = RayBundle(
-            lengths=lengths, origins=origins, directions=directions, xys=None
+        bundle = ImplicitronRayBundle(
+            lengths=lengths,
+            origins=origins,
+            directions=directions,
+            xys=None,
+            camera_ids=None,
+            camera_counts=None,
         )
         return bundle
 

@@ -6,9 +6,10 @@ from typing import Any, cast, Optional, Tuple
 import torch
 from omegaconf import DictConfig
 from pytorch3d.common.linear_with_repeat import LinearWithRepeat
+from pytorch3d.implicitron.models.renderer.base import ImplicitronRayBundle
 from pytorch3d.implicitron.third_party import hyperlayers, pytorch_prototyping
 from pytorch3d.implicitron.tools.config import Configurable, registry, run_auto_creation
-from pytorch3d.renderer import ray_bundle_to_ray_points, RayBundle
+from pytorch3d.renderer import ray_bundle_to_ray_points
 from pytorch3d.renderer.cameras import CamerasBase
 from pytorch3d.renderer.implicit import HarmonicEmbedding
 
@@ -68,7 +69,7 @@ class SRNRaymarchFunction(Configurable, torch.nn.Module):
 
     def forward(
         self,
-        ray_bundle: RayBundle,
+        ray_bundle: ImplicitronRayBundle,
         fun_viewpool=None,
         camera: Optional[CamerasBase] = None,
         global_code=None,
@@ -76,7 +77,7 @@ class SRNRaymarchFunction(Configurable, torch.nn.Module):
     ):
         """
         Args:
-            ray_bundle: A RayBundle object containing the following variables:
+            ray_bundle: An ImplicitronRayBundle object containing the following variables:
                 origins: A tensor of shape `(minibatch, ..., 3)` denoting the
                     origins of the sampling rays in world coords.
                 directions: A tensor of shape `(minibatch, ..., 3)`
@@ -96,10 +97,11 @@ class SRNRaymarchFunction(Configurable, torch.nn.Module):
         """
         # We first convert the ray parametrizations to world
         # coordinates with `ray_bundle_to_ray_points`.
+        # pyre-ignore[6]
         rays_points_world = ray_bundle_to_ray_points(ray_bundle)
 
         embeds = create_embeddings_for_implicit_function(
-            xyz_world=ray_bundle_to_ray_points(ray_bundle),
+            xyz_world=rays_points_world,
             # pyre-fixme[6]: Expected `Optional[typing.Callable[..., typing.Any]]`
             #  for 2nd param but got `Union[torch.Tensor, torch.nn.Module]`.
             xyz_embedding_function=self._harmonic_embedding,
@@ -175,7 +177,7 @@ class SRNPixelGenerator(Configurable, torch.nn.Module):
     def forward(
         self,
         raymarch_features: torch.Tensor,
-        ray_bundle: RayBundle,
+        ray_bundle: ImplicitronRayBundle,
         camera: Optional[CamerasBase] = None,
         **kwargs,
     ):
@@ -183,7 +185,7 @@ class SRNPixelGenerator(Configurable, torch.nn.Module):
         Args:
             raymarch_features: Features from the raymarching network of shape
                 `(minibatch, ..., self.in_features)`
-            ray_bundle: A RayBundle object containing the following variables:
+            ray_bundle: An ImplicitronRayBundle object containing the following variables:
                 origins: A tensor of shape `(minibatch, ..., 3)` denoting the
                     origins of the sampling rays in world coords.
                 directions: A tensor of shape `(minibatch, ..., 3)`
@@ -297,7 +299,7 @@ class SRNRaymarchHyperNet(Configurable, torch.nn.Module):
 
     def forward(
         self,
-        ray_bundle: RayBundle,
+        ray_bundle: ImplicitronRayBundle,
         fun_viewpool=None,
         camera: Optional[CamerasBase] = None,
         global_code=None,
@@ -350,7 +352,7 @@ class SRNImplicitFunction(ImplicitFunctionBase, torch.nn.Module):
     def forward(
         self,
         *,
-        ray_bundle: RayBundle,
+        ray_bundle: ImplicitronRayBundle,
         fun_viewpool=None,
         camera: Optional[CamerasBase] = None,
         global_code=None,
@@ -410,7 +412,7 @@ class SRNHyperNetImplicitFunction(ImplicitFunctionBase, torch.nn.Module):
     def forward(
         self,
         *,
-        ray_bundle: RayBundle,
+        ray_bundle: ImplicitronRayBundle,
         fun_viewpool=None,
         camera: Optional[CamerasBase] = None,
         global_code=None,

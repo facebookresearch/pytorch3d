@@ -10,9 +10,9 @@ import torch
 
 import torch.nn.functional as F
 from pytorch3d.common.compat import prod
+from pytorch3d.implicitron.models.renderer.base import ImplicitronRayBundle
 from pytorch3d.renderer import ray_bundle_to_ray_points
 from pytorch3d.renderer.cameras import CamerasBase
-from pytorch3d.renderer.implicit import RayBundle
 
 
 def broadcast_global_code(embeds: torch.Tensor, global_code: torch.Tensor):
@@ -190,7 +190,7 @@ def interpolate_volume(
 
 
 def get_rays_points_world(
-    ray_bundle: Optional[RayBundle] = None,
+    ray_bundle: Optional[ImplicitronRayBundle] = None,
     rays_points_world: Optional[torch.Tensor] = None,
 ) -> torch.Tensor:
     """
@@ -198,7 +198,7 @@ def get_rays_points_world(
     and raises error if both are defined.
 
     Args:
-        ray_bundle: A RayBundle object or None
+        ray_bundle: An ImplicitronRayBundle object or None
         rays_points_world: A torch.Tensor representing ray points converted to
             world coordinates
     Returns:
@@ -213,5 +213,6 @@ def get_rays_points_world(
     if rays_points_world is not None:
         return rays_points_world
     if ray_bundle is not None:
+        # pyre-ignore[6]
         return ray_bundle_to_ray_points(ray_bundle)
     raise ValueError("ray_bundle and rays_points_world cannot both be None")

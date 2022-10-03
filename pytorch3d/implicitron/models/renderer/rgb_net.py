@@ -7,8 +7,10 @@ import logging
 from typing import List, Tuple
 
 import torch
+from pytorch3d.implicitron.models.renderer.base import ImplicitronRayBundle
 from pytorch3d.implicitron.tools.config import enable_get_default_args
-from pytorch3d.renderer.implicit import HarmonicEmbedding, RayBundle
+from pytorch3d.renderer.implicit import HarmonicEmbedding
+
 from torch import nn
 
 
@@ -89,7 +91,7 @@ class RayNormalColoringNetwork(torch.nn.Module):
         feature_vectors: torch.Tensor,
         points,
         normals,
-        ray_bundle: RayBundle,
+        ray_bundle: ImplicitronRayBundle,
         masks=None,
         pooling_fn=None,
     ):
