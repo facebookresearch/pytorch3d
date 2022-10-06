@@ -4,19 +4,24 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+import itertools
+
 from fvcore.common.benchmark import benchmark
 from tests.test_marching_cubes import TestMarchingCubes
 
 
 def bm_marching_cubes() -> None:
-    kwargs_list = [
-        {"batch_size": 1, "V": 5},
-        {"batch_size": 1, "V": 10},
-        {"batch_size": 1, "V": 20},
-        {"batch_size": 1, "V": 40},
-        {"batch_size": 5, "V": 5},
-        {"batch_size": 20, "V": 20},
-    ]
+    case_grid = {
+        "algo_type": [
+            "naive",
+            "cextension",
+        ],
+        "batch_size": [1, 5, 20],
+        "V": [5, 10, 20],
+    }
+    test_cases = itertools.product(*case_grid.values())
+    kwargs_list = [dict(zip(case_grid.keys(), case)) for case in test_cases]
+
     benchmark(
         TestMarchingCubes.marching_cubes_with_init,
         "MARCHING_CUBES",

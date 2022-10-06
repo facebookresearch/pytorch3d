@@ -22,6 +22,7 @@
 #include "interp_face_attrs/interp_face_attrs.h"
 #include "iou_box3d/iou_box3d.h"
 #include "knn/knn.h"
+#include "marching_cubes/marching_cubes.h"
 #include "mesh_normal_consistency/mesh_normal_consistency.h"
 #include "packed_to_padded_tensor/packed_to_padded_tensor.h"
 #include "point_mesh/point_mesh_cuda.h"
@@ -93,6 +94,9 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
 
   // 3D IoU
   m.def("iou_box3d", &IoUBox3D);
+
+  // Marching cubes
+  m.def("marching_cubes", &MarchingCubes);
 
   // Pulsar.
 #ifdef PULSAR_LOGGING_ENABLED
