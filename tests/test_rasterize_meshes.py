@@ -35,13 +35,23 @@ class TestRasterizeMeshes(TestCaseMixin, unittest.TestCase):
         self._test_barycentric_clipping(rasterize_meshes_python, device, bin_size=-1)
         self._test_back_face_culling(rasterize_meshes_python, device, bin_size=-1)
 
-    def test_simple_cpu_naive(self):
+    def _test_simple_cpu_naive_instance(self):
         device = torch.device("cpu")
         self._simple_triangle_raster(rasterize_meshes, device, bin_size=0)
         self._simple_blurry_raster(rasterize_meshes, device, bin_size=0)
         self._test_behind_camera(rasterize_meshes, device, bin_size=0)
         self._test_perspective_correct(rasterize_meshes, device, bin_size=0)
         self._test_back_face_culling(rasterize_meshes, device, bin_size=0)
+
+    def test_simple_cpu_naive(self):
+        n_threads = torch.get_num_threads()
+        torch.set_num_threads(1)  # single threaded
+        self._test_simple_cpu_naive_instance()
+        torch.set_num_threads(4)  # even (divisible) number of threads
+        self._test_simple_cpu_naive_instance()
+        torch.set_num_threads(5)  # odd (nondivisible) number of threads
+        self._test_simple_cpu_naive_instance()
+        torch.set_num_threads(n_threads)
 
     def test_simple_cuda_naive(self):
         device = get_random_cuda_device()
