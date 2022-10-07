@@ -310,13 +310,16 @@ struct Vertex {
   Vertex operator+(const Vertex& xyz) const {
     return Vertex(x + xyz.x, y + xyz.y, z + xyz.z);
   }
-  // The == operator overrides is used for checking degenerate triangles
+  // The =/!= operator overrides is used for checking degenerate triangles
   bool operator==(const Vertex& xyz) const {
-    if (std::abs(x - xyz.x) < EPS && std::abs(y - xyz.y) < EPS &&
-        std::abs(z - xyz.z) < EPS) {
-      return true;
-    }
-    return false;
+    return (
+        std::abs(x - xyz.x) < EPS && std::abs(y - xyz.y) < EPS &&
+        std::abs(z - xyz.z) < EPS);
+  }
+  bool operator!=(const Vertex& xyz) const {
+    return (
+        std::abs(x - xyz.x) >= EPS || std::abs(y - xyz.y) >= EPS ||
+        std::abs(z - xyz.z) >= EPS);
   }
   // vertex position
   float x, y, z;

@@ -86,8 +86,8 @@ std::tuple<at::Tensor, at::Tensor> MarchingCubesCpu(
             }
             tri.clear();
             ps.clear();
-          }
-        } // endif
+          } // endif
+        } // endfor edge enumeration
       } // endfor x
     } // endfor y
   } // endfor z
