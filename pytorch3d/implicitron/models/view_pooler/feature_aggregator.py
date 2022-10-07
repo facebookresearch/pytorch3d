@@ -229,7 +229,7 @@ class ReductionFeatureAggregator(torch.nn.Module, FeatureAggregatorBase):
             masks_sampled.device,
             self.exclude_target_view,
         )
-        aggr_weigths = masks_sampled * sampling_mask
+        aggr_weigths = masks_sampled[..., 0] * sampling_mask[..., None]
         feats_aggregated = {
             k: _avgmaxstd_reduction_function(
                 f,
