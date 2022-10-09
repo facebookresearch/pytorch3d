@@ -29,6 +29,9 @@ from pytorch3d.implicitron.dataset.types import (
     SequenceAnnotation,
 )
 from pytorch3d.implicitron.tools.config import expand_args_fields
+from tests.common_testing import interactive_testing_requested
+
+from .common_resources import CO3DV2_MANIFOLD_PATH
 
 
 class TestJsonIndexDatasetProviderV2(unittest.TestCase):
@@ -175,3 +178,16 @@ def _make_random_json_dataset_map_provider_v2_data(
 
     with open(os.path.join(root, "category_to_subset_name_list.json"), "w") as f:
         json.dump(category_to_subset_list, f)
+
+
+class TestCo3dv2(unittest.TestCase):
+    def test_simple(self):
+        if not interactive_testing_requested():
+            return
+        dataset_provider = JsonIndexDatasetMapProviderV2(
+            category="apple",
+            subset_name="manyview_dev_0",
+            dataset_root=CO3DV2_MANIFOLD_PATH,
+            dataset_JsonIndexDataset_args={"load_point_clouds": True},
+        )
+        dataset_provider.get_dataset_map().train[0]

@@ -414,14 +414,25 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
             )
 
         if self.load_point_clouds and point_cloud is not None:
-            frame_data.sequence_point_cloud_path = pcl_path = os.path.join(
-                self.dataset_root, point_cloud.path
-            )
+            pcl_path = self._fix_point_cloud_path(point_cloud.path)
             frame_data.sequence_point_cloud = _load_pointcloud(
                 self._local_path(pcl_path), max_points=self.max_points
             )
+            frame_data.sequence_point_cloud_path = pcl_path
 
         return frame_data
+
+    def _fix_point_cloud_path(self, path: str) -> str:
+        """
+        Fix up a point cloud path from the dataset.
+        Some files in Co3Dv2 have an accidental absolute path stored.
+        """
+        unwanted_prefix = (
+            "/large_experiments/p3/replay/datasets/co3d/co3d45k_220512/export_v23/"
+        )
+        if path.startswith(unwanted_prefix):
+            path = path[len(unwanted_prefix) :]
+        return os.path.join(self.dataset_root, path)
 
     def _load_crop_fg_probability(
         self, entry: types.FrameAnnotation

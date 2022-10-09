@@ -17,6 +17,9 @@ from iopath.common.file_io import PathManager
 
 
 CO3D_MANIFOLD_PATH: str = "manifold://co3d/tree/extracted"
+CO3DV2_MANIFOLD_PATH: str = "manifold://co3d/tree/v2/extracted"
+
+INSIDE_RE_WORKER: bool = os.environ.get("INSIDE_RE_WORKER", False)
 
 
 def get_path_manager(silence_logs: bool = False) -> PathManager:
@@ -30,7 +33,7 @@ def get_path_manager(silence_logs: bool = False) -> PathManager:
         logging.getLogger("iopath.fb.manifold").setLevel(logging.CRITICAL)
         logging.getLogger("iopath.common.file_io").setLevel(logging.CRITICAL)
 
-    if os.environ.get("INSIDE_RE_WORKER", False):
+    if INSIDE_RE_WORKER:
         raise ValueError("Cannot get to manifold from RE")
 
     path_manager = PathManager()
@@ -70,7 +73,7 @@ def get_skateboard_data(
             raise unittest.SkipTest("Unknown environment. Data not available.")
         yield "/datasets01/co3d/081922", PathManager()
 
-    elif avoid_manifold or os.environ.get("INSIDE_RE_WORKER", False):
+    elif avoid_manifold or INSIDE_RE_WORKER:
         from libfb.py.parutil import get_file_path
 
         par_path = "skateboard_first_5"
@@ -120,7 +123,7 @@ def _provide_torchvision_weights(par_path: str, filename: str) -> None:
     # (It can't copy straight to a nested location, see
     #    https://fb.workplace.com/groups/askbuck/posts/2644615728920359/)
     # Here we symlink it to the new cache location.
-    if os.environ.get("INSIDE_RE_WORKER") is not None:
+    if INSIDE_RE_WORKER:
         from libfb.py.parutil import get_file_path
 
         os.environ["FVCORE_CACHE"] = "iopath_cache"
