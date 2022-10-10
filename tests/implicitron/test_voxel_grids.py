@@ -35,9 +35,6 @@ class TestVoxelGrids(TestCaseMixin, unittest.TestCase):
     one by one sample and comparing with the batched implementation.
     """
 
-    def test_my_code(self):
-        return
-
     def get_random_normalized_points(
         self, n_grids, n_points=None, dimension=3
     ) -> torch.Tensor:
@@ -293,6 +290,8 @@ class TestVoxelGrids(TestCaseMixin, unittest.TestCase):
                     padding_mode="zeros",
                     mode="bilinear",
                 ),
+                rtol=0.0001,
+                atol=0.0001,
             )
         with self.subTest("2D interpolation"):
             points = self.get_random_normalized_points(
@@ -308,6 +307,8 @@ class TestVoxelGrids(TestCaseMixin, unittest.TestCase):
                     padding_mode="zeros",
                     mode="bilinear",
                 ),
+                rtol=0.0001,
+                atol=0.0001,
             )
 
         with self.subTest("3D interpolation"):
@@ -325,6 +326,7 @@ class TestVoxelGrids(TestCaseMixin, unittest.TestCase):
                     mode="bilinear",
                 ),
                 rtol=0.0001,
+                atol=0.0001,
             )
 
     def test_floating_point_query(self):
@@ -378,7 +380,8 @@ class TestVoxelGrids(TestCaseMixin, unittest.TestCase):
             assert torch.allclose(
                 grid.evaluate_local(points, params),
                 expected_result,
-                rtol=0.00001,
+                rtol=0.0001,
+                atol=0.0001,
             ), grid.evaluate_local(points, params)
         with self.subTest("CP"):
             grid = CPFactorizedVoxelGrid(
@@ -446,14 +449,16 @@ class TestVoxelGrids(TestCaseMixin, unittest.TestCase):
                 assert torch.allclose(
                     grid.evaluate_local(points, params),
                     expected_result_matrix,
-                    rtol=0.00001,
+                    rtol=0.0001,
+                    atol=0.0001,
                 )
             del params.basis_matrix
             with self.subTest("CP with sum reduction"):
                 assert torch.allclose(
                     grid.evaluate_local(points, params),
                     expected_result_sum,
-                    rtol=0.00001,
+                    rtol=0.0001,
+                    atol=0.0001,
                 )
 
         with self.subTest("VM"):
@@ -540,7 +545,8 @@ class TestVoxelGrids(TestCaseMixin, unittest.TestCase):
                 assert torch.allclose(
                     grid.evaluate_local(points, params),
                     expected_result_matrix,
-                    rtol=0.00001,
+                    rtol=0.0001,
+                    atol=0.0001,
                 )
             del params.basis_matrix
             with self.subTest("VM with sum reduction"):
@@ -548,6 +554,7 @@ class TestVoxelGrids(TestCaseMixin, unittest.TestCase):
                     grid.evaluate_local(points, params),
                     expected_result_sum,
                     rtol=0.0001,
+                    atol=0.0001,
                 ), grid.evaluate_local(points, params)
 
     def test_forward_with_small_init_std(self):
@@ -613,6 +620,7 @@ class TestVoxelGrids(TestCaseMixin, unittest.TestCase):
                 grid(world_point)[0, 0],
                 grid.voxel_grid.evaluate_local(local_point[None], grid_values)[0, 0, 0],
                 rtol=0.0001,
+                atol=0.0001,
             )
 
     def test_resolution_change(self, n_times=10):

@@ -653,7 +653,7 @@ class VolumeLocator:
         volume_translation: _Translation = (0.0, 0.0, 0.0),
     ):
         """
-        **batch_size** : Batch size of the underlaying grids
+        **batch_size** : Batch size of the underlying grids
         **grid_sizes** : Represents the resolutions of different grids in the batch. Can be
                 a) tuple of form (H, W, D)
                 b) list/tuple of length batch_size of lists/tuples of form (H, W, D)
