@@ -225,8 +225,8 @@ def _dataclass_list_from_dict_list(dlist, typeannot):
         assert indices[-1] == len(all_keys_res)
 
         keys = np.split(list(all_keys_res), indices[:-1])
-        vals = np.split(list(all_vals_res), indices[:-1])
-        return [cls(zip(k, v)) for k, v in zip(keys, vals)]
+        all_vals_res_iter = iter(all_vals_res)
+        return [cls(zip(k, all_vals_res_iter)) for k in keys]
     elif not dataclasses.is_dataclass(typeannot):
         return dlist
 
