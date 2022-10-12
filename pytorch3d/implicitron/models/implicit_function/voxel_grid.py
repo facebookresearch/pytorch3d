@@ -166,14 +166,16 @@ class VoxelGridBase(ReplaceableBase, torch.nn.Module):
     def change_resolution(
         self,
         grid_values: VoxelGridValuesBase,
-        epoch: int,
         *,
+        epoch: Optional[int] = None,
+        grid_values_with_wanted_resolution: Optional[VoxelGridValuesBase] = None,
         mode: str = "linear",
         align_corners: bool = True,
         antialias: bool = False,
     ) -> Tuple[VoxelGridValuesBase, bool]:
         """
-        Changes resolution of tensors in `grid_values` to match the `wanted_resolution`.
+        Changes resolution of tensors in `grid_values` to match the
+        `grid_values_with_wanted_resolution` or resolution on wanted epoch.
 
         Args:
             epoch: current training epoch, used to see if the grid needs regridding
@@ -181,6 +183,8 @@ class VoxelGridBase(ReplaceableBase, torch.nn.Module):
                 the voxel grid which will be interpolated to create the new grid
             epoch: epoch which is used to get the resolution of the new
                 `grid_values` using `self.resolution_changes`.
+            grid_values_with_wanted_resolution: `VoxelGridValuesBase` to whose resolution
+                to interpolate grid_values
             align_corners: as for torch.nn.functional.interpolate
             mode: as for torch.nn.functional.interpolate
                 'nearest' | 'bicubic' | 'linear' | 'area' | 'nearest-exact'.
@@ -195,8 +199,12 @@ class VoxelGridBase(ReplaceableBase, torch.nn.Module):
                 - new voxel grid_values of desired resolution, of type self.values_type
                 - True if regridding has happened.
         """
-        if epoch not in self.resolution_changes:
-            return grid_values, False
+
+        if (epoch is None) == (grid_values_with_wanted_resolution is None):
+            raise ValueError(
+                "Exactly one of `epoch` or "
+                "`grid_values_with_wanted_resolution` has to be defined."
+            )
 
         if mode not in ("nearest", "bicubic", "linear", "area", "nearest-exact"):
             raise ValueError(
@@ -219,11 +227,28 @@ class VoxelGridBase(ReplaceableBase, torch.nn.Module):
                 recompute_scale_factor=False,
             )
 
-        wanted_shapes = self.get_shapes(epoch=epoch)
-        params = {
-            name: change_individual_resolution(getattr(grid_values, name), shape[1:])
-            for name, shape in wanted_shapes.items()
-        }
+        if epoch is not None:
+            if epoch not in self.resolution_changes:
+                return grid_values, False
+
+            wanted_shapes = self.get_shapes(epoch=epoch)
+            params = {
+                name: change_individual_resolution(
+                    getattr(grid_values, name), shape[1:]
+                )
+                for name, shape in wanted_shapes.items()
+            }
+        else:
+            params = {
+                name: (
+                    change_individual_resolution(
+                        getattr(grid_values, name), tensor.shape[2:]
+                    )
+                    if tensor is not None
+                    else None
+                )
+                for name, tensor in vars(grid_values_with_wanted_resolution).items()
+            }
         # pyre-ignore[29]
         return self.values_type(**params), True
 
@@ -238,6 +263,82 @@ class VoxelGridBase(ReplaceableBase, torch.nn.Module):
         Returns True if voxel grid uses align_corners=True
         """
         return self.align_corners
+
+    def crop_world(
+        self,
+        min_point_world: torch.Tensor,
+        max_point_world: torch.Tensor,
+        grid_values: VoxelGridValuesBase,
+        volume_locator: VolumeLocator,
+    ) -> VoxelGridValuesBase:
+        """
+        Crops the voxel grid based on minimum and maximum occupied point in
+        world coordinates. After cropping all 8 corner points are preserved in
+        the voxel grid. This is achieved by preserving all the voxels needed to
+        calculate the point.
+
+           +--------B
+          /        /|
+         /        / |
+        +--------+  |  <==== Bounding box represented by points A and B:
+        |        |  |           - B has x, y and z coordinates bigger or equal
+        |        |  +              to all other points of the object
+        |        | /            - A has x, y and z coordinates smaller or equal
+        |        |/                to all other points of the object
+        A--------+
+
+        Args:
+            min_point_world: torch.Tensor of shape (3,). Has x, y and z coordinates
+                smaller or equal to all other occupied points. Point A from the
+                picture above.
+            max_point_world: torch.Tensor of shape (3,). Has x, y and z coordinates
+                bigger or equal to all other occupied points. Point B from the
+                picture above.
+            grid_values: instance of self.values_type which contains
+                the voxel grid which will be cropped to create the new grid
+            volume_locator: VolumeLocator object used to convert world to local
+                cordinates
+        Returns:
+            instance of self.values_type which has volume cropped to desired size.
+        """
+        min_point_local = volume_locator.world_to_local_coords(min_point_world[None])[0]
+        max_point_local = volume_locator.world_to_local_coords(max_point_world[None])[0]
+        return self.crop_local(min_point_local, max_point_local, grid_values)
+
+    def crop_local(
+        self,
+        min_point_local: torch.Tensor,
+        max_point_local: torch.Tensor,
+        grid_values: VoxelGridValuesBase,
+    ) -> VoxelGridValuesBase:
+        """
+        Crops the voxel grid based on minimum and maximum occupied point in local
+        coordinates. After cropping both min and max point are preserved in the voxel
+        grid. This is achieved by preserving all the voxels needed to calculate the point.
+
+           +--------B
+          /        /|
+         /        / |
+        +--------+  |  <==== Bounding box represented by points A and B:
+        |        |  |           - B has x, y and z coordinates bigger or equal
+        |        |  +              to all other points of the object
+        |        | /            - A has x, y and z coordinates smaller or equal
+        |        |/                to all other points of the object
+        A--------+
+
+        Args:
+            min_point_local: torch.Tensor of shape (3,). Has x, y and z coordinates
+                smaller or equal to all other occupied points. Point A from the
+                picture above. All elements in [-1, 1].
+            max_point_local: torch.Tensor of shape (3,). Has x, y and z coordinates
+                bigger or equal to all other occupied points. Point B from the
+                picture above. All elements in [-1, 1].
+            grid_values: instance of self.values_type which contains
+                the voxel grid which will be cropped to create the new grid
+        Returns:
+            instance of self.values_type which has volume cropped to desired size.
+        """
+        raise NotImplementedError()
 
 
 @dataclass
@@ -287,6 +388,34 @@ class FullResolutionVoxelGrid(VoxelGridBase):
     def get_shapes(self, epoch: int) -> Dict[str, Tuple]:
         width, height, depth = self.get_resolution(epoch)
         return {"voxel_grid": (self.n_features, width, height, depth)}
+
+    # pyre-ignore[14]
+    def crop_local(
+        self,
+        min_point_local: torch.Tensor,
+        max_point_local: torch.Tensor,
+        grid_values: FullResolutionVoxelGridValues,
+    ) -> FullResolutionVoxelGridValues:
+        assert torch.all(min_point_local < max_point_local)
+        min_point_local = torch.clamp(min_point_local, -1, 1)
+        max_point_local = torch.clamp(max_point_local, -1, 1)
+        _, _, width, height, depth = grid_values.voxel_grid.shape
+        resolution = grid_values.voxel_grid.new_tensor([width, height, depth])
+        min_point_local01 = (min_point_local + 1) / 2
+        max_point_local01 = (max_point_local + 1) / 2
+
+        if self.align_corners:
+            minx, miny, minz = torch.floor(min_point_local01 * (resolution - 1)).long()
+            maxx, maxy, maxz = torch.ceil(max_point_local01 * (resolution - 1)).long()
+        else:
+            minx, miny, minz = torch.floor(min_point_local01 * resolution - 0.5).long()
+            maxx, maxy, maxz = torch.ceil(max_point_local01 * resolution - 0.5).long()
+
+        return FullResolutionVoxelGridValues(
+            voxel_grid=grid_values.voxel_grid[
+                :, :, minx : maxx + 1, miny : maxy + 1, minz : maxz + 1
+            ]
+        )
 
 
 @dataclass
@@ -387,6 +516,37 @@ class CPFactorizedVoxelGrid(VoxelGridBase):
         if self.basis_matrix:
             shape_dict["basis_matrix"] = (self.n_components, self.n_features)
         return shape_dict
+
+    # pyre-ignore[14]
+    def crop_local(
+        self,
+        min_point_local: torch.Tensor,
+        max_point_local: torch.Tensor,
+        grid_values: CPFactorizedVoxelGridValues,
+    ) -> CPFactorizedVoxelGridValues:
+        assert torch.all(min_point_local < max_point_local)
+        min_point_local = torch.clamp(min_point_local, -1, 1)
+        max_point_local = torch.clamp(max_point_local, -1, 1)
+        _, _, width = grid_values.vector_components_x.shape
+        _, _, height = grid_values.vector_components_y.shape
+        _, _, depth = grid_values.vector_components_z.shape
+        resolution = grid_values.vector_components_x.new_tensor([width, height, depth])
+        min_point_local01 = (min_point_local + 1) / 2
+        max_point_local01 = (max_point_local + 1) / 2
+
+        if self.align_corners:
+            minx, miny, minz = torch.floor(min_point_local01 * (resolution - 1)).long()
+            maxx, maxy, maxz = torch.ceil(max_point_local01 * (resolution - 1)).long()
+        else:
+            minx, miny, minz = torch.floor(min_point_local01 * resolution - 0.5).long()
+            maxx, maxy, maxz = torch.ceil(max_point_local01 * resolution - 0.5).long()
+
+        return CPFactorizedVoxelGridValues(
+            vector_components_x=grid_values.vector_components_x[:, :, minx : maxx + 1],
+            vector_components_y=grid_values.vector_components_y[:, :, miny : maxy + 1],
+            vector_components_z=grid_values.vector_components_z[:, :, minz : maxz + 1],
+            basis_matrix=grid_values.basis_matrix,
+        )
 
 
 @dataclass
@@ -585,6 +745,46 @@ class VMFactorizedVoxelGrid(VoxelGridBase):
 
         return shape_dict
 
+    # pyre-ignore[14]
+    def crop_local(
+        self,
+        min_point_local: torch.Tensor,
+        max_point_local: torch.Tensor,
+        grid_values: VMFactorizedVoxelGridValues,
+    ) -> VMFactorizedVoxelGridValues:
+        assert torch.all(min_point_local < max_point_local)
+        min_point_local = torch.clamp(min_point_local, -1, 1)
+        max_point_local = torch.clamp(max_point_local, -1, 1)
+        _, _, width = grid_values.vector_components_x.shape
+        _, _, height = grid_values.vector_components_y.shape
+        _, _, depth = grid_values.vector_components_z.shape
+        resolution = grid_values.vector_components_x.new_tensor([width, height, depth])
+        min_point_local01 = (min_point_local + 1) / 2
+        max_point_local01 = (max_point_local + 1) / 2
+
+        if self.align_corners:
+            minx, miny, minz = torch.floor(min_point_local01 * (resolution - 1)).long()
+            maxx, maxy, maxz = torch.ceil(max_point_local01 * (resolution - 1)).long()
+        else:
+            minx, miny, minz = torch.floor(min_point_local01 * resolution - 0.5).long()
+            maxx, maxy, maxz = torch.ceil(max_point_local01 * resolution - 0.5).long()
+
+        return VMFactorizedVoxelGridValues(
+            vector_components_x=grid_values.vector_components_x[:, :, minx : maxx + 1],
+            vector_components_y=grid_values.vector_components_y[:, :, miny : maxy + 1],
+            vector_components_z=grid_values.vector_components_z[:, :, minz : maxz + 1],
+            matrix_components_xy=grid_values.matrix_components_xy[
+                :, :, minx : maxx + 1, miny : maxy + 1
+            ],
+            matrix_components_yz=grid_values.matrix_components_yz[
+                :, :, miny : maxy + 1, minz : maxz + 1
+            ],
+            matrix_components_xz=grid_values.matrix_components_xz[
+                :, :, minx : maxx + 1, minz : maxz + 1
+            ],
+            basis_matrix=grid_values.basis_matrix,
+        )
+
 
 # pyre-fixme[13]: Attribute `voxel_grid` is never initialized.
 class VoxelGridModule(Configurable, torch.nn.Module):
@@ -770,6 +970,37 @@ class VoxelGridModule(Configurable, torch.nn.Module):
         """
         # pyre-ignore[29]
         return next(val for val in self.params.values() if val is not None).device
+
+    def crop_self(self, min_point: torch.Tensor, max_point: torch.Tensor) -> None:
+        """
+        Crops self to only represent points between min_point and max_point (inclusive).
+
+        Args:
+            min_point: torch.Tensor of shape (3,). Has x, y and z coordinates
+                smaller or equal to all other occupied points.
+            max_point: torch.Tensor of shape (3,). Has x, y and z coordinates
+                bigger or equal to all other occupied points.
+        Returns:
+            nothing
+        """
+        locator = self._get_volume_locator()
+        # pyre-fixme[29]: `Union[torch._tensor.Tensor,
+        #  torch.nn.modules.module.Module]` is not a function.
+        old_grid_values = self.voxel_grid.values_type(**self.params)
+        new_grid_values = self.voxel_grid.crop_world(
+            min_point, max_point, old_grid_values, locator
+        )
+        grid_values, _ = self.voxel_grid.change_resolution(
+            new_grid_values, grid_values_with_wanted_resolution=old_grid_values
+        )
+        # pyre-ignore [16]
+        self.params = torch.nn.ParameterDict(
+            {k: v for k, v in vars(grid_values).items()}
+        )
+        # New center of voxel grid is the middle point between max and min points.
+        self.translation = tuple((max_point + min_point) / 2)
+        # new extents of voxel grid are distances between min and max points
+        self.extents = tuple(max_point - min_point)
 
     def _get_volume_locator(self) -> VolumeLocator:
         """
