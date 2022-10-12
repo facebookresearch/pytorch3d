@@ -508,7 +508,8 @@ inline bool IsCoplanarTriTri(
 
   // Compute most distant points
   auto argvs = ArgMaxVerts(tri1, tri2);
-  const auto [v1m, v2m] = argvs;
+  const auto v1m = std::get<0>(argvs);
+  const auto v2m = std::get<1>(argvs);
 
   vec3<float> n12m = v1m - v2m;
   n12m = n12m / std::fmaxf(norm(n12m), kEpsilon);
@@ -542,7 +543,8 @@ inline bool IsCoplanarTriPlane(
 
   // Compute most distant points
   auto argvs = ArgMaxVerts(tri, plane);
-  const auto [v1m, v2m] = argvs;
+  const auto v1m = std::get<0>(argvs);
+  const auto v2m = std::get<1>(argvs);
 
   vec3<float> n12m = v1m - v2m;
   n12m = n12m / std::fmaxf(norm(n12m), kEpsilon);
