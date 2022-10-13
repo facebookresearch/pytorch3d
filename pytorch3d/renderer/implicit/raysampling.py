@@ -207,7 +207,7 @@ class MultinomialRaysampler(torch.nn.Module):
                 n_rays_per_image,
             ) = _sample_cameras_and_masks(n_rays_total, cameras, mask)
         else:
-            camera_ids = torch.range(0, len(cameras), dtype=torch.long)
+            camera_ids = torch.arange(len(cameras), dtype=torch.long)
 
         batch_size = cameras.R.shape[0]
         device = cameras.device
@@ -438,7 +438,7 @@ class MonteCarloRaysampler(torch.nn.Module):
                 n_rays_per_image,
             ) = _sample_cameras_and_masks(self._n_rays_total, cameras, None)
         else:
-            camera_ids = torch.range(0, len(cameras), dtype=torch.long)
+            camera_ids = torch.arange(len(cameras), dtype=torch.long)
             n_rays_per_image = self._n_rays_per_image
 
         batch_size = cameras.R.shape[0]
