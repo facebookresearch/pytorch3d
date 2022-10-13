@@ -54,15 +54,43 @@ class DecoderFunctionBase(ReplaceableBase, torch.nn.Module):
 
 
 @registry.register
-class IdentityDecoder(DecoderFunctionBase):
+class ElementwiseDecoder(DecoderFunctionBase):
     """
-    Decoding function which returns its input.
+    Decoding function which scales the input, adds shift and then applies
+    `relu`, `softplus`, `sigmoid` or nothing on its input:
+    `result = operation(input * scale + shift)`
+
+    Members:
+        scale: a scalar with which input is multiplied before being shifted.
+            Defaults to 1.
+        shift: a scalar which is added to the scaled input before performing
+            the operation. Defaults to 0.
+        operation: which operation to perform on the transformed input. Options are:
+            `relu`, `softplus`, `sigmoid` and `identity`. Defaults to `identity`.
     """
+
+    scale: float = 1
+    shift: float = 0
+    operation: str = "identity"
+
+    def __post_init__(self):
+        super().__post_init__()
+        if self.operation not in ["relu", "softplus", "sigmoid", "identity"]:
+            raise ValueError(
+                "`operation` can only be `relu`, `softplus`, `sigmoid` or identity."
+            )
 
     def forward(
         self, features: torch.Tensor, z: Optional[torch.Tensor] = None
     ) -> torch.Tensor:
-        return features
+        transfomed_input = features * self.scale + self.shift
+        if self.operation == "softplus":
+            return torch.nn.functional.softplus(transfomed_input)
+        if self.operation == "relu":
+            return torch.nn.functional.relu(transfomed_input)
+        if self.operation == "sigmoid":
+            return torch.nn.functional.sigmoid(transfomed_input)
+        return transfomed_input
 
 
 class MLPWithInputSkips(Configurable, torch.nn.Module):
