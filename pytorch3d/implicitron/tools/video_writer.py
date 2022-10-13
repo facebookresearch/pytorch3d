@@ -116,7 +116,7 @@ class VideoWriter:
         self.frames.append(outfile)
         self.frame_num += 1
 
-    def get_video(self) -> str:
+    def get_video(self, quiet: bool = True) -> str:
         """
         Generate the video from the written frames.
 
@@ -155,8 +155,12 @@ class VideoWriter:
                 "yuv420p",
                 self.out_path,
             ]
-
-            subprocess.check_call(args)
+            if quiet:
+                subprocess.check_call(
+                    args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+                )
+            else:
+                subprocess.check_call(args)
         else:
             raise ValueError("no such output type %s" % str(self.output_format))
 
