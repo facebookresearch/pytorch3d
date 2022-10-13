@@ -215,6 +215,7 @@ def _check_raymarcher_inputs(
     if density_1d and rays_densities.shape[-1] != 1:
         raise ValueError(
             "The size of the last dimension of rays_densities has to be one."
+            + f" Got shape {rays_densities.shape}."
         )
 
     rays_shape = rays_densities.shape[:-1]

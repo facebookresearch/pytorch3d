@@ -362,6 +362,11 @@ class ViewMetrics(ViewMetricsBase):
 
 def _rgb_metrics(images, images_pred, masks, masks_pred, masks_crop):
     assert masks_crop is not None
+    if images.shape[1] != images_pred.shape[1]:
+        raise ValueError(
+            f"Network output's RGB images had {images_pred.shape[1]} "
+            f"channels. {images.shape[1]} expected."
+        )
     rgb_squared = ((images_pred - images) ** 2).mean(dim=1, keepdim=True)
     rgb_loss = utils.huber(rgb_squared, scaling=0.03)
     crop_mass = masks_crop.sum().clamp(1.0)
