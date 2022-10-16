@@ -62,7 +62,7 @@ Below we compare the performance for Objectron (in C++) and our algorithm, in C+
 ```python
 from pytorch3d.ops import box3d_overlap
 # Assume inputs: boxes1 (M, 8, 3) and boxes2 (N, 8, 3)
-intersection_vol, iou_3d = box3d_overal(boxes1, boxes2)
+intersection_vol, iou_3d = box3d_overlap(boxes1, boxes2)
 ```
 
 For more details, read [iou_box3d.py](https://github.com/facebookresearch/pytorch3d/blob/main/pytorch3d/ops/iou_box3d.py).
