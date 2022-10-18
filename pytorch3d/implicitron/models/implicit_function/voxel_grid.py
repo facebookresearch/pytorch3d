@@ -808,6 +808,21 @@ class VoxelGridModule(Configurable, torch.nn.Module):
             with mean=init_mean and std=init_std. Default 0.
         hold_voxel_grid_as_parameters: if True components of the underlying voxel grids
             will be saved as parameters and therefore be trainable. Default True.
+        param_groups: dictionary where keys are names of individual parameters
+            or module members and values are the parameter group where the
+            parameter/member will be sorted to. "self" key is used to denote the
+            parameter group at the module level. Possible keys, including the "self" key
+            do not have to be defined. By default all parameters are put into "default"
+            parameter group and have the learning rate defined in the optimizer,
+            it can be overridden at the:
+                - module level with “self” key, all the parameters and child
+                    module's parameters will be put to that parameter group
+                - member level, which is the same as if the `param_groups` in that
+                    member has key=“self” and value equal to that parameter group.
+                    This is useful if members do not have `param_groups`, for
+                    example torch.nn.Linear.
+                - parameter level, parameter with the same name as the key
+                    will be put to that parameter group.
     """
 
     voxel_grid_class_type: str = "FullResolutionVoxelGrid"
@@ -820,6 +835,7 @@ class VoxelGridModule(Configurable, torch.nn.Module):
     init_mean: float = 0
 
     hold_voxel_grid_as_parameters: bool = True
+    param_groups: Dict[str, str] = field(default_factory=lambda: {})
 
     def __post_init__(self):
         super().__init__()

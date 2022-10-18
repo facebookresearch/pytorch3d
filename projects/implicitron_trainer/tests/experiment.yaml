@@ -409,6 +409,7 @@ optimizer_factory_ImplicitronOptimizerFactory_args:
   linear_exponential_lr_milestone: 200
   linear_exponential_start_gamma: 0.1
   foreach: true
+  group_learning_rates: {}
 training_loop_ImplicitronTrainingLoop_args:
   evaluator_class_type: ImplicitronEvaluator
   evaluator_ImplicitronEvaluator_args:

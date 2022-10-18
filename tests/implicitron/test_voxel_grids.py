@@ -19,7 +19,6 @@ from pytorch3d.implicitron.models.implicit_function.utils import (
 from pytorch3d.implicitron.models.implicit_function.voxel_grid import (
     CPFactorizedVoxelGrid,
     FullResolutionVoxelGrid,
-    FullResolutionVoxelGridValues,
     VMFactorizedVoxelGrid,
     VoxelGridModule,
 )

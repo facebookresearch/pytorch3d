@@ -13,9 +13,10 @@ This file contains
 """
 
 import logging
+from dataclasses import field
 
 from enum import Enum
-from typing import Optional, Tuple
+from typing import Dict, Optional, Tuple
 
 import torch
 
@@ -42,7 +43,26 @@ class DecoderFunctionBase(ReplaceableBase, torch.nn.Module):
     """
     Decoding function is a torch.nn.Module which takes the embedding of a location in
     space and transforms it into the required quantity (for example density and color).
+
+    Members:
+        param_groups: dictionary where keys are names of individual parameters
+            or module members and values are the parameter group where the
+            parameter/member will be sorted to. "self" key is used to denote the
+            parameter group at the module level. Possible keys, including the "self" key
+            do not have to be defined. By default all parameters are put into "default"
+            parameter group and have the learning rate defined in the optimizer,
+            it can be overridden at the:
+                - module level with “self” key, all the parameters and child
+                    module's parameters will be put to that parameter group
+                - member level, which is the same as if the `param_groups` in that
+                    member has key=“self” and value equal to that parameter group.
+                    This is useful if members do not have `param_groups`, for
+                    example torch.nn.Linear.
+                - parameter level, parameter with the same name as the key
+                    will be put to that parameter group.
     """
+
+    param_groups: Dict[str, str] = field(default_factory=lambda: {})
 
     def __post_init__(self):
         super().__init__()
