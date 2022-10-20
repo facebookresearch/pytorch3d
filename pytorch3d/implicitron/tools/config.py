@@ -522,8 +522,12 @@ def get_default_args(C, *, _do_not_process: Tuple[type, ...] = ()) -> DictConfig
 
         try:
             out: DictConfig = OmegaConf.structured(C)
-        except Exception as e:
-            raise ValueError(f"OmegaConf.structured({C}) failed") from e
+        except Exception:
+            print(f"### OmegaConf.structured({C}) failed ###")
+            # We don't use `raise From` here, because that gets the original
+            # exception hidden by the OC_CAUSE logic in the case where we are
+            # called by hydra.
+            raise
         exclude = getattr(C, "_processed_members", ())
         with open_dict(out):
             for field in exclude:
@@ -545,8 +549,9 @@ def get_default_args(C, *, _do_not_process: Tuple[type, ...] = ()) -> DictConfig
 
     try:
         out: DictConfig = OmegaConf.structured(dataclass)
-    except Exception as e:
-        raise ValueError(f"OmegaConf.structured failed for {dataclass_name}") from e
+    except Exception:
+        print(f"### OmegaConf.structured failed for {C.__name__} ###")
+        raise
     return out
 
 
