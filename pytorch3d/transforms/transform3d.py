@@ -5,6 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import math
+import os
 import warnings
 from typing import List, Optional, Union
 
@@ -636,7 +637,10 @@ class Rotate(Transform3d):
             msg = "R must have shape (3, 3) or (N, 3, 3); got %s"
             raise ValueError(msg % repr(R.shape))
         R = R.to(device=device_, dtype=dtype)
-        _check_valid_rotation_matrix(R, tol=orthogonal_tol)
+        if os.environ.get("PYTORCH3D_CHECK_ROTATION_MATRICES", "0") == "1":
+            # Note: aten::all_close in the check is computationally slow, so we
+            # only run the check when PYTORCH3D_CHECK_ROTATION_MATRICES is on.
+            _check_valid_rotation_matrix(R, tol=orthogonal_tol)
         N = R.shape[0]
         mat = torch.eye(4, dtype=dtype, device=device_)
         mat = mat.view(1, 4, 4).repeat(N, 1, 1)

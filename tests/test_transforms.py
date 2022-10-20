@@ -4,9 +4,10 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-
 import math
+import os
 import unittest
+from unittest import mock
 
 import torch
 from pytorch3d.transforms import random_rotations
@@ -191,7 +192,25 @@ class TestTransform(TestCaseMixin, unittest.TestCase):
         self.assertTrue(torch.allclose(points_out, points_out_expected))
         self.assertTrue(torch.allclose(normals_out, normals_out_expected))
 
-    def test_rotate(self):
+    @mock.patch.dict(os.environ, {"PYTORCH3D_CHECK_ROTATION_MATRICES": "1"}, clear=True)
+    def test_rotate_check_rot_valid_on(self):
+        R = so3_exp_map(torch.randn((1, 3)))
+        t = Transform3d().rotate(R)
+        points = torch.tensor([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.5, 0.5, 0.0]]).view(
+            1, 3, 3
+        )
+        normals = torch.tensor(
+            [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [1.0, 1.0, 0.0]]
+        ).view(1, 3, 3)
+        points_out = t.transform_points(points)
+        normals_out = t.transform_normals(normals)
+        points_out_expected = torch.bmm(points, R)
+        normals_out_expected = torch.bmm(normals, R)
+        self.assertTrue(torch.allclose(points_out, points_out_expected))
+        self.assertTrue(torch.allclose(normals_out, normals_out_expected))
+
+    @mock.patch.dict(os.environ, {"PYTORCH3D_CHECK_ROTATION_MATRICES": "0"}, clear=True)
+    def test_rotate_check_rot_valid_off(self):
         R = so3_exp_map(torch.randn((1, 3)))
         t = Transform3d().rotate(R)
         points = torch.tensor([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.5, 0.5, 0.0]]).view(
