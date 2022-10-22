@@ -9,7 +9,7 @@ import copy
 import warnings
 from collections import OrderedDict
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, TYPE_CHECKING, Union
 
 import numpy as np
 import torch
@@ -27,7 +27,9 @@ from pytorch3d.renderer.camera_utils import join_cameras_as_batch
 from pytorch3d.renderer.cameras import CamerasBase, PerspectiveCameras
 from pytorch3d.vis.plotly_vis import plot_scene
 from tabulate import tabulate
-from visdom import Visdom
+
+if TYPE_CHECKING:
+    from visdom import Visdom
 
 
 EVAL_N_SRC_VIEWS = [1, 3, 5, 7, 9]
@@ -43,7 +45,7 @@ class _Visualizer:
 
     visdom_env: str = "eval_debug"
 
-    _viz: Visdom = field(init=False)
+    _viz: Optional["Visdom"] = field(init=False)
 
     def __post_init__(self):
         self._viz = vis_utils.get_visdom_connection()
@@ -51,6 +53,8 @@ class _Visualizer:
     def show_rgb(
         self, loss_value: float, metric_name: str, loss_mask_now: torch.Tensor
     ):
+        if self._viz is None:
+            return
         self._viz.images(
             torch.cat(
                 (
@@ -68,7 +72,10 @@ class _Visualizer:
     def show_depth(
         self, depth_loss: float, name_postfix: str, loss_mask_now: torch.Tensor
     ):
-        self._viz.images(
+        if self._viz is None:
+            return
+        viz = self._viz
+        viz.images(
             torch.cat(
                 (
                     make_depth_image(self.depth_render, loss_mask_now),
@@ -80,13 +87,13 @@ class _Visualizer:
             win="depth_abs" + name_postfix,
             opts={"title": f"depth_abs_{name_postfix}_{depth_loss:1.2f}"},
         )
-        self._viz.images(
+        viz.images(
             loss_mask_now,
             env=self.visdom_env,
             win="depth_abs" + name_postfix + "_mask",
             opts={"title": f"depth_abs_{name_postfix}_{depth_loss:1.2f}_mask"},
         )
-        self._viz.images(
+        viz.images(
             self.depth_mask,
             env=self.visdom_env,
             win="depth_abs" + name_postfix + "_maskd",
@@ -126,7 +133,7 @@ class _Visualizer:
             pointcloud_max_points=10000,
             pointcloud_marker_size=1,
         )
-        self._viz.plotlyplot(
+        viz.plotlyplot(
             plotlyplot,
             env=self.visdom_env,
             win=f"pcl{name_postfix}",

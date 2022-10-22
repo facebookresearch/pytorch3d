@@ -12,7 +12,7 @@ import logging
 import math
 import warnings
 from dataclasses import field
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING, Union
 
 import torch
 import tqdm
@@ -34,7 +34,9 @@ from pytorch3d.implicitron.tools.utils import cat_dataclass
 from pytorch3d.renderer import utils as rend_utils
 
 from pytorch3d.renderer.cameras import CamerasBase
-from visdom import Visdom
+
+if TYPE_CHECKING:
+    from visdom import Visdom
 
 from .base_model import ImplicitronModelBase, ImplicitronRender
 from .feature_extractor import FeatureExtractorBase
@@ -544,7 +546,7 @@ class GenericModel(ImplicitronModelBase):  # pyre-ignore: 13
 
     def visualize(
         self,
-        viz: Visdom,
+        viz: Optional["Visdom"],
         visdom_env_imgs: str,
         preds: Dict[str, Any],
         prefix: str,
@@ -559,7 +561,7 @@ class GenericModel(ImplicitronModelBase):  # pyre-ignore: 13
             preds: predictions dict like returned by forward()
             prefix: prepended to the names of images
         """
-        if not viz.check_connection():
+        if viz is None or not viz.check_connection():
             logger.info("no visdom server! -> skipping batch vis")
             return
 

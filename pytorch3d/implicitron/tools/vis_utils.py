@@ -5,10 +5,12 @@
 # LICENSE file in the root directory of this source tree.
 
 import logging
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, Optional, Tuple, TYPE_CHECKING
 
 import torch
-from visdom import Visdom
+
+if TYPE_CHECKING:
+    from visdom import Visdom
 
 
 logger = logging.getLogger(__name__)
@@ -40,9 +42,9 @@ _viz_singleton = None
 def get_visdom_connection(
     server: str = "http://localhost",
     port: int = 8097,
-) -> Visdom:
+) -> Optional["Visdom"]:
     """
-    Obtain a connection to a visdom server.
+    Obtain a connection to a visdom server if visdom is installed.
 
     Args:
         server: Server address.
@@ -51,6 +53,15 @@ def get_visdom_connection(
     Returns:
         connection: The connection object.
     """
+    try:
+        from visdom import Visdom
+    except ImportError:
+        logger.debug("Cannot load visdom")
+        return None
+
+    if server == "None":
+        return None
+
     global _viz_singleton
     if _viz_singleton is None:
         _viz_singleton = Visdom(server=server, port=port)
@@ -58,7 +69,7 @@ def get_visdom_connection(
 
 
 def visualize_basics(
-    viz: Visdom,
+    viz: "Visdom",
     preds: Dict[str, Any],
     visdom_env_imgs: str,
     title: str = "",

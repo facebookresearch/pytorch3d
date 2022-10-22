@@ -10,7 +10,7 @@ import logging
 import math
 import os
 import random
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, TYPE_CHECKING, Union
 
 import numpy as np
 import torch
@@ -27,7 +27,9 @@ from pytorch3d.implicitron.tools.vis_utils import (
     make_depth_image,
 )
 from tqdm import tqdm
-from visdom import Visdom
+
+if TYPE_CHECKING:
+    from visdom import Visdom
 
 logger = logging.getLogger(__name__)
 
@@ -272,7 +274,7 @@ def _stack_images(ims: torch.Tensor, size: Optional[Tuple[int, int]]) -> torch.T
 def _show_predictions(
     preds: List[Dict[str, Any]],
     sequence_name: str,
-    viz: Visdom,
+    viz: "Visdom",
     viz_env: str = "visualizer",
     predicted_keys: Sequence[str] = (
         "images_render",
@@ -318,7 +320,7 @@ def _show_predictions(
 def _generate_prediction_videos(
     preds: List[Dict[str, Any]],
     sequence_name: str,
-    viz: Optional[Visdom] = None,
+    viz: Optional["Visdom"] = None,
     viz_env: str = "visualizer",
     predicted_keys: Sequence[str] = (
         "images_render",

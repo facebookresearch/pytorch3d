@@ -41,7 +41,7 @@ The outputs of the experiment are saved and logged in multiple ways:
         Stats are logged and plotted to the file "train_stats.pdf" in the
         same directory. The stats are also saved as part of the checkpoint file.
   - Visualizations
-        Prredictions are plotted to a visdom server running at the
+        Predictions are plotted to a visdom server running at the
         port specified by the `visdom_server` and `visdom_port` keys in the
         config file.
 

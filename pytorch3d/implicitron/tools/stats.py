@@ -337,7 +337,7 @@ class Stats(object):
         novisdom = False
 
         viz = get_visdom_connection(server=visdom_server, port=visdom_port)
-        if not viz.check_connection():
+        if viz is None or not viz.check_connection():
             print("no visdom server! -> skipping visdom plots")
             novisdom = True
 
