@@ -88,23 +88,37 @@ class TestRotationConversion(TestCaseMixin, unittest.TestCase):
         [g] = torch.autograd.grad(modified.sum(), rotation)
         self.assertTrue(torch.isfinite(g).all())
 
-    def _tait_bryan_conventions(self):
+    def _tait_bryan_intrinsic_conventions(self):
         return map("".join, itertools.permutations("XYZ"))
 
-    def _proper_euler_conventions(self):
+    def _proper_euler_intrinsic_conventions(self):
         letterpairs = itertools.permutations("XYZ", 2)
         return (l0 + l1 + l0 for l0, l1 in letterpairs)
 
+    def _all_euler_intrinsic_angle_conventions(self):
+        return itertools.chain(
+            self._tait_bryan_intrinsic_conventions(),
+            self._proper_euler_intrinsic_conventions(),
+        )
+
     def _all_euler_angle_conventions(self):
         return itertools.chain(
-            self._tait_bryan_conventions(), self._proper_euler_conventions()
+            self._all_euler_intrinsic_angle_conventions(),
+            (c.lower() for c in self._all_euler_intrinsic_angle_conventions()),
         )
 
     def test_conventions(self):
         """The conventions listings have the right length."""
-        all = list(self._all_euler_angle_conventions())
+        all = list(self._all_euler_intrinsic_angle_conventions())
         self.assertEqual(len(all), 12)
         self.assertEqual(len(set(all)), 12)
+
+        data = random_rotations(13, dtype=torch.float64)
+        for convention_intr in self._all_euler_intrinsic_angle_conventions():
+            convention_extr = convention_intr[::-1].lower()
+            euler_angles_intr = matrix_to_euler_angles(data, convention_intr)
+            euler_angles_extr = matrix_to_euler_angles(data, convention_extr)
+            self.assertClose(euler_angles_intr, torch.flip(euler_angles_extr, [-1]))
 
     def test_from_euler(self):
         """euler -> mtx -> euler"""
@@ -117,16 +131,18 @@ class TestRotationConversion(TestCaseMixin, unittest.TestCase):
         data.uniform_(-math.pi, math.pi)
 
         data[:, 1].uniform_(-half_pi + tolerance, half_pi - tolerance)
-        for convention in self._tait_bryan_conventions():
-            matrices = euler_angles_to_matrix(data, convention)
-            mdata = matrix_to_euler_angles(matrices, convention)
-            self.assertClose(data, mdata)
+        for convention_intr in self._tait_bryan_intrinsic_conventions():
+            for convention in [convention_intr, convention_intr.lower()]:
+                matrices = euler_angles_to_matrix(data, convention)
+                mdata = matrix_to_euler_angles(matrices, convention)
+                self.assertClose(data, mdata)
 
         data[:, 1] += half_pi
-        for convention in self._proper_euler_conventions():
-            matrices = euler_angles_to_matrix(data, convention)
-            mdata = matrix_to_euler_angles(matrices, convention)
-            self.assertClose(data, mdata)
+        for convention_intr in self._proper_euler_intrinsic_conventions():
+            for convention in [convention_intr, convention_intr.lower()]:
+                matrices = euler_angles_to_matrix(data, convention)
+                mdata = matrix_to_euler_angles(matrices, convention)
+                self.assertClose(data, mdata)
 
     def test_to_euler(self):
         """mtx -> euler -> mtx"""
