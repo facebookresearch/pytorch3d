@@ -235,6 +235,7 @@ model_factory_ImplicitronModelFactory_args:
         surface_thickness: 1
         bg_color:
         - 0.0
+        replicate_last_interval: False
         background_opacity: 0.0
         density_relu: true
         blend_output: false
@@ -242,6 +243,7 @@ model_factory_ImplicitronModelFactory_args:
         surface_thickness: 1
         bg_color:
         - 0.0
+        replicate_last_interval: False
         background_opacity: 10000000000.0
         density_relu: true
         blend_output: false

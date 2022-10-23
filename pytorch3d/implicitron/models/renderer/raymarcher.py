@@ -55,8 +55,11 @@ class AccumulativeRaymarcherBase(RaymarcherBase, torch.nn.Module):
         surface_thickness: The thickness of the raymarched surface.
         bg_color: The background color. A tuple of either 1 element or of D elements,
             where D matches the feature dimensionality; it is broadcast when necessary.
-        background_opacity: The raw opacity value (i.e. before exponentiation)
-            of the background.
+        replicate_last_interval: If True, the ray length assigned to the last interval
+            for the opacity delta calculation is copied from the penultimate interval.
+        background_opacity: The length over which the last raw opacity value
+            (i.e. before exponentiation) is considered to apply, for the delta
+            calculation. Ignored if replicate_last_interval=True.
         density_relu: If `True`, passes the input density through ReLU before
             raymarching.
         blend_output: If `True`, alpha-blends the output renders with the
@@ -76,6 +79,7 @@ class AccumulativeRaymarcherBase(RaymarcherBase, torch.nn.Module):
 
     surface_thickness: int = 1
     bg_color: Tuple[float, ...] = (0.0,)
+    replicate_last_interval: bool = False
     background_opacity: float = 0.0
     density_relu: bool = True
     blend_output: bool = False
@@ -151,13 +155,14 @@ class AccumulativeRaymarcherBase(RaymarcherBase, torch.nn.Module):
             density_1d=True,
         )
 
-        deltas = torch.cat(
-            (
-                ray_lengths[..., 1:] - ray_lengths[..., :-1],
-                self.background_opacity * torch.ones_like(ray_lengths[..., :1]),
-            ),
-            dim=-1,
-        )
+        ray_lengths_diffs = ray_lengths[..., 1:] - ray_lengths[..., :-1]
+        if self.replicate_last_interval:
+            last_interval = ray_lengths_diffs[..., -1:]
+        else:
+            last_interval = torch.full_like(
+                ray_lengths[..., :1], self.background_opacity
+            )
+        deltas = torch.cat((ray_lengths_diffs, last_interval), dim=-1)
 
         rays_densities = rays_densities[..., 0]
 
