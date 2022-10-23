@@ -394,6 +394,168 @@ model_factory_ImplicitronModelFactory_args:
         in_features: 256
         out_features: 3
         ray_dir_in_camera_coords: false
+    implicit_function_VoxelGridImplicitFunction_args:
+      harmonic_embedder_xyz_density_args:
+        n_harmonic_functions: 6
+        omega_0: 1.0
+        logspace: true
+        append_input: true
+      harmonic_embedder_xyz_color_args:
+        n_harmonic_functions: 6
+        omega_0: 1.0
+        logspace: true
+        append_input: true
+      harmonic_embedder_dir_color_args:
+        n_harmonic_functions: 6
+        omega_0: 1.0
+        logspace: true
+        append_input: true
+      decoder_density_class_type: MLPDecoder
+      decoder_color_class_type: MLPDecoder
+      use_multiple_streams: true
+      xyz_ray_dir_in_camera_coords: false
+      scaffold_calculating_epochs: []
+      scaffold_resolution:
+      - 128
+      - 128
+      - 128
+      scaffold_empty_space_threshold: 0.001
+      scaffold_occupancy_chunk_size: 'inf'
+      scaffold_max_pool_kernel_size: 3
+      scaffold_filter_points: true
+      volume_cropping_epochs: []
+      voxel_grid_density_args:
+        voxel_grid_class_type: FullResolutionVoxelGrid
+        extents:
+        - 2.0
+        - 2.0
+        - 2.0
+        translation:
+        - 0.0
+        - 0.0
+        - 0.0
+        init_std: 0.1
+        init_mean: 0.0
+        hold_voxel_grid_as_parameters: true
+        param_groups: {}
+        voxel_grid_CPFactorizedVoxelGrid_args:
+          align_corners: true
+          padding: zeros
+          mode: bilinear
+          n_features: 1
+          resolution_changes:
+            0:
+            - 128
+            - 128
+            - 128
+          n_components: 24
+          basis_matrix: true
+        voxel_grid_FullResolutionVoxelGrid_args:
+          align_corners: true
+          padding: zeros
+          mode: bilinear
+          n_features: 1
+          resolution_changes:
+            0:
+            - 128
+            - 128
+            - 128
+        voxel_grid_VMFactorizedVoxelGrid_args:
+          align_corners: true
+          padding: zeros
+          mode: bilinear
+          n_features: 1
+          resolution_changes:
+            0:
+            - 128
+            - 128
+            - 128
+          n_components: null
+          distribution_of_components: null
+          basis_matrix: true
+      voxel_grid_color_args:
+        voxel_grid_class_type: FullResolutionVoxelGrid
+        extents:
+        - 2.0
+        - 2.0
+        - 2.0
+        translation:
+        - 0.0
+        - 0.0
+        - 0.0
+        init_std: 0.1
+        init_mean: 0.0
+        hold_voxel_grid_as_parameters: true
+        param_groups: {}
+        voxel_grid_CPFactorizedVoxelGrid_args:
+          align_corners: true
+          padding: zeros
+          mode: bilinear
+          n_features: 1
+          resolution_changes:
+            0:
+            - 128
+            - 128
+            - 128
+          n_components: 24
+          basis_matrix: true
+        voxel_grid_FullResolutionVoxelGrid_args:
+          align_corners: true
+          padding: zeros
+          mode: bilinear
+          n_features: 1
+          resolution_changes:
+            0:
+            - 128
+            - 128
+            - 128
+        voxel_grid_VMFactorizedVoxelGrid_args:
+          align_corners: true
+          padding: zeros
+          mode: bilinear
+          n_features: 1
+          resolution_changes:
+            0:
+            - 128
+            - 128
+            - 128
+          n_components: null
+          distribution_of_components: null
+          basis_matrix: true
+      decoder_density_ElementwiseDecoder_args:
+        scale: 1.0
+        shift: 0.0
+        operation: IDENTITY
+      decoder_density_MLPDecoder_args:
+        param_groups: {}
+        network_args:
+          n_layers: 8
+          output_dim: 256
+          skip_dim: 39
+          hidden_dim: 256
+          input_skips:
+          - 5
+          skip_affine_trans: false
+          last_layer_bias_init: null
+          last_activation: RELU
+          use_xavier_init: true
+      decoder_color_ElementwiseDecoder_args:
+        scale: 1.0
+        shift: 0.0
+        operation: IDENTITY
+      decoder_color_MLPDecoder_args:
+        param_groups: {}
+        network_args:
+          n_layers: 8
+          output_dim: 256
+          skip_dim: 39
+          hidden_dim: 256
+          input_skips:
+          - 5
+          skip_affine_trans: false
+          last_layer_bias_init: null
+          last_activation: RELU
+          use_xavier_init: true
     view_metrics_ViewMetrics_args: {}
     regularization_metrics_RegularizationMetrics_args: {}
 optimizer_factory_ImplicitronOptimizerFactory_args:

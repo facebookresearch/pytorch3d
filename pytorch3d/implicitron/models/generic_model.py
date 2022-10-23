@@ -52,6 +52,9 @@ from .implicit_function.scene_representation_networks import (  # noqa
     SRNHyperNetImplicitFunction,
     SRNImplicitFunction,
 )
+from .implicit_function.voxel_grid_implicit_function import (  # noqa
+    VoxelGridImplicitFunction,
+)
 
 from .renderer.base import (
     BaseRenderer,
