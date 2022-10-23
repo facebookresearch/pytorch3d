@@ -96,7 +96,7 @@ sys.path.append(os.path.abspath(''))
 # ## Load the SMPL model
 # 
 # #### Download the SMPL model
-# - Go to http://smpl.is.tue.mpg.de/downloads and sign up.
+# - Go to https://smpl.is.tue.mpg.de/download.php and sign up.
 # - Download SMPL for Python Users and unzip.
 # - Copy the file male template file **'models/basicModel_m_lbs_10_207_0_v1.0.0.pkl'** to the data/DensePose/ folder.
 #    - rename the file to **'smpl_model.pkl'** or rename the string where it's commented below

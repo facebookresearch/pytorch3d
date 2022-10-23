@@ -186,9 +186,9 @@ class MyConfigurable(Configurable):
 # In[ ]:
 
 
-# expand_args_fields must be called on an object before it is instantiated.
-# A warning is raised if this is missed, but it is possible to not notice the warning.
-# It modifies the class like @dataclass
+# The expand_args_fields function modifies the class like @dataclasses.dataclass.
+# If it has not been called on a Configurable object before it has been instantiated, it will
+# be called automatically.
 expand_args_fields(MyConfigurable)
 my_configurable_instance = MyConfigurable(a=18)
 assert my_configurable_instance.d == 16
@@ -197,7 +197,7 @@ assert my_configurable_instance.d == 16
 # In[ ]:
 
 
-# get_default_args calls expand_args_fields automatically
+# get_default_args also calls expand_args_fields automatically
 our_structured = get_default_args(MyConfigurable)
 assert isinstance(our_structured, DictConfig)
 print(OmegaConf.to_yaml(our_structured))
@@ -357,7 +357,6 @@ class MyLinear(torch.nn.Module, Configurable):
 # In[ ]:
 
 
-expand_args_fields(MyLinear)
 my_linear = MyLinear()
 input = torch.zeros(2)
 output = my_linear(input)
@@ -415,7 +414,6 @@ class Out(Configurable):
 # In[ ]:
 
 
-expand_args_fields(Out)
 out2 = Out(inner_class_type="UserImplementedInner")
 print(out2.inner)
 
@@ -450,7 +448,6 @@ class LargeComponent(Configurable):
 # In[ ]:
 
 
-expand_args_fields(LargeComponent)
 large_component = LargeComponent()
 assert large_component.apply(3) == 4
 print(OmegaConf.to_yaml(LargeComponent))
@@ -491,7 +488,6 @@ class LargeComponent(Configurable):
 # In[ ]:
 
 
-expand_args_fields(LargeComponent)
 large_component = LargeComponent()
 assert large_component.apply(3) == 4
 print(OmegaConf.to_yaml(LargeComponent))
@@ -506,7 +502,6 @@ print(OmegaConf.to_yaml(LargeComponent))
 # ## Appendix: gotchas ⚠️
 # 
 # * Omitting to define `__post_init__` or not calling `run_auto_creation` in it.
-# * Using a configurable class without calling get_default_args or expand_args_fields on it.
 # * Omitting a type annotation on a field. For example, writing 
 # ```
 #     subcomponent_class_type = "SubComponent"

@@ -174,10 +174,9 @@
 <span class="kn">from</span> <span class="nn">pytorch3d.implicitron.dataset.dataset_base</span> <span class="kn">import</span> <span class="n">FrameData</span>
 <span class="kn">from</span> <span class="nn">pytorch3d.implicitron.dataset.rendered_mesh_dataset_map_provider</span> <span class="kn">import</span> <span class="n">RenderedMeshDatasetMapProvider</span>
 <span class="kn">from</span> <span class="nn">pytorch3d.implicitron.models.generic_model</span> <span class="kn">import</span> <span class="n">GenericModel</span>
-<span class="kn">from</span> <span class="nn">pytorch3d.implicitron.models.implicit_function.base</span> <span class="kn">import</span> <span class="n">ImplicitFunctionBase</span>
+<span class="kn">from</span> <span class="nn">pytorch3d.implicitron.models.implicit_function.base</span> <span class="kn">import</span> <span class="n">ImplicitFunctionBase</span><span class="p">,</span> <span class="n">ImplicitronRayBundle</span>
 <span class="kn">from</span> <span class="nn">pytorch3d.implicitron.models.renderer.base</span> <span class="kn">import</span> <span class="n">EvaluationMode</span>
-<span class="kn">from</span> <span class="nn">pytorch3d.implicitron.tools.config</span> <span class="kn">import</span> <span class="n">expand_args_fields</span><span class="p">,</span> <span class="n">get_default_args</span><span class="p">,</span> <span class="n">registry</span><span class="p">,</span> <span class="n">remove_unused_components</span>
-<span class="kn">from</span> <span class="nn">pytorch3d.renderer</span> <span class="kn">import</span> <span class="n">RayBundle</span>
+<span class="kn">from</span> <span class="nn">pytorch3d.implicitron.tools.config</span> <span class="kn">import</span> <span class="n">get_default_args</span><span class="p">,</span> <span class="n">registry</span><span class="p">,</span> <span class="n">remove_unused_components</span>
 <span class="kn">from</span> <span class="nn">pytorch3d.renderer.implicit.renderer</span> <span class="kn">import</span> <span class="n">VolumeSampler</span>
 <span class="kn">from</span> <span class="nn">pytorch3d.structures</span> <span class="kn">import</span> <span class="n">Volumes</span>
 <span class="kn">from</span> <span class="nn">pytorch3d.vis.plotly_vis</span> <span class="kn">import</span> <span class="n">plot_batch_individually</span><span class="p">,</span> <span class="n">plot_scene</span>
@@ -241,21 +240,12 @@ If running locally, the data is already available at the correct path.</p>
 </div>
 </div>
 </div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>If we want to instantiate one of Implicitron's configurable objects, such as <code>RenderedMeshDatasetMapProvider</code>, without using the OmegaConf initialisation (get_default_args), we need to call <code>expand_args_fields</code> on the class first.</p>
-</div>
-</div>
-</div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">In [ ]:</div>
 <div class="inner_cell">
 <div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">expand_args_fields</span><span class="p">(</span><span class="n">RenderedMeshDatasetMapProvider</span><span class="p">)</span>
-<span class="n">cow_provider</span> <span class="o">=</span> <span class="n">RenderedMeshDatasetMapProvider</span><span class="p">(</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">cow_provider</span> <span class="o">=</span> <span class="n">RenderedMeshDatasetMapProvider</span><span class="p">(</span>
     <span class="n">data_file</span><span class="o">=</span><span class="s2">"data/cow_mesh/cow.obj"</span><span class="p">,</span>
     <span class="n">use_point_light</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="n">resolution</span><span class="o">=</span><span class="n">output_resolution</span><span class="p">,</span>
@@ -344,7 +334,7 @@ We use Python's dataclass annotations for configuring the module.</p>
 
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">ray_bundle</span><span class="p">:</span> <span class="n">RayBundle</span><span class="p">,</span>
+        <span class="n">ray_bundle</span><span class="p">:</span> <span class="n">ImplicitronRayBundle</span><span class="p">,</span>
         <span class="n">fun_viewpool</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">global_code</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
@@ -394,7 +384,6 @@ There are two ways to construct it which are equivalent here.</p>
     <span class="n">gm</span> <span class="o">=</span> <span class="n">GenericModel</span><span class="p">(</span><span class="o">**</span><span class="n">cfg</span><span class="p">)</span>
 <span class="k">else</span><span class="p">:</span>
     <span class="c1"># constructing GenericModel directly</span>
-    <span class="n">expand_args_fields</span><span class="p">(</span><span class="n">GenericModel</span><span class="p">)</span>
     <span class="n">gm</span> <span class="o">=</span> <span class="n">GenericModel</span><span class="p">(</span>
         <span class="n">implicit_function_class_type</span><span class="o">=</span><span class="s2">"MyVolumes"</span><span class="p">,</span>
         <span class="n">render_image_height</span><span class="o">=</span><span class="n">output_resolution</span><span class="p">,</span>

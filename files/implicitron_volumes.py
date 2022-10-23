@@ -73,10 +73,9 @@ from PIL import Image
 from pytorch3d.implicitron.dataset.dataset_base import FrameData
 from pytorch3d.implicitron.dataset.rendered_mesh_dataset_map_provider import RenderedMeshDatasetMapProvider
 from pytorch3d.implicitron.models.generic_model import GenericModel
-from pytorch3d.implicitron.models.implicit_function.base import ImplicitFunctionBase
+from pytorch3d.implicitron.models.implicit_function.base import ImplicitFunctionBase, ImplicitronRayBundle
 from pytorch3d.implicitron.models.renderer.base import EvaluationMode
-from pytorch3d.implicitron.tools.config import expand_args_fields, get_default_args, registry, remove_unused_components
-from pytorch3d.renderer import RayBundle
+from pytorch3d.implicitron.tools.config import get_default_args, registry, remove_unused_components
 from pytorch3d.renderer.implicit.renderer import VolumeSampler
 from pytorch3d.structures import Volumes
 from pytorch3d.vis.plotly_vis import plot_batch_individually, plot_scene
@@ -112,12 +111,9 @@ get_ipython().system('wget -P data/cow_mesh https://dl.fbaipublicfiles.com/pytor
 get_ipython().system('wget -P data/cow_mesh https://dl.fbaipublicfiles.com/pytorch3d/data/cow_mesh/cow_texture.png')
 
 
-# If we want to instantiate one of Implicitron's configurable objects, such as `RenderedMeshDatasetMapProvider`, without using the OmegaConf initialisation (get_default_args), we need to call `expand_args_fields` on the class first.
-
 # In[ ]:
 
 
-expand_args_fields(RenderedMeshDatasetMapProvider)
 cow_provider = RenderedMeshDatasetMapProvider(
     data_file="data/cow_mesh/cow.obj",
     use_point_light=False,
@@ -184,7 +180,7 @@ class MyVolumes(ImplicitFunctionBase, torch.nn.Module):
 
     def forward(
         self,
-        ray_bundle: RayBundle,
+        ray_bundle: ImplicitronRayBundle,
         fun_viewpool=None,
         global_code=None,
     ):
@@ -225,7 +221,6 @@ if CONSTRUCT_MODEL_FROM_CONFIG:
     gm = GenericModel(**cfg)
 else:
     # constructing GenericModel directly
-    expand_args_fields(GenericModel)
     gm = GenericModel(
         implicit_function_class_type="MyVolumes",
         render_image_height=output_resolution,

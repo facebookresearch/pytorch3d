@@ -384,9 +384,9 @@ Note that we indicate configurable classes using a special base class <code>Conf
 <div class="prompt input_prompt">In [ ]:</div>
 <div class="inner_cell">
 <div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># expand_args_fields must be called on an object before it is instantiated.</span>
-<span class="c1"># A warning is raised if this is missed, but it is possible to not notice the warning.</span>
-<span class="c1"># It modifies the class like @dataclass</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># The expand_args_fields function modifies the class like @dataclasses.dataclass.</span>
+<span class="c1"># If it has not been called on a Configurable object before it has been instantiated, it will</span>
+<span class="c1"># be called automatically.</span>
 <span class="n">expand_args_fields</span><span class="p">(</span><span class="n">MyConfigurable</span><span class="p">)</span>
 <span class="n">my_configurable_instance</span> <span class="o">=</span> <span class="n">MyConfigurable</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
 <span class="k">assert</span> <span class="n">my_configurable_instance</span><span class="o">.</span><span class="n">d</span> <span class="o">==</span> <span class="mi">16</span>
@@ -400,7 +400,7 @@ Note that we indicate configurable classes using a special base class <code>Conf
 <div class="prompt input_prompt">In [ ]:</div>
 <div class="inner_cell">
 <div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># get_default_args calls expand_args_fields automatically</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># get_default_args also calls expand_args_fields automatically</span>
 <span class="n">our_structured</span> <span class="o">=</span> <span class="n">get_default_args</span><span class="p">(</span><span class="n">MyConfigurable</span><span class="p">)</span>
 <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">our_structured</span><span class="p">,</span> <span class="n">DictConfig</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">OmegaConf</span><span class="o">.</span><span class="n">to_yaml</span><span class="p">(</span><span class="n">our_structured</span><span class="p">))</span>
@@ -642,8 +642,7 @@ Note in this case it is necessary to call <code>Module.__init__</code> explicitl
 <div class="prompt input_prompt">In [ ]:</div>
 <div class="inner_cell">
 <div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">expand_args_fields</span><span class="p">(</span><span class="n">MyLinear</span><span class="p">)</span>
-<span class="n">my_linear</span> <span class="o">=</span> <span class="n">MyLinear</span><span class="p">()</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">my_linear</span> <span class="o">=</span> <span class="n">MyLinear</span><span class="p">()</span>
 <span class="nb">input</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
 <span class="n">output</span> <span class="o">=</span> <span class="n">my_linear</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="s2">"output shape:"</span><span class="p">,</span> <span class="n">output</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
@@ -736,8 +735,7 @@ before you <em>use</em> the library classes.</p>
 <div class="prompt input_prompt">In [ ]:</div>
 <div class="inner_cell">
 <div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">expand_args_fields</span><span class="p">(</span><span class="n">Out</span><span class="p">)</span>
-<span class="n">out2</span> <span class="o">=</span> <span class="n">Out</span><span class="p">(</span><span class="n">inner_class_type</span><span class="o">=</span><span class="s2">"UserImplementedInner"</span><span class="p">)</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">out2</span> <span class="o">=</span> <span class="n">Out</span><span class="p">(</span><span class="n">inner_class_type</span><span class="o">=</span><span class="s2">"UserImplementedInner"</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">out2</span><span class="o">.</span><span class="n">inner</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -785,8 +783,7 @@ before you <em>use</em> the library classes.</p>
 <div class="prompt input_prompt">In [ ]:</div>
 <div class="inner_cell">
 <div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">expand_args_fields</span><span class="p">(</span><span class="n">LargeComponent</span><span class="p">)</span>
-<span class="n">large_component</span> <span class="o">=</span> <span class="n">LargeComponent</span><span class="p">()</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">large_component</span> <span class="o">=</span> <span class="n">LargeComponent</span><span class="p">()</span>
 <span class="k">assert</span> <span class="n">large_component</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="o">==</span> <span class="mi">4</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">OmegaConf</span><span class="o">.</span><span class="n">to_yaml</span><span class="p">(</span><span class="n">LargeComponent</span><span class="p">))</span>
 </pre></div>
@@ -842,8 +839,7 @@ before you <em>use</em> the library classes.</p>
 <div class="prompt input_prompt">In [ ]:</div>
 <div class="inner_cell">
 <div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">expand_args_fields</span><span class="p">(</span><span class="n">LargeComponent</span><span class="p">)</span>
-<span class="n">large_component</span> <span class="o">=</span> <span class="n">LargeComponent</span><span class="p">()</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">large_component</span> <span class="o">=</span> <span class="n">LargeComponent</span><span class="p">()</span>
 <span class="k">assert</span> <span class="n">large_component</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="o">==</span> <span class="mi">4</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">OmegaConf</span><span class="o">.</span><span class="n">to_yaml</span><span class="p">(</span><span class="n">LargeComponent</span><span class="p">))</span>
 </pre></div>
@@ -871,7 +867,6 @@ before you <em>use</em> the library classes.</p>
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="Appendix:-gotchas-⚠️">Appendix: gotchas ⚠️<a class="anchor-link" href="#Appendix:-gotchas-⚠️">¶</a></h2><ul>
 <li>Omitting to define <code>__post_init__</code> or not calling <code>run_auto_creation</code> in it.</li>
-<li>Using a configurable class without calling get_default_args or expand_args_fields on it.</li>
 <li>Omitting a type annotation on a field. For example, writing 
 <pre><code>  subcomponent_class_type = "SubComponent"</code></pre>
 instead of 
