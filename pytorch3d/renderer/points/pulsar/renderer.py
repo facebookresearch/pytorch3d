@@ -107,6 +107,7 @@ class _Render(torch.autograd.Function):
         bg_col=None,
         opacity=None,
         percent_allowed_difference=0.01,
+        # pyre-fixme[16]: Module `_C` has no attribute `MAX_UINT`.
         max_n_hits=_C.MAX_UINT,
         mode=0,
         return_forward_info=False,
@@ -323,6 +324,7 @@ class Renderer(torch.nn.Module):
         max_num_balls: int,
         orthogonal_projection: bool = False,
         right_handed_system: bool = False,
+        # pyre-fixme[16]: Module `_C` has no attribute `EPS`.
         background_normalized_depth: float = _C.EPS,
         n_channels: int = 3,
         n_track: int = 5,
@@ -541,6 +543,7 @@ class Renderer(torch.nn.Module):
         bg_col: Optional[torch.Tensor] = None,
         opacity: Optional[torch.Tensor] = None,
         percent_allowed_difference: float = 0.01,
+        # pyre-fixme[16]: Module `_C` has no attribute `MAX_UINT`.
         max_n_hits: int = _C.MAX_UINT,
         mode: int = 0,
         return_forward_info: bool = False,
