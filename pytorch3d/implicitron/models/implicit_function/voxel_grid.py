@@ -15,9 +15,12 @@ these classes.
 
 """
 
+import warnings
 from collections.abc import Mapping
 from dataclasses import dataclass, field
-from typing import Callable, ClassVar, Dict, Iterator, List, Optional, Tuple, Type
+
+from distutils.version import LooseVersion
+from typing import Any, Callable, ClassVar, Dict, Iterator, List, Optional, Tuple, Type
 
 import torch
 from omegaconf import DictConfig
@@ -67,7 +70,9 @@ class VoxelGridBase(ReplaceableBase, torch.nn.Module):
     padding: str = "zeros"
     mode: str = "bilinear"
     n_features: int = 1
-    resolution_changes: Dict[int, List[int]] = field(
+    # return the line below once we drop OmegaConf 2.1 support
+    # resolution_changes: Dict[int, List[int]] = field(
+    resolution_changes: Dict[int, Any] = field(
         default_factory=lambda: {0: [128, 128, 128]}
     )
 
@@ -212,6 +217,13 @@ class VoxelGridBase(ReplaceableBase, torch.nn.Module):
                 + "| 'bicubic' | 'linear' | 'area' | 'nearest-exact'"
             )
 
+        interpolate_has_antialias = LooseVersion(torch.__version__) >= "1.11"
+
+        if antialias and not interpolate_has_antialias:
+            warnings.warn("Antialiased interpolation requires PyTorch 1.11+; ignoring")
+
+        interp_kwargs = {"antialias": antialias} if interpolate_has_antialias else {}
+
         def change_individual_resolution(tensor, wanted_resolution):
             if mode == "linear":
                 n_dim = len(wanted_resolution)
@@ -223,8 +235,8 @@ class VoxelGridBase(ReplaceableBase, torch.nn.Module):
                 size=wanted_resolution,
                 mode=new_mode,
                 align_corners=align_corners,
-                antialias=antialias,
                 recompute_scale_factor=False,
+                **interp_kwargs,
             )
 
         if epoch is not None:
@@ -880,7 +892,14 @@ class VoxelGridModule(Configurable, torch.nn.Module):
         """
         if self.hold_voxel_grid_as_parameters:
             # pyre-ignore [16]
-            self.params = torch.nn.ParameterDict(vars(params))
+            # Nones are converted to empty tensors by Parameter()
+            self.params = torch.nn.ParameterDict(
+                {
+                    k: torch.nn.Parameter(val)
+                    for k, val in vars(params).items()
+                    if val is not None
+                }
+            )
         else:
             # Torch Module to hold parameters since they can only be registered
             # at object level.
@@ -1011,7 +1030,11 @@ class VoxelGridModule(Configurable, torch.nn.Module):
         )
         # pyre-ignore [16]
         self.params = torch.nn.ParameterDict(
-            {k: v for k, v in vars(grid_values).items()}
+            {
+                k: torch.nn.Parameter(val)
+                for k, val in vars(grid_values).items()
+                if val is not None
+            }
         )
         # New center of voxel grid is the middle point between max and min points.
         self.translation = tuple((max_point + min_point) / 2)

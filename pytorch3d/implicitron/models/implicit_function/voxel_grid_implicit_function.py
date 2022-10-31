@@ -527,10 +527,10 @@ class VoxelGridImplicitFunction(ImplicitFunctionBase, torch.nn.Module):
         return False
 
     @classmethod
-    def decoder_density_tweak_args(cls, type, args: DictConfig) -> None:
+    def decoder_density_tweak_args(cls, type_, args: DictConfig) -> None:
         args.pop("input_dim", None)
 
-    def create_decoder_density_impl(self, type, args: DictConfig) -> None:
+    def create_decoder_density_impl(self, type_, args: DictConfig) -> None:
         """
         Decoding functions come after harmonic embedding and voxel grid. In order to not
         calculate the input dimension of the decoder in the config file this function
@@ -548,7 +548,7 @@ class VoxelGridImplicitFunction(ImplicitFunctionBase, torch.nn.Module):
             embedder_args["append_input"],
         )
 
-        cls = registry.get(DecoderFunctionBase, type)
+        cls = registry.get(DecoderFunctionBase, type_)
         need_input_dim = any(field.name == "input_dim" for field in fields(cls))
         if need_input_dim:
             self.decoder_density = cls(input_dim=input_dim, **args)
@@ -556,10 +556,10 @@ class VoxelGridImplicitFunction(ImplicitFunctionBase, torch.nn.Module):
             self.decoder_density = cls(**args)
 
     @classmethod
-    def decoder_color_tweak_args(cls, type, args: DictConfig) -> None:
+    def decoder_color_tweak_args(cls, type_, args: DictConfig) -> None:
         args.pop("input_dim", None)
 
-    def create_decoder_color_impl(self, type, args: DictConfig) -> None:
+    def create_decoder_color_impl(self, type_, args: DictConfig) -> None:
         """
         Decoding functions come after harmonic embedding and voxel grid. In order to not
         calculate the input dimension of the decoder in the config file this function
@@ -587,7 +587,7 @@ class VoxelGridImplicitFunction(ImplicitFunctionBase, torch.nn.Module):
 
         input_dim = input_dim0 + input_dim1
 
-        cls = registry.get(DecoderFunctionBase, type)
+        cls = registry.get(DecoderFunctionBase, type_)
         need_input_dim = any(field.name == "input_dim" for field in fields(cls))
         if need_input_dim:
             self.decoder_color = cls(input_dim=input_dim, **args)

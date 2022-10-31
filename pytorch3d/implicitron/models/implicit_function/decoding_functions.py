@@ -75,7 +75,7 @@ class ElementwiseDecoder(DecoderFunctionBase):
         shift: a scalar which is added to the scaled input before performing
             the operation. Defaults to 0.
         operation: which operation to perform on the transformed input. Options are:
-            `relu`, `softplus`, `sigmoid` and `identity`. Defaults to `identity`.
+            `RELU`, `SOFTPLUS`, `SIGMOID` or `IDENTITY`. Defaults to `IDENTITY`.
     """
 
     scale: float = 1
@@ -91,7 +91,7 @@ class ElementwiseDecoder(DecoderFunctionBase):
             DecoderActivation.IDENTITY,
         ]:
             raise ValueError(
-                "`operation` can only be `relu`, `softplus`, `sigmoid` or identity."
+                "`operation` can only be `RELU`, `SOFTPLUS`, `SIGMOID` or `IDENTITY`."
             )
 
     def forward(
@@ -165,22 +165,18 @@ class MLPWithInputSkips(Configurable, torch.nn.Module):
     def __post_init__(self):
         super().__init__()
 
-        if self.last_activation not in [
-            DecoderActivation.RELU,
-            DecoderActivation.SOFTPLUS,
-            DecoderActivation.SIGMOID,
-            DecoderActivation.IDENTITY,
-        ]:
+        try:
+            last_activation = {
+                DecoderActivation.RELU: torch.nn.ReLU(True),
+                DecoderActivation.SOFTPLUS: torch.nn.Softplus(),
+                DecoderActivation.SIGMOID: torch.nn.Sigmoid(),
+                DecoderActivation.IDENTITY: torch.nn.Identity(),
+            }[self.last_activation]
+        except KeyError as e:
             raise ValueError(
-                "`last_activation` can only be `relu`,"
-                " `softplus`, `sigmoid` or identity."
-            )
-        last_activation = {
-            DecoderActivation.RELU: torch.nn.ReLU(True),
-            DecoderActivation.SOFTPLUS: torch.nn.Softplus(),
-            DecoderActivation.SIGMOID: torch.nn.Sigmoid(),
-            DecoderActivation.IDENTITY: torch.nn.Identity(),
-        }[self.last_activation]
+                "`last_activation` can only be `RELU`,"
+                " `SOFTPLUS`, `SIGMOID` or `IDENTITY`."
+            ) from e
 
         layers = []
         skip_affine_layers = []
