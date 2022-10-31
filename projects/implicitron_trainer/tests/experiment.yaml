@@ -420,7 +420,7 @@ model_factory_ImplicitronModelFactory_args:
       - 128
       - 128
       scaffold_empty_space_threshold: 0.001
-      scaffold_occupancy_chunk_size: 'inf'
+      scaffold_occupancy_chunk_size: -1
       scaffold_max_pool_kernel_size: 3
       scaffold_filter_points: true
       volume_cropping_epochs: []

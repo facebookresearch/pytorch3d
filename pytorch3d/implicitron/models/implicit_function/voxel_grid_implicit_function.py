@@ -126,7 +126,8 @@ class VoxelGridImplicitFunction(ImplicitFunctionBase, torch.nn.Module):
             every voxel, this calculation can be split into scaffold depth number of xy plane
             calculations if you want the lowest memory usage, one calculation to calculate the
             whole scaffold, but with higher memory footprint or any other number of planes.
-            Setting to 'inf' calculates all planes at the same time. Defaults to 'inf'.
+            Setting to a non-positive number calculates all planes at the same time.
+            Defaults to '-1' (=calculating all planes).
         scaffold_max_pool_kernel_size (int): Size of the pooling region to use when
             calculating the scaffold. Defaults to 3.
         scaffold_filter_points (bool): If set to True the points will be filtered using
@@ -173,7 +174,7 @@ class VoxelGridImplicitFunction(ImplicitFunctionBase, torch.nn.Module):
     scaffold_calculating_epochs: Tuple[int, ...] = ()
     scaffold_resolution: Tuple[int, int, int] = (128, 128, 128)
     scaffold_empty_space_threshold: float = 0.001
-    scaffold_occupancy_chunk_size: Union[str, int] = "inf"
+    scaffold_occupancy_chunk_size: int = -1
     scaffold_max_pool_kernel_size: int = 3
     scaffold_filter_points: bool = True
 
@@ -199,11 +200,6 @@ class VoxelGridImplicitFunction(ImplicitFunctionBase, torch.nn.Module):
         )
         # pyre-ignore[16]
         self._scaffold_ready = False
-        if type(self.scaffold_occupancy_chunk_size) != int:
-            if self.scaffold_occupancy_chunk_size != "inf":
-                raise ValueError(
-                    "`scaffold_occupancy_chunk_size` has to be int or 'inf'."
-                )
 
     def forward(
         self,
@@ -504,7 +500,7 @@ class VoxelGridImplicitFunction(ImplicitFunctionBase, torch.nn.Module):
 
         chunk_size = (
             self.scaffold_occupancy_chunk_size
-            if type(self.scaffold_occupancy_chunk_size) == int
+            if self.scaffold_occupancy_chunk_size > 0
             else points.shape[-1]
         )
         for k in range(0, points.shape[-1], chunk_size):
