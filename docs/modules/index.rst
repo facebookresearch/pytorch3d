@@ -13,3 +13,4 @@ API Documentation
     datasets
     common
     vis
+    implicitron/index
