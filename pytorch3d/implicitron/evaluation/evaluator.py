@@ -5,13 +5,12 @@
 # LICENSE file in the root directory of this source tree.
 
 import copy
-
 import json
 import logging
 import os
+import warnings
 from typing import Any, Dict, List, Optional, Tuple
 
-import lpips
 import torch
 
 import tqdm
@@ -89,8 +88,16 @@ class ImplicitronEvaluator(EvaluatorBase):
         Returns:
             A dictionary of results.
         """
-        lpips_model = lpips.LPIPS(net="vgg")
-        lpips_model = lpips_model.to(device)
+        try:
+            import lpips
+
+            lpips_model = lpips.LPIPS(net="vgg")
+            lpips_model = lpips_model.to(device)
+        except ImportError:
+            warnings.warn(
+                "lpips library NOT FOUND. lpips losses will not be calculated"
+            )
+            lpips_model = None
 
         model.eval()
 
