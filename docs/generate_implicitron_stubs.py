@@ -19,7 +19,11 @@ def paths_to_modules(paths):
     """
     Given an iterable of paths, return equivalent list of modules.
     """
-    return [str(i.relative_to(ROOT_DIR))[:-3].replace("/", ".") for i in paths]
+    return [
+        str(i.relative_to(ROOT_DIR))[:-3].replace("/", ".")
+        for i in paths
+        if "__pycache__" not in str(i)
+    ]
 
 
 def create_one_file(title, description, sources, dest_file):
@@ -57,16 +61,38 @@ def iterate_directory(directory_path, dest):
             continue
         if subdir.name == "fb":
             continue
+        if subdir.name.startswith("_"):
+            continue
         iterate_directory(subdir, dest / (subdir.name))
         toc.append(f"{subdir.name}/index")
 
+    paths_to_modules_ = paths_to_modules([directory_path.with_suffix(".XX")])
+    if len(paths_to_modules_) == 0:
+        return
+    title = paths_to_modules_[0]
+
     with open(dest / "index.rst", "w") as f:
-        title = paths_to_modules([directory_path.with_suffix(".XX")])[0]
         print(title, file=f)
         print("=" * len(title), file=f)
         print("\n.. toctree::\n", file=f)
         for item in toc:
             print(f"    {item}", file=f)
+
+
+def make_directory_index(title: str, directory_path: Path):
+    index_file = directory_path / "index.rst"
+    directory_rsts = sorted(directory_path.glob("*.rst"))
+    subdirs = sorted([f for f in directory_path.iterdir() if f.is_dir()])
+    with open(index_file, "w") as f:
+        print(title, file=f)
+        print("=" * len(title), file=f)
+        print("\n.. toctree::\n", file=f)
+        for subdir in subdirs:
+            print(f"    {subdir.stem}/index.rst", file=f)
+        for rst in directory_rsts:
+            if rst.stem == "index":
+                continue
+            print(f"    {rst.stem}", file=f)
 
 
 iterate_directory(ROOT_DIR / "pytorch3d/implicitron/models", DEST_DIR / "models")
@@ -118,3 +144,5 @@ create_one_file(
     paths_to_modules(evaluation_files),
     DEST_DIR / "evaluation.rst",
 )
+
+make_directory_index("pytorch3d.implicitron", DEST_DIR)
