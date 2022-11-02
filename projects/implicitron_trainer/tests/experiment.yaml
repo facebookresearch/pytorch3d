@@ -62,6 +62,7 @@ data_source_ImplicitronDataSource_args:
     test_on_train: false
     only_test_set: false
     load_eval_batches: true
+    num_load_workers: 4
     n_known_frames_for_test: 0
     dataset_class_type: JsonIndexDataset
     path_manager_factory_class_type: PathManagerFactory

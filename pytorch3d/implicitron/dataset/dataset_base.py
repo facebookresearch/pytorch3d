@@ -9,6 +9,7 @@ from dataclasses import dataclass, field, fields
 from typing import (
     Any,
     ClassVar,
+    Dict,
     Iterable,
     Iterator,
     List,
@@ -259,6 +260,12 @@ class DatasetBase(_GenericWorkaround, torch.utils.data.Dataset[FrameData]):
         """
         raise ValueError("This dataset does not contain videos.")
 
+    def join(self, other_datasets: Iterable["DatasetBase"]) -> None:
+        """
+        Joins the current dataset with a list of other datasets of the same type.
+        """
+        raise NotImplementedError()
+
     def get_eval_batches(self) -> Optional[List[List[int]]]:
         return None
 
@@ -266,6 +273,22 @@ class DatasetBase(_GenericWorkaround, torch.utils.data.Dataset[FrameData]):
         """Returns an iterator over sequence names in the dataset."""
         # pyre-ignore[16]
         return self._seq_to_idx.keys()
+
+    def category_to_sequence_names(self) -> Dict[str, List[str]]:
+        """
+        Returns a dict mapping from each dataset category to a list of its
+        sequence names.
+
+        Returns:
+            category_to_sequence_names: Dict {category_i: [..., sequence_name_j, ...]}
+        """
+        c2seq = defaultdict(list)
+        for sequence_name in self.sequence_names():
+            first_frame_idx = next(self.sequence_indices_in_order(sequence_name))
+            # crashes without overriding __getitem__
+            sequence_category = self[first_frame_idx].sequence_category
+            c2seq[sequence_category].append(sequence_name)
+        return dict(c2seq)
 
     def sequence_frames_in_order(
         self, seq_name: str

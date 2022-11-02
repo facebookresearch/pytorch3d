@@ -6,8 +6,9 @@
 
 
 import warnings
+from collections import Counter
 from dataclasses import dataclass, field
-from typing import Iterable, Iterator, List, Sequence, Tuple
+from typing import Dict, Iterable, Iterator, List, Sequence, Tuple
 
 import numpy as np
 from torch.utils.data.sampler import Sampler
@@ -42,7 +43,16 @@ class SceneBatchSampler(Sampler[List[int]]):
     # same but for timestamps if they are available
     consecutive_frames_max_gap_seconds: float = 0.1
 
+    # if True, the sampler first reads from the dataset the mapping between
+    # sequence names and their categories.
+    # During batch sampling, the sampler ensures uniform distribution over the categories
+    # of the sampled sequences.
+    category_aware: bool = True
+
     seq_names: List[str] = field(init=False)
+
+    category_to_sequence_names: Dict[str, List[str]] = field(init=False)
+    categories: List[str] = field(init=False)
 
     def __post_init__(self) -> None:
         if self.batch_size <= 0:
@@ -56,6 +66,10 @@ class SceneBatchSampler(Sampler[List[int]]):
 
         self.seq_names = list(self.dataset.sequence_names())
 
+        if self.category_aware:
+            self.category_to_sequence_names = self.dataset.category_to_sequence_names()
+            self.categories = list(self.category_to_sequence_names.keys())
+
     def __len__(self) -> int:
         return self.num_batches
 
@@ -67,7 +81,25 @@ class SceneBatchSampler(Sampler[List[int]]):
     def _sample_batch(self, batch_idx) -> List[int]:
         n_per_seq = np.random.choice(self.images_per_seq_options)
         n_seqs = -(-self.batch_size // n_per_seq)  # round up
-        chosen_seq = _capped_random_choice(self.seq_names, n_seqs, replace=False)
+
+        if self.category_aware:
+            # first sample categories at random, these can be repeated in the batch
+            chosen_cat = _capped_random_choice(self.categories, n_seqs, replace=True)
+            # then randomly sample a set of unique sequences within each category
+            chosen_seq = []
+            for cat, n_per_category in Counter(chosen_cat).items():
+                category_chosen_seq = _capped_random_choice(
+                    self.category_to_sequence_names[cat],
+                    n_per_category,
+                    replace=False,
+                )
+                chosen_seq.extend([str(s) for s in category_chosen_seq])
+        else:
+            chosen_seq = _capped_random_choice(
+                self.seq_names,
+                n_seqs,
+                replace=False,
+            )
 
         if self.sample_consecutive_frames:
             frame_idx = []

@@ -19,6 +19,8 @@ from pathlib import Path
 from typing import (
     Any,
     ClassVar,
+    Dict,
+    Iterable,
     List,
     Optional,
     Sequence,
@@ -188,7 +190,44 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
                 self.eval_batch_index
             )
 
-    def is_filtered(self):
+    def join(self, other_datasets: Iterable[DatasetBase]) -> None:
+        """
+        Join the dataset with other JsonIndexDataset objects.
+
+        Args:
+            other_datasets: A list of JsonIndexDataset objects to be joined
+                into the current dataset.
+        """
+        if not all(isinstance(d, JsonIndexDataset) for d in other_datasets):
+            raise ValueError("This function can only join a list of JsonIndexDataset")
+        # pyre-ignore[16]
+        self.frame_annots.extend([fa for d in other_datasets for fa in d.frame_annots])
+        # pyre-ignore[16]
+        self.seq_annots.update(
+            # https://gist.github.com/treyhunner/f35292e676efa0be1728
+            functools.reduce(
+                lambda a, b: {**a, **b},
+                [d.seq_annots for d in other_datasets],  # pyre-ignore[16]
+            )
+        )
+        all_eval_batches = [
+            self.eval_batches,
+            # pyre-ignore
+            *[d.eval_batches for d in other_datasets],
+        ]
+        if not (
+            all(ba is None for ba in all_eval_batches)
+            or all(ba is not None for ba in all_eval_batches)
+        ):
+            raise ValueError(
+                "When joining datasets, either all joined datasets have to have their"
+                " eval_batches defined, or all should have their eval batches undefined."
+            )
+        if self.eval_batches is not None:
+            self.eval_batches = sum(all_eval_batches, [])
+        self._invalidate_indexes(filter_seq_annots=True)
+
+    def is_filtered(self) -> bool:
         """
         Returns `True` in case the dataset has been filtered and thus some frame annotations
         stored on the disk might be missing in the dataset object.
@@ -211,6 +250,7 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
         seq_frame_index: List[List[Union[Tuple[str, int, str], Tuple[str, int]]]],
         allow_missing_indices: bool = False,
         remove_missing_indices: bool = False,
+        suppress_missing_index_warning: bool = True,
     ) -> List[List[Union[Optional[int], int]]]:
         """
         Obtain indices into the dataset object given a list of frame ids.
@@ -228,6 +268,11 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
                 If `False`, returns `None` in place of `seq_frame_index` entries that
                 are not present in the dataset.
                 If `True` removes missing indices from the returned indices.
+            suppress_missing_index_warning:
+                Active if `allow_missing_indices==True`. Suppressess a warning message
+                in case an entry from `seq_frame_index` is missing in the dataset
+                (expected in certain cases - e.g. when setting
+                `self.remove_empty_masks=True`).
 
         Returns:
             dataset_idx: Indices of dataset entries corresponding to`seq_frame_index`.
@@ -254,7 +299,8 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
                 )
                 if not allow_missing_indices:
                     raise IndexError(msg)
-                warnings.warn(msg)
+                if not suppress_missing_index_warning:
+                    warnings.warn(msg)
                 return idx
             if path is not None:
                 # Check that the loaded frame path is consistent
@@ -288,6 +334,21 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
         frame_index: List[Union[Tuple[str, int], Tuple[str, int, str]]],
         allow_missing_indices: bool = True,
     ) -> "JsonIndexDataset":
+        """
+        Generate a dataset subset given the list of frames specified in `frame_index`.
+
+        Args:
+            frame_index: The list of frame indentifiers (as stored in the metadata)
+                specified as `List[Tuple[sequence_name:str, frame_number:int]]`. Optionally,
+                Image paths relative to the dataset_root can be stored specified as well:
+                `List[Tuple[sequence_name:str, frame_number:int, image_path:str]]`,
+                in the latter case, if imaga_path do not match the stored paths, an error
+                is raised.
+            allow_missing_indices: If `False`, throws an IndexError upon reaching the first
+                entry from `frame_index` which is missing in the dataset.
+                Otherwise, generates a subset consisting of frames entries that actually
+                exist in the dataset.
+        """
         # Get the indices into the frame annots.
         dataset_indices = self.seq_frame_index_to_dataset_index(
             [frame_index],
@@ -837,6 +898,13 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
                 (frame_annotation.frame_number, frame_annotation.frame_timestamp)
             )
         return out
+
+    def category_to_sequence_names(self) -> Dict[str, List[str]]:
+        c2seq = defaultdict(list)
+        # pyre-ignore
+        for sequence_name, sa in self.seq_annots.items():
+            c2seq[sa.category].append(sequence_name)
+        return dict(c2seq)
 
     def get_eval_batches(self) -> Optional[List[List[int]]]:
         return self.eval_batches

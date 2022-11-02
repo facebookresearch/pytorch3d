@@ -8,6 +8,7 @@
 import copy
 import json
 import logging
+import multiprocessing
 import os
 import warnings
 from collections import defaultdict
@@ -30,6 +31,7 @@ from pytorch3d.implicitron.tools.config import (
 )
 
 from pytorch3d.renderer.cameras import CamerasBase
+from tqdm import tqdm
 
 
 _CO3DV2_DATASET_ROOT: str = os.getenv("CO3DV2_DATASET_ROOT", "")
@@ -147,7 +149,8 @@ class JsonIndexDatasetMapProviderV2(DatasetMapProviderBase):  # pyre-ignore [13]
     (test frames can repeat across batches).
 
     Args:
-        category: The object category of the dataset.
+        category: Dataset categories to load expressed as a string of comma-separated
+            category names (e.g. `"apple,car,orange"`).
         subset_name: The name of the dataset subset. For CO3Dv2, these include
             e.g. "manyview_dev_0", "fewview_test", ...
         dataset_root: The root folder of the dataset.
@@ -173,6 +176,7 @@ class JsonIndexDatasetMapProviderV2(DatasetMapProviderBase):  # pyre-ignore [13]
     test_on_train: bool = False
     only_test_set: bool = False
     load_eval_batches: bool = True
+    num_load_workers: int = 4
 
     n_known_frames_for_test: int = 0
 
@@ -189,11 +193,33 @@ class JsonIndexDatasetMapProviderV2(DatasetMapProviderBase):  # pyre-ignore [13]
         if self.only_test_set and self.test_on_train:
             raise ValueError("Cannot have only_test_set and test_on_train")
 
-        frame_file = os.path.join(
-            self.dataset_root, self.category, "frame_annotations.jgz"
-        )
+        if "," in self.category:
+            # a comma-separated list of categories to load
+            categories = [c.strip() for c in self.category.split(",")]
+            logger.info(f"Loading a list of categories: {str(categories)}.")
+            with multiprocessing.Pool(
+                processes=min(self.num_load_workers, len(categories))
+            ) as pool:
+                category_dataset_maps = list(
+                    tqdm(
+                        pool.imap(self._load_category, categories),
+                        total=len(categories),
+                    )
+                )
+            dataset_map = category_dataset_maps[0]
+            dataset_map.join(category_dataset_maps[1:])
+
+        else:
+            # one category to load
+            dataset_map = self._load_category(self.category)
+
+        self.dataset_map = dataset_map
+
+    def _load_category(self, category: str) -> DatasetMap:
+
+        frame_file = os.path.join(self.dataset_root, category, "frame_annotations.jgz")
         sequence_file = os.path.join(
-            self.dataset_root, self.category, "sequence_annotations.jgz"
+            self.dataset_root, category, "sequence_annotations.jgz"
         )
 
         path_manager = self.path_manager_factory.get()
@@ -232,7 +258,7 @@ class JsonIndexDatasetMapProviderV2(DatasetMapProviderBase):  # pyre-ignore [13]
 
         dataset = dataset_type(**common_dataset_kwargs)
 
-        available_subset_names = self._get_available_subset_names()
+        available_subset_names = self._get_available_subset_names(category)
         logger.debug(f"Available subset names: {str(available_subset_names)}.")
         if self.subset_name not in available_subset_names:
             raise ValueError(
@@ -242,20 +268,20 @@ class JsonIndexDatasetMapProviderV2(DatasetMapProviderBase):  # pyre-ignore [13]
 
         # load the list of train/val/test frames
         subset_mapping = self._load_annotation_json(
-            os.path.join(
-                self.category, "set_lists", f"set_lists_{self.subset_name}.json"
-            )
+            os.path.join(category, "set_lists", f"set_lists_{self.subset_name}.json")
         )
 
         # load the evaluation batches
         if self.load_eval_batches:
             eval_batch_index = self._load_annotation_json(
                 os.path.join(
-                    self.category,
+                    category,
                     "eval_batches",
                     f"eval_batches_{self.subset_name}.json",
                 )
             )
+        else:
+            eval_batch_index = None
 
         train_dataset = None
         if not self.only_test_set:
@@ -313,9 +339,7 @@ class JsonIndexDatasetMapProviderV2(DatasetMapProviderBase):  # pyre-ignore [13]
                     )
                 logger.info(f"# eval batches: {len(test_dataset.eval_batches)}")
 
-        self.dataset_map = DatasetMap(
-            train=train_dataset, val=val_dataset, test=test_dataset
-        )
+        return DatasetMap(train=train_dataset, val=val_dataset, test=test_dataset)
 
     @classmethod
     def dataset_tweak_args(cls, type, args: DictConfig) -> None:
@@ -381,10 +405,10 @@ class JsonIndexDatasetMapProviderV2(DatasetMapProviderBase):  # pyre-ignore [13]
             data = json.load(f)
         return data
 
-    def _get_available_subset_names(self):
+    def _get_available_subset_names(self, category: str):
         return get_available_subset_names(
             self.dataset_root,
-            self.category,
+            category,
             path_manager=self.path_manager_factory.get(),
         )
 

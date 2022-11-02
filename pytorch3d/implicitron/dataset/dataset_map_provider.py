@@ -7,7 +7,7 @@
 import logging
 import os
 from dataclasses import dataclass
-from typing import Iterator, Optional
+from typing import Iterable, Iterator, Optional
 
 from iopath.common.file_io import PathManager
 from pytorch3d.implicitron.tools.config import registry, ReplaceableBase
@@ -50,6 +50,34 @@ class DatasetMap:
             yield self.val
         if self.test is not None:
             yield self.test
+
+    def join(self, other_dataset_maps: Iterable["DatasetMap"]) -> None:
+        """
+        Joins the current DatasetMap with other dataset maps from the input list.
+
+        For each subset of each dataset map (train/val/test), the function
+        omits joining the subsets that are None.
+
+        Note the train/val/test datasets of the current dataset map will be
+        modified in-place.
+
+        Args:
+            other_dataset_maps: The list of dataset maps to be joined into the
+                current dataset map.
+        """
+        for set_ in ["train", "val", "test"]:
+            dataset_list = [
+                getattr(self, set_),
+                *[getattr(dmap, set_) for dmap in other_dataset_maps],
+            ]
+            dataset_list = [d for d in dataset_list if d is not None]
+            if len(dataset_list) == 0:
+                setattr(self, set_, None)
+                continue
+            d0 = dataset_list[0]
+            if len(dataset_list) > 1:
+                d0.join(dataset_list[1:])
+            setattr(self, set_, d0)
 
 
 class DatasetMapProviderBase(ReplaceableBase):
