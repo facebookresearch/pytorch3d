@@ -73,29 +73,29 @@ class Stats(object):
     # TODO: update this with context manager
     """
     stats logging object useful for gathering statistics of training a deep net in pytorch
-    Example:
-    ```
-    # init stats structure that logs statistics 'objective' and 'top1e'
-    stats = Stats( ('objective','top1e') )
-    network = init_net() # init a pytorch module (=nueral network)
-    dataloader = init_dataloader() # init a dataloader
-    for epoch in range(10):
-        # start of epoch -> call new_epoch
-        stats.new_epoch()
+    Example::
 
-        # iterate over batches
-        for batch in dataloader:
+        # init stats structure that logs statistics 'objective' and 'top1e'
+        stats = Stats( ('objective','top1e') )
+        network = init_net() # init a pytorch module (=nueral network)
+        dataloader = init_dataloader() # init a dataloader
+        for epoch in range(10):
+            # start of epoch -> call new_epoch
+            stats.new_epoch()
 
-            output = network(batch) # run and save into a dict of output variables "output"
+            # iterate over batches
+            for batch in dataloader:
 
-            # stats.update() automatically parses the 'objective' and 'top1e' from
-            # the "output" dict and stores this into the db
-            stats.update(output)
-            stats.print() # prints the averages over given epoch
-        # stores the training plots into '/tmp/epoch_stats.pdf'
-        # and plots into a visdom server running at localhost (if running)
-        stats.plot_stats(plot_file='/tmp/epoch_stats.pdf')
-    ```
+                output = network(batch) # run and save into a dict of output variables
+
+                # stats.update() automatically parses the 'objective' and 'top1e' from
+                # the "output" dict and stores this into the db
+                stats.update(output)
+                stats.print() # prints the averages over given epoch
+            # stores the training plots into '/tmp/epoch_stats.pdf'
+            # and plots into a visdom server running at localhost (if running)
+            stats.plot_stats(plot_file='/tmp/epoch_stats.pdf')
+
     """
 
     def __init__(

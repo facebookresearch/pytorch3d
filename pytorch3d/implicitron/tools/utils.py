@@ -181,11 +181,11 @@ class Timer:
     """
     A simple class for timing execution.
 
-    Example:
-        ```
+    Example::
+
         with Timer():
             print("This print statement is timed.")
-        ```
+
     """
 
     def __init__(self, name="timer", quiet=False):

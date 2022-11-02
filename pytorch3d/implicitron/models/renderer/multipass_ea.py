@@ -29,21 +29,21 @@ class MultiPassEmissionAbsorptionRenderer(  # pyre-ignore: 13
     During each ray marching pass, features, depth map, and masks
     are integrated: Let o_i be the opacity estimated by the implicit function,
     and d_i be the offset between points `i` and `i+1` along the respective ray.
-    Ray marching is performed using the following equations:
-    ```
-    ray_opacity_n = cap_fn(sum_i=1^n cap_fn(d_i * o_i)),
-    weight_n = weight_fn(cap_fn(d_i * o_i), 1 - ray_opacity_{n-1}),
-    ```
+    Ray marching is performed using the following equations::
+
+        ray_opacity_n = cap_fn(sum_i=1^n cap_fn(d_i * o_i)),
+        weight_n = weight_fn(cap_fn(d_i * o_i), 1 - ray_opacity_{n-1}),
+
     and the final rendered quantities are computed by a dot-product of ray values
     with the weights, e.g. `features = sum_n(weight_n * ray_features_n)`.
 
     By default, for the EA raymarcher from [1] (
         activated with `self.raymarcher_class_type="EmissionAbsorptionRaymarcher"`
-    ):
-        ```
+    )::
+
         cap_fn(x) = 1 - exp(-x),
         weight_fn(x) = w * x.
-        ```
+
     Note that the latter can altered by changing `self.raymarcher_class_type`,
     e.g. to "CumsumRaymarcher" which implements the cumulative-sum raymarcher
     from NeuralVolumes [2].

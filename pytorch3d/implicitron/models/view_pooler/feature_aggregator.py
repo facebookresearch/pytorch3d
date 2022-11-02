@@ -250,12 +250,11 @@ class AngleWeightedReductionFeatureAggregator(torch.nn.Module, FeatureAggregator
     Performs a weighted aggregation using a set of predefined `reduction_functions`
     and concatenates the results of each aggregation function along the
     channel dimension. The weights are proportional to the cosine of the
-    angle between the target ray and the source ray:
-    ```
-    weight = (
-        dot(target_ray, source_ray) * 0.5 + 0.5 + self.min_ray_angle_weight
-    )**self.weight_by_ray_angle_gamma
-    ```
+    angle between the target ray and the source ray::
+
+        weight = (
+            dot(target_ray, source_ray) * 0.5 + 0.5 + self.min_ray_angle_weight
+        )**self.weight_by_ray_angle_gamma
 
     The reduction functions singularize the second dimension
     of the sampled features which stacks the source views.
@@ -359,12 +358,11 @@ class AngleWeightedIdentityFeatureAggregator(torch.nn.Module, FeatureAggregatorB
     """
     This aggregator does not perform any feature aggregation. It only weights
     the features by the weights proportional to the cosine of the
-    angle between the target ray and the source ray:
-    ```
-    weight = (
-        dot(target_ray, source_ray) * 0.5 + 0.5 + self.min_ray_angle_weight
-    )**self.weight_by_ray_angle_gamma
-    ```
+    angle between the target ray and the source ray::
+
+        weight = (
+            dot(target_ray, source_ray) * 0.5 + 0.5 + self.min_ray_angle_weight
+        )**self.weight_by_ray_angle_gamma
 
     Settings:
         min_ray_angle_weight: The minimum possible aggregation weight

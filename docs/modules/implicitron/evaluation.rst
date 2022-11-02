@@ -1,5 +1,5 @@
-pytorch3d.impliciton.evaluation
-===============================
+pytorch3d.implicitron.evaluation
+================================
 
 evaluation
 

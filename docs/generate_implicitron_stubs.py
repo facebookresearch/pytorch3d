@@ -49,7 +49,7 @@ def iterate_directory(directory_path, dest):
     toc = []
     if not dest.exists():
         dest.mkdir()
-    for file in directory_path.glob("*.py"):
+    for file in sorted(directory_path.glob("*.py")):
         if file.stem.startswith("_"):
             continue
         module = paths_to_modules([file])
@@ -121,7 +121,7 @@ basic_dataset = [
 ]
 basic_dataset_modules = [f"pytorch3d.implicitron.dataset.{i}" for i in basic_dataset]
 create_one_file(
-    "pytorch3d.implicitron.dataset",
+    "pytorch3d.implicitron.dataset in general",
     "Basics of data for implicitron",
     basic_dataset_modules,
     DEST_DIR / "data_basics.rst",
@@ -131,7 +131,7 @@ specific_dataset_files = [
     i for i in dataset_files if i.stem.find("_dataset_map_provider") != -1
 ]
 create_one_file(
-    "pytorch3d.impliciton.dataset",
+    "pytorch3d.implicitron.dataset specific datasets",
     "specific datasets",
     paths_to_modules(specific_dataset_files),
     DEST_DIR / "datasets.rst",
@@ -139,7 +139,7 @@ create_one_file(
 
 evaluation_files = sorted(ROOT_DIR.glob("pytorch3d/implicitron/evaluation/*.py"))
 create_one_file(
-    "pytorch3d.impliciton.evaluation",
+    "pytorch3d.implicitron.evaluation",
     "evaluation",
     paths_to_modules(evaluation_files),
     DEST_DIR / "evaluation.rst",

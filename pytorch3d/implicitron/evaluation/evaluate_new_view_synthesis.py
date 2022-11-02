@@ -554,8 +554,8 @@ def _get_flat_nvs_metric_key(result, metric_name) -> str:
 
 def flatten_nvs_results(results):
     """
-    Takes input `results` list of dicts of the form:
-    ```
+    Takes input `results` list of dicts of the form::
+
         [
             {
                 'subset':'train/test/...',
@@ -564,12 +564,14 @@ def flatten_nvs_results(results):
             },
             ...
         ]
-    ```
-    And converts to a flat dict as follows:
-    {
-        'subset=train/test/...|subsubset=src=1/src=2/...': nvs_eval_metrics,
-        ...
-    }
+
+    And converts to a flat dict as follows::
+
+        {
+            'subset=train/test/...|subsubset=src=1/src=2/...': nvs_eval_metrics,
+            ...
+        }
+
     """
     results_flat = {}
     for result in results:

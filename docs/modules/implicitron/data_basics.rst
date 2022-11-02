@@ -1,5 +1,5 @@
-pytorch3d.implicitron.dataset
-=============================
+pytorch3d.implicitron.dataset in general
+========================================
 
 Basics of data for implicitron
 

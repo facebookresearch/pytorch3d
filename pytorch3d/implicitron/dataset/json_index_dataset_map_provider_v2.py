@@ -57,8 +57,8 @@ class JsonIndexDatasetMapProviderV2(DatasetMapProviderBase):  # pyre-ignore [13]
     Generates the training, validation, and testing dataset objects for
     a dataset laid out on disk like CO3Dv2, with annotations in gzipped json files.
 
-    The dataset is organized in the filesystem as follows:
-        ```
+    The dataset is organized in the filesystem as follows::
+
         self.dataset_root
             ├── <category_0>
             │   ├── <sequence_name_0>
@@ -90,7 +90,6 @@ class JsonIndexDatasetMapProviderV2(DatasetMapProviderBase):  # pyre-ignore [13]
             ├── <category_1>
             ├── ...
             ├── <category_K>
-        ```
 
     The dataset contains sequences named `<sequence_name_i>` from `K` categories with
     names `<category_j>`. Each category comprises sequence folders
@@ -106,8 +105,8 @@ class JsonIndexDatasetMapProviderV2(DatasetMapProviderBase):  # pyre-ignore [13]
     the list of all frames and sequences of the given category stored as lists of
     `FrameAnnotation` and `SequenceAnnotation` objects respectivelly.
 
-    Each `set_lists_<subset_name_l>.json` file contains the following dictionary:
-        ```
+    Each `set_lists_<subset_name_l>.json` file contains the following dictionary::
+
         {
             "train": [
                 (sequence_name: str, frame_number: int, image_path: str),
@@ -122,7 +121,7 @@ class JsonIndexDatasetMapProviderV2(DatasetMapProviderBase):  # pyre-ignore [13]
                 ...
             ],
         ]
-        ```
+
     defining the list of frames (identified with their `sequence_name` and `frame_number`)
     in the "train", "val", and "test" subsets of the dataset.
     Note that `frame_number` can be obtained only from `frame_annotations.jgz` and
@@ -131,8 +130,8 @@ class JsonIndexDatasetMapProviderV2(DatasetMapProviderBase):  # pyre-ignore [13]
     have its frame number set to `20`, not 5).
 
     Each `eval_batches_<subset_name_l>.json` file contains a list of evaluation examples
-    in the following form:
-        ```
+    in the following form::
+
         [
             [  # batch 1
                 (sequence_name: str, frame_number: int, image_path: str),
@@ -143,7 +142,7 @@ class JsonIndexDatasetMapProviderV2(DatasetMapProviderBase):  # pyre-ignore [13]
                 ...
             ],
         ]
-        ```
+
     Note that the evaluation examples always come from the `"test"` subset of the dataset.
     (test frames can repeat across batches).
 
@@ -341,14 +340,13 @@ class JsonIndexDatasetMapProviderV2(DatasetMapProviderBase):  # pyre-ignore [13]
 
         Returns:
             category_to_subset_name_list: A dictionary containing subset names available
-                per category of the following form:
-                    ```
+                per category of the following form::
+
                     {
                         category_0: [category_0_subset_name_0, category_0_subset_name_1, ...],
                         category_1: [category_1_subset_name_0, category_1_subset_name_1, ...],
                         ...
                     }
-                    ```
 
         """
         category_to_subset_name_list_json = "category_to_subset_name_list.json"

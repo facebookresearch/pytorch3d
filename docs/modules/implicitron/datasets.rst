@@ -1,5 +1,5 @@
-pytorch3d.impliciton.dataset
-============================
+pytorch3d.implicitron.dataset specific datasets
+===============================================
 
 specific datasets
 

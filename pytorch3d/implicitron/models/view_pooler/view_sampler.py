@@ -218,8 +218,8 @@ def cameras_points_cartesian_product(
 ) -> Tuple[CamerasBase, torch.Tensor]:
     """
     Generates all pairs of pairs of elements from 'camera' and 'pts' and returns
-    `camera_rep` and `pts_rep` such that:
-        ```
+    `camera_rep` and `pts_rep` such that::
+
         camera_rep = [                 pts_rep = [
             camera[0]                      pts[0],
             camera[0]                      pts[1],
@@ -235,15 +235,14 @@ def cameras_points_cartesian_product(
             camera[n_cameras-1]            ...,
             ...                            pts[batch_pts-1],
         ]                              ]
-        ```
 
     Args:
         camera: A batch of `n_cameras` cameras.
         pts: A batch of `batch_pts` points of shape `(batch_pts, ..., dim)`
 
     Returns:
-        camera_rep: A batch of batch_pts*n_cameras cameras such that:
-            ```
+        camera_rep: A batch of batch_pts*n_cameras cameras such that::
+
             camera_rep = [
                 camera[0]
                 camera[0]
@@ -258,11 +257,11 @@ def cameras_points_cartesian_product(
                 camera[n_cameras-1]
                 camera[n_cameras-1]
             ]
-            ```
+
 
         pts_rep: Repeated `pts` of shape `(batch_pts*n_cameras, ..., dim)`,
-            such that:
-            ```
+            such that::
+
             pts_rep = [
                 pts[0],
                 pts[1],
@@ -278,7 +277,7 @@ def cameras_points_cartesian_product(
                 ...,
                 pts[batch_pts-1],
             ]
-            ```
+
     """
     n_cameras = camera.R.shape[0]
     batch_pts = pts.shape[0]
