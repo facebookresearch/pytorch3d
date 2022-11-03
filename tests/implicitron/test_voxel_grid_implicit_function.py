@@ -89,7 +89,7 @@ class TestVoxelGridImplicitFunction(TestCaseMixin, unittest.TestCase):
                     out.append(torch.tensor([[0.0]]))
             return torch.cat(out).view(*inshape[:-1], 1).to(device)
 
-        func.get_density = new_density
+        func._get_density = new_density
         func._get_scaffold(0)
 
         points = torch.tensor(
@@ -136,15 +136,15 @@ class TestVoxelGridImplicitFunction(TestCaseMixin, unittest.TestCase):
             assert torch.all(scaffold(points)), (scaffold(points), points.shape)
             return points.sum(dim=-1, keepdim=True)
 
-        def new_color(points, camera, directions):
+        def new_color(points, camera, directions, non_empty_points, num_points_per_ray):
             # check if all passed points should be passed here
             assert torch.all(scaffold(points))  # , (scaffold(points), points)
             return points * 2
 
         # check both computation paths that they contain only points
         # which are not in empty space
-        func.get_density = new_density
-        func.get_color = new_color
+        func._get_density = new_density
+        func._get_color = new_color
         func.voxel_grid_scaffold.forward = scaffold
         func._scaffold_ready = True
 
