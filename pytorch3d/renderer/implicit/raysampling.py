@@ -207,7 +207,8 @@ class MultinomialRaysampler(torch.nn.Module):
                 n_rays_per_image,
             ) = _sample_cameras_and_masks(n_rays_total, cameras, mask)
         else:
-            camera_ids = torch.arange(len(cameras), dtype=torch.long)
+            # pyre-ignore[9]
+            camera_ids: torch.LongTensor = torch.arange(len(cameras), dtype=torch.long)
 
         batch_size = cameras.R.shape[0]
         device = cameras.device
@@ -438,7 +439,8 @@ class MonteCarloRaysampler(torch.nn.Module):
                 n_rays_per_image,
             ) = _sample_cameras_and_masks(self._n_rays_total, cameras, None)
         else:
-            camera_ids = torch.arange(len(cameras), dtype=torch.long)
+            # pyre-ignore[9]
+            camera_ids: torch.LongTensor = torch.arange(len(cameras), dtype=torch.long)
             n_rays_per_image = self._n_rays_per_image
 
         batch_size = cameras.R.shape[0]
@@ -716,7 +718,11 @@ def _jiggle_within_stratas(bin_centers: torch.Tensor) -> torch.Tensor:
 def _sample_cameras_and_masks(
     n_samples: int, cameras: CamerasBase, mask: Optional[torch.Tensor] = None
 ) -> Tuple[
-    CamerasBase, Optional[torch.Tensor], torch.Tensor, torch.Tensor, torch.Tensor
+    CamerasBase,
+    Optional[torch.Tensor],
+    torch.LongTensor,
+    torch.LongTensor,
+    torch.LongTensor,
 ]:
     """
     Samples n_rays_total cameras and masks and returns them in a form
@@ -740,6 +746,7 @@ def _sample_cameras_and_masks(
         dtype=torch.long,
     )
     unique_ids, counts = torch.unique(sampled_ids, return_counts=True)
+    # pyre-ignore[7]
     return (
         cameras[unique_ids],
         mask[unique_ids] if mask is not None else None,
@@ -749,8 +756,9 @@ def _sample_cameras_and_masks(
     )
 
 
+# TODO: this function can be unified with ImplicitronRayBundle.get_padded_xys
 def _pack_ray_bundle(
-    ray_bundle: RayBundle, camera_ids: torch.Tensor, camera_counts: torch.Tensor
+    ray_bundle: RayBundle, camera_ids: torch.LongTensor, camera_counts: torch.LongTensor
 ) -> HeterogeneousRayBundle:
     """
     Pack the raybundle from [n_cameras, max(rays_per_camera), ...] to
@@ -765,9 +773,11 @@ def _pack_ray_bundle(
     Returns:
         HeterogeneousRayBundle where batch_size=sum(camera_counts) and n_rays_per_image=1
     """
+    # pyre-ignore[9]
     camera_counts = camera_counts.to(ray_bundle.origins.device)
     cumsum = torch.cumsum(camera_counts, dim=0, dtype=torch.long)
-    first_idxs = torch.cat(
+    # pyre-ignore[9]
+    first_idxs: torch.LongTensor = torch.cat(
         (camera_counts.new_zeros((1,), dtype=torch.long), cumsum[:-1])
     )
     num_inputs = int(camera_counts.sum())

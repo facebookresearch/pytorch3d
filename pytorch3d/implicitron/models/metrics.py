@@ -12,7 +12,7 @@ import torch
 from pytorch3d.implicitron.models.renderer.ray_sampler import ImplicitronRayBundle
 from pytorch3d.implicitron.tools import metric_utils as utils
 from pytorch3d.implicitron.tools.config import registry, ReplaceableBase
-from pytorch3d.ops import packed_to_padded, padded_to_packed
+from pytorch3d.ops import padded_to_packed
 from pytorch3d.renderer import utils as rend_utils
 
 from .renderer.base import RendererOutput
@@ -257,20 +257,7 @@ class ViewMetrics(ViewMetricsBase):
         # memory requirements. Instead of having one image for every element in
         # ray_bundle we can than have one image per unique sampled camera.
         if ray_bundle.is_packed():
-            # pyre-ignore[6]
-            cumsum = torch.cumsum(ray_bundle.camera_counts, dim=0, dtype=torch.long)
-            first_idxs = torch.cat(
-                (
-                    # pyre-ignore[16]
-                    ray_bundle.camera_counts.new_zeros((1,), dtype=torch.long),
-                    cumsum[:-1],
-                )
-            )
-            # pyre-ignore[16]
-            num_inputs = int(ray_bundle.camera_counts.sum())
-            # pyre-ignore[6]
-            max_size = int(torch.max(ray_bundle.camera_counts))
-            xys = packed_to_padded(xys, first_idxs, max_size)
+            xys, first_idxs, num_inputs = ray_bundle.get_padded_xys()
 
         # reshape the sampling grid as well
         # TODO: we can get rid of the singular dimension here and in _reshape_nongrid_var
@@ -278,23 +265,26 @@ class ViewMetrics(ViewMetricsBase):
         xys = xys.reshape(xys.shape[0], -1, 1, 2)
 
         # closure with the given xys
-        def sample(tensor, mode):
+        def sample_full(tensor, mode):
             if tensor is None:
                 return tensor
+            return rend_utils.ndc_grid_sample(tensor, xys, mode=mode)
+
+        def sample_packed(tensor, mode):
+            if tensor is None:
+                return tensor
+
+            # select images that corespond to sampled cameras if raybundle is packed
+            tensor = tensor[ray_bundle.camera_ids]
             if ray_bundle.is_packed():
                 # select images that corespond to sampled cameras if raybundle is packed
                 tensor = tensor[ray_bundle.camera_ids]
             result = rend_utils.ndc_grid_sample(tensor, xys, mode=mode)
-            if ray_bundle.is_packed():
-                # Images after sampling are in a form [batch, 3, max_num_rays, 1],
-                # packed_to_padded combines first two dimensions so we need to swap 1st
-                # and 2nd dimension. the result is [n_rays_total_training, 1, 3, 1]
-                # (we use keepdim=True).
-                result = result.transpose(1, 2)
-                result = padded_to_packed(result, first_idxs, num_inputs)[:, None]
-                result = result.transpose(1, 2)
+            return padded_to_packed(result, first_idxs, num_inputs, max_size_dim=2)[
+                :, :, None
+            ]  # the result is [n_rays_total_training, 3, 1, 1]
 
-            return result
+        sample = sample_packed if ray_bundle.is_packed() else sample_full
 
         # eval all results in this size
         image_rgb = sample(image_rgb, mode="bilinear")

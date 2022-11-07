@@ -11,10 +11,11 @@ import dataclasses
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import torch
 from pytorch3d.implicitron.tools.config import ReplaceableBase
+from pytorch3d.ops import packed_to_padded
 
 
 class EvaluationMode(Enum):
@@ -37,26 +38,59 @@ class ImplicitronRayBundle:
     in the respective 1D coordinate systems; see documentation for
     :func:`ray_bundle_to_ray_points` for the conversion formula.
 
-    camera_ids: A tensor of shape (N, ) which indicates which camera
-        was used to sample the rays. `N` is the number of different
-        sampled cameras.
-    camera_counts: A tensor of shape (N, ) which how many times the
-        coresponding camera in `camera_ids` was sampled.
-        `sum(camera_counts)==minibatch`
+    Ray bundle may represent rays from multiple cameras. In that case, cameras
+    are stored in the packed form (i.e. rays from the same camera are stored in
+    the consecutive elements). The following indices will be set:
+        camera_ids: A tensor of shape (N, ) which indicates which camera
+            was used to sample the rays. `N` is the number of different
+            sampled cameras.
+        camera_counts: A tensor of shape (N, ) which how many times the
+            coresponding camera in `camera_ids` was sampled.
+            `sum(camera_counts) == minibatch`, where `minibatch = origins.shape[0]`.
     """
 
     origins: torch.Tensor
     directions: torch.Tensor
     lengths: torch.Tensor
     xys: torch.Tensor
-    camera_ids: Optional[torch.Tensor] = None
-    camera_counts: Optional[torch.Tensor] = None
+    camera_ids: Optional[torch.LongTensor] = None
+    camera_counts: Optional[torch.LongTensor] = None
 
     def is_packed(self) -> bool:
         """
         Returns whether the ImplicitronRayBundle carries data in packed state
         """
         return self.camera_ids is not None and self.camera_counts is not None
+
+    def get_padded_xys(self) -> Tuple[torch.Tensor, torch.LongTensor, int]:
+        """
+        For a packed ray bundle, returns padded rays. Assumes the input bundle is packed
+        (i.e. `camera_ids` and `camera_counts` are set).
+
+        Returns:
+            - xys: Tensor of shape (N, max_size, ...) containing the padded
+                representation of the pixel coordinated;
+                where max_size is max of `camera_counts`. The values for camera id `i`
+                will be copied to `xys[i, :]`, with zeros padding out the extra inputs.
+            - first_idxs: cumulative sum of `camera_counts` defininf the boundaries
+                between cameras in the packed representation
+            - num_inputs: the number of cameras in the bundle.
+        """
+        if not self.is_packed():
+            raise ValueError("get_padded_xys can be called only on a packed bundle")
+
+        camera_counts = self.camera_counts
+        assert camera_counts is not None
+
+        cumsum = torch.cumsum(camera_counts, dim=0, dtype=torch.long)
+        first_idxs = torch.cat(
+            (camera_counts.new_zeros((1,), dtype=torch.long), cumsum[:-1])
+        )
+        num_inputs = camera_counts.sum().item()
+        max_size = torch.max(camera_counts).item()
+        xys = packed_to_padded(self.xys, first_idxs, max_size)
+        # pyre-ignore [7] pytorch typeshed inaccuracy
+        return xys, first_idxs, num_inputs
 
 
 @dataclass

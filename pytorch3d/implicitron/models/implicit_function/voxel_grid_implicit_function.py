@@ -4,6 +4,7 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+import logging
 import math
 import warnings
 from dataclasses import fields
@@ -28,6 +29,9 @@ from pytorch3d.implicitron.tools.config import (
 from pytorch3d.renderer import ray_bundle_to_ray_points
 from pytorch3d.renderer.cameras import CamerasBase
 from pytorch3d.renderer.implicit import HarmonicEmbedding
+
+logger = logging.getLogger(__name__)
+
 
 enable_get_default_args(HarmonicEmbedding)
 
@@ -490,6 +494,11 @@ class VoxelGridImplicitFunction(ImplicitFunctionBase, torch.nn.Module):
         min_indices = tuple(torch.min(non_zero_idxs, dim=0)[0])
         max_indices = tuple(torch.max(non_zero_idxs, dim=0)[0])
         min_point, max_point = points[min_indices], points[max_indices]
+
+        logger.info(
+            f"Cropping at epoch {epoch} to bounding box "
+            f"[{min_point.tolist()}, {max_point.tolist()}]."
+        )
 
         # crop the voxel grids
         self.voxel_grid_density.crop_self(min_point, max_point)

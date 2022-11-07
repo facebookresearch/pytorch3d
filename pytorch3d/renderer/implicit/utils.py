@@ -60,8 +60,8 @@ class HeterogeneousRayBundle:
     directions: torch.Tensor
     lengths: torch.Tensor
     xys: torch.Tensor
-    camera_ids: Optional[torch.Tensor] = None
-    camera_counts: Optional[torch.Tensor] = None
+    camera_ids: Optional[torch.LongTensor] = None
+    camera_counts: Optional[torch.LongTensor] = None
 
 
 def ray_bundle_to_ray_points(

@@ -188,6 +188,16 @@ class TestPackedToPadded(TestCaseMixin, unittest.TestCase):
         # check forward
         self.assertClose(values_packed, values_packed_torch)
 
+        if len(dims) > 0:
+            values_packed_dim2 = padded_to_packed(
+                values.transpose(1, 2),
+                mesh_to_faces_packed_first_idx,
+                num_faces_per_mesh.sum().item(),
+                max_size_dim=2,
+            )
+            # check forward
+            self.assertClose(values_packed_dim2, values_packed_torch)
+
         # check backward
         if len(dims) == 0:
             grad_inputs = torch.rand((num_faces_per_mesh.sum().item()), device=device)

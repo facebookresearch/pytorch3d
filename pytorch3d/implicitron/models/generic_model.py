@@ -9,7 +9,6 @@
 # which are part of implicitron. They ensure that the registry is prepopulated.
 
 import logging
-import math
 import warnings
 from dataclasses import field
 from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING, Union
@@ -29,7 +28,7 @@ from pytorch3d.implicitron.tools.config import (
     registry,
     run_auto_creation,
 )
-from pytorch3d.implicitron.tools.rasterize_mc import rasterize_mc_samples
+from pytorch3d.implicitron.tools.rasterize_mc import rasterize_sparse_ray_bundle
 from pytorch3d.implicitron.tools.utils import cat_dataclass
 from pytorch3d.renderer import utils as rend_utils
 
@@ -502,9 +501,10 @@ class GenericModel(ImplicitronModelBase):  # pyre-ignore: 13
                     preds["images_render"],
                     preds["depths_render"],
                     preds["masks_render"],
-                ) = self._rasterize_mc_samples(
-                    ray_bundle.xys,
+                ) = rasterize_sparse_ray_bundle(
+                    ray_bundle,
                     rendered.features,
+                    (self.render_image_height, self.render_image_width),
                     rendered.depths,
                     masks=rendered.masks,
                 )
@@ -828,61 +828,6 @@ class GenericModel(ImplicitronModelBase):  # pyre-ignore: 13
 
         return image_rgb, fg_mask, depth_map
 
-    @torch.no_grad()
-    def _rasterize_mc_samples(
-        self,
-        xys: torch.Tensor,
-        features: torch.Tensor,
-        depth: torch.Tensor,
-        masks: Optional[torch.Tensor] = None,
-    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        """
-        Rasterizes Monte-Carlo features back onto the image.
-
-        Args:
-            xys: B x ... x 2 2D point locations in PyTorch3D NDC convention
-            features: B x ... x C tensor containing per-point rendered features.
-            depth: B x ... x 1 tensor containing per-point rendered depth.
-        """
-        ba = xys.shape[0]
-
-        # Flatten the features and xy locations.
-        features_depth_ras = torch.cat(
-            (
-                features.reshape(ba, -1, features.shape[-1]),
-                depth.reshape(ba, -1, 1),
-            ),
-            dim=-1,
-        )
-        xys_ras = xys.reshape(ba, -1, 2)
-        if masks is not None:
-            masks_ras = masks.reshape(ba, -1, 1)
-        else:
-            masks_ras = None
-
-        if min(self.render_image_height, self.render_image_width) <= 0:
-            raise ValueError(
-                "Need to specify a positive"
-                " self.render_image_height and self.render_image_width"
-                " for MC rasterisation."
-            )
-
-        # Estimate the rasterization point radius so that we approximately fill
-        # the whole image given the number of rasterized points.
-        pt_radius = 2.0 / math.sqrt(xys.shape[1])
-
-        # Rasterize the samples.
-        features_depth_render, masks_render = rasterize_mc_samples(
-            xys_ras,
-            features_depth_ras,
-            (self.render_image_height, self.render_image_width),
-            radius=pt_radius,
-            masks=masks_ras,
-        )
-        images_render = features_depth_render[:, :-1]
-        depths_render = features_depth_render[:, -1:]
-        return images_render, depths_render, masks_render
-
 
 def _apply_chunked(func, chunk_generator, tensor_collator):
     """
@@ -940,7 +885,7 @@ def _chunk_generator(
 
     def _safe_slice(
         tensor: Optional[torch.Tensor], start_idx: int, end_idx: int
-    ) -> Optional[torch.Tensor]:
+    ) -> Any:
         return tensor[start_idx:end_idx] if tensor is not None else None
 
     for start_idx in iter:

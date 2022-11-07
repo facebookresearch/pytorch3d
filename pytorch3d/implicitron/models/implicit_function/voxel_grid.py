@@ -15,6 +15,7 @@ these classes.
 
 """
 
+import logging
 import warnings
 from collections.abc import Mapping
 from dataclasses import dataclass, field
@@ -33,6 +34,9 @@ from pytorch3d.implicitron.tools.config import (
 from pytorch3d.structures.volumes import VolumeLocator
 
 from .utils import interpolate_line, interpolate_plane, interpolate_volume
+
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -250,6 +254,8 @@ class VoxelGridBase(ReplaceableBase, torch.nn.Module):
                 )
                 for name, shape in wanted_shapes.items()
             }
+            res = self.get_resolution(epoch)
+            logger.info(f"Changed grid resolutiuon at epoch {epoch} to {res}")
         else:
             params = {
                 name: (
@@ -261,6 +267,7 @@ class VoxelGridBase(ReplaceableBase, torch.nn.Module):
                 )
                 for name, tensor in vars(grid_values_with_wanted_resolution).items()
             }
+
         # pyre-ignore[29]
         return self.values_type(**params), True
 
