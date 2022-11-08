@@ -138,7 +138,7 @@ def _get_config_from_experiment_directory(experiment_directory) -> DictConfig:
     cfg_file = os.path.join(experiment_directory, "expconfig.yaml")
     config = OmegaConf.load(cfg_file)
     # pyre-ignore[7]
-    return config
+    return OmegaConf.merge(get_default_args(Experiment), config)
 
 
 def main(argv) -> None:
