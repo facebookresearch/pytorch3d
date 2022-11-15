@@ -1,15 +1,19 @@
-pytorch3d.renderer 
-===========================
+pytorch3d.renderer
+==================
 
 .. toctree::
 
-    rasterizer
+    blending
+    camera_conversions
+    camera_utils
     cameras
+    compositing
+    fisheyecameras
     lighting
     materials
-    texturing
-    blending
-    shading
-    shader
-    renderer
+    splatter_blend
     utils
+    implicit/index
+    mesh/index
+    opengl/index
+    points/index

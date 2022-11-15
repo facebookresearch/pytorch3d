@@ -12,7 +12,6 @@ This script makes the stubs for implicitron in docs/modules.
 from pathlib import Path
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
-DEST_DIR = Path(__file__).resolve().parent / "modules/implicitron"
 
 
 def paths_to_modules(paths):
@@ -95,54 +94,69 @@ def make_directory_index(title: str, directory_path: Path):
             print(f"    {rst.stem}", file=f)
 
 
-iterate_directory(ROOT_DIR / "pytorch3d/implicitron/models", DEST_DIR / "models")
+def do_implicitron():
+    DEST_DIR = Path(__file__).resolve().parent / "modules/implicitron"
 
-unwanted_tools = ["configurable", "depth_cleanup", "utils"]
-tools_sources = sorted(ROOT_DIR.glob("pytorch3d/implicitron/tools/*.py"))
-tools_modules = [
-    str(i.relative_to(ROOT_DIR))[:-3].replace("/", ".")
-    for i in tools_sources
-    if i.stem not in unwanted_tools
-]
-create_one_file(
-    "pytorch3d.implicitron.tools",
-    "Tools for implicitron",
-    tools_modules,
-    DEST_DIR / "tools.rst",
-)
+    iterate_directory(ROOT_DIR / "pytorch3d/implicitron/models", DEST_DIR / "models")
 
-dataset_files = sorted(ROOT_DIR.glob("pytorch3d/implicitron/dataset/*.py"))
-basic_dataset = [
-    "dataset_base",
-    "dataset_map_provider",
-    "data_loader_map_provider",
-    "data_source",
-    "scene_batch_sampler",
-]
-basic_dataset_modules = [f"pytorch3d.implicitron.dataset.{i}" for i in basic_dataset]
-create_one_file(
-    "pytorch3d.implicitron.dataset in general",
-    "Basics of data for implicitron",
-    basic_dataset_modules,
-    DEST_DIR / "data_basics.rst",
-)
+    unwanted_tools = ["configurable", "depth_cleanup", "utils"]
+    tools_sources = sorted(ROOT_DIR.glob("pytorch3d/implicitron/tools/*.py"))
+    tools_modules = [
+        str(i.relative_to(ROOT_DIR))[:-3].replace("/", ".")
+        for i in tools_sources
+        if i.stem not in unwanted_tools
+    ]
+    create_one_file(
+        "pytorch3d.implicitron.tools",
+        "Tools for implicitron",
+        tools_modules,
+        DEST_DIR / "tools.rst",
+    )
 
-specific_dataset_files = [
-    i for i in dataset_files if i.stem.find("_dataset_map_provider") != -1
-]
-create_one_file(
-    "pytorch3d.implicitron.dataset specific datasets",
-    "specific datasets",
-    paths_to_modules(specific_dataset_files),
-    DEST_DIR / "datasets.rst",
-)
+    dataset_files = sorted(ROOT_DIR.glob("pytorch3d/implicitron/dataset/*.py"))
+    basic_dataset = [
+        "dataset_base",
+        "dataset_map_provider",
+        "data_loader_map_provider",
+        "data_source",
+        "scene_batch_sampler",
+    ]
+    basic_dataset_modules = [
+        f"pytorch3d.implicitron.dataset.{i}" for i in basic_dataset
+    ]
+    create_one_file(
+        "pytorch3d.implicitron.dataset in general",
+        "Basics of data for implicitron",
+        basic_dataset_modules,
+        DEST_DIR / "data_basics.rst",
+    )
 
-evaluation_files = sorted(ROOT_DIR.glob("pytorch3d/implicitron/evaluation/*.py"))
-create_one_file(
-    "pytorch3d.implicitron.evaluation",
-    "evaluation",
-    paths_to_modules(evaluation_files),
-    DEST_DIR / "evaluation.rst",
-)
+    specific_dataset_files = [
+        i for i in dataset_files if i.stem.find("_dataset_map_provider") != -1
+    ]
+    create_one_file(
+        "pytorch3d.implicitron.dataset specific datasets",
+        "specific datasets",
+        paths_to_modules(specific_dataset_files),
+        DEST_DIR / "datasets.rst",
+    )
 
-make_directory_index("pytorch3d.implicitron", DEST_DIR)
+    evaluation_files = sorted(ROOT_DIR.glob("pytorch3d/implicitron/evaluation/*.py"))
+    create_one_file(
+        "pytorch3d.implicitron.evaluation",
+        "evaluation",
+        paths_to_modules(evaluation_files),
+        DEST_DIR / "evaluation.rst",
+    )
+
+    make_directory_index("pytorch3d.implicitron", DEST_DIR)
+
+
+def iterate_toplevel_module(name: str) -> None:
+    dest_dir = Path(__file__).resolve().parent / "modules" / name
+    iterate_directory(ROOT_DIR / "pytorch3d" / name, dest_dir)
+
+
+do_implicitron()
+iterate_toplevel_module("renderer")
+iterate_toplevel_module("vis")

@@ -1,9 +1,9 @@
-pytorch3d.renderer.utils
+pytorch3d.vis.plotly_vis
 ========================
 
-utils
+plotly_vis
 
-.. automodule:: pytorch3d.renderer.utils
+.. automodule:: pytorch3d.vis.plotly_vis
     :members:
     :undoc-members:
     :show-inheritance:

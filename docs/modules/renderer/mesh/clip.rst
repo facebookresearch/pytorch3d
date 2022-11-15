@@ -1,9 +1,9 @@
-pytorch3d.renderer.materials
+pytorch3d.renderer.mesh.clip
 ============================
 
-materials
+clip
 
-.. automodule:: pytorch3d.renderer.materials
+.. automodule:: pytorch3d.renderer.mesh.clip
     :members:
     :undoc-members:
     :show-inheritance:
