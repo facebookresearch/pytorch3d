@@ -37,7 +37,6 @@ class TestCubeConfiguration(TestCaseMixin, unittest.TestCase):
         self.assertClose(verts, expected_verts)
         self.assertClose(faces, expected_faces)
 
-        # test C++ implementation
         verts, faces = marching_cubes(volume_data, return_local_coords=False)
         self.assertClose(verts, expected_verts)
         self.assertClose(faces, expected_faces)
@@ -46,7 +45,6 @@ class TestCubeConfiguration(TestCaseMixin, unittest.TestCase):
         volume_data = torch.ones(1, 2, 2, 2)  # (B, W, H, D)
         volume_data[0, 0, 0, 0] = 0
         volume_data = volume_data.permute(0, 3, 2, 1)  # (B, D, H, W)
-        verts, faces = marching_cubes_naive(volume_data, return_local_coords=False)
         expected_verts = torch.tensor(
             [
                 [0.5, 0, 0],
@@ -54,22 +52,21 @@ class TestCubeConfiguration(TestCaseMixin, unittest.TestCase):
                 [0, 0, 0.5],
             ]
         )
-
         expected_faces = torch.tensor([[0, 1, 2]])
+
+        verts, faces = marching_cubes_naive(volume_data, return_local_coords=False)
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
 
-        # test C++ implementation
         verts, faces = marching_cubes(volume_data, return_local_coords=False)
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
 
-        verts, faces = marching_cubes_naive(volume_data, return_local_coords=True)
         expected_verts = convert_to_local(expected_verts, 2)
+        verts, faces = marching_cubes_naive(volume_data, return_local_coords=True)
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
 
-        # test C++ implementation
         verts, faces = marching_cubes(volume_data, return_local_coords=True)
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
@@ -92,7 +89,6 @@ class TestCubeConfiguration(TestCaseMixin, unittest.TestCase):
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
 
-        # test C++ implementation
         verts, faces = marching_cubes(volume_data, return_local_coords=False)
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
@@ -102,7 +98,6 @@ class TestCubeConfiguration(TestCaseMixin, unittest.TestCase):
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
 
-        # test C++ implementation
         verts, faces = marching_cubes(volume_data, return_local_coords=True)
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
@@ -128,7 +123,6 @@ class TestCubeConfiguration(TestCaseMixin, unittest.TestCase):
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
 
-        # test C++ implementation
         verts, faces = marching_cubes(volume_data, return_local_coords=False)
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
@@ -138,7 +132,6 @@ class TestCubeConfiguration(TestCaseMixin, unittest.TestCase):
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
 
-        # test C++ implementation
         verts, faces = marching_cubes(volume_data, return_local_coords=True)
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
@@ -164,7 +157,6 @@ class TestCubeConfiguration(TestCaseMixin, unittest.TestCase):
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
 
-        # test C++ implementation
         verts, faces = marching_cubes(volume_data, return_local_coords=False)
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
@@ -174,7 +166,6 @@ class TestCubeConfiguration(TestCaseMixin, unittest.TestCase):
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
 
-        # test C++ implementation
         verts, faces = marching_cubes(volume_data, return_local_coords=True)
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
@@ -198,7 +189,6 @@ class TestCubeConfiguration(TestCaseMixin, unittest.TestCase):
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
 
-        # test C++ implementation
         verts, faces = marching_cubes(volume_data, return_local_coords=False)
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
@@ -208,7 +198,6 @@ class TestCubeConfiguration(TestCaseMixin, unittest.TestCase):
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
 
-        # test C++ implementation
         verts, faces = marching_cubes(volume_data, return_local_coords=True)
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
@@ -239,7 +228,6 @@ class TestCubeConfiguration(TestCaseMixin, unittest.TestCase):
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
 
-        # test C++ implementation
         verts, faces = marching_cubes(volume_data, return_local_coords=False)
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
@@ -249,7 +237,6 @@ class TestCubeConfiguration(TestCaseMixin, unittest.TestCase):
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
 
-        # test C++ implementation
         verts, faces = marching_cubes(volume_data, return_local_coords=True)
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
@@ -285,7 +272,6 @@ class TestCubeConfiguration(TestCaseMixin, unittest.TestCase):
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
 
-        # test C++ implementation
         verts, faces = marching_cubes(volume_data, return_local_coords=False)
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
@@ -295,7 +281,6 @@ class TestCubeConfiguration(TestCaseMixin, unittest.TestCase):
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
 
-        # test C++ implementation
         verts, faces = marching_cubes(volume_data, return_local_coords=True)
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
@@ -324,7 +309,6 @@ class TestCubeConfiguration(TestCaseMixin, unittest.TestCase):
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
 
-        # test C++ implementation
         verts, faces = marching_cubes(volume_data, return_local_coords=False)
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
@@ -334,7 +318,6 @@ class TestCubeConfiguration(TestCaseMixin, unittest.TestCase):
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
 
-        # test C++ implementation
         verts, faces = marching_cubes(volume_data, return_local_coords=True)
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
@@ -363,7 +346,6 @@ class TestCubeConfiguration(TestCaseMixin, unittest.TestCase):
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
 
-        # test C++ implementation
         verts, faces = marching_cubes(volume_data, return_local_coords=False)
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
@@ -373,7 +355,6 @@ class TestCubeConfiguration(TestCaseMixin, unittest.TestCase):
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
 
-        # test C++ implementation
         verts, faces = marching_cubes(volume_data, return_local_coords=True)
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
@@ -401,7 +382,6 @@ class TestCubeConfiguration(TestCaseMixin, unittest.TestCase):
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
 
-        # test C++ implementation
         verts, faces = marching_cubes(volume_data, return_local_coords=False)
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
@@ -411,7 +391,6 @@ class TestCubeConfiguration(TestCaseMixin, unittest.TestCase):
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
 
-        # test C++ implementation
         verts, faces = marching_cubes(volume_data, return_local_coords=True)
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
@@ -441,7 +420,6 @@ class TestCubeConfiguration(TestCaseMixin, unittest.TestCase):
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
 
-        # test C++ implementation
         verts, faces = marching_cubes(volume_data, return_local_coords=False)
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
@@ -451,7 +429,6 @@ class TestCubeConfiguration(TestCaseMixin, unittest.TestCase):
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
 
-        # test C++ implementation
         verts, faces = marching_cubes(volume_data, return_local_coords=True)
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
@@ -483,7 +460,6 @@ class TestCubeConfiguration(TestCaseMixin, unittest.TestCase):
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
 
-        # test C++ implementation
         verts, faces = marching_cubes(volume_data, return_local_coords=False)
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
@@ -493,7 +469,6 @@ class TestCubeConfiguration(TestCaseMixin, unittest.TestCase):
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
 
-        # test C++ implementation
         verts, faces = marching_cubes(volume_data, return_local_coords=True)
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
@@ -525,7 +500,6 @@ class TestCubeConfiguration(TestCaseMixin, unittest.TestCase):
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
 
-        # test C++ implementation
         verts, faces = marching_cubes(volume_data, return_local_coords=False)
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
@@ -535,7 +509,6 @@ class TestCubeConfiguration(TestCaseMixin, unittest.TestCase):
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
 
-        # test C++ implementation
         verts, faces = marching_cubes(volume_data, return_local_coords=True)
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
@@ -565,7 +538,6 @@ class TestCubeConfiguration(TestCaseMixin, unittest.TestCase):
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
 
-        # test C++ implementation
         verts, faces = marching_cubes(volume_data, return_local_coords=False)
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
@@ -575,7 +547,6 @@ class TestCubeConfiguration(TestCaseMixin, unittest.TestCase):
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
 
-        # test C++ implementation
         verts, faces = marching_cubes(volume_data, return_local_coords=True)
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
@@ -613,7 +584,6 @@ class TestMarchingCubes(TestCaseMixin, unittest.TestCase):
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
 
-        # test C++ implementation
         verts, faces = marching_cubes(volume_data, return_local_coords=False)
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
@@ -624,7 +594,6 @@ class TestMarchingCubes(TestCaseMixin, unittest.TestCase):
         self.assertClose(faces[0], expected_faces)
         self.assertTrue(verts[0].ge(-1).all() and verts[0].le(1).all())
 
-        # test C++ implementation
         verts, faces = marching_cubes(volume_data, return_local_coords=True)
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
@@ -641,8 +610,6 @@ class TestMarchingCubes(TestCaseMixin, unittest.TestCase):
         volume_data[0, 2, 2, 1] = 1
         volume_data[0, 2, 2, 2] = 1
         volume_data = volume_data.permute(0, 3, 2, 1)  # (B, D, H, W)
-        verts, faces = marching_cubes_naive(volume_data, 0.9, return_local_coords=False)
-
         expected_verts = torch.tensor(
             [
                 [1.0000, 0.9000, 1.0000],
@@ -720,11 +687,13 @@ class TestMarchingCubes(TestCaseMixin, unittest.TestCase):
                 [17, 23, 19],
             ]
         )
+        verts, faces = marching_cubes_naive(volume_data, 0.9, return_local_coords=False)
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
 
-        # test C++ implementation
         verts, faces = marching_cubes(volume_data, 0.9, return_local_coords=False)
+        verts2, faces2 = marching_cubes(volume_data, 0.9, return_local_coords=False)
+
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
 
@@ -736,7 +705,6 @@ class TestMarchingCubes(TestCaseMixin, unittest.TestCase):
         # Check all values are in the range [-1, 1]
         self.assertTrue(verts[0].ge(-1).all() and verts[0].le(1).all())
 
-        # test C++ implementation
         verts, faces = marching_cubes(volume_data, 0.9, return_local_coords=True)
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
@@ -803,12 +771,14 @@ class TestMarchingCubes(TestCaseMixin, unittest.TestCase):
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
 
+        verts, faces = marching_cubes(volume_data, 1, return_local_coords=False)
+        self.assertClose(verts[0], expected_verts)
+        self.assertClose(faces[0], expected_faces)
+
         verts, faces = marching_cubes_naive(volume_data, 1, return_local_coords=True)
         expected_verts = convert_to_local(expected_verts, 5)
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
-
-        # Check all values are in the range [-1, 1]
         self.assertTrue(verts[0].ge(-1).all() and verts[0].le(1).all())
 
     def test_sphere(self):
@@ -837,7 +807,6 @@ class TestMarchingCubes(TestCaseMixin, unittest.TestCase):
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
 
-        # test C++ implementation
         verts, faces = marching_cubes(volume, 64, return_local_coords=False)
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
@@ -853,7 +822,6 @@ class TestMarchingCubes(TestCaseMixin, unittest.TestCase):
         # Check all values are in the range [-1, 1]
         self.assertTrue(verts[0].ge(-1).all() and verts[0].le(1).all())
 
-        # test C++ implementation
         verts, faces = marching_cubes(volume, 64, return_local_coords=True)
         self.assertClose(verts[0], expected_verts)
         self.assertClose(faces[0], expected_faces)
@@ -964,7 +932,7 @@ class TestMarchingCubes(TestCaseMixin, unittest.TestCase):
             self.assertClose(surf, surf_c)
 
     def test_ball_example(self):
-        N = 15
+        N = 30
         axis_tensor = torch.arange(0, N)
         X, Y, Z = torch.meshgrid(axis_tensor, axis_tensor, axis_tensor, indexing="ij")
         u = (X - 15) ** 2 + (Y - 15) ** 2 + (Z - 15) ** 2 - 8**2
@@ -975,14 +943,14 @@ class TestMarchingCubes(TestCaseMixin, unittest.TestCase):
         self.assertClose(faces[0], faces2[0])
 
     @staticmethod
-    def marching_cubes_with_init(algo_type: str, batch_size: int, V: int):
-        device = torch.device("cuda:0")
+    def marching_cubes_with_init(algo_type: str, batch_size: int, V: int, device: str):
+        device = torch.device(device)
         volume_data = torch.rand(
             (batch_size, V, V, V), dtype=torch.float32, device=device
         )
         algo_table = {
             "naive": marching_cubes_naive,
-            "cextension": marching_cubes,
+            "extension": marching_cubes,
         }
 
         def convert():

@@ -13,6 +13,7 @@
 #include <unordered_map>
 #include <vector>
 #include "marching_cubes/marching_cubes_utils.h"
+#include "marching_cubes/tables.h"
 
 // Cpu implementation for Marching Cubes
 // Args:
@@ -21,10 +22,11 @@
 //          whether points are within a volume.
 //
 // Returns:
-//    vertices: a float tensor of shape (N, 3) for positions of the mesh
-//    faces: a long tensor of shape (N, 3) for indices of the face vertices
+//    vertices: a float tensor of shape (N_verts, 3) for positions of the mesh
+//    faces: a long tensor of shape (N_faces, 3) for indices of the face
+//    ids: a long tensor of shape (N_verts) as placeholder
 //
-std::tuple<at::Tensor, at::Tensor> MarchingCubesCpu(
+std::tuple<at::Tensor, at::Tensor, at::Tensor> MarchingCubesCpu(
     const at::Tensor& vol,
     const float isolevel) {
   // volume shapes
@@ -48,7 +50,7 @@ std::tuple<at::Tensor, at::Tensor> MarchingCubesCpu(
       for (int x = 0; x < W - 1; x++) {
         Cube cube(x, y, z, vol_a, isolevel);
         // Cube is entirely in/out of the surface
-        if (_FACE_TABLE[cube.cubeindex][0] == -1) {
+        if (_FACE_TABLE[cube.cubeindex][0] == 255) {
           continue;
         }
         // store all boundary vertices that intersect with the edges
@@ -58,7 +60,7 @@ std::tuple<at::Tensor, at::Tensor> MarchingCubesCpu(
         std::vector<Vertex> ps;
 
         // Interpolate the vertices where the surface intersects with the cube
-        for (int j = 0; _FACE_TABLE[cube.cubeindex][j] != -1; j++) {
+        for (int j = 0; _FACE_TABLE[cube.cubeindex][j] != 255; j++) {
           const int e = _FACE_TABLE[cube.cubeindex][j];
           interp_points[e] = cube.VertexInterp(isolevel, e, vol_a);
 
@@ -95,6 +97,7 @@ std::tuple<at::Tensor, at::Tensor> MarchingCubesCpu(
   const int n_vertices = verts.size();
   const int64_t n_faces = (int64_t)faces.size() / 3;
   auto vert_tensor = torch::zeros({n_vertices, 3}, torch::kFloat);
+  auto id_tensor = torch::zeros({n_vertices}, torch::kInt64); // placeholder
   auto face_tensor = torch::zeros({n_faces, 3}, torch::kInt64);
 
   auto vert_a = vert_tensor.accessor<float, 2>();
@@ -111,5 +114,5 @@ std::tuple<at::Tensor, at::Tensor> MarchingCubesCpu(
     face_a[i][2] = faces.at(i * 3 + 2);
   }
 
-  return std::make_tuple(vert_tensor, face_tensor);
+  return std::make_tuple(vert_tensor, face_tensor, id_tensor);
 }

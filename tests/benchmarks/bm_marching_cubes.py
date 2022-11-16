@@ -14,10 +14,11 @@ def bm_marching_cubes() -> None:
     case_grid = {
         "algo_type": [
             "naive",
-            "cextension",
+            "extension",
         ],
-        "batch_size": [1, 5, 20],
-        "V": [5, 10, 20],
+        "batch_size": [1, 2],
+        "V": [5, 10, 20, 100, 512],
+        "device": ["cpu", "cuda:0"],
     }
     test_cases = itertools.product(*case_grid.values())
     kwargs_list = [dict(zip(case_grid.keys(), case)) for case in test_cases]
