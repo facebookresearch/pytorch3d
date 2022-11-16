@@ -122,45 +122,24 @@ struct Cube {
     return p1 * (1 - ratio) + p2 * ratio;
   }
 
-  // Get a tuple of global vertex ID from a local edge ID
-  // Global vertex ID is calculated as (x + dx) + (y + dy) * W + (z + dz) * W *
-  // H
-
+  // Hash an edge into a global edge_id. The function binds an
+  // edge with an integer to address floating point precision issue.
+  //
   // Args:
-  //     edge: local edge ID in the cube
-  //     W: width of x dimension
-  //     H: height of y dimension
+  //    v1_id: global id of vertex 1
+  //    v2_id: global id of vertex 2
+  //    W: width of the 3d grid
+  //    H: height of the 3d grid
+  //    D: depth of the 3d grid
   //
   // Returns:
-  //     a pair of global vertex ID
+  //    hashing for a pair of vertex ids
   //
-  std::pair<int, int> GetVPairFromEdge(const int edge, int W, int H) {
+  int64_t HashVpair(const int edge, int W, int H, int D) {
     const int v1 = _EDGE_TO_VERTICES[edge][0];
     const int v2 = _EDGE_TO_VERTICES[edge][1];
     const int v1_id = p[v1].x + p[v1].y * W + p[v1].z * W * H;
     const int v2_id = p[v2].x + p[v2].y * W + p[v2].z * W * H;
-    return std::make_pair(v1_id, v2_id);
+    return (int64_t)v1_id * (W + W * H + W * H * D) + (int64_t)v2_id;
   }
 };
-
-// helper functions for hashing
-namespace std {
-// Taken from boost library to combine several hash functions
-template <class T>
-inline void hash_combine(size_t& s, const T& v) {
-  std::hash<T> h;
-  s ^= h(v) + 0x9e3779b9 + (s << 6) + (s >> 2);
-}
-
-// Function for hashing a pair of vertices
-template <>
-struct hash<std::pair<int, int>> {
-  size_t operator()(const std::pair<int, int>& p) const {
-    size_t res = 0;
-    hash_combine(res, p.first);
-    hash_combine(res, p.second);
-    return res;
-  }
-};
-
-} // namespace std

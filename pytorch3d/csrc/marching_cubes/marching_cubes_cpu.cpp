@@ -36,8 +36,6 @@ std::tuple<at::Tensor, at::Tensor, at::Tensor> MarchingCubesCpu(
 
   // Create tensor accessors
   auto vol_a = vol.accessor<float, 3>();
-  // vpair_to_edge maps a pair of vertex ids to its corresponding edge id
-  std::unordered_map<std::pair<int, int>, int64_t> vpair_to_edge;
   // edge_id_to_v maps from an edge id to a vertex position
   std::unordered_map<int64_t, Vertex> edge_id_to_v;
   // uniq_edge_id: used to remove redundant edge ids
@@ -64,12 +62,7 @@ std::tuple<at::Tensor, at::Tensor, at::Tensor> MarchingCubesCpu(
           const int e = _FACE_TABLE[cube.cubeindex][j];
           interp_points[e] = cube.VertexInterp(isolevel, e, vol_a);
 
-          auto vpair = cube.GetVPairFromEdge(e, W, H);
-          if (!vpair_to_edge.count(vpair)) {
-            vpair_to_edge[vpair] = vpair_to_edge.size();
-          }
-
-          int64_t edge = vpair_to_edge[vpair];
+          int64_t edge = cube.HashVpair(e, W, H, D);
           tri.push_back(edge);
           ps.push_back(interp_points[e]);
 
