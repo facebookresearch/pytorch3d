@@ -446,6 +446,7 @@ class TestConfig(unittest.TestCase):
             b2: Optional[B]
             b3: Optional[B]
             b2_enabled: bool = True
+            b3_enabled: bool = False
 
             def __post_init__(self):
                 run_auto_creation(self)
@@ -681,9 +682,10 @@ class TestConfig(unittest.TestCase):
     def test_remove_unused_components_optional(self):
         class MainTestWrapper(Configurable):
             mt: Optional[MainTest]
+            mt_enabled: bool = False
 
         args = get_default_args(MainTestWrapper)
-        self.assertEqual(list(args.keys()), ["mt_args", "mt_enabled"])
+        self.assertEqual(list(args.keys()), ["mt_enabled", "mt_args"])
         remove_unused_components(args)
         self.assertEqual(OmegaConf.to_yaml(args), "mt_enabled: false\n")
 
@@ -775,6 +777,7 @@ class TestConfig(unittest.TestCase):
                 boring_o: Optional[BoringConfigurable]
                 boring_o_enabled: bool = True
                 boring_0: Optional[BoringConfigurable]
+                boring_0_enabled: bool = False
 
                 def __post_init__(self):
                     run_auto_creation(self)

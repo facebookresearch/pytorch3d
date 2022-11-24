@@ -783,16 +783,16 @@ def expand_args_fields(
     Similarly, replace,
 
         x: Optional[X]
+        x_enabled: bool = ...
 
     and optionally
 
         def create_x(self):...
-        x_enabled: bool = ...
 
     with
 
         x_args: dict = dataclasses.field(default_factory=lambda: get_default_args(X))
-        x_enabled: bool = False
+        x_enabled: bool = ...
         def create_x(self):
             self.create_x_impl(self.x_enabled, self.x_args)
 
@@ -1091,8 +1091,10 @@ def _process_member(
         if process_type == _ProcessType.OPTIONAL_CONFIGURABLE:
             enabled_name = name + ENABLED_SUFFIX
             if enabled_name not in some_class.__annotations__:
-                some_class.__annotations__[enabled_name] = bool
-                setattr(some_class, enabled_name, False)
+                raise ValueError(
+                    f"{name} is an Optional[{type_.__name__}] member "
+                    f"but there is no corresponding member {enabled_name}."
+                )
 
     creation_function_name = f"{CREATE_PREFIX}{name}"
     if not hasattr(some_class, creation_function_name):
