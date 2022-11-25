@@ -141,7 +141,7 @@ def _get_config_from_experiment_directory(experiment_directory) -> DictConfig:
     return OmegaConf.merge(get_default_args(Experiment), config)
 
 
-def main(argv) -> None:
+def main(argv=sys.argv) -> None:
     # automatically parses arguments of visualize_reconstruction
     cfg = OmegaConf.create(get_default_args(visualize_reconstruction))
     cfg.update(OmegaConf.from_cli(argv))
@@ -150,4 +150,4 @@ def main(argv) -> None:
 
 
 if __name__ == "__main__":
-    main(sys.argv)
+    main()
