@@ -304,7 +304,7 @@ class ImplicitronOptimizerFactory(OptimizerFactoryBase):
             for name, param in module.named_parameters(recurse=False):
                 if param.requires_grad:
                     group_name = mapping.get(name, default_group)
-                    logger.info(f"Assigning {name} to param_group {group_name}")
+                    logger.debug(f"Assigning {name} to param_group {group_name}")
                     param_groups[group_name].append(param)
 
             # If children have defined default param group then use it else pass
