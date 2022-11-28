@@ -111,8 +111,10 @@ CUDA support will be included if CUDA is available in pytorch or if the environm
 
 ### 1. Install from GitHub
 ```
-pip install "git+https://github.com/facebookresearch/pytorch3d.git"
+TORCH_CUDA_ARCH_LIST="8.0;8.6+PTX" 
+FORCE_CUDA=1 pip install "git+https://github.com/facebookresearch/pytorch3d.git"
 ```
+Update TORCH_CUDA_ARCH_LIST according to your device.
 To install using the code of the released version instead of from the main branch, use the following instead.
 ```
 pip install "git+https://github.com/facebookresearch/pytorch3d.git@stable"
@@ -128,10 +130,12 @@ MACOSX_DEPLOYMENT_TARGET=10.14 CC=clang CXX=clang++ pip install "git+https://git
 
 ### 2. Install from a local clone
 ```
+TORCH_CUDA_ARCH_LIST="8.0;8.6+PTX" 
 git clone https://github.com/facebookresearch/pytorch3d.git
-cd pytorch3d && pip install -e .
+cd pytorch3d && FORCE_CUDA=1 pip install -e .
 ```
-To rebuild after installing from a local clone run, `rm -rf build/ **/*.so` then `pip install -e .`. You often need to rebuild pytorch3d after reinstalling PyTorch. For CUDA builds with versions earlier than CUDA 11, set `CUB_HOME` before building as described above.
+Update TORCH_CUDA_ARCH_LIST according to your device
+To rebuild after installing from a local clone run, `rm -rf build/ **/*.so` then `FORCE_CUDA=1 pip install -e .`. You often need to rebuild pytorch3d after reinstalling PyTorch. For CUDA builds with versions earlier than CUDA 11, set `CUB_HOME` before building as described above.
 
 **Install from local clone on macOS:**
 ```
