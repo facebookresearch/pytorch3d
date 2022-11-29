@@ -1067,33 +1067,33 @@ def load_ply(
     is to use the IO.load_mesh and IO.load_pointcloud functions,
     which can read more of the data.
 
-    Example .ply file format:
+    Example .ply file format::
 
-    ply
-    format ascii 1.0           { ascii/binary, format version number }
-    comment made by Greg Turk  { comments keyword specified, like all lines }
-    comment this file is a cube
-    element vertex 8           { define "vertex" element, 8 of them in file }
-    property float x           { vertex contains float "x" coordinate }
-    property float y           { y coordinate is also a vertex property }
-    property float z           { z coordinate, too }
-    element face 6             { there are 6 "face" elements in the file }
-    property list uchar int vertex_index { "vertex_indices" is a list of ints }
-    end_header                 { delimits the end of the header }
-    0 0 0                      { start of vertex list }
-    0 0 1
-    0 1 1
-    0 1 0
-    1 0 0
-    1 0 1
-    1 1 1
-    1 1 0
-    4 0 1 2 3                  { start of face list }
-    4 7 6 5 4
-    4 0 4 5 1
-    4 1 5 6 2
-    4 2 6 7 3
-    4 3 7 4 0
+        ply
+        format ascii 1.0           { ascii/binary, format version number }
+        comment made by Greg Turk  { comments keyword specified, like all lines }
+        comment this file is a cube
+        element vertex 8           { define "vertex" element, 8 of them in file }
+        property float x           { vertex contains float "x" coordinate }
+        property float y           { y coordinate is also a vertex property }
+        property float z           { z coordinate, too }
+        element face 6             { there are 6 "face" elements in the file }
+        property list uchar int vertex_index { "vertex_indices" is a list of ints }
+        end_header                 { delimits the end of the header }
+        0 0 0                      { start of vertex list }
+        0 0 1
+        0 1 1
+        0 1 0
+        1 0 0
+        1 0 1
+        1 1 1
+        1 1 0
+        4 0 1 2 3                  { start of face list }
+        4 7 6 5 4
+        4 0 4 5 1
+        4 1 5 6 2
+        4 2 6 7 3
+        4 3 7 4 0
 
     Args:
         f:  A binary or text file-like object (with methods read, readline,

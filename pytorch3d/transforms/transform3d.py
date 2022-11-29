@@ -256,12 +256,12 @@ class Transform3d:
 
         The conversion from the 4x4 SE(3) matrix `transform` to the
         6D representation `log_transform = [log_translation | log_rotation]`
-        is done as follows:
-            ```
+        is done as follows::
+
             log_transform = log(transform.get_matrix())
             log_translation = log_transform[3, :3]
             log_rotation = inv_hat(log_transform[:3, :3])
-            ```
+
         where `log` is the matrix logarithm
         and `inv_hat` is the inverse of the Hat operator [2].
 

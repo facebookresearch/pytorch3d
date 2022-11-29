@@ -73,13 +73,13 @@ def ray_bundle_to_ray_points(
     extending each ray according to the corresponding length.
 
     E.g. for 2 dimensional tensors `ray_bundle.origins`, `ray_bundle.directions`
-        and `ray_bundle.lengths`, the ray point at position `[i, j]` is:
-        ```
+        and `ray_bundle.lengths`, the ray point at position `[i, j]` is::
+
             ray_bundle.points[i, j, :] = (
                 ray_bundle.origins[i, :]
                 + ray_bundle.directions[i, :] * ray_bundle.lengths[i, j]
             )
-        ```
+
     Note that both the directions and magnitudes of the vectors in
     `ray_bundle.directions` matter.
 
@@ -109,13 +109,13 @@ def ray_bundle_variables_to_ray_points(
     ray length:
 
     E.g. for 2 dimensional input tensors `rays_origins`, `rays_directions`
-    and `rays_lengths`, the ray point at position `[i, j]` is:
-        ```
+    and `rays_lengths`, the ray point at position `[i, j]` is::
+
             rays_points[i, j, :] = (
                 rays_origins[i, :]
                 + rays_directions[i, :] * rays_lengths[i, j]
             )
-        ```
+
     Note that both the directions and magnitudes of the vectors in
     `rays_directions` matter.
 

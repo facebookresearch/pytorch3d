@@ -11,7 +11,6 @@ Proper Python support for pytorch requires creating a torch.autograd.function
 here and a torch.nn.Module is exposed for the use in more complex models.
 """
 import logging
-import math
 import warnings
 from typing import Optional, Tuple, Union
 

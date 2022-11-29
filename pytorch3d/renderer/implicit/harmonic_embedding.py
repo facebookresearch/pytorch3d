@@ -21,8 +21,8 @@ class HarmonicEmbedding(torch.nn.Module):
         (i.e. vector along the last dimension) in `x`
         into a series of harmonic features `embedding`,
         where for each i in range(dim) the following are present
-        in embedding[...]:
-            ```
+        in embedding[...]::
+
             [
                 sin(f_1*x[..., i]),
                 sin(f_2*x[..., i]),
@@ -34,7 +34,7 @@ class HarmonicEmbedding(torch.nn.Module):
                 cos(f_N * x[..., i]),
                 x[..., i],              # only present if append_input is True.
             ]
-            ```
+
         where N corresponds to `n_harmonic_functions-1`, and f_i is a scalar
         denoting the i-th frequency of the harmonic embedding.
 

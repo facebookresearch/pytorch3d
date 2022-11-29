@@ -35,10 +35,10 @@ def cameras_from_opencv_projection(
     to the NDC screen convention of PyTorch3D.
 
     More specifically, the OpenCV convention projects points to the OpenCV screen
-    space as follows:
-        ```
+    space as follows::
+
         x_screen_opencv = camera_matrix @ (R @ x_world + tvec)
-        ```
+
     followed by the homogenization of `x_screen_opencv`.
 
     Note:

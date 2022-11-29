@@ -208,8 +208,8 @@ def add_pointclouds_to_volumes(
     of `initial_volumes` with its `features` and `densities` updated with the
     result of the pointcloud addition.
 
-    Example:
-        ```
+    Example::
+
         # init a random point cloud
         pointclouds = Pointclouds(
             points=torch.randn(4, 100, 3), features=torch.rand(4, 100, 5)
@@ -229,7 +229,6 @@ def add_pointclouds_to_volumes(
             initial_volumes=initial_volumes,
             mode="trilinear",
         )
-        ```
 
     Args:
         pointclouds: Batch of 3D pointclouds represented with a `Pointclouds`

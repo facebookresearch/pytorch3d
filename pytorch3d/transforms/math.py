@@ -22,18 +22,17 @@ def acos_linear_extrapolation(
     domain of `(-1, 1)`. This allows for stable backpropagation in case `x`
     is not guaranteed to be strictly within `(-1, 1)`.
 
-    More specifically:
-    ```
-    bounds=(lower_bound, upper_bound)
-    if lower_bound <= x <= upper_bound:
-        acos_linear_extrapolation(x) = acos(x)
-    elif x <= lower_bound: # 1st order Taylor approximation
-        acos_linear_extrapolation(x)
-            = acos(lower_bound) + dacos/dx(lower_bound) * (x - lower_bound)
-    else:  # x >= upper_bound
-        acos_linear_extrapolation(x)
-            = acos(upper_bound) + dacos/dx(upper_bound) * (x - upper_bound)
-    ```
+    More specifically::
+
+        bounds=(lower_bound, upper_bound)
+        if lower_bound <= x <= upper_bound:
+            acos_linear_extrapolation(x) = acos(x)
+        elif x <= lower_bound: # 1st order Taylor approximation
+            acos_linear_extrapolation(x)
+                = acos(lower_bound) + dacos/dx(lower_bound) * (x - lower_bound)
+        else:  # x >= upper_bound
+            acos_linear_extrapolation(x)
+                = acos(upper_bound) + dacos/dx(upper_bound) * (x - upper_bound)
 
     Args:
         x: Input `Tensor`.

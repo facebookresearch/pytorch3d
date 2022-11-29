@@ -285,26 +285,26 @@ class _DeviceContextStore:
 
     The EGL/CUDA contexts are not meant to be created and destroyed all the time,
     and having multiple on a single device can be troublesome. Intended use is entirely
-    transparent to the user:
+    transparent to the user::
 
-    ```
-    rasterizer1 = MeshRasterizerOpenGL(...some args...)
-    mesh1 = load_mesh_on_cuda_0()
+        rasterizer1 = MeshRasterizerOpenGL(...some args...)
+        mesh1 = load_mesh_on_cuda_0()
 
-    # Now rasterizer1 will request EGL/CUDA contexts from global_device_context_store
-    # on cuda:0, and since there aren't any, the store will create new ones.
-    rasterizer1.rasterize(mesh1)
+        # Now rasterizer1 will request EGL/CUDA contexts from
+        # global_device_context_store on cuda:0, and since there aren't any, the
+        # store will create new ones.
+        rasterizer1.rasterize(mesh1)
 
-    # rasterizer2 also needs EGL & CUDA contexts. But global_context_store already has
-    # them for cuda:0. Instead of creating new contexts, the store will tell rasterizer2
-    # to use them.
-    rasterizer2 = MeshRasterizerOpenGL(dcs)
-    rasterize2.rasterize(mesh1)
+        # rasterizer2 also needs EGL & CUDA contexts. But global_context_store
+        # already has them for cuda:0. Instead of creating new contexts, the store
+        # will tell rasterizer2 to use them.
+        rasterizer2 = MeshRasterizerOpenGL(dcs)
+        rasterize2.rasterize(mesh1)
 
-    # When rasterizer1 needs to render on cuda:1, the store will create new contexts.
-    mesh2 = load_mesh_on_cuda_1()
-    rasterizer1.rasterize(mesh2)
-    ```
+        # When rasterizer1 needs to render on cuda:1, the store will create new contexts.
+        mesh2 = load_mesh_on_cuda_1()
+        rasterizer1.rasterize(mesh2)
+
     """
 
     def __init__(self):

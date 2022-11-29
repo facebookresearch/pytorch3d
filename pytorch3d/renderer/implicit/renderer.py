@@ -41,13 +41,13 @@ class ImplicitRenderer(torch.nn.Module):
     as well as the `volumetric_function` `Callable`, which defines a field of opacity
     and feature vectors over the 3D domain of the scene.
 
-    A standard `volumetric_function` has the following signature:
-    ```
-    def volumetric_function(
-        ray_bundle: Union[RayBundle, HeterogeneousRayBundle],
-        **kwargs,
-    ) -> Tuple[torch.Tensor, torch.Tensor]
-    ```
+    A standard `volumetric_function` has the following signature::
+
+        def volumetric_function(
+            ray_bundle: Union[RayBundle, HeterogeneousRayBundle],
+            **kwargs,
+        ) -> Tuple[torch.Tensor, torch.Tensor]
+
     With the following arguments:
         `ray_bundle`: A RayBundle or HeterogeneousRayBundle object
             containing the following variables:
@@ -79,32 +79,32 @@ class ImplicitRenderer(torch.nn.Module):
 
     Example:
         A simple volumetric function of a 0-centered
-        RGB sphere with a unit diameter is defined as follows:
-        ```
-        def volumetric_function(
-            ray_bundle: Union[RayBundle, HeterogeneousRayBundle],
-            **kwargs,
-        ) -> Tuple[torch.Tensor, torch.Tensor]:
+        RGB sphere with a unit diameter is defined as follows::
 
-            # first convert the ray origins, directions and lengths
-            # to 3D ray point locations in world coords
-            rays_points_world = ray_bundle_to_ray_points(ray_bundle)
+            def volumetric_function(
+                ray_bundle: Union[RayBundle, HeterogeneousRayBundle],
+                **kwargs,
+            ) -> Tuple[torch.Tensor, torch.Tensor]:
 
-            # set the densities as an inverse sigmoid of the
-            # ray point distance from the sphere centroid
-            rays_densities = torch.sigmoid(
-                -100.0 * rays_points_world.norm(dim=-1, keepdim=True)
-            )
+                # first convert the ray origins, directions and lengths
+                # to 3D ray point locations in world coords
+                rays_points_world = ray_bundle_to_ray_points(ray_bundle)
 
-            # set the ray features to RGB colors proportional
-            # to the 3D location of the projection of ray points
-            # on the sphere surface
-            rays_features = torch.nn.functional.normalize(
-                rays_points_world, dim=-1
-            ) * 0.5 + 0.5
+                # set the densities as an inverse sigmoid of the
+                # ray point distance from the sphere centroid
+                rays_densities = torch.sigmoid(
+                    -100.0 * rays_points_world.norm(dim=-1, keepdim=True)
+                )
 
-            return rays_densities, rays_features
-        ```
+                # set the ray features to RGB colors proportional
+                # to the 3D location of the projection of ray points
+                # on the sphere surface
+                rays_features = torch.nn.functional.normalize(
+                    rays_points_world, dim=-1
+                ) * 0.5 + 0.5
+
+                return rays_densities, rays_features
+
     """
 
     def __init__(self, raysampler: Callable, raymarcher: Callable) -> None:

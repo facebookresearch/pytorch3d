@@ -32,23 +32,22 @@ class MultinomialRaysampler(torch.nn.Module):
     have uniformly-spaced z-coordinates between a predefined
     minimum and maximum depth.
 
-    The raysampler first generates a 3D coordinate grid of the following form:
-    ```
-       / min_x, min_y, max_depth -------------- / max_x, min_y, max_depth
-      /                                        /|
-     /                                        / |     ^
-    / min_depth                    min_depth /  |     |
-    min_x ----------------------------- max_x   |     | image
-    min_y                               min_y   |     | height
-    |                                       |   |     |
-    |                                       |   |     v
-    |                                       |   |
-    |                                       |   / max_x, max_y,     ^
-    |                                       |  /  max_depth        /
-    min_x                               max_y /                   / n_pts_per_ray
-    max_y ----------------------------- max_x/ min_depth         v
-              < --- image_width --- >
-    ```
+    The raysampler first generates a 3D coordinate grid of the following form::
+
+           / min_x, min_y, max_depth -------------- / max_x, min_y, max_depth
+          /                                        /|
+         /                                        / |     ^
+        / min_depth                    min_depth /  |     |
+        min_x ----------------------------- max_x   |     | image
+        min_y                               min_y   |     | height
+        |                                       |   |     |
+        |                                       |   |     v
+        |                                       |   |
+        |                                       |   / max_x, max_y,     ^
+        |                                       |  /  max_depth        /
+        min_x                               max_y /                   / n_pts_per_ray
+        max_y ----------------------------- max_x/ min_depth         v
+                < --- image_width --- >
 
     In order to generate ray points, `MultinomialRaysampler` takes each 3D point of
     the grid (with coordinates `[x, y, depth]`) and unprojects it

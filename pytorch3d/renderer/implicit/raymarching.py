@@ -25,20 +25,20 @@ class EmissionAbsorptionRaymarcher(torch.nn.Module):
     (i.e. its density -> 1.0).
 
     EA first utilizes `rays_densities` to compute the absorption function
-    along each ray as follows:
-        ```
+    along each ray as follows::
+
         absorption = cumprod(1 - rays_densities, dim=-1)
-        ```
+
     The value of absorption at position `absorption[..., k]` specifies
     how much light has reached `k`-th point along a ray since starting
     its trajectory at `k=0`-th point.
 
     Each ray is then rendered into a tensor `features` of shape `(..., feature_dim)`
-    by taking a weighed combination of per-ray features `rays_features` as follows:
-        ```
+    by taking a weighed combination of per-ray features `rays_features` as follows::
+
         weights = absorption * rays_densities
         features = (rays_features * weights).sum(dim=-2)
-        ```
+
     Where `weights` denote a function that has a strong peak around the location
     of the first surface point that a given ray passes through.
 

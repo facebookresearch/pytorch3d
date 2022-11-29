@@ -25,19 +25,16 @@ This module has the master functions for loading and saving data.
 The main usage is via the IO object, and its methods
 `load_mesh`, `save_mesh`, `load_pointcloud` and `save_pointcloud`.
 
-For example, to load a mesh you might do
-```
-from pytorch3d.io import IO
+For example, to load a mesh you might do::
 
-mesh = IO().load_mesh("mymesh.obj")
-```
+    from pytorch3d.io import IO
 
-and to save a point cloud you might do
+    mesh = IO().load_mesh("mymesh.obj")
 
-```
-pcl = Pointclouds(...)
-IO().save_pointcloud(pcl, "output_pointcloud.obj")
-```
+and to save a point cloud you might do::
+
+    pcl = Pointclouds(...)
+    IO().save_pointcloud(pcl, "output_pointcloud.obj")
 
 """
 

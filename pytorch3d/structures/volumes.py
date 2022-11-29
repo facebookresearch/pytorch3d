@@ -97,12 +97,12 @@ class Volumes:
               in the world coordinates.
             - They are specified with the following mapping that converts
               points `x_local` in the local coordinates to points `x_world`
-              in the world coordinates:
-                ```
-                x_world = (
-                    x_local * (volume_size - 1) * 0.5 * voxel_size
-                ) - volume_translation,
-                ```
+              in the world coordinates::
+
+                    x_world = (
+                        x_local * (volume_size - 1) * 0.5 * voxel_size
+                    ) - volume_translation,
+
               here `voxel_size` specifies the size of each voxel of the volume,
               and `volume_translation` is the 3D offset of the central voxel of
               the volume w.r.t. the origin of the world coordinate frame.
@@ -110,12 +110,12 @@ class Volumes:
               the world coordinate units. `volume_size` is the spatial size of
               the volume in form of a 3D vector `[width, height, depth]`.
             - Given the above definition of `x_world`, one can derive the
-              inverse mapping from `x_world` to `x_local` as follows:
-                ```
-                x_local = (
-                    (x_world + volume_translation) / (0.5 * voxel_size)
-                ) / (volume_size - 1)
-                ```
+              inverse mapping from `x_world` to `x_local` as follows::
+
+                    x_local = (
+                        (x_world + volume_translation) / (0.5 * voxel_size)
+                    ) / (volume_size - 1)
+
             - For a trivial volume with `volume_translation==[0, 0, 0]`
               with `voxel_size=-1`, `x_world` would range
               from -(volume_size-1)/2` to `+(volume_size-1)/2`.
@@ -139,13 +139,13 @@ class Volumes:
           to `x_local=(-1, 0, 1)`.
         - For a "trivial" volume `v` with `voxel_size = 1.`,
           `volume_translation=[0., 0., 0.]`, the following holds:
-            ```
-            torch.nn.functional.grid_sample(
-                v.densities(),
-                v.get_coord_grid(world_coordinates=False),
-                align_corners=True,
-            ) == v.densities(),
-            ```
+
+                torch.nn.functional.grid_sample(
+                    v.densities(),
+                    v.get_coord_grid(world_coordinates=False),
+                    align_corners=True,
+                ) == v.densities(),
+
             i.e. sampling the volume at trivial local coordinates
             (no scaling with `voxel_size`` or shift with `volume_translation`)
             results in the same volume.
@@ -588,12 +588,12 @@ class VolumeLocator:
               in the world coordinates.
             - They are specified with the following mapping that converts
               points `x_local` in the local coordinates to points `x_world`
-              in the world coordinates:
-                ```
-                x_world = (
-                    x_local * (volume_size - 1) * 0.5 * voxel_size
-                ) - volume_translation,
-                ```
+              in the world coordinates::
+
+                    x_world = (
+                        x_local * (volume_size - 1) * 0.5 * voxel_size
+                    ) - volume_translation,
+
               here `voxel_size` specifies the size of each voxel of the volume,
               and `volume_translation` is the 3D offset of the central voxel of
               the volume w.r.t. the origin of the world coordinate frame.
@@ -601,12 +601,12 @@ class VolumeLocator:
               the world coordinate units. `volume_size` is the spatial size of
               the volume in form of a 3D vector `[width, height, depth]`.
             - Given the above definition of `x_world`, one can derive the
-              inverse mapping from `x_world` to `x_local` as follows:
-                ```
-                x_local = (
-                    (x_world + volume_translation) / (0.5 * voxel_size)
-                ) / (volume_size - 1)
-                ```
+              inverse mapping from `x_world` to `x_local` as follows::
+
+                    x_local = (
+                        (x_world + volume_translation) / (0.5 * voxel_size)
+                    ) / (volume_size - 1)
+
             - For a trivial volume with `volume_translation==[0, 0, 0]`
               with `voxel_size=-1`, `x_world` would range
               from -(volume_size-1)/2` to `+(volume_size-1)/2`.
@@ -629,14 +629,14 @@ class VolumeLocator:
           `DxHxW = 5x5x5`, the point `x_world = (-2, 0, 2)` gets mapped
           to `x_local=(-1, 0, 1)`.
         - For a "trivial" volume `v` with `voxel_size = 1.`,
-          `volume_translation=[0., 0., 0.]`, the following holds:
-            ```
-            torch.nn.functional.grid_sample(
-                v.densities(),
-                v.get_coord_grid(world_coordinates=False),
-                align_corners=True,
-            ) == v.densities(),
-            ```
+          `volume_translation=[0., 0., 0.]`, the following holds::
+
+                torch.nn.functional.grid_sample(
+                    v.densities(),
+                    v.get_coord_grid(world_coordinates=False),
+                    align_corners=True,
+                ) == v.densities(),
+
             i.e. sampling the volume at trivial local coordinates
             (no scaling with `voxel_size`` or shift with `volume_translation`)
             results in the same volume.
