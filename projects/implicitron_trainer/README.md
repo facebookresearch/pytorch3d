@@ -33,6 +33,7 @@ pip install "hydra-core>=1.1" visdom lpips matplotlib accelerate
 Runner executable is available as `pytorch3d_implicitron_runner` shell command.
 See [Running](#running) section below for examples of training and evaluation commands.
 
+
 ## [Option 2] Supporting custom implementations
 
 To plug in custom implementations, for example, of renderer or implicit-function protocols, you need to create your own runner script and import the plug-in implementations there.
@@ -55,11 +56,31 @@ pip install "hydra-core>=1.1" visdom lpips matplotlib accelerate
 You are still encouraged to implement custom plugins as above where possible as it makes reusing the code easier.
 The executable is located in `pytorch3d/projects/implicitron_trainer`.
 
+> **_NOTE:_**  Both `pytorch3d_implicitron_runner` and `pytorch3d_implicitron_visualizer`
+executables (mentioned below) are not available when using local clone.
+Instead users should use the python scripts `experiment.py` and `visualize_reconstruction.py` (see the [Running](Running) section below).
+
 
 # Running
 
-This section assumes that you use the executable provided by the installed package.
-If you have a custom `experiment.py` script (as in the Option 2 above), replace the executable with the path to your script.
+This section assumes that you use the executable provided by the installed package
+(Option 1 / Option 2 in [#Installation](Installation) above),
+i.e. `pytorch3d_implicitron_runner` and `pytorch3d_implicitron_visualizer` are available.
+
+> **_NOTE:_**  If the executables are not available (e.g. when using a local clone - Option 3 in [#Installation](Installation)),
+users should directly use the `experiment.py` and `visualize_reconstruction.py` python scripts
+which correspond to the executables as follows:
+- `pytorch3d_implicitron_runner` corresponds to `<pytorch3d_root>/projects/implicitron_trainer/experiment.py`
+- `pytorch3d_implicitron_visualizer` corresponds to `<pytorch3d_root>/projects/implicitron_trainer/visualize_reconstruction.py`
+
+For instance, in order to directly execute training with the python script, users can call:
+```shell
+cd <pytorch3d_root>/projects/ \
+python -m implicitron_trainer.experiment <args>`
+```
+
+If you have a custom `experiment.py` or `visualize_reconstruction.py` script
+(as in the Option 2 [above](#Installation)), replace the executable with the path to your script.
 
 ## Training
 
@@ -80,6 +101,13 @@ and `<CHECKPOINT_DIR>` with a directory where checkpoints will be dumped during 
 Other configuration parameters can be overridden in the same way.
 See [Configuration system](#configuration-system) section for more information on this.
 
+### Visdom logging
+
+Note that the training script logs its progress to Visdom. Make sure to start a visdom server before the training commences:
+```
+python -m visdom.server
+```
+> In case a Visdom server is not started, the console will get flooded with `requests.exceptions.ConnectionError` errors signalling that a Visdom server is not available. Note that these errors <b>will NOT interrupt</b> the program and the training will still continue without issues.
 
 ## Evaluation
 
@@ -105,14 +133,14 @@ conda install ffmpeg
 
 Here is an example of calling the script:
 ```shell
-projects/implicitron_trainer/visualize_reconstruction.py exp_dir=<CHECKPOINT_DIR> \
+pytorch3d_implicitron_visualizer exp_dir=<CHECKPOINT_DIR> \
     visdom_show_preds=True n_eval_cameras=40 render_size="[64,64]" video_size="[256,256]"
 ```
 
 The argument `n_eval_cameras` sets the number of renderring viewpoints sampled on a trajectory, which defaults to a circular fly-around;
 `render_size` sets the size of a render passed to the model, which can be resized to `video_size` before writing.
 
-Rendered videos of images, masks, and depth maps will be saved to `<CHECKPOINT_DIR>/vis`.
+Rendered videos of images, masks, and depth maps will be saved to `<CHECKPOINT_DIR>/video`.
 
 
 # Configuration system
@@ -127,8 +155,11 @@ Configurables can form hierarchies.
 For example, `GenericModel` has a field `raysampler: RaySampler`, which is also Configurable.
 In the config, inner parameters can be propagated using `_args` postfix, e.g. to change `raysampler.n_pts_per_ray_training` (the number of sampled points per ray), the node `raysampler_args.n_pts_per_ray_training` should be specified.
 
-The root of the hierarchy is defined by `ExperimentConfig` dataclass.
-It has top-level fields like `eval_only` which was used above for running evaluation by adding a CLI override.
+### Top-level configuration class: `Experiment`
+
+<b>The root of the hierarchy is defined by `Experiment` Configurable in `<pytorch3d_root>/projects/implicitron_trainer/experiment.py`.</b>
+
+It has top-level fields like `seed`, which seeds the random number generator.
 Additionally, it has non-leaf nodes like `model_factory_ImplicitronModelFactory_args.model_GenericModel_args`, which dispatches the config parameters to `GenericModel`.
 Thus, changing the model parameters may be achieved in two ways: either by editing the config file, e.g.
 ```yaml
@@ -266,14 +297,66 @@ model_GenericModel_args: GenericModel
 Please look at the annotations of the respective classes or functions for the lists of hyperparameters.
 `tests/experiment.yaml` shows every possible option if you have no user-defined classes.
 
-# Reproducing CO3D experiments
+
+# Implementations of existing methods
+
+We provide configuration files that implement several existing works.
+
+<b>The configuration files live in `pytorch3d/projects/implicitron_trainer/configs`.</b>
+
+
+## NeRF
+
+The following config file corresponds to training of a vanilla NeRF on Blender Synthetic dataset
+(see https://arxiv.org/abs/2003.08934 for details of the method):
+
+`./configs/repro_singleseq_nerf_blender.yaml`
+
+
+### Downloading Blender-Synthetic
+Training requires the Blender Synthetic dataset.
+To download the dataset, visit the [gdrive bucket](https://drive.google.com/file/d/18JxhpWD-4ZmuFKLzKlAw-w5PpzZxXOcG/view?usp=share_link)
+and click Download.
+Then unpack the downloaded .zip file to a folder which we call `<BLENDER_DATASET_ROOT_FOLDER>`.
+
+
+### Launching NeRF training
+In order to train NeRF on the "drums" scene, execute the following command:
+```shell
+export BLENDER_DATASET_ROOT="<BLENDER_DATASET_ROOT_FOLDER>" \
+export BLENDER_SINGLESEQ_CLASS="drums" \
+pytorch3d_implicitron_runner --config-path ./configs/ --config-name repro_singleseq_nerf_blender
+```
+
+Note that the training scene is selected by setting the environment variable `BLENDER_SINGLESEQ_CLASS`
+appropriately (one of `"chair"`, `"drums"`, `"ficus"`, `"hotdog"`, `"lego"`, `"materials"`, `"mic"`, `"ship"`).
+
+By default, the training outputs will be stored to `"./data/nerf_blender_repro/$BLENDER_SINGLESEQ_CLASS/"`
+
+
+### Visualizing trained NeRF
+```shell
+pytorch3d_implicitron_visualizer exp_dir=<CHECKPOINT_DIR> \
+    visdom_show_preds=True n_eval_cameras=40 render_size="[64,64]" video_size="[256,256]"
+```
+where `<CHECKPOINT_DIR>` corresponds to the directory with the training outputs (defaults to `"./data/nerf_blender_repro/$BLENDER_SINGLESEQ_CLASS/"`).
+
+The script will output a rendered video of the learned radiance field to `"./data/nerf_blender_repro/$BLENDER_SINGLESEQ_CLASS/"` (requires `ffmpeg`).
+
+> **_NOTE:_** Recall that, if `pytorch3d_implicitron_runner`/`pytorch3d_implicitron_visualizer` are not available, replace the calls
+with `cd <pytorch3d_root>/projects/; python -m implicitron_trainer.[experiment|visualize_reconstruction]`
+
+
+## CO3D experiments
 
 Common Objects in 3D (CO3D) is a large-scale dataset of videos of rigid objects grouped into 50 common categories.
 Implicitron provides implementations and config files to reproduce the results from [the paper](https://arxiv.org/abs/2109.00512).
 Please follow [the link](https://github.com/facebookresearch/co3d#automatic-batch-download) for the instructions to download the dataset.
 In training and evaluation scripts, use the download location as `<DATASET_ROOT>`.
 It is also possible to define environment variable `CO3D_DATASET_ROOT` instead of specifying it.
-To reproduce the experiments from the paper, use the following configs. For single-sequence experiments:
+To reproduce the experiments from the paper, use the following configs.
+
+For single-sequence experiments:
 
 | Method          |   config file                       |
 |-----------------|-------------------------------------|
@@ -286,7 +369,7 @@ To reproduce the experiments from the paper, use the following configs. For sing
 | SRN + WCE       | repro_singleseq_srn_wce_noharm.yaml |
 | SRN + WCE + γ   | repro_singleseq_srn_wce_noharm.yaml |
 
-For multi-sequence experiments (without generalisation to new sequences):
+For multi-sequence autodecoder experiments (without generalization to new sequences):
 
 | Method          |   config file                              |
 |-----------------|--------------------------------------------|
@@ -294,7 +377,7 @@ For multi-sequence experiments (without generalisation to new sequences):
 | SRN + AD        | repro_multiseq_srn_ad_hypernet_noharm.yaml |
 | SRN + γ + AD    | repro_multiseq_srn_ad_hypernet.yaml        |
 
-For multi-sequence experiments (with generalisation to new sequences):
+For multi-sequence experiments (with generalization to new sequences):
 
 | Method          |   config file                        |
 |-----------------|--------------------------------------|
@@ -302,3 +385,36 @@ For multi-sequence experiments (with generalisation to new sequences):
 | NerFormer       | repro_multiseq_nerformer.yaml        |
 | SRN + WCE       | repro_multiseq_srn_wce_noharm.yaml   |
 | SRN + WCE + γ   | repro_multiseq_srn_wce.yaml          |
+
+
+## CO3Dv2 experiments
+
+The following config files implement training on the second version of CO3D, `CO3Dv2`.
+
+In order to launch trainings, set the `CO3DV2_DATASET_ROOT` environment variable
+to the root folder of the dataset (note that the name of the env. variable differs from the CO3Dv1 version).
+
+Single-sequence experiments:
+
+| Method          |   config file                         |
+|-----------------|-------------------------------------|
+| NeRF            | repro_singleseq_v2_nerf.yaml        |
+| NerFormer       | repro_singleseq_v2_nerformer.yaml   |
+| IDR             | repro_singleseq_v2_idr.yaml         |
+| SRN             | repro_singleseq_v2_srn_noharm.yaml  |
+
+Multi-sequence autodecoder experiments (without generalization to new sequences):
+
+| Method          |   config file                                |
+|-----------------|--------------------------------------------|
+| NeRF + AD       | repro_multiseq_v2_nerf_ad.yaml             |
+| SRN + γ + AD    | repro_multiseq_v2_srn_ad_hypernet.yaml     |
+
+Multi-sequence experiments (with generalization to new sequences):
+
+| Method          |   config file                            |
+|-----------------|----------------------------------------|
+| NeRF + WCE      | repro_multiseq_v2_nerf_wce.yaml        |
+| NerFormer       | repro_multiseq_v2_nerformer.yaml       |
+| SRN + WCE       | repro_multiseq_v2_srn_wce_noharm.yaml  |
+| SRN + WCE + γ   | repro_multiseq_v2_srn_wce.yaml         |

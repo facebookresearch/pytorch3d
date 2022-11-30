@@ -19,10 +19,6 @@ from the command line, for example:
 ./experiment.py --config-name base_config.yaml override.param.one=42 override.param.two=84
 ```
 
-To run an experiment on a specific GPU, specify the `gpu_idx` key in the
-config file / CLI. To run on a different device, specify the device in
-`run_training`.
-
 Main functions
 ---------------
 - The Experiment class defines `run` which creates the model, optimizer, and other

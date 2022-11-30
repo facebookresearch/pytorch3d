@@ -7,7 +7,7 @@ data_source_ImplicitronDataSource_args:
     dataset_length_train: 100
   dataset_map_provider_class_type: BlenderDatasetMapProvider
   dataset_map_provider_BlenderDatasetMapProvider_args:
-    base_dir: ${oc.env:BLENDER_DATASET_ROOT}
+    base_dir: ${oc.env:BLENDER_DATASET_ROOT}/${oc.env:BLENDER_SINGLESEQ_CLASS}
     n_known_frames_for_test: null
     object_name: ${oc.env:BLENDER_SINGLESEQ_CLASS}
     path_manager_factory_class_type: PathManagerFactory
