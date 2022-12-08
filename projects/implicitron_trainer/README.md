@@ -75,7 +75,7 @@ which correspond to the executables as follows:
 
 For instance, in order to directly execute training with the python script, users can call:
 ```shell
-cd <pytorch3d_root>/projects/ \
+cd <pytorch3d_root>/projects/
 python -m implicitron_trainer.experiment <args>`
 ```
 
