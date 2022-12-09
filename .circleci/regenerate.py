@@ -28,6 +28,7 @@ CONDA_CUDA_VERSIONS = {
     "1.11.0": ["cu102", "cu111", "cu113", "cu115"],
     "1.12.0": ["cu102", "cu113", "cu116"],
     "1.12.1": ["cu102", "cu113", "cu116"],
+    "1.13.0": ["cu116", "cu117"],
 }
 
 
@@ -40,6 +41,8 @@ def conda_docker_image_for_cuda(cuda_version):
         return "pytorch/conda-builder:cuda115"
     if cuda_version == "cu116":
         return "pytorch/conda-builder:cuda116"
+    if cuda_version == "cu117":
+        return "pytorch/conda-builder:cuda117"
     raise ValueError("Unknown cuda version")
 
 
