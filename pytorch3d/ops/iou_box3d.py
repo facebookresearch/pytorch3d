@@ -161,7 +161,6 @@ def box3d_overlap(
     _check_nonzero(boxes1, eps)
     _check_nonzero(boxes2, eps)
 
-    # pyre-fixme[16]: `_box3d_overlap` has no attribute `apply`.
     vol, iou = _box3d_overlap.apply(boxes1, boxes2)
 
     return vol, iou

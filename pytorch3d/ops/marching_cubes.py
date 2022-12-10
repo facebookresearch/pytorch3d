@@ -278,7 +278,6 @@ def marching_cubes(
     for i in range(len(vol_batch)):
         vol = vol_batch[i]
         thresh = ((vol.max() + vol.min()) / 2).item() if isolevel is None else isolevel
-        # pyre-fixme[16]: `_marching_cubes` has no attribute `apply`.
         verts, faces, ids = _marching_cubes.apply(vol, thresh)
         if len(faces) > 0 and len(verts) > 0:
             # Convert from world coordinates ([0, D-1], [0, H-1], [0, W-1]) to

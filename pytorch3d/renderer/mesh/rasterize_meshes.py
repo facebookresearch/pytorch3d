@@ -220,7 +220,6 @@ def rasterize_meshes(
     if max_faces_per_bin is None:
         max_faces_per_bin = int(max(10000, meshes._F / 5))
 
-    # pyre-fixme[16]: `_RasterizeFaceVerts` has no attribute `apply`.
     pix_to_face, zbuf, barycentric_coords, dists = _RasterizeFaceVerts.apply(
         face_verts,
         mesh_to_face_first_idx,

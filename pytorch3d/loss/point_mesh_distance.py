@@ -88,7 +88,6 @@ class _PointFaceDistance(Function):
         return grad_points, None, grad_tris, None, None, None
 
 
-# pyre-fixme[16]: `_PointFaceDistance` has no attribute `apply`.
 point_face_distance = _PointFaceDistance.apply
 
 
@@ -151,7 +150,6 @@ class _FacePointDistance(Function):
         return grad_points, None, grad_tris, None, None, None
 
 
-# pyre-fixme[16]: `_FacePointDistance` has no attribute `apply`.
 face_point_distance = _FacePointDistance.apply
 
 
@@ -202,7 +200,6 @@ class _PointEdgeDistance(Function):
         return grad_points, None, grad_segms, None, None
 
 
-# pyre-fixme[16]: `_PointEdgeDistance` has no attribute `apply`.
 point_edge_distance = _PointEdgeDistance.apply
 
 
@@ -253,7 +250,6 @@ class _EdgePointDistance(Function):
         return grad_points, None, grad_segms, None, None
 
 
-# pyre-fixme[16]: `_EdgePointDistance` has no attribute `apply`.
 edge_point_distance = _EdgePointDistance.apply
 
 

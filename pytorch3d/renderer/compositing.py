@@ -90,7 +90,6 @@ def alpha_composite(pointsidx, alphas, pt_clds) -> torch.Tensor:
         Combined features: Tensor of shape (N, C, image_size, image_size)
             giving the accumulated features at each point.
     """
-    # pyre-fixme[16]: `_CompositeAlphaPoints` has no attribute `apply`.
     return _CompositeAlphaPoints.apply(pt_clds, alphas, pointsidx)
 
 
@@ -169,7 +168,6 @@ def norm_weighted_sum(pointsidx, alphas, pt_clds) -> torch.Tensor:
         Combined features: Tensor of shape (N, C, image_size, image_size)
             giving the accumulated features at each point.
     """
-    # pyre-fixme[16]: `_CompositeNormWeightedSumPoints` has no attribute `apply`.
     return _CompositeNormWeightedSumPoints.apply(pt_clds, alphas, pointsidx)
 
 
@@ -241,5 +239,4 @@ def weighted_sum(pointsidx, alphas, pt_clds) -> torch.Tensor:
         Combined features: Tensor of shape (N, C, image_size, image_size)
             giving the accumulated features at each point.
     """
-    # pyre-fixme[16]: `_CompositeWeightedSumPoints` has no attribute `apply`.
     return _CompositeWeightedSumPoints.apply(pt_clds, alphas, pointsidx)

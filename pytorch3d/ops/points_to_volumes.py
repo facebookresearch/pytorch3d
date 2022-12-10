@@ -183,7 +183,6 @@ class _points_to_volumes_function(Function):
         )
 
 
-# pyre-fixme[16]: `_points_to_volumes_function` has no attribute `apply`.
 _points_to_volumes = _points_to_volumes_function.apply
 
 

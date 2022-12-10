@@ -91,7 +91,6 @@ def packed_to_padded(
         inputs = inputs.unsqueeze(1)
     else:
         inputs = inputs.reshape(input_shape[0], -1)
-    # pyre-ignore [16]
     inputs_padded = _PackedToPadded.apply(inputs, first_idxs, max_size)
     # if flat is True, reshape output to (N, max_size) from (N, max_size, 1)
     # else reshape output to (N, max_size, ...)
@@ -188,7 +187,6 @@ def padded_to_packed(
         inputs = inputs.unsqueeze(2)
     else:
         inputs = inputs.reshape(*input_shape[:2], -1)
-    # pyre-ignore [16]
     inputs_packed = _PaddedToPacked.apply(inputs, first_idxs, num_inputs)
     # if input is flat, reshape output to (F,) from (F, 1)
     # else reshape output to (F, ...)

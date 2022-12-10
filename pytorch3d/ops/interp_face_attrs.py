@@ -56,7 +56,6 @@ def interpolate_face_attributes(
     pix_to_face = pix_to_face.view(-1)
     barycentric_coords = barycentric_coords.view(N * H * W * K, 3)
     args = (pix_to_face, barycentric_coords, face_attributes)
-    # pyre-fixme[16]: `_InterpFaceAttrs` has no attribute `apply`.
     out = _InterpFaceAttrs.apply(*args)
     out = out.view(N, H, W, K, -1)
     return out

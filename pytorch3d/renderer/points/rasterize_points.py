@@ -128,7 +128,6 @@ def rasterize_points(
 
     # Function.apply cannot take keyword args, so we handle defaults in this
     # wrapper and call apply with positional args only
-    # pyre-fixme[16]: `_RasterizePoints` has no attribute `apply`.
     return _RasterizePoints.apply(
         points_packed,
         cloud_to_packed_first_idx,

@@ -108,7 +108,6 @@ class _SigmoidAlphaBlend(torch.autograd.Function):
         return grad_dists, None, None
 
 
-# pyre-fixme[16]: `_SigmoidAlphaBlend` has no attribute `apply`.
 _sigmoid_alpha = _SigmoidAlphaBlend.apply
 
 

@@ -171,5 +171,4 @@ class GatherScatter(Function):
         return grad_input, grad_edges, grad_directed
 
 
-# pyre-fixme[16]: `GatherScatter` has no attribute `apply`.
 gather_scatter = GatherScatter.apply

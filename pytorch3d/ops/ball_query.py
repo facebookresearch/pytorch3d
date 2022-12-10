@@ -132,7 +132,6 @@ def ball_query(
     if lengths2 is None:
         lengths2 = torch.full((N,), P2, dtype=torch.int64, device=p1.device)
 
-    # pyre-fixme[16]: `_ball_query` has no attribute `apply`.
     dists, idx = _ball_query.apply(p1, p2, lengths1, lengths2, K, radius)
 
     # Gather the neighbors if needed

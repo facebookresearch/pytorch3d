@@ -628,7 +628,6 @@ class Renderer(torch.nn.Module):
                     max_depth / focal_lengths.min().item(),
                 )
             )
-        # pyre-fixme[16]: `_Render` has no attribute `apply`.
         ret_res = _Render.apply(
             vert_pos,
             vert_col,
