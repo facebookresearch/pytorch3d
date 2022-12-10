@@ -198,10 +198,6 @@ class MeshRasterizer(nn.Module):
         verts_view = cameras.get_world_to_view_transform(**kwargs).transform_points(
             verts_world, eps=eps
         )
-        # Call transform_points instead of explicitly composing transforms to handle
-        # the case, where camera class does not have a projection matrix form.
-        verts_proj = cameras.transform_points(verts_world, eps=eps)
-        to_ndc_transform = cameras.get_ndc_camera_transform(**kwargs)
         projection_transform = try_get_projection_transform(cameras, kwargs)
         if projection_transform is not None:
             projection_transform = projection_transform.compose(to_ndc_transform)
