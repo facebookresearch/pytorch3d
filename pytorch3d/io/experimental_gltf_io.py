@@ -740,7 +740,10 @@ class _GLTFWriter:
         json_length = len(json_bytes)
 
         # write header
-        header = struct.pack("<III", _GLTF_MAGIC, 2, json_length + byte_offset)
+        version = 2
+        total_header_length = 28  # (file header = 12) + 2 * (chunk header = 8)
+        file_length = json_length + byte_offset + total_header_length
+        header = struct.pack("<III", _GLTF_MAGIC, version, file_length)
         self.buffer_stream.write(header)
 
         # write json
