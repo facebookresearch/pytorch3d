@@ -117,7 +117,7 @@ jobs:
       - run:
           name: build
           no_output_timeout: 20m
-          command: MAX_JOBS=15 TEST_FLAG=--no-test packaging/build_conda.sh
+          command: MAX_JOBS=15 TEST_FLAG=--no-test python3 packaging/build_conda.py
       - store_artifacts:
           path: /opt/conda/conda-bld/linux-64
       - persist_to_workspace:
@@ -154,7 +154,7 @@ jobs:
           export JUST_TESTRUN=1
           VARS_TO_PASS="-e PYTHON_VERSION -e BUILD_VERSION -e PYTORCH_VERSION -e CU_VERSION -e JUST_TESTRUN"
 
-          docker run --gpus all  --ipc=host -v $(pwd):/remote -w /remote ${VARS_TO_PASS} ${TESTRUN_DOCKER_IMAGE} ./packaging/build_conda.sh
+          docker run --gpus all  --ipc=host -v $(pwd):/remote -w /remote ${VARS_TO_PASS} ${TESTRUN_DOCKER_IMAGE} python3 ./packaging/build_conda.py
 
   binary_macos_wheel:
     <<: *binary_common
