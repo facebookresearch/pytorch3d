@@ -8,8 +8,8 @@
 The core library is written in PyTorch. Several components have underlying implementation in CUDA for improved performance. A subset of these components have CPU implementations in C++/PyTorch. It is advised to use PyTorch3D with GPU support in order to use all the features.
 
 - Linux or macOS or Windows
-- Python 3.6, 3.7, 3.8 or 3.9
-- PyTorch 1.8.0, 1.8.1, 1.9.0, 1.9.1, 1.10.0, 1.10.1, 1.10.2, 1.11.0 or 1.12.0.
+- Python 3.8, 3.9 or 3.10
+- PyTorch 1.9.0, 1.9.1, 1.10.0, 1.10.1, 1.10.2, 1.11.0, 1.12.0, 1.12.1 or 1.13.0.
 - torchvision that matches the PyTorch installation. You can install them together as explained at pytorch.org to make sure of this.
 - gcc & g++ ≥ 4.9
 - [fvcore](https://github.com/facebookresearch/fvcore)
@@ -21,11 +21,11 @@ The runtime dependencies can be installed by running:
 ```
 conda create -n pytorch3d python=3.9
 conda activate pytorch3d
-conda install -c pytorch pytorch=1.9.1 torchvision cudatoolkit=10.2
+conda install -c pytorch pytorch=1.9.1 torchvision cudatoolkit=11.6
 conda install -c fvcore -c iopath -c conda-forge fvcore iopath
 ```
 
-For the CUB build time dependency, if you are using conda, you can continue with
+For the CUB build time dependency, which you only need if you have CUDA older than 11.7, if you are using conda, you can continue with
 ```
 conda install -c bottler nvidiacub
 ```
@@ -78,14 +78,14 @@ Or, to install a nightly (non-official, alpha) build:
 conda install pytorch3d -c pytorch3d-nightly
 ```
 ### 2. Install from PyPI, on Mac only.
-This works with pytorch 1.12.0 only. The build is CPU only.
+This works with pytorch 1.13.0 only. The build is CPU only.
 ```
 pip install pytorch3d
 ```
 
 ### 3. Install wheels for Linux
 We have prebuilt wheels with CUDA for Linux for PyTorch 1.11.0, for each of the supported CUDA versions,
-for Python 3.7, 3.8 and 3.9. This is for ease of use on Google Colab.
+for Python 3.8 and 3.9. This is for ease of use on Google Colab.
 These are installed in a special way.
 For example, to install for Python 3.8, PyTorch 1.11.0 and CUDA 11.3
 ```
