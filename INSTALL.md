@@ -21,7 +21,7 @@ The runtime dependencies can be installed by running:
 ```
 conda create -n pytorch3d python=3.9
 conda activate pytorch3d
-conda install -c pytorch -c nvidia pytorch=1.9.1 torchvision cudatoolkit=11.6
+conda install pytorch=1.13.0 torchvision pytorch-cuda=11.6 -c pytorch -c nvidia
 conda install -c fvcore -c iopath -c conda-forge fvcore iopath
 ```
 
