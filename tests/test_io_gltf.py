@@ -4,6 +4,7 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+import os.path
 import unittest
 from math import radians
 
@@ -11,7 +12,7 @@ import numpy as np
 import torch
 from PIL import Image
 from pytorch3d.io import IO
-from pytorch3d.io.experimental_gltf_io import MeshGlbFormat
+from pytorch3d.io.experimental_gltf_io import _read_header, MeshGlbFormat
 from pytorch3d.renderer import (
     AmbientLights,
     BlendParams,
@@ -46,10 +47,14 @@ def _load(path, **kwargs) -> Meshes:
     return io.load_mesh(path, **kwargs)
 
 
-def _write(mesh, path, **kwargs) -> bool:
+def _write(mesh, path, **kwargs) -> None:
     io = IO()
     io.register_meshes_format(MeshGlbFormat())
-    return io.save_mesh(mesh, path, **kwargs)
+    io.save_mesh(mesh, path, **kwargs)
+
+    with open(path, "rb") as f:
+        _, stored_length = _read_header(f)
+    assert stored_length == os.path.getsize(path)
 
 
 def _render(

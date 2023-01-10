@@ -155,6 +155,9 @@ class IO:
             include_textures: If textures are present, whether to try to save
                                 them.
         """
+        if not isinstance(data, Meshes):
+            raise ValueError("Meshes object expected.")
+
         if len(data) != 1:
             raise ValueError("Can only save a single mesh.")
 
@@ -204,6 +207,9 @@ class IO:
             path: file to write
             binary: If there is a choice, whether to save in a binary format.
         """
+        if not isinstance(data, Pointclouds):
+            raise ValueError("Pointclouds object expected.")
+
         if len(data) != 1:
             raise ValueError("Can only save a single point cloud.")
 
