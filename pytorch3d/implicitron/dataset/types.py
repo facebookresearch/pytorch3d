@@ -9,10 +9,21 @@ import dataclasses
 import gzip
 import json
 from dataclasses import dataclass, Field, MISSING
-from typing import Any, cast, Dict, IO, Optional, Tuple, Type, TypeVar, Union
+from typing import (
+    Any,
+    cast,
+    Dict,
+    get_args,
+    get_origin,
+    IO,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 
 import numpy as np
-from pytorch3d.common.datatypes import get_args, get_origin
 
 
 _X = TypeVar("_X")

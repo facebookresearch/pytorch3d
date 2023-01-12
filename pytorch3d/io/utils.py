@@ -7,7 +7,7 @@
 import contextlib
 import pathlib
 import warnings
-from typing import ContextManager, IO, Optional, Union
+from typing import cast, ContextManager, IO, Optional, Union
 
 import numpy as np
 import torch
@@ -15,14 +15,6 @@ from iopath.common.file_io import PathManager
 from PIL import Image
 
 from ..common.datatypes import Device
-
-
-@contextlib.contextmanager
-def nullcontext(x):
-    """
-    This is just like contextlib.nullcontext but also works in Python 3.6.
-    """
-    yield x
 
 
 PathOrStr = Union[pathlib.Path, str]
@@ -36,7 +28,7 @@ def _open_file(f, path_manager: PathManager, mode: str = "r") -> ContextManager[
         f = f.open(mode)
         return contextlib.closing(f)
     else:
-        return nullcontext(f)
+        return contextlib.nullcontext(cast(IO, f))
 
 
 def _make_tensor(

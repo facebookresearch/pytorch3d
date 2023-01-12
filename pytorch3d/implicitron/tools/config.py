@@ -12,10 +12,21 @@ import warnings
 from collections import Counter, defaultdict
 from enum import Enum
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, TypeVar, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    get_args,
+    get_origin,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 
 from omegaconf import DictConfig, OmegaConf, open_dict
-from pytorch3d.common.datatypes import get_args, get_origin
 
 
 """
