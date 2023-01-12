@@ -1412,7 +1412,10 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
             images = renderer(sphere_mesh)
             rgb = images[0, ..., :3].squeeze().cpu()
 
-            filename = f"test_simple_sphere_outside_zfar_{int(zfar)}_{rasterizer_type.__name__}.png"
+            filename = (
+                "test_simple_sphere_outside_zfar_"
+                f"{int(zfar)}_{rasterizer_type.__name__}.png"
+            )
 
             # Load reference image
             image_ref = load_rgb_image(filename, DATA_DIR)

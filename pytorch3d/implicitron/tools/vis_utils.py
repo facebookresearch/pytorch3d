@@ -128,8 +128,8 @@ def visualize_basics(
     # TODO: handle errors on the outside
     try:
         imout = {"all": torch.cat(list(imout.values()), dim=2)}
-    except:
-        print("cant cat!")
+    except RuntimeError as e:
+        print("cant cat!", e.args)
 
     for k, v in imout.items():
         viz.images(
