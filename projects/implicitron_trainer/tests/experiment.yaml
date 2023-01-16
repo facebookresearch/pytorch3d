@@ -103,8 +103,10 @@ data_source_ImplicitronDataSource_args:
     num_views: 40
     data_file: null
     azimuth_range: 180.0
+    distance: 2.7
     resolution: 128
     use_point_light: true
+    gpu_idx: 0
     path_manager_factory_class_type: PathManagerFactory
     path_manager_factory_PathManagerFactory_args:
       silence_logs: true
