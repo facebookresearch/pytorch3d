@@ -432,7 +432,7 @@ class CamerasBase(TensorProperties):
                     f"Boolean index of shape {index.shape} does not match cameras"
                 )
         elif max(index) >= len(self):
-            raise ValueError(f"Index {max(index)} is out of bounds for select cameras")
+            raise IndexError(f"Index {max(index)} is out of bounds for select cameras")
 
         for field in self._FIELDS:
             val = getattr(self, field, None)

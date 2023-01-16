@@ -866,6 +866,11 @@ class TestCamerasCommon(TestCaseMixin, unittest.TestCase):
         self.join_cameras_as_batch_fov(FoVOrthographicCameras)
         self.join_cameras_as_batch(OrthographicCameras)
 
+    def test_iterable(self):
+        for camera_type in [PerspectiveCameras, OrthographicCameras]:
+            a_list = list(camera_type())
+            self.assertEqual(len(a_list), 1)
+
 
 ############################################################
 #                FoVPerspective Camera                     #
@@ -1009,7 +1014,7 @@ class TestFoVPerspectiveProjection(TestCaseMixin, unittest.TestCase):
         self.assertClose(c135.R, R_matrix[SLICE, ...])
 
         # Check errors with get item
-        with self.assertRaisesRegex(ValueError, "out of bounds"):
+        with self.assertRaisesRegex(IndexError, "out of bounds"):
             cam[N_CAMERAS]
 
         with self.assertRaisesRegex(ValueError, "does not match cameras"):
