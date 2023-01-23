@@ -18,13 +18,11 @@ from pytorch3d.implicitron.dataset.dataset_base import FrameData
 from pytorch3d.implicitron.dataset.utils import is_known_frame, is_train_frame
 from pytorch3d.implicitron.models.base_model import ImplicitronRender
 from pytorch3d.implicitron.tools import vis_utils
-from pytorch3d.implicitron.tools.camera_utils import volumetric_camera_overlaps
 from pytorch3d.implicitron.tools.image_utils import mask_background
 from pytorch3d.implicitron.tools.metric_utils import calc_psnr, eval_depth, iou, rgb_l1
 from pytorch3d.implicitron.tools.point_cloud_utils import get_rgbd_point_cloud
 from pytorch3d.implicitron.tools.vis_utils import make_depth_image
-from pytorch3d.renderer.camera_utils import join_cameras_as_batch
-from pytorch3d.renderer.cameras import CamerasBase, PerspectiveCameras
+from pytorch3d.renderer.cameras import PerspectiveCameras
 from pytorch3d.vis.plotly_vis import plot_scene
 from tabulate import tabulate
 
@@ -149,7 +147,6 @@ def eval_batch(
     visualize: bool = False,
     visualize_visdom_env: str = "eval_debug",
     break_after_visualising: bool = True,
-    source_cameras: Optional[CamerasBase] = None,
 ) -> Dict[str, Any]:
     """
     Produce performance metrics for a single batch of new-view synthesis
@@ -171,8 +168,6 @@ def eval_batch(
             ground truth.
         lpips_model: A pre-trained model for evaluating the LPIPS metric.
         visualize: If True, visualizes the results to Visdom.
-        source_cameras: A list of all training cameras for evaluating the
-            difficulty of the target views.
 
     Returns:
         results: A dictionary holding evaluation metrics.
@@ -365,16 +360,7 @@ def eval_batch(
     # convert all metrics to floats
     results = {k: float(v) for k, v in results.items()}
 
-    if source_cameras is None:
-        # pyre-fixme[16]: Optional has no attribute __getitem__
-        source_cameras = frame_data.camera[torch.where(is_known)[0]]
-
     results["meta"] = {
-        # calculate the camera difficulties and add to results
-        "camera_difficulty": calculate_camera_difficulties(
-            frame_data.camera[0],
-            source_cameras,
-        )[0].item(),
         # store the size of the batch (corresponds to n_src_views+1)
         "batch_size": int(is_known.numel()),
         # store the type of the target frame
@@ -406,33 +392,6 @@ def average_per_batch_results(
     }
 
 
-def calculate_camera_difficulties(
-    cameras_target: CamerasBase,
-    cameras_source: CamerasBase,
-) -> torch.Tensor:
-    """
-    Calculate the difficulties of the target cameras, given a set of known
-    cameras `cameras_source`.
-
-    Returns:
-        a tensor of shape (len(cameras_target),)
-    """
-    ious = [
-        volumetric_camera_overlaps(
-            join_cameras_as_batch(
-                # pyre-fixme[6]: Expected `CamerasBase` for 1st param but got
-                #  `Optional[pytorch3d.renderer.utils.TensorProperties]`.
-                [cameras_target[cami], cameras_source.to(cameras_target.device)]
-            )
-        )[0, :]
-        for cami in range(cameras_target.R.shape[0])
-    ]
-    camera_difficulties = torch.stack(
-        [_reduce_camera_iou_overlap(iou[1:]) for iou in ious]
-    )
-    return camera_difficulties
-
-
 def _reduce_camera_iou_overlap(ious: torch.Tensor, topk: int = 2) -> torch.Tensor:
     """
     Calculate the final camera difficulty by computing the average of the
@@ -458,8 +417,7 @@ def _get_camera_difficulty_bin_edges(camera_difficulty_bin_breaks: Tuple[float, 
 def summarize_nvs_eval_results(
     per_batch_eval_results: List[Dict[str, Any]],
     is_multisequence: bool,
-    camera_difficulty_bin_breaks: Tuple[float, float],
-):
+) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """
     Compile the per-batch evaluation results `per_batch_eval_results` into
     a set of aggregate metrics. The produced metrics depend on is_multisequence.
@@ -482,18 +440,11 @@ def summarize_nvs_eval_results(
     batch_sizes = torch.tensor(
         [r["meta"]["batch_size"] for r in per_batch_eval_results]
     ).long()
-    camera_difficulty = torch.tensor(
-        [r["meta"]["camera_difficulty"] for r in per_batch_eval_results]
-    ).float()
+
     is_train = is_train_frame([r["meta"]["frame_type"] for r in per_batch_eval_results])
 
     # init the result database dict
     results = []
-
-    diff_bin_edges, diff_bin_names = _get_camera_difficulty_bin_edges(
-        camera_difficulty_bin_breaks
-    )
-    n_diff_edges = diff_bin_edges.numel()
 
     # add per set averages
     for SET in eval_sets:
@@ -504,26 +455,17 @@ def summarize_nvs_eval_results(
             ok_set = is_train == int(SET == "train")
             set_name = SET
 
-        # eval each difficulty bin, including a full average result (diff_bin=None)
-        for diff_bin in [None, *list(range(n_diff_edges - 1))]:
-            if diff_bin is None:
-                # average over all results
-                in_bin = ok_set
-                diff_bin_name = "all"
-            else:
-                b1, b2 = diff_bin_edges[diff_bin : (diff_bin + 2)]
-                in_bin = ok_set & (camera_difficulty > b1) & (camera_difficulty <= b2)
-                diff_bin_name = diff_bin_names[diff_bin]
-            bin_results = average_per_batch_results(
-                per_batch_eval_results, idx=torch.where(in_bin)[0]
-            )
-            results.append(
-                {
-                    "subset": set_name,
-                    "subsubset": f"diff={diff_bin_name}",
-                    "metrics": bin_results,
-                }
-            )
+        # average over all results
+        bin_results = average_per_batch_results(
+            per_batch_eval_results, idx=torch.where(ok_set)[0]
+        )
+        results.append(
+            {
+                "subset": set_name,
+                "subsubset": "diff=all",
+                "metrics": bin_results,
+            }
+        )
 
         if is_multisequence:
             # split based on n_src_views
@@ -552,7 +494,7 @@ def _get_flat_nvs_metric_key(result, metric_name) -> str:
     return metric_key
 
 
-def flatten_nvs_results(results):
+def flatten_nvs_results(results) -> Dict[str, Any]:
     """
     Takes input `results` list of dicts of the form::
 
@@ -571,7 +513,6 @@ def flatten_nvs_results(results):
             'subset=train/test/...|subsubset=src=1/src=2/...': nvs_eval_metrics,
             ...
         }
-
     """
     results_flat = {}
     for result in results:

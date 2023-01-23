@@ -34,6 +34,7 @@ class DataSourceBase(ReplaceableBase):
     @property
     def all_train_cameras(self) -> Optional[CamerasBase]:
         """
+        DEPRECATED! The property will be removed in future versions.
         If the data is all for a single scene, a list
         of the known training cameras for that scene, which is
         used for evaluating the viewpoint difficulty of the
@@ -70,6 +71,9 @@ class ImplicitronDataSource(DataSourceBase):  # pyre-ignore[13]
 
     @property
     def all_train_cameras(self) -> Optional[CamerasBase]:
+        """
+        DEPRECATED! The property will be removed in future versions.
+        """
         if self._all_train_cameras_cache is None:  # pyre-ignore[16]
             all_train_cameras = self.dataset_map_provider.get_all_train_cameras()
             self._all_train_cameras_cache = (all_train_cameras,)

@@ -122,7 +122,6 @@ class ImplicitronTrainingLoop(TrainingLoopBase):
         optimizer: torch.optim.Optimizer,
         scheduler: Any,
         accelerator: Optional[Accelerator],
-        all_train_cameras: Optional[CamerasBase],
         device: torch.device,
         exp_dir: str,
         stats: Stats,
@@ -142,7 +141,6 @@ class ImplicitronTrainingLoop(TrainingLoopBase):
             if test_loader is not None:
                 # pyre-fixme[16]: `Optional` has no attribute `run`.
                 self.evaluator.run(
-                    all_train_cameras=all_train_cameras,
                     dataloader=test_loader,
                     device=device,
                     dump_to_json=True,
@@ -200,7 +198,6 @@ class ImplicitronTrainingLoop(TrainingLoopBase):
                     and epoch % self.test_interval == 0
                 ):
                     self.evaluator.run(
-                        all_train_cameras=all_train_cameras,
                         device=device,
                         dataloader=test_loader,
                         model=model,
@@ -217,7 +214,6 @@ class ImplicitronTrainingLoop(TrainingLoopBase):
         if self.test_when_finished:
             if test_loader is not None:
                 self.evaluator.run(
-                    all_train_cameras=all_train_cameras,
                     device=device,
                     dump_to_json=True,
                     epoch=stats.epoch,

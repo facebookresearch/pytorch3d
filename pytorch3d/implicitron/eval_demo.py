@@ -153,21 +153,12 @@ def evaluate_dbir_for_category(
                 preds["implicitron_render"],
                 bg_color=bg_color,
                 lpips_model=lpips_model,
-                source_cameras=data_source.all_train_cameras,
             )
         )
 
-    if task == Task.SINGLE_SEQUENCE:
-        camera_difficulty_bin_breaks = 0.97, 0.98
-        multisequence_evaluation = False
-    else:
-        camera_difficulty_bin_breaks = 2.0 / 3, 5.0 / 6
-        multisequence_evaluation = True
-
     category_result_flat, category_result = summarize_nvs_eval_results(
         per_batch_eval_results,
-        camera_difficulty_bin_breaks=camera_difficulty_bin_breaks,
-        is_multisequence=multisequence_evaluation,
+        is_multisequence=task != Task.SINGLE_SEQUENCE,
     )
 
     return category_result["results"]

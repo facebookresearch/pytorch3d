@@ -95,6 +95,7 @@ class DatasetMapProviderBase(ReplaceableBase):
 
     def get_all_train_cameras(self) -> Optional[CamerasBase]:
         """
+        DEPRECATED! The function will be removed in future versions.
         If the data is all for a single scene, returns a list
         of the known training cameras for that scene, which is
         used for evaluating the difficulty of the unknown

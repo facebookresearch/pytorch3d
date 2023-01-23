@@ -23,7 +23,6 @@ from pytorch3d.implicitron.tools.config import (
     ReplaceableBase,
     run_auto_creation,
 )
-from pytorch3d.renderer.cameras import CamerasBase
 from torch.utils.data import DataLoader
 
 logger = logging.getLogger(__name__)
@@ -50,12 +49,9 @@ class EvaluatorBase(ReplaceableBase):
 class ImplicitronEvaluator(EvaluatorBase):
     """
     Evaluate the results of Implicitron training.
-
-    Members:
-        camera_difficulty_bin_breaks: low/medium vals to divide camera difficulties into
-            [0-eps, low, medium, 1+eps].
     """
 
+    # UNUSED; preserved for compatibility purposes
     camera_difficulty_bin_breaks: Tuple[float, ...] = 0.97, 0.98
 
     def __post_init__(self):
@@ -65,7 +61,6 @@ class ImplicitronEvaluator(EvaluatorBase):
         self,
         model: ImplicitronModelBase,
         dataloader: DataLoader,
-        all_train_cameras: Optional[CamerasBase],
         device: torch.device,
         dump_to_json: bool = False,
         exp_dir: Optional[str] = None,
@@ -79,7 +74,6 @@ class ImplicitronEvaluator(EvaluatorBase):
         Args:
             model: A (trained) model to evaluate.
             dataloader: A test dataloader.
-            all_train_cameras: Camera instances we used for training.
             device: A torch device.
             dump_to_json: If True, will dump the results to a json file.
             exp_dir: Root expeirment directory.
@@ -123,16 +117,12 @@ class ImplicitronEvaluator(EvaluatorBase):
                         implicitron_render,
                         bg_color="black",
                         lpips_model=lpips_model,
-                        source_cameras=(  # None will make it use batch’s known cameras
-                            None if self.is_multisequence else all_train_cameras
-                        ),
                     )
                 )
 
         _, category_result = evaluate.summarize_nvs_eval_results(
             per_batch_eval_results,
             self.is_multisequence,
-            self.camera_difficulty_bin_breaks,
         )
 
         results = category_result["results"]
