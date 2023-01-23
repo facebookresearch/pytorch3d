@@ -39,6 +39,7 @@ def visualize_reconstruction(
     visdom_server: str = "http://127.0.0.1",
     visdom_port: int = 8097,
     visdom_env: Optional[str] = None,
+    **render_flyaround_kwargs,
 ) -> None:
     """
     Given an `exp_dir` containing a trained Implicitron model, generates videos consisting
@@ -60,6 +61,8 @@ def visualize_reconstruction(
         visdom_server: The address of the visdom server.
         visdom_port: The port of the visdom server.
         visdom_env: If set, defines a custom name for the visdom environment.
+        render_flyaround_kwargs: Keyword arguments passed to the invoked `render_flyaround`
+            function (see `pytorch3d.implicitron.models.visualization.render_flyaround`).
     """
 
     # In case an output directory is specified use it. If no output_directory
@@ -115,20 +118,22 @@ def visualize_reconstruction(
     # iterate over the sequences in the dataset
     for sequence_name in dataset.sequence_names():
         with torch.no_grad():
-            render_flyaround(
-                dataset=dataset,
-                sequence_name=sequence_name,
-                model=model,
-                output_video_path=os.path.join(output_directory, "video"),
-                n_source_views=n_source_views,
-                visdom_show_preds=visdom_show_preds,
-                n_flyaround_poses=n_eval_cameras,
-                visdom_server=visdom_server,
-                visdom_port=visdom_port,
-                visdom_environment=visdom_env,
-                video_resize=video_size,
-                device=device,
-            )
+            render_kwargs = {
+                "dataset": dataset,
+                "sequence_name": sequence_name,
+                "model": model,
+                "output_video_path": os.path.join(output_directory, "video"),
+                "n_source_views": n_source_views,
+                "visdom_show_preds": visdom_show_preds,
+                "n_flyaround_poses": n_eval_cameras,
+                "visdom_server": visdom_server,
+                "visdom_port": visdom_port,
+                "visdom_environment": visdom_env,
+                "video_resize": video_size,
+                "device": device,
+                **render_flyaround_kwargs,
+            }
+            render_flyaround(**render_kwargs)
 
 
 enable_get_default_args(visualize_reconstruction)
