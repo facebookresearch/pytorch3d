@@ -27,13 +27,33 @@ def get_rgbd_point_cloud(
     mask: Optional[torch.Tensor] = None,
     mask_thr: float = 0.5,
     mask_points: bool = True,
+    euclidean: bool = False,
 ) -> Pointclouds:
     """
-    Given a batch of images, depths, masks and cameras, generate a colored
-    point cloud by unprojecting depth maps to the  and coloring with the source
+    Given a batch of images, depths, masks and cameras, generate a single colored
+    point cloud by unprojecting depth maps and coloring with the source
     pixel colors.
+
+    Arguments:
+        camera: Batch of N cameras
+        image_rgb: Batch of N images of shape (N, C, H, W).
+            For RGB images C=3.
+        depth_map: Batch of N depth maps of shape (N, 1, H', W').
+            Only positive values here are used to generate points.
+            If euclidean=False (default) this contains perpendicular distances
+            from each point to the camera plane (z-values).
+            If euclidean=True, this contains distances from each point to
+            the camera center.
+        mask: If provided, batch of N masks of the same shape as depth_map.
+            If provided, values in depth_map are ignored if the corresponding
+            element of mask is smaller than mask_thr.
+        mask_thr: used in interpreting mask
+        euclidean: used in interpreting depth_map.
+
+    Returns:
+        Pointclouds object containing one point cloud.
     """
-    imh, imw = image_rgb.shape[2:]
+    imh, imw = depth_map.shape[2:]
 
     # convert the depth maps to point clouds using the grid ray sampler
     pts_3d = ray_bundle_to_ray_points(
@@ -43,6 +63,7 @@ def get_rgbd_point_cloud(
             n_pts_per_ray=1,
             min_depth=1.0,
             max_depth=1.0,
+            unit_directions=euclidean,
         )(camera)._replace(lengths=depth_map[:, 0, ..., None])
     )
 
