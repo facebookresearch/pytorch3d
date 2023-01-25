@@ -100,6 +100,7 @@ class Lighting(NamedTuple):  # pragma: no cover
     vertexnormalsepsilon: float = 1e-12
 
 
+@torch.no_grad()
 def plot_scene(
     plots: Dict[str, Dict[str, Struct]],
     *,
@@ -407,6 +408,7 @@ def plot_scene(
     return fig
 
 
+@torch.no_grad()
 def plot_batch_individually(
     batched_structs: Union[
         List[Struct],
@@ -888,8 +890,12 @@ def _add_ray_bundle_trace(
     )
 
     # make the ray lines for plotly plotting
-    nan_tensor = torch.Tensor([[float("NaN")] * 3])
-    ray_lines = torch.empty(size=(1, 3))
+    nan_tensor = torch.tensor(
+        [[float("NaN")] * 3],
+        device=ray_lines_endpoints.device,
+        dtype=ray_lines_endpoints.dtype,
+    )
+    ray_lines = torch.empty(size=(1, 3), device=ray_lines_endpoints.device)
     for ray_line in ray_lines_endpoints:
         # We combine the ray lines into a single tensor to plot them in a
         # single trace. The NaNs are inserted between sets of ray lines
@@ -952,7 +958,7 @@ def _add_ray_bundle_trace(
     current_layout = fig["layout"][plot_scene]
 
     # update the bounds of the axes for the current trace
-    all_ray_points = ray_bundle_to_ray_points(ray_bundle).view(-1, 3)
+    all_ray_points = ray_bundle_to_ray_points(ray_bundle).reshape(-1, 3)
     ray_points_center = all_ray_points.mean(dim=0)
     max_expand = (all_ray_points.max(0)[0] - all_ray_points.min(0)[0]).max().item()
     _update_axes_bounds(ray_points_center, float(max_expand), current_layout)
@@ -1002,6 +1008,7 @@ def _update_axes_bounds(
         max_expand: the maximum spread in any dimension of the trace's vertices.
         current_layout: the plotly figure layout scene corresponding to the referenced trace.
     """
+    verts_center = verts_center.detach().cpu()
     verts_min = verts_center - max_expand
     verts_max = verts_center + max_expand
     bounds = torch.t(torch.stack((verts_min, verts_max)))
