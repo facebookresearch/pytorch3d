@@ -237,7 +237,7 @@ class DatasetBase(_GenericWorkaround, torch.utils.data.Dataset[FrameData]):
         raise NotImplementedError()
 
     def get_frame_numbers_and_timestamps(
-        self, idxs: Sequence[int]
+        self, idxs: Sequence[int], subset_filter: Optional[Sequence[str]] = None
     ) -> List[Tuple[int, float]]:
         """
         If the sequences in the dataset are videos rather than
@@ -251,7 +251,9 @@ class DatasetBase(_GenericWorkaround, torch.utils.data.Dataset[FrameData]):
         frames.
 
         Args:
-            idx: frame index in self
+            idxs: frame index in self
+            subset_filter: If given, an index in idxs is ignored if the
+                corresponding frame is not in any of the named subsets.
 
         Returns:
             tuple of
@@ -291,7 +293,7 @@ class DatasetBase(_GenericWorkaround, torch.utils.data.Dataset[FrameData]):
         return dict(c2seq)
 
     def sequence_frames_in_order(
-        self, seq_name: str
+        self, seq_name: str, subset_filter: Optional[Sequence[str]] = None
     ) -> Iterator[Tuple[float, int, int]]:
         """Returns an iterator over the frame indices in a given sequence.
         We attempt to first sort by timestamp (if they are available),
@@ -308,7 +310,9 @@ class DatasetBase(_GenericWorkaround, torch.utils.data.Dataset[FrameData]):
         """
         # pyre-ignore[16]
         seq_frame_indices = self._seq_to_idx[seq_name]
-        nos_timestamps = self.get_frame_numbers_and_timestamps(seq_frame_indices)
+        nos_timestamps = self.get_frame_numbers_and_timestamps(
+            seq_frame_indices, subset_filter
+        )
 
         yield from sorted(
             [
@@ -317,11 +321,13 @@ class DatasetBase(_GenericWorkaround, torch.utils.data.Dataset[FrameData]):
             ]
         )
 
-    def sequence_indices_in_order(self, seq_name: str) -> Iterator[int]:
+    def sequence_indices_in_order(
+        self, seq_name: str, subset_filter: Optional[Sequence[str]] = None
+    ) -> Iterator[int]:
         """Same as `sequence_frames_in_order` but returns the iterator over
         only dataset indices.
         """
-        for _, _, idx in self.sequence_frames_in_order(seq_name):
+        for _, _, idx in self.sequence_frames_in_order(seq_name, subset_filter):
             yield idx
 
     # frame_data_type is the actual type of frames returned by the dataset.

@@ -40,3 +40,41 @@ class TestDataJsonIndex(TestCaseMixin, unittest.TestCase):
         self.assertEqual(len(data_sets.train), 81)
         self.assertEqual(len(data_sets.val), 102)
         self.assertEqual(len(data_sets.test), 102)
+
+    def test_visitor_subsets(self):
+        args = get_default_args(ImplicitronDataSource)
+        args.dataset_map_provider_class_type = "JsonIndexDatasetMapProvider"
+        dataset_args = args.dataset_map_provider_JsonIndexDatasetMapProvider_args
+        dataset_args.category = "skateboard"
+        dataset_args.dataset_root = "manifold://co3d/tree/extracted"
+        dataset_args.test_restrict_sequence_id = 0
+        dataset_args.dataset_JsonIndexDataset_args.limit_sequences_to = 1
+
+        data_source = ImplicitronDataSource(**args)
+        datasets, _ = data_source.get_datasets_and_dataloaders()
+        dataset = datasets.test
+
+        sequences = list(dataset.sequence_names())
+        self.assertEqual(len(sequences), 1)
+        i = 0
+        for seq in sequences:
+            last_ts = float("-Inf")
+            seq_frames = list(dataset.sequence_frames_in_order(seq))
+            self.assertEqual(len(seq_frames), 102)
+            for ts, _, idx in seq_frames:
+                self.assertEqual(i, idx)
+                i += 1
+                self.assertGreaterEqual(ts, last_ts)
+                last_ts = ts
+
+            last_ts = float("-Inf")
+            known_frames = list(dataset.sequence_frames_in_order(seq, "test_known"))
+            self.assertEqual(len(known_frames), 81)
+            for ts, _, _ in known_frames:
+                self.assertGreaterEqual(ts, last_ts)
+                last_ts = ts
+
+            known_indices = list(dataset.sequence_indices_in_order(seq, "test_known"))
+            self.assertEqual(len(known_indices), 81)
+
+            break  # testing only the first sequence

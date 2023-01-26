@@ -888,10 +888,16 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
         return self.path_manager.get_local_path(path)
 
     def get_frame_numbers_and_timestamps(
-        self, idxs: Sequence[int]
+        self, idxs: Sequence[int], subset_filter: Optional[Sequence[str]] = None
     ) -> List[Tuple[int, float]]:
         out: List[Tuple[int, float]] = []
         for idx in idxs:
+            if (
+                subset_filter is not None
+                and self.frame_annots[idx]["subset"] not in subset_filter
+            ):
+                continue
+
             # pyre-ignore[16]
             frame_annotation = self.frame_annots[idx]["frame_annotation"]
             out.append(
