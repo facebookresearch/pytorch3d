@@ -12,7 +12,7 @@ import torch
 from pytorch3d.implicitron.tools.config import registry, ReplaceableBase
 from torch.utils.data import (
     BatchSampler,
-    ChainDataset,
+    ConcatDataset,
     DataLoader,
     RandomSampler,
     Sampler,
@@ -482,7 +482,7 @@ class SequenceDataLoaderMapProvider(DataLoaderMapProviderBase):
             num_batches=num_batches,
         )
         return DataLoader(
-            ChainDataset([dataset, train_dataset]),
+            ConcatDataset([dataset, train_dataset]),
             batch_sampler=sampler,
             **data_loader_kwargs,
         )
