@@ -894,11 +894,11 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
         for idx in idxs:
             if (
                 subset_filter is not None
+                # pyre-fixme[16]: `JsonIndexDataset` has no attribute `frame_annots`.
                 and self.frame_annots[idx]["subset"] not in subset_filter
             ):
                 continue
 
-            # pyre-ignore[16]
             frame_annotation = self.frame_annots[idx]["frame_annotation"]
             out.append(
                 (frame_annotation.frame_number, frame_annotation.frame_timestamp)

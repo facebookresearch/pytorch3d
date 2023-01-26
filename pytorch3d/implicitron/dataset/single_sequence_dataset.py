@@ -46,6 +46,8 @@ class SingleSceneDataset(DatasetBase, Configurable):
     def __len__(self) -> int:
         return len(self.poses)
 
+    # pyre-fixme[14]: `sequence_frames_in_order` overrides method defined in
+    #  `DatasetBase` inconsistently.
     def sequence_frames_in_order(
         self, seq_name: str
     ) -> Iterator[Tuple[float, int, int]]:
