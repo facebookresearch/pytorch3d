@@ -124,8 +124,11 @@ class VideoWriter:
             quiet: If `True`, suppresses logging messages.
 
         Returns:
-            video_path: The path to the generated video.
+            video_path: The path to the generated video if any frames were added.
+                Otherwise returns an empty string.
         """
+        if self.frame_num == 0:
+            return ""
 
         regexp = os.path.join(self.cache_dir, self.regexp)
 

@@ -219,17 +219,10 @@ def eval_batch(
         frame_type = [frame_type]
 
     is_train = is_train_frame(frame_type)
-    if not (is_train[0] == is_train).all():
-        raise ValueError("All frames in the eval batch have to be either train/test.")
-
-    # pyre-fixme[16]: `Optional` has no attribute `device`.
-    is_known = is_known_frame(frame_type, device=frame_data.image_rgb.device)
-
-    if not ((is_known[1:] == 1).all() and (is_known[0] == 0).all()):
+    if len(is_train) > 1 and (is_train[1] != is_train[1:]).any():
         raise ValueError(
-            "For evaluation the first element of the batch has to be"
-            + " a target view while the rest should be source views."
-        )  # TODO: do we need to enforce this?
+            "All (conditioning) frames in the eval batch have to be either train/test."
+        )
 
     for k in [
         "depth_map",
@@ -362,7 +355,7 @@ def eval_batch(
 
     results["meta"] = {
         # store the size of the batch (corresponds to n_src_views+1)
-        "batch_size": int(is_known.numel()),
+        "batch_size": len(frame_type),
         # store the type of the target frame
         # pyre-fixme[16]: `None` has no attribute `__getitem__`.
         "frame_type": str(frame_data.frame_type[0]),
