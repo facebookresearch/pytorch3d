@@ -149,14 +149,11 @@ def _dump_to_json(
 
 def _get_eval_frame_data(frame_data: Any) -> Any:
     """
-    Masks the unknown image data to make sure we cannot use it at model evaluation time.
+    Masks the target image data to make sure we cannot use it at model evaluation
+    time. Assumes the first batch element is target, the rest are source.
     """
     frame_data_for_eval = copy.deepcopy(frame_data)
-    is_known = ds_utils.is_known_frame(frame_data.frame_type).type_as(
-        frame_data.image_rgb
-    )[:, None, None, None]
     for k in ("image_rgb", "depth_map", "fg_probability", "mask_crop"):
         value = getattr(frame_data_for_eval, k)
-        value_masked = value.clone() * is_known if value is not None else None
-        setattr(frame_data_for_eval, k, value_masked)
+        value[0].zero_()
     return frame_data_for_eval
