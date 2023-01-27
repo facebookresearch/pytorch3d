@@ -29,8 +29,6 @@ class Autodecoder(Configurable, torch.nn.Module):
     ignore_input: bool = False
 
     def __post_init__(self):
-        super().__init__()
-
         if self.n_instances <= 0:
             raise ValueError(f"Invalid n_instances {self.n_instances}")
 

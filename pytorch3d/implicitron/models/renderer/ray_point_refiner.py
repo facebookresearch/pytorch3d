@@ -38,9 +38,6 @@ class RayPointRefiner(Configurable, torch.nn.Module):
     random_sampling: bool
     add_input_samples: bool = True
 
-    def __post_init__(self) -> None:
-        super().__init__()
-
     def forward(
         self,
         input_ray_bundle: ImplicitronRayBundle,

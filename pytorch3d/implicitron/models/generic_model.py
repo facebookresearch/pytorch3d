@@ -304,8 +304,6 @@ class GenericModel(ImplicitronModelBase):  # pyre-ignore: 13
     )
 
     def __post_init__(self):
-        super().__init__()
-
         if self.view_pooler_enabled:
             if self.image_feature_extractor_class_type is None:
                 raise ValueError(

@@ -118,9 +118,6 @@ class IdentityFeatureAggregator(torch.nn.Module, FeatureAggregatorBase):
     the outputs.
     """
 
-    def __post_init__(self):
-        super().__init__()
-
     def get_aggregated_feature_dim(
         self, feats_or_feats_dim: Union[Dict[str, torch.Tensor], int]
     ):
@@ -180,9 +177,6 @@ class ReductionFeatureAggregator(torch.nn.Module, FeatureAggregatorBase):
         ReductionFunction.AVG,
         ReductionFunction.STD,
     )
-
-    def __post_init__(self):
-        super().__init__()
 
     def get_aggregated_feature_dim(
         self, feats_or_feats_dim: Union[Dict[str, torch.Tensor], int]
@@ -274,9 +268,6 @@ class AngleWeightedReductionFeatureAggregator(torch.nn.Module, FeatureAggregator
     )
     weight_by_ray_angle_gamma: float = 1.0
     min_ray_angle_weight: float = 0.1
-
-    def __post_init__(self):
-        super().__init__()
 
     def get_aggregated_feature_dim(
         self, feats_or_feats_dim: Union[Dict[str, torch.Tensor], int]
@@ -376,9 +367,6 @@ class AngleWeightedIdentityFeatureAggregator(torch.nn.Module, FeatureAggregatorB
 
     weight_by_ray_angle_gamma: float = 1.0
     min_ray_angle_weight: float = 0.1
-
-    def __post_init__(self):
-        super().__init__()
 
     def get_aggregated_feature_dim(
         self, feats_or_feats_dim: Union[Dict[str, torch.Tensor], int]

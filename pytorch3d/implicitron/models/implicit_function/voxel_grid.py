@@ -81,7 +81,6 @@ class VoxelGridBase(ReplaceableBase, torch.nn.Module):
     )
 
     def __post_init__(self):
-        super().__init__()
         if 0 not in self.resolution_changes:
             raise ValueError("There has to be key `0` in `resolution_changes`.")
 
@@ -857,7 +856,6 @@ class VoxelGridModule(Configurable, torch.nn.Module):
     param_groups: Dict[str, str] = field(default_factory=lambda: {})
 
     def __post_init__(self):
-        super().__init__()
         run_auto_creation(self)
         n_grids = 1  # Voxel grid objects are batched. We need only a single grid.
         shapes = self.voxel_grid.get_shapes(epoch=0)

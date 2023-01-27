@@ -22,9 +22,6 @@ class RaymarcherBase(ReplaceableBase):
     and marching along them in order to generate a feature render.
     """
 
-    def __init__(self):
-        super().__init__()
-
     def forward(
         self,
         rays_densities: torch.Tensor,
@@ -98,8 +95,6 @@ class AccumulativeRaymarcherBase(RaymarcherBase, torch.nn.Module):
             surface_thickness: Denotes the overlap between the absorption
                 function and the density function.
         """
-        super().__init__()
-
         bg_color = torch.tensor(self.bg_color)
         if bg_color.ndim != 1:
             raise ValueError(f"bg_color (shape {bg_color.shape}) should be a 1D tensor")

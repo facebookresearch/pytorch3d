@@ -14,9 +14,6 @@ from pytorch3d.renderer.cameras import CamerasBase
 
 
 class ImplicitFunctionBase(ABC, ReplaceableBase):
-    def __init__(self):
-        super().__init__()
-
     @abstractmethod
     def forward(
         self,

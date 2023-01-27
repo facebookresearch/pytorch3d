@@ -44,7 +44,6 @@ class SRNRaymarchFunction(Configurable, torch.nn.Module):
     raymarch_function: Any = None
 
     def __post_init__(self):
-        super().__init__()
         self._harmonic_embedding = HarmonicEmbedding(
             self.n_harmonic_functions, append_input=True
         )
@@ -135,7 +134,6 @@ class SRNPixelGenerator(Configurable, torch.nn.Module):
     ray_dir_in_camera_coords: bool = False
 
     def __post_init__(self):
-        super().__init__()
         self._harmonic_embedding = HarmonicEmbedding(
             self.n_harmonic_functions, append_input=True
         )
@@ -249,7 +247,6 @@ class SRNRaymarchHyperNet(Configurable, torch.nn.Module):
     xyz_in_camera_coords: bool = False
 
     def __post_init__(self):
-        super().__init__()
         raymarch_input_embedding_dim = (
             HarmonicEmbedding.get_output_dim_static(
                 self.in_features,
@@ -335,7 +332,6 @@ class SRNImplicitFunction(ImplicitFunctionBase, torch.nn.Module):
     pixel_generator: SRNPixelGenerator
 
     def __post_init__(self):
-        super().__init__()
         run_auto_creation(self)
 
     def create_raymarch_function(self) -> None:
@@ -393,7 +389,6 @@ class SRNHyperNetImplicitFunction(ImplicitFunctionBase, torch.nn.Module):
     pixel_generator: SRNPixelGenerator
 
     def __post_init__(self):
-        super().__init__()
         run_auto_creation(self)
 
     def create_hypernet(self) -> None:

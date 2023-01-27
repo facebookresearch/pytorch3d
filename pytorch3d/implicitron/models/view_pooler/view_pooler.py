@@ -38,7 +38,6 @@ class ViewPooler(Configurable, torch.nn.Module):
     feature_aggregator: FeatureAggregatorBase
 
     def __post_init__(self):
-        super().__init__()
         run_auto_creation(self)
 
     def get_aggregated_feature_dim(self, feats: Union[Dict[str, torch.Tensor], int]):

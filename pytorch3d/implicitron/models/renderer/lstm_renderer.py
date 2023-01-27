@@ -57,7 +57,6 @@ class LSTMRenderer(BaseRenderer, torch.nn.Module):
     verbose: bool = False
 
     def __post_init__(self):
-        super().__init__()
         self._lstm = torch.nn.LSTMCell(
             input_size=self.n_feature_channels,
             hidden_size=self.hidden_size,

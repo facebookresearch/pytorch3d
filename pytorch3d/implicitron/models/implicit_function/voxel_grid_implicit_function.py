@@ -186,7 +186,6 @@ class VoxelGridImplicitFunction(ImplicitFunctionBase, torch.nn.Module):
     volume_cropping_epochs: Tuple[int, ...] = ()
 
     def __post_init__(self) -> None:
-        super().__init__()
         run_auto_creation(self)
         # pyre-ignore[16]
         self.voxel_grid_scaffold = self._create_voxel_grid_scaffold()

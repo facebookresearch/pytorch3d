@@ -45,9 +45,6 @@ class DecoderFunctionBase(ReplaceableBase, torch.nn.Module):
     space and transforms it into the required quantity (for example density and color).
     """
 
-    def __post_init__(self):
-        super().__init__()
-
     def forward(
         self, features: torch.Tensor, z: Optional[torch.Tensor] = None
     ) -> torch.Tensor:
@@ -83,7 +80,6 @@ class ElementwiseDecoder(DecoderFunctionBase):
     operation: DecoderActivation = DecoderActivation.IDENTITY
 
     def __post_init__(self):
-        super().__post_init__()
         if self.operation not in [
             DecoderActivation.RELU,
             DecoderActivation.SOFTPLUS,
@@ -163,8 +159,6 @@ class MLPWithInputSkips(Configurable, torch.nn.Module):
     use_xavier_init: bool = True
 
     def __post_init__(self):
-        super().__init__()
-
         try:
             last_activation = {
                 DecoderActivation.RELU: torch.nn.ReLU(True),
@@ -284,7 +278,6 @@ class MLPDecoder(DecoderFunctionBase):
     network: MLPWithInputSkips
 
     def __post_init__(self):
-        super().__post_init__()
         run_auto_creation(self)
 
     def forward(

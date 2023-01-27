@@ -66,8 +66,6 @@ class IdrFeatureField(ImplicitFunctionBase, torch.nn.Module):
     encoding_dim: int = 0
 
     def __post_init__(self):
-        super().__init__()
-
         dims = [self.d_in] + list(self.dims) + [self.d_out + self.feature_vector_size]
 
         self.embed_fn = None

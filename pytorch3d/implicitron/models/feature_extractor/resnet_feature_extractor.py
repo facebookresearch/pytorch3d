@@ -78,7 +78,6 @@ class ResNetFeatureExtractor(FeatureExtractorBase):
     feature_rescale: float = 1.0
 
     def __post_init__(self):
-        super().__init__()
         if self.normalize_image:
             # register buffers needed to normalize the image
             for k, v in (("_resnet_mean", _RESNET_MEAN), ("_resnet_std", _RESNET_STD)):

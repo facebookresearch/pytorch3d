@@ -43,9 +43,6 @@ class RayTracing(Configurable, nn.Module):
     n_steps: int = 100
     n_secant_steps: int = 8
 
-    def __post_init__(self):
-        super().__init__()
-
     def forward(
         self,
         sdf: Callable[[torch.Tensor], torch.Tensor],

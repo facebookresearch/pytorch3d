@@ -25,9 +25,6 @@ class RegularizationMetricsBase(ReplaceableBase, torch.nn.Module):
     depend on the model's parameters.
     """
 
-    def __post_init__(self) -> None:
-        super().__init__()
-
     def forward(
         self, model: Any, keys_prefix: str = "loss_", **kwargs
     ) -> Dict[str, Any]:
@@ -55,9 +52,6 @@ class ViewMetricsBase(ReplaceableBase, torch.nn.Module):
     Replaceable abstract base for model metrics.
     `forward()` method produces losses and other metrics.
     """
-
-    def __post_init__(self) -> None:
-        super().__init__()
 
     def forward(
         self,

@@ -49,9 +49,6 @@ class ImplicitronModelBase(ReplaceableBase, torch.nn.Module):
     # the training loop.
     log_vars: List[str] = field(default_factory=lambda: ["objective"])
 
-    def __init__(self) -> None:
-        super().__init__()
-
     def forward(
         self,
         *,  # force keyword-only arguments

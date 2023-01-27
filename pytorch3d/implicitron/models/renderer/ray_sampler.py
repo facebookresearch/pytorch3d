@@ -20,9 +20,6 @@ class RaySamplerBase(ReplaceableBase):
     Base class for ray samplers.
     """
 
-    def __init__(self):
-        super().__init__()
-
     def forward(
         self,
         cameras: CamerasBase,
@@ -102,8 +99,6 @@ class AbstractMaskRaySampler(RaySamplerBase, torch.nn.Module):
     stratified_point_sampling_evaluation: bool = False
 
     def __post_init__(self):
-        super().__init__()
-
         if (self.n_rays_per_image_sampled_from_mask is not None) and (
             self.n_rays_total_training is not None
         ):

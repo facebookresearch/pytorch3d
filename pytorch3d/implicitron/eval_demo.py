@@ -130,7 +130,7 @@ def evaluate_dbir_for_category(
         raise ValueError("Image size should be set in the dataset")
 
     # init the simple DBIR model
-    model = ModelDBIR(  # pyre-ignore[28]: c’tor implicitly overridden
+    model = ModelDBIR(
         render_image_width=image_size,
         render_image_height=image_size,
         bg_color=bg_color,

@@ -26,9 +26,6 @@ class GlobalEncoderBase(ReplaceableBase):
     (`SequenceAutodecoder`).
     """
 
-    def __init__(self) -> None:
-        super().__init__()
-
     def get_encoding_dim(self):
         """
         Returns the dimensionality of the returned encoding.
@@ -69,7 +66,6 @@ class SequenceAutodecoder(GlobalEncoderBase, torch.nn.Module):  # pyre-ignore: 1
     autodecoder: Autodecoder
 
     def __post_init__(self):
-        super().__init__()
         run_auto_creation(self)
 
     def get_encoding_dim(self):
@@ -103,7 +99,6 @@ class HarmonicTimeEncoder(GlobalEncoderBase, torch.nn.Module):
     time_divisor: float = 1.0
 
     def __post_init__(self):
-        super().__init__()
         self._harmonic_embedding = HarmonicEmbedding(
             n_harmonic_functions=self.n_harmonic_functions,
             append_input=self.append_input,

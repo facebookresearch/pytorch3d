@@ -184,6 +184,7 @@ ENABLED_SUFFIX: str = "_enabled"
 CREATE_PREFIX: str = "create_"
 IMPL_SUFFIX: str = "_impl"
 TWEAK_SUFFIX: str = "_tweak_args"
+_DATACLASS_INIT: str = "__dataclass_own_init__"
 
 
 class ReplaceableBase:
@@ -834,6 +835,9 @@ def expand_args_fields(
     then the default_factory of x_args will also have a call to x_tweak_args(X, x_args) and
     the default_factory of x_Y_args will also have a call to x_tweak_args(Y, x_Y_args).
 
+    In addition, if the class inherits torch.nn.Module, the generated __init__ will
+    call torch.nn.Module's __init__ before doing anything else.
+
     Note that although the *_args members are intended to have type DictConfig, they
     are actually internally annotated as dicts. OmegaConf is happy to see a DictConfig
     in place of a dict, but not vice-versa. Allowing dict lets a class user specify
@@ -912,7 +916,38 @@ def expand_args_fields(
     some_class._known_implementations = known_implementations
 
     dataclasses.dataclass(eq=False)(some_class)
+    _fixup_class_init(some_class)
     return some_class
+
+
+def _fixup_class_init(some_class) -> None:
+    """
+    In-place modification of the some_class class which happens
+    after dataclass processing.
+
+    If the dataclass some_class inherits torch.nn.Module, then
+    makes torch.nn.Module's __init__ be called before anything else
+    on instantiation of some_class.
+    This is a bit like attr's __pre_init__.
+    """
+
+    assert _is_actually_dataclass(some_class)
+    try:
+        import torch
+    except ModuleNotFoundError:
+        return
+
+    if not issubclass(some_class, torch.nn.Module):
+        return
+
+    def init(self, *args, **kwargs) -> None:
+        torch.nn.Module.__init__(self)
+        getattr(self, _DATACLASS_INIT)(*args, **kwargs)
+
+    assert not hasattr(some_class, _DATACLASS_INIT)
+
+    setattr(some_class, _DATACLASS_INIT, some_class.__init__)
+    some_class.__init__ = init
 
 
 def get_default_args_field(

@@ -41,9 +41,6 @@ class ModelDBIR(ImplicitronModelBase):
     bg_color: Tuple[float, float, float] = (0.0, 0.0, 0.0)
     max_points: int = -1
 
-    def __post_init__(self):
-        super().__init__()
-
     def forward(
         self,
         *,  # force keyword-only arguments

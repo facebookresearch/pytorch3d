@@ -141,9 +141,6 @@ class BaseRenderer(ABC, ReplaceableBase):
     Base class for all Renderer implementations.
     """
 
-    def __init__(self) -> None:
-        super().__init__()
-
     def requires_object_mask(self) -> bool:
         """
         Whether `forward` needs the object_mask.

@@ -212,9 +212,7 @@ from pytorch3d.implicitron.tools.config import registry
 class XRayRenderer(BaseRenderer, torch.nn.Module):
     n_pts_per_ray: int = 64
 
-    # if there are other base classes, make sure to call `super().__init__()` explicitly
     def __post_init__(self):
-        super().__init__()
         # custom initialization
 
     def forward(

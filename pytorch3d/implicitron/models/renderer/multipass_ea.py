@@ -90,7 +90,6 @@ class MultiPassEmissionAbsorptionRenderer(  # pyre-ignore: 13
     return_weights: bool = False
 
     def __post_init__(self):
-        super().__init__()
         self._refiners = {
             EvaluationMode.TRAINING: RayPointRefiner(
                 n_pts_per_ray=self.n_pts_per_ray_fine_training,

@@ -56,7 +56,6 @@ class NeuralRadianceFieldBase(ImplicitFunctionBase, torch.nn.Module):
     """
 
     def __post_init__(self):
-        super().__init__()
         # The harmonic embedding layer converts input 3D coordinates
         # to a representation that is more suitable for
         # processing with a deep neural network.

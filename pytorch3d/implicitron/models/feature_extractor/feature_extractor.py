@@ -15,9 +15,6 @@ class FeatureExtractorBase(ReplaceableBase, torch.nn.Module):
     Base class for an extractor of a set of features from images.
     """
 
-    def __init__(self):
-        super().__init__()
-
     def get_feat_dims(self) -> int:
         """
         Returns:

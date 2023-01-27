@@ -35,7 +35,6 @@ class SignedDistanceFunctionRenderer(BaseRenderer, torch.nn.Module):  # pyre-ign
     def __post_init__(
         self,
     ):
-        super().__init__()
         render_features_dimensions = self.render_features_dimensions
         if len(self.bg_color) not in [1, render_features_dimensions]:
             raise ValueError(

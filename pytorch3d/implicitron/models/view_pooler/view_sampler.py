@@ -29,9 +29,6 @@ class ViewSampler(Configurable, torch.nn.Module):
     masked_sampling: bool = False
     sampling_mode: str = "bilinear"
 
-    def __post_init__(self):
-        super().__init__()
-
     def forward(
         self,
         *,  # force kw args
