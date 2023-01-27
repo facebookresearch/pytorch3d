@@ -48,7 +48,8 @@ class MockDataset(DatasetBase):
             for i in idx:
                 self.frame_annots[i]["frame_annotation"].sequence_name = seq_name
 
-    def get_frame_numbers_and_timestamps(self, idxs):
+    def get_frame_numbers_and_timestamps(self, idxs, subset_filter=None):
+        assert subset_filter is None
         out = []
         for idx in idxs:
             frame_annotation = self.frame_annots[idx]["frame_annotation"]
