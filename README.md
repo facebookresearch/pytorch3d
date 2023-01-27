@@ -12,7 +12,7 @@ Key features include:
 - Data structure for storing and manipulating triangle meshes
 - Efficient operations on triangle meshes (projective transformations, graph convolution, sampling, loss functions)
 - A differentiable mesh renderer
-- Implicitron, see [its README](projects/implicitron_trainer), a framework for new-view synthesis via implicit representations.
+- Implicitron, see [its README](projects/implicitron_trainer), a framework for new-view synthesis via implicit representations. ([blog post](https://ai.facebook.com/blog/implicitron-a-new-modular-extensible-framework-for-neural-implicit-representations-in-pytorch3d/))
 
 PyTorch3D is designed to integrate smoothly with deep learning methods for predicting and manipulating 3D data.
 For this reason, all operators in PyTorch3D:
@@ -23,6 +23,8 @@ For this reason, all operators in PyTorch3D:
 - Can utilize GPUs for acceleration
 
 Within FAIR, PyTorch3D has been used to power research projects such as [Mesh R-CNN](https://arxiv.org/abs/1906.02739).
+
+See our [blog post](https://ai.facebook.com/blog/-introducing-pytorch3d-an-open-source-library-for-3d-deep-learning/) to see more demos and learn about PyTorch3D.
 
 ## Installation
 
