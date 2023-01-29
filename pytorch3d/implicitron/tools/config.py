@@ -944,7 +944,7 @@ def _fixup_class_init(some_class) -> None:
         torch.nn.Module.__init__(self)
         getattr(self, _DATACLASS_INIT)(*args, **kwargs)
 
-    assert not hasattr(some_class, _DATACLASS_INIT)
+    assert _DATACLASS_INIT not in some_class.__dict__
 
     setattr(some_class, _DATACLASS_INIT, some_class.__init__)
     some_class.__init__ = init
