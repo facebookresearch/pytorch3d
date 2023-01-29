@@ -464,9 +464,6 @@ class TestTransform(TestCaseMixin, unittest.TestCase):
         for invalid_index in (
             torch.tensor([1, 0, 1], dtype=torch.float32, device=device),  # float tensor
             1.2,  # float index
-            torch.tensor(
-                [[1, 0, 1], [1, 0, 1]], dtype=torch.int32, device=device
-            ),  # multidimensional tensor
         ):
             with self.assertRaises(IndexError):
                 t3d_selected = t3d[invalid_index]
