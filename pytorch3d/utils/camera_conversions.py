@@ -42,12 +42,11 @@ def cameras_from_opencv_projection(
     followed by the homogenization of `x_screen_opencv`.
 
     Note:
-        The parameters `R, tvec, camera_matrix` correspond to the outputs of
-        `cv2.decomposeProjectionMatrix`.
-
-        The `rvec` parameter of the `cv2.projectPoints` is an axis-angle vector
-        that can be converted to the rotation matrix `R` expected here by
-        calling the `so3_exp_map` function.
+        The parameters `R, tvec, camera_matrix` correspond to the inputs of
+        `cv2.projectPoints(x_world, rvec, tvec, camera_matrix, [])`,
+        where `rvec` is an axis-angle vector that can be obtained from
+        the rotation matrix `R` expected here by calling the `so3_log_map` function.
+        Correspondingly, `R` can be obtained from `rvec` by calling `so3_exp_map`.
 
     Args:
         R: A batch of rotation matrices of shape `(N, 3, 3)`.
@@ -73,12 +72,11 @@ def opencv_from_cameras_projection(
     of `cameras_from_opencv_projection`.
 
     Note:
-        The outputs `R, tvec, camera_matrix` correspond to the outputs of
-        `cv2.decomposeProjectionMatrix`.
-
-        The `rvec` parameter of the `cv2.projectPoints` is an axis-angle vector
-        that can be converted from the returned rotation matrix `R` here by
-        calling the `so3_log_map` function.
+        The outputs `R, tvec, camera_matrix` correspond to the inputs of
+        `cv2.projectPoints(x_world, rvec, tvec, camera_matrix, [])`,
+        where `rvec` is an axis-angle vector that can be obtained from
+        the rotation matrix `R` output here by calling the `so3_log_map` function.
+        Correspondingly, `R` can be obtained from `rvec` by calling `so3_exp_map`.
 
     Args:
         cameras: A batch of `N` cameras in the PyTorch3D convention.
