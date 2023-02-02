@@ -86,6 +86,8 @@ class VideoWriter:
                 or a 2-tuple defining the size of the output image.
         """
 
+        # pyre-fixme[6]: For 1st argument expected `Union[PathLike[str], str]` but
+        #  got `Optional[str]`.
         outfile = os.path.join(self.cache_dir, self.regexp % self.frame_num)
 
         if isinstance(frame, matplotlib.figure.Figure):
@@ -130,6 +132,8 @@ class VideoWriter:
         if self.frame_num == 0:
             return ""
 
+        # pyre-fixme[6]: For 1st argument expected `Union[PathLike[str], str]` but
+        #  got `Optional[str]`.
         regexp = os.path.join(self.cache_dir, self.regexp)
 
         if shutil.which(self.ffmpeg_bin) is None:

@@ -215,6 +215,8 @@ def load_obj(
     """
     data_dir = "./"
     if isinstance(f, (str, bytes, Path)):
+        # pyre-fixme[6]: For 1st argument expected `PathLike[Variable[AnyStr <:
+        #  [str, bytes]]]` but got `Union[Path, bytes, str]`.
         data_dir = os.path.dirname(f)
     if path_manager is None:
         path_manager = PathManager()
@@ -296,6 +298,8 @@ class MeshObjFormat(MeshFormatInterpreter):
     def __init__(self) -> None:
         self.known_suffixes = (".obj",)
 
+    # pyre-fixme[14]: `read` overrides method defined in `MeshFormatInterpreter`
+    #  inconsistently.
     def read(
         self,
         path: PathOrStr,
@@ -320,6 +324,8 @@ class MeshObjFormat(MeshFormatInterpreter):
         )
         return mesh
 
+    # pyre-fixme[14]: `save` overrides method defined in `MeshFormatInterpreter`
+    #  inconsistently.
     def save(
         self,
         data: Meshes,

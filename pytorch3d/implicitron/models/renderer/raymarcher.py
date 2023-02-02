@@ -111,6 +111,8 @@ class AccumulativeRaymarcherBase(RaymarcherBase, torch.nn.Module):
             "minimum": lambda curr, acc: torch.minimum(curr, acc),
         }[self.weight_function_type]
 
+    # pyre-fixme[14]: `forward` overrides method defined in `RaymarcherBase`
+    #  inconsistently.
     def forward(
         self,
         rays_densities: torch.Tensor,

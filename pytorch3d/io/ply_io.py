@@ -1372,6 +1372,8 @@ class MeshPlyFormat(MeshFormatInterpreter):
         )
         return mesh
 
+    # pyre-fixme[14]: `save` overrides method defined in `MeshFormatInterpreter`
+    #  inconsistently.
     def save(
         self,
         data: Meshes,
@@ -1452,6 +1454,8 @@ class PointcloudPlyFormat(PointcloudFormatInterpreter):
         )
         return pointcloud
 
+    # pyre-fixme[14]: `save` overrides method defined in
+    #  `PointcloudFormatInterpreter` inconsistently.
     def save(
         self,
         data: Pointclouds,

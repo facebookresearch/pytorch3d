@@ -315,6 +315,8 @@ class GenericModel(ImplicitronModelBase):  # pyre-ignore: 13
 
         self.log_loss_weights()
 
+    # pyre-fixme[14]: `forward` overrides method defined in `ImplicitronModelBase`
+    #  inconsistently.
     def forward(
         self,
         *,  # force keyword-only arguments
