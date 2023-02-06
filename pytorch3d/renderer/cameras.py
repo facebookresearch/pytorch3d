@@ -695,8 +695,6 @@ class FoVPerspectiveCameras(CamerasBase):
         )
         return transform
 
-    # pyre-fixme[14]: `unproject_points` overrides method defined in `CamerasBase`
-    #  inconsistently.
     def unproject_points(
         self,
         xy_depth: torch.Tensor,
@@ -940,8 +938,6 @@ class FoVOrthographicCameras(CamerasBase):
         )
         return transform
 
-    # pyre-fixme[14]: `unproject_points` overrides method defined in `CamerasBase`
-    #  inconsistently.
     def unproject_points(
         self,
         xy_depth: torch.Tensor,
@@ -1149,8 +1145,6 @@ class PerspectiveCameras(CamerasBase):
         )
         return transform
 
-    # pyre-fixme[14]: `unproject_points` overrides method defined in `CamerasBase`
-    #  inconsistently.
     def unproject_points(
         self,
         xy_depth: torch.Tensor,
@@ -1388,8 +1382,6 @@ class OrthographicCameras(CamerasBase):
         )
         return transform
 
-    # pyre-fixme[14]: `unproject_points` overrides method defined in `CamerasBase`
-    #  inconsistently.
     def unproject_points(
         self,
         xy_depth: torch.Tensor,

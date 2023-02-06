@@ -368,8 +368,6 @@ class R2N2(ShapeNetBase):  # pragma: no cover
         T = RT[3, :3]
         return R, T
 
-    # pyre-fixme[14]: `render` overrides method defined in `ShapeNetBase`
-    #  inconsistently.
     def render(
         self,
         model_ids: Optional[List[str]] = None,

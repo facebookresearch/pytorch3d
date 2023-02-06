@@ -66,8 +66,6 @@ class SignedDistanceFunctionRenderer(BaseRenderer, torch.nn.Module):  # pyre-ign
     def requires_object_mask(self) -> bool:
         return True
 
-    # pyre-fixme[14]: `forward` overrides method defined in `BaseRenderer`
-    #  inconsistently.
     def forward(
         self,
         ray_bundle: ImplicitronRayBundle,

@@ -57,7 +57,6 @@ class ImplicitronEvaluator(EvaluatorBase):
     def __post_init__(self):
         run_auto_creation(self)
 
-    # pyre-fixme[14]: `run` overrides method defined in `EvaluatorBase` inconsistently.
     def run(
         self,
         model: ImplicitronModelBase,

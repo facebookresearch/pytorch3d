@@ -298,8 +298,6 @@ class MeshObjFormat(MeshFormatInterpreter):
     def __init__(self) -> None:
         self.known_suffixes = (".obj",)
 
-    # pyre-fixme[14]: `read` overrides method defined in `MeshFormatInterpreter`
-    #  inconsistently.
     def read(
         self,
         path: PathOrStr,
@@ -324,8 +322,6 @@ class MeshObjFormat(MeshFormatInterpreter):
         )
         return mesh
 
-    # pyre-fixme[14]: `save` overrides method defined in `MeshFormatInterpreter`
-    #  inconsistently.
     def save(
         self,
         data: Meshes,

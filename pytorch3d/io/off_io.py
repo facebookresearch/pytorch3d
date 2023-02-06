@@ -456,8 +456,6 @@ class MeshOffFormat(MeshFormatInterpreter):
         )
         return mesh
 
-    # pyre-fixme[14]: `save` overrides method defined in `MeshFormatInterpreter`
-    #  inconsistently.
     def save(
         self,
         data: Meshes,

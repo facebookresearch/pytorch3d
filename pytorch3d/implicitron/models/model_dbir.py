@@ -41,8 +41,6 @@ class ModelDBIR(ImplicitronModelBase):
     bg_color: Tuple[float, float, float] = (0.0, 0.0, 0.0)
     max_points: int = -1
 
-    # pyre-fixme[14]: `forward` overrides method defined in `ImplicitronModelBase`
-    #  inconsistently.
     def forward(
         self,
         *,  # force keyword-only arguments

@@ -345,8 +345,6 @@ class SRNImplicitFunction(ImplicitFunctionBase, torch.nn.Module):
     def raymarch_function_tweak_args(cls, type, args: DictConfig) -> None:
         args.pop("latent_dim", None)
 
-    # pyre-fixme[14]: `forward` overrides method defined in `ImplicitFunctionBase`
-    #  inconsistently.
     def forward(
         self,
         *,
@@ -406,8 +404,6 @@ class SRNHyperNetImplicitFunction(ImplicitFunctionBase, torch.nn.Module):
         args.pop("latent_dim", None)
         args.pop("latent_dim_hypernet", None)
 
-    # pyre-fixme[14]: `forward` overrides method defined in `ImplicitFunctionBase`
-    #  inconsistently.
     def forward(
         self,
         *,

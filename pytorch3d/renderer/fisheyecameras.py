@@ -347,8 +347,6 @@ class FishEyeCameras(CamerasBase):
         point3d_est[..., :2] = theta.tan()[..., None] / xr_yrNorm[..., None] * xr_yr
         return point3d_est
 
-    # pyre-fixme[14]: `unproject_points` overrides method defined in `CamerasBase`
-    #  inconsistently.
     def unproject_points(
         self,
         xy_depth: torch.Tensor,
