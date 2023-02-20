@@ -1334,7 +1334,7 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
         )
 
         # The cube should've been chopped into three submeshes.
-        self.assertEquals(len(subcubes), 3)
+        self.assertEqual(len(subcubes), 3)
 
         # The first submesh should be a single facet of cube#2.
         front_facet = to_sorted(
