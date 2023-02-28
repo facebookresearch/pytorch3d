@@ -17,58 +17,68 @@ import torch
 import tqdm
 from omegaconf import DictConfig
 from pytorch3d.common.compat import prod
+
+from pytorch3d.implicitron.models.base_model import (
+    ImplicitronModelBase,
+    ImplicitronRender,
+)
+from pytorch3d.implicitron.models.feature_extractor import FeatureExtractorBase
+from pytorch3d.implicitron.models.feature_extractor.resnet_feature_extractor import (  # noqa
+    ResNetFeatureExtractor,
+)
+from pytorch3d.implicitron.models.global_encoder.global_encoder import GlobalEncoderBase
+from pytorch3d.implicitron.models.implicit_function.base import ImplicitFunctionBase
+from pytorch3d.implicitron.models.implicit_function.idr_feature_field import (  # noqa
+    IdrFeatureField,
+)
+from pytorch3d.implicitron.models.implicit_function.neural_radiance_field import (  # noqa
+    NeRFormerImplicitFunction,
+    NeuralRadianceFieldImplicitFunction,
+)
+from pytorch3d.implicitron.models.implicit_function.scene_representation_networks import (  # noqa
+    SRNHyperNetImplicitFunction,
+    SRNImplicitFunction,
+)
+from pytorch3d.implicitron.models.implicit_function.voxel_grid_implicit_function import (  # noqa
+    VoxelGridImplicitFunction,
+)
 from pytorch3d.implicitron.models.metrics import (
     RegularizationMetricsBase,
     ViewMetricsBase,
 )
-from pytorch3d.implicitron.models.renderer.base import ImplicitronRayBundle
+
+from pytorch3d.implicitron.models.renderer.base import (
+    BaseRenderer,
+    EvaluationMode,
+    ImplicitFunctionWrapper,
+    ImplicitronRayBundle,
+    RendererOutput,
+    RenderSamplingMode,
+)
+from pytorch3d.implicitron.models.renderer.lstm_renderer import LSTMRenderer  # noqa
+from pytorch3d.implicitron.models.renderer.multipass_ea import (  # noqa
+    MultiPassEmissionAbsorptionRenderer,
+)
+from pytorch3d.implicitron.models.renderer.ray_sampler import RaySamplerBase
+from pytorch3d.implicitron.models.renderer.sdf_renderer import (  # noqa
+    SignedDistanceFunctionRenderer,
+)
+from pytorch3d.implicitron.models.view_pooler.view_pooler import ViewPooler
 from pytorch3d.implicitron.tools import image_utils, vis_utils
 from pytorch3d.implicitron.tools.config import (
     expand_args_fields,
     registry,
     run_auto_creation,
 )
+
 from pytorch3d.implicitron.tools.rasterize_mc import rasterize_sparse_ray_bundle
 from pytorch3d.implicitron.tools.utils import cat_dataclass
 from pytorch3d.renderer import utils as rend_utils
-
 from pytorch3d.renderer.cameras import CamerasBase
+
 
 if TYPE_CHECKING:
     from visdom import Visdom
-
-from .base_model import ImplicitronModelBase, ImplicitronRender
-from .feature_extractor import FeatureExtractorBase
-from .feature_extractor.resnet_feature_extractor import ResNetFeatureExtractor  # noqa
-from .global_encoder.global_encoder import GlobalEncoderBase
-from .implicit_function.base import ImplicitFunctionBase
-from .implicit_function.idr_feature_field import IdrFeatureField  # noqa
-from .implicit_function.neural_radiance_field import (  # noqa
-    NeRFormerImplicitFunction,
-    NeuralRadianceFieldImplicitFunction,
-)
-from .implicit_function.scene_representation_networks import (  # noqa
-    SRNHyperNetImplicitFunction,
-    SRNImplicitFunction,
-)
-from .implicit_function.voxel_grid_implicit_function import (  # noqa
-    VoxelGridImplicitFunction,
-)
-
-from .renderer.base import (
-    BaseRenderer,
-    EvaluationMode,
-    ImplicitFunctionWrapper,
-    RendererOutput,
-    RenderSamplingMode,
-)
-from .renderer.lstm_renderer import LSTMRenderer  # noqa
-from .renderer.multipass_ea import MultiPassEmissionAbsorptionRenderer  # noqa
-from .renderer.ray_sampler import RaySamplerBase
-from .renderer.sdf_renderer import SignedDistanceFunctionRenderer  # noqa
-from .view_pooler.view_pooler import ViewPooler
-
-
 logger = logging.getLogger(__name__)
 
 
