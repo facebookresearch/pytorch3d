@@ -537,7 +537,6 @@ def _safe_as_tensor(data, dtype):
 # each batch is loaded and collated by a single worker;
 # since sequences tend to co-occur within batches, this is useful.
 @functools.lru_cache(maxsize=256)
-# pyre-ignore
 def _load_pointcloud(pcl_path: Union[str, Path], max_points: int = 0) -> Pointclouds:
     pcl = IO().load_pointcloud(pcl_path)
     if max_points > 0:
