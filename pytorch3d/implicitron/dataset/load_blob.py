@@ -1,15 +1,18 @@
 import functools
 import os
 import warnings
+from pathlib import Path
+from typing import Any, Optional, Tuple, Union
 
 import numpy as np
-from PIL import Image
 import torch
-from typing import Any, Optional, Tuple
+from PIL import Image
 
 from pytorch3d.implicitron.dataset import types
 from pytorch3d.implicitron.dataset.dataset_base import FrameData
 from pytorch3d.io import IO
+from pytorch3d.renderer.cameras import PerspectiveCameras
+from pytorch3d.structures.pointclouds import Pointclouds
 
 
 class BlobLoader:
@@ -44,6 +47,7 @@ class BlobLoader:
         box_crop_context: The amount of additional padding added to each
                 dimension of the cropping bounding box, relative to box size.
     """
+
     path_manager: Any = None
 
     def __init__(
@@ -371,7 +375,7 @@ def _get_bbox_from_mask(
         masks_for_box = (mask > thr).astype(np.float32)
         thr -= decrease_quant
     if thr <= 0.0:
-        warnings.warn(f"Empty masks_for_bbox (thr={thr}) => using full image.")
+        warnings.warn(f"Empty masks_for_bbox (thr={thr}) => using full image.", stacklevel=1)
 
     x0, x1 = _get_1d_bounds(masks_for_box.sum(axis=-2))
     y0, y1 = _get_1d_bounds(masks_for_box.sum(axis=-1))

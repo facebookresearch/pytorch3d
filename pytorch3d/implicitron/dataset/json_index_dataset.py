@@ -15,7 +15,6 @@ import random
 import warnings
 from collections import defaultdict
 from itertools import islice
-from pathlib import Path
 from typing import (
     Any,
     ClassVar,
@@ -30,18 +29,17 @@ from typing import (
     Union,
 )
 
-import numpy as np
 import torch
 from tqdm import tqdm
 
-from pytorch3d.implicitron.tools.config import registry, ReplaceableBase
 from pytorch3d.implicitron.dataset import types
 from pytorch3d.implicitron.dataset.dataset_base import DatasetBase, FrameData
 from pytorch3d.implicitron.dataset.load_blob import BlobLoader
 from pytorch3d.implicitron.dataset.utils import is_known_frame_scalar
+
+from pytorch3d.implicitron.tools.config import registry, ReplaceableBase
 from pytorch3d.renderer.camera_utils import join_cameras_as_batch
-from pytorch3d.renderer.cameras import CamerasBase, PerspectiveCameras
-from pytorch3d.structures.pointclouds import Pointclouds
+from pytorch3d.renderer.cameras import CamerasBase
 
 
 logger = logging.getLogger(__name__)
@@ -177,20 +175,20 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
         self._extract_and_set_eval_batches()
 
         self.blob_loader = BlobLoader(
-            dataset_root = self.dataset_root,
-            load_images = self.load_images,
-            load_depths = self.load_depths,
-            load_depth_masks = self.load_depth_masks,
-            load_masks = self.load_masks,
-            load_point_clouds = self.load_point_clouds,
-            max_points = self.max_points,
-            mask_images = self.mask_images,
-            mask_depths = self.mask_depths,
-            image_height = self.image_height,
-            image_width = self.image_width,
-            box_crop = self.box_crop,
-            box_crop_mask_thr = self.box_crop_mask_thr,
-            box_crop_context = self.box_crop_context,
+            dataset_root=self.dataset_root,
+            load_images=self.load_images,
+            load_depths=self.load_depths,
+            load_depth_masks=self.load_depth_masks,
+            load_masks=self.load_masks,
+            load_point_clouds=self.load_point_clouds,
+            max_points=self.max_points,
+            mask_images=self.mask_images,
+            mask_depths=self.mask_depths,
+            image_height=self.image_height,
+            image_width=self.image_width,
+            box_crop=self.box_crop,
+            box_crop_mask_thr=self.box_crop_mask_thr,
+            box_crop_context=self.box_crop_context,
         )
         logger.info(str(self))
 
