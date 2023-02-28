@@ -375,7 +375,9 @@ def _get_bbox_from_mask(
         masks_for_box = (mask > thr).astype(np.float32)
         thr -= decrease_quant
     if thr <= 0.0:
-        warnings.warn(f"Empty masks_for_bbox (thr={thr}) => using full image.", stacklevel=1)
+        warnings.warn(
+            f"Empty masks_for_bbox (thr={thr}) => using full image.", stacklevel=1
+        )
 
     x0, x1 = _get_1d_bounds(masks_for_box.sum(axis=-2))
     y0, y1 = _get_1d_bounds(masks_for_box.sum(axis=-1))
