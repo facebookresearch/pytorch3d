@@ -44,7 +44,6 @@ class BlobLoader:
         box_crop_context: The amount of additional padding added to each
                 dimension of the cropping bounding box, relative to box size.
     """
-
     path_manager: Any = None
 
     def __init__(
@@ -64,20 +63,20 @@ class BlobLoader:
         box_crop_mask_thr,
         box_crop_context,
     ):
-        self.dataset_root = dataset_root
-        self.load_images = load_images
-        self.load_depths = load_depths
-        self.load_depth_masks = load_depth_masks
-        self.load_masks = load_masks
-        self.load_point_clouds = load_point_clouds
-        self.max_points = max_points
-        self.mask_images = mask_images
-        self.mask_depths = mask_depths
-        self.image_height = image_height
-        self.image_width = image_width
-        self.box_crop = box_crop
-        self.box_crop_mask_thr = box_crop_mask_thr
-        self.box_crop_context = box_crop_context
+        self.dataset_root: str = dataset_root
+        self.load_images: bool = load_images
+        self.load_depths: bool = load_depths
+        self.load_depth_masks: bool = load_depth_masks
+        self.load_masks: bool = load_masks
+        self.load_point_clouds: bool = load_point_clouds
+        self.max_points: int = max_points
+        self.mask_images: bool = mask_images
+        self.mask_depths: bool = mask_depths
+        self.image_height: int = image_height
+        self.image_width: int = image_width
+        self.box_crop: bool = box_crop
+        self.box_crop_mask_thr: float = box_crop_mask_thr
+        self.box_crop_context: float = box_crop_context
 
     def load(
         self,
@@ -341,7 +340,6 @@ class BlobLoader:
             align_corners=False if mode == "bilinear" else None,
             recompute_scale_factor=True,
         )[0]
-        # pyre-fixme[19]: Expected 1 positional argument.
         imre_ = torch.zeros(image.shape[0], self.image_height, self.image_width)
         imre_[:, 0 : imre.shape[1], 0 : imre.shape[2]] = imre
         mask = torch.zeros(1, self.image_height, self.image_width)

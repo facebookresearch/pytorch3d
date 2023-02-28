@@ -52,7 +52,6 @@ if TYPE_CHECKING:
 
     class FrameAnnotsEntry(TypedDict):
         subset: Optional[str]
-        # pyre-ignore
         frame_annotation: types.FrameAnnotation
 
 else:
@@ -60,7 +59,6 @@ else:
 
 
 @registry.register
-# pyre-ignore
 class JsonIndexDataset(DatasetBase, ReplaceableBase):
     """
     A dataset with annotations in json files like the Common Objects in 3D
@@ -131,7 +129,6 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
 
     frame_annotations_type: ClassVar[
         Type[types.FrameAnnotation]
-        # pyre-ignore
     ] = types.FrameAnnotation
 
     path_manager: Any = None
@@ -164,7 +161,7 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
     sort_frames: bool = False
     eval_batches: Any = None
     eval_batch_index: Any = None
-    loader: BlobLoader
+    blob_loader: BlobLoader
     # frame_annots: List[FrameAnnotsEntry] = field(init=False)
     # seq_annots: Dict[str, types.SequenceAnnotation] = field(init=False)
 
@@ -179,21 +176,21 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
         self._filter_db()  # also computes sequence indices
         self._extract_and_set_eval_batches()
 
-        self.loader = BlobLoader(
-            self.dataset_root,
-            self.load_images,
-            self.load_depths,
-            self.load_depth_masks,
-            self.load_masks,
-            self.load_point_clouds,
-            self.max_points,
-            self.mask_images,
-            self.mask_depths,
-            self.image_height,
-            self.image_width,
-            self.box_crop,
-            self.box_crop_mask_thr,
-            self.box_crop_context,
+        self.blob_loader = BlobLoader(
+            dataset_root = self.dataset_root,
+            load_images = self.load_images,
+            load_depths = self.load_depths,
+            load_depth_masks = self.load_depth_masks,
+            load_masks = self.load_masks,
+            load_point_clouds = self.load_point_clouds,
+            max_points = self.max_points,
+            mask_images = self.mask_images,
+            mask_depths = self.mask_depths,
+            image_height = self.image_height,
+            image_width = self.image_width,
+            box_crop = self.box_crop,
+            box_crop_mask_thr = self.box_crop_mask_thr,
+            box_crop_context = self.box_crop_context,
         )
         logger.info(str(self))
 
@@ -415,7 +412,6 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
     def _get_frame_type(self, entry: FrameAnnotsEntry) -> Optional[str]:
         return entry["subset"]
 
-    # pyre-ignore
     def get_all_train_cameras(self) -> CamerasBase:
         """
         Returns the cameras corresponding to all the known frames.
@@ -431,7 +427,6 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
                 cameras.append(self[frame_idx].camera)
         return join_cameras_as_batch(cameras)
 
-    # pyre-ignore
     def __getitem__(self, index) -> FrameData:
         # pyre-ignore[16]
         if index >= len(self.frame_annots):
@@ -456,17 +451,14 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
             else None,
         )
 
-        # The rest of the fields are optional
+        # Optional field
         frame_data.frame_type = self._get_frame_type(self.frame_annots[index])
-
-        frame_data = self.loader.load(frame_data, entry, point_cloud)
-        return frame_data
+        return self.blob_loader.load(frame_data, entry, point_cloud)
 
     def _load_frames(self) -> None:
         logger.info(f"Loading Co3D frames from {self.frame_annotations_file}.")
         local_file = self._local_path(self.frame_annotations_file)
         with gzip.open(local_file, "rt", encoding="utf8") as zipfile:
-            # pyre-ignore
             frame_annots_list = types.load_dataclass(
                 zipfile, List[self.frame_annotations_type]
             )
@@ -481,7 +473,6 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
         logger.info(f"Loading Co3D sequences from {self.sequence_annotations_file}.")
         local_file = self._local_path(self.sequence_annotations_file)
         with gzip.open(local_file, "rt", encoding="utf8") as zipfile:
-            # pyre-ignore
             seq_annots = types.load_dataclass(zipfile, List[types.SequenceAnnotation])
         if not seq_annots:
             raise ValueError("Empty sequences file!")
