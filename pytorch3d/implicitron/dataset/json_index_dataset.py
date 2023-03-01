@@ -34,7 +34,7 @@ from tqdm import tqdm
 
 from pytorch3d.implicitron.dataset import types
 from pytorch3d.implicitron.dataset.dataset_base import DatasetBase, FrameData
-from pytorch3d.implicitron.dataset.load_blob import BlobLoader
+from pytorch3d.implicitron.dataset.blob_loader import BlobLoader
 from pytorch3d.implicitron.dataset.utils import is_known_frame_scalar
 
 from pytorch3d.implicitron.tools.config import registry, ReplaceableBase
