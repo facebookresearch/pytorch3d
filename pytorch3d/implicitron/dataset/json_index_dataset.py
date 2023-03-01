@@ -62,7 +62,7 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
     A dataset with annotations in json files like the Common Objects in 3D
     (CO3D) dataset.
 
-    Args:
+    Metadata-related args::
         frame_annotations_file: A zipped json file containing metadata of the
             frames in the dataset, serialized List[types.FrameAnnotation].
         sequence_annotations_file: A zipped json file containing metadata of the
@@ -80,6 +80,24 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
         pick_sequence: A list of sequence names to restrict the dataset to.
         exclude_sequence: A list of the names of the sequences to exclude.
         limit_category_to: Restrict the dataset to the given list of categories.
+        remove_empty_masks: Removes the frames with no active foreground pixels
+            in the segmentation mask after thresholding (see box_crop_mask_thr).
+        n_frames_per_sequence: If > 0, randomly samples #n_frames_per_sequence
+            frames in each sequences uniformly without replacement if it has
+            more frames than that; applied before other frame-level filters.
+        seed: The seed of the random generator sampling #n_frames_per_sequence
+            random frames per sequence.
+        sort_frames: Enable frame annotations sorting to group frames from the
+            same sequences together and order them by timestamps
+        eval_batches: A list of batches that form the evaluation set;
+            list of batch-sized lists of indices corresponding to __getitem__
+            of this class, thus it can be used directly as a batch sampler.
+        eval_batch_index:
+            ( Optional[List[List[Union[Tuple[str, int, str], Tuple[str, int]]]] )
+            A list of batches of frames described as (sequence_name, frame_idx)
+            that can form the evaluation set, `eval_batches` will be set from this.
+
+    Blob-loading parameters:
         dataset_root: The root folder of the dataset; all the paths in jsons are
             specified relative to this root (but not json paths themselves).
         load_images: Enable loading the frame RGB data.
@@ -106,23 +124,6 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
             is greater than this threshold, the loader lowers it and repeats.
         box_crop_context: The amount of additional padding added to each
             dimension of the cropping bounding box, relative to box size.
-        remove_empty_masks: Removes the frames with no active foreground pixels
-            in the segmentation mask after thresholding (see box_crop_mask_thr).
-        n_frames_per_sequence: If > 0, randomly samples #n_frames_per_sequence
-            frames in each sequences uniformly without replacement if it has
-            more frames than that; applied before other frame-level filters.
-        seed: The seed of the random generator sampling #n_frames_per_sequence
-            random frames per sequence.
-        sort_frames: Enable frame annotations sorting to group frames from the
-            same sequences together and order them by timestamps
-        eval_batches: A list of batches that form the evaluation set;
-            list of batch-sized lists of indices corresponding to __getitem__
-            of this class, thus it can be used directly as a batch sampler.
-        eval_batch_index:
-            ( Optional[List[List[Union[Tuple[str, int, str], Tuple[str, int]]]] )
-            A list of batches of frames described as (sequence_name, frame_idx)
-            that can form the evaluation set, `eval_batches` will be set from this.
-
     """
 
     frame_annotations_type: ClassVar[
