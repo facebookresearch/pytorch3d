@@ -1,6 +1,7 @@
 import functools
 import os
 import warnings
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional, Tuple, Union
 
@@ -15,6 +16,7 @@ from pytorch3d.renderer.cameras import PerspectiveCameras
 from pytorch3d.structures.pointclouds import Pointclouds
 
 
+@dataclass
 class BlobLoader:
     """
     A loader for correctly (according to setup) loading blobs for FrameData
@@ -48,39 +50,21 @@ class BlobLoader:
                 dimension of the cropping bounding box, relative to box size.
     """
 
+    dataset_root: str
+    load_images: bool
+    load_depths: bool
+    load_depth_masks: bool
+    load_masks: bool
+    load_point_clouds: bool
+    max_points: int
+    mask_images: bool
+    mask_depths: bool
+    image_height: int
+    image_width: int
+    box_crop: bool
+    box_crop_mask_thr: float
+    box_crop_context: float
     path_manager: Any = None
-
-    def __init__(
-        self,
-        dataset_root,
-        load_images,
-        load_depths,
-        load_depth_masks,
-        load_masks,
-        load_point_clouds,
-        max_points,
-        mask_images,
-        mask_depths,
-        image_height,
-        image_width,
-        box_crop,
-        box_crop_mask_thr,
-        box_crop_context,
-    ):
-        self.dataset_root: str = dataset_root
-        self.load_images: bool = load_images
-        self.load_depths: bool = load_depths
-        self.load_depth_masks: bool = load_depth_masks
-        self.load_masks: bool = load_masks
-        self.load_point_clouds: bool = load_point_clouds
-        self.max_points: int = max_points
-        self.mask_images: bool = mask_images
-        self.mask_depths: bool = mask_depths
-        self.image_height: int = image_height
-        self.image_width: int = image_width
-        self.box_crop: bool = box_crop
-        self.box_crop_mask_thr: float = box_crop_mask_thr
-        self.box_crop_context: float = box_crop_context
 
     def load(
         self,
