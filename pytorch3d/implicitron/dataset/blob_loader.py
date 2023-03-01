@@ -19,7 +19,8 @@ from pytorch3d.structures.pointclouds import Pointclouds
 @dataclass
 class BlobLoader:
     """
-    A loader for correctly (according to setup) loading blobs for FrameData
+    A loader for correctly (according to setup) loading blobs for FrameData.
+    Beware that modification done in place
 
     Args:
         dataset_root: The root folder of the dataset; all the paths in jsons are
@@ -75,7 +76,9 @@ class BlobLoader:
         # pyre-ignore
         seq_annotation: types.SequenceAnnotation,
     ) -> FrameData:
-        """Main method for loader."""
+        """Main method for loader.
+        FrameData modification done inplace
+        """
         (
             frame_data.fg_probability,
             frame_data.mask_path,
