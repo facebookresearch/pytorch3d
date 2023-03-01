@@ -14,6 +14,7 @@ import os
 import random
 import warnings
 from collections import defaultdict
+from dataclasses import field
 from itertools import islice
 from typing import (
     Any,
@@ -30,16 +31,16 @@ from typing import (
 )
 
 import torch
-from tqdm import tqdm
 
 from pytorch3d.implicitron.dataset import types
-from pytorch3d.implicitron.dataset.dataset_base import DatasetBase, FrameData
 from pytorch3d.implicitron.dataset.blob_loader import BlobLoader
+from pytorch3d.implicitron.dataset.dataset_base import DatasetBase, FrameData
 from pytorch3d.implicitron.dataset.utils import is_known_frame_scalar
 
 from pytorch3d.implicitron.tools.config import registry, ReplaceableBase
 from pytorch3d.renderer.camera_utils import join_cameras_as_batch
 from pytorch3d.renderer.cameras import CamerasBase
+from tqdm import tqdm
 
 
 logger = logging.getLogger(__name__)
@@ -160,13 +161,14 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
     sort_frames: bool = False
     eval_batches: Any = None
     eval_batch_index: Any = None
-    blob_loader: BlobLoader
-    # frame_annots: List[FrameAnnotsEntry] = field(init=False)
-    # seq_annots: Dict[str, types.SequenceAnnotation] = field(init=False)
+    subset_to_image_path: Any = None
+    # initialised in __post_init__
+    blob_loader: BlobLoader = field(init=False)
+    frame_annots: List[FrameAnnotsEntry] = field(init=False)
+    seq_annots: Dict[str, types.SequenceAnnotation] = field(init=False)
+    _seq_to_idx: Dict[str, List[int]] = field(init=False)
 
     def __post_init__(self) -> None:
-        # pyre-fixme[16]: `JsonIndexDataset` has no attribute `subset_to_image_path`.
-        self.subset_to_image_path = None
         self._load_frames()
         self._load_sequences()
         if self.sort_frames:
@@ -206,7 +208,8 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
                 self.eval_batch_index
             )
 
-    def join(self, other_datasets: Iterable[DatasetBase]) -> None:
+    # pyre-ignore
+    def join(self, other_datasets: Iterable["JsonIndexDataset"]) -> None:
         """
         Join the dataset with other JsonIndexDataset objects.
 
@@ -216,9 +219,7 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
         """
         if not all(isinstance(d, JsonIndexDataset) for d in other_datasets):
             raise ValueError("This function can only join a list of JsonIndexDataset")
-        # pyre-ignore[16]
         self.frame_annots.extend([fa for d in other_datasets for fa in d.frame_annots])
-        # pyre-ignore[16]
         self.seq_annots.update(
             # https://gist.github.com/treyhunner/f35292e676efa0be1728
             functools.reduce(
@@ -266,7 +267,7 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
         allow_missing_indices: bool = False,
         remove_missing_indices: bool = False,
         suppress_missing_index_warning: bool = True,
-    ) -> List[List[Union[Optional[int], int]]]:
+    ) -> Union[List[List[Optional[int]]], List[List[int]]]:
         """
         Obtain indices into the dataset object given a list of frame ids.
 
@@ -294,11 +295,9 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
         """
         _dataset_seq_frame_n_index = {
             seq: {
-                # pyre-ignore[16]
                 self.frame_annots[idx]["frame_annotation"].frame_number: idx
                 for idx in seq_idx
             }
-            # pyre-ignore[16]
             for seq, seq_idx in self._seq_to_idx.items()
         }
 
@@ -321,7 +320,6 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
                 # Check that the loaded frame path is consistent
                 # with the one stored in self.frame_annots.
                 assert os.path.normpath(
-                    # pyre-ignore[16]
                     self.frame_annots[idx]["frame_annotation"].image.path
                 ) == os.path.normpath(
                     path
@@ -338,9 +336,7 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
             valid_dataset_idx = [
                 [b for b in batch if b is not None] for batch in dataset_idx
             ]
-            return [  # pyre-ignore[7]
-                batch for batch in valid_dataset_idx if len(batch) > 0
-            ]
+            return [batch for batch in valid_dataset_idx if len(batch) > 0]
 
         return dataset_idx
 
@@ -373,7 +369,7 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
 
         # Deep copy the whole dataset except frame_annots, which are large so we
         # deep copy only the requested subset of frame_annots.
-        memo = {id(self.frame_annots): None}  # pyre-ignore[16]
+        memo = {id(self.frame_annots): None}
         dataset_new = copy.deepcopy(self, memo)
         dataset_new.frame_annots = copy.deepcopy(
             [self.frame_annots[i] for i in valid_dataset_indices]
@@ -401,11 +397,9 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
         return dataset_new
 
     def __str__(self) -> str:
-        # pyre-ignore[16]
         return f"JsonIndexDataset #frames={len(self.frame_annots)}"
 
     def __len__(self) -> int:
-        # pyre-ignore[16]
         return len(self.frame_annots)
 
     def _get_frame_type(self, entry: FrameAnnotsEntry) -> Optional[str]:
@@ -417,7 +411,6 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
         """
         logger.info("Loading all train cameras.")
         cameras = []
-        # pyre-ignore[16]
         for frame_idx, frame_annot in enumerate(tqdm(self.frame_annots)):
             frame_type = self._get_frame_type(frame_annot)
             if frame_type is None:
@@ -427,12 +420,10 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
         return join_cameras_as_batch(cameras)
 
     def __getitem__(self, index) -> FrameData:
-        # pyre-ignore[16]
         if index >= len(self.frame_annots):
             raise IndexError(f"index {index} out of range {len(self.frame_annots)}")
 
         entry = self.frame_annots[index]["frame_annotation"]
-        # pyre-ignore[16]
         point_cloud = self.seq_annots[entry.sequence_name].point_cloud
         frame_data = FrameData(
             frame_number=_safe_as_tensor(entry.frame_number, torch.long),
@@ -452,7 +443,9 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
 
         # Optional field
         frame_data.frame_type = self._get_frame_type(self.frame_annots[index])
-        return self.blob_loader.load(frame_data, entry, self.seq_annots[entry.sequence_name])
+        return self.blob_loader.load(
+            frame_data, entry, self.seq_annots[entry.sequence_name]
+        )
 
     def _load_frames(self) -> None:
         logger.info(f"Loading Co3D frames from {self.frame_annotations_file}.")
@@ -463,7 +456,6 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
             )
         if not frame_annots_list:
             raise ValueError("Empty dataset!")
-        # pyre-ignore[16]
         self.frame_annots = [
             FrameAnnotsEntry(frame_annotation=a, subset=None) for a in frame_annots_list
         ]
@@ -475,7 +467,6 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
             seq_annots = types.load_dataclass(zipfile, List[types.SequenceAnnotation])
         if not seq_annots:
             raise ValueError("Empty sequences file!")
-        # pyre-ignore[16]
         self.seq_annots = {entry.sequence_name: entry for entry in seq_annots}
 
     def _load_subset_lists(self) -> None:
@@ -491,7 +482,6 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
             for subset, frames in subset_to_seq_frame.items()
             for _, _, path in frames
         }
-        # pyre-ignore[16]
         for frame in self.frame_annots:
             frame["subset"] = frame_path_to_subset.get(
                 frame["frame_annotation"].image.path, None
@@ -504,7 +494,6 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
 
     def _sort_frames(self) -> None:
         # Sort frames to have them grouped by sequence, ordered by timestamp
-        # pyre-ignore[16]
         self.frame_annots = sorted(
             self.frame_annots,
             key=lambda f: (
@@ -516,7 +505,6 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
     def _filter_db(self) -> None:
         if self.remove_empty_masks:
             logger.info("Removing images with empty masks.")
-            # pyre-ignore[16]
             old_len = len(self.frame_annots)
 
             msg = "remove_empty_masks needs every MaskAnnotation.mass to be set."
@@ -557,7 +545,6 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
 
         if len(self.limit_category_to) > 0:
             logger.info(f"Limiting dataset to categories: {self.limit_category_to}")
-            # pyre-ignore[16]
             self.seq_annots = {
                 name: entry
                 for name, entry in self.seq_annots.items()
@@ -595,7 +582,6 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
         if self.n_frames_per_sequence > 0:
             logger.info(f"Taking max {self.n_frames_per_sequence} per sequence.")
             keep_idx = []
-            # pyre-ignore[16]
             for seq, seq_indices in self._seq_to_idx.items():
                 # infer the seed from the sequence name, this is reproducible
                 # and makes the selection differ for different sequences
@@ -625,20 +611,14 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
         self._invalidate_seq_to_idx()
 
         if filter_seq_annots:
-            # pyre-ignore[16]
             self.seq_annots = {
-                k: v
-                for k, v in self.seq_annots.items()
-                # pyre-ignore[16]
-                if k in self._seq_to_idx
+                k: v for k, v in self.seq_annots.items() if k in self._seq_to_idx
             }
 
     def _invalidate_seq_to_idx(self) -> None:
         seq_to_idx = defaultdict(list)
-        # pyre-ignore[16]
         for idx, entry in enumerate(self.frame_annots):
             seq_to_idx[entry["frame_annotation"].sequence_name].append(idx)
-        # pyre-ignore[16]
         self._seq_to_idx = seq_to_idx
 
     def _local_path(self, path: str) -> str:
@@ -653,7 +633,6 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
         for idx in idxs:
             if (
                 subset_filter is not None
-                # pyre-fixme[16]: `JsonIndexDataset` has no attribute `frame_annots`.
                 and self.frame_annots[idx]["subset"] not in subset_filter
             ):
                 continue
@@ -666,7 +645,6 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
 
     def category_to_sequence_names(self) -> Dict[str, List[str]]:
         c2seq = defaultdict(list)
-        # pyre-ignore
         for sequence_name, sa in self.seq_annots.items():
             c2seq[sa.category].append(sequence_name)
         return dict(c2seq)

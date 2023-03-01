@@ -1,3 +1,9 @@
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+# All rights reserved.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
+
 import functools
 import os
 import warnings
@@ -60,8 +66,8 @@ class BlobLoader:
     max_points: int
     mask_images: bool
     mask_depths: bool
-    image_height: int
-    image_width: int
+    image_height: Optional[int]
+    image_width: Optional[int]
     box_crop: bool
     box_crop_mask_thr: float
     box_crop_context: float
@@ -69,11 +75,8 @@ class BlobLoader:
 
     def load(
         self,
-        # pyre-ignore
         frame_data: FrameData,
-        # pyre-ignore
         entry: types.FrameAnnotation,
-        # pyre-ignore
         seq_annotation: types.SequenceAnnotation,
     ) -> FrameData:
         """Main method for loader.
@@ -242,7 +245,7 @@ class BlobLoader:
         entry: types.FrameAnnotation,
         scale: float,
         clamp_bbox_xyxy: Optional[torch.Tensor],
-    ) -> PerspectiveCameras:  # pyre-ignore
+    ) -> PerspectiveCameras:
         entry_viewpoint = entry.viewpoint
         assert entry_viewpoint is not None
         # principal point and focal length
@@ -331,9 +334,9 @@ class BlobLoader:
             align_corners=False if mode == "bilinear" else None,
             recompute_scale_factor=True,
         )[0]
-        imre_ = torch.zeros(image.shape[0], self.image_height, self.image_width)
+        imre_ = torch.zeros(image.shape[0], image_height, image_width)
         imre_[:, 0 : imre.shape[1], 0 : imre.shape[2]] = imre
-        mask = torch.zeros(1, self.image_height, self.image_width)
+        mask = torch.zeros(1, image_height, image_width)
         mask[:, 0 : imre.shape[1], 0 : imre.shape[2]] = 1.0
         return imre_, minscale, mask
 
