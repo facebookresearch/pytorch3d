@@ -89,7 +89,7 @@ class BlobLoader:
         # pyre-ignore
         entry: types.FrameAnnotation,
         # pyre-ignore
-        point_cloud: types.PointCloudAnnotation,
+        seq_annotation: types.SequenceAnnotation,
     ) -> FrameData:
         """Main method for loader."""
         (
@@ -128,8 +128,8 @@ class BlobLoader:
                 clamp_bbox_xyxy,
             )
 
-        if self.load_point_clouds and point_cloud is not None:
-            pcl_path = self._fix_point_cloud_path(point_cloud.path)
+        if self.load_point_clouds and seq_annotation.point_cloud is not None:
+            pcl_path = self._fix_point_cloud_path(seq_annotation.point_cloud.path)
             frame_data.sequence_point_cloud = _load_pointcloud(
                 self._local_path(pcl_path), max_points=self.max_points
             )
