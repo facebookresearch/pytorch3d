@@ -434,34 +434,6 @@ def _bbox_xyxy_to_xywh(xyxy: torch.Tensor) -> torch.Tensor:
     return xywh
 
 
-def _resize_image(
-    self, image, mode="bilinear"
-) -> Tuple[torch.Tensor, float, torch.Tensor]:
-    image_height, image_width = self.image_height, self.image_width
-    if image_height is None or image_width is None:
-        # skip the resizing
-        imre_ = torch.from_numpy(image)
-        return imre_, 1.0, torch.ones_like(imre_[:1])
-    # takes numpy array, returns pytorch tensor
-    minscale = min(
-        image_height / image.shape[-2],
-        image_width / image.shape[-1],
-    )
-    imre = torch.nn.functional.interpolate(
-        torch.from_numpy(image)[None],
-        scale_factor=minscale,
-        mode=mode,
-        align_corners=False if mode == "bilinear" else None,
-        recompute_scale_factor=True,
-    )[0]
-    # pyre-fixme[19]: Expected 1 positional argument.
-    imre_ = torch.zeros(image.shape[0], self.image_height, self.image_width)
-    imre_[:, 0 : imre.shape[1], 0 : imre.shape[2]] = imre
-    mask = torch.zeros(1, self.image_height, self.image_width)
-    mask[:, 0 : imre.shape[1], 0 : imre.shape[2]] = 1.0
-    return imre_, minscale, mask
-
-
 def _load_depth(path, scale_adjustment) -> np.ndarray:
     if not path.lower().endswith(".png"):
         raise ValueError('unsupported depth file name "%s"' % path)
