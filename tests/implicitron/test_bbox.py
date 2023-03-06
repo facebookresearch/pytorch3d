@@ -9,7 +9,7 @@ import unittest
 import numpy as np
 
 import torch
-from pytorch3d.implicitron.dataset.json_index_dataset import (
+from pytorch3d.implicitron.dataset.blob_loader import (
     _bbox_xywh_to_xyxy,
     _bbox_xyxy_to_xywh,
     _get_bbox_from_mask,
