@@ -17,13 +17,7 @@ setupcuda: &setupcuda
     name: Setup CUDA
     working_directory: ~/
     command: |
-      # download and install nvidia drivers, cuda, etc
-      wget --no-verbose --no-clobber -P ~/nvidia-downloads https://developer.download.nvidia.com/compute/cuda/11.3.1/local_installers/cuda_11.3.1_465.19.01_linux.run
-      sudo sh ~/nvidia-downloads/cuda_11.3.1_465.19.01_linux.run --silent
-      echo "Done installing CUDA."
-      pyenv versions
-      nvidia-smi
-      pyenv global 3.9.1
+      sudo update-alternatives --set cuda /usr/local/cuda-11.6
 
 binary_common: &binary_common
   parameters:
@@ -61,15 +55,15 @@ binary_common: &binary_common
 jobs:
   main:
     environment:
-      CUDA_VERSION: "11.3"
+      CUDA_VERSION: "11.6"
     resource_class: gpu.nvidia.small.multi
     machine:
-      image: ubuntu-2004:202101-01
+      image: ubuntu-2204:2023.02.1
     steps:
       - checkout
       - <<: *setupcuda
       - run: pip3 install --progress-bar off imageio wheel matplotlib 'pillow<7'
-      - run: pip3 install --progress-bar off torch==1.10.0+cu113 torchvision==0.11.1+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html
+      - run: pip3 install --progress-bar off torch==1.13.1+cu116 torchvision==0.14.1+cu116 -f https://download.pytorch.org/whl/cu116/torch_stable.html
       # - run: conda create -p ~/conda_env python=3.7 numpy
       # - run: conda activate ~/conda_env
       # - run: conda install -c pytorch pytorch torchvision
@@ -79,9 +73,9 @@ jobs:
       - run:
           name: build
           command: |
-            export LD_LIBRARY_PATH=$LD_LIBARY_PATH:/usr/local/cuda-11.3/lib64
+            export LD_LIBRARY_PATH=$LD_LIBARY_PATH:/usr/local/cuda-11.6/lib64
             python3 setup.py build_ext --inplace
-      - run: LD_LIBRARY_PATH=$LD_LIBARY_PATH:/usr/local/cuda-11.3/lib64 python -m unittest discover -v -s tests -t .
+      - run: LD_LIBRARY_PATH=$LD_LIBARY_PATH:/usr/local/cuda-11.6/lib64 python -m unittest discover -v -s tests -t .
       - run: python3 setup.py bdist_wheel
 
   binary_linux_wheel:
@@ -128,7 +122,7 @@ jobs:
   binary_linux_conda_cuda:
     <<: *binary_common
     machine:
-      image: ubuntu-1604-cuda-10.2:202012-01
+      image: linux-cuda-11:2023.02.1
     resource_class: gpu.nvidia.small.multi
     steps:
     - checkout
@@ -181,12 +175,6 @@ workflows:
       # - main:
       #     context: DOCKERHUB_TOKEN
       {{workflows()}}
-      - binary_linux_conda_cuda:
-          name: testrun_conda_cuda_py38_cu102_pyt190
-          context: DOCKERHUB_TOKEN
-          python_version: "3.8"
-          pytorch_version: '1.9.0'
-          cu_version: "cu102"
       - binary_macos_wheel:
           cu_version: cpu
           name: macos_wheel_py3.8_cpu
