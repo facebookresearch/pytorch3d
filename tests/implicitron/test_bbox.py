@@ -13,6 +13,11 @@ from pytorch3d.implicitron.dataset.blob_loader import (
     _bbox_xywh_to_xyxy,
     _bbox_xyxy_to_xywh,
     _get_bbox_from_mask,
+    _crop_around_box,
+    _clamp_box_to_image_bounds_and_round,
+    _get_clamp_bbox,
+    _rescale_bbox,
+    _get_1d_bounds,
 )
 from tests.common_testing import TestCaseMixin
 
@@ -76,3 +81,41 @@ class TestBBox(TestCaseMixin, unittest.TestCase):
         expected_bbox_xywh = [2, 1, 2, 1]
         bbox_xywh = _get_bbox_from_mask(mask, 0.5)
         self.assertClose(bbox_xywh, expected_bbox_xywh)
+
+    def test_crop_around_box(self):
+        bbox = (0, 1, 2, 2) # (x_min, y_min, x_max, y_max)
+        image = torch.LongTensor(
+            [
+                [0, 0, 10, 20],
+                [10, 20, 5, 1],
+                [10, 20, 1, 1],
+                [5, 4, 0, 1],
+            ]
+        )
+        cropped = _crop_around_box(image, bbox)
+        self.assertClose(cropped, image[0:2, 1:2])
+
+    def test_clamp_box_to_image_bounds_and_round(self):
+        bbox = torch.LongTensor([0, 1, 10, 12])
+        image_size = (5, 6)
+        clamped_bbox = _clamp_box_to_image_bounds_and_round(bbox)
+        self.assertClose(clamped_bbox == [0, 1, 5, 6])
+
+    def test_get_clamp_bbox(self):
+        bbox_xywh = torch.LongTensor([1, 1, 4, 5])
+        clamped_bbox_xyxy = _get_clamp_bbox(bbox, box_crop_context=2)
+        # size multiplied by 2 and added coordinates
+        self.assertClose(clamped_bbox_xyxy == torch.LongTensor([0, 1, 9, 11]))
+
+    def test_rescale_bbox(self):
+        bbox = torch.LongTensor([0, 1, 3, 4])
+        original_resolution = (4, 4) #
+        new_resolution = (8, 8)
+        rescaled_bbox = _rescale_bbox(bbox, original_resolution, new_resolution)
+        self.assertClose(bbox * 2 == rescaled_bbox)
+
+    def test_get_1d_bounds(self):
+        array = [0, 1, 2]
+        bounds = _get_1d_bounds(array)
+        # make nonzero 1d bounds of image
+        assert bounds == [1, 2]
