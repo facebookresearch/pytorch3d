@@ -78,7 +78,7 @@ class TestBlobLoader(TestCaseMixin, unittest.TestCase):
             [1, self.image_height, self.image_width]
         )
         assert bbox_xywh.shape == torch.Size([4])
-        assert clamp_bbox_xyxy == torch.Size([4])
+        assert clamp_bbox_xyxy.shape == torch.Size([4])
         assert crop_bbox_xywh.shape == torch.Size([4])
         (
             image_rgb,
@@ -184,7 +184,7 @@ class TestBlobLoader(TestCaseMixin, unittest.TestCase):
         mask_path = os.path.join(self.dataset_root, self.entry.depth.mask_path)
         mask = _load_1bit_png_mask(mask_path)
         assert mask.dtype == np.float32
-        assert len(mask.shape) == 3
+        assert len(mask.shape) == 2
 
     def test_load_depth_mask(self):
         mask_path = os.path.join(self.dataset_root, self.entry.depth.mask_path)
