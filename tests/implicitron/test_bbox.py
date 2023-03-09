@@ -83,7 +83,7 @@ class TestBBox(TestCaseMixin, unittest.TestCase):
         self.assertClose(bbox_xywh, expected_bbox_xywh)
 
     def test_crop_around_box(self):
-        bbox = torch.LongTensor([0, 1, 2, 2]) # (x_min, y_min, x_max, y_max)
+        bbox = torch.LongTensor([0, 1, 2, 3]) # (x_min, y_min, x_max, y_max)
         image = torch.LongTensor(
             [
                 [0, 0, 10, 20],
@@ -93,33 +93,30 @@ class TestBBox(TestCaseMixin, unittest.TestCase):
             ]
         )
         cropped = _crop_around_box(image, bbox)
-        self.assertClose(cropped, image[0:2, 1:2])
-
-
+        self.assertClose(cropped, image[1:3, 0:2])
 
     def test_clamp_box_to_image_bounds_and_round(self):
         bbox = torch.LongTensor([0, 1, 10, 12])
         image_size = (5, 6)
+        expected_clamped_bbox = torch.LongTensor([0, 1, image_size[1], image_size[0]])
         clamped_bbox = _clamp_box_to_image_bounds_and_round(bbox, image_size)
-        self.assertClose(clamped_bbox, [0, 1, 5, 6])
+        self.assertClose(clamped_bbox, expected_clamped_bbox)
 
     def test_get_clamp_bbox(self):
         bbox_xywh = torch.LongTensor([1, 1, 4, 5])
         clamped_bbox_xyxy = _get_clamp_bbox(bbox_xywh, box_crop_context=2)
         # size multiplied by 2 and added coordinates
-        self.assertClose(clamped_bbox_xyxy, torch.LongTensor([0, 1, 9, 11]))
+        self.assertClose(clamped_bbox_xyxy, torch.Tensor([-3, -4, 9, 11]))
 
     def test_rescale_bbox(self):
-        bbox = torch.LongTensor([0, 1, 3, 4])
+        bbox = torch.Tensor([0.0, 1.0, 3.0, 4.0])
         original_resolution = (4, 4)
-        new_resolution = (8, 8)
+        new_resolution = (8, 8)  # twice bigger
         rescaled_bbox = _rescale_bbox(bbox, original_resolution, new_resolution)
-        print(rescaled_bbox)
         self.assertClose(bbox * 2, rescaled_bbox)
 
     def test_get_1d_bounds(self):
         array = [0, 1, 2]
         bounds = _get_1d_bounds(array)
         # make nonzero 1d bounds of image
-        print(bounds)
-        assert bounds == [1, 3]
+        self.assertClose(bounds, [1, 3])
