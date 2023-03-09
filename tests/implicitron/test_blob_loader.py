@@ -96,9 +96,7 @@ class TestBlobLoader(TestCaseMixin, unittest.TestCase):
         assert scale
         # assert image and mask shapes
         assert image_rgb.shape == torch.Size([3, self.image_height, self.image_width])
-        assert mask_crop.shape == torch.Size(
-            [1, self.image_height, self.image_width],
-        )
+        assert mask_crop.shape == torch.Size([1, self.image_height, self.image_width])
 
         (
             depth_map,
@@ -113,12 +111,8 @@ class TestBlobLoader(TestCaseMixin, unittest.TestCase):
         assert depth_path
         assert torch.is_tensor(depth_mask)
         # assert image and mask shapes
-        assert depth_map.shape == torch.Size(
-            [1, self.image_height, self.image_width],
-        )
-        assert depth_mask.shape == torch.Size(
-            [1, self.image_height, self.image_width],
-        )
+        assert depth_map.shape == torch.Size([1, self.image_height, self.image_width])
+        assert depth_mask.shape == torch.Size([1, self.image_height, self.image_width])
 
         camera = self.dataset.blob_loader._get_pytorch3d_camera(
             self.entry,
@@ -178,7 +172,7 @@ class TestBlobLoader(TestCaseMixin, unittest.TestCase):
         path = os.path.join(self.dataset_root, self.entry.depth.path)
         depth_map = _load_16big_png_depth(path)
         assert depth_map.dtype == np.float32
-        assert depth_map.shape
+        assert len(depth_map.shape) == 2
 
     def test_load_1bit_png_mask(self):
         mask_path = os.path.join(self.dataset_root, self.entry.depth.mask_path)
