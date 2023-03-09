@@ -12,13 +12,14 @@ import torch
 from pytorch3d.implicitron.dataset.blob_loader import (
     _bbox_xywh_to_xyxy,
     _bbox_xyxy_to_xywh,
-    _get_bbox_from_mask,
-    _crop_around_box,
     _clamp_box_to_image_bounds_and_round,
+    _crop_around_box,
+    _get_1d_bounds,
+    _get_bbox_from_mask,
     _get_clamp_bbox,
     _rescale_bbox,
-    _get_1d_bounds,
 )
+
 from tests.common_testing import TestCaseMixin
 
 
@@ -83,7 +84,7 @@ class TestBBox(TestCaseMixin, unittest.TestCase):
         self.assertClose(bbox_xywh, expected_bbox_xywh)
 
     def test_crop_around_box(self):
-        bbox = torch.LongTensor([0, 1, 2, 3]) # (x_min, y_min, x_max, y_max)
+        bbox = torch.LongTensor([0, 1, 2, 3])  # (x_min, y_min, x_max, y_max)
         image = torch.LongTensor(
             [
                 [0, 0, 10, 20],
