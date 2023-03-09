@@ -124,12 +124,14 @@ class Pointclouds:
             normals:
                 Can be either
 
+                - None
                 - List where each element is a tensor of shape (num_points, 3)
                   containing the normal vector for each point.
                 - Padded float tensor of shape (num_clouds, num_points, 3).
             features:
                 Can be either
 
+                - None
                 - List where each element is a tensor of shape (num_points, C)
                   containing the features for the points in the cloud.
                 - Padded float tensor of shape (num_clouds, num_points, C).
@@ -1260,6 +1262,42 @@ def join_pointclouds_as_batch(pointclouds: Sequence[Pointclouds]) -> Pointclouds
             field_list = None
         else:
             field_list = [p for points in field_list for p in points]
+            if field == "features" and any(
+                p.shape[1] != field_list[0].shape[1] for p in field_list[1:]
+            ):
+                raise ValueError("Pointclouds must have the same number of features")
         kwargs[field] = field_list
 
     return Pointclouds(**kwargs)
+
+
+def join_pointclouds_as_scene(
+    pointclouds: Union[Pointclouds, List[Pointclouds]]
+) -> Pointclouds:
+    """
+    Joins a batch of point cloud in the form of a Pointclouds object or a list of Pointclouds
+    objects as a single point cloud. If the input is a list, the Pointclouds objects in the
+    list must all be on the same device, and they must either all or none have features and
+    all or none have normals.
+
+    Args:
+        Pointclouds: Pointclouds object that contains a batch of point clouds, or a list of
+                    Pointclouds objects.
+
+    Returns:
+        new Pointclouds object containing a single point cloud
+    """
+    if isinstance(pointclouds, list):
+        pointclouds = join_pointclouds_as_batch(pointclouds)
+
+    if len(pointclouds) == 1:
+        return pointclouds
+    points = pointclouds.points_packed()
+    features = pointclouds.features_packed()
+    normals = pointclouds.normals_packed()
+    pointcloud = Pointclouds(
+        points=points[None],
+        features=None if features is None else features[None],
+        normals=None if normals is None else normals[None],
+    )
+    return pointcloud

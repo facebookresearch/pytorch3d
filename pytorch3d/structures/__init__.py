@@ -5,7 +5,11 @@
 # LICENSE file in the root directory of this source tree.
 
 from .meshes import join_meshes_as_batch, join_meshes_as_scene, Meshes
-from .pointclouds import Pointclouds
+from .pointclouds import (
+    join_pointclouds_as_batch,
+    join_pointclouds_as_scene,
+    Pointclouds,
+)
 from .utils import list_to_packed, list_to_padded, packed_to_list, padded_to_list
 from .volumes import Volumes
 

@@ -11,7 +11,11 @@ import unittest
 import numpy as np
 import torch
 from pytorch3d.structures import utils as struct_utils
-from pytorch3d.structures.pointclouds import join_pointclouds_as_batch, Pointclouds
+from pytorch3d.structures.pointclouds import (
+    join_pointclouds_as_batch,
+    join_pointclouds_as_scene,
+    Pointclouds,
+)
 
 from .common_testing import TestCaseMixin
 
@@ -1159,9 +1163,9 @@ class TestPointclouds(TestCaseMixin, unittest.TestCase):
         normals = [torch.rand(length, 3) for length in lengths]
 
         # Test with normals and features present
-        pcl = Pointclouds(points=points, features=features, normals=normals)
-        pcl3 = join_pointclouds_as_batch([pcl] * 3)
-        check_triple(pcl, pcl3)
+        pcl1 = Pointclouds(points=points, features=features, normals=normals)
+        pcl3 = join_pointclouds_as_batch([pcl1] * 3)
+        check_triple(pcl1, pcl3)
 
         # Test with normals and features present for tensor backed pointclouds
         N, P, D = 5, 30, 4
@@ -1173,15 +1177,25 @@ class TestPointclouds(TestCaseMixin, unittest.TestCase):
         pcl3 = join_pointclouds_as_batch([pcl] * 3)
         check_triple(pcl, pcl3)
 
+        # Test with inconsistent #features
+        with self.assertRaisesRegex(ValueError, "same number of features"):
+            join_pointclouds_as_batch([pcl1, pcl])
+
         # Test without normals
         pcl_nonormals = Pointclouds(points=points, features=features)
         pcl3 = join_pointclouds_as_batch([pcl_nonormals] * 3)
         check_triple(pcl_nonormals, pcl3)
+        pcl_scene = join_pointclouds_as_scene([pcl_nonormals] * 3)
+        self.assertEqual(len(pcl_scene), 1)
+        self.assertClose(pcl_scene.features_packed(), pcl3.features_packed())
 
         # Test without features
         pcl_nofeats = Pointclouds(points=points, normals=normals)
         pcl3 = join_pointclouds_as_batch([pcl_nofeats] * 3)
         check_triple(pcl_nofeats, pcl3)
+        pcl_scene = join_pointclouds_as_scene([pcl_nofeats] * 3)
+        self.assertEqual(len(pcl_scene), 1)
+        self.assertClose(pcl_scene.normals_packed(), pcl3.normals_packed())
 
         # Check error raised if all pointclouds in the batch
         # are not consistent in including normals/features
