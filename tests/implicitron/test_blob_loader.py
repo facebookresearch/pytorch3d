@@ -74,12 +74,12 @@ class TestBlobLoader(TestCaseMixin, unittest.TestCase):
         assert torch.is_tensor(clamp_bbox_xyxy)
         assert torch.is_tensor(crop_bbox_xywh)
         # assert bboxes shape
-        assert fg_probability.shape == torch.Shape(
+        assert fg_probability.shape == torch.Size(
             [1, self.image_height, self.image_width]
         )
-        assert bbox_xywh.shape == torch.Shape([4])
-        assert clamp_bbox_xyxy == torch.Shape([4])
-        assert crop_bbox_xywh.shape == torch.Shape([4])
+        assert bbox_xywh.shape == torch.Size([4])
+        assert clamp_bbox_xyxy == torch.Size([4])
+        assert crop_bbox_xywh.shape == torch.Size([4])
         (
             image_rgb,
             image_path,
@@ -95,8 +95,8 @@ class TestBlobLoader(TestCaseMixin, unittest.TestCase):
         assert torch.is_tensor(mask_crop)
         assert scale
         # assert image and mask shapes
-        assert image_rgb.shape == torch.Shape([3, self.image_height, self.image_width])
-        assert mask_crop.shape == torch.Shape(
+        assert image_rgb.shape == torch.Size([3, self.image_height, self.image_width])
+        assert mask_crop.shape == torch.Size(
             [1, self.image_height, self.image_width],
         )
 
@@ -113,10 +113,10 @@ class TestBlobLoader(TestCaseMixin, unittest.TestCase):
         assert depth_path
         assert torch.is_tensor(depth_mask)
         # assert image and mask shapes
-        assert depth_map.shape == torch.Shape(
+        assert depth_map.shape == torch.Size(
             [1, self.image_height, self.image_width],
         )
-        assert depth_mask.shape == torch.Shape(
+        assert depth_mask.shape == torch.Size(
             [1, self.image_height, self.image_width],
         )
 
