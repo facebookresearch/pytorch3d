@@ -52,21 +52,38 @@ class TestBlobLoader(TestCaseMixin, unittest.TestCase):
             load_point_clouds=True,
             path_manager=self.path_manager,
         )
-        index = 7000
-        self.entry = self.dataset.frame_annots[index]["frame_annotation"]
 
     def test_BlobLoader_args(self):
         # test that BlobLoader works with get_default_args
         get_default_args(BlobLoader)
 
-    def test_load_pipeline(self):
+    def test_fix_point_cloud_path(self):
+        """Some files in Co3Dv2 have an accidental absolute path stored."""
+        original_path = "some_file_path"
+        modified_path = self.dataset.blob_loader._fix_point_cloud_path(original_path)
+        assert original_path in modified_path
+        assert self.dataset.blob_loader.dataset_root in modified_path
+
+    def test_entry_loading_functions(self):
+        for index in range(len(self.dataset.frame_annots)):
+            entry = self.dataset.frame_annots[index]["frame_annotation"]
+            self.load_test(entry)
+            self._resize_image_test(entry)
+            self._load_image_test(entry)
+            self._load_mask_test(entry)
+            self._load_depth_test(entry)
+            self._load_16big_png_depth_test(entry)
+            self._load_1bit_png_mask_test(entry)
+            self._load_depth_mask_test(entry)
+
+    def load_test(self, entry):
         (
             fg_probability,
             mask_path,
             bbox_xywh,
             clamp_bbox_xyxy,
             crop_bbox_xywh,
-        ) = self.dataset.blob_loader._load_crop_fg_probability(self.entry)
+        ) = self.dataset.blob_loader._load_crop_fg_probability(entry)
 
         assert mask_path
         assert torch.is_tensor(fg_probability)
@@ -86,7 +103,7 @@ class TestBlobLoader(TestCaseMixin, unittest.TestCase):
             mask_crop,
             scale,
         ) = self.dataset.blob_loader._load_crop_images(
-            self.entry,
+            entry,
             fg_probability,
             clamp_bbox_xyxy,
         )
@@ -103,7 +120,7 @@ class TestBlobLoader(TestCaseMixin, unittest.TestCase):
             depth_path,
             depth_mask,
         ) = self.dataset.blob_loader._load_mask_depth(
-            self.entry,
+            entry,
             clamp_bbox_xyxy,
             fg_probability,
         )
@@ -115,21 +132,14 @@ class TestBlobLoader(TestCaseMixin, unittest.TestCase):
         assert depth_mask.shape == torch.Size([1, self.image_height, self.image_width])
 
         camera = self.dataset.blob_loader._get_pytorch3d_camera(
-            self.entry,
+            entry,
             scale,
             clamp_bbox_xyxy,
         )
         assert type(camera) == PerspectiveCameras
 
-    def test_fix_point_cloud_path(self):
-        """Some files in Co3Dv2 have an accidental absolute path stored."""
-        original_path = "some_file_path"
-        modified_path = self.dataset.blob_loader._fix_point_cloud_path(original_path)
-        assert original_path in modified_path
-        assert self.dataset.blob_loader.dataset_root in modified_path
-
-    def test_resize_image(self):
-        path = os.path.join(self.dataset_root, self.entry.image.path)
+    def _resize_image_test(self, entry):
+        path = os.path.join(self.dataset_root, entry.image.path)
         local_path = self.path_manager.get_local_path(path)
         image = _load_image(local_path)
         image_rgb, scale, mask_crop = self.dataset.blob_loader._resize_image(image)
@@ -147,41 +157,41 @@ class TestBlobLoader(TestCaseMixin, unittest.TestCase):
         assert image_rgb.shape[-2:] == expected_shape
         assert mask_crop.shape[-2:] == expected_shape
 
-    def test_load_image(self):
-        path = os.path.join(self.dataset_root, self.entry.image.path)
+    def _load_image_test(self, entry):
+        path = os.path.join(self.dataset_root, entry.image.path)
         local_path = self.path_manager.get_local_path(path)
         image = _load_image(local_path)
         assert image.dtype == np.float32
         assert np.max(image) <= 1.0
         assert np.min(image) >= 0.0
 
-    def test_load_mask(self):
-        path = os.path.join(self.dataset_root, self.entry.mask.path)
+    def _load_mask_test(self, entry):
+        path = os.path.join(self.dataset_root, entry.mask.path)
         mask = _load_mask(path)
         assert mask.dtype == np.float32
         assert np.max(mask) <= 1.0
         assert np.min(mask) >= 0.0
 
-    def test_load_depth(self):
-        path = os.path.join(self.dataset_root, self.entry.depth.path)
-        depth_map = _load_depth(path, self.entry.depth.scale_adjustment)
+    def _load_depth_test(self, entry):
+        path = os.path.join(self.dataset_root, entry.depth.path)
+        depth_map = _load_depth(path, entry.depth.scale_adjustment)
         assert depth_map.dtype == np.float32
         assert depth_map.shape
 
-    def test_load_16big_png_depth(self):
-        path = os.path.join(self.dataset_root, self.entry.depth.path)
+    def _load_16big_png_depth_test(self, entry):
+        path = os.path.join(self.dataset_root, entry.depth.path)
         depth_map = _load_16big_png_depth(path)
         assert depth_map.dtype == np.float32
         assert len(depth_map.shape) == 2
 
-    def test_load_1bit_png_mask(self):
-        mask_path = os.path.join(self.dataset_root, self.entry.depth.mask_path)
+    def _load_1bit_png_mask_test(self, entry):
+        mask_path = os.path.join(self.dataset_root, entry.depth.mask_path)
         mask = _load_1bit_png_mask(mask_path)
         assert mask.dtype == np.float32
         assert len(mask.shape) == 2
 
-    def test_load_depth_mask(self):
-        mask_path = os.path.join(self.dataset_root, self.entry.depth.mask_path)
+    def _load_depth_mask_test(self, entry):
+        mask_path = os.path.join(self.dataset_root, entry.depth.mask_path)
         mask = _load_depth_mask(mask_path)
         assert mask.dtype == np.float32
         assert len(mask.shape) == 3
