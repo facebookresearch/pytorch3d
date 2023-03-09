@@ -18,11 +18,12 @@ from tests.common_testing import TestCaseMixin
 from pytorch3d.implicitron.tools.config import expand_args_fields
 from pytorch3d.implicitron.tools.config import get_default_args
 
+from tests.implicitron.common_resources import get_skateboard_data
+
 
 class TestBlobLoader(TestCaseMixin, unittest.TestCase):
     def setUp(self):
         torch.manual_seed(42)
-        self.blob_loader = BlobLoader()
 
         category = "skateboard"
         stack = contextlib.ExitStack()
@@ -74,8 +75,8 @@ class TestBlobLoader(TestCaseMixin, unittest.TestCase):
         )
         assert image_rgb
         assert image_path
-        assert mask_crop,
-        assert scale,
+        assert mask_crop
+        assert scale
         (
             depth_map,
             depth_path,
