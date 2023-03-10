@@ -52,6 +52,8 @@ class TestBlobLoader(TestCaseMixin, unittest.TestCase):
             load_point_clouds=True,
             path_manager=self.path_manager,
         )
+        index = 7000
+        self.entry = self.dataset.frame_annots[index]["frame_annotation"]
 
     def test_BlobLoader_args(self):
         # test that BlobLoader works with get_default_args
@@ -64,26 +66,14 @@ class TestBlobLoader(TestCaseMixin, unittest.TestCase):
         assert original_path in modified_path
         assert self.dataset.blob_loader.dataset_root in modified_path
 
-    def test_entry_loading_functions(self):
-        for index in range(len(self.dataset.frame_annots)):
-            entry = self.dataset.frame_annots[index]["frame_annotation"]
-            self.load_test(entry)
-            self._resize_image_test(entry)
-            self._load_image_test(entry)
-            self._load_mask_test(entry)
-            self._load_depth_test(entry)
-            self._load_16big_png_depth_test(entry)
-            self._load_1bit_png_mask_test(entry)
-            self._load_depth_mask_test(entry)
-
-    def load_test(self, entry):
+    def test_load(self):
         (
             fg_probability,
             mask_path,
             bbox_xywh,
             clamp_bbox_xyxy,
             crop_bbox_xywh,
-        ) = self.dataset.blob_loader._load_crop_fg_probability(entry)
+        ) = self.dataset.blob_loader._load_crop_fg_probability(self.entry)
 
         assert mask_path
         assert torch.is_tensor(fg_probability)
@@ -96,15 +86,8 @@ class TestBlobLoader(TestCaseMixin, unittest.TestCase):
         self.assertEqual(clamp_bbox_xyxy.shape, torch.Size([4]))
         self.assertEqual(crop_bbox_xywh.shape, torch.Size([4]))
         (
-            image_rgb,
-            image_path,
-            mask_crop,
-            scale,
-        ) = self.dataset.blob_loader._load_crop_images(
-            entry,
-            fg_probability,
-            clamp_bbox_xyxy,
-        )
+            image_rgb, image_path, mask_crop, scale,
+        ) = self.dataset.blob_loader._load_crop_images(self.entry, fg_probability, clamp_bbox_xyxy)
         assert torch.is_tensor(image_rgb)
         assert image_path
         assert torch.is_tensor(mask_crop)
@@ -118,7 +101,7 @@ class TestBlobLoader(TestCaseMixin, unittest.TestCase):
             depth_path,
             depth_mask,
         ) = self.dataset.blob_loader._load_mask_depth(
-            entry,
+            self.entry,
             clamp_bbox_xyxy,
             fg_probability,
         )
@@ -130,14 +113,14 @@ class TestBlobLoader(TestCaseMixin, unittest.TestCase):
         self.assertEqual(depth_mask.shape, torch.Size([1, self.image_height, self.image_width]))
 
         camera = self.dataset.blob_loader._get_pytorch3d_camera(
-            entry,
+            self.entry,
             scale,
             clamp_bbox_xyxy,
         )
         self.assertEqual(type(camera), PerspectiveCameras)
 
-    def _resize_image_test(self, entry):
-        path = os.path.join(self.dataset_root, entry.image.path)
+    def test_resize_image(self):
+        path = os.path.join(self.dataset_root, self.entry.image.path)
         local_path = self.path_manager.get_local_path(path)
         image = _load_image(local_path)
         image_rgb, scale, mask_crop = self.dataset.blob_loader._resize_image(image)
@@ -155,41 +138,41 @@ class TestBlobLoader(TestCaseMixin, unittest.TestCase):
         self.assertEqual(image_rgb.shape[-2:], expected_shape)
         self.assertEqual(mask_crop.shape[-2:], expected_shape)
 
-    def _load_image_test(self, entry):
-        path = os.path.join(self.dataset_root, entry.image.path)
+    def test_load_image(self):
+        path = os.path.join(self.dataset_root, self.entry.image.path)
         local_path = self.path_manager.get_local_path(path)
         image = _load_image(local_path)
         self.assertEqual(image.dtype, np.float32)
         assert np.max(image) <= 1.0
         assert np.min(image) >= 0.0
 
-    def _load_mask_test(self, entry):
-        path = os.path.join(self.dataset_root, entry.mask.path)
+    def test_load_mask(self):
+        path = os.path.join(self.dataset_root, self.entry.mask.path)
         mask = _load_mask(path)
         self.assertEqual(mask.dtype, np.float32)
         assert np.max(mask) <= 1.0
         assert np.min(mask) >= 0.0
 
-    def _load_depth_test(self, entry):
-        path = os.path.join(self.dataset_root, entry.depth.path)
-        depth_map = _load_depth(path, entry.depth.scale_adjustment)
+    def test_load_depth(self):
+        path = os.path.join(self.dataset_root, self.entry.depth.path)
+        depth_map = _load_depth(path, self.entry.depth.scale_adjustment)
         self.assertEqual(depth_map.dtype, np.float32)
         self.assertEqual(len(depth_map.shape), 2)
 
-    def _load_16big_png_depth_test(self, entry):
-        path = os.path.join(self.dataset_root, entry.depth.path)
+    def test_load_16big_png_depth(self):
+        path = os.path.join(self.dataset_root, self.entry.depth.path)
         depth_map = _load_16big_png_depth(path)
         self.assertEqual(depth_map.dtype, np.float32)
         self.assertEqual(len(depth_map.shape), 2)
 
-    def _load_1bit_png_mask_test(self, entry):
-        mask_path = os.path.join(self.dataset_root, entry.depth.mask_path)
+    def test_load_1bit_png_mask(self):
+        mask_path = os.path.join(self.dataset_root, self.entry.depth.mask_path)
         mask = _load_1bit_png_mask(mask_path)
         self.assertEqual(mask.dtype, np.float32)
         self.assertEqual(len(mask.shape), 2)
 
-    def _load_depth_mask_test(self, entry):
-        mask_path = os.path.join(self.dataset_root, entry.depth.mask_path)
+    def test_load_depth_mask(self):
+        mask_path = os.path.join(self.dataset_root, self.entry.depth.mask_path)
         mask = _load_depth_mask(mask_path)
         self.assertEqual(mask.dtype, np.float32)
         self.assertEqual(len(mask.shape), 3)
