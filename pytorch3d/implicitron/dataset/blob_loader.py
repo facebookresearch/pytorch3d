@@ -333,7 +333,7 @@ class BlobLoader:
 
 
 def _resize_image(
-    self, image, image_height, image_width, mode="bilinear"
+    image, image_height, image_width, mode="bilinear"
 ) -> Tuple[torch.Tensor, float, torch.Tensor]:
     if image_height is None or image_width is None:
         # skip the resizing
