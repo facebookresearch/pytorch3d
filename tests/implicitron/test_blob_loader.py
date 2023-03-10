@@ -91,12 +91,10 @@ class TestBlobLoader(TestCaseMixin, unittest.TestCase):
         assert torch.is_tensor(clamp_bbox_xyxy)
         assert torch.is_tensor(crop_bbox_xywh)
         # assert bboxes shape
-        assert fg_probability.shape == torch.Size(
-            [1, self.image_height, self.image_width]
-        )
-        assert bbox_xywh.shape == torch.Size([4])
-        assert clamp_bbox_xyxy.shape == torch.Size([4])
-        assert crop_bbox_xywh.shape == torch.Size([4])
+        self.assertEqual(fg_probability.shape, torch.Size([1, self.image_height, self.image_width]))
+        self.assertEqual(bbox_xywh.shape, torch.Size([4]))
+        self.assertEqual(clamp_bbox_xyxy.shape, torch.Size([4]))
+        self.assertEqual(crop_bbox_xywh.shape, torch.Size([4]))
         (
             image_rgb,
             image_path,
@@ -112,8 +110,8 @@ class TestBlobLoader(TestCaseMixin, unittest.TestCase):
         assert torch.is_tensor(mask_crop)
         assert scale
         # assert image and mask shapes
-        assert image_rgb.shape == torch.Size([3, self.image_height, self.image_width])
-        assert mask_crop.shape == torch.Size([1, self.image_height, self.image_width])
+        self.assertEqual(image_rgb.shape, torch.Size([3, self.image_height, self.image_width]))
+        self.assertEqual(mask_crop.shape, torch.Size([1, self.image_height, self.image_width])
 
         (
             depth_map,
@@ -128,15 +126,15 @@ class TestBlobLoader(TestCaseMixin, unittest.TestCase):
         assert depth_path
         assert torch.is_tensor(depth_mask)
         # assert image and mask shapes
-        assert depth_map.shape == torch.Size([1, self.image_height, self.image_width])
-        assert depth_mask.shape == torch.Size([1, self.image_height, self.image_width])
+        self.assertEqual(depth_map.shape, torch.Size([1, self.image_height, self.image_width]))
+        self.assertEqual(depth_mask.shape, torch.Size([1, self.image_height, self.image_width]))
 
         camera = self.dataset.blob_loader._get_pytorch3d_camera(
             entry,
             scale,
             clamp_bbox_xyxy,
         )
-        assert type(camera) == PerspectiveCameras
+        self.assertEqual(type(camera), PerspectiveCameras)
 
     def _resize_image_test(self, entry):
         path = os.path.join(self.dataset_root, entry.image.path)
@@ -153,45 +151,45 @@ class TestBlobLoader(TestCaseMixin, unittest.TestCase):
             expected_shape[0] / original_shape[0], expected_shape[1] / original_shape[1]
         )
 
-        assert scale == expected_scale
-        assert image_rgb.shape[-2:] == expected_shape
-        assert mask_crop.shape[-2:] == expected_shape
+        self.assertEqual(scale, expected_scale)
+        self.assertEqual(image_rgb.shape[-2:], expected_shape)
+        self.assertEqual(mask_crop.shape[-2:], expected_shape)
 
     def _load_image_test(self, entry):
         path = os.path.join(self.dataset_root, entry.image.path)
         local_path = self.path_manager.get_local_path(path)
         image = _load_image(local_path)
-        assert image.dtype == np.float32
+        self.assertEqual(image.dtype, np.float32)
         assert np.max(image) <= 1.0
         assert np.min(image) >= 0.0
 
     def _load_mask_test(self, entry):
         path = os.path.join(self.dataset_root, entry.mask.path)
         mask = _load_mask(path)
-        assert mask.dtype == np.float32
+        self.assertEqual(mask.dtype, np.float32)
         assert np.max(mask) <= 1.0
         assert np.min(mask) >= 0.0
 
     def _load_depth_test(self, entry):
         path = os.path.join(self.dataset_root, entry.depth.path)
         depth_map = _load_depth(path, entry.depth.scale_adjustment)
-        assert depth_map.dtype == np.float32
-        assert depth_map.shape
+        self.assertEqual(depth_map.dtype, np.float32)
+        self.assertEqual(len(depth_map.shape), 2)
 
     def _load_16big_png_depth_test(self, entry):
         path = os.path.join(self.dataset_root, entry.depth.path)
         depth_map = _load_16big_png_depth(path)
-        assert depth_map.dtype == np.float32
-        assert len(depth_map.shape) == 2
+        self.assertEqual(depth_map.dtype, np.float32)
+        self.assertEqual(len(depth_map.shape), 2)
 
     def _load_1bit_png_mask_test(self, entry):
         mask_path = os.path.join(self.dataset_root, entry.depth.mask_path)
         mask = _load_1bit_png_mask(mask_path)
-        assert mask.dtype == np.float32
-        assert len(mask.shape) == 2
+        self.assertEqual(mask.dtype, np.float32)
+        self.assertEqual(len(mask.shape), 2)
 
     def _load_depth_mask_test(self, entry):
         mask_path = os.path.join(self.dataset_root, entry.depth.mask_path)
         mask = _load_depth_mask(mask_path)
-        assert mask.dtype == np.float32
-        assert len(mask.shape) == 3
+        self.assertEqual(mask.dtype, np.float32)
+        self.assertEqual(len(mask.shape), 3)
