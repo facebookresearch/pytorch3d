@@ -15,10 +15,9 @@ from pytorch3d.implicitron.dataset.blob_loader import (
     _load_depth_mask,
     _load_image,
     _load_mask,
-    _resize_image,
     BlobLoader,
 )
-from pytorch3d.implicitron.tools.config import expand_args_fields, get_default_args
+from pytorch3d.implicitron.tools.config import get_default_args
 from pytorch3d.renderer.cameras import PerspectiveCameras
 
 from tests.common_testing import TestCaseMixin
@@ -123,27 +122,6 @@ class TestBlobLoader(TestCaseMixin, unittest.TestCase):
             clamp_bbox_xyxy,
         )
         self.assertEqual(type(camera), PerspectiveCameras)
-
-    def test_resize_image(self):
-        path = os.path.join(self.dataset_root, self.frame_annotation.image.path)
-        local_path = self.path_manager.get_local_path(path)
-        image = _load_image(local_path)
-        image_rgb, scale, mask_crop = _resize_image(
-            image, image_height=self.image_height, image_width=self.image_width
-        )
-
-        original_shape = image.shape[-2:]
-        expected_shape = (
-            self.image_height,
-            self.image_width,
-        )
-        expected_scale = min(
-            expected_shape[0] / original_shape[0], expected_shape[1] / original_shape[1]
-        )
-
-        self.assertEqual(scale, expected_scale)
-        self.assertEqual(image_rgb.shape[-2:], expected_shape)
-        self.assertEqual(mask_crop.shape[-2:], expected_shape)
 
     def test_load_image(self):
         path = os.path.join(self.dataset_root, self.frame_annotation.image.path)

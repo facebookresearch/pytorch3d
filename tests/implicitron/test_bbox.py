@@ -18,6 +18,7 @@ from pytorch3d.implicitron.dataset.blob_loader import (
     _get_bbox_from_mask,
     _get_clamp_bbox,
     _rescale_bbox,
+    _resize_image,
 )
 
 from tests.common_testing import TestCaseMixin
@@ -121,3 +122,20 @@ class TestBBox(TestCaseMixin, unittest.TestCase):
         bounds = _get_1d_bounds(array)
         # make nonzero 1d bounds of image
         self.assertClose(bounds, [1, 3])
+
+    def test_resize_image(self):
+        image = torch.rand(3, 300, 500)  # rgb image 300x500
+        expected_shape = (150, 250)
+
+        resized_image, scale, mask_crop = _resize_image(
+            image, image_height=expected_shape[0], image_width=expected_shape[1]
+        )
+
+        original_shape = image.shape[-2:]
+        expected_scale = min(
+            expected_shape[0] / original_shape[0], expected_shape[1] / original_shape[1]
+        )
+
+        self.assertEqual(scale, expected_scale)
+        self.assertEqual(resized_image.shape[-2:], expected_shape)
+        self.assertEqual(mask_crop.shape[-2:], expected_shape)
