@@ -15,6 +15,7 @@ from pytorch3d.implicitron.dataset.blob_loader import (
     _load_depth_mask,
     _load_image,
     _load_mask,
+    _resize_image,
     BlobLoader,
 )
 from pytorch3d.implicitron.tools.config import expand_args_fields, get_default_args
@@ -127,7 +128,9 @@ class TestBlobLoader(TestCaseMixin, unittest.TestCase):
         path = os.path.join(self.dataset_root, self.frame_annotation.image.path)
         local_path = self.path_manager.get_local_path(path)
         image = _load_image(local_path)
-        image_rgb, scale, mask_crop = self.blob_loader._resize_image(image)
+        image_rgb, scale, mask_crop = _resize_image(
+            image, image_height=self.image_height, image_width=self.image_width
+        )
 
         original_shape = image.shape[-2:]
         expected_shape = (

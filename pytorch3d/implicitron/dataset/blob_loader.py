@@ -165,7 +165,12 @@ class BlobLoader:
 
                 mask = _crop_around_box(mask, clamp_bbox_xyxy, full_path)
 
-            fg_probability, _, _ = self._resize_image(mask, mode="nearest")
+            fg_probability, _, _ = _resize_image(
+                mask,
+                image_height=self.image_height,
+                image_width=self.image_width,
+                mode="nearest",
+            )
 
         return fg_probability, full_path, bbox_xywh, clamp_bbox_xyxy, crop_box_xywh
 
@@ -188,7 +193,9 @@ class BlobLoader:
             assert clamp_bbox_xyxy is not None
             image_rgb = _crop_around_box(image_rgb, clamp_bbox_xyxy, path)
 
-        image_rgb, scale, mask_crop = self._resize_image(image_rgb)
+        image_rgb, scale, mask_crop = _resize_image(
+            image_rgb, image_height=self.image_height, image_width=self.image_width
+        )
 
         if self.mask_images:
             assert fg_probability is not None
@@ -214,7 +221,12 @@ class BlobLoader:
             )
             depth_map = _crop_around_box(depth_map, depth_bbox_xyxy, path)
 
-        depth_map, _, _ = self._resize_image(depth_map, mode="nearest")
+        depth_map, _, _ = _resize_image(
+            depth_map,
+            image_height=self.image_height,
+            image_width=self.image_width,
+            mode="nearest",
+        )
 
         if self.mask_depths:
             assert fg_probability is not None
@@ -234,7 +246,12 @@ class BlobLoader:
                     depth_mask, depth_mask_bbox_xyxy, mask_path
                 )
 
-            depth_mask, _, _ = self._resize_image(depth_mask, mode="nearest")
+            depth_mask, _, _ = _resize_image(
+                depth_mask,
+                image_height=self.image_height,
+                image_width=self.image_width,
+                mode="nearest",
+            )
         else:
             depth_mask = torch.ones_like(depth_map)
 
@@ -314,31 +331,31 @@ class BlobLoader:
             return path
         return self.path_manager.get_local_path(path)
 
-    def _resize_image(
-        self, image, mode="bilinear"
-    ) -> Tuple[torch.Tensor, float, torch.Tensor]:
-        image_height, image_width = self.image_height, self.image_width
-        if image_height is None or image_width is None:
-            # skip the resizing
-            imre_ = torch.from_numpy(image)
-            return imre_, 1.0, torch.ones_like(imre_[:1])
-        # takes numpy array, returns pytorch tensor
-        minscale = min(
-            image_height / image.shape[-2],
-            image_width / image.shape[-1],
-        )
-        imre = torch.nn.functional.interpolate(
-            torch.from_numpy(image)[None],
-            scale_factor=minscale,
-            mode=mode,
-            align_corners=False if mode == "bilinear" else None,
-            recompute_scale_factor=True,
-        )[0]
-        imre_ = torch.zeros(image.shape[0], image_height, image_width)
-        imre_[:, 0 : imre.shape[1], 0 : imre.shape[2]] = imre
-        mask = torch.zeros(1, image_height, image_width)
-        mask[:, 0 : imre.shape[1], 0 : imre.shape[2]] = 1.0
-        return imre_, minscale, mask
+
+def _resize_image(
+    self, image, image_height, image_width, mode="bilinear"
+) -> Tuple[torch.Tensor, float, torch.Tensor]:
+    if image_height is None or image_width is None:
+        # skip the resizing
+        imre_ = torch.from_numpy(image)
+        return imre_, 1.0, torch.ones_like(imre_[:1])
+    # takes numpy array, returns pytorch tensor
+    minscale = min(
+        image_height / image.shape[-2],
+        image_width / image.shape[-1],
+    )
+    imre = torch.nn.functional.interpolate(
+        torch.from_numpy(image)[None],
+        scale_factor=minscale,
+        mode=mode,
+        align_corners=False if mode == "bilinear" else None,
+        recompute_scale_factor=True,
+    )[0]
+    imre_ = torch.zeros(image.shape[0], image_height, image_width)
+    imre_[:, 0 : imre.shape[1], 0 : imre.shape[2]] = imre
+    mask = torch.zeros(1, image_height, image_width)
+    mask[:, 0 : imre.shape[1], 0 : imre.shape[2]] = 1.0
+    return imre_, minscale, mask
 
 
 def _load_image(path) -> np.ndarray:
