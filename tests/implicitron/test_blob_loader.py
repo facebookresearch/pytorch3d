@@ -14,6 +14,7 @@ from pytorch3d.implicitron.dataset.blob_loader import (
     _load_mask,
     BlobLoader,
 )
+from pytorch3d.implicitron.dataset import types
 from pytorch3d.implicitron.dataset.json_index_dataset import JsonIndexDataset
 from pytorch3d.implicitron.tools.config import expand_args_fields, get_default_args
 from pytorch3d.renderer.cameras import PerspectiveCameras
@@ -40,20 +41,16 @@ class TestBlobLoader(TestCaseMixin, unittest.TestCase):
         self.image_height = 768
         self.image_width = 512
 
-        expand_args_fields(JsonIndexDataset)
+        expand_args_fields(BlobLoader)
+        self.blob_loader = BlobLoader()
 
-        self.dataset = JsonIndexDataset(
-            frame_annotations_file=frame_file,
-            sequence_annotations_file=sequence_file,
-            dataset_root=self.dataset_root,
-            image_height=self.image_height,
-            image_width=self.image_width,
-            box_crop=True,
-            load_point_clouds=True,
-            path_manager=self.path_manager,
-        )
-        index = 7000
-        self.entry = self.dataset.frame_annots[index]["frame_annotation"]
+        # loading single frame annotation of dataset (see JsonIndexDataset._load_frames())
+        local_file = self.path_manager.get_local_path(frame_file)
+        with gzip.open(local_file, "rt", encoding="utf8") as zipfile:
+            frame_annots_list = types.load_dataclass(zipfile, List[self.frame_annotations_type])
+
+        index = 0
+        self.entry = FrameAnnotsEntry(frame_annotation=frame_annots_list[index], subset=None)
 
     def test_BlobLoader_args(self):
         # test that BlobLoader works with get_default_args
@@ -62,9 +59,9 @@ class TestBlobLoader(TestCaseMixin, unittest.TestCase):
     def test_fix_point_cloud_path(self):
         """Some files in Co3Dv2 have an accidental absolute path stored."""
         original_path = "some_file_path"
-        modified_path = self.dataset.blob_loader._fix_point_cloud_path(original_path)
+        modified_path = self.blob_loader._fix_point_cloud_path(original_path)
         assert original_path in modified_path
-        assert self.dataset.blob_loader.dataset_root in modified_path
+        assert self.blob_loader.dataset_root in modified_path
 
     def test_load(self):
         (
@@ -73,7 +70,7 @@ class TestBlobLoader(TestCaseMixin, unittest.TestCase):
             bbox_xywh,
             clamp_bbox_xyxy,
             crop_bbox_xywh,
-        ) = self.dataset.blob_loader._load_crop_fg_probability(self.entry)
+        ) = self.blob_loader._load_crop_fg_probability(self.entry)
 
         assert mask_path
         assert torch.is_tensor(fg_probability)
@@ -87,7 +84,7 @@ class TestBlobLoader(TestCaseMixin, unittest.TestCase):
         self.assertEqual(crop_bbox_xywh.shape, torch.Size([4]))
         (
             image_rgb, image_path, mask_crop, scale,
-        ) = self.dataset.blob_loader._load_crop_images(self.entry, fg_probability, clamp_bbox_xyxy)
+        ) = self.blob_loader._load_crop_images(self.entry, fg_probability, clamp_bbox_xyxy)
         assert torch.is_tensor(image_rgb)
         assert image_path
         assert torch.is_tensor(mask_crop)
@@ -100,7 +97,7 @@ class TestBlobLoader(TestCaseMixin, unittest.TestCase):
             depth_map,
             depth_path,
             depth_mask,
-        ) = self.dataset.blob_loader._load_mask_depth(
+        ) = self.blob_loader._load_mask_depth(
             self.entry,
             clamp_bbox_xyxy,
             fg_probability,
@@ -112,7 +109,7 @@ class TestBlobLoader(TestCaseMixin, unittest.TestCase):
         self.assertEqual(depth_map.shape, torch.Size([1, self.image_height, self.image_width]))
         self.assertEqual(depth_mask.shape, torch.Size([1, self.image_height, self.image_width]))
 
-        camera = self.dataset.blob_loader._get_pytorch3d_camera(
+        camera = self.blob_loader._get_pytorch3d_camera(
             self.entry,
             scale,
             clamp_bbox_xyxy,
@@ -123,7 +120,7 @@ class TestBlobLoader(TestCaseMixin, unittest.TestCase):
         path = os.path.join(self.dataset_root, self.entry.image.path)
         local_path = self.path_manager.get_local_path(path)
         image = _load_image(local_path)
-        image_rgb, scale, mask_crop = self.dataset.blob_loader._resize_image(image)
+        image_rgb, scale, mask_crop = self.blob_loader._resize_image(image)
 
         original_shape = image.shape[-2:]
         expected_shape = (
