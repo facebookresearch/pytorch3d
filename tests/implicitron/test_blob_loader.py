@@ -91,7 +91,7 @@ class TestBlobLoader(TestCaseMixin, unittest.TestCase):
         assert scale
         # assert image and mask shapes
         self.assertEqual(image_rgb.shape, torch.Size([3, self.image_height, self.image_width]))
-        self.assertEqual(mask_crop.shape, torch.Size([1, self.image_height, self.image_width])
+        self.assertEqual(mask_crop.shape, torch.Size([1, self.image_height, self.image_width]))
 
         (
             depth_map,

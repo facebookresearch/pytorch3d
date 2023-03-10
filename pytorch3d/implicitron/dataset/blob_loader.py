@@ -57,20 +57,20 @@ class BlobLoader:
                 dimension of the cropping bounding box, relative to box size.
     """
 
-    dataset_root: str
-    load_images: bool
-    load_depths: bool
-    load_depth_masks: bool
-    load_masks: bool
-    load_point_clouds: bool
-    max_points: int
-    mask_images: bool
-    mask_depths: bool
-    image_height: Optional[int]
-    image_width: Optional[int]
-    box_crop: bool
-    box_crop_mask_thr: float
-    box_crop_context: float
+    dataset_root: str = ""
+    load_images: bool = True
+    load_depths: bool = True
+    load_depth_masks: bool = True
+    load_masks: bool = True
+    load_point_clouds: bool = False
+    max_points: int = 0
+    mask_images: bool = False
+    mask_depths: bool = False
+    image_height: Optional[int] = 800
+    image_width: Optional[int] = 800
+    box_crop: bool = True
+    box_crop_mask_thr: float = 0.4
+    box_crop_context: float = 0.3
     path_manager: Any = None
 
     def load(
