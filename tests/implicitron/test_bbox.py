@@ -124,7 +124,7 @@ class TestBBox(TestCaseMixin, unittest.TestCase):
         self.assertClose(bounds, [1, 3])
 
     def test_resize_image(self):
-        image = torch.rand(3, 300, 500)  # rgb image 300x500
+        image = np.random.rand(3, 300, 500)  # rgb image 300x500
         expected_shape = (150, 250)
 
         resized_image, scale, mask_crop = _resize_image(
