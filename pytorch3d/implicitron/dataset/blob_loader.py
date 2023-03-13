@@ -90,7 +90,10 @@ class BlobLoader:
             frame_data.crop_bbox_xywh,
         ) = self._load_crop_fg_probability(entry)
 
-        scale = 1.0
+        scale = min(
+            self.image_height / entry.image.size[0],
+            self.image_width / entry.image.size[1],
+        )
         if self.load_images and entry.image is not None:
             # original image size
             frame_data.image_size_hw = _safe_as_tensor(entry.image.size, torch.long)
