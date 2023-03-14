@@ -85,7 +85,7 @@ class BlobLoader:
         (
             frame_data.fg_probability,
             frame_data.mask_path,
-            bbox_xywh,
+            frame_data.bbox_xywh,
         ) = self._load_crop_fg_probability(entry)
 
         scale = min(
@@ -121,7 +121,7 @@ class BlobLoader:
             frame_data.sequence_point_cloud_path = pcl_path
 
         if self.box_crop:
-            frame_data.crop_by_bbox(bbox_xywh, self.box_crop_context)
+            frame_data.crop_by_bbox_(self.box_crop_context)
 
         return frame_data
 

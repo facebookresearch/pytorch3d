@@ -151,10 +151,10 @@ class FrameData(Mapping[str, Any]):
     def __len__(self):
         return len(fields(self))
 
-    def crop_by_bbox(self, bbox_xywh, box_crop_context):
+    def crop_by_bbox_(self, box_crop_context):
         clamp_bbox_xyxy = _clamp_box_to_image_bounds_and_round(
             _get_clamp_bbox(
-                bbox_xywh,
+                self.bbox_xywh,
                 image_path=self.image.path,
                 box_crop_context=box_crop_context,
             ),
