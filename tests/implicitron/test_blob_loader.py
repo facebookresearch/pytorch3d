@@ -64,7 +64,7 @@ class TestBlobLoader(TestCaseMixin, unittest.TestCase):
         assert original_path in modified_path
         assert self.blob_loader.dataset_root in modified_path
 
-    def test_load(self):
+    def test_load_(self):
         (
             fg_probability,
             mask_path,

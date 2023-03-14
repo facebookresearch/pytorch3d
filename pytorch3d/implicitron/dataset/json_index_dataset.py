@@ -443,9 +443,10 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
 
         # Optional field
         frame_data.frame_type = self._get_frame_type(self.frame_annots[index])
-        return self.blob_loader.load(
+        self.blob_loader.load_(
             frame_data, entry, self.seq_annots[entry.sequence_name]
         )
+        return frame_data
 
     def _load_frames(self) -> None:
         logger.info(f"Loading Co3D frames from {self.frame_annotations_file}.")

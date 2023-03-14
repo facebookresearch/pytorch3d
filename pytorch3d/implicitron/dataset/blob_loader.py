@@ -73,7 +73,7 @@ class BlobLoader:
     box_crop_context: float = 0.3
     path_manager: Any = None
 
-    def load(
+    def load_(
         self,
         frame_data: FrameData,
         entry: types.FrameAnnotation,
@@ -127,7 +127,6 @@ class BlobLoader:
                 self._local_path(pcl_path), max_points=self.max_points
             )
             frame_data.sequence_point_cloud_path = pcl_path
-        return frame_data
 
     def _load_crop_fg_probability(
         self, entry: types.FrameAnnotation
