@@ -6,7 +6,6 @@
 
 import functools
 import os
-import warnings
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional, Tuple, Union
@@ -17,12 +16,10 @@ from PIL import Image
 
 from pytorch3d.implicitron.dataset import types
 from pytorch3d.implicitron.dataset.dataset_base import FrameData
+from pytorch3d.implicitron.dataset.utils import _get_bbox_from_mask
 from pytorch3d.io import IO
 from pytorch3d.renderer.cameras import PerspectiveCameras
 from pytorch3d.structures.pointclouds import Pointclouds
-from pytorch3d.implicitron.dataset.utils import (
-    _get_bbox_from_mask,
-)
 
 
 @dataclass
@@ -124,13 +121,13 @@ class BlobLoader:
             frame_data.sequence_point_cloud_path = pcl_path
 
         if self.box_crop:
-            frame_data.crop_by_bbox(bbox_xywh, self.box_crop_context, )
+            frame_data.crop_by_bbox(bbox_xywh, self.box_crop_context)
 
         return frame_data
 
     def _load_crop_fg_probability(
         self, entry: types.FrameAnnotation
-    ) -> Tuple[Optional[torch.Tensor],Optional[str],Optional[torch.Tensor]]:
+    ) -> Tuple[Optional[torch.Tensor], Optional[str], Optional[torch.Tensor]]:
         fg_probability = None
         full_path = None
         bbox_xywh = None
@@ -138,7 +135,7 @@ class BlobLoader:
         if (self.load_masks) and entry.mask is not None:
             full_path = os.path.join(self.dataset_root, entry.mask.path)
             mask = _load_mask(self._local_path(full_path))
-            bbox_xywh = torch.tensor(_get_bbox_from_mask(self.mask, self.box_crop_mask_thr))
+            bbox_xywh = torch.tensor(_get_bbox_from_mask(mask, self.box_crop_mask_thr))
 
             if mask.shape[-2:] != entry.image.size:
                 raise ValueError(

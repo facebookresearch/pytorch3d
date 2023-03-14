@@ -5,7 +5,10 @@
 # LICENSE file in the root directory of this source tree.
 
 
-from typing import List, Optional
+import warnings
+from typing import List, Optional, Tuple
+
+import numpy as np
 
 import torch
 
@@ -55,22 +58,22 @@ def is_train_frame(
 
 
 def _get_bbox_from_mask(
-        mask, thr, decrease_quant: float = 0.05
-    ) -> Tuple[int, int, int, int]:
-        # bbox in xywh
-        masks_for_box = np.zeros_like(mask)
-        while masks_for_box.sum() <= 1.0:
-            masks_for_box = (mask > thr).astype(np.float32)
-            thr -= decrease_quant
-        if thr <= 0.0:
-            warnings.warn(
-                f"Empty masks_for_bbox (thr={thr}) => using full image.", stacklevel=1
-            )
+    mask, thr, decrease_quant: float = 0.05
+) -> Tuple[int, int, int, int]:
+    # bbox in xywh
+    masks_for_box = np.zeros_like(mask)
+    while masks_for_box.sum() <= 1.0:
+        masks_for_box = (mask > thr).astype(np.float32)
+        thr -= decrease_quant
+    if thr <= 0.0:
+        warnings.warn(
+            f"Empty masks_for_bbox (thr={thr}) => using full image.", stacklevel=1
+        )
 
-        x0, x1 = _get_1d_bounds(masks_for_box.sum(axis=-2))
-        y0, y1 = _get_1d_bounds(masks_for_box.sum(axis=-1))
+    x0, x1 = _get_1d_bounds(masks_for_box.sum(axis=-2))
+    y0, y1 = _get_1d_bounds(masks_for_box.sum(axis=-1))
 
-        return x0, y0, x1 - x0, y1 - y0
+    return x0, y0, x1 - x0, y1 - y0
 
 
 def _crop_around_box(tensor, bbox, impath: str = ""):

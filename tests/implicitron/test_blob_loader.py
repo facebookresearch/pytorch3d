@@ -69,25 +69,22 @@ class TestBlobLoader(TestCaseMixin, unittest.TestCase):
             fg_probability,
             mask_path,
             bbox_xywh,
-            clamp_bbox_xyxy,
-            crop_bbox_xywh,
         ) = self.blob_loader._load_crop_fg_probability(self.frame_annotation)
 
         assert mask_path
         assert torch.is_tensor(fg_probability)
         assert torch.is_tensor(bbox_xywh)
-        assert torch.is_tensor(clamp_bbox_xyxy)
-        assert torch.is_tensor(crop_bbox_xywh)
         # assert bboxes shape
         self.assertEqual(
             fg_probability.shape, torch.Size([1, self.image_height, self.image_width])
         )
         self.assertEqual(bbox_xywh.shape, torch.Size([4]))
-        self.assertEqual(clamp_bbox_xyxy.shape, torch.Size([4]))
-        self.assertEqual(crop_bbox_xywh.shape, torch.Size([4]))
-        (image_rgb, image_path, mask_crop, scale,) = self.blob_loader._load_crop_images(
-            self.frame_annotation, fg_probability, clamp_bbox_xyxy
-        )
+        (
+            image_rgb,
+            image_path,
+            mask_crop,
+            scale,
+        ) = self.blob_loader._load_crop_images(self.frame_annotation, fg_probability)
         assert torch.is_tensor(image_rgb)
         assert image_path
         assert torch.is_tensor(mask_crop)
@@ -102,7 +99,6 @@ class TestBlobLoader(TestCaseMixin, unittest.TestCase):
 
         (depth_map, depth_path, depth_mask,) = self.blob_loader._load_mask_depth(
             self.frame_annotation,
-            clamp_bbox_xyxy,
             fg_probability,
         )
         assert torch.is_tensor(depth_map)
@@ -119,7 +115,6 @@ class TestBlobLoader(TestCaseMixin, unittest.TestCase):
         camera = self.blob_loader._get_pytorch3d_camera(
             self.frame_annotation,
             scale,
-            clamp_bbox_xyxy,
         )
         self.assertEqual(type(camera), PerspectiveCameras)
 
