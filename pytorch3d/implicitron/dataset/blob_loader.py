@@ -26,7 +26,7 @@ from pytorch3d.structures.pointclouds import Pointclouds
 class BlobLoader:
     """
     A loader for correctly (according to setup) loading blobs for FrameData.
-    Beware that modification done in place
+    This is used in the implementation of some dataset objects.
 
     Args:
         dataset_root: The root folder of the dataset; all the paths in jsons are
