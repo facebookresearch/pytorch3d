@@ -173,8 +173,7 @@ class FrameData(Mapping[str, Any]):
         depth_mask_bbox_xyxy = _rescale_bbox(clamp_bbox_xyxy, entry.image.size, self.depth_mask.shape[-2:])
         self.depth_mask = _crop_around_box(self.depth_mask, depth_mask_bbox_xyxy, self.mask_path)
 
-
-        principal_point_px -= clamp_bbox_xyxy[:2]
+        self.camera.principal_point_px -= clamp_bbox_xyxy[:2]
 
     @classmethod
     def collate(cls, batch):
