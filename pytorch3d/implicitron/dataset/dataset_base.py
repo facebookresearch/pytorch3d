@@ -26,6 +26,13 @@ import torch
 from pytorch3d.renderer.camera_utils import join_cameras_as_batch
 from pytorch3d.renderer.cameras import CamerasBase, PerspectiveCameras
 from pytorch3d.structures.pointclouds import join_pointclouds_as_batch, Pointclouds
+from pytorch3d.implicitron.dataset.utils import (
+    _crop_around_box,
+    _clamp_box_to_image_bounds_and_round,
+    _bbox_xyxy_to_xywh,
+    _get_clamp_bbox,
+    _rescale_bbox,
+)
 
 
 @dataclass
@@ -143,6 +150,31 @@ class FrameData(Mapping[str, Any]):
 
     def __len__(self):
         return len(fields(self))
+
+    def crop_by_bbox(self, bbox_xywh, box_crop_context):
+        clamp_bbox_xyxy = _clamp_box_to_image_bounds_and_round(
+            _get_clamp_bbox(
+                bbox_xywh,
+                image_path=self.image.path,
+                box_crop_context=box_crop_context,
+            ),
+            image_size_hw=tuple(self.fg_probability.shape[-2:]),
+        )
+        self.crop_bbox_xywh = _bbox_xyxy_to_xywh(clamp_bbox_xyxy)
+
+        self.fg_probability = _crop_around_box(
+            self.fg_probability, clamp_bbox_xyxy, self.mask_path
+        )
+        self.image_rgb = _crop_around_box(self.image_rgb, clamp_bbox_xyxy, self.image.path)
+
+        depth_bbox_xyxy = _rescale_bbox(clamp_bbox_xyxy, entry.image.size, self.depth_map.shape[-2:])
+        self.depth_map = _crop_around_box(self.depth_map, depth_bbox_xyxy, self.depth_path)
+
+        depth_mask_bbox_xyxy = _rescale_bbox(clamp_bbox_xyxy, entry.image.size, self.depth_mask.shape[-2:])
+        self.depth_mask = _crop_around_box(self.depth_mask, depth_mask_bbox_xyxy, self.mask_path)
+
+
+        principal_point_px -= clamp_bbox_xyxy[:2]
 
     @classmethod
     def collate(cls, batch):

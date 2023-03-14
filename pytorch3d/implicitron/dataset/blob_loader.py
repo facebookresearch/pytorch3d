@@ -20,6 +20,9 @@ from pytorch3d.implicitron.dataset.dataset_base import FrameData
 from pytorch3d.io import IO
 from pytorch3d.renderer.cameras import PerspectiveCameras
 from pytorch3d.structures.pointclouds import Pointclouds
+from pytorch3d.implicitron.dataset.utils import (
+    _get_bbox_from_mask,
+)
 
 
 @dataclass
@@ -85,9 +88,7 @@ class BlobLoader:
         (
             frame_data.fg_probability,
             frame_data.mask_path,
-            frame_data.bbox_xywh,
-            clamp_bbox_xyxy,
-            frame_data.crop_bbox_xywh,
+            bbox_xywh,
         ) = self._load_crop_fg_probability(entry)
 
         scale = min(
@@ -103,23 +104,17 @@ class BlobLoader:
                 frame_data.image_path,
                 frame_data.mask_crop,
                 scale,
-            ) = self._load_crop_images(
-                entry, frame_data.fg_probability, clamp_bbox_xyxy
-            )
+            ) = self._load_crop_images(entry, frame_data.fg_probability)
 
         if self.load_depths and entry.depth is not None:
             (
                 frame_data.depth_map,
                 frame_data.depth_path,
                 frame_data.depth_mask,
-            ) = self._load_mask_depth(entry, clamp_bbox_xyxy, frame_data.fg_probability)
+            ) = self._load_mask_depth(entry, frame_data.fg_probability)
 
         if entry.viewpoint is not None:
-            frame_data.camera = self._get_pytorch3d_camera(
-                entry,
-                scale,
-                clamp_bbox_xyxy,
-            )
+            frame_data.camera = self._get_pytorch3d_camera(entry, scale)
 
         if self.load_point_clouds and seq_annotation.point_cloud is not None:
             pcl_path = self._fix_point_cloud_path(seq_annotation.point_cloud.path)
@@ -128,44 +123,27 @@ class BlobLoader:
             )
             frame_data.sequence_point_cloud_path = pcl_path
 
+        if self.box_crop:
+            frame_data.crop_by_bbox(bbox_xywh, self.box_crop_context, )
+
+        return frame_data
+
     def _load_crop_fg_probability(
         self, entry: types.FrameAnnotation
-    ) -> Tuple[
-        Optional[torch.Tensor],
-        Optional[str],
-        Optional[torch.Tensor],
-        Optional[torch.Tensor],
-        Optional[torch.Tensor],
-    ]:
+    ) -> Tuple[Optional[torch.Tensor],Optional[str],Optional[torch.Tensor]]:
         fg_probability = None
         full_path = None
         bbox_xywh = None
-        clamp_bbox_xyxy = None
-        crop_box_xywh = None
 
-        if (self.load_masks or self.box_crop) and entry.mask is not None:
+        if (self.load_masks) and entry.mask is not None:
             full_path = os.path.join(self.dataset_root, entry.mask.path)
             mask = _load_mask(self._local_path(full_path))
+            bbox_xywh = torch.tensor(_get_bbox_from_mask(self.mask, self.box_crop_mask_thr))
 
             if mask.shape[-2:] != entry.image.size:
                 raise ValueError(
                     f"bad mask size: {mask.shape[-2:]} vs {entry.image.size}!"
                 )
-
-            bbox_xywh = torch.tensor(_get_bbox_from_mask(mask, self.box_crop_mask_thr))
-
-            if self.box_crop:
-                clamp_bbox_xyxy = _clamp_box_to_image_bounds_and_round(
-                    _get_clamp_bbox(
-                        bbox_xywh,
-                        image_path=entry.image.path,
-                        box_crop_context=self.box_crop_context,
-                    ),
-                    image_size_hw=tuple(mask.shape[-2:]),
-                )
-                crop_box_xywh = _bbox_xyxy_to_xywh(clamp_bbox_xyxy)
-
-                mask = _crop_around_box(mask, clamp_bbox_xyxy, full_path)
 
             fg_probability, _, _ = _resize_image(
                 mask,
@@ -174,13 +152,12 @@ class BlobLoader:
                 mode="nearest",
             )
 
-        return fg_probability, full_path, bbox_xywh, clamp_bbox_xyxy, crop_box_xywh
+        return fg_probability, full_path, bbox_xywh
 
     def _load_crop_images(
         self,
         entry: types.FrameAnnotation,
         fg_probability: Optional[torch.Tensor],
-        clamp_bbox_xyxy: Optional[torch.Tensor],
     ) -> Tuple[torch.Tensor, str, torch.Tensor, float]:
         assert self.dataset_root is not None and entry.image is not None
         path = os.path.join(self.dataset_root, entry.image.path)
@@ -190,10 +167,6 @@ class BlobLoader:
             raise ValueError(
                 f"bad image size: {image_rgb.shape[-2:]} vs {entry.image.size}!"
             )
-
-        if self.box_crop:
-            assert clamp_bbox_xyxy is not None
-            image_rgb = _crop_around_box(image_rgb, clamp_bbox_xyxy, path)
 
         image_rgb, scale, mask_crop = _resize_image(
             image_rgb, image_height=self.image_height, image_width=self.image_width
@@ -208,20 +181,12 @@ class BlobLoader:
     def _load_mask_depth(
         self,
         entry: types.FrameAnnotation,
-        clamp_bbox_xyxy: Optional[torch.Tensor],
         fg_probability: Optional[torch.Tensor],
     ) -> Tuple[torch.Tensor, str, torch.Tensor]:
         entry_depth = entry.depth
         assert entry_depth is not None
         path = os.path.join(self.dataset_root, entry_depth.path)
         depth_map = _load_depth(self._local_path(path), entry_depth.scale_adjustment)
-
-        if self.box_crop:
-            assert clamp_bbox_xyxy is not None
-            depth_bbox_xyxy = _rescale_bbox(
-                clamp_bbox_xyxy, entry.image.size, depth_map.shape[-2:]
-            )
-            depth_map = _crop_around_box(depth_map, depth_bbox_xyxy, path)
 
         depth_map, _, _ = _resize_image(
             depth_map,
@@ -239,15 +204,6 @@ class BlobLoader:
             mask_path = os.path.join(self.dataset_root, entry_depth.mask_path)
             depth_mask = _load_depth_mask(self._local_path(mask_path))
 
-            if self.box_crop:
-                assert clamp_bbox_xyxy is not None
-                depth_mask_bbox_xyxy = _rescale_bbox(
-                    clamp_bbox_xyxy, entry.image.size, depth_mask.shape[-2:]
-                )
-                depth_mask = _crop_around_box(
-                    depth_mask, depth_mask_bbox_xyxy, mask_path
-                )
-
             depth_mask, _, _ = _resize_image(
                 depth_mask,
                 image_height=self.image_height,
@@ -263,7 +219,6 @@ class BlobLoader:
         self,
         entry: types.FrameAnnotation,
         scale: float,
-        clamp_bbox_xyxy: Optional[torch.Tensor],
     ) -> PerspectiveCameras:
         entry_viewpoint = entry.viewpoint
         assert entry_viewpoint is not None
@@ -290,9 +245,6 @@ class BlobLoader:
         # principal point and focal length in pixels
         principal_point_px = half_image_size_wh_orig - principal_point * rescale
         focal_length_px = focal_length * rescale
-        if self.box_crop:
-            assert clamp_bbox_xyxy is not None
-            principal_point_px -= clamp_bbox_xyxy[:2]
 
         # now, convert from pixels to PyTorch3D v0.5+ NDC convention
         if self.image_height is None or self.image_width is None:
@@ -375,84 +327,6 @@ def _load_mask(path) -> np.ndarray:
     return mask[None]  # fake feature channel
 
 
-def _get_bbox_from_mask(
-    mask, thr, decrease_quant: float = 0.05
-) -> Tuple[int, int, int, int]:
-    # bbox in xywh
-    masks_for_box = np.zeros_like(mask)
-    while masks_for_box.sum() <= 1.0:
-        masks_for_box = (mask > thr).astype(np.float32)
-        thr -= decrease_quant
-    if thr <= 0.0:
-        warnings.warn(
-            f"Empty masks_for_bbox (thr={thr}) => using full image.", stacklevel=1
-        )
-
-    x0, x1 = _get_1d_bounds(masks_for_box.sum(axis=-2))
-    y0, y1 = _get_1d_bounds(masks_for_box.sum(axis=-1))
-
-    return x0, y0, x1 - x0, y1 - y0
-
-
-def _crop_around_box(tensor, bbox, impath: str = ""):
-    # bbox is xyxy, where the upper bound is corrected with +1
-    bbox = _clamp_box_to_image_bounds_and_round(
-        bbox,
-        image_size_hw=tensor.shape[-2:],
-    )
-    tensor = tensor[..., bbox[1] : bbox[3], bbox[0] : bbox[2]]
-    assert all(c > 0 for c in tensor.shape), f"squashed image {impath}"
-    return tensor
-
-
-def _clamp_box_to_image_bounds_and_round(
-    bbox_xyxy: torch.Tensor,
-    image_size_hw: Tuple[int, int],
-) -> torch.LongTensor:
-    bbox_xyxy = bbox_xyxy.clone()
-    bbox_xyxy[[0, 2]] = torch.clamp(bbox_xyxy[[0, 2]], 0, image_size_hw[-1])
-    bbox_xyxy[[1, 3]] = torch.clamp(bbox_xyxy[[1, 3]], 0, image_size_hw[-2])
-    if not isinstance(bbox_xyxy, torch.LongTensor):
-        bbox_xyxy = bbox_xyxy.round().long()
-    return bbox_xyxy  # pyre-ignore [7]
-
-
-def _get_clamp_bbox(
-    bbox: torch.Tensor,
-    box_crop_context: float = 0.0,
-    image_path: str = "",
-) -> torch.Tensor:
-    # box_crop_context: rate of expansion for bbox
-    # returns possibly expanded bbox xyxy as float
-
-    bbox = bbox.clone()  # do not edit bbox in place
-
-    # increase box size
-    if box_crop_context > 0.0:
-        c = box_crop_context
-        bbox = bbox.float()
-        bbox[0] -= bbox[2] * c / 2
-        bbox[1] -= bbox[3] * c / 2
-        bbox[2] += bbox[2] * c
-        bbox[3] += bbox[3] * c
-
-    if (bbox[2:] <= 1.0).any():
-        raise ValueError(
-            f"squashed image {image_path}!! The bounding box contains no pixels."
-        )
-
-    bbox[2:] = torch.clamp(bbox[2:], 2)  # set min height, width to 2 along both axes
-    bbox_xyxy = _bbox_xywh_to_xyxy(bbox, clamp_size=2)
-
-    return bbox_xyxy
-
-
-def _bbox_xyxy_to_xywh(xyxy: torch.Tensor) -> torch.Tensor:
-    wh = xyxy[2:] - xyxy[:2]
-    xywh = torch.cat([xyxy[:2], wh])
-    return xywh
-
-
 def _load_depth(path, scale_adjustment) -> np.ndarray:
     if not path.lower().endswith(".png"):
         raise ValueError('unsupported depth file name "%s"' % path)
@@ -474,14 +348,6 @@ def _load_16big_png_depth(depth_png) -> np.ndarray:
     return depth
 
 
-def _rescale_bbox(bbox: torch.Tensor, orig_res, new_res) -> torch.Tensor:
-    assert bbox is not None
-    assert np.prod(orig_res) > 1e-8
-    # average ratio of dimensions
-    rel_size = (new_res[0] / orig_res[0] + new_res[1] / orig_res[1]) / 2.0
-    return bbox * rel_size
-
-
 def _load_1bit_png_mask(file: str) -> np.ndarray:
     with Image.open(file) as pil_im:
         mask = (np.array(pil_im.convert("L")) > 0.0).astype(np.float32)
@@ -493,21 +359,6 @@ def _load_depth_mask(path: str) -> np.ndarray:
         raise ValueError('unsupported depth mask file name "%s"' % path)
     m = _load_1bit_png_mask(path)
     return m[None]  # fake feature channel
-
-
-def _get_1d_bounds(arr) -> Tuple[int, int]:
-    nz = np.flatnonzero(arr)
-    return nz[0], nz[-1] + 1
-
-
-def _bbox_xywh_to_xyxy(
-    xywh: torch.Tensor, clamp_size: Optional[int] = None
-) -> torch.Tensor:
-    xyxy = xywh.clone()
-    if clamp_size is not None:
-        xyxy[2:] = torch.clamp(xyxy[2:], clamp_size)
-    xyxy[2:] += xyxy[:2]
-    return xyxy
 
 
 def _safe_as_tensor(data, dtype):
