@@ -226,17 +226,18 @@ class FrameData(Mapping[str, Any]):
                 # pyre-ignore
                 self.image_rgb.shape[-2:],
             )
+        if self.image_rgb is not None:
+            self.image_rgb, scale, self.mask_crop = _resize_image(
+                self.image_rgb, image_height=image_height, image_width=image_width
+            )
 
-        self.image_rgb, scale, self.mask_crop = _resize_image(
-            self.image_rgb, image_height=image_height, image_width=image_width
-        )
-
-        self.fg_probability, _, _ = _resize_image(
-            self.fg_probability,
-            image_height=image_height,
-            image_width=image_width,
-            mode="nearest",
-        )
+        if self.fg_probability is not None:
+            self.fg_probability, _, _ = _resize_image(
+                self.fg_probability,
+                image_height=image_height,
+                image_width=image_width,
+                mode="nearest",
+            )
 
         if self.depth_map is not None:
             self.depth_map, _, _ = _resize_image(
