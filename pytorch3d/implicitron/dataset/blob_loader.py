@@ -142,15 +142,17 @@ class BlobLoader:
             fg_probability = _load_mask(self._local_path(full_path))
             # we can use provided bbox_xywh or calculate it based on mask
             if bbox_xywh is None:
-                bbox_xywh = torch.tensor(
-                    _get_bbox_from_mask(fg_probability, self.box_crop_mask_thr)
-                )
+                bbox_xywh = _get_bbox_from_mask(fg_probability, self.box_crop_mask_thr)
             if fg_probability.shape[-2:] != entry.image.size:
                 raise ValueError(
                     f"bad mask size: {fg_probability.shape[-2:]} vs {entry.image.size}!"
                 )
 
-        return torch.tensor(fg_probability), full_path, bbox_xywh
+        return (
+            _safe_as_tensor(fg_probability, torch.float),
+            full_path,
+            _safe_as_tensor(bbox_xywh, torch.long),
+        )
 
     def _load_images(
         self,
