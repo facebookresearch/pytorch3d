@@ -226,6 +226,8 @@ class FrameData(Mapping[str, Any]):
                 # pyre-ignore
                 self.image_rgb.shape[-2:],
             )
+
+        scale = 1.0
         if self.image_rgb is not None:
             self.image_rgb, scale, self.mask_crop = _resize_image(
                 self.image_rgb, image_height=image_height, image_width=image_width
@@ -237,6 +239,7 @@ class FrameData(Mapping[str, Any]):
                 image_height=image_height,
                 image_width=image_width,
                 mode="nearest",
+
             )
 
         if self.depth_map is not None:
