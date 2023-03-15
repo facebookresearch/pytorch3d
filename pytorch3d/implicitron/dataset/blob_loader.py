@@ -117,10 +117,21 @@ class BlobLoader:
         if self.box_crop:
             clamp_bbox_xyxy = frame_data.crop_by_bbox_(self.box_crop_context)
 
-        scale = 1.0
+        scale = (
+            min(
+                self.image_height / entry.image.size[0],
+                # pyre-ignore
+                self.image_width / entry.image.size[1],
+            )
+            if self.image_height is not None and self.image_width is not None
+            else 1.0
+        )
 
         if self.image_height is not None and self.image_width is not None:
-            scale = frame_data.resize_frame_(self.image_height, self.image_width)
+            optional_scale = frame_data.resize_frame_(
+                self.image_height, self.image_width
+            )
+            scale = optional_scale or scale
 
         # creating camera taking to account bbox and resize scale
         if entry.viewpoint is not None:

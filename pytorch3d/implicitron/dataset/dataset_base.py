@@ -218,7 +218,7 @@ class FrameData(Mapping[str, Any]):
         self.cropped = True
         return clamp_bbox_xyxy
 
-    def resize_frame_(self, image_height, image_width) -> float:
+    def resize_frame_(self, image_height, image_width) -> Optional[float]:
         if self.bbox_xywh is not None:
             self.bbox_xywh = _rescale_bbox(
                 self.bbox_xywh,
@@ -227,7 +227,7 @@ class FrameData(Mapping[str, Any]):
                 self.image_rgb.shape[-2:],
             )
 
-        scale = 1.0
+        scale = None
         if self.image_rgb is not None:
             self.image_rgb, scale, self.mask_crop = _resize_image(
                 self.image_rgb, image_height=image_height, image_width=image_width
@@ -239,7 +239,6 @@ class FrameData(Mapping[str, Any]):
                 image_height=image_height,
                 image_width=image_width,
                 mode="nearest",
-
             )
 
         if self.depth_map is not None:
