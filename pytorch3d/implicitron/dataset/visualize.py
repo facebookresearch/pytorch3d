@@ -44,6 +44,7 @@ def get_implicitron_sequence_pointcloud(
         sequence_entries = [
             ei
             for ei in sequence_entries
+            # pyre-ignore[16]
             if dataset.frame_annots[ei]["frame_annotation"].sequence_name
             == sequence_name
         ]

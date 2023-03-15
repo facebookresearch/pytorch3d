@@ -9,7 +9,6 @@ import unittest
 import numpy as np
 
 import torch
-from pytorch3d.implicitron.dataset.blob_loader import _resize_image
 
 from pytorch3d.implicitron.dataset.utils import (
     _bbox_xywh_to_xyxy,
@@ -20,6 +19,7 @@ from pytorch3d.implicitron.dataset.utils import (
     _get_bbox_from_mask,
     _get_clamp_bbox,
     _rescale_bbox,
+    _resize_image,
 )
 
 from tests.common_testing import TestCaseMixin

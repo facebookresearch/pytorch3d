@@ -156,3 +156,32 @@ def _bbox_xywh_to_xyxy(
 def _get_1d_bounds(arr) -> Tuple[int, int]:
     nz = np.flatnonzero(arr)
     return nz[0], nz[-1] + 1
+
+
+def _resize_image(
+    image, image_height, image_width, mode="bilinear"
+) -> Tuple[torch.Tensor, float, torch.Tensor]:
+
+    if type(image) == np.ndarray:
+        image = torch.from_numpy(image)
+
+    if image_height is None or image_width is None:
+        # skip the resizing
+        return image, 1.0, torch.ones_like(image[:1])
+    # takes numpy array or tensor, returns pytorch tensor
+    minscale = min(
+        image_height / image.shape[-2],
+        image_width / image.shape[-1],
+    )
+    imre = torch.nn.functional.interpolate(
+        image[None],
+        scale_factor=minscale,
+        mode=mode,
+        align_corners=False if mode == "bilinear" else None,
+        recompute_scale_factor=True,
+    )[0]
+    imre_ = torch.zeros(image.shape[0], image_height, image_width)
+    imre_[:, 0 : imre.shape[1], 0 : imre.shape[2]] = imre
+    mask = torch.zeros(1, image_height, image_width)
+    mask[:, 0 : imre.shape[1], 0 : imre.shape[2]] = 1.0
+    return imre_, minscale, mask
