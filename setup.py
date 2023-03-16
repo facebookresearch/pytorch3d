@@ -7,7 +7,6 @@
 
 import glob
 import os
-import runpy
 import sys
 import warnings
 from typing import List, Optional
@@ -126,10 +125,6 @@ def get_extensions():
     return ext_modules
 
 
-# Retrieve __version__ from the package.
-__version__ = runpy.run_path("pytorch3d/__init__.py")["__version__"]
-
-
 if os.getenv("PYTORCH3D_NO_NINJA", "0") == "1":
 
     class BuildExtension(torch.utils.cpp_extension.BuildExtension):
@@ -142,30 +137,12 @@ else:
 trainer = "pytorch3d.implicitron_trainer"
 
 setup(
-    name="pytorch3d",
-    version=__version__,
-    author="FAIR",
     url="https://github.com/facebookresearch/pytorch3d",
-    description="PyTorch3D is FAIR's library of reusable components "
-    "for deep Learning with 3D data.",
     packages=find_packages(
         exclude=("configs", "tests", "tests.*", "docs.*", "projects.*")
     )
     + [trainer],
     package_dir={trainer: "projects/implicitron_trainer"},
-    install_requires=["fvcore", "iopath"],
-    extras_require={
-        "all": ["matplotlib", "tqdm>4.29.0", "imageio", "ipywidgets"],
-        "dev": ["flake8", "usort"],
-        "implicitron": [
-            "hydra-core>=1.1",
-            "visdom",
-            "lpips",
-            "tqdm>4.29.0",
-            "matplotlib",
-            "accelerate",
-        ],
-    },
     entry_points={
         "console_scripts": [
             f"pytorch3d_implicitron_runner={trainer}.experiment:experiment",

@@ -1,0 +1,26 @@
+[project]
+name = "pytorch3d"
+authors = [{ name = "FAIR" }]
+dependencies = ["iopath", "fvcore"]
+description = "PyTorch3D is FAIR's library of reusable components for deep Learning with 3D data."
+dynamic = ["version"]
+requires-python = ">=3.8,<3.11"
+
+[project.optional-dependencies]
+all = ["imageio", "ipywidgets", "matplotlib", "tqdm>4.29.0"]
+dev = ["flake8", "usort"]
+implicitron = [
+    "accelerate",
+    "hydra-core>=1.1",
+    "lpips",
+    "matplotlib",
+    "tqdm>4.29.0",
+    "visdom",
+]
+
+[build-system]
+requires = ["setuptools", "torch >1.9, <=1.14"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.dynamic]
+version = { attr = "pytorch3d.__version__" }
