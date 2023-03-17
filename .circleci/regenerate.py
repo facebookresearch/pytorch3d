@@ -30,32 +30,21 @@ CONDA_CUDA_VERSIONS = {
     "1.12.1": ["cu102", "cu113", "cu116"],
     "1.13.0": ["cu116", "cu117"],
     "1.13.1": ["cu116", "cu117"],
+    "2.0.0": ["cu117", "cu118"],
 }
 
 
 def conda_docker_image_for_cuda(cuda_version):
     if cuda_version in ("cu101", "cu102", "cu111"):
         return None
-    if cuda_version == "cu113":
-        return "pytorch/conda-builder:cuda113"
-    if cuda_version == "cu115":
-        return "pytorch/conda-builder:cuda115"
-    if cuda_version == "cu116":
-        return "pytorch/conda-builder:cuda116"
-    if cuda_version == "cu117":
-        return "pytorch/conda-builder:cuda117"
-    raise ValueError("Unknown cuda version")
+    if len(cuda_version) != 5:
+        raise ValueError("Unknown cuda version")
+    return "pytorch/conda-builder:cuda" + cuda_version[2:]
 
 
 def pytorch_versions_for_python(python_version):
-    if python_version in ["3.7", "3.8"]:
+    if python_version in ["3.8", "3.9"]:
         return list(CONDA_CUDA_VERSIONS)
-    if python_version == "3.9":
-        return [
-            i
-            for i in CONDA_CUDA_VERSIONS
-            if version.Version(i) > version.Version("1.7.0")
-        ]
     if python_version == "3.10":
         return [
             i
