@@ -147,6 +147,7 @@ def find_last_checkpoint(
             # pyre-fixme[61]: `fls` is undefined, or not always defined.
             fl = [f[0 : -len(ext)] + ".pth" for f in fls]
         else:
+            # pyre-fixme[61]: `ext` is undefined, or not always defined.
             fl = fls[-1][0 : -len(ext)] + ".pth"
 
     return fl
