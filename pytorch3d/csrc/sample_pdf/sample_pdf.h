@@ -7,6 +7,7 @@
  */
 
 #pragma once
+#include <torch/csrc/autograd/VariableTypeUtils.h>
 #include <torch/extension.h>
 #include <cstdio>
 #include <tuple>
@@ -63,6 +64,7 @@ inline void SamplePdf(
 #ifdef WITH_CUDA
     CHECK_CUDA(weights);
     CHECK_CONTIGUOUS_CUDA(outputs);
+    torch::autograd::increment_version(outputs);
     SamplePdfCuda(bins, weights, outputs, eps);
     return;
 #else

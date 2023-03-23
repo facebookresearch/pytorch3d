@@ -6,6 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <torch/csrc/autograd/VariableTypeUtils.h>
 #include <torch/extension.h>
 #include <algorithm>
 #include <thread>
@@ -137,4 +138,5 @@ void SamplePdfCpu(
   for (auto&& thread : threads) {
     thread.join();
   }
+  torch::autograd::increment_version(outputs);
 }

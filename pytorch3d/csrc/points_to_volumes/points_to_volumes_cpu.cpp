@@ -6,6 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <torch/csrc/autograd/VariableTypeUtils.h>
 #include <torch/extension.h>
 #include <algorithm>
 #include <cmath>
@@ -148,6 +149,8 @@ void PointsToVolumesForwardCpu(
       }
     }
   }
+  torch::autograd::increment_version(volume_features);
+  torch::autograd::increment_version(volume_densities);
 }
 
 // With nearest, the only smooth dependence is that volume features

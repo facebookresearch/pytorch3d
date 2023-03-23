@@ -7,6 +7,7 @@
  */
 
 #pragma once
+#include <torch/csrc/autograd/VariableTypeUtils.h>
 #include <torch/extension.h>
 #include <cstdio>
 #include <tuple>
@@ -96,6 +97,8 @@ inline void PointsToVolumesForward(
         point_weight,
         align_corners,
         splat);
+    torch::autograd::increment_version(volume_features);
+    torch::autograd::increment_version(volume_densities);
     return;
 #else
     AT_ERROR("Not compiled with GPU support.");
