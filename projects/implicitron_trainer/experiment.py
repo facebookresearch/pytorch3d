@@ -59,7 +59,7 @@ from pytorch3d.implicitron.dataset.data_source import (
     DataSourceBase,
     ImplicitronDataSource,
 )
-from pytorch3d.implicitron.models.generic_model import ImplicitronModelBase
+from pytorch3d.implicitron.models.base_model import ImplicitronModelBase
 
 from pytorch3d.implicitron.models.renderer.multipass_ea import (
     MultiPassEmissionAbsorptionRenderer,

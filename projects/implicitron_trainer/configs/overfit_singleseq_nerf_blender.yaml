@@ -1,0 +1,56 @@
+defaults:
+- overfit_singleseq_base
+- _self_
+exp_dir: "./data/overfit_nerf_blender_repro/${oc.env:BLENDER_SINGLESEQ_CLASS}"
+data_source_ImplicitronDataSource_args:
+  data_loader_map_provider_SequenceDataLoaderMapProvider_args:
+    dataset_length_train: 100
+  dataset_map_provider_class_type: BlenderDatasetMapProvider
+  dataset_map_provider_BlenderDatasetMapProvider_args:
+    base_dir: ${oc.env:BLENDER_DATASET_ROOT}/${oc.env:BLENDER_SINGLESEQ_CLASS}
+    n_known_frames_for_test: null
+    object_name: ${oc.env:BLENDER_SINGLESEQ_CLASS}
+    path_manager_factory_class_type: PathManagerFactory
+    path_manager_factory_PathManagerFactory_args:
+      silence_logs: true
+
+model_factory_ImplicitronModelFactory_args:
+  model_class_type: "OverfitModel"
+  model_OverfitModel_args:
+    mask_images: false
+    raysampler_class_type: AdaptiveRaySampler
+    raysampler_AdaptiveRaySampler_args:
+      n_pts_per_ray_training: 64
+      n_pts_per_ray_evaluation: 64
+      n_rays_per_image_sampled_from_mask: 4096
+      stratified_point_sampling_training: true
+      stratified_point_sampling_evaluation: false
+      scene_extent: 2.0
+      scene_center:
+      - 0.0
+      - 0.0
+      - 0.0
+    renderer_MultiPassEmissionAbsorptionRenderer_args:
+      density_noise_std_train: 0.0
+      n_pts_per_ray_fine_training: 128
+      n_pts_per_ray_fine_evaluation: 128
+      raymarcher_EmissionAbsorptionRaymarcher_args:
+        blend_output: false
+    loss_weights:
+      loss_rgb_mse: 1.0
+      loss_prev_stage_rgb_mse: 1.0
+      loss_mask_bce: 0.0
+      loss_prev_stage_mask_bce: 0.0
+      loss_autodecoder_norm: 0.00
+
+optimizer_factory_ImplicitronOptimizerFactory_args:
+  exponential_lr_step_size: 3001
+  lr_policy: LinearExponential
+  linear_exponential_lr_milestone: 200
+
+training_loop_ImplicitronTrainingLoop_args:
+  max_epochs: 6000
+  metric_print_interval: 10
+  store_checkpoints_purge: 3
+  test_when_finished: true
+  validation_interval: 100

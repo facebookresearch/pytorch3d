@@ -8,10 +8,10 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
 import torch
+
+from pytorch3d.implicitron.models.renderer.base import EvaluationMode
 from pytorch3d.implicitron.tools.config import ReplaceableBase
 from pytorch3d.renderer.cameras import CamerasBase
-
-from .renderer.base import EvaluationMode
 
 
 @dataclass

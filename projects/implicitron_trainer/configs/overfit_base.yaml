@@ -1,0 +1,79 @@
+defaults:
+- default_config
+- _self_
+exp_dir: ./data/exps/overfit_base/
+training_loop_ImplicitronTrainingLoop_args:
+  visdom_port: 8097
+  visualize_interval: 0
+  max_epochs: 1000
+data_source_ImplicitronDataSource_args:
+  data_loader_map_provider_class_type: SequenceDataLoaderMapProvider
+  dataset_map_provider_class_type: JsonIndexDatasetMapProvider
+  data_loader_map_provider_SequenceDataLoaderMapProvider_args:
+    dataset_length_train: 1000
+    dataset_length_val: 1
+    num_workers: 8
+  dataset_map_provider_JsonIndexDatasetMapProvider_args:
+    dataset_root: ${oc.env:CO3D_DATASET_ROOT}
+    n_frames_per_sequence: -1
+    test_on_train: true
+    test_restrict_sequence_id: 0
+    dataset_JsonIndexDataset_args:
+      load_point_clouds: false
+      mask_depths: false
+      mask_images: false
+model_factory_ImplicitronModelFactory_args:
+  model_class_type: "OverfitModel"
+  model_OverfitModel_args:
+    loss_weights:
+      loss_mask_bce: 1.0
+      loss_prev_stage_mask_bce: 1.0
+      loss_autodecoder_norm: 0.01
+      loss_rgb_mse: 1.0
+      loss_prev_stage_rgb_mse: 1.0
+    output_rasterized_mc: false
+    chunk_size_grid: 102400
+    render_image_height: 400
+    render_image_width: 400
+    share_implicit_function_across_passes: false
+    implicit_function_class_type: "NeuralRadianceFieldImplicitFunction"
+    implicit_function_NeuralRadianceFieldImplicitFunction_args:
+      n_harmonic_functions_xyz: 10
+      n_harmonic_functions_dir: 4
+      n_hidden_neurons_xyz: 256
+      n_hidden_neurons_dir: 128
+      n_layers_xyz: 8
+      append_xyz:
+      - 5
+    coarse_implicit_function_class_type: "NeuralRadianceFieldImplicitFunction"
+    coarse_implicit_function_NeuralRadianceFieldImplicitFunction_args:
+      n_harmonic_functions_xyz: 10
+      n_harmonic_functions_dir: 4
+      n_hidden_neurons_xyz: 256
+      n_hidden_neurons_dir: 128
+      n_layers_xyz: 8
+      append_xyz:
+      - 5
+    raysampler_AdaptiveRaySampler_args:
+      n_rays_per_image_sampled_from_mask: 1024
+      scene_extent: 8.0
+      n_pts_per_ray_training: 64
+      n_pts_per_ray_evaluation: 64
+      stratified_point_sampling_training: true
+      stratified_point_sampling_evaluation: false
+    renderer_MultiPassEmissionAbsorptionRenderer_args:
+      n_pts_per_ray_fine_training: 64
+      n_pts_per_ray_fine_evaluation: 64
+      append_coarse_samples_to_fine: true
+      density_noise_std_train: 1.0
+optimizer_factory_ImplicitronOptimizerFactory_args:
+  breed: Adam
+  weight_decay: 0.0
+  lr_policy: MultiStepLR
+  multistep_lr_milestones: []
+  lr: 0.0005
+  gamma: 0.1
+  momentum: 0.9
+  betas:
+  - 0.9
+  - 0.999

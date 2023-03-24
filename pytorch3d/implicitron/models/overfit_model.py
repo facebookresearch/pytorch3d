@@ -8,9 +8,10 @@
 # Note: The #noqa comments below are for unused imports of pluggable implementations
 # which are part of implicitron. They ensure that the registry is prepopulated.
 
+import functools
 import logging
 from dataclasses import field
-from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, TYPE_CHECKING, Union
 
 import torch
 from omegaconf import DictConfig
@@ -19,24 +20,8 @@ from pytorch3d.implicitron.models.base_model import (
     ImplicitronModelBase,
     ImplicitronRender,
 )
-from pytorch3d.implicitron.models.feature_extractor import FeatureExtractorBase
-from pytorch3d.implicitron.models.feature_extractor.resnet_feature_extractor import (  # noqa
-    ResNetFeatureExtractor,
-)
 from pytorch3d.implicitron.models.global_encoder.global_encoder import GlobalEncoderBase
 from pytorch3d.implicitron.models.implicit_function.base import ImplicitFunctionBase
-from pytorch3d.implicitron.models.implicit_function.idr_feature_field import (  # noqa
-    IdrFeatureField,
-)
-from pytorch3d.implicitron.models.implicit_function.neural_radiance_field import (  # noqa
-    NeRFormerImplicitFunction,
-)
-from pytorch3d.implicitron.models.implicit_function.scene_representation_networks import (  # noqa
-    SRNHyperNetImplicitFunction,
-)
-from pytorch3d.implicitron.models.implicit_function.voxel_grid_implicit_function import (  # noqa
-    VoxelGridImplicitFunction,
-)
 from pytorch3d.implicitron.models.metrics import (
     RegularizationMetricsBase,
     ViewMetricsBase,
@@ -45,20 +30,11 @@ from pytorch3d.implicitron.models.metrics import (
 from pytorch3d.implicitron.models.renderer.base import (
     BaseRenderer,
     EvaluationMode,
-    ImplicitFunctionWrapper,
     ImplicitronRayBundle,
     RendererOutput,
     RenderSamplingMode,
 )
-from pytorch3d.implicitron.models.renderer.lstm_renderer import LSTMRenderer  # noqa
-from pytorch3d.implicitron.models.renderer.multipass_ea import (  # noqa
-    MultiPassEmissionAbsorptionRenderer,
-)
 from pytorch3d.implicitron.models.renderer.ray_sampler import RaySamplerBase
-from pytorch3d.implicitron.models.renderer.sdf_renderer import (  # noqa
-    SignedDistanceFunctionRenderer,
-)
-
 from pytorch3d.implicitron.models.utils import (
     apply_chunked,
     chunk_generator,
@@ -66,7 +42,6 @@ from pytorch3d.implicitron.models.utils import (
     preprocess_input,
     weighted_sum_losses,
 )
-from pytorch3d.implicitron.models.view_pooler.view_pooler import ViewPooler
 from pytorch3d.implicitron.tools import vis_utils
 from pytorch3d.implicitron.tools.config import (
     expand_args_fields,
@@ -83,75 +58,56 @@ if TYPE_CHECKING:
     from visdom import Visdom
 logger = logging.getLogger(__name__)
 
+IMPLICIT_FUNCTION_ARGS_TO_REMOVE: List[str] = [
+    "feature_vector_size",
+    "encoding_dim",
+    "latent_dim",
+    "color_dim",
+]
+
 
 @registry.register
-class GenericModel(ImplicitronModelBase):  # pyre-ignore: 13
+class OverfitModel(ImplicitronModelBase):  # pyre-ignore: 13
     """
-    GenericModel is a wrapper for the neural implicit
+    OverfitModel is a wrapper for the neural implicit
     rendering and reconstruction pipeline which consists
-    of the following sequence of 7 steps (steps 2–4 are normally
-    skipped in overfitting scenario, since conditioning on source views
-    does not add much information; otherwise they should be present altogether):
+    of the following sequence of 4 steps:
 
 
         (1) Ray Sampling
         ------------------
         Rays are sampled from an image grid based on the target view(s).
-                │_____________
-                │             │
-                │             ▼
-                │    (2) Feature Extraction (optional)
-                │    -----------------------
-                │    A feature extractor (e.g. a convolutional
-                │    neural net) is used to extract image features
-                │    from the source view(s).
-                │            │
-                │            ▼
-                │    (3) View Sampling  (optional)
-                │    ------------------
-                │    Image features are sampled at the 2D projections
-                │    of a set of 3D points along each of the sampled
-                │    target rays from (1).
-                │            │
-                │            ▼
-                │    (4) Feature Aggregation  (optional)
-                │    ------------------
-                │    Aggregate features and masks sampled from
-                │    image view(s) in (3).
-                │            │
-                │____________▼
                 │
                 ▼
-        (5) Implicit Function Evaluation
+        (2) Implicit Function Evaluation
         ------------------
         Evaluate the implicit function(s) at the sampled ray points
-        (optionally pass in the aggregated image features from (4)).
         (also optionally pass in a global encoding from global_encoder).
                 │
                 ▼
-        (6) Rendering
+        (3) Rendering
         ------------------
         Render the image into the target cameras by raymarching along
         the sampled rays and aggregating the colors and densities
-        output by the implicit function in (5).
+        output by the implicit function in (2).
                 │
                 ▼
-        (7) Loss Computation
+        (4) Loss Computation
         ------------------
         Compute losses based on the predicted target image(s).
 
 
-    The `forward` function of GenericModel executes
-    this sequence of steps. Currently, steps 1, 3, 4, 5, 6
+    The `forward` function of OverfitModel executes
+    this sequence of steps. Currently, steps 1, 2, 3
     can be customized by intializing a subclass of the appropriate
-    baseclass and adding the newly created module to the registry.
+    base class and adding the newly created module to the registry.
     Please see https://github.com/facebookresearch/pytorch3d/blob/main/projects/implicitron_trainer/README.md#custom-plugins
     for more details on how to create and register a custom component.
 
     In the config .yaml files for experiments, the parameters below are
     contained in the
-    `model_factory_ImplicitronModelFactory_args.model_GenericModel_args`
-    node. As GenericModel derives from ReplaceableBase, the input arguments are
+    `model_factory_ImplicitronModelFactory_args.model_OverfitModel_args`
+    node. As OverfitModel derives from ReplaceableBase, the input arguments are
     parsed by the run_auto_creation function to initialize the
     necessary member modules. Please see implicitron_trainer/README.md
     for more details on this process.
@@ -170,17 +126,12 @@ class GenericModel(ImplicitronModelBase):  # pyre-ignore: 13
         bg_color: RGB values for setting the background color of input image
             if mask_images=True. Defaults to (0.0, 0.0, 0.0). Each renderer has its own
             way to determine the background color of its output, unrelated to this.
-        num_passes: The specified implicit_function is initialized num_passes
-            times and run sequentially.
         chunk_size_grid: The total number of points which can be rendered
             per chunk. This is used to compute the number of rays used
             per chunk when the chunked version of the renderer is used (in order
             to fit rendering on all rays in memory)
         render_features_dimensions: The number of output features to render.
             Defaults to 3, corresponding to RGB images.
-        n_train_target_views: The number of cameras to render into at training
-            time; first `n_train_target_views` in the batch are considered targets,
-            the rest are sources.
         sampling_mode_training: The sampling method to use during training. Must be
             a value from the RenderSamplingMode Enum.
         sampling_mode_evaluation: Same as above but for evaluation.
@@ -199,20 +150,20 @@ class GenericModel(ImplicitronModelBase):  # pyre-ignore: 13
             registry.
         renderer: A renderer class which inherits from BaseRenderer. This is used to
             generate the images from the target view(s).
-        image_feature_extractor_class_type: If a str, constructs and enables
-            the `image_feature_extractor` object of this type. Or None if not needed.
-        image_feature_extractor: A module for extrating features from an input image.
-        view_pooler_enabled: If `True`, constructs and enables the `view_pooler` object.
-            This means features are sampled from the source image(s)
-            at the projected 2d locations of the sampled 3d ray points from the target
-            view(s), i.e. this activates step (3) above.
-        view_pooler: An instance of ViewPooler which is used for sampling of
-            image-based features at the 2D projections of a set
-            of 3D points and aggregating the sampled features.
+        share_implicit_function_across_passes: If set to True
+            coarse_implicit_function is automatically set as implicit_function
+            (coarse_implicit_function=implicit_funciton). The
+            implicit_functions are then run sequentially during the rendering.
         implicit_function_class_type: The type of implicit function to use which
             is available in the global registry.
-        implicit_function: An instance of ImplicitFunctionBase. The actual implicit functions
-            are initialised to be in self._implicit_functions.
+        implicit_function: An instance of ImplicitFunctionBase.
+        coarse_implicit_function_class_type: The type of implicit function to use which
+            is available in the global registry.
+        coarse_implicit_function: An instance of ImplicitFunctionBase.
+            If set and `share_implicit_function_across_passes` is set to False,
+            coarse_implicit_function is instantiated on itself. It
+            is then used as the second pass during the rendering.
+            If set to None, we only do a single pass with implicit_function.
         view_metrics: An instance of ViewMetricsBase used to compute loss terms which
             are independent of the model's parameters.
         view_metrics_class_type: The type of view metrics to use, must be available in
@@ -235,7 +186,6 @@ class GenericModel(ImplicitronModelBase):  # pyre-ignore: 13
     mask_threshold: float = 0.5
     output_rasterized_mc: bool = False
     bg_color: Tuple[float, float, float] = (0.0, 0.0, 0.0)
-    num_passes: int = 1
     chunk_size_grid: int = 4096
     render_features_dimensions: int = 3
     tqdm_trigger_threshold: int = 16
@@ -256,19 +206,12 @@ class GenericModel(ImplicitronModelBase):  # pyre-ignore: 13
     renderer_class_type: str = "MultiPassEmissionAbsorptionRenderer"
     renderer: BaseRenderer
 
-    # ---- image feature extractor settings
-    # (This is only created if view_pooler is enabled)
-    image_feature_extractor: Optional[FeatureExtractorBase]
-    image_feature_extractor_class_type: Optional[str] = None
-    # ---- view pooler settings
-    view_pooler_enabled: bool = False
-    view_pooler: Optional[ViewPooler]
-
     # ---- implicit function settings
+    share_implicit_function_across_passes: bool = False
     implicit_function_class_type: str = "NeuralRadianceFieldImplicitFunction"
-    # This is just a model, never constructed.
-    # The actual implicit functions live in self._implicit_functions
     implicit_function: ImplicitFunctionBase
+    coarse_implicit_function_class_type: Optional[str] = None
+    coarse_implicit_function: Optional[ImplicitFunctionBase]
 
     # ----- metrics
     view_metrics: ViewMetricsBase
@@ -316,16 +259,13 @@ class GenericModel(ImplicitronModelBase):  # pyre-ignore: 13
     )
 
     def __post_init__(self):
-        if self.view_pooler_enabled:
-            if self.image_feature_extractor_class_type is None:
-                raise ValueError(
-                    "image_feature_extractor must be present for view pooling."
-                )
+        # The attribute will be filled by run_auto_creation
         run_auto_creation(self)
-
-        self._implicit_functions = self._construct_implicit_functions()
-
         log_loss_weights(self.loss_weights, logger)
+        # We need to set it here since run_auto_creation
+        # will create coarse_implicit_function before implicit_function
+        if self.share_implicit_function_across_passes:
+            self.coarse_implicit_function = self.implicit_function
 
     def forward(
         self,
@@ -379,28 +319,6 @@ class GenericModel(ImplicitronModelBase):  # pyre-ignore: 13
             self.bg_color,
         )
 
-        # Obtain the batch size from the camera as this is the only required input.
-        batch_size = camera.R.shape[0]
-
-        # Determine the number of target views, i.e. cameras we render into.
-        n_targets = (
-            1
-            if evaluation_mode == EvaluationMode.EVALUATION
-            else batch_size
-            if self.n_train_target_views <= 0
-            else min(self.n_train_target_views, batch_size)
-        )
-
-        # A helper function for selecting n_target first elements from the input
-        # where the latter can be None.
-        def safe_slice_targets(
-            tensor: Optional[Union[torch.Tensor, List[str]]],
-        ) -> Optional[Union[torch.Tensor, List[str]]]:
-            return None if tensor is None else tensor[:n_targets]
-
-        # Select the target cameras.
-        target_cameras = camera[list(range(n_targets))]
-
         # Determine the used ray sampling mode.
         sampling_mode = RenderSamplingMode(
             self.sampling_mode_training
@@ -411,95 +329,57 @@ class GenericModel(ImplicitronModelBase):  # pyre-ignore: 13
         # (1) Sample rendering rays with the ray sampler.
         # pyre-ignore[29]
         ray_bundle: ImplicitronRayBundle = self.raysampler(
-            target_cameras,
+            camera,
             evaluation_mode,
-            mask=mask_crop[:n_targets]
+            mask=mask_crop
             if mask_crop is not None and sampling_mode == RenderSamplingMode.MASK_SAMPLE
             else None,
         )
 
-        # custom_args hold additional arguments to the implicit function.
-        custom_args = {}
-
-        if self.image_feature_extractor is not None:
-            # (2) Extract features for the image
-            img_feats = self.image_feature_extractor(image_rgb, fg_probability)
-        else:
-            img_feats = None
-
-        if self.view_pooler_enabled:
-            if sequence_name is None:
-                raise ValueError("sequence_name must be provided for view pooling")
-            assert img_feats is not None
-
-            # (3-4) Sample features and masks at the ray points.
-            #       Aggregate features from multiple views.
-            def curried_viewpooler(pts):
-                return self.view_pooler(
-                    pts=pts,
-                    seq_id_pts=sequence_name[:n_targets],
-                    camera=camera,
-                    seq_id_camera=sequence_name,
-                    feats=img_feats,
-                    masks=mask_crop,
-                )
-
-            custom_args["fun_viewpool"] = curried_viewpooler
-
-        global_code = None
-        if self.global_encoder is not None:
-            global_code = self.global_encoder(  # pyre-fixme[29]
-                sequence_name=safe_slice_targets(sequence_name),
-                frame_timestamp=safe_slice_targets(frame_timestamp),
-            )
-        custom_args["global_code"] = global_code
-
-        # pyre-fixme[29]:
-        #  `Union[BoundMethod[typing.Callable(torch.Tensor.__iter__)[[Named(self,
-        #  torch.Tensor)], typing.Iterator[typing.Any]], torch.Tensor], torch.Tensor,
-        #  torch.nn.Module]` is not a function.
-        for func in self._implicit_functions:
-            func.bind_args(**custom_args)
-
         inputs_to_be_chunked = {}
         if fg_probability is not None and self.renderer.requires_object_mask():
             sampled_fb_prob = rend_utils.ndc_grid_sample(
-                fg_probability[:n_targets], ray_bundle.xys, mode="nearest"
+                fg_probability, ray_bundle.xys, mode="nearest"
             )
             inputs_to_be_chunked["object_mask"] = sampled_fb_prob > 0.5
 
-        # (5)-(6) Implicit function evaluation and Rendering
+        # (2)-(3) Implicit function evaluation and Rendering
+        implicit_functions: List[Union[Callable, ImplicitFunctionBase]] = [
+            self.implicit_function
+        ]
+        if self.coarse_implicit_function is not None:
+            implicit_functions += [self.coarse_implicit_function]
+
+        if self.global_encoder is not None:
+            global_code = self.global_encoder(  # pyre-fixme[29]
+                sequence_name=sequence_name,
+                frame_timestamp=frame_timestamp,
+            )
+            implicit_functions = [
+                functools.partial(implicit_function, global_code=global_code)
+                if isinstance(implicit_function, Callable)
+                else functools.partial(
+                    implicit_function.forward, global_code=global_code
+                )
+                for implicit_function in implicit_functions
+            ]
         rendered = self._render(
             ray_bundle=ray_bundle,
             sampling_mode=sampling_mode,
             evaluation_mode=evaluation_mode,
-            implicit_functions=self._implicit_functions,
+            implicit_functions=implicit_functions,
             inputs_to_be_chunked=inputs_to_be_chunked,
         )
 
-        # Unbind the custom arguments to prevent pytorch from storing
-        # large buffers of intermediate results due to points in the
-        # bound arguments.
-        # pyre-fixme[29]:
-        #  `Union[BoundMethod[typing.Callable(torch.Tensor.__iter__)[[Named(self,
-        #  torch.Tensor)], typing.Iterator[typing.Any]], torch.Tensor], torch.Tensor,
-        #  torch.nn.Module]` is not a function.
-        for func in self._implicit_functions:
-            func.unbind_args()
-
         # A dict to store losses as well as rendering results.
-        preds: Dict[str, Any] = {}
-
-        preds.update(
-            self.view_metrics(
-                results=preds,
-                raymarched=rendered,
-                ray_bundle=ray_bundle,
-                image_rgb=safe_slice_targets(image_rgb),
-                depth_map=safe_slice_targets(depth_map),
-                fg_probability=safe_slice_targets(fg_probability),
-                mask_crop=safe_slice_targets(mask_crop),
-            )
+        preds: Dict[str, Any] = self.view_metrics(
+            results={},
+            raymarched=rendered,
+            ray_bundle=ray_bundle,
+            image_rgb=image_rgb,
+            depth_map=depth_map,
+            fg_probability=fg_probability,
+            mask_crop=mask_crop,
         )
 
         preds.update(
@@ -537,7 +417,8 @@ class GenericModel(ImplicitronModelBase):  # pyre-ignore: 13
         else:
             raise AssertionError("Unreachable state")
 
-        # (7) Compute losses
+        # (4) Compute losses
+        # finally get the optimization objective using self.loss_weights
         objective = self._get_objective(preds)
         if objective is not None:
             preds["objective"] = objective
@@ -622,14 +503,6 @@ class GenericModel(ImplicitronModelBase):  # pyre-ignore: 13
                 **kwargs,
             )
 
-    def _get_viewpooled_feature_dim(self) -> int:
-        if self.view_pooler is None:
-            return 0
-        assert self.image_feature_extractor is not None
-        return self.view_pooler.get_aggregated_feature_dim(
-            self.image_feature_extractor.get_feat_dims()
-        )
-
     @classmethod
     def raysampler_tweak_args(cls, type, args: DictConfig) -> None:
         """
@@ -683,82 +556,84 @@ class GenericModel(ImplicitronModelBase):  # pyre-ignore: 13
             **renderer_args, **extra_args
         )
 
-    def create_implicit_function(self) -> None:
-        """
-        No-op called by run_auto_creation so that self.implicit_function
-        does not get created. __post_init__ creates the implicit function(s)
-        in wrappers explicitly in self._implicit_functions.
-        """
-        pass
-
     @classmethod
     def implicit_function_tweak_args(cls, type, args: DictConfig) -> None:
         """
         We don't expose certain implicit_function fields because we want to set
         them based on other inputs.
         """
-        args.pop("feature_vector_size", None)
-        args.pop("encoding_dim", None)
-        args.pop("latent_dim", None)
-        args.pop("latent_dim_hypernet", None)
-        args.pop("color_dim", None)
+        for arg in IMPLICIT_FUNCTION_ARGS_TO_REMOVE:
+            args.pop(arg, None)
 
-    def _construct_implicit_functions(self):
+    @classmethod
+    def coarse_implicit_function_tweak_args(cls, type, args: DictConfig) -> None:
         """
-        After run_auto_creation has been called, the arguments
-        for each of the possible implicit function methods are
-        available. `GenericModel` arguments are first validated
-        based on the custom requirements for each specific
-        implicit function method. Then the required implicit
-        function(s) are initialized.
+        We don't expose certain implicit_function fields because we want to set
+        them based on other inputs.
         """
+        for arg in IMPLICIT_FUNCTION_ARGS_TO_REMOVE:
+            args.pop(arg, None)
+
+    def _create_extra_args_for_implicit_function(self) -> Dict[str, Any]:
         extra_args = {}
         global_encoder_dim = (
             0 if self.global_encoder is None else self.global_encoder.get_encoding_dim()
         )
-        viewpooled_feature_dim = self._get_viewpooled_feature_dim()
-
         if self.implicit_function_class_type in (
             "NeuralRadianceFieldImplicitFunction",
             "NeRFormerImplicitFunction",
         ):
-            extra_args["latent_dim"] = viewpooled_feature_dim + global_encoder_dim
+            extra_args["latent_dim"] = global_encoder_dim
             extra_args["color_dim"] = self.render_features_dimensions
 
         if self.implicit_function_class_type == "IdrFeatureField":
+            extra_args["feature_work_size"] = global_encoder_dim
             extra_args["feature_vector_size"] = self.render_features_dimensions
-            extra_args["encoding_dim"] = global_encoder_dim
 
         if self.implicit_function_class_type == "SRNImplicitFunction":
-            extra_args["latent_dim"] = viewpooled_feature_dim + global_encoder_dim
+            extra_args["latent_dim"] = global_encoder_dim
+        return extra_args
 
-        # srn_hypernet preprocessing
-        if self.implicit_function_class_type == "SRNHyperNetImplicitFunction":
-            extra_args["latent_dim"] = viewpooled_feature_dim
-            extra_args["latent_dim_hypernet"] = global_encoder_dim
-
-        # check that for srn, srn_hypernet, idr we have self.num_passes=1
+    def create_implicit_function(self) -> None:
         implicit_function_type = registry.get(
             ImplicitFunctionBase, self.implicit_function_class_type
         )
         expand_args_fields(implicit_function_type)
-        if self.num_passes != 1 and not implicit_function_type.allows_multiple_passes():
-            raise ValueError(
-                self.implicit_function_class_type
-                + f"requires num_passes=1 not {self.num_passes}"
-            )
 
-        if implicit_function_type.requires_pooling_without_aggregation():
-            if self.view_pooler_enabled and self.view_pooler.has_aggregation():
-                raise ValueError(
-                    "The chosen implicit function requires view pooling without aggregation."
-                )
         config_name = f"implicit_function_{self.implicit_function_class_type}_args"
         config = getattr(self, config_name, None)
         if config is None:
             raise ValueError(f"{config_name} not present")
-        implicit_functions_list = [
-            ImplicitFunctionWrapper(implicit_function_type(**config, **extra_args))
-            for _ in range(self.num_passes)
-        ]
-        return torch.nn.ModuleList(implicit_functions_list)
+
+        extra_args = self._create_extra_args_for_implicit_function()
+        self.implicit_function = implicit_function_type(**config, **extra_args)
+
+    def create_coarse_implicit_function(self) -> None:
+        # If coarse_implicit_function_class_type has been defined
+        # then we init a module based on its arguments
+        if (
+            self.coarse_implicit_function_class_type is not None
+            and not self.share_implicit_function_across_passes
+        ):
+            config_name = "coarse_implicit_function_{0}_args".format(
+                self.coarse_implicit_function_class_type
+            )
+            config = getattr(self, config_name, {})
+
+            implicit_function_type = registry.get(
+                ImplicitFunctionBase,
+                # pyre-ignore: config is None allow to check if this is None.
+                self.coarse_implicit_function_class_type,
+            )
+            expand_args_fields(implicit_function_type)
+
+            extra_args = self._create_extra_args_for_implicit_function()
+            self.coarse_implicit_function = implicit_function_type(
+                **config, **extra_args
+            )
+        elif self.share_implicit_function_across_passes:
+            # Since coarse_implicit_function is initialised before
+            # implicit_function we handle this case in the post_init.
+            pass
+        else:
+            self.coarse_implicit_function = None

@@ -141,7 +141,11 @@ class TestExperiment(unittest.TestCase):
         # Check that all the pre-prepared configs are valid.
         config_files = []
 
-        for pattern in ("repro_singleseq*.yaml", "repro_multiseq*.yaml"):
+        for pattern in (
+            "repro_singleseq*.yaml",
+            "repro_multiseq*.yaml",
+            "overfit_singleseq*.yaml",
+        ):
             config_files.extend(
                 [
                     f

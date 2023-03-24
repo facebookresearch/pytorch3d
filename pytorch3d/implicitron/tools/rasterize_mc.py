@@ -7,8 +7,9 @@
 import math
 from typing import Optional, Tuple
 
+import pytorch3d
+
 import torch
-from pytorch3d.implicitron.models.renderer.base import ImplicitronRayBundle
 from pytorch3d.ops import packed_to_padded
 from pytorch3d.renderer import PerspectiveCameras
 from pytorch3d.structures import Pointclouds
@@ -18,7 +19,7 @@ from .point_cloud_utils import render_point_cloud_pytorch3d
 
 @torch.no_grad()
 def rasterize_sparse_ray_bundle(
-    ray_bundle: ImplicitronRayBundle,
+    ray_bundle: "pytorch3d.implicitron.models.renderer.base.ImplicitronRayBundle",
     features: torch.Tensor,
     image_size_hw: Tuple[int, int],
     depth: torch.Tensor,

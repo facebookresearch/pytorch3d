@@ -561,6 +561,623 @@ model_factory_ImplicitronModelFactory_args:
           use_xavier_init: true
     view_metrics_ViewMetrics_args: {}
     regularization_metrics_RegularizationMetrics_args: {}
+  model_OverfitModel_args:
+    log_vars:
+    - loss_rgb_psnr_fg
+    - loss_rgb_psnr
+    - loss_rgb_mse
+    - loss_rgb_huber
+    - loss_depth_abs
+    - loss_depth_abs_fg
+    - loss_mask_neg_iou
+    - loss_mask_bce
+    - loss_mask_beta_prior
+    - loss_eikonal
+    - loss_density_tv
+    - loss_depth_neg_penalty
+    - loss_autodecoder_norm
+    - loss_prev_stage_rgb_mse
+    - loss_prev_stage_rgb_psnr_fg
+    - loss_prev_stage_rgb_psnr
+    - loss_prev_stage_mask_bce
+    - objective
+    - epoch
+    - sec/it
+    mask_images: true
+    mask_depths: true
+    render_image_width: 400
+    render_image_height: 400
+    mask_threshold: 0.5
+    output_rasterized_mc: false
+    bg_color:
+    - 0.0
+    - 0.0
+    - 0.0
+    chunk_size_grid: 4096
+    render_features_dimensions: 3
+    tqdm_trigger_threshold: 16
+    n_train_target_views: 1
+    sampling_mode_training: mask_sample
+    sampling_mode_evaluation: full_grid
+    global_encoder_class_type: null
+    raysampler_class_type: AdaptiveRaySampler
+    renderer_class_type: MultiPassEmissionAbsorptionRenderer
+    share_implicit_function_across_passes: false
+    implicit_function_class_type: NeuralRadianceFieldImplicitFunction
+    coarse_implicit_function_class_type: null
+    view_metrics_class_type: ViewMetrics
+    regularization_metrics_class_type: RegularizationMetrics
+    loss_weights:
+      loss_rgb_mse: 1.0
+      loss_prev_stage_rgb_mse: 1.0
+      loss_mask_bce: 0.0
+      loss_prev_stage_mask_bce: 0.0
+    global_encoder_HarmonicTimeEncoder_args:
+      n_harmonic_functions: 10
+      append_input: true
+      time_divisor: 1.0
+    global_encoder_SequenceAutodecoder_args:
+      autodecoder_args:
+        encoding_dim: 0
+        n_instances: 1
+        init_scale: 1.0
+        ignore_input: false
+    raysampler_AdaptiveRaySampler_args:
+      n_pts_per_ray_training: 64
+      n_pts_per_ray_evaluation: 64
+      n_rays_per_image_sampled_from_mask: 1024
+      n_rays_total_training: null
+      stratified_point_sampling_training: true
+      stratified_point_sampling_evaluation: false
+      scene_extent: 8.0
+      scene_center:
+      - 0.0
+      - 0.0
+      - 0.0
+    raysampler_NearFarRaySampler_args:
+      n_pts_per_ray_training: 64
+      n_pts_per_ray_evaluation: 64
+      n_rays_per_image_sampled_from_mask: 1024
+      n_rays_total_training: null
+      stratified_point_sampling_training: true
+      stratified_point_sampling_evaluation: false
+      min_depth: 0.1
+      max_depth: 8.0
+    renderer_LSTMRenderer_args:
+      num_raymarch_steps: 10
+      init_depth: 17.0
+      init_depth_noise_std: 0.0005
+      hidden_size: 16
+      n_feature_channels: 256
+      bg_color: null
+      verbose: false
+    renderer_MultiPassEmissionAbsorptionRenderer_args:
+      raymarcher_class_type: EmissionAbsorptionRaymarcher
+      n_pts_per_ray_fine_training: 64
+      n_pts_per_ray_fine_evaluation: 64
+      stratified_sampling_coarse_training: true
+      stratified_sampling_coarse_evaluation: false
+      append_coarse_samples_to_fine: true
+      density_noise_std_train: 0.0
+      return_weights: false
+      raymarcher_CumsumRaymarcher_args:
+        surface_thickness: 1
+        bg_color:
+        - 0.0
+        replicate_last_interval: false
+        background_opacity: 0.0
+        density_relu: true
+        blend_output: false
+      raymarcher_EmissionAbsorptionRaymarcher_args:
+        surface_thickness: 1
+        bg_color:
+        - 0.0
+        replicate_last_interval: false
+        background_opacity: 10000000000.0
+        density_relu: true
+        blend_output: false
+    renderer_SignedDistanceFunctionRenderer_args:
+      ray_normal_coloring_network_args:
+        feature_vector_size: 3
+        mode: idr
+        d_in: 9
+        d_out: 3
+        dims:
+        - 512
+        - 512
+        - 512
+        - 512
+        weight_norm: true
+        n_harmonic_functions_dir: 0
+        pooled_feature_dim: 0
+      bg_color:
+      - 0.0
+      soft_mask_alpha: 50.0
+      ray_tracer_args:
+        sdf_threshold: 5.0e-05
+        line_search_step: 0.5
+        line_step_iters: 1
+        sphere_tracing_iters: 10
+        n_steps: 100
+        n_secant_steps: 8
+    implicit_function_IdrFeatureField_args:
+      d_in: 3
+      d_out: 1
+      dims:
+      - 512
+      - 512
+      - 512
+      - 512
+      - 512
+      - 512
+      - 512
+      - 512
+      geometric_init: true
+      bias: 1.0
+      skip_in: []
+      weight_norm: true
+      n_harmonic_functions_xyz: 0
+      pooled_feature_dim: 0
+    implicit_function_NeRFormerImplicitFunction_args:
+      n_harmonic_functions_xyz: 10
+      n_harmonic_functions_dir: 4
+      n_hidden_neurons_dir: 128
+      input_xyz: true
+      xyz_ray_dir_in_camera_coords: false
+      transformer_dim_down_factor: 2.0
+      n_hidden_neurons_xyz: 80
+      n_layers_xyz: 2
+      append_xyz:
+      - 1
+    implicit_function_NeuralRadianceFieldImplicitFunction_args:
+      n_harmonic_functions_xyz: 10
+      n_harmonic_functions_dir: 4
+      n_hidden_neurons_dir: 128
+      input_xyz: true
+      xyz_ray_dir_in_camera_coords: false
+      transformer_dim_down_factor: 1.0
+      n_hidden_neurons_xyz: 256
+      n_layers_xyz: 8
+      append_xyz:
+      - 5
+    implicit_function_SRNHyperNetImplicitFunction_args:
+      latent_dim_hypernet: 0
+      hypernet_args:
+        n_harmonic_functions: 3
+        n_hidden_units: 256
+        n_layers: 2
+        n_hidden_units_hypernet: 256
+        n_layers_hypernet: 1
+        in_features: 3
+        out_features: 256
+        xyz_in_camera_coords: false
+      pixel_generator_args:
+        n_harmonic_functions: 4
+        n_hidden_units: 256
+        n_hidden_units_color: 128
+        n_layers: 2
+        in_features: 256
+        out_features: 3
+        ray_dir_in_camera_coords: false
+    implicit_function_SRNImplicitFunction_args:
+      raymarch_function_args:
+        n_harmonic_functions: 3
+        n_hidden_units: 256
+        n_layers: 2
+        in_features: 3
+        out_features: 256
+        xyz_in_camera_coords: false
+        raymarch_function: null
+      pixel_generator_args:
+        n_harmonic_functions: 4
+        n_hidden_units: 256
+        n_hidden_units_color: 128
+        n_layers: 2
+        in_features: 256
+        out_features: 3
+        ray_dir_in_camera_coords: false
+    implicit_function_VoxelGridImplicitFunction_args:
+      harmonic_embedder_xyz_density_args:
+        n_harmonic_functions: 6
+        omega_0: 1.0
+        logspace: true
+        append_input: true
+      harmonic_embedder_xyz_color_args:
+        n_harmonic_functions: 6
+        omega_0: 1.0
+        logspace: true
+        append_input: true
+      harmonic_embedder_dir_color_args:
+        n_harmonic_functions: 6
+        omega_0: 1.0
+        logspace: true
+        append_input: true
+      decoder_density_class_type: MLPDecoder
+      decoder_color_class_type: MLPDecoder
+      use_multiple_streams: true
+      xyz_ray_dir_in_camera_coords: false
+      scaffold_calculating_epochs: []
+      scaffold_resolution:
+      - 128
+      - 128
+      - 128
+      scaffold_empty_space_threshold: 0.001
+      scaffold_occupancy_chunk_size: -1
+      scaffold_max_pool_kernel_size: 3
+      scaffold_filter_points: true
+      volume_cropping_epochs: []
+      voxel_grid_density_args:
+        voxel_grid_class_type: FullResolutionVoxelGrid
+        extents:
+        - 2.0
+        - 2.0
+        - 2.0
+        translation:
+        - 0.0
+        - 0.0
+        - 0.0
+        init_std: 0.1
+        init_mean: 0.0
+        hold_voxel_grid_as_parameters: true
+        param_groups: {}
+        voxel_grid_CPFactorizedVoxelGrid_args:
+          align_corners: true
+          padding: zeros
+          mode: bilinear
+          n_features: 1
+          resolution_changes:
+            0:
+            - 128
+            - 128
+            - 128
+          n_components: 24
+          basis_matrix: true
+        voxel_grid_FullResolutionVoxelGrid_args:
+          align_corners: true
+          padding: zeros
+          mode: bilinear
+          n_features: 1
+          resolution_changes:
+            0:
+            - 128
+            - 128
+            - 128
+        voxel_grid_VMFactorizedVoxelGrid_args:
+          align_corners: true
+          padding: zeros
+          mode: bilinear
+          n_features: 1
+          resolution_changes:
+            0:
+            - 128
+            - 128
+            - 128
+          n_components: null
+          distribution_of_components: null
+          basis_matrix: true
+      voxel_grid_color_args:
+        voxel_grid_class_type: FullResolutionVoxelGrid
+        extents:
+        - 2.0
+        - 2.0
+        - 2.0
+        translation:
+        - 0.0
+        - 0.0
+        - 0.0
+        init_std: 0.1
+        init_mean: 0.0
+        hold_voxel_grid_as_parameters: true
+        param_groups: {}
+        voxel_grid_CPFactorizedVoxelGrid_args:
+          align_corners: true
+          padding: zeros
+          mode: bilinear
+          n_features: 1
+          resolution_changes:
+            0:
+            - 128
+            - 128
+            - 128
+          n_components: 24
+          basis_matrix: true
+        voxel_grid_FullResolutionVoxelGrid_args:
+          align_corners: true
+          padding: zeros
+          mode: bilinear
+          n_features: 1
+          resolution_changes:
+            0:
+            - 128
+            - 128
+            - 128
+        voxel_grid_VMFactorizedVoxelGrid_args:
+          align_corners: true
+          padding: zeros
+          mode: bilinear
+          n_features: 1
+          resolution_changes:
+            0:
+            - 128
+            - 128
+            - 128
+          n_components: null
+          distribution_of_components: null
+          basis_matrix: true
+      decoder_density_ElementwiseDecoder_args:
+        scale: 1.0
+        shift: 0.0
+        operation: IDENTITY
+      decoder_density_MLPDecoder_args:
+        param_groups: {}
+        network_args:
+          n_layers: 8
+          output_dim: 256
+          skip_dim: 39
+          hidden_dim: 256
+          input_skips:
+          - 5
+          skip_affine_trans: false
+          last_layer_bias_init: null
+          last_activation: RELU
+          use_xavier_init: true
+      decoder_color_ElementwiseDecoder_args:
+        scale: 1.0
+        shift: 0.0
+        operation: IDENTITY
+      decoder_color_MLPDecoder_args:
+        param_groups: {}
+        network_args:
+          n_layers: 8
+          output_dim: 256
+          skip_dim: 39
+          hidden_dim: 256
+          input_skips:
+          - 5
+          skip_affine_trans: false
+          last_layer_bias_init: null
+          last_activation: RELU
+          use_xavier_init: true
+    coarse_implicit_function_IdrFeatureField_args:
+      d_in: 3
+      d_out: 1
+      dims:
+      - 512
+      - 512
+      - 512
+      - 512
+      - 512
+      - 512
+      - 512
+      - 512
+      geometric_init: true
+      bias: 1.0
+      skip_in: []
+      weight_norm: true
+      n_harmonic_functions_xyz: 0
+      pooled_feature_dim: 0
+    coarse_implicit_function_NeRFormerImplicitFunction_args:
+      n_harmonic_functions_xyz: 10
+      n_harmonic_functions_dir: 4
+      n_hidden_neurons_dir: 128
+      input_xyz: true
+      xyz_ray_dir_in_camera_coords: false
+      transformer_dim_down_factor: 2.0
+      n_hidden_neurons_xyz: 80
+      n_layers_xyz: 2
+      append_xyz:
+      - 1
+    coarse_implicit_function_NeuralRadianceFieldImplicitFunction_args:
+      n_harmonic_functions_xyz: 10
+      n_harmonic_functions_dir: 4
+      n_hidden_neurons_dir: 128
+      input_xyz: true
+      xyz_ray_dir_in_camera_coords: false
+      transformer_dim_down_factor: 1.0
+      n_hidden_neurons_xyz: 256
+      n_layers_xyz: 8
+      append_xyz:
+      - 5
+    coarse_implicit_function_SRNHyperNetImplicitFunction_args:
+      latent_dim_hypernet: 0
+      hypernet_args:
+        n_harmonic_functions: 3
+        n_hidden_units: 256
+        n_layers: 2
+        n_hidden_units_hypernet: 256
+        n_layers_hypernet: 1
+        in_features: 3
+        out_features: 256
+        xyz_in_camera_coords: false
+      pixel_generator_args:
+        n_harmonic_functions: 4
+        n_hidden_units: 256
+        n_hidden_units_color: 128
+        n_layers: 2
+        in_features: 256
+        out_features: 3
+        ray_dir_in_camera_coords: false
+    coarse_implicit_function_SRNImplicitFunction_args:
+      raymarch_function_args:
+        n_harmonic_functions: 3
+        n_hidden_units: 256
+        n_layers: 2
+        in_features: 3
+        out_features: 256
+        xyz_in_camera_coords: false
+        raymarch_function: null
+      pixel_generator_args:
+        n_harmonic_functions: 4
+        n_hidden_units: 256
+        n_hidden_units_color: 128
+        n_layers: 2
+        in_features: 256
+        out_features: 3
+        ray_dir_in_camera_coords: false
+    coarse_implicit_function_VoxelGridImplicitFunction_args:
+      harmonic_embedder_xyz_density_args:
+        n_harmonic_functions: 6
+        omega_0: 1.0
+        logspace: true
+        append_input: true
+      harmonic_embedder_xyz_color_args:
+        n_harmonic_functions: 6
+        omega_0: 1.0
+        logspace: true
+        append_input: true
+      harmonic_embedder_dir_color_args:
+        n_harmonic_functions: 6
+        omega_0: 1.0
+        logspace: true
+        append_input: true
+      decoder_density_class_type: MLPDecoder
+      decoder_color_class_type: MLPDecoder
+      use_multiple_streams: true
+      xyz_ray_dir_in_camera_coords: false
+      scaffold_calculating_epochs: []
+      scaffold_resolution:
+      - 128
+      - 128
+      - 128
+      scaffold_empty_space_threshold: 0.001
+      scaffold_occupancy_chunk_size: -1
+      scaffold_max_pool_kernel_size: 3
+      scaffold_filter_points: true
+      volume_cropping_epochs: []
+      voxel_grid_density_args:
+        voxel_grid_class_type: FullResolutionVoxelGrid
+        extents:
+        - 2.0
+        - 2.0
+        - 2.0
+        translation:
+        - 0.0
+        - 0.0
+        - 0.0
+        init_std: 0.1
+        init_mean: 0.0
+        hold_voxel_grid_as_parameters: true
+        param_groups: {}
+        voxel_grid_CPFactorizedVoxelGrid_args:
+          align_corners: true
+          padding: zeros
+          mode: bilinear
+          n_features: 1
+          resolution_changes:
+            0:
+            - 128
+            - 128
+            - 128
+          n_components: 24
+          basis_matrix: true
+        voxel_grid_FullResolutionVoxelGrid_args:
+          align_corners: true
+          padding: zeros
+          mode: bilinear
+          n_features: 1
+          resolution_changes:
+            0:
+            - 128
+            - 128
+            - 128
+        voxel_grid_VMFactorizedVoxelGrid_args:
+          align_corners: true
+          padding: zeros
+          mode: bilinear
+          n_features: 1
+          resolution_changes:
+            0:
+            - 128
+            - 128
+            - 128
+          n_components: null
+          distribution_of_components: null
+          basis_matrix: true
+      voxel_grid_color_args:
+        voxel_grid_class_type: FullResolutionVoxelGrid
+        extents:
+        - 2.0
+        - 2.0
+        - 2.0
+        translation:
+        - 0.0
+        - 0.0
+        - 0.0
+        init_std: 0.1
+        init_mean: 0.0
+        hold_voxel_grid_as_parameters: true
+        param_groups: {}
+        voxel_grid_CPFactorizedVoxelGrid_args:
+          align_corners: true
+          padding: zeros
+          mode: bilinear
+          n_features: 1
+          resolution_changes:
+            0:
+            - 128
+            - 128
+            - 128
+          n_components: 24
+          basis_matrix: true
+        voxel_grid_FullResolutionVoxelGrid_args:
+          align_corners: true
+          padding: zeros
+          mode: bilinear
+          n_features: 1
+          resolution_changes:
+            0:
+            - 128
+            - 128
+            - 128
+        voxel_grid_VMFactorizedVoxelGrid_args:
+          align_corners: true
+          padding: zeros
+          mode: bilinear
+          n_features: 1
+          resolution_changes:
+            0:
+            - 128
+            - 128
+            - 128
+          n_components: null
+          distribution_of_components: null
+          basis_matrix: true
+      decoder_density_ElementwiseDecoder_args:
+        scale: 1.0
+        shift: 0.0
+        operation: IDENTITY
+      decoder_density_MLPDecoder_args:
+        param_groups: {}
+        network_args:
+          n_layers: 8
+          output_dim: 256
+          skip_dim: 39
+          hidden_dim: 256
+          input_skips:
+          - 5
+          skip_affine_trans: false
+          last_layer_bias_init: null
+          last_activation: RELU
+          use_xavier_init: true
+      decoder_color_ElementwiseDecoder_args:
+        scale: 1.0
+        shift: 0.0
+        operation: IDENTITY
+      decoder_color_MLPDecoder_args:
+        param_groups: {}
+        network_args:
+          n_layers: 8
+          output_dim: 256
+          skip_dim: 39
+          hidden_dim: 256
+          input_skips:
+          - 5
+          skip_affine_trans: false
+          last_layer_bias_init: null
+          last_activation: RELU
+          use_xavier_init: true
+    view_metrics_ViewMetrics_args: {}
+    regularization_metrics_RegularizationMetrics_args: {}
 optimizer_factory_ImplicitronOptimizerFactory_args:
   betas:
   - 0.9

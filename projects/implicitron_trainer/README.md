@@ -248,7 +248,7 @@ The main object for this trainer loop is `Experiment`. It has four top-level rep
 * `data_source`: This is a `DataSourceBase` which defaults to `ImplicitronDataSource`.
 It constructs the data sets and dataloaders.
 * `model_factory`: This is a `ModelFactoryBase` which defaults to `ImplicitronModelFactory`.
-It constructs the model, which is usually an instance of implicitron's main `GenericModel` class, and can load its weights from a checkpoint.
+It constructs the model, which is usually an instance of `OverfitModel` (for NeRF-style training with overfitting to one scene) or `GenericModel` (that is able to generalize to multiple scenes by NeRFormer-style conditioning on other scene views), and can load its weights from a checkpoint.
 * `optimizer_factory`: This is an `OptimizerFactoryBase` which defaults to `ImplicitronOptimizerFactory`.
 It constructs the optimizer and can load its weights from a checkpoint.
 * `training_loop`: This is a `TrainingLoopBase` which defaults to `ImplicitronTrainingLoop` and defines the main training loop.
@@ -291,6 +291,43 @@ model_GenericModel_args: GenericModel
         ╘== AngleWeightedReductionFeatureAggregator
         ╘== ReductionFeatureAggregator
 ```
+
+Here is the class structure of OverfitModel:
+
+```
+model_OverfitModel_args: OverfitModel
+└-- raysampler_*_args: RaySampler
+    ╘== AdaptiveRaysampler
+    ╘== NearFarRaysampler
+└-- renderer_*_args: BaseRenderer
+    ╘== MultiPassEmissionAbsorptionRenderer
+    ╘== LSTMRenderer
+    ╘== SignedDistanceFunctionRenderer
+        └-- ray_tracer_args: RayTracing
+        └-- ray_normal_coloring_network_args: RayNormalColoringNetwork
+└-- implicit_function_*_args: ImplicitFunctionBase
+    ╘== NeuralRadianceFieldImplicitFunction
+    ╘== SRNImplicitFunction
+        └-- raymarch_function_args: SRNRaymarchFunction
+        └-- pixel_generator_args: SRNPixelGenerator
+    ╘== SRNHyperNetImplicitFunction
+        └-- hypernet_args: SRNRaymarchHyperNet
+        └-- pixel_generator_args: SRNPixelGenerator
+    ╘== IdrFeatureField
+└-- coarse_implicit_function_*_args: ImplicitFunctionBase
+    ╘== NeuralRadianceFieldImplicitFunction
+    ╘== SRNImplicitFunction
+        └-- raymarch_function_args: SRNRaymarchFunction
+        └-- pixel_generator_args: SRNPixelGenerator
+    ╘== SRNHyperNetImplicitFunction
+        └-- hypernet_args: SRNRaymarchHyperNet
+        └-- pixel_generator_args: SRNPixelGenerator
+    ╘== IdrFeatureField
+```
+
+OverfitModel has been introduced to create a simple class to disantagle Nerfs which the overfit pattern
+from the GenericModel.
+
 
 Please look at the annotations of the respective classes or functions for the lists of hyperparameters.
 `tests/experiment.yaml` shows every possible option if you have no user-defined classes.
