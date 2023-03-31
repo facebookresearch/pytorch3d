@@ -13,13 +13,8 @@ from pytorch3d.implicitron.tools.config import (
 )
 from pytorch3d.renderer.cameras import CamerasBase
 
-from .blender_dataset_map_provider import BlenderDatasetMapProvider  # noqa
 from .data_loader_map_provider import DataLoaderMap, DataLoaderMapProviderBase
 from .dataset_map_provider import DatasetMap, DatasetMapProviderBase
-from .json_index_dataset_map_provider import JsonIndexDatasetMapProvider  # noqa
-from .json_index_dataset_map_provider_v2 import JsonIndexDatasetMapProviderV2  # noqa
-from .llff_dataset_map_provider import LlffDatasetMapProvider  # noqa
-from .rendered_mesh_dataset_map_provider import RenderedMeshDatasetMapProvider  # noqa
 
 
 class DataSourceBase(ReplaceableBase):
@@ -59,6 +54,26 @@ class ImplicitronDataSource(DataSourceBase):  # pyre-ignore[13]
     dataset_map_provider_class_type: str
     data_loader_map_provider: DataLoaderMapProviderBase
     data_loader_map_provider_class_type: str = "SequenceDataLoaderMapProvider"
+
+    @classmethod
+    def pre_expand(cls) -> None:
+        # use try/finally to bypass cinder's lazy imports
+        try:
+            from .blender_dataset_map_provider import (  # noqa: F401
+                BlenderDatasetMapProvider,
+            )
+            from .json_index_dataset_map_provider import (  # noqa: F401
+                JsonIndexDatasetMapProvider,
+            )
+            from .json_index_dataset_map_provider_v2 import (  # noqa: F401
+                JsonIndexDatasetMapProviderV2,
+            )
+            from .llff_dataset_map_provider import LlffDatasetMapProvider  # noqa: F401
+            from .rendered_mesh_dataset_map_provider import (  # noqa: F401
+                RenderedMeshDatasetMapProvider,
+            )
+        finally:
+            pass
 
     def __post_init__(self):
         run_auto_creation(self)

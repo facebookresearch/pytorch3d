@@ -10,6 +10,7 @@ import unittest
 from dataclasses import dataclass, field, is_dataclass
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
+from unittest.mock import Mock
 
 from omegaconf import DictConfig, ListConfig, OmegaConf, ValidationError
 from pytorch3d.implicitron.tools.config import (
@@ -804,6 +805,39 @@ class TestConfig(unittest.TestCase):
                 self.assertIsInstance(instance.boring_o, BoringConfigurable)
 
         self.assertEqual(control_args, ["Orange", "Orange", True, True])
+
+    def test_pre_expand(self):
+        # Check that the precreate method of a class is called once before
+        # when expand_args_fields is called on the class.
+
+        class A(Configurable):
+            n: int = 9
+
+            @classmethod
+            def pre_expand(cls):
+                pass
+
+        A.pre_expand = Mock()
+        expand_args_fields(A)
+        A.pre_expand.assert_called()
+
+    def test_pre_expand_replaceable(self):
+        # Check that the precreate method of a class is called once before
+        # when expand_args_fields is called on the class.
+
+        class A(ReplaceableBase):
+            pass
+
+            @classmethod
+            def pre_expand(cls):
+                pass
+
+        class A1(A):
+            n: 9
+
+        A.pre_expand = Mock()
+        expand_args_fields(A1)
+        A.pre_expand.assert_called()
 
 
 @dataclass(eq=False)

@@ -258,6 +258,31 @@ class OverfitModel(ImplicitronModelBase):  # pyre-ignore: 13
         ]
     )
 
+    @classmethod
+    def pre_expand(cls) -> None:
+        # use try/finally to bypass cinder's lazy imports
+        try:
+            from pytorch3d.implicitron.models.implicit_function.idr_feature_field import (  # noqa: F401, B950
+                IdrFeatureField,
+            )
+            from pytorch3d.implicitron.models.implicit_function.neural_radiance_field import (  # noqa: F401, B950
+                NeuralRadianceFieldImplicitFunction,
+            )
+            from pytorch3d.implicitron.models.implicit_function.scene_representation_networks import (  # noqa: F401, B950
+                SRNImplicitFunction,
+            )
+            from pytorch3d.implicitron.models.renderer.lstm_renderer import (  # noqa: F401
+                LSTMRenderer,
+            )
+            from pytorch3d.implicitron.models.renderer.multipass_ea import (  # noqa: F401
+                MultiPassEmissionAbsorptionRenderer,
+            )
+            from pytorch3d.implicitron.models.renderer.sdf_renderer import (  # noqa: F401
+                SignedDistanceFunctionRenderer,
+            )
+        finally:
+            pass
+
     def __post_init__(self):
         # The attribute will be filled by run_auto_creation
         run_auto_creation(self)

@@ -20,23 +20,8 @@ from pytorch3d.implicitron.models.base_model import (
     ImplicitronRender,
 )
 from pytorch3d.implicitron.models.feature_extractor import FeatureExtractorBase
-from pytorch3d.implicitron.models.feature_extractor.resnet_feature_extractor import (  # noqa
-    ResNetFeatureExtractor,
-)
 from pytorch3d.implicitron.models.global_encoder.global_encoder import GlobalEncoderBase
 from pytorch3d.implicitron.models.implicit_function.base import ImplicitFunctionBase
-from pytorch3d.implicitron.models.implicit_function.idr_feature_field import (  # noqa
-    IdrFeatureField,
-)
-from pytorch3d.implicitron.models.implicit_function.neural_radiance_field import (  # noqa
-    NeRFormerImplicitFunction,
-)
-from pytorch3d.implicitron.models.implicit_function.scene_representation_networks import (  # noqa
-    SRNHyperNetImplicitFunction,
-)
-from pytorch3d.implicitron.models.implicit_function.voxel_grid_implicit_function import (  # noqa
-    VoxelGridImplicitFunction,
-)
 from pytorch3d.implicitron.models.metrics import (
     RegularizationMetricsBase,
     ViewMetricsBase,
@@ -50,14 +35,7 @@ from pytorch3d.implicitron.models.renderer.base import (
     RendererOutput,
     RenderSamplingMode,
 )
-from pytorch3d.implicitron.models.renderer.lstm_renderer import LSTMRenderer  # noqa
-from pytorch3d.implicitron.models.renderer.multipass_ea import (  # noqa
-    MultiPassEmissionAbsorptionRenderer,
-)
 from pytorch3d.implicitron.models.renderer.ray_sampler import RaySamplerBase
-from pytorch3d.implicitron.models.renderer.sdf_renderer import (  # noqa
-    SignedDistanceFunctionRenderer,
-)
 
 from pytorch3d.implicitron.models.utils import (
     apply_chunked,
@@ -314,6 +292,37 @@ class GenericModel(ImplicitronModelBase):  # pyre-ignore: 13
             "sec/it",
         ]
     )
+
+    @classmethod
+    def pre_expand(cls) -> None:
+        # use try/finally to bypass cinder's lazy imports
+        try:
+            from pytorch3d.implicitron.models.feature_extractor.resnet_feature_extractor import (  # noqa: F401, B950
+                ResNetFeatureExtractor,
+            )
+            from pytorch3d.implicitron.models.implicit_function.idr_feature_field import (  # noqa: F401, B950
+                IdrFeatureField,
+            )
+            from pytorch3d.implicitron.models.implicit_function.neural_radiance_field import (  # noqa: F401, B950
+                NeRFormerImplicitFunction,
+            )
+            from pytorch3d.implicitron.models.implicit_function.scene_representation_networks import (  # noqa: F401, B950
+                SRNHyperNetImplicitFunction,
+            )
+            from pytorch3d.implicitron.models.implicit_function.voxel_grid_implicit_function import (  # noqa: F401, B950
+                VoxelGridImplicitFunction,
+            )
+            from pytorch3d.implicitron.models.renderer.lstm_renderer import (  # noqa: F401
+                LSTMRenderer,
+            )
+            from pytorch3d.implicitron.models.renderer.multipass_ea import (  # noqa
+                MultiPassEmissionAbsorptionRenderer,
+            )
+            from pytorch3d.implicitron.models.renderer.sdf_renderer import (  # noqa: F401
+                SignedDistanceFunctionRenderer,
+            )
+        finally:
+            pass
 
     def __post_init__(self):
         if self.view_pooler_enabled:

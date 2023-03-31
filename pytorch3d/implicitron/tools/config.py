@@ -185,6 +185,7 @@ CREATE_PREFIX: str = "create_"
 IMPL_SUFFIX: str = "_impl"
 TWEAK_SUFFIX: str = "_tweak_args"
 _DATACLASS_INIT: str = "__dataclass_own_init__"
+PRE_EXPAND_NAME: str = "pre_expand"
 
 
 class ReplaceableBase:
@@ -838,6 +839,9 @@ def expand_args_fields(
     In addition, if the class inherits torch.nn.Module, the generated __init__ will
     call torch.nn.Module's __init__ before doing anything else.
 
+    Before any transformation of the class, if the class has a classmethod called
+    `pre_expand`, it will be called with no arguments.
+
     Note that although the *_args members are intended to have type DictConfig, they
     are actually internally annotated as dicts. OmegaConf is happy to see a DictConfig
     in place of a dict, but not vice-versa. Allowing dict lets a class user specify
@@ -857,6 +861,9 @@ def expand_args_fields(
     """
     if _is_actually_dataclass(some_class):
         return some_class
+
+    if hasattr(some_class, PRE_EXPAND_NAME):
+        getattr(some_class, PRE_EXPAND_NAME)()
 
     # The functions this class's run_auto_creation will run.
     creation_functions: List[str] = []
