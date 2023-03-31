@@ -4,6 +4,7 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+import warnings
 from collections import defaultdict
 from dataclasses import dataclass, field, fields
 from typing import (
@@ -23,6 +24,14 @@ from typing import (
 
 import numpy as np
 import torch
+from pytorch3d.implicitron.dataset.utils import (
+    _bbox_xyxy_to_xywh,
+    _clamp_box_to_image_bounds_and_round,
+    _crop_around_box,
+    _get_clamp_bbox,
+    _rescale_bbox,
+    _resize_image,
+)
 from pytorch3d.renderer.camera_utils import join_cameras_as_batch
 from pytorch3d.renderer.cameras import CamerasBase, PerspectiveCameras
 from pytorch3d.structures.pointclouds import join_pointclouds_as_batch, Pointclouds
@@ -90,6 +99,7 @@ class FrameData(Mapping[str, Any]):
         frame_type: The type of the loaded frame specified in
             `subset_lists_file`, if provided.
         meta: A dict for storing additional frame information.
+        cropped: Bool to avoid cropping FrameData twice
     """
 
     frame_number: Optional[torch.LongTensor]
@@ -116,6 +126,7 @@ class FrameData(Mapping[str, Any]):
     sequence_point_cloud_idx: Optional[torch.Tensor] = None
     frame_type: Union[str, List[str], None] = None  # known | unseen
     meta: dict = field(default_factory=lambda: {})
+    cropped: bool = False
 
     def to(self, *args, **kwargs):
         new_params = {}
@@ -143,6 +154,109 @@ class FrameData(Mapping[str, Any]):
 
     def __len__(self):
         return len(fields(self))
+
+    def crop_by_bbox_(self, box_crop_context) -> Optional[torch.Tensor]:
+        if self.cropped:
+            warnings.warn(
+                f"You called cropping on same frame twice "
+                f"sequence_name: {self.sequence_name}, skipping cropping"
+            )
+            return None
+
+        if (
+            self.bbox_xywh is None
+            or self.fg_probability is None
+            or self.mask_path is None
+            or self.image_path is None
+        ):
+            warnings.warn(
+                "You called cropping without loading frame data"
+                "please call blob_loader.load_ first, skipping cropping"
+            )
+            return None
+
+        bbox_xyxy = _get_clamp_bbox(
+            self.bbox_xywh,
+            # pyre-ignore
+            image_path=self.image_path,
+            box_crop_context=box_crop_context,
+        )
+        clamp_bbox_xyxy = _clamp_box_to_image_bounds_and_round(
+            bbox_xyxy,
+            # pyre-ignore
+            image_size_hw=tuple(self.image_size_hw),
+        )
+        self.crop_bbox_xywh = _bbox_xyxy_to_xywh(clamp_bbox_xyxy)
+
+        self.fg_probability = _crop_around_box(
+            self.fg_probability,
+            clamp_bbox_xyxy,
+            # pyre-ignore
+            self.mask_path,
+        )
+        self.image_rgb = _crop_around_box(
+            self.image_rgb,
+            clamp_bbox_xyxy,
+            # pyre-ignore
+            self.image_path,
+        )
+
+        if self.depth_map is not None:
+            self.depth_map = _crop_around_box(
+                self.depth_map,
+                clamp_bbox_xyxy,
+                # pyre-ignore
+                self.depth_path,
+            )
+        if self.depth_mask is not None:
+            self.depth_mask = _crop_around_box(
+                self.depth_mask,
+                clamp_bbox_xyxy,
+                # pyre-ignore
+                self.mask_path,
+            )
+        self.cropped = True
+        return clamp_bbox_xyxy
+
+    def resize_frame_(self, image_height, image_width) -> Optional[float]:
+        if self.bbox_xywh is not None:
+            self.bbox_xywh = _rescale_bbox(
+                self.bbox_xywh,
+                np.array(self.image_size_hw),
+                # pyre-ignore
+                self.image_rgb.shape[-2:],
+            )
+
+        scale = None
+        if self.image_rgb is not None:
+            self.image_rgb, scale, self.mask_crop = _resize_image(
+                self.image_rgb, image_height=image_height, image_width=image_width
+            )
+
+        if self.fg_probability is not None:
+            self.fg_probability, _, _ = _resize_image(
+                self.fg_probability,
+                image_height=image_height,
+                image_width=image_width,
+                mode="nearest",
+            )
+
+        if self.depth_map is not None:
+            self.depth_map, _, _ = _resize_image(
+                self.depth_map,
+                image_height=image_height,
+                image_width=image_width,
+                mode="nearest",
+            )
+
+        if self.depth_mask is not None:
+            self.depth_mask, _, _ = _resize_image(
+                self.depth_mask,
+                image_height=image_height,
+                image_width=image_width,
+                mode="nearest",
+            )
+        return scale
 
     @classmethod
     def collate(cls, batch):
