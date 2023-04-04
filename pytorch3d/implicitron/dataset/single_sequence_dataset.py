@@ -20,8 +20,9 @@ from pytorch3d.implicitron.tools.config import (
 )
 from pytorch3d.renderer import CamerasBase, join_cameras_as_batch, PerspectiveCameras
 
-from .dataset_base import DatasetBase, FrameData
+from .dataset_base import DatasetBase
 from .dataset_map_provider import DatasetMap, DatasetMapProviderBase, PathManagerFactory
+from .frame_data import FrameData
 from .utils import DATASET_TYPE_KNOWN, DATASET_TYPE_UNKNOWN
 
 _SINGLE_SEQUENCE_NAME: str = "one_sequence"
@@ -69,7 +70,8 @@ class SingleSceneDataset(DatasetBase, Configurable):
             sequence_name=_SINGLE_SEQUENCE_NAME,
             sequence_category=self.object_name,
             camera=pose,
-            image_size_hw=torch.tensor(image.shape[1:]),
+            # pyre-ignore
+            image_size_hw=torch.tensor(image.shape[1:], dtype=torch.long),
             image_rgb=image,
             fg_probability=fg_probability,
             frame_type=frame_type,

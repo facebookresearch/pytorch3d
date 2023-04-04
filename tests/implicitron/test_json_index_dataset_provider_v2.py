@@ -17,7 +17,7 @@ import numpy as np
 import torch
 import torchvision
 from PIL import Image
-from pytorch3d.implicitron.dataset.dataset_base import FrameData
+from pytorch3d.implicitron.dataset.frame_data import FrameData
 from pytorch3d.implicitron.dataset.json_index_dataset_map_provider_v2 import (
     JsonIndexDatasetMapProviderV2,
 )

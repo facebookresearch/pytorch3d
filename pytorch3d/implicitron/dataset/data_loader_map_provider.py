@@ -18,8 +18,9 @@ from torch.utils.data import (
     Sampler,
 )
 
-from .dataset_base import DatasetBase, FrameData
+from .dataset_base import DatasetBase
 from .dataset_map_provider import DatasetMap
+from .frame_data import FrameData
 from .scene_batch_sampler import SceneBatchSampler
 from .utils import is_known_frame_scalar
 

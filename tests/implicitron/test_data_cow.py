@@ -8,7 +8,7 @@ import os
 import unittest
 
 import torch
-from pytorch3d.implicitron.dataset.dataset_base import FrameData
+from pytorch3d.implicitron.dataset.frame_data import FrameData
 from pytorch3d.implicitron.dataset.rendered_mesh_dataset_map_provider import (
     RenderedMeshDatasetMapProvider,
 )

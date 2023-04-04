@@ -14,7 +14,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, TYPE_CHECKING, Un
 import numpy as np
 import torch
 import torch.nn.functional as F
-from pytorch3d.implicitron.dataset.dataset_base import FrameData
+from pytorch3d.implicitron.dataset.frame_data import FrameData
 from pytorch3d.implicitron.dataset.utils import is_train_frame
 from pytorch3d.implicitron.models.base_model import ImplicitronRender
 from pytorch3d.implicitron.tools import vis_utils

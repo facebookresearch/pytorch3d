@@ -13,8 +13,10 @@ import os
 import unittest
 
 import lpips
+import numpy as np
 import torch
-from pytorch3d.implicitron.dataset.dataset_base import FrameData
+
+from pytorch3d.implicitron.dataset.frame_data import FrameData
 from pytorch3d.implicitron.dataset.json_index_dataset import JsonIndexDataset
 from pytorch3d.implicitron.evaluation.evaluate_new_view_synthesis import eval_batch
 from pytorch3d.implicitron.models.base_model import ImplicitronModelBase
@@ -268,7 +270,7 @@ class TestEvaluation(unittest.TestCase):
         for metric in lower_better:
             m_better = eval_result[metric]
             m_worse = eval_result_bad[metric]
-            if m_better != m_better or m_worse != m_worse:
+            if np.isnan(m_better) or np.isnan(m_worse):
                 continue  # metric is missing, i.e. NaN
             _assert = (
                 self.assertLessEqual

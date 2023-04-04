@@ -55,6 +55,8 @@ class MaskAnnotation:
     path: str
     # (soft) number of pixels in the mask; sum(Prob(fg | pixel))
     mass: Optional[float] = None
+    # tight bounding box around the foreground mask
+    bounding_box_xywh: Optional[Tuple[float, float, float, float]] = None
 
 
 @dataclass
