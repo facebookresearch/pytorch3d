@@ -85,7 +85,7 @@ cameras_ndc = PerspectiveCameras(focal_length=fcl_ndc, principal_point=prp_ndc)
 # Screen space camera
 image_size = ((128, 256),)    # (h, w)
 fcl_screen = (76.8,)          # fcl_ndc * min(image_size) / 2
-prp_screen = ((115.2, 48), )  # w / 2 - px_ndc * min(image_size) / 2, h / 2 - py_ndc * min(image_size) / 2
+prp_screen = ((115.2, 32), )  # w / 2 - px_ndc * min(image_size) / 2, h / 2 - py_ndc * min(image_size) / 2
 cameras_screen = PerspectiveCameras(focal_length=fcl_screen, principal_point=prp_screen, in_ndc=False, image_size=image_size)
 ```
 
