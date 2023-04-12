@@ -491,6 +491,8 @@ class TexturesAtlas(TexturesBase):
         new_tex._num_faces_per_mesh = new_props["_num_faces_per_mesh"]
         return new_tex
 
+    # pyre-fixme[14]: `sample_textures` overrides method defined in `TexturesBase`
+    #  inconsistently.
     def sample_textures(self, fragments, **kwargs) -> torch.Tensor:
         """
         This is similar to a nearest neighbor sampling and involves a
@@ -927,6 +929,8 @@ class TexturesUV(TexturesBase):
         new_tex._num_faces_per_mesh = new_props["_num_faces_per_mesh"]
         return new_tex
 
+    # pyre-fixme[14]: `sample_textures` overrides method defined in `TexturesBase`
+    #  inconsistently.
     def sample_textures(self, fragments, **kwargs) -> torch.Tensor:
         """
         Interpolate a 2D texture map using uv vertex texture coordinates for each
@@ -1450,6 +1454,8 @@ class TexturesVertex(TexturesBase):
         new_tex._num_verts_per_mesh = new_props["_num_verts_per_mesh"]
         return new_tex
 
+    # pyre-fixme[14]: `sample_textures` overrides method defined in `TexturesBase`
+    #  inconsistently.
     def sample_textures(self, fragments, faces_packed=None) -> torch.Tensor:
         """
         Determine the color for each rasterized face. Interpolate the colors for
