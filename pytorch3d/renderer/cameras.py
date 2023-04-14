@@ -375,14 +375,14 @@ class CamerasBase(TensorProperties):
         raise NotImplementedError()
 
     def get_znear(self):
-        return self.znear if hasattr(self, "znear") else None
+        return getattr(self, "znear", None)
 
     def get_image_size(self):
         """
         Returns the image size, if provided, expected in the form of (height, width)
         The image size is used for conversion of projected points to screen coordinates.
         """
-        return self.image_size if hasattr(self, "image_size") else None
+        return getattr(self, "image_size", None)
 
     def __getitem__(
         self, index: Union[int, List[int], torch.BoolTensor, torch.LongTensor]
