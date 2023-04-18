@@ -684,8 +684,8 @@ def save_obj(
     decimal_places: Optional[int] = None,
     path_manager: Optional[PathManager] = None,
     *,
-    verts_normals: Optional[torch.Tensor] = None,
-    faces_normals: Optional[torch.Tensor] = None,
+    normals: Optional[torch.Tensor] = None,
+    faces_normals_idx: Optional[torch.Tensor] = None,
     verts_uvs: Optional[torch.Tensor] = None,
     faces_uvs: Optional[torch.Tensor] = None,
     texture_map: Optional[torch.Tensor] = None,
@@ -700,9 +700,9 @@ def save_obj(
         decimal_places: Number of decimal places for saving.
         path_manager: Optional PathManager for interpreting f if
             it is a str.
-        verts_normals: FloatTensor of shape (V, 3) giving the normal per vertex.
-        faces_normals: LongTensor of shape (F, 3) giving the index into verts_normals
-            for each vertex in the face.
+        normals: FloatTensor of shape (V, 3) giving the normal per vertex.
+        faces_normals_idx: LongTensor of shape (F, 3) giving the index into 
+            normals for each vertex in the face.
         verts_uvs: FloatTensor of shape (V, 2) giving the uv coordinate per vertex.
         faces_uvs: LongTensor of shape (F, 3) giving the index into verts_uvs for
             each vertex in the face.
@@ -718,12 +718,13 @@ def save_obj(
         message = "'faces' should either be empty or of shape (num_faces, 3)."
         raise ValueError(message)
     
-    if faces_normals is not None and (faces_normals.dim() != 2 or faces_normals.size(1) != 3):
-        message = "'faces_normals' should either be empty or of shape (num_faces, 3)."
+    if faces_normals_idx is not None and \
+        (faces_normals_idx.dim() != 2 or faces_normals_idx.size(1) != 3):
+        message = "'faces_normals_idx' should either be empty or of shape (num_faces, 3)."
         raise ValueError(message)
     
-    if verts_normals is not None and (verts_normals.dim() != 2 or verts_normals.size(1) != 3):
-        message = "'verts_normals' should either be empty or of shape (num_verts, 3)."
+    if normals is not None and (normals.dim() != 2 or normals.size(1) != 3):
+        message = "'normals' should either be empty or of shape (num_verts, 3)."
         raise ValueError(message)
 
     if faces_uvs is not None and (faces_uvs.dim() != 2 or faces_uvs.size(1) != 3):
@@ -741,7 +742,7 @@ def save_obj(
     if path_manager is None:
         path_manager = PathManager()
 
-    save_normals = all([n is not None for n in [verts_normals, faces_normals]])
+    save_normals = all([n is not None for n in [normals, faces_normals_idx]])
     save_texture = all([t is not None for t in [faces_uvs, verts_uvs, texture_map]])
     output_path = Path(f)
 
@@ -756,8 +757,8 @@ def save_obj(
             verts,
             faces,
             decimal_places,
-            verts_normals=verts_normals,
-            faces_normals=faces_normals,
+            normals=normals,
+            faces_normals_idx=faces_normals_idx,
             verts_uvs=verts_uvs,
             faces_uvs=faces_uvs,
             save_texture=save_texture,
@@ -794,8 +795,8 @@ def _save(
     faces,
     decimal_places: Optional[int] = None,
     *,
-    verts_normals: Optional[torch.Tensor] = None,
-    faces_normals: Optional[torch.Tensor] = None,
+    normals: Optional[torch.Tensor] = None,
+    faces_normals_idx: Optional[torch.Tensor] = None,
     verts_uvs: Optional[torch.Tensor] = None,
     faces_uvs: Optional[torch.Tensor] = None,
     save_texture: bool = False,
@@ -830,22 +831,22 @@ def _save(
             lines += "v %s\n" % " ".join(vert)
 
     if save_normals:
-        if faces_normals is not None and (faces_normals.dim() != 2 or faces_normals.size(1) != 3):
-            message = "'faces_normals' should either be empty or of shape (num_faces, 3)."
+        if faces_normals_idx is not None and (faces_normals_idx.dim() != 2 or faces_normals_idx.size(1) != 3):
+            message = "'faces_normals_idx' should either be empty or of shape (num_faces, 3)."
             raise ValueError(message)
         
-        if verts_normals is not None and (verts_normals.dim() != 2 or verts_normals.size(1) != 3):
-            message = "'verts_normals' should either be empty or of shape (num_verts, 3)."
+        if normals is not None and (normals.dim() != 2 or normals.size(1) != 3):
+            message = "'normals' should either be empty or of shape (num_verts, 3)."
             raise ValueError(message)
 
         # pyre-fixme[16] # undefined attribute cpu
-        verts_normals, faces_normals = verts_normals.cpu(), faces_normals.cpu()
+        normals, faces_normals_idx = normals.cpu(), faces_normals_idx.cpu()
 
         # Save verts normals after verts
-        if len(verts_normals):
-            V, D = verts_normals.shape
+        if len(normals):
+            V, D = normals.shape
             for i in range(V):
-                normal = [float_str % verts_normals[i, j] for j in range(D)]
+                normal = [float_str % normals[i, j] for j in range(D)]
                 lines += "vn %s\n" % " ".join(normal)
 
     if save_texture:
@@ -879,14 +880,14 @@ def _save(
                     "%d/%d/%d" % (
                         faces[i, j] + 1, 
                         faces_uvs[i, j] + 1, 
-                        faces_normals[i, j] + 1,
+                        faces_normals_idx[i, j] + 1,
                     )
                     for j in range(P)
                 ]
             elif save_normals:
                 # Format faces as {verts_idx}//{verts_normals_idx}
                 face = [
-                    "%d//%d" % (faces[i, j] + 1, faces_normals[i, j] + 1) for j in range(P)
+                    "%d//%d" % (faces[i, j] + 1, faces_normals_idx[i, j] + 1) for j in range(P)
                 ]
             elif save_texture:
                 # Format faces as {verts_idx}/{verts_uvs_idx}

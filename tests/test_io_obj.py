@@ -903,12 +903,12 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
         faces = torch.tensor(
             [[0, 2, 1], [0, 1, 2], [3, 2, 1], [3, 1, 0]], dtype=torch.int64
         )
-        verts_normals = torch.tensor(
+        normals = torch.tensor(
             [[0.02, 0.5, 0.73], [0.3, 0.03, 0.361], [0.32, 0.12, 0.47], [0.36, 0.17, 0.9],
              [0.40, 0.7, 0.19], [1.0, 0.00, 0.000], [0.00, 1.00, 0.00], [0.00, 0.00, 1.0]],
             dtype=torch.float32,
         )
-        faces_normals = torch.tensor(
+        faces_normals_idx = torch.tensor(
             [[0, 1, 2], [2, 3, 4], [4, 5, 6], [6, 7, 0]], dtype=torch.int64
         )
 
@@ -919,8 +919,8 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
                 verts,
                 faces,
                 decimal_places=2,
-                verts_normals=verts_normals,
-                faces_normals=faces_normals,
+                normals=normals,
+                faces_normals_idx=faces_normals_idx,
             )
 
             expected_obj_file = "\n".join(
@@ -1023,11 +1023,11 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
         faces = torch.tensor(
             [[0, 2, 1], [0, 1, 2], [3, 2, 1], [3, 1, 0]], dtype=torch.int64
         )
-        verts_normals = torch.tensor(
+        normals = torch.tensor(
             [[0.02, 0.5, 0.73], [0.3, 0.03, 0.361], [0.32, 0.12, 0.47], [0.36, 0.17, 0.9]],
             dtype=torch.float32,
         )
-        faces_normals = faces
+        faces_normals_idx = faces
         verts_uvs = torch.tensor(
             [[0.02, 0.5], [0.3, 0.03], [0.32, 0.12], [0.36, 0.17]],
             dtype=torch.float32,
@@ -1042,8 +1042,8 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
                 verts,
                 faces,
                 decimal_places=2,
-                verts_normals=verts_normals,
-                faces_normals=faces_normals,
+                normals=normals,
+                faces_normals_idx=faces_normals_idx,
                 verts_uvs=verts_uvs,
                 faces_uvs=faces_uvs,
                 texture_map=texture_map,
