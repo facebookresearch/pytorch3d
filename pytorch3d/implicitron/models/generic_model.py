@@ -360,7 +360,7 @@ class GenericModel(ImplicitronModelBase):  # pyre-ignore: 13
                 and source images, which will be used for intersecting with target rays.
             fg_probability: A tensor of shape `(B, 1, H, W)` containing a batch of
                 foreground masks.
-            mask_crop: A binary tensor of shape `(B, 1, H, W)` deonting valid
+            mask_crop: A binary tensor of shape `(B, 1, H, W)` denoting valid
                 regions in the input images (i.e. regions that do not correspond
                 to, e.g., zero-padding). When the `RaySampler`'s sampling mode is set to
                 "mask_sample", rays  will be sampled in the non zero regions.

@@ -26,6 +26,8 @@ from tests.common_testing import interactive_testing_requested
 
 from .common_resources import get_skateboard_data
 
+VISDOM_PORT = int(os.environ.get("VISDOM_PORT", 8097))
+
 
 class TestDatasetVisualize(unittest.TestCase):
     def setUp(self):
@@ -77,7 +79,7 @@ class TestDatasetVisualize(unittest.TestCase):
                 for k, dataset in self.datasets.items()
             }
         )
-        self.visdom = Visdom()
+        self.visdom = Visdom(port=VISDOM_PORT)
         if not self.visdom.check_connection():
             print("Visdom server not running! Disabling visdom visualizations.")
             self.visdom = None
