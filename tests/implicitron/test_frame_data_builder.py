@@ -17,6 +17,7 @@ from pytorch3d.implicitron.dataset import types
 from pytorch3d.implicitron.dataset.dataset_base import FrameData
 from pytorch3d.implicitron.dataset.frame_data import FrameDataBuilder
 from pytorch3d.implicitron.dataset.utils import (
+    get_bbox_from_mask,
     load_16big_png_depth,
     load_1bit_png_mask,
     load_depth,
@@ -107,11 +108,14 @@ class TestFrameDataBuilder(TestCaseMixin, unittest.TestCase):
         )
         self.frame_data.effective_image_size_hw = self.frame_data.image_size_hw
 
-        (
-            self.frame_data.fg_probability,
-            self.frame_data.mask_path,
-            self.frame_data.bbox_xywh,
-        ) = self.frame_data_builder._load_fg_probability(self.frame_annotation)
+        fg_mask_np, mask_path = self.frame_data_builder._load_fg_probability(
+            self.frame_annotation
+        )
+        self.frame_data.mask_path = mask_path
+        self.frame_data.fg_probability = safe_as_tensor(fg_mask_np, torch.float)
+        mask_thr = self.frame_data_builder.box_crop_mask_thr
+        bbox_xywh = get_bbox_from_mask(fg_mask_np, mask_thr)
+        self.frame_data.bbox_xywh = safe_as_tensor(bbox_xywh, torch.long)
 
         self.assertIsNotNone(self.frame_data.mask_path)
         self.assertTrue(torch.is_tensor(self.frame_data.fg_probability))
