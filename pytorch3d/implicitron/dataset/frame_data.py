@@ -450,6 +450,7 @@ class FrameDataBuilderBase(ReplaceableBase, Generic[FrameDataSubtype], ABC):
         self,
         frame_annotation: types.FrameAnnotation,
         sequence_annotation: types.SequenceAnnotation,
+        load_blobs: bool = True,
     ) -> FrameDataSubtype:
         """An abstract method to build the frame data based on raw frame/sequence
         annotations, load the binary data and adjust them according to the metadata.
@@ -465,8 +466,9 @@ class GenericFrameDataBuilder(FrameDataBuilderBase[FrameDataSubtype], ABC):
     Beware that modifications of frame data are done in-place.
 
     Args:
-        dataset_root: The root folder of the dataset; all the paths in jsons are
-                specified relative to this root (but not json paths themselves).
+        dataset_root: The root folder of the dataset; all paths in frame / sequence
+            annotations are defined w.r.t. this root. Has to be set if any of the
+            load_* flabs below is true.
         load_images: Enable loading the frame RGB data.
         load_depths: Enable loading the frame depth maps.
         load_depth_masks: Enable loading the frame depth map masks denoting the
@@ -494,7 +496,7 @@ class GenericFrameDataBuilder(FrameDataBuilderBase[FrameDataSubtype], ABC):
         path_manager: Optionally a PathManager for interpreting paths in a special way.
     """
 
-    dataset_root: str = ""
+    dataset_root: Optional[str] = None
     load_images: bool = True
     load_depths: bool = True
     load_depth_masks: bool = True
@@ -509,6 +511,25 @@ class GenericFrameDataBuilder(FrameDataBuilderBase[FrameDataSubtype], ABC):
     box_crop_mask_thr: float = 0.4
     box_crop_context: float = 0.3
     path_manager: Any = None
+
+    def __post_init__(self) -> None:
+        load_any_blob = (
+            self.load_images
+            or self.load_depths
+            or self.load_depth_masks
+            or self.load_masks
+            or self.load_point_clouds
+        )
+        if load_any_blob and self.dataset_root is None:
+            raise ValueError(
+                "dataset_root must be set to load any blob data. "
+                "Make sure it is set in either FrameDataBuilder or Dataset params."
+            )
+
+        if load_any_blob and not os.path.isdir(self.dataset_root):  # pyre-ignore
+            raise ValueError(
+                f"dataset_root is passed but {self.dataset_root} does not exist."
+            )
 
     def build(
         self,
@@ -567,7 +588,7 @@ class GenericFrameDataBuilder(FrameDataBuilderBase[FrameDataSubtype], ABC):
             if bbox_xywh is None and fg_mask_np is not None:
                 bbox_xywh = get_bbox_from_mask(fg_mask_np, self.box_crop_mask_thr)
 
-            frame_data.bbox_xywh = safe_as_tensor(bbox_xywh, torch.long)
+            frame_data.bbox_xywh = safe_as_tensor(bbox_xywh, torch.float)
 
         if frame_annotation.image is not None:
             image_size_hw = safe_as_tensor(frame_annotation.image.size, torch.long)
@@ -612,7 +633,8 @@ class GenericFrameDataBuilder(FrameDataBuilderBase[FrameDataSubtype], ABC):
     def _load_fg_probability(
         self, entry: types.FrameAnnotation
     ) -> Tuple[np.ndarray, str]:
-        full_path = os.path.join(self.dataset_root, entry.mask.path)  # pyre-ignore
+        assert self.dataset_root is not None and entry.mask is not None
+        full_path = os.path.join(self.dataset_root, entry.mask.path)
         fg_probability = load_mask(self._local_path(full_path))
         if fg_probability.shape[-2:] != entry.image.size:
             raise ValueError(
@@ -647,7 +669,7 @@ class GenericFrameDataBuilder(FrameDataBuilderBase[FrameDataSubtype], ABC):
         fg_probability: Optional[torch.Tensor],
     ) -> Tuple[torch.Tensor, str, torch.Tensor]:
         entry_depth = entry.depth
-        assert entry_depth is not None
+        assert self.dataset_root is not None and entry_depth is not None
         path = os.path.join(self.dataset_root, entry_depth.path)
         depth_map = load_depth(self._local_path(path), entry_depth.scale_adjustment)
 
@@ -657,6 +679,7 @@ class GenericFrameDataBuilder(FrameDataBuilderBase[FrameDataSubtype], ABC):
 
         if self.load_depth_masks:
             assert entry_depth.mask_path is not None
+            # pyre-ignore
             mask_path = os.path.join(self.dataset_root, entry_depth.mask_path)
             depth_mask = load_depth_mask(self._local_path(mask_path))
         else:
@@ -705,6 +728,7 @@ class GenericFrameDataBuilder(FrameDataBuilderBase[FrameDataSubtype], ABC):
         )
         if path.startswith(unwanted_prefix):
             path = path[len(unwanted_prefix) :]
+        assert self.dataset_root is not None
         return os.path.join(self.dataset_root, path)
 
     def _local_path(self, path: str) -> str:

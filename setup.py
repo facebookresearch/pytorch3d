@@ -164,6 +164,7 @@ setup(
             "tqdm>4.29.0",
             "matplotlib",
             "accelerate",
+            "sqlalchemy>=2.0",
         ],
     },
     entry_points={
