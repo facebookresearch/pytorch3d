@@ -109,17 +109,11 @@ class MultinomialRaysampler(torch.nn.Module):
         self._stratified_sampling = stratified_sampling
 
         # get the initial grid of image xy coords
-        _xy_grid = torch.stack(
-            tuple(
-                reversed(
-                    meshgrid_ij(
-                        torch.linspace(min_y, max_y, image_height, dtype=torch.float32),
-                        torch.linspace(min_x, max_x, image_width, dtype=torch.float32),
-                    )
-                )
-            ),
-            dim=-1,
+        y, x = meshgrid_ij(
+            torch.linspace(min_y, max_y, image_height, dtype=torch.float32),
+            torch.linspace(min_x, max_x, image_width, dtype=torch.float32),
         )
+        _xy_grid = torch.stack([x, y], dim=-1)
 
         self.register_buffer("_xy_grid", _xy_grid, persistent=False)
 
