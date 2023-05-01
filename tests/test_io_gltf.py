@@ -120,6 +120,7 @@ class TestMeshGltfIO(TestCaseMixin, unittest.TestCase):
         The scene is "already lit", i.e. the textures reflect the lighting
         already, so we want to render them with full ambient light.
         """
+
         self.skipTest("Data not available")
 
         glb = DATA_DIR / "apartment_1.glb"
@@ -266,3 +267,117 @@ class TestMeshGltfIO(TestCaseMixin, unittest.TestCase):
             expected = np.array(f)
 
         self.assertClose(image, expected)
+
+    def test_load_save_load_cow_texturesvertex(self):
+        """
+        Load the cow as converted to a single mesh in a glb file and then save it to a glb file.
+        """
+
+        glb = DATA_DIR / "cow.glb"
+        self.assertTrue(glb.is_file())
+        device = torch.device("cuda:0")
+        mesh = _load(glb, device=device, include_textures=False)
+        self.assertEqual(len(mesh), 1)
+        self.assertIsNone(mesh.textures)
+
+        self.assertEqual(mesh.faces_packed().shape, (5856, 3))
+        self.assertEqual(mesh.verts_packed().shape, (3225, 3))
+        mesh_obj = _load(TUTORIAL_DATA_DIR / "cow_mesh/cow.obj")
+        self.assertClose(mesh.get_bounding_boxes().cpu(), mesh_obj.get_bounding_boxes())
+
+        mesh.textures = TexturesVertex(0.5 * torch.ones_like(mesh.verts_padded()))
+
+        image = _render(mesh, "cow_gray")
+
+        with Image.open(DATA_DIR / "glb_cow_gray.png") as f:
+            expected = np.array(f)
+
+        self.assertClose(image, expected)
+
+        # save the mesh to a glb file
+        glb = DATA_DIR / "cow_write_texturesvertex.glb"
+        _write(mesh, glb)
+
+        # reload the mesh glb file saved in TexturesVertex format
+        glb = DATA_DIR / "cow_write_texturesvertex.glb"
+        self.assertTrue(glb.is_file())
+        mesh_dash = _load(glb, device=device)
+        self.assertEqual(len(mesh_dash), 1)
+
+        self.assertEqual(mesh_dash.faces_packed().shape, (5856, 3))
+        self.assertEqual(mesh_dash.verts_packed().shape, (3225, 3))
+        self.assertEqual(mesh_dash.textures.verts_features_list()[0].shape, (3225, 3))
+
+        # check the re-rendered image with expected
+        image_dash = _render(mesh, "cow_gray_texturesvertex")
+        self.assertClose(image_dash, expected)
+
+    def test_save_toy(self):
+        """
+        Construct a simple mesh and save it to a glb file in TexturesVertex mode.
+        """
+
+        example = {}
+        example["POSITION"] = torch.tensor(
+            [
+                [
+                    [0.0, 0.0, 0.0],
+                    [-1.0, 0.0, 0.0],
+                    [-1.0, 0.0, 1.0],
+                    [0.0, 0.0, 1.0],
+                    [0.0, 1.0, 0.0],
+                    [-1.0, 1.0, 0.0],
+                    [-1.0, 1.0, 1.0],
+                    [0.0, 1.0, 1.0],
+                ]
+            ]
+        )
+        example["indices"] = torch.tensor(
+            [
+                [
+                    [1, 4, 2],
+                    [4, 3, 2],
+                    [3, 7, 2],
+                    [7, 6, 2],
+                    [3, 4, 7],
+                    [4, 8, 7],
+                    [8, 5, 7],
+                    [5, 6, 7],
+                    [5, 2, 6],
+                    [5, 1, 2],
+                    [1, 5, 4],
+                    [5, 8, 4],
+                ]
+            ]
+        )
+        example["indices"] -= 1
+        example["COLOR_0"] = torch.tensor(
+            [
+                [
+                    [1.0, 0.0, 0.0],
+                    [1.0, 0.0, 0.0],
+                    [1.0, 0.0, 0.0],
+                    [1.0, 0.0, 0.0],
+                    [1.0, 0.0, 0.0],
+                    [1.0, 0.0, 0.0],
+                    [1.0, 0.0, 0.0],
+                    [1.0, 0.0, 0.0],
+                ]
+            ]
+        )
+        # example['prop'] = {'material':
+        #                       {'pbrMetallicRoughness':
+        #                           {'baseColorFactor':
+        #                                torch.tensor([[0.7, 0.7, 1, 0.5]]),
+        #                            'metallicFactor': torch.tensor([1]),
+        #                            'roughnessFactor': torch.tensor([0.1])},
+        #                    'alphaMode': 'BLEND',
+        #                    'doubleSided': True}}
+
+        texture = TexturesVertex(example["COLOR_0"])
+        mesh = Meshes(
+            verts=example["POSITION"], faces=example["indices"], textures=texture
+        )
+
+        glb = DATA_DIR / "example_write_texturesvertex.glb"
+        _write(mesh, glb)

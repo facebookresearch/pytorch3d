@@ -393,7 +393,7 @@ class _GLTFLoader:
         attributes = primitive["attributes"]
         vertex_colors = self._get_primitive_attribute(attributes, "COLOR_0", np.float32)
         if vertex_colors is not None:
-            return TexturesVertex(torch.from_numpy(vertex_colors))
+            return TexturesVertex([torch.from_numpy(vertex_colors)])
 
         vertex_texcoords_0 = self._get_primitive_attribute(
             attributes, "TEXCOORD_0", np.float32
@@ -559,12 +559,26 @@ class _GLTFWriter:
         meshes = defaultdict(list)
         # pyre-fixme[6]: Incompatible parameter type
         meshes["name"] = "Node-Mesh"
-        primitives = {
-            "attributes": {"POSITION": 0, "TEXCOORD_0": 2},
-            "indices": 1,
-            "material": 0,  # default material
-            "mode": _PrimitiveMode.TRIANGLES,
-        }
+        if isinstance(self.mesh.textures, TexturesVertex):
+            primitives = {
+                "attributes": {"POSITION": 0, "COLOR_0": 2},
+                "indices": 1,
+                "mode": _PrimitiveMode.TRIANGLES,
+            }
+        elif isinstance(self.mesh.textures, TexturesUV):
+            primitives = {
+                "attributes": {"POSITION": 0, "TEXCOORD_0": 2},
+                "indices": 1,
+                "mode": _PrimitiveMode.TRIANGLES,
+                "material": 0,
+            }
+        else:
+            primitives = {
+                "attributes": {"POSITION": 0},
+                "indices": 1,
+                "mode": _PrimitiveMode.TRIANGLES,
+            }
+
         meshes["primitives"].append(primitives)
         self._json_data["meshes"].append(meshes)
 
@@ -610,6 +624,14 @@ class _GLTFWriter:
             element_min = list(map(float, np.min(data, axis=0)))
             element_max = list(map(float, np.max(data, axis=0)))
             byte_per_element = 2 * _DTYPE_BYTES[_ITEM_TYPES[_ComponentType.FLOAT]]
+        elif key == "texvertices":
+            component_type = _ComponentType.FLOAT
+            data = self.mesh.textures.verts_features_list()[0].cpu().numpy()
+            element_type = "VEC3"
+            buffer_view = 2
+            element_min = list(map(float, np.min(data, axis=0)))
+            element_max = list(map(float, np.max(data, axis=0)))
+            byte_per_element = 3 * _DTYPE_BYTES[_ITEM_TYPES[_ComponentType.FLOAT]]
         elif key == "indices":
             component_type = _ComponentType.UNSIGNED_SHORT
             data = (
@@ -646,8 +668,10 @@ class _GLTFWriter:
         return (byte_length, data)
 
     def _write_bufferview(self, key: str, **kwargs):
-        if key not in ["positions", "texcoords", "indices"]:
-            raise ValueError("key must be one of positions, texcoords or indices")
+        if key not in ["positions", "texcoords", "texvertices", "indices"]:
+            raise ValueError(
+                "key must be one of positions, texcoords, texvertices or indices"
+            )
 
         bufferview = {
             "name": "bufferView_%s" % key,
@@ -660,6 +684,10 @@ class _GLTFWriter:
         elif key == "texcoords":
             byte_per_element = 2 * _DTYPE_BYTES[_ITEM_TYPES[_ComponentType.FLOAT]]
             target = _TargetType.ARRAY_BUFFER
+            bufferview["byteStride"] = int(byte_per_element)
+        elif key == "texvertices":
+            byte_per_element = 3 * _DTYPE_BYTES[_ITEM_TYPES[_ComponentType.FLOAT]]
+            target = _TargetType.ELEMENT_ARRAY_BUFFER
             bufferview["byteStride"] = int(byte_per_element)
         elif key == "indices":
             byte_per_element = (
@@ -701,12 +729,15 @@ class _GLTFWriter:
         pos_byte, pos_data = self._write_accessor_json("positions")
         idx_byte, idx_data = self._write_accessor_json("indices")
         include_textures = False
-        if (
-            self.mesh.textures is not None
-            and self.mesh.textures.verts_uvs_list()[0] is not None
-        ):
-            tex_byte, tex_data = self._write_accessor_json("texcoords")
-            include_textures = True
+        if self.mesh.textures is not None:
+            if hasattr(self.mesh.textures, "verts_features_list"):
+                tex_byte, tex_data = self._write_accessor_json("texvertices")
+                include_textures = True
+                texcoords = False
+            elif self.mesh.textures.verts_uvs_list()[0] is not None:
+                tex_byte, tex_data = self._write_accessor_json("texcoords")
+                include_textures = True
+                texcoords = True
 
         # bufferViews for positions, texture coords and indices
         byte_offset = 0
@@ -717,17 +748,19 @@ class _GLTFWriter:
         byte_offset += idx_byte
 
         if include_textures:
-            self._write_bufferview(
-                "texcoords", byte_length=tex_byte, offset=byte_offset
-            )
+            if texcoords:
+                self._write_bufferview(
+                    "texcoords", byte_length=tex_byte, offset=byte_offset
+                )
+            else:
+                self._write_bufferview(
+                    "texvertices", byte_length=tex_byte, offset=byte_offset
+                )
             byte_offset += tex_byte
 
         # image bufferView
         include_image = False
-        if (
-            self.mesh.textures is not None
-            and self.mesh.textures.maps_list()[0] is not None
-        ):
+        if self.mesh.textures is not None and hasattr(self.mesh.textures, "maps_list"):
             include_image = True
             image_byte, image_data = self._write_image_buffer(offset=byte_offset)
             byte_offset += image_byte
