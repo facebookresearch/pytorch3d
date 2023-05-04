@@ -534,6 +534,9 @@ std::tuple<at::Tensor, at::Tensor> KNearestNeighborBackwardCuda(
       c, {p1_t, p2_t, lengths1_t, lengths2_t, idxs_t, grad_dists_t});
   at::checkAllSameType(c, {p1_t, p2_t, grad_dists_t});
 
+  // This is nondeterministic because atomicAdd
+  at::globalContext().alertNotDeterministic("KNearestNeighborBackwardCuda");
+
   // Set the device for the kernel launch based on the device of the input
   at::cuda::CUDAGuard device_guard(p1.device());
   cudaStream_t stream = at::cuda::getCurrentCUDAStream();

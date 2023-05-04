@@ -141,6 +141,9 @@ void PointsToVolumesForwardCuda(
        grid_sizes_t,
        mask_t});
 
+  // This is nondeterministic because atomicAdd
+  at::globalContext().alertNotDeterministic("PointsToVolumesForwardCuda");
+
   // Set the device for the kernel launch based on the device of the input
   at::cuda::CUDAGuard device_guard(points_3d.device());
   cudaStream_t stream = at::cuda::getCurrentCUDAStream();

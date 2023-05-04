@@ -423,7 +423,8 @@ at::Tensor RasterizePointsBackwardCuda(
   at::CheckedFrom c = "RasterizePointsBackwardCuda";
   at::checkAllSameGPU(c, {points_t, idxs_t, grad_zbuf_t, grad_dists_t});
   at::checkAllSameType(c, {points_t, grad_zbuf_t, grad_dists_t});
-
+  // This is nondeterministic because atomicAdd
+  at::globalContext().alertNotDeterministic("RasterizePointsBackwardCuda");
   // Set the device for the kernel launch based on the device of the input
   at::cuda::CUDAGuard device_guard(points.device());
   cudaStream_t stream = at::cuda::getCurrentCUDAStream();

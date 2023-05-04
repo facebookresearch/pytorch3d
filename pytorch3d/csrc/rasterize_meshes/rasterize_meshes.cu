@@ -583,6 +583,9 @@ at::Tensor RasterizeMeshesBackwardCuda(
   at::checkAllSameType(
       c, {face_verts_t, grad_zbuf_t, grad_bary_t, grad_dists_t});
 
+  // This is nondeterministic because atomicAdd
+  at::globalContext().alertNotDeterministic("RasterizeMeshesBackwardCuda");
+
   // Set the device for the kernel launch based on the device of the input
   at::cuda::CUDAGuard device_guard(face_verts.device());
   cudaStream_t stream = at::cuda::getCurrentCUDAStream();

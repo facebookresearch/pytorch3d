@@ -130,6 +130,9 @@ std::tuple<at::Tensor, at::Tensor> InterpFaceAttrsBackwardCuda(
   at::checkAllSameType(
       c, {barycentric_coords_t, face_attrs_t, grad_pix_attrs_t});
 
+  // This is nondeterministic because atomicAdd
+  at::globalContext().alertNotDeterministic("InterpFaceAttrsBackwardCuda");
+
   // Set the device for the kernel launch based on the input
   at::cuda::CUDAGuard device_guard(pix_to_face.device());
   cudaStream_t stream = at::cuda::getCurrentCUDAStream();

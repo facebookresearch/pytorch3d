@@ -305,6 +305,8 @@ std::tuple<at::Tensor, at::Tensor> DistanceBackwardCuda(
   at::CheckedFrom c = "DistanceBackwardCuda";
   at::checkAllSameGPU(c, {objects_t, targets_t, idx_objects_t, grad_dists_t});
   at::checkAllSameType(c, {objects_t, targets_t, grad_dists_t});
+  // This is nondeterministic because atomicAdd
+  at::globalContext().alertNotDeterministic("DistanceBackwardCuda");
 
   // Set the device for the kernel launch based on the device of the input
   at::cuda::CUDAGuard device_guard(objects.device());
@@ -624,6 +626,9 @@ std::tuple<at::Tensor, at::Tensor> PointFaceArrayDistanceBackwardCuda(
   at::CheckedFrom c = "PointFaceArrayDistanceBackwardCuda";
   at::checkAllSameGPU(c, {points_t, tris_t, grad_dists_t});
   at::checkAllSameType(c, {points_t, tris_t, grad_dists_t});
+  // This is nondeterministic because atomicAdd
+  at::globalContext().alertNotDeterministic(
+      "PointFaceArrayDistanceBackwardCuda");
 
   // Set the device for the kernel launch based on the device of the input
   at::cuda::CUDAGuard device_guard(points.device());
@@ -787,6 +792,9 @@ std::tuple<at::Tensor, at::Tensor> PointEdgeArrayDistanceBackwardCuda(
   at::CheckedFrom c = "PointEdgeArrayDistanceBackwardCuda";
   at::checkAllSameGPU(c, {points_t, segms_t, grad_dists_t});
   at::checkAllSameType(c, {points_t, segms_t, grad_dists_t});
+  // This is nondeterministic because atomicAdd
+  at::globalContext().alertNotDeterministic(
+      "PointEdgeArrayDistanceBackwardCuda");
 
   // Set the device for the kernel launch based on the device of the input
   at::cuda::CUDAGuard device_guard(points.device());

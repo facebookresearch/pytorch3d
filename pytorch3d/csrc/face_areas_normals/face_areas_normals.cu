@@ -266,6 +266,8 @@ at::Tensor FaceAreasNormalsBackwardCuda(
       grad_normals_t{grad_normals, "grad_normals", 4};
   at::CheckedFrom c = "FaceAreasNormalsBackwardCuda";
   at::checkAllSameGPU(c, {verts_t, faces_t, grad_areas_t, grad_normals_t});
+  // This is nondeterministic because atomicAdd
+  at::globalContext().alertNotDeterministic("FaceAreasNormalsBackwardCuda");
 
   // Set the device for the kernel launch based on the device of verts
   at::cuda::CUDAGuard device_guard(verts.device());
