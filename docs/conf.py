@@ -20,7 +20,8 @@
 import os
 import sys
 
-import mock
+import unittest.mock as mock
+
 from recommonmark.parser import CommonMarkParser
 from recommonmark.states import DummyStateMachine
 from sphinx.builders.html import StandaloneHTMLBuilder
