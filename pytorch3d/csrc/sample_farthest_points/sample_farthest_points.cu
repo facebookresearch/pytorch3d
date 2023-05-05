@@ -155,7 +155,7 @@ at::Tensor FarthestPointSamplingCuda(
 
   // Max possible threads per block
   const int MAX_THREADS_PER_BLOCK = 1024;
-  const size_t threads = max(min(1 << points_pow_2, MAX_THREADS_PER_BLOCK), 1);
+  const size_t threads = max(min(1 << points_pow_2, MAX_THREADS_PER_BLOCK), 2);
 
   // Create the accessors
   auto points_a = points.packed_accessor64<float, 3, at::RestrictPtrTraits>();
@@ -213,10 +213,6 @@ at::Tensor FarthestPointSamplingCuda(
       break;
     case 2:
       FarthestPointSamplingKernel<2><<<threads, threads, shared_mem, stream>>>(
-          points_a, lengths_a, K_a, idxs_a, min_point_dist_a, start_idxs_a);
-      break;
-    case 1:
-      FarthestPointSamplingKernel<1><<<threads, threads, shared_mem, stream>>>(
           points_a, lengths_a, K_a, idxs_a, min_point_dist_a, start_idxs_a);
       break;
     default:
