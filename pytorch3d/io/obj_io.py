@@ -684,6 +684,8 @@ def save_obj(
     decimal_places: Optional[int] = None,
     path_manager: Optional[PathManager] = None,
     *,
+    normals: Optional[torch.Tensor] = None,
+    faces_normals_idx: Optional[torch.Tensor] = None,
     verts_uvs: Optional[torch.Tensor] = None,
     faces_uvs: Optional[torch.Tensor] = None,
     texture_map: Optional[torch.Tensor] = None,
@@ -698,6 +700,10 @@ def save_obj(
         decimal_places: Number of decimal places for saving.
         path_manager: Optional PathManager for interpreting f if
             it is a str.
+        normals: FloatTensor of shape (V, 3) giving normals for faces_normals_idx
+            to index into.
+        faces_normals_idx: LongTensor of shape (F, 3) giving the index into
+            normals for each vertex in the face.
         verts_uvs: FloatTensor of shape (V, 2) giving the uv coordinate per vertex.
         faces_uvs: LongTensor of shape (F, 3) giving the index into verts_uvs for
             each vertex in the face.
@@ -711,6 +717,22 @@ def save_obj(
 
     if len(faces) and (faces.dim() != 2 or faces.size(1) != 3):
         message = "'faces' should either be empty or of shape (num_faces, 3)."
+        raise ValueError(message)
+
+    if (normals is None) != (faces_normals_idx is None):
+        message = "'normals' and 'faces_normals_idx' must both be None or neither."
+        raise ValueError(message)
+
+    if faces_normals_idx is not None and (
+        faces_normals_idx.dim() != 2 or faces_normals_idx.size(1) != 3
+    ):
+        message = (
+            "'faces_normals_idx' should either be empty or of shape (num_faces, 3)."
+        )
+        raise ValueError(message)
+
+    if normals is not None and (normals.dim() != 2 or normals.size(1) != 3):
+        message = "'normals' should either be empty or of shape (num_verts, 3)."
         raise ValueError(message)
 
     if faces_uvs is not None and (faces_uvs.dim() != 2 or faces_uvs.size(1) != 3):
@@ -742,9 +764,12 @@ def save_obj(
             verts,
             faces,
             decimal_places,
+            normals=normals,
+            faces_normals_idx=faces_normals_idx,
             verts_uvs=verts_uvs,
             faces_uvs=faces_uvs,
             save_texture=save_texture,
+            save_normals=normals is not None,
         )
 
     # Save the .mtl and .png files associated with the texture
@@ -777,9 +802,12 @@ def _save(
     faces,
     decimal_places: Optional[int] = None,
     *,
+    normals: Optional[torch.Tensor] = None,
+    faces_normals_idx: Optional[torch.Tensor] = None,
     verts_uvs: Optional[torch.Tensor] = None,
     faces_uvs: Optional[torch.Tensor] = None,
     save_texture: bool = False,
+    save_normals: bool = False,
 ) -> None:
 
     if len(verts) and (verts.dim() != 2 or verts.size(1) != 3):
@@ -798,18 +826,26 @@ def _save(
 
     lines = ""
 
-    if len(verts):
-        if decimal_places is None:
-            float_str = "%f"
-        else:
-            float_str = "%" + ".%df" % decimal_places
+    if decimal_places is None:
+        float_str = "%f"
+    else:
+        float_str = "%" + ".%df" % decimal_places
 
+    if len(verts):
         V, D = verts.shape
         for i in range(V):
             vert = [float_str % verts[i, j] for j in range(D)]
             lines += "v %s\n" % " ".join(vert)
 
+    if save_normals:
+        assert normals is not None
+        assert faces_normals_idx is not None
+        lines += _write_normals(normals, faces_normals_idx, float_str)
+
     if save_texture:
+        assert faces_uvs is not None
+        assert verts_uvs is not None
+
         if faces_uvs is not None and (faces_uvs.dim() != 2 or faces_uvs.size(1) != 3):
             message = "'faces_uvs' should either be empty or of shape (num_faces, 3)."
             raise ValueError(message)
@@ -818,7 +854,6 @@ def _save(
             message = "'verts_uvs' should either be empty or of shape (num_verts, 2)."
             raise ValueError(message)
 
-        # pyre-fixme[16] # undefined attribute cpu
         verts_uvs, faces_uvs = verts_uvs.cpu(), faces_uvs.cpu()
 
         # Save verts uvs after verts
@@ -828,25 +863,77 @@ def _save(
                 uv = [float_str % verts_uvs[i, j] for j in range(uD)]
                 lines += "vt %s\n" % " ".join(uv)
 
+    f.write(lines)
+
     if torch.any(faces >= verts.shape[0]) or torch.any(faces < 0):
         warnings.warn("Faces have invalid indices")
 
     if len(faces):
-        F, P = faces.shape
-        for i in range(F):
-            if save_texture:
-                # Format faces as {verts_idx}/{verts_uvs_idx}
+        _write_faces(
+            f,
+            faces,
+            faces_uvs if save_texture else None,
+            faces_normals_idx if save_normals else None,
+        )
+
+
+def _write_normals(
+    normals: torch.Tensor, faces_normals_idx: torch.Tensor, float_str: str
+) -> str:
+    if faces_normals_idx.dim() != 2 or faces_normals_idx.size(1) != 3:
+        message = (
+            "'faces_normals_idx' should either be empty or of shape (num_faces, 3)."
+        )
+        raise ValueError(message)
+
+    if normals.dim() != 2 or normals.size(1) != 3:
+        message = "'normals' should either be empty or of shape (num_verts, 3)."
+        raise ValueError(message)
+
+    normals, faces_normals_idx = normals.cpu(), faces_normals_idx.cpu()
+
+    lines = []
+    V, D = normals.shape
+    for i in range(V):
+        normal = [float_str % normals[i, j] for j in range(D)]
+        lines.append("vn %s\n" % " ".join(normal))
+    return "".join(lines)
+
+
+def _write_faces(
+    f,
+    faces: torch.Tensor,
+    faces_uvs: Optional[torch.Tensor],
+    faces_normals_idx: Optional[torch.Tensor],
+) -> None:
+    F, P = faces.shape
+    for i in range(F):
+        if faces_normals_idx is not None:
+            if faces_uvs is not None:
+                # Format faces as {verts_idx}/{verts_uvs_idx}/{verts_normals_idx}
                 face = [
-                    "%d/%d" % (faces[i, j] + 1, faces_uvs[i, j] + 1) for j in range(P)
+                    "%d/%d/%d"
+                    % (
+                        faces[i, j] + 1,
+                        faces_uvs[i, j] + 1,
+                        faces_normals_idx[i, j] + 1,
+                    )
+                    for j in range(P)
                 ]
             else:
-                face = ["%d" % (faces[i, j] + 1) for j in range(P)]
+                # Format faces as {verts_idx}//{verts_normals_idx}
+                face = [
+                    "%d//%d" % (faces[i, j] + 1, faces_normals_idx[i, j] + 1)
+                    for j in range(P)
+                ]
+        elif faces_uvs is not None:
+            # Format faces as {verts_idx}/{verts_uvs_idx}
+            face = ["%d/%d" % (faces[i, j] + 1, faces_uvs[i, j] + 1) for j in range(P)]
+        else:
+            face = ["%d" % (faces[i, j] + 1) for j in range(P)]
 
-            if i + 1 < F:
-                lines += "f %s\n" % " ".join(face)
-
-            elif i + 1 == F:
-                # No newline at the end of the file.
-                lines += "f %s" % " ".join(face)
-
-    f.write(lines)
+        if i + 1 < F:
+            f.write("f %s\n" % " ".join(face))
+        else:
+            # No newline at the end of the file.
+            f.write("f %s" % " ".join(face))
