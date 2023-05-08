@@ -204,7 +204,7 @@ def _dataclass_list_from_dict_list(dlist, typeannot):
     # otherwise, we dispatch by the type of the provided annotation to convert to
     if issubclass(cls, tuple) and hasattr(cls, "_fields"):  # namedtuple
         # For namedtuple, call the function recursively on the lists of corresponding keys
-        types = cls._field_types.values()
+        types = cls.__annotations__.values()
         dlist_T = zip(*dlist)
         res_T = [
             _dataclass_list_from_dict_list(key_list, tp)
@@ -270,7 +270,7 @@ def _dataclass_from_dict(d, typeannot):
 
     cls = get_origin(typeannot) or typeannot
     if issubclass(cls, tuple) and hasattr(cls, "_fields"):  # namedtuple
-        types = cls._field_types.values()
+        types = cls.__annotations__.values()
         return cls(*[_dataclass_from_dict(v, tp) for v, tp in zip(d, types)])
     elif issubclass(cls, (list, tuple)):
         types = get_args(typeannot)
