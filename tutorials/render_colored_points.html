@@ -124,7 +124,7 @@
 <span class="k">except</span> <span class="ne">ModuleNotFoundError</span><span class="p">:</span>
     <span class="n">need_pytorch3d</span><span class="o">=</span><span class="kc">True</span>
 <span class="k">if</span> <span class="n">need_pytorch3d</span><span class="p">:</span>
-    <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"1.13."</span><span class="p">)</span> <span class="ow">and</span> <span class="n">sys</span><span class="o">.</span><span class="n">platform</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"linux"</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">((</span><span class="s2">"1.13."</span><span class="p">,</span> <span class="s2">"2.0."</span><span class="p">))</span> <span class="ow">and</span> <span class="n">sys</span><span class="o">.</span><span class="n">platform</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"linux"</span><span class="p">):</span>
         <span class="c1"># We try to install PyTorch3D via a released wheel.</span>
         <span class="n">pyt_version_str</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"+"</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"."</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
         <span class="n">version_str</span><span class="o">=</span><span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">([</span>
@@ -132,14 +132,11 @@
             <span class="n">torch</span><span class="o">.</span><span class="n">version</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"."</span><span class="p">,</span><span class="s2">""</span><span class="p">),</span>
             <span class="sa">f</span><span class="s2">"_pyt</span><span class="si">{</span><span class="n">pyt_version_str</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">])</span>
-        <span class="o">!</span>pip install fvcore iopath
-        <span class="o">!</span>pip install --no-index --no-cache-dir pytorch3d -f https://dl.fbaipublicfiles.com/pytorch3d/packaging/wheels/<span class="o">{</span>version_str<span class="o">}</span>/download.html
+        <span class="o">!</span>pip<span class="w"> </span>install<span class="w"> </span>fvcore<span class="w"> </span>iopath
+        <span class="o">!</span>pip<span class="w"> </span>install<span class="w"> </span>--no-index<span class="w"> </span>--no-cache-dir<span class="w"> </span>pytorch3d<span class="w"> </span>-f<span class="w"> </span>https://dl.fbaipublicfiles.com/pytorch3d/packaging/wheels/<span class="o">{</span>version_str<span class="o">}</span>/download.html
     <span class="k">else</span><span class="p">:</span>
         <span class="c1"># We try to install PyTorch3D from source.</span>
-        <span class="o">!</span>curl -LO https://github.com/NVIDIA/cub/archive/1.10.0.tar.gz
-        <span class="o">!</span>tar xzf <span class="m">1</span>.10.0.tar.gz
-        <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">"CUB_HOME"</span><span class="p">]</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span> <span class="o">+</span> <span class="s2">"/cub-1.10.0"</span>
-        <span class="o">!</span>pip install <span class="s1">'git+https://github.com/facebookresearch/pytorch3d.git@stable'</span>
+        <span class="o">!</span>pip<span class="w"> </span>install<span class="w"> </span><span class="s1">'git+https://github.com/facebookresearch/pytorch3d.git@stable'</span>
 </pre></div>
 </div>
 </div>
@@ -199,8 +196,8 @@ If running locally, the data is already available at the correct path.</p>
 <div class="prompt input_prompt">In [ ]:</div>
 <div class="inner_cell">
 <div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="o">!</span>mkdir -p data/PittsburghBridge
-<span class="o">!</span>wget -P data/PittsburghBridge https://dl.fbaipublicfiles.com/pytorch3d/data/PittsburghBridge/pointcloud.npz
+<div class="highlight hl-ipython3"><pre><span></span><span class="o">!</span>mkdir<span class="w"> </span>-p<span class="w"> </span>data/PittsburghBridge
+<span class="o">!</span>wget<span class="w"> </span>-P<span class="w"> </span>data/PittsburghBridge<span class="w"> </span>https://dl.fbaipublicfiles.com/pytorch3d/data/PittsburghBridge/pointcloud.npz
 </pre></div>
 </div>
 </div>
@@ -556,4 +553,4 @@ Sphere-based Representations</a>.</p>
 </div>
 </div>
 </div>
-</div></div></div></div></div><footer class="nav-footer" id="footer"><section class="sitemap"><div class="footerSection"><div class="social"><a class="github-button" href="https://github.com/facebookresearch/pytorch3d" data-count-href="https://github.com/facebookresearch/pytorch3d/stargazers" data-show-count="true" data-count-aria-label="# stargazers on GitHub" aria-label="Star PyTorch3D on GitHub">pytorch3d</a></div></div></section><a href="https://opensource.facebook.com/" target="_blank" rel="noreferrer noopener" class="fbOpenSource"><img src="/img/oss_logo.png" alt="Facebook Open Source" width="170" height="45"/></a><section class="copyright">Copyright © 2022 Meta Platforms, Inc<br/>Legal:<a href="https://opensource.facebook.com/legal/privacy/" target="_blank" rel="noreferrer noopener">Privacy</a><a href="https://opensource.facebook.com/legal/terms/" target="_blank" rel="noreferrer noopener">Terms</a></section></footer></div></body></html>
+</div></div></div></div></div><footer class="nav-footer" id="footer"><section class="sitemap"><div class="footerSection"><div class="social"><a class="github-button" href="https://github.com/facebookresearch/pytorch3d" data-count-href="https://github.com/facebookresearch/pytorch3d/stargazers" data-show-count="true" data-count-aria-label="# stargazers on GitHub" aria-label="Star PyTorch3D on GitHub">pytorch3d</a></div></div></section><a href="https://opensource.facebook.com/" target="_blank" rel="noreferrer noopener" class="fbOpenSource"><img src="/img/oss_logo.png" alt="Facebook Open Source" width="170" height="45"/></a><section class="copyright">Copyright © 2023 Meta Platforms, Inc<br/>Legal:<a href="https://opensource.facebook.com/legal/privacy/" target="_blank" rel="noreferrer noopener">Privacy</a><a href="https://opensource.facebook.com/legal/terms/" target="_blank" rel="noreferrer noopener">Terms</a></section></footer></div></body></html>
