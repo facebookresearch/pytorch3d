@@ -450,7 +450,9 @@ class FrameDataBuilderBase(ReplaceableBase, Generic[FrameDataSubtype], ABC):
         self,
         frame_annotation: types.FrameAnnotation,
         sequence_annotation: types.SequenceAnnotation,
+        *,
         load_blobs: bool = True,
+        **kwargs,
     ) -> FrameDataSubtype:
         """An abstract method to build the frame data based on raw frame/sequence
         annotations, load the binary data and adjust them according to the metadata.
@@ -526,7 +528,12 @@ class GenericFrameDataBuilder(FrameDataBuilderBase[FrameDataSubtype], ABC):
                 "Make sure it is set in either FrameDataBuilder or Dataset params."
             )
 
-        if load_any_blob and not os.path.isdir(self.dataset_root):  # pyre-ignore
+        if self.path_manager is None:
+            dataset_root_exists = os.path.isdir(self.dataset_root)  # pyre-ignore
+        else:
+            dataset_root_exists = self.path_manager.isdir(self.dataset_root)
+
+        if load_any_blob and not dataset_root_exists:
             raise ValueError(
                 f"dataset_root is passed but {self.dataset_root} does not exist."
             )
@@ -535,7 +542,9 @@ class GenericFrameDataBuilder(FrameDataBuilderBase[FrameDataSubtype], ABC):
         self,
         frame_annotation: types.FrameAnnotation,
         sequence_annotation: types.SequenceAnnotation,
+        *,
         load_blobs: bool = True,
+        **kwargs,
     ) -> FrameDataSubtype:
         """Builds the frame data based on raw frame/sequence annotations, loads the
         binary data and adjust them according to the metadata. The processing includes:

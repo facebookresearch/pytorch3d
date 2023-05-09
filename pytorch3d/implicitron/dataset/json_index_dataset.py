@@ -190,6 +190,7 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
             box_crop=self.box_crop,
             box_crop_mask_thr=self.box_crop_mask_thr,
             box_crop_context=self.box_crop_context,
+            path_manager=self.path_manager,
         )
         logger.info(str(self))
 

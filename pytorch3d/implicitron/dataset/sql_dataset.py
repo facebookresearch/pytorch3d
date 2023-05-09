@@ -140,6 +140,7 @@ class SqlIndexDataset(DatasetBase, ReplaceableBase):  # pyre-ignore
             ] = self.dataset_root
 
         run_auto_creation(self)
+        self.frame_data_builder.path_manager = self.path_manager
 
         # pyre-ignore
         self._sql_engine = sa.create_engine(f"sqlite:///{self.sqlite_metadata_file}")
