@@ -256,7 +256,6 @@ class ImplicitronTrainingLoop(TrainingLoopBase):
             list(log_vars),
             plot_file=os.path.join(exp_dir, "train_stats.pdf"),
             visdom_env=visdom_env_charts,
-            verbose=False,
             visdom_server=self.visdom_server,
             visdom_port=self.visdom_port,
         )
@@ -382,7 +381,8 @@ class ImplicitronTrainingLoop(TrainingLoopBase):
 
             # print textual status update
             if it % self.metric_print_interval == 0 or last_iter:
-                stats.print(stat_set=trainmode, max_it=n_batches)
+                std_out = stats.get_status_string(stat_set=trainmode, max_it=n_batches)
+                logger.info(std_out)
 
             # visualize results
             if (
