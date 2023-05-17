@@ -132,6 +132,11 @@ class TestExperiment(unittest.TestCase):
         # Check that the default config values, defined by Experiment and its
         # members, is what we expect it to be.
         cfg = OmegaConf.structured(experiment.Experiment)
+        # the following removes the possible effect of env variables
+        ds_arg = cfg.data_source_ImplicitronDataSource_args
+        ds_arg.dataset_map_provider_JsonIndexDatasetMapProvider_args.dataset_root = ""
+        ds_arg.dataset_map_provider_JsonIndexDatasetMapProviderV2_args.dataset_root = ""
+        cfg.training_loop_ImplicitronTrainingLoop_args.visdom_port = 8097
         yaml = OmegaConf.to_yaml(cfg, sort_keys=False)
         if DEBUG:
             (DATA_DIR / "experiment.yaml").write_text(yaml)

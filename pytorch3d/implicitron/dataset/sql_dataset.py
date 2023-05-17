@@ -210,6 +210,9 @@ class SqlIndexDataset(DatasetBase, ReplaceableBase):  # pyre-ignore
             seq, frame = self._index.index[frame_idx]
         else:
             seq, frame, *rest = frame_idx
+            if isinstance(frame, torch.LongTensor):
+                frame = frame.item()
+
             if (seq, frame) not in self._index.index:
                 raise IndexError(
                     f"Sequence-frame index {frame_idx} not found; was it filtered out?"

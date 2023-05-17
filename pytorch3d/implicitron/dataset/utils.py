@@ -225,19 +225,23 @@ def resize_image(
     return imre_, minscale, mask
 
 
+def transpose_normalize_image(image: np.ndarray) -> np.ndarray:
+    im = np.atleast_3d(image).transpose((2, 0, 1))
+    return im.astype(np.float32) / 255.0
+
+
 def load_image(path: str) -> np.ndarray:
     with Image.open(path) as pil_im:
         im = np.array(pil_im.convert("RGB"))
-    im = im.transpose((2, 0, 1))
-    im = im.astype(np.float32) / 255.0
-    return im
+
+    return transpose_normalize_image(im)
 
 
 def load_mask(path: str) -> np.ndarray:
     with Image.open(path) as pil_im:
         mask = np.array(pil_im)
-    mask = mask.astype(np.float32) / 255.0
-    return mask[None]  # fake feature channel
+
+    return transpose_normalize_image(mask)
 
 
 def load_depth(path: str, scale_adjustment: float) -> np.ndarray:

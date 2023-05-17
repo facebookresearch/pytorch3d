@@ -25,6 +25,7 @@ from pytorch3d.implicitron.dataset.utils import (
     load_image,
     load_mask,
     safe_as_tensor,
+    transpose_normalize_image,
 )
 from pytorch3d.implicitron.tools.config import get_default_args
 from pytorch3d.renderer.cameras import PerspectiveCameras
@@ -123,14 +124,15 @@ class TestFrameDataBuilder(TestCaseMixin, unittest.TestCase):
         # assert bboxes shape
         self.assertEqual(self.frame_data.bbox_xywh.shape, torch.Size([4]))
 
-        (
-            self.frame_data.image_rgb,
-            self.frame_data.image_path,
-        ) = self.frame_data_builder._load_images(
-            self.frame_annotation, self.frame_data.fg_probability
+        image_path = os.path.join(
+            self.frame_data_builder.dataset_root, self.frame_annotation.image.path
         )
-        self.assertEqual(type(self.frame_data.image_rgb), np.ndarray)
-        self.assertIsNotNone(self.frame_data.image_path)
+        image_np = load_image(self.frame_data_builder._local_path(image_path))
+        self.assertIsInstance(image_np, np.ndarray)
+        self.frame_data.image_rgb = self.frame_data_builder._postprocess_image(
+            image_np, self.frame_annotation.image.size, self.frame_data.fg_probability
+        )
+        self.assertIsInstance(self.frame_data.image_rgb, torch.Tensor)
 
         (
             self.frame_data.depth_map,
@@ -183,6 +185,34 @@ class TestFrameDataBuilder(TestCaseMixin, unittest.TestCase):
             self.frame_annotation,
         )
         self.assertEqual(type(self.frame_data.camera), PerspectiveCameras)
+
+    def test_transpose_normalize_image(self):
+        def inverse_transpose_normalize_image(image: np.ndarray) -> np.ndarray:
+            im = image * 255.0
+            return im.transpose((1, 2, 0)).astype(np.uint8)
+
+        # Test 2D input
+        input_image = np.array(
+            [[10, 20, 30], [40, 50, 60], [70, 80, 90]], dtype=np.uint8
+        )
+        expected_input = inverse_transpose_normalize_image(
+            transpose_normalize_image(input_image)
+        )
+        self.assertClose(input_image[..., None], expected_input)
+
+        # Test 3D input
+        input_image = np.array(
+            [
+                [[10, 20, 30], [40, 50, 60], [70, 80, 90]],
+                [[100, 110, 120], [130, 140, 150], [160, 170, 180]],
+                [[190, 200, 210], [220, 230, 240], [250, 255, 255]],
+            ],
+            dtype=np.uint8,
+        )
+        expected_input = inverse_transpose_normalize_image(
+            transpose_normalize_image(input_image)
+        )
+        self.assertClose(input_image, expected_input)
 
     def test_load_image(self):
         path = os.path.join(self.dataset_root, self.frame_annotation.image.path)
