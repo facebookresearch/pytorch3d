@@ -112,4 +112,6 @@
 
 #endif
 
+#include <c10/util/Logging.h>
+
 #endif
