@@ -136,7 +136,10 @@ def _provide_torchvision_weights(par_path: str, filename: str) -> None:
             dest.mkdir(parents=True)
 
         if not (dest / filename).is_symlink():
-            (dest / filename).symlink_to(source)
+            try:
+                (dest / filename).symlink_to(source)
+            except FileExistsError:
+                print("FileExistsError: no symlink created.")
 
 
 def provide_lpips_vgg() -> None:
