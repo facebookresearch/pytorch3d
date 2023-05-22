@@ -33,7 +33,35 @@ from sqlalchemy.types import TypeDecorator
 
 
 # these produce policies to serialize structured types to blobs
-def ArrayTypeFactory(shape):
+def ArrayTypeFactory(shape=None):
+    if shape is None:
+
+        class VariableShapeNumpyArrayType(TypeDecorator):
+            impl = LargeBinary
+
+            def process_bind_param(self, value, dialect):
+                if value is None:
+                    return None
+
+                ndim_bytes = np.int32(value.ndim).tobytes()
+                shape_bytes = np.array(value.shape, dtype=np.int64).tobytes()
+                value_bytes = value.astype(np.float32).tobytes()
+                return ndim_bytes + shape_bytes + value_bytes
+
+            def process_result_value(self, value, dialect):
+                if value is None:
+                    return None
+
+                ndim = np.frombuffer(value[:4], dtype=np.int32)[0]
+                value_start = 4 + 8 * ndim
+                shape = np.frombuffer(value[4:value_start], dtype=np.int64)
+                assert shape.shape == (ndim,)
+                return np.frombuffer(value[value_start:], dtype=np.float32).reshape(
+                    shape
+                )
+
+        return VariableShapeNumpyArrayType
+
     class NumpyArrayType(TypeDecorator):
         impl = LargeBinary
 
@@ -158,4 +186,4 @@ class SqlSequenceAnnotation(Base):
         mapped_column("_point_cloud_n_points", nullable=True),
     )
     # the bigger the better
-    viewpoint_quality_score: Mapped[Optional[float]] = mapped_column(default=None)
+    viewpoint_quality_score: Mapped[Optional[float]] = mapped_column()

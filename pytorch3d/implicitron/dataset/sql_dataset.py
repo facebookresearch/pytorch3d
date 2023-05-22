@@ -142,8 +142,10 @@ class SqlIndexDataset(DatasetBase, ReplaceableBase):  # pyre-ignore
         run_auto_creation(self)
         self.frame_data_builder.path_manager = self.path_manager
 
-        # pyre-ignore
-        self._sql_engine = sa.create_engine(f"sqlite:///{self.sqlite_metadata_file}")
+        # pyre-ignore  # NOTE: sqlite-specific args (read-only mode).
+        self._sql_engine = sa.create_engine(
+            f"sqlite:///file:{self.sqlite_metadata_file}?mode=ro&uri=true"
+        )
 
         sequences = self._get_filtered_sequences_if_any()
 
