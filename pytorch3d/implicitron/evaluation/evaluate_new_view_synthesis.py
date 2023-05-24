@@ -339,6 +339,8 @@ def eval_batch(
     ):
         results[rgb_metric_name] = rgb_metric_fun(
             image_render,
+            # pyre-fixme[6]: For 2nd argument expected `Tensor` but got
+            #  `Optional[Tensor]`.
             image_rgb,
             mask=mask_crop,
         )
