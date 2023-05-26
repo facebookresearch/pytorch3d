@@ -373,7 +373,7 @@ class OverfitModel(ImplicitronModelBase):  # pyre-ignore: 13
             self.implicit_function
         ]
         if self.coarse_implicit_function is not None:
-            implicit_functions += [self.coarse_implicit_function]
+            implicit_functions = [self.coarse_implicit_function, self.implicit_function]
 
         if self.global_encoder is not None:
             global_code = self.global_encoder(  # pyre-fixme[29]
