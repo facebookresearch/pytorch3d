@@ -81,7 +81,12 @@ def chamfer_distance(
     norm: int = 2,
 ):
     """
-    Chamfer distance between two pointclouds x and y.
+    Bi-directional chamfer distance between two pointclouds x and y:
+    
+    For example, the L2 norm is the sum of averaged squared closest point distances in 
+    both directions:
+    
+    1/|x| ∑ᵢ minⱼ ‖ xᵢ - yⱼ‖² + 1/|y| ∑ⱼ minᵢ ‖ xᵢ - yⱼ‖²
 
     Args:
         x: FloatTensor of shape (N, P1, D) or a Pointclouds object representing
