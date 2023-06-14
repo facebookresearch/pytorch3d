@@ -205,3 +205,13 @@ def get_point_covariances(
     covariances = per_pt_cov.mean(2)
 
     return covariances, k_nearest_neighbors
+
+
+def one_hot_sparse(A,num_classes,value=None):
+    A = A.int()
+    B = torch.arange(A.shape[0]).to(A.device)
+    if value==None:
+        C = torch.ones_like(B)
+    else:
+        C = value
+    return torch.sparse_coo_tensor(torch.stack([B,A]),C,size=(A.shape[0],num_classes))
