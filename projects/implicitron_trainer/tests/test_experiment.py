@@ -136,6 +136,8 @@ class TestExperiment(unittest.TestCase):
         ds_arg = cfg.data_source_ImplicitronDataSource_args
         ds_arg.dataset_map_provider_JsonIndexDatasetMapProvider_args.dataset_root = ""
         ds_arg.dataset_map_provider_JsonIndexDatasetMapProviderV2_args.dataset_root = ""
+        if "dataset_map_provider_SqlIndexDatasetMapProvider_args" in ds_arg:
+            del ds_arg.dataset_map_provider_SqlIndexDatasetMapProvider_args
         cfg.training_loop_ImplicitronTrainingLoop_args.visdom_port = 8097
         yaml = OmegaConf.to_yaml(cfg, sort_keys=False)
         if DEBUG:

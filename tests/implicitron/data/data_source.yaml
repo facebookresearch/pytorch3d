@@ -116,3 +116,16 @@ data_loader_map_provider_SimpleDataLoaderMapProvider_args:
   dataset_length_train: 0
   dataset_length_val: 0
   dataset_length_test: 0
+data_loader_map_provider_TrainEvalDataLoaderMapProvider_args:
+  batch_size: 1
+  num_workers: 0
+  dataset_length_train: 0
+  dataset_length_val: 0
+  dataset_length_test: 0
+  train_conditioning_type: SAME
+  val_conditioning_type: SAME
+  test_conditioning_type: KNOWN
+  images_per_seq_options: []
+  sample_consecutive_frames: false
+  consecutive_frames_max_gap: 0
+  consecutive_frames_max_gap_seconds: 0.1

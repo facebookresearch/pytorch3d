@@ -72,6 +72,16 @@ class ImplicitronDataSource(DataSourceBase):  # pyre-ignore[13]
             from .rendered_mesh_dataset_map_provider import (  # noqa: F401
                 RenderedMeshDatasetMapProvider,
             )
+            from .train_eval_data_loader_provider import (  # noqa: F401
+                TrainEvalDataLoaderMapProvider,
+            )
+
+            try:
+                from .sql_dataset_provider import (  # noqa: F401  # pyre-ignore
+                    SqlIndexDatasetMapProvider,
+                )
+            except ModuleNotFoundError:
+                pass  # environment without SQL dataset
         finally:
             pass
 
