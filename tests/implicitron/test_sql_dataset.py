@@ -222,6 +222,30 @@ class TestSqlDataset(unittest.TestCase):
         )
         self.assertEqual(len(dataset), 100)
 
+    def test_limit_sequence_per_category(self, num_sequences=2):
+        dataset = SqlIndexDataset(
+            sqlite_metadata_file=METADATA_FILE,
+            remove_empty_masks=False,
+            limit_sequences_per_category_to=num_sequences,
+            frame_data_builder_FrameDataBuilder_args=NO_BLOBS_KWARGS,
+        )
+
+        self.assertEqual(len(dataset), num_sequences * 10 * 2)
+        seq_names = list(dataset.sequence_names())
+        self.assertEqual(len(seq_names), num_sequences * 2)
+        # check that we respect the row order
+        for seq_name in seq_names:
+            self.assertLess(int(seq_name[-1]), num_sequences)
+
+        # test when the limit is not binding
+        dataset = SqlIndexDataset(
+            sqlite_metadata_file=METADATA_FILE,
+            remove_empty_masks=False,
+            limit_sequences_per_category_to=13,
+            frame_data_builder_FrameDataBuilder_args=NO_BLOBS_KWARGS,
+        )
+        self.assertEqual(len(dataset), 100)
+
     def test_filter_medley(self):
         dataset = SqlIndexDataset(
             sqlite_metadata_file=METADATA_FILE,
