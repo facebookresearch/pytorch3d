@@ -5,6 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import importlib
+import os
 import sys
 import unittest
 import unittest.mock
@@ -25,16 +26,23 @@ class TestBuild(unittest.TestCase):
                 if module.startswith("pytorch3d"):
                     sys.modules.pop(module, None)
 
+            # torchvision seems to cause problems if re-imported,
+            # so make sure it has been imported here.
+            import torchvision.utils  # noqa
+
             root_dir = get_pytorch3d_dir() / "pytorch3d"
             # Exclude opengl-related files, as Implicitron is decoupled from opengl
             # components which will not work without adding a dep on pytorch3d_opengl.
+            ignored_modules = (
+                "__init__",
+                "plotly_vis",
+                "opengl_utils",
+                "rasterizer_opengl",
+            )
+            if os.environ.get("FB_TEST", False):
+                ignored_modules += ("orm_types", "sql_dataset", "sql_dataset_provider")
             for module_file in root_dir.glob("**/*.py"):
-                if module_file.stem in (
-                    "__init__",
-                    "plotly_vis",
-                    "opengl_utils",
-                    "rasterizer_opengl",
-                ):
+                if module_file.stem in ignored_modules:
                     continue
                 relative_module = str(module_file.relative_to(root_dir))[:-3]
                 module = "pytorch3d." + relative_module.replace("/", ".")
