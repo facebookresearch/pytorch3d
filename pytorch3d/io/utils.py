@@ -16,7 +16,6 @@ from PIL import Image
 
 from ..common.datatypes import Device
 
-
 PathOrStr = Union[pathlib.Path, str]
 
 

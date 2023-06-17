@@ -13,6 +13,6 @@ from .camera_conversions import (
 from .checkerboard import checkerboard
 from .ico_sphere import ico_sphere
 from .torus import torus
-
+from .obj_utils import parse_obj_to_mesh_by_texture
 
 __all__ = [k for k in globals().keys() if not k.startswith("_")]
