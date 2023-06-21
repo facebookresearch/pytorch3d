@@ -439,6 +439,27 @@ class TestSamplePoints(TestCaseMixin, unittest.TestCase):
                         DATA_DIR / filename
                     )
 
+    def test_sampling_mapper(self):
+        device = torch.device("cuda:0")
+        obj_dir = get_pytorch3d_dir() / "docs/tutorials/data"
+        obj_filename = obj_dir / "cow_mesh/cow.obj"
+
+        mesh = load_objs_as_meshes(
+                    [obj_filename], device=device, load_textures=True, texture_wrap=None
+        )
+        
+        points, _, _, mappers = sample_points_from_meshes(
+            mesh,
+            num_samples=50000,
+            return_normals=False,
+            return_textures=False,
+            return_mappers=True
+        )
+
+        # for each point in the sample, a mapping to the origin face index
+        self.assertTrue(points.shape[0] == mappers.shape[0])
+        self.assertTrue(points.shape[1] == mappers.shape[1])
+    
     @staticmethod
     def sample_points_with_init(
         num_meshes: int,

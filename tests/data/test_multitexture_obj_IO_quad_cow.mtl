@@ -1,0 +1,8 @@
+newmtl material_1
+map_Kd test_multitexture_obj_IO_quad_cow_0.png
+newmtl material_2
+map_Kd test_multitexture_obj_IO_quad_cow_1.png
+newmtl material_3
+map_Kd test_multitexture_obj_IO_quad_cow_2.png
+newmtl material_4
+map_Kd test_multitexture_obj_IO_quad_cow_3.png
