@@ -68,6 +68,9 @@ class TestDataSource(unittest.TestCase):
         # making the test invariant to env variables
         cfg.dataset_map_provider_JsonIndexDatasetMapProvider_args.dataset_root = ""
         cfg.dataset_map_provider_JsonIndexDatasetMapProviderV2_args.dataset_root = ""
+        # making the test invariant to the presence of SQL dataset
+        if "dataset_map_provider_SqlIndexDatasetMapProvider_args" in cfg:
+            del cfg.dataset_map_provider_SqlIndexDatasetMapProvider_args
         yaml = OmegaConf.to_yaml(cfg, sort_keys=False)
         if DEBUG:
             (DATA_DIR / "data_source.yaml").write_text(yaml)

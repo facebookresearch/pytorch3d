@@ -109,9 +109,9 @@ class TestOverfitModel(unittest.TestCase):
 
         # Adapt the mapping from generic model to overfit model
         mapping_om_from_gm = {
-            key.replace("_implicit_functions.0._fn", "implicit_function").replace(
-                "_implicit_functions.1._fn", "coarse_implicit_function"
-            ): val
+            key.replace(
+                "_implicit_functions.0._fn", "coarse_implicit_function"
+            ).replace("_implicit_functions.1._fn", "implicit_function"): val
             for key, val in generic_model.state_dict().items()
         }
         # Copy parameters from generic_model to overfit_model

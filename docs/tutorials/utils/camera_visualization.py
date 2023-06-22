@@ -33,7 +33,7 @@ def plot_camera_scene(cameras, cameras_gt, status: str):
     a string passed inside the `status` argument.
     """
     fig = plt.figure()
-    ax = fig.gca(projection="3d")
+    ax = fig.add_subplot(projection="3d")
     ax.clear()
     ax.set_title(status)
     handle_cam = plot_cameras(ax, cameras, color="#FF7D1E")

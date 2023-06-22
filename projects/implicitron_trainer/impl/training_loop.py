@@ -21,7 +21,6 @@ from pytorch3d.implicitron.tools.config import (
     run_auto_creation,
 )
 from pytorch3d.implicitron.tools.stats import Stats
-from pytorch3d.renderer.cameras import CamerasBase
 from torch.utils.data import DataLoader, Dataset
 
 from .utils import seed_all_random_engines

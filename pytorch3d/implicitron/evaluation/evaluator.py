@@ -14,8 +14,6 @@ from typing import Any, Dict, List, Optional, Tuple
 import torch
 
 import tqdm
-from pytorch3d.implicitron.dataset import utils as ds_utils
-
 from pytorch3d.implicitron.evaluation import evaluate_new_view_synthesis as evaluate
 from pytorch3d.implicitron.models.base_model import EvaluationMode, ImplicitronModelBase
 from pytorch3d.implicitron.tools.config import (
