@@ -3,7 +3,14 @@ import pytorch3d
 # from pytorch3d.ops import cot_laplacian
 # from pytorch3d.structures import Meshes
 
-from .utils import one_hot_sparse
+def one_hot_sparse(A,num_classes,value=None):
+    A = A.int()
+    B = torch.arange(A.shape[0]).to(A.device)
+    if value==None:
+        C = torch.ones_like(B)
+    else:
+        C = value
+    return torch.sparse_coo_tensor(torch.stack([B,A]),C,size=(A.shape[0],num_classes))
 
 def faces_angle(meshs: pytorch3d.structures.Meshes)->torch.Tensor:
     """

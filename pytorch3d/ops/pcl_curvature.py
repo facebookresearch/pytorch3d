@@ -3,8 +3,6 @@ import pytorch3d
 from pytorch3d.ops import knn_points,knn_gather
 # from pytorch3d.structures import Meshes
 
-from .utils import one_hot_sparse
-
 def Weingarten_maps(pointscloud:torch.Tensor, k=50)->torch.Tensor:
     """
     Compute the Weingarten maps of a point cloud
