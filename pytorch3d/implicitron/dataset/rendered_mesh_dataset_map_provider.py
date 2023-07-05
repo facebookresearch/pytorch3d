@@ -8,11 +8,7 @@ from os.path import dirname, join, realpath
 from typing import Optional, Tuple
 
 import torch
-from pytorch3d.implicitron.tools.config import (
-    expand_args_fields,
-    registry,
-    run_auto_creation,
-)
+from pytorch3d.implicitron.tools.config import registry, run_auto_creation
 from pytorch3d.io import IO
 from pytorch3d.renderer import (
     AmbientLights,

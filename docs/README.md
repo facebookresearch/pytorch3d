@@ -3,7 +3,7 @@
 ### Install dependencies
 
 ```
-pip install -U recommonmark mock sphinx sphinx_rtd_theme sphinx_markdown_tables
+pip install -U recommonmark sphinx sphinx_rtd_theme sphinx_markdown_tables
 ```
 
 ### Add symlink to the root README.md

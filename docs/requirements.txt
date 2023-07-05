@@ -3,7 +3,6 @@ Sphinx>=1.7
 recommonmark==0.4.0
 sphinx_rtd_theme
 sphinx_markdown_tables
-mock
 numpy
 iopath
 fvcore
