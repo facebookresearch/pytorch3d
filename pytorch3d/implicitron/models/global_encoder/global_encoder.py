@@ -119,7 +119,7 @@ class HarmonicTimeEncoder(GlobalEncoderBase, torch.nn.Module):
         if frame_timestamp.shape[-1] != 1:
             raise ValueError("Frame timestamp's last dimensions should be one.")
         time = frame_timestamp / self.time_divisor
-        return self._harmonic_embedding(time)  # pyre-ignore: 29
+        return self._harmonic_embedding(time)
 
     def calculate_squared_encoding_norm(self) -> Optional[torch.Tensor]:
         return None

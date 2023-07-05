@@ -143,7 +143,6 @@ class ResNetFeatureExtractor(FeatureExtractorBase):
         return (img - self._resnet_mean) / self._resnet_std
 
     def get_feat_dims(self) -> int:
-        # pyre-fixme[29]
         return sum(self._feat_dim.values())
 
     def forward(
@@ -181,13 +180,8 @@ class ResNetFeatureExtractor(FeatureExtractorBase):
                 imgs_normed = self._resnet_normalize_image(imgs_resized)
             else:
                 imgs_normed = imgs_resized
-            # pyre-fixme[29]: `Union[torch.Tensor, torch.nn.modules.module.Module]`
             #  is not a function.
             feats = self.stem(imgs_normed)
-            # pyre-fixme[6]: For 1st param expected `Iterable[Variable[_T1]]` but
-            #  got `Union[Tensor, Module]`.
-            # pyre-fixme[6]: For 2nd param expected `Iterable[Variable[_T2]]` but
-            #  got `Union[Tensor, Module]`.
             for stage, (layer, proj) in enumerate(zip(self.layers, self.proj_layers)):
                 feats = layer(feats)
                 # just a sanity check below

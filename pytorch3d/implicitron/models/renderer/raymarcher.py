@@ -170,9 +170,9 @@ class AccumulativeRaymarcherBase(RaymarcherBase, torch.nn.Module):
             rays_densities = torch.relu(rays_densities)
 
         weighted_densities = deltas * rays_densities
-        capped_densities = self._capping_function(weighted_densities)  # pyre-ignore: 29
+        capped_densities = self._capping_function(weighted_densities)
 
-        rays_opacities = self._capping_function(  # pyre-ignore: 29
+        rays_opacities = self._capping_function(
             torch.cumsum(weighted_densities, dim=-1)
         )
         opacities = rays_opacities[..., -1:]
@@ -181,9 +181,7 @@ class AccumulativeRaymarcherBase(RaymarcherBase, torch.nn.Module):
         )
         absorption_shifted[..., : self.surface_thickness] = 1.0
 
-        weights = self._weight_function(  # pyre-ignore: 29
-            capped_densities, absorption_shifted
-        )
+        weights = self._weight_function(capped_densities, absorption_shifted)
         features = (weights[..., None] * rays_features).sum(dim=-2)
         depth = (weights * ray_lengths)[..., None].sum(dim=-2)
 

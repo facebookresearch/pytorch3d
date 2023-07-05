@@ -134,7 +134,6 @@ class LSTMRenderer(BaseRenderer, torch.nn.Module):
                 break
 
             # run the lstm marcher
-            # pyre-fixme[29]: `Union[torch.Tensor, torch.nn.Module]` is not a function.
             state_h, state_c = self._lstm(
                 raymarch_features.view(-1, raymarch_features.shape[-1]),
                 states[-1],
@@ -142,7 +141,6 @@ class LSTMRenderer(BaseRenderer, torch.nn.Module):
             if state_h.requires_grad:
                 state_h.register_hook(lambda x: x.clamp(min=-10, max=10))
             # predict the next step size
-            # pyre-fixme[29]: `Union[torch.Tensor, torch.nn.Module]` is not a function.
             signed_distance = self._out_layer(state_h).view(ray_bundle_t.lengths.shape)
             # log the lstm states
             states.append((state_h, state_c))

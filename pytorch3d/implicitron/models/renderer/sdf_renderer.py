@@ -58,7 +58,6 @@ class SignedDistanceFunctionRenderer(BaseRenderer, torch.nn.Module):  # pyre-ign
 
     def create_ray_tracer(self) -> None:
         self.ray_tracer = RayTracing(
-            # pyre-ignore[32]
             **self.ray_tracer_args,
             object_bounding_sphere=self.object_bounding_sphere,
         )
@@ -146,7 +145,6 @@ class SignedDistanceFunctionRenderer(BaseRenderer, torch.nn.Module):  # pyre-ign
             eikonal_points = torch.empty(
                 n_eik_points,
                 3,
-                # pyre-fixme[6]: For 3rd param expected `Union[None, str, device]`
                 #  but got `Union[device, Tensor, Module]`.
                 device=self._bg_color.device,
             ).uniform_(-eik_bounding_box, eik_bounding_box)
@@ -205,7 +203,7 @@ class SignedDistanceFunctionRenderer(BaseRenderer, torch.nn.Module):  # pyre-ign
             normals_full.view(-1, 3)[surface_mask] = normals
             render_full.view(-1, self.render_features_dimensions)[
                 surface_mask
-            ] = self._rgb_network(  # pyre-fixme[29]:
+            ] = self._rgb_network(
                 features,
                 differentiable_surface_points[None],
                 normals,

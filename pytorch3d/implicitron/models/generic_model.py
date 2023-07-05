@@ -463,10 +463,6 @@ class GenericModel(ImplicitronModelBase):  # pyre-ignore: 13
             )
         custom_args["global_code"] = global_code
 
-        # pyre-fixme[29]:
-        #  `Union[BoundMethod[typing.Callable(torch.Tensor.__iter__)[[Named(self,
-        #  torch.Tensor)], typing.Iterator[typing.Any]], torch.Tensor], torch.Tensor,
-        #  torch.nn.Module]` is not a function.
         for func in self._implicit_functions:
             func.bind_args(**custom_args)
 
@@ -489,10 +485,6 @@ class GenericModel(ImplicitronModelBase):  # pyre-ignore: 13
         # Unbind the custom arguments to prevent pytorch from storing
         # large buffers of intermediate results due to points in the
         # bound arguments.
-        # pyre-fixme[29]:
-        #  `Union[BoundMethod[typing.Callable(torch.Tensor.__iter__)[[Named(self,
-        #  torch.Tensor)], typing.Iterator[typing.Any]], torch.Tensor], torch.Tensor,
-        #  torch.nn.Module]` is not a function.
         for func in self._implicit_functions:
             func.unbind_args()
 

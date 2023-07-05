@@ -316,7 +316,7 @@ def adjust_camera_to_bbox_crop_(
 
     focal_length_px, principal_point_px = _convert_ndc_to_pixels(
         camera.focal_length[0],
-        camera.principal_point[0],  # pyre-ignore
+        camera.principal_point[0],
         image_size_wh,
     )
     principal_point_px_cropped = principal_point_px - clamp_bbox_xywh[:2]
@@ -328,7 +328,7 @@ def adjust_camera_to_bbox_crop_(
     )
 
     camera.focal_length = focal_length[None]
-    camera.principal_point = principal_point_cropped[None]  # pyre-ignore
+    camera.principal_point = principal_point_cropped[None]
 
 
 def adjust_camera_to_image_scale_(
@@ -338,7 +338,7 @@ def adjust_camera_to_image_scale_(
 ) -> PerspectiveCameras:
     focal_length_px, principal_point_px = _convert_ndc_to_pixels(
         camera.focal_length[0],
-        camera.principal_point[0],  # pyre-ignore
+        camera.principal_point[0],
         original_size_wh,
     )
 

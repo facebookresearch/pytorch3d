@@ -171,7 +171,6 @@ class AbstractMaskRaySampler(RaySamplerBase, torch.nn.Module):
         """
         sample_mask = None
         if (
-            # pyre-fixme[29]
             self._sampling_mode[evaluation_mode] == RenderSamplingMode.MASK_SAMPLE
             and mask is not None
         ):
@@ -188,7 +187,6 @@ class AbstractMaskRaySampler(RaySamplerBase, torch.nn.Module):
             EvaluationMode.EVALUATION: self._evaluation_raysampler,
         }[evaluation_mode]
 
-        # pyre-fixme[29]:
         ray_bundle = raysampler(
             cameras=cameras,
             mask=sample_mask,
