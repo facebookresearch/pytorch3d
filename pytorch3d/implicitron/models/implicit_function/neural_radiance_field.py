@@ -9,11 +9,14 @@ from typing import Optional, Tuple
 
 import torch
 from pytorch3d.common.linear_with_repeat import LinearWithRepeat
-from pytorch3d.implicitron.models.renderer.base import ImplicitronRayBundle
+from pytorch3d.implicitron.models.renderer.base import (
+    conical_frustum_to_gaussian,
+    ImplicitronRayBundle,
+)
 from pytorch3d.implicitron.tools.config import expand_args_fields, registry
-from pytorch3d.renderer import ray_bundle_to_ray_points
 from pytorch3d.renderer.cameras import CamerasBase
 from pytorch3d.renderer.implicit import HarmonicEmbedding
+from pytorch3d.renderer.implicit.utils import ray_bundle_to_ray_points
 
 from .base import ImplicitFunctionBase
 
@@ -36,6 +39,7 @@ class NeuralRadianceFieldBase(ImplicitFunctionBase, torch.nn.Module):
     input_xyz: bool = True
     xyz_ray_dir_in_camera_coords: bool = False
     color_dim: int = 3
+    use_integrated_positional_encoding: bool = False
     """
     Args:
         n_harmonic_functions_xyz: The number of harmonic functions
@@ -53,6 +57,10 @@ class NeuralRadianceFieldBase(ImplicitFunctionBase, torch.nn.Module):
         n_layers_xyz: The number of layers of the MLP that outputs the
             occupancy field.
         append_xyz: The list of indices of the skip layers of the occupancy MLP.
+        use_integrated_positional_encoding: If True, use integrated positional enoding
+            as defined in `MIP-NeRF <https://arxiv.org/abs/2103.13415>`_.
+            If False, use the classical harmonic embedding
+            defined in `NeRF <https://arxiv.org/abs/2003.08934>`_.
     """
 
     def __post_init__(self):
@@ -149,6 +157,10 @@ class NeuralRadianceFieldBase(ImplicitFunctionBase, torch.nn.Module):
                     containing the direction vectors of sampling rays in world coords.
                 lengths: A tensor of shape `(minibatch, ..., num_points_per_ray)`
                     containing the lengths at which the rays are sampled.
+                bins: An optional tensor of shape `(minibatch,..., num_points_per_ray + 1)`
+                    containing the bins at which the rays are sampled. In this case
+                    lengths is equal to the midpoints of bins.
+
             fun_viewpool: an optional callback with the signature
                     fun_fiewpool(points) -> pooled_features
                 where points is a [N_TGT x N x 3] tensor of world coords,
@@ -160,11 +172,22 @@ class NeuralRadianceFieldBase(ImplicitFunctionBase, torch.nn.Module):
                 denoting the opacitiy of each ray point.
             rays_colors: A tensor of shape `(minibatch, ..., num_points_per_ray, 3)`
                 denoting the color of each ray point.
+
+        Raises:
+            ValueError: If `use_integrated_positional_encoding` is True and
+                `ray_bundle.bins` is None.
         """
-        # We first convert the ray parametrizations to world
-        # coordinates with `ray_bundle_to_ray_points`.
-        # pyre-ignore[6]
-        rays_points_world = ray_bundle_to_ray_points(ray_bundle)
+        if self.use_integrated_positional_encoding and ray_bundle.bins is None:
+            raise ValueError(
+                "When use_integrated_positional_encoding is True, ray_bundle.bins must be set."
+                "Have you set to True `AbstractMaskRaySampler.use_bins_for_ray_sampling`?"
+            )
+
+        rays_points_world, diag_cov = (
+            conical_frustum_to_gaussian(ray_bundle)
+            if self.use_integrated_positional_encoding
+            else (ray_bundle_to_ray_points(ray_bundle), None)  # pyre-ignore
+        )
         # rays_points_world.shape = [minibatch x ... x pts_per_ray x 3]
 
         embeds = create_embeddings_for_implicit_function(
@@ -177,6 +200,7 @@ class NeuralRadianceFieldBase(ImplicitFunctionBase, torch.nn.Module):
             fun_viewpool=fun_viewpool,
             xyz_in_camera_coords=self.xyz_ray_dir_in_camera_coords,
             camera=camera,
+            diag_cov=diag_cov,
         )
 
         # embeds.shape = [minibatch x n_src x n_rays x n_pts x self.n_harmonic_functions*6+3]
