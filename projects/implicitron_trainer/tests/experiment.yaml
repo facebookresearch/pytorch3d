@@ -249,6 +249,8 @@ model_factory_ImplicitronModelFactory_args:
       append_coarse_samples_to_fine: true
       density_noise_std_train: 0.0
       return_weights: false
+      blurpool_weights: false
+      sample_pdf_eps: 1.0e-05
       raymarcher_CumsumRaymarcher_args:
         surface_thickness: 1
         bg_color:
@@ -679,6 +681,8 @@ model_factory_ImplicitronModelFactory_args:
       append_coarse_samples_to_fine: true
       density_noise_std_train: 0.0
       return_weights: false
+      blurpool_weights: false
+      sample_pdf_eps: 1.0e-05
       raymarcher_CumsumRaymarcher_args:
         surface_thickness: 1
         bg_color:
