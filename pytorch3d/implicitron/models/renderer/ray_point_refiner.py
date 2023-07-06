@@ -4,6 +4,8 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+import copy
+
 import torch
 from pytorch3d.implicitron.models.renderer.base import ImplicitronRayBundle
 from pytorch3d.implicitron.tools.config import Configurable, expand_args_fields
@@ -106,14 +108,13 @@ class RayPointRefiner(Configurable, torch.nn.Module):
             z_vals = z_samples
         # Resort by depth.
         z_vals, _ = torch.sort(z_vals, dim=-1)
-
-        kwargs_ray = dict(vars(input_ray_bundle))
+        ray_bundle = copy.copy(input_ray_bundle)
         if input_ray_bundle.bins is None:
-            kwargs_ray["lengths"] = z_vals
-            return ImplicitronRayBundle(**kwargs_ray)
-        kwargs_ray["bins"] = z_vals
-        del kwargs_ray["lengths"]
-        return ImplicitronRayBundle.from_bins(**kwargs_ray)
+            ray_bundle.lengths = z_vals
+        else:
+            ray_bundle.bins = z_vals
+
+        return ray_bundle
 
 
 def apply_blurpool_on_weights(weights) -> torch.Tensor:

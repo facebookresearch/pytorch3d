@@ -236,11 +236,12 @@ class AbstractMaskRaySampler(RaySamplerBase, torch.nn.Module):
         elif self.cast_ray_bundle_as_cone:
             pixel_hw: Tuple[float, float] = (self.pixel_height, self.pixel_width)
             pixel_radii_2d = compute_radii(cameras, ray_bundle.xys[..., :2], pixel_hw)
-            return ImplicitronRayBundle.from_bins(
+            return ImplicitronRayBundle(
                 directions=ray_bundle.directions,
                 origins=ray_bundle.origins,
-                bins=ray_bundle.lengths,
+                lengths=None,
                 xys=ray_bundle.xys,
+                bins=ray_bundle.lengths,
                 pixel_radii_2d=pixel_radii_2d,
             )
 

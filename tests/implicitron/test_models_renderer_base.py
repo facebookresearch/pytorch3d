@@ -25,22 +25,61 @@ from tests.common_testing import TestCaseMixin
 class TestRendererBase(TestCaseMixin, unittest.TestCase):
     def test_implicitron_from_bins(self) -> None:
         bins = torch.randn(2, 3, 4, 5)
-        ray_bundle = ImplicitronRayBundle.from_bins(
+        ray_bundle = ImplicitronRayBundle(
             origins=None,
             directions=None,
+            lengths=None,
             xys=None,
             bins=bins,
         )
         self.assertClose(ray_bundle.lengths, 0.5 * (bins[..., 1:] + bins[..., :-1]))
         self.assertClose(ray_bundle.bins, bins)
 
-    def test_implicitron_raise_value_error_if_bins_dim_equal_1(self) -> None:
-        with self.assertRaises(ValueError):
-            ImplicitronRayBundle.from_bins(
+    def test_implicitron_raise_value_error_bins_is_set_and_try_to_set_lengths(
+        self,
+    ) -> None:
+        with self.assertRaises(ValueError) as context:
+            ray_bundle = ImplicitronRayBundle(
                 origins=torch.rand(2, 3, 4, 3),
                 directions=torch.rand(2, 3, 4, 3),
+                lengths=None,
                 xys=torch.rand(2, 3, 4, 2),
                 bins=torch.rand(2, 3, 4, 1),
+            )
+            ray_bundle.lengths = torch.empty(2)
+            self.assertEqual(
+                str(context.exception),
+                "If the bins attribute is not None you cannot set the lengths attribute.",
+            )
+
+    def test_implicitron_raise_value_error_if_bins_dim_equal_1(self) -> None:
+        with self.assertRaises(ValueError) as context:
+            ImplicitronRayBundle(
+                origins=torch.rand(2, 3, 4, 3),
+                directions=torch.rand(2, 3, 4, 3),
+                lengths=None,
+                xys=torch.rand(2, 3, 4, 2),
+                bins=torch.rand(2, 3, 4, 1),
+            )
+            self.assertEqual(
+                str(context.exception),
+                "The last dim of bins must be at least superior or equal to 2.",
+            )
+
+    def test_implicitron_raise_value_error_if_neither_bins_or_lengths_provided(
+        self,
+    ) -> None:
+        with self.assertRaises(ValueError) as context:
+            ImplicitronRayBundle(
+                origins=torch.rand(2, 3, 4, 3),
+                directions=torch.rand(2, 3, 4, 3),
+                lengths=None,
+                xys=torch.rand(2, 3, 4, 2),
+                bins=None,
+            )
+            self.assertEqual(
+                str(context.exception),
+                "Please set either bins or lengths to initialize an ImplicitronRayBundle.",
             )
 
     def test_conical_frustum_to_gaussian(self) -> None:

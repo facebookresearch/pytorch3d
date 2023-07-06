@@ -4,7 +4,7 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-import dataclasses
+import copy
 import logging
 from typing import List, Optional, Tuple
 
@@ -102,12 +102,11 @@ class LSTMRenderer(BaseRenderer, torch.nn.Module):
             )
 
         # jitter the initial depths
-        ray_bundle_t = dataclasses.replace(
-            ray_bundle,
-            lengths=(
-                ray_bundle.lengths
-                + torch.randn_like(ray_bundle.lengths) * self.init_depth_noise_std
-            ),
+
+        ray_bundle_t = copy.copy(ray_bundle)
+        ray_bundle_t.lengths = (
+            ray_bundle.lengths
+            + torch.randn_like(ray_bundle.lengths) * self.init_depth_noise_std
         )
 
         states: List[Optional[Tuple[torch.Tensor, torch.Tensor]]] = [None]

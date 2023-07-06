@@ -6,8 +6,6 @@
 
 from __future__ import annotations
 
-import dataclasses
-
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
@@ -29,7 +27,6 @@ class RenderSamplingMode(Enum):
     FULL_GRID = "full_grid"
 
 
-@dataclasses.dataclass
 class ImplicitronRayBundle:
     """
     Parametrizes points along projection rays by storing ray `origins`,
@@ -69,53 +66,58 @@ class ImplicitronRayBundle:
             lengths should be equal to the midpoints of bins `(..., num_points_per_ray)`.
         pixel_radii_2d: An optional tensor of shape `(..., 1)`
             base radii of the conical frustums.
+
+    Raises:
+        ValueError: If either bins or lengths are not provided.
+        ValueError: If bins is provided and the last dim is inferior or equal to 1.
     """
 
-    origins: torch.Tensor
-    directions: torch.Tensor
-    lengths: torch.Tensor
-    xys: torch.Tensor
-    camera_ids: Optional[torch.LongTensor] = None
-    camera_counts: Optional[torch.LongTensor] = None
-    bins: Optional[torch.Tensor] = None
-    pixel_radii_2d: Optional[torch.Tensor] = None
-
-    @classmethod
-    def from_bins(
-        cls,
+    def __init__(
+        self,
         origins: torch.Tensor,
         directions: torch.Tensor,
-        bins: torch.Tensor,
+        lengths: Optional[torch.Tensor],
         xys: torch.Tensor,
-        **kwargs,
-    ) -> "ImplicitronRayBundle":
-        """
-        Creates a new instance from bins instead of lengths.
-
-        Attributes:
-            origins: A tensor of shape `(..., 3)` denoting the
-                origins of the sampling rays in world coords.
-            directions: A tensor of shape `(..., 3)` containing the direction
-                vectors of sampling rays in world coords. They don't have to be normalized;
-                they define unit vectors in the respective 1D coordinate systems; see
-                documentation for :func:`ray_bundle_to_ray_points` for the conversion formula.
-            bins: A tensor of shape `(..., num_points_per_ray + 1)`
-                containing the bins at which the rays are sampled. In this case
-                lengths is equal to the midpoints of bins `(..., num_points_per_ray)`.
-            xys: A tensor of shape `(..., 2)`, the xy-locations (`xys`) of the ray pixels
-            kwargs: Additional arguments passed to the constructor of ImplicitronRayBundle
-        Returns:
-            An instance of ImplicitronRayBundle.
-        """
-
-        if bins.shape[-1] <= 1:
+        camera_ids: Optional[torch.LongTensor] = None,
+        camera_counts: Optional[torch.LongTensor] = None,
+        bins: Optional[torch.Tensor] = None,
+        pixel_radii_2d: Optional[torch.Tensor] = None,
+    ):
+        if bins is not None and bins.shape[-1] <= 1:
             raise ValueError(
                 "The last dim of bins must be at least superior or equal to 2."
             )
-        # equivalent to: 0.5 * (bins[..., 1:] + bins[..., :-1]) but more efficient
-        lengths = torch.lerp(bins[..., 1:], bins[..., :-1], 0.5)
 
-        return cls(origins, directions, lengths, xys, bins=bins, **kwargs)
+        if bins is None and lengths is None:
+            raise ValueError(
+                "Please set either bins or lengths to initialize an ImplicitronRayBundle."
+            )
+
+        self.origins = origins
+        self.directions = directions
+        self._lengths = lengths if bins is None else None
+        self.xys = xys
+        self.bins = bins
+        self.pixel_radii_2d = pixel_radii_2d
+        self.camera_ids = camera_ids
+        self.camera_counts = camera_counts
+
+    @property
+    def lengths(self) -> torch.Tensor:
+        if self.bins is not None:
+            # equivalent to: 0.5 * (bins[..., 1:] + bins[..., :-1]) but more efficient
+            # pyre-ignore
+            return torch.lerp(self.bins[..., :-1], self.bins[..., 1:], 0.5)
+        return self._lengths
+
+    @lengths.setter
+    def lengths(self, value):
+        if self.bins is not None:
+            raise ValueError(
+                "If the bins attribute is not None you cannot set the lengths attribute."
+            )
+        else:
+            self._lengths = value
 
     def is_packed(self) -> bool:
         """
