@@ -24,7 +24,7 @@ class HarmonicEmbedding(torch.nn.Module):
         and the integrated position encoding in
         `MIP-NeRF <https://arxiv.org/abs/2103.13415>`_.
 
-        During, the inference you can provide the extra argument `diag_cov`.
+        During the inference you can provide the extra argument `diag_cov`.
 
         If `diag_cov is None`, it converts
         rays parametrized with a `ray_bundle` to 3D points by

@@ -157,9 +157,13 @@ class MultiPassEmissionAbsorptionRenderer(  # pyre-ignore: 13
             else 0.0
         )
 
+        ray_deltas = (
+            None if ray_bundle.bins is None else torch.diff(ray_bundle.bins, dim=-1)
+        )
         output = self.raymarcher(
             *implicit_functions[0](ray_bundle=ray_bundle),
             ray_lengths=ray_bundle.lengths,
+            ray_deltas=ray_deltas,
             density_noise_std=density_noise_std,
         )
         output.prev_stage = prev_stage
