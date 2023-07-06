@@ -216,6 +216,7 @@ model_factory_ImplicitronModelFactory_args:
       n_rays_total_training: null
       stratified_point_sampling_training: true
       stratified_point_sampling_evaluation: false
+      cast_ray_bundle_as_cone: false
       scene_extent: 8.0
       scene_center:
       - 0.0
@@ -228,6 +229,7 @@ model_factory_ImplicitronModelFactory_args:
       n_rays_total_training: null
       stratified_point_sampling_training: true
       stratified_point_sampling_evaluation: false
+      cast_ray_bundle_as_cone: false
       min_depth: 0.1
       max_depth: 8.0
     renderer_LSTMRenderer_args:
@@ -642,6 +644,7 @@ model_factory_ImplicitronModelFactory_args:
       n_rays_total_training: null
       stratified_point_sampling_training: true
       stratified_point_sampling_evaluation: false
+      cast_ray_bundle_as_cone: false
       scene_extent: 8.0
       scene_center:
       - 0.0
@@ -654,6 +657,7 @@ model_factory_ImplicitronModelFactory_args:
       n_rays_total_training: null
       stratified_point_sampling_training: true
       stratified_point_sampling_evaluation: false
+      cast_ray_bundle_as_cone: false
       min_depth: 0.1
       max_depth: 8.0
     renderer_LSTMRenderer_args:

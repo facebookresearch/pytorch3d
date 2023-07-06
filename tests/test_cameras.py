@@ -32,7 +32,6 @@
 
 import math
 import pickle
-import typing
 import unittest
 from itertools import product
 
@@ -59,6 +58,8 @@ from pytorch3d.renderer.fisheyecameras import FishEyeCameras
 from pytorch3d.transforms import Transform3d
 from pytorch3d.transforms.rotation_conversions import random_rotations
 from pytorch3d.transforms.so3 import so3_exp_map
+
+from .common_camera_utils import init_random_cameras
 
 from .common_testing import TestCaseMixin
 
@@ -149,60 +150,6 @@ def ndc_to_screen_points_naive(points, imsize):
     x = -scale * x + half_width
     y = -scale * y + half_height
     return torch.stack((x, y, z), dim=2)
-
-
-def init_random_cameras(
-    cam_type: typing.Type[CamerasBase],
-    batch_size: int,
-    random_z: bool = False,
-    device: Device = "cpu",
-):
-    cam_params = {}
-    T = torch.randn(batch_size, 3) * 0.03
-    if not random_z:
-        T[:, 2] = 4
-    R = so3_exp_map(torch.randn(batch_size, 3) * 3.0)
-    cam_params = {"R": R, "T": T, "device": device}
-    if cam_type in (OpenGLPerspectiveCameras, OpenGLOrthographicCameras):
-        cam_params["znear"] = torch.rand(batch_size) * 10 + 0.1
-        cam_params["zfar"] = torch.rand(batch_size) * 4 + 1 + cam_params["znear"]
-        if cam_type == OpenGLPerspectiveCameras:
-            cam_params["fov"] = torch.rand(batch_size) * 60 + 30
-            cam_params["aspect_ratio"] = torch.rand(batch_size) * 0.5 + 0.5
-        else:
-            cam_params["top"] = torch.rand(batch_size) * 0.2 + 0.9
-            cam_params["bottom"] = -(torch.rand(batch_size)) * 0.2 - 0.9
-            cam_params["left"] = -(torch.rand(batch_size)) * 0.2 - 0.9
-            cam_params["right"] = torch.rand(batch_size) * 0.2 + 0.9
-    elif cam_type in (FoVPerspectiveCameras, FoVOrthographicCameras):
-        cam_params["znear"] = torch.rand(batch_size) * 10 + 0.1
-        cam_params["zfar"] = torch.rand(batch_size) * 4 + 1 + cam_params["znear"]
-        if cam_type == FoVPerspectiveCameras:
-            cam_params["fov"] = torch.rand(batch_size) * 60 + 30
-            cam_params["aspect_ratio"] = torch.rand(batch_size) * 0.5 + 0.5
-        else:
-            cam_params["max_y"] = torch.rand(batch_size) * 0.2 + 0.9
-            cam_params["min_y"] = -(torch.rand(batch_size)) * 0.2 - 0.9
-            cam_params["min_x"] = -(torch.rand(batch_size)) * 0.2 - 0.9
-            cam_params["max_x"] = torch.rand(batch_size) * 0.2 + 0.9
-    elif cam_type in (
-        SfMOrthographicCameras,
-        SfMPerspectiveCameras,
-        OrthographicCameras,
-        PerspectiveCameras,
-    ):
-        cam_params["focal_length"] = torch.rand(batch_size) * 10 + 0.1
-        cam_params["principal_point"] = torch.randn((batch_size, 2))
-    elif cam_type == FishEyeCameras:
-        cam_params["focal_length"] = torch.rand(batch_size, 1) * 10 + 0.1
-        cam_params["principal_point"] = torch.randn((batch_size, 2))
-        cam_params["radial_params"] = torch.randn((batch_size, 6))
-        cam_params["tangential_params"] = torch.randn((batch_size, 2))
-        cam_params["thin_prism_params"] = torch.randn((batch_size, 4))
-
-    else:
-        raise ValueError(str(cam_type))
-    return cam_type(**cam_params)
 
 
 class TestCameraHelpers(TestCaseMixin, unittest.TestCase):

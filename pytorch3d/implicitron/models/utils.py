@@ -177,6 +177,20 @@ def chunk_generator(
 
     for start_idx in iter:
         end_idx = min(start_idx + chunk_size_in_rays, n_rays)
+        bins = (
+            None
+            if ray_bundle.bins is None
+            else ray_bundle.bins.reshape(batch_size, n_rays, n_pts_per_ray + 1)[
+                :, start_idx:end_idx
+            ]
+        )
+        pixel_radii_2d = (
+            None
+            if ray_bundle.pixel_radii_2d is None
+            else ray_bundle.pixel_radii_2d.reshape(batch_size, -1, 1)[
+                :, start_idx:end_idx
+            ]
+        )
         ray_bundle_chunk = ImplicitronRayBundle(
             origins=ray_bundle.origins.reshape(batch_size, -1, 3)[:, start_idx:end_idx],
             directions=ray_bundle.directions.reshape(batch_size, -1, 3)[
@@ -186,6 +200,8 @@ def chunk_generator(
                 :, start_idx:end_idx
             ],
             xys=ray_bundle.xys.reshape(batch_size, -1, 2)[:, start_idx:end_idx],
+            bins=bins,
+            pixel_radii_2d=pixel_radii_2d,
             camera_ids=_safe_slice(ray_bundle.camera_ids, start_idx, end_idx),
             camera_counts=_safe_slice(ray_bundle.camera_counts, start_idx, end_idx),
         )
