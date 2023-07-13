@@ -245,10 +245,21 @@ def load_mask(path: str) -> np.ndarray:
 
 
 def load_depth(path: str, scale_adjustment: float) -> np.ndarray:
-    if not path.lower().endswith(".png"):
+    if path.lower().endswith(".exr"):
+        # NOTE: environment variable OPENCV_IO_ENABLE_OPENEXR must be set to 1
+        # You will have to accept these vulnerabilities by using OpenEXR:
+        # https://github.com/opencv/opencv/issues/21326
+        import cv2
+
+        d = cv2.imread(path, cv2.IMREAD_ANYCOLOR | cv2.IMREAD_ANYDEPTH)[..., 0]
+        d[d > 1e9] = 0.0
+    elif path.lower().endswith(".png"):
+        d = load_16big_png_depth(path)
+    else:
         raise ValueError('unsupported depth file name "%s"' % path)
 
-    d = load_16big_png_depth(path) * scale_adjustment
+    d = d * scale_adjustment
+
     d[~np.isfinite(d)] = 0.0
     return d[None]  # fake feature channel
 
