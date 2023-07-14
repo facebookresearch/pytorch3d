@@ -1,6 +1,6 @@
 docutils>=0.14
 Sphinx>=1.7
-recommonmark==0.4.0
+recommonmark
 sphinx_rtd_theme
 sphinx_markdown_tables
 numpy
