@@ -22,6 +22,7 @@ PathOrStr = Union[pathlib.Path, str]
 
 def _open_file(f, path_manager: PathManager, mode: str = "r") -> ContextManager[IO]:
     if isinstance(f, str):
+        # pyre-fixme[6]: For 2nd argument expected `Union[typing_extensions.Literal['...
         f = path_manager.open(f, mode)
         return contextlib.closing(f)
     elif isinstance(f, pathlib.Path):
@@ -71,8 +72,6 @@ def _read_image(file_name: str, path_manager: PathManager, format=None):
     if format not in ["RGB", "BGR"]:
         raise ValueError("format can only be one of [RGB, BGR]; got %s", format)
     with path_manager.open(file_name, "rb") as f:
-        # pyre-fixme[6]: Expected `Union[str, typing.BinaryIO]` for 1st param but
-        #  got `Union[typing.IO[bytes], typing.IO[str]]`.
         image = Image.open(f)
         if format is not None:
             # PIL only supports RGB. First convert to RGB and flip channels
