@@ -120,16 +120,12 @@ def corresponding_cameras_alignment(
 
     # create a new cameras object and set the R and T accordingly
     cameras_src_aligned = cameras_src.clone()
-    # pyre-fixme[6]: For 2nd param expected `Tensor` but got `Union[Tensor, Module]`.
     cameras_src_aligned.R = torch.bmm(align_t_R.expand_as(cameras_src.R), cameras_src.R)
     cameras_src_aligned.T = (
         torch.bmm(
             align_t_T[:, None].repeat(cameras_src.R.shape[0], 1, 1),
-            # pyre-fixme[6]: For 2nd param expected `Tensor` but got `Union[Tensor,
-            #  Module]`.
             cameras_src.R,
         )[:, 0]
-        # pyre-fixme[29]: `Union[BoundMethod[typing.Callable(torch._C._TensorBase.__m...
         + cameras_src.T * align_t_s
     )
 
@@ -177,7 +173,6 @@ def _align_camera_extrinsics(
         R_A = (U V^T)^T
         ```
     """
-    # pyre-fixme[6]: For 1st param expected `Tensor` but got `Union[Tensor, Module]`.
     RRcov = torch.bmm(cameras_src.R, cameras_tgt.R.transpose(2, 1)).mean(0)
     U, _, V = torch.svd(RRcov)
     align_t_R = V @ U.t()
@@ -207,17 +202,7 @@ def _align_camera_extrinsics(
         T_A = mean(B) - mean(A) * s_A
         ```
     """
-    # pyre-fixme[29]:
-    #  `Union[BoundMethod[typing.Callable(torch.Tensor.__getitem__)[[Named(self,
-    #  torch.Tensor), Named(item, typing.Any)], typing.Any], torch.Tensor],
-    #  torch.Tensor, torch.nn.Module]` is not a function.
-    # pyre-fixme[6]: For 1st param expected `Tensor` but got `Union[Tensor, Module]`.
     A = torch.bmm(cameras_src.R, cameras_src.T[:, :, None])[:, :, 0]
-    # pyre-fixme[29]:
-    #  `Union[BoundMethod[typing.Callable(torch.Tensor.__getitem__)[[Named(self,
-    #  torch.Tensor), Named(item, typing.Any)], typing.Any], torch.Tensor],
-    #  torch.Tensor, torch.nn.Module]` is not a function.
-    # pyre-fixme[6]: For 1st param expected `Tensor` but got `Union[Tensor, Module]`.
     B = torch.bmm(cameras_src.R, cameras_tgt.T[:, :, None])[:, :, 0]
     Amu = A.mean(0, keepdim=True)
     Bmu = B.mean(0, keepdim=True)

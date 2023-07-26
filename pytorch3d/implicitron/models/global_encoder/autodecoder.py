@@ -69,7 +69,7 @@ class Autodecoder(Configurable, torch.nn.Module):
         return key_map
 
     def calculate_squared_encoding_norm(self) -> Optional[torch.Tensor]:
-        return (self._autodecoder_codes.weight**2).mean()  # pyre-ignore[16]
+        return (self._autodecoder_codes.weight**2).mean()
 
     def get_encoding_dim(self) -> int:
         return self.encoding_dim
@@ -93,7 +93,6 @@ class Autodecoder(Configurable, torch.nn.Module):
                 # pyre-fixme[9]: x has type `Union[List[str], LongTensor]`; used as
                 #  `Tensor`.
                 x = torch.tensor(
-                    # pyre-ignore[29]
                     [self._key_map[elem] for elem in x],
                     dtype=torch.long,
                     device=next(self.parameters()).device,
@@ -101,7 +100,6 @@ class Autodecoder(Configurable, torch.nn.Module):
             except StopIteration:
                 raise ValueError("Not enough n_instances in the autodecoder") from None
 
-        # pyre-fixme[29]: `Union[torch.Tensor, torch.nn.Module]` is not a function.
         return self._autodecoder_codes(x)
 
     def _load_key_map_hook(

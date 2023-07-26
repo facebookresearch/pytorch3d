@@ -58,6 +58,12 @@ class MultinomialRaysampler(torch.nn.Module):
     coordinate convention. For a raysampler which follows the PyTorch3D
     coordinate conventions please refer to `NDCMultinomialRaysampler`.
     As such, `NDCMultinomialRaysampler` is a special case of `MultinomialRaysampler`.
+
+    Attributes:
+        min_x: The leftmost x-coordinate of each ray's source pixel's center.
+        max_x: The rightmost x-coordinate of each ray's source pixel's center.
+        min_y: The topmost y-coordinate of each ray's source pixel's center.
+        max_y: The bottommost y-coordinate of each ray's source pixel's center.
     """
 
     def __init__(
@@ -107,7 +113,8 @@ class MultinomialRaysampler(torch.nn.Module):
         self._n_rays_total = n_rays_total
         self._unit_directions = unit_directions
         self._stratified_sampling = stratified_sampling
-
+        self.min_x, self.max_x = min_x, max_x
+        self.min_y, self.max_y = min_y, max_y
         # get the initial grid of image xy coords
         y, x = meshgrid_ij(
             torch.linspace(min_y, max_y, image_height, dtype=torch.float32),

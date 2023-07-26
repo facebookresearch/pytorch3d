@@ -65,6 +65,9 @@ class MultiPassEmissionAbsorptionRenderer(  # pyre-ignore: 13
             opacity field.
         return_weights: Enables returning the rendering weights of the EA raymarcher.
             Setting to `True` can lead to a prohibitivelly large memory consumption.
+        blurpool_weights: Use blurpool defined in [3], on the input weights of
+            each implicit_function except the first (implicit_functions[0]).
+        sample_pdf_eps: Padding applied to the weights (alpha in equation 18 of [3]).
         raymarcher_class_type: The type of self.raymarcher corresponding to
             a child of `RaymarcherBase` in the registry.
         raymarcher: The raymarcher object used to convert per-point features
@@ -75,6 +78,8 @@ class MultiPassEmissionAbsorptionRenderer(  # pyre-ignore: 13
             Fields for View Synthesis." ECCV 2020.
         [2] Lombardi, Stephen, et al. "Neural Volumes: Learning Dynamic Renderable
             Volumes from Images." SIGGRAPH 2019.
+        [3] Jonathan T. Barron, et al. "Mip-NeRF: A Multiscale Representation
+            for Anti-Aliasing Neural Radiance Fields." ICCV 2021.
 
     """
 
@@ -88,6 +93,8 @@ class MultiPassEmissionAbsorptionRenderer(  # pyre-ignore: 13
     append_coarse_samples_to_fine: bool = True
     density_noise_std_train: float = 0.0
     return_weights: bool = False
+    blurpool_weights: bool = False
+    sample_pdf_eps: float = 1e-5
 
     def __post_init__(self):
         self._refiners = {
@@ -95,11 +102,15 @@ class MultiPassEmissionAbsorptionRenderer(  # pyre-ignore: 13
                 n_pts_per_ray=self.n_pts_per_ray_fine_training,
                 random_sampling=self.stratified_sampling_coarse_training,
                 add_input_samples=self.append_coarse_samples_to_fine,
+                blurpool_weights=self.blurpool_weights,
+                sample_pdf_eps=self.sample_pdf_eps,
             ),
             EvaluationMode.EVALUATION: RayPointRefiner(
                 n_pts_per_ray=self.n_pts_per_ray_fine_evaluation,
                 random_sampling=self.stratified_sampling_coarse_evaluation,
                 add_input_samples=self.append_coarse_samples_to_fine,
+                blurpool_weights=self.blurpool_weights,
+                sample_pdf_eps=self.sample_pdf_eps,
             ),
         }
         run_auto_creation(self)
@@ -146,9 +157,13 @@ class MultiPassEmissionAbsorptionRenderer(  # pyre-ignore: 13
             else 0.0
         )
 
+        ray_deltas = (
+            None if ray_bundle.bins is None else torch.diff(ray_bundle.bins, dim=-1)
+        )
         output = self.raymarcher(
             *implicit_functions[0](ray_bundle=ray_bundle),
             ray_lengths=ray_bundle.lengths,
+            ray_deltas=ray_deltas,
             density_noise_std=density_noise_std,
         )
         output.prev_stage = prev_stage

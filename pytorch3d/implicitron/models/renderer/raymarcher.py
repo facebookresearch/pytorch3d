@@ -4,7 +4,7 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-from typing import Any, Callable, Dict, Tuple
+from typing import Any, Callable, Dict, Optional, Tuple
 
 import torch
 from pytorch3d.implicitron.models.renderer.base import RendererOutput
@@ -119,6 +119,7 @@ class AccumulativeRaymarcherBase(RaymarcherBase, torch.nn.Module):
         rays_features: torch.Tensor,
         aux: Dict[str, Any],
         ray_lengths: torch.Tensor,
+        ray_deltas: Optional[torch.Tensor] = None,
         density_noise_std: float = 0.0,
         **kwargs,
     ) -> RendererOutput:
@@ -131,6 +132,9 @@ class AccumulativeRaymarcherBase(RaymarcherBase, torch.nn.Module):
             aux: a dictionary with extra information.
             ray_lengths: Per-ray depth values represented with a tensor
                 of shape `(..., n_points_per_ray, feature_dim)`.
+            ray_deltas: Optional differences between consecutive elements along the ray bundle
+                represented with a tensor of shape `(..., n_points_per_ray)`. If None,
+                these differences are computed from ray_lengths.
             density_noise_std: the magnitude of the noise added to densities.
 
         Returns:
@@ -152,14 +156,17 @@ class AccumulativeRaymarcherBase(RaymarcherBase, torch.nn.Module):
             density_1d=True,
         )
 
-        ray_lengths_diffs = ray_lengths[..., 1:] - ray_lengths[..., :-1]
-        if self.replicate_last_interval:
-            last_interval = ray_lengths_diffs[..., -1:]
+        if ray_deltas is None:
+            ray_lengths_diffs = torch.diff(ray_lengths, dim=-1)
+            if self.replicate_last_interval:
+                last_interval = ray_lengths_diffs[..., -1:]
+            else:
+                last_interval = torch.full_like(
+                    ray_lengths[..., :1], self.background_opacity
+                )
+            deltas = torch.cat((ray_lengths_diffs, last_interval), dim=-1)
         else:
-            last_interval = torch.full_like(
-                ray_lengths[..., :1], self.background_opacity
-            )
-        deltas = torch.cat((ray_lengths_diffs, last_interval), dim=-1)
+            deltas = ray_deltas
 
         rays_densities = rays_densities[..., 0]
 
@@ -170,9 +177,9 @@ class AccumulativeRaymarcherBase(RaymarcherBase, torch.nn.Module):
             rays_densities = torch.relu(rays_densities)
 
         weighted_densities = deltas * rays_densities
-        capped_densities = self._capping_function(weighted_densities)  # pyre-ignore: 29
+        capped_densities = self._capping_function(weighted_densities)
 
-        rays_opacities = self._capping_function(  # pyre-ignore: 29
+        rays_opacities = self._capping_function(
             torch.cumsum(weighted_densities, dim=-1)
         )
         opacities = rays_opacities[..., -1:]
@@ -181,9 +188,7 @@ class AccumulativeRaymarcherBase(RaymarcherBase, torch.nn.Module):
         )
         absorption_shifted[..., : self.surface_thickness] = 1.0
 
-        weights = self._weight_function(  # pyre-ignore: 29
-            capped_densities, absorption_shifted
-        )
+        weights = self._weight_function(capped_densities, absorption_shifted)
         features = (weights[..., None] * rays_features).sum(dim=-2)
         depth = (weights * ray_lengths)[..., None].sum(dim=-2)
 

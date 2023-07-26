@@ -101,8 +101,6 @@ class SRNRaymarchFunction(Configurable, torch.nn.Module):
 
         embeds = create_embeddings_for_implicit_function(
             xyz_world=rays_points_world,
-            # pyre-fixme[6]: Expected `Optional[typing.Callable[..., typing.Any]]`
-            #  for 2nd param but got `Union[torch.Tensor, torch.nn.Module]`.
             xyz_embedding_function=self._harmonic_embedding,
             global_code=global_code,
             fun_viewpool=fun_viewpool,
@@ -112,7 +110,6 @@ class SRNRaymarchFunction(Configurable, torch.nn.Module):
 
         # Before running the network, we have to resize embeds to ndims=3,
         # otherwise the SRN layers consume huge amounts of memory.
-        # pyre-fixme[29]: `Union[torch.Tensor, torch.nn.Module]` is not a function.
         raymarch_features = self._net(
             embeds.view(embeds.shape[0], -1, embeds.shape[-1])
         )
@@ -167,9 +164,7 @@ class SRNPixelGenerator(Configurable, torch.nn.Module):
         # Normalize the ray_directions to unit l2 norm.
         rays_directions_normed = torch.nn.functional.normalize(rays_directions, dim=-1)
         # Obtain the harmonic embedding of the normalized ray directions.
-        # pyre-fixme[29]: `Union[torch.Tensor, torch.nn.Module]` is not a function.
         rays_embedding = self._harmonic_embedding(rays_directions_normed)
-        # pyre-fixme[29]: `Union[torch.Tensor, torch.nn.Module]` is not a function.
         return self._color_layer((features, rays_embedding))
 
     def forward(
@@ -198,7 +193,6 @@ class SRNPixelGenerator(Configurable, torch.nn.Module):
                 denoting the color of each ray point.
         """
         # raymarch_features.shape = [minibatch x ... x pts_per_ray x 3]
-        # pyre-fixme[29]: `Union[torch.Tensor, torch.nn.Module]` is not a function.
         features = self._net(raymarch_features)
         # features.shape = [minibatch x ... x self.n_hidden_units]
 
@@ -213,7 +207,6 @@ class SRNPixelGenerator(Configurable, torch.nn.Module):
         # NNs operate on the flattenned rays; reshaping to the correct spatial size
         features = features.reshape(*raymarch_features.shape[:-1], -1)
 
-        # pyre-fixme[29]: `Union[torch.Tensor, torch.nn.Module]` is not a function.
         raw_densities = self._density_layer(features)
 
         rays_colors = self._get_colors(features, directions)
@@ -274,7 +267,6 @@ class SRNRaymarchHyperNet(Configurable, torch.nn.Module):
         srn_raymarch_function.
         """
 
-        # pyre-fixme[29]: `Union[torch.Tensor, torch.nn.Module]` is not a function.
         net = self._hypernet(global_code)
 
         # use the hyper-net generated network to instantiate the raymarch module
@@ -310,7 +302,6 @@ class SRNRaymarchHyperNet(Configurable, torch.nn.Module):
         # across LSTM iterations for the same global_code.
         if self.cached_srn_raymarch_function is None:
             # generate the raymarching network from the hypernet
-            # pyre-fixme[16]: `SRNRaymarchHyperNet` has no attribute
             self.cached_srn_raymarch_function = self._run_hypernet(global_code)
         (srn_raymarch_function,) = cast(
             Tuple[SRNRaymarchFunction], self.cached_srn_raymarch_function
@@ -337,7 +328,6 @@ class SRNImplicitFunction(ImplicitFunctionBase, torch.nn.Module):
     def create_raymarch_function(self) -> None:
         self.raymarch_function = SRNRaymarchFunction(
             latent_dim=self.latent_dim,
-            # pyre-ignore[32]
             **self.raymarch_function_args,
         )
 
@@ -395,7 +385,6 @@ class SRNHyperNetImplicitFunction(ImplicitFunctionBase, torch.nn.Module):
         self.hypernet = SRNRaymarchHyperNet(
             latent_dim=self.latent_dim,
             latent_dim_hypernet=self.latent_dim_hypernet,
-            # pyre-ignore[32]
             **self.hypernet_args,
         )
 

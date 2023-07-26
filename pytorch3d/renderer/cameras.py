@@ -201,8 +201,8 @@ class CamerasBase(TensorProperties):
         """
         R: torch.Tensor = kwargs.get("R", self.R)
         T: torch.Tensor = kwargs.get("T", self.T)
-        self.R = R  # pyre-ignore[16]
-        self.T = T  # pyre-ignore[16]
+        self.R = R
+        self.T = T
         world_to_view_transform = get_world_to_view_transform(R=R, T=T)
         return world_to_view_transform
 
@@ -226,8 +226,8 @@ class CamerasBase(TensorProperties):
             a Transform3d object which represents a batch of transforms
             of shape (N, 3, 3)
         """
-        self.R: torch.Tensor = kwargs.get("R", self.R)  # pyre-ignore[16]
-        self.T: torch.Tensor = kwargs.get("T", self.T)  # pyre-ignore[16]
+        self.R: torch.Tensor = kwargs.get("R", self.R)
+        self.T: torch.Tensor = kwargs.get("T", self.T)
         world_to_view_transform = self.get_world_to_view_transform(R=self.R, T=self.T)
         view_to_proj_transform = self.get_projection_transform(**kwargs)
         return world_to_view_transform.compose(view_to_proj_transform)

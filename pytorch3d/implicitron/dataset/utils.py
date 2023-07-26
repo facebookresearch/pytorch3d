@@ -245,10 +245,21 @@ def load_mask(path: str) -> np.ndarray:
 
 
 def load_depth(path: str, scale_adjustment: float) -> np.ndarray:
-    if not path.lower().endswith(".png"):
+    if path.lower().endswith(".exr"):
+        # NOTE: environment variable OPENCV_IO_ENABLE_OPENEXR must be set to 1
+        # You will have to accept these vulnerabilities by using OpenEXR:
+        # https://github.com/opencv/opencv/issues/21326
+        import cv2
+
+        d = cv2.imread(path, cv2.IMREAD_ANYCOLOR | cv2.IMREAD_ANYDEPTH)[..., 0]
+        d[d > 1e9] = 0.0
+    elif path.lower().endswith(".png"):
+        d = load_16big_png_depth(path)
+    else:
         raise ValueError('unsupported depth file name "%s"' % path)
 
-    d = load_16big_png_depth(path) * scale_adjustment
+    d = d * scale_adjustment
+
     d[~np.isfinite(d)] = 0.0
     return d[None]  # fake feature channel
 
@@ -316,7 +327,7 @@ def adjust_camera_to_bbox_crop_(
 
     focal_length_px, principal_point_px = _convert_ndc_to_pixels(
         camera.focal_length[0],
-        camera.principal_point[0],  # pyre-ignore
+        camera.principal_point[0],
         image_size_wh,
     )
     principal_point_px_cropped = principal_point_px - clamp_bbox_xywh[:2]
@@ -328,7 +339,7 @@ def adjust_camera_to_bbox_crop_(
     )
 
     camera.focal_length = focal_length[None]
-    camera.principal_point = principal_point_cropped[None]  # pyre-ignore
+    camera.principal_point = principal_point_cropped[None]
 
 
 def adjust_camera_to_image_scale_(
@@ -338,7 +349,7 @@ def adjust_camera_to_image_scale_(
 ) -> PerspectiveCameras:
     focal_length_px, principal_point_px = _convert_ndc_to_pixels(
         camera.focal_length[0],
-        camera.principal_point[0],  # pyre-ignore
+        camera.principal_point[0],
         original_size_wh,
     )
 

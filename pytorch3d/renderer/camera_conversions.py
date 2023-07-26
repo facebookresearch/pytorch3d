@@ -63,8 +63,8 @@ def _opencv_from_cameras_projection(
     cameras: PerspectiveCameras,
     image_size: torch.Tensor,
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-    R_pytorch3d = cameras.R.clone()  # pyre-ignore
-    T_pytorch3d = cameras.T.clone()  # pyre-ignore
+    R_pytorch3d = cameras.R.clone()
+    T_pytorch3d = cameras.T.clone()
     focal_pytorch3d = cameras.focal_length
     p0_pytorch3d = cameras.principal_point
     T_pytorch3d[:, :2] *= -1

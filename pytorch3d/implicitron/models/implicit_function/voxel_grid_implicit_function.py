@@ -187,21 +187,16 @@ class VoxelGridImplicitFunction(ImplicitFunctionBase, torch.nn.Module):
 
     def __post_init__(self) -> None:
         run_auto_creation(self)
-        # pyre-ignore[16]
         self.voxel_grid_scaffold = self._create_voxel_grid_scaffold()
-        # pyre-ignore[16]
         self.harmonic_embedder_xyz_density = HarmonicEmbedding(
             **self.harmonic_embedder_xyz_density_args
         )
-        # pyre-ignore[16]
         self.harmonic_embedder_xyz_color = HarmonicEmbedding(
             **self.harmonic_embedder_xyz_color_args
         )
-        # pyre-ignore[16]
         self.harmonic_embedder_dir_color = HarmonicEmbedding(
             **self.harmonic_embedder_dir_color_args
         )
-        # pyre-ignore[16]
         self._scaffold_ready = False
 
     def forward(
@@ -252,7 +247,6 @@ class VoxelGridImplicitFunction(ImplicitFunctionBase, torch.nn.Module):
         # ########## filter the points using the scaffold ########## #
         if self._scaffold_ready and self.scaffold_filter_points:
             with torch.no_grad():
-                # pyre-ignore[29]
                 non_empty_points = self.voxel_grid_scaffold(points)[..., 0] > 0
             points = points[non_empty_points]
             if len(points) == 0:
@@ -364,7 +358,6 @@ class VoxelGridImplicitFunction(ImplicitFunctionBase, torch.nn.Module):
                 feature dimensionality which `decoder_density` returns
         """
         embeds_density = self.voxel_grid_density(points)
-        # pyre-ignore[29]
         harmonic_embedding_density = self.harmonic_embedder_xyz_density(embeds_density)
         # shape = [..., density_dim]
         return self.decoder_density(harmonic_embedding_density)
@@ -407,13 +400,11 @@ class VoxelGridImplicitFunction(ImplicitFunctionBase, torch.nn.Module):
 
         # ########## embed with the harmonic function ########## #
         # Obtain the harmonic embedding of the voxel grid output.
-        # pyre-ignore[29]
         harmonic_embedding_color = self.harmonic_embedder_xyz_color(embeds_color)
 
         # Normalize the ray_directions to unit l2 norm.
         rays_directions_normed = torch.nn.functional.normalize(directions, dim=-1)
         # Obtain the harmonic embedding of the normalized ray directions.
-        # pyre-ignore[29]
         harmonic_embedding_dir = self.harmonic_embedder_dir_color(
             rays_directions_normed
         )
@@ -482,10 +473,8 @@ class VoxelGridImplicitFunction(ImplicitFunctionBase, torch.nn.Module):
             an object inside, else False.
         """
         # find bounding box
-        # pyre-ignore[16]
         points = self.voxel_grid_scaffold.get_grid_points(epoch=epoch)
         assert self._scaffold_ready, "Scaffold has to be calculated before cropping."
-        # pyre-ignore[29]
         occupancy = self.voxel_grid_scaffold(points)[..., 0] > 0
         non_zero_idxs = torch.nonzero(occupancy)
         if len(non_zero_idxs) == 0:
@@ -517,7 +506,6 @@ class VoxelGridImplicitFunction(ImplicitFunctionBase, torch.nn.Module):
         """
 
         planes = []
-        # pyre-ignore[16]
         points = self.voxel_grid_scaffold.get_grid_points(epoch=epoch)
 
         chunk_size = (
@@ -537,9 +525,7 @@ class VoxelGridImplicitFunction(ImplicitFunctionBase, torch.nn.Module):
             stride=1,
         )
         occupancy_cube = density_cube > self.scaffold_empty_space_threshold
-        # pyre-ignore[16]
         self.voxel_grid_scaffold.params["voxel_grid"] = occupancy_cube.float()
-        # pyre-ignore[16]
         self._scaffold_ready = True
 
         return False
@@ -556,7 +542,6 @@ class VoxelGridImplicitFunction(ImplicitFunctionBase, torch.nn.Module):
         decoding function to this value.
         """
         grid_args = self.voxel_grid_density_args
-        # pyre-ignore[6]
         grid_output_dim = VoxelGridModule.get_output_dim(grid_args)
 
         embedder_args = self.harmonic_embedder_xyz_density_args
@@ -585,7 +570,6 @@ class VoxelGridImplicitFunction(ImplicitFunctionBase, torch.nn.Module):
         decoding function to this value.
         """
         grid_args = self.voxel_grid_color_args
-        # pyre-ignore[6]
         grid_output_dim = VoxelGridModule.get_output_dim(grid_args)
 
         embedder_args = self.harmonic_embedder_xyz_color_args
@@ -619,9 +603,7 @@ class VoxelGridImplicitFunction(ImplicitFunctionBase, torch.nn.Module):
                     `self.voxel_grid_density`
         """
         return VoxelGridModule(
-            # pyre-ignore[29]
             extents=self.voxel_grid_density_args["extents"],
-            # pyre-ignore[29]
             translation=self.voxel_grid_density_args["translation"],
             voxel_grid_class_type="FullResolutionVoxelGrid",
             hold_voxel_grid_as_parameters=False,

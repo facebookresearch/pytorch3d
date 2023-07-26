@@ -9,11 +9,14 @@ from typing import Optional, Tuple
 
 import torch
 from pytorch3d.common.linear_with_repeat import LinearWithRepeat
-from pytorch3d.implicitron.models.renderer.base import ImplicitronRayBundle
+from pytorch3d.implicitron.models.renderer.base import (
+    conical_frustum_to_gaussian,
+    ImplicitronRayBundle,
+)
 from pytorch3d.implicitron.tools.config import expand_args_fields, registry
-from pytorch3d.renderer import ray_bundle_to_ray_points
 from pytorch3d.renderer.cameras import CamerasBase
 from pytorch3d.renderer.implicit import HarmonicEmbedding
+from pytorch3d.renderer.implicit.utils import ray_bundle_to_ray_points
 
 from .base import ImplicitFunctionBase
 
@@ -36,6 +39,7 @@ class NeuralRadianceFieldBase(ImplicitFunctionBase, torch.nn.Module):
     input_xyz: bool = True
     xyz_ray_dir_in_camera_coords: bool = False
     color_dim: int = 3
+    use_integrated_positional_encoding: bool = False
     """
     Args:
         n_harmonic_functions_xyz: The number of harmonic functions
@@ -53,6 +57,10 @@ class NeuralRadianceFieldBase(ImplicitFunctionBase, torch.nn.Module):
         n_layers_xyz: The number of layers of the MLP that outputs the
             occupancy field.
         append_xyz: The list of indices of the skip layers of the occupancy MLP.
+        use_integrated_positional_encoding: If True, use integrated positional enoding
+            as defined in `MIP-NeRF <https://arxiv.org/abs/2103.13415>`_.
+            If False, use the classical harmonic embedding
+            defined in `NeRF <https://arxiv.org/abs/2003.08934>`_.
     """
 
     def __post_init__(self):
@@ -113,10 +121,8 @@ class NeuralRadianceFieldBase(ImplicitFunctionBase, torch.nn.Module):
         # Normalize the ray_directions to unit l2 norm.
         rays_directions_normed = torch.nn.functional.normalize(rays_directions, dim=-1)
         # Obtain the harmonic embedding of the normalized ray directions.
-        # pyre-fixme[29]: `Union[torch.Tensor, torch.nn.Module]` is not a function.
         rays_embedding = self.harmonic_embedding_dir(rays_directions_normed)
 
-        # pyre-fixme[29]: `Union[torch.Tensor, torch.nn.Module]` is not a function.
         return self.color_layer((self.intermediate_linear(features), rays_embedding))
 
     @staticmethod
@@ -151,6 +157,10 @@ class NeuralRadianceFieldBase(ImplicitFunctionBase, torch.nn.Module):
                     containing the direction vectors of sampling rays in world coords.
                 lengths: A tensor of shape `(minibatch, ..., num_points_per_ray)`
                     containing the lengths at which the rays are sampled.
+                bins: An optional tensor of shape `(minibatch,..., num_points_per_ray + 1)`
+                    containing the bins at which the rays are sampled. In this case
+                    lengths is equal to the midpoints of bins.
+
             fun_viewpool: an optional callback with the signature
                     fun_fiewpool(points) -> pooled_features
                 where points is a [N_TGT x N x 3] tensor of world coords,
@@ -162,16 +172,26 @@ class NeuralRadianceFieldBase(ImplicitFunctionBase, torch.nn.Module):
                 denoting the opacitiy of each ray point.
             rays_colors: A tensor of shape `(minibatch, ..., num_points_per_ray, 3)`
                 denoting the color of each ray point.
+
+        Raises:
+            ValueError: If `use_integrated_positional_encoding` is True and
+                `ray_bundle.bins` is None.
         """
-        # We first convert the ray parametrizations to world
-        # coordinates with `ray_bundle_to_ray_points`.
-        # pyre-ignore[6]
-        rays_points_world = ray_bundle_to_ray_points(ray_bundle)
+        if self.use_integrated_positional_encoding and ray_bundle.bins is None:
+            raise ValueError(
+                "When use_integrated_positional_encoding is True, ray_bundle.bins must be set."
+                "Have you set to True `AbstractMaskRaySampler.use_bins_for_ray_sampling`?"
+            )
+
+        rays_points_world, diag_cov = (
+            conical_frustum_to_gaussian(ray_bundle)
+            if self.use_integrated_positional_encoding
+            else (ray_bundle_to_ray_points(ray_bundle), None)  # pyre-ignore
+        )
         # rays_points_world.shape = [minibatch x ... x pts_per_ray x 3]
 
         embeds = create_embeddings_for_implicit_function(
             xyz_world=rays_points_world,
-            # pyre-fixme[6]: Expected `Optional[typing.Callable[..., typing.Any]]`
             #  for 2nd param but got `Union[None, torch.Tensor, torch.nn.Module]`.
             xyz_embedding_function=self.harmonic_embedding_xyz
             if self.input_xyz
@@ -180,17 +200,16 @@ class NeuralRadianceFieldBase(ImplicitFunctionBase, torch.nn.Module):
             fun_viewpool=fun_viewpool,
             xyz_in_camera_coords=self.xyz_ray_dir_in_camera_coords,
             camera=camera,
+            diag_cov=diag_cov,
         )
 
         # embeds.shape = [minibatch x n_src x n_rays x n_pts x self.n_harmonic_functions*6+3]
-        # pyre-fixme[29]: `Union[torch.Tensor, torch.nn.Module]` is not a function.
         features = self.xyz_encoder(embeds)
         # features.shape = [minibatch x ... x self.n_hidden_neurons_xyz]
         # NNs operate on the flattenned rays; reshaping to the correct spatial size
         # TODO: maybe make the transformer work on non-flattened tensors to avoid this reshape
         features = features.reshape(*rays_points_world.shape[:-1], -1)
 
-        # pyre-fixme[29]: `Union[torch.Tensor, torch.nn.Module]` is not a function.
         raw_densities = self.density_layer(features)
         # raw_densities.shape = [minibatch x ... x 1] in [0-1]
 

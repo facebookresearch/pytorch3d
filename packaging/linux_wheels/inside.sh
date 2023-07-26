@@ -16,23 +16,32 @@ VERSION=$(python -c "exec(open('pytorch3d/__init__.py').read()); print(__version
 
 export BUILD_VERSION=$VERSION
 export FORCE_CUDA=1
+export MAX_JOBS=8
+export CONDA_PKGS_DIRS=/conda_cache
 
-wget --no-verbose https://github.com/NVIDIA/cub/archive/1.10.0.tar.gz
-tar xzf 1.10.0.tar.gz
-CUB_HOME=$(realpath ./cub-1.10.0)
-export CUB_HOME
-echo "CUB_HOME is now $CUB_HOME"
+if false
+then
+    # We used to have to do this for old versions of CUDA
+    wget --no-verbose https://github.com/NVIDIA/cub/archive/1.10.0.tar.gz
+    tar xzf 1.10.0.tar.gz
+    CUB_HOME=$(realpath ./cub-1.10.0)
+    export CUB_HOME
+    echo "CUB_HOME is now $CUB_HOME"
+fi
 
 # As a rule, we want to build for any combination of dependencies which is supported by
 # PyTorch3D and not older than the current Google Colab set up.
 
-PYTHON_VERSIONS="3.7 3.8 3.9 3.10"
+PYTHON_VERSIONS="3.8 3.9 3.10"
 # the keys are pytorch versions
 declare -A CONDA_CUDA_VERSIONS=(
-    ["1.10.1"]="cu111 cu113"
-    ["1.10.2"]="cu111 cu113"
-    ["1.10.0"]="cu111 cu113"
-    ["1.11.0"]="cu111 cu113 cu115"
+#    ["1.11.0"]="cu113"
+#    ["1.12.0"]="cu113"
+#    ["1.12.1"]="cu113"
+#    ["1.13.0"]="cu116"
+#    ["1.13.1"]="cu116 cu117"
+#    ["2.0.0"]="cu117 cu118"
+    ["2.0.1"]="cu117 cu118"
 )
 
 
@@ -41,39 +50,43 @@ for python_version in $PYTHON_VERSIONS
 do
     for pytorch_version in "${!CONDA_CUDA_VERSIONS[@]}"
     do
-        if [[ "3.7 3.8" != *$python_version* ]] && [[ "1.7.0" == *$pytorch_version* ]]
-        then
-            #python 3.9 and later not supported by pytorch 1.7.0 and before
-            continue
-        fi
         if [[ "3.7 3.8 3.9" != *$python_version* ]] && [[ "1.7.0 1.7.1 1.8.0 1.8.1 1.9.0 1.9.1 1.10.0 1.10.1 1.10.2" == *$pytorch_version* ]]
         then
             #python 3.10 and later not supported by pytorch 1.10.2 and before
             continue
         fi
 
-        extra_channel="-c conda-forge"
+        extra_channel="-c nvidia"
+        cudatools="pytorch-cuda"
         if [[ "1.11.0" == "$pytorch_version" ]]
         then
             extra_channel=""
+            cudatools="cudatoolkit"
+        fi
+        if [[ "1.12.0" == "$pytorch_version" ]] || [[ "1.12.1" == "$pytorch_version" ]]
+        then
+            extra_channel="-c conda-forge"
+            cudatools="cudatoolkit"
         fi
 
         for cu_version in ${CONDA_CUDA_VERSIONS[$pytorch_version]}
         do
-            if [[ "cu113 cu115 cu116" == *$cu_version* ]]
-            #       ^^^ CUDA versions listed here have to be built
-            # in their own containers.
-            then
             if [[ $SELECTED_CUDA != "$cu_version" ]]
-                then
-                    continue
-                fi
-            elif [[ $SELECTED_CUDA != "" ]]
             then
                 continue
             fi
 
             case "$cu_version" in
+                cu118)
+                    export CUDA_HOME=/usr/local/cuda-11.8/
+                    export CUDA_TAG=11.8
+                    export NVCC_FLAGS="-gencode=arch=compute_35,code=sm_35 -gencode=arch=compute_50,code=sm_50 -gencode=arch=compute_60,code=sm_60 -gencode=arch=compute_70,code=sm_70 -gencode=arch=compute_75,code=sm_75 -gencode=arch=compute_80,code=sm_80 -gencode=arch=compute_86,code=sm_86 -gencode=arch=compute_50,code=compute_50"
+                ;;
+                cu117)
+                    export CUDA_HOME=/usr/local/cuda-11.7/
+                    export CUDA_TAG=11.7
+                    export NVCC_FLAGS="-gencode=arch=compute_35,code=sm_35 -gencode=arch=compute_50,code=sm_50 -gencode=arch=compute_60,code=sm_60 -gencode=arch=compute_70,code=sm_70 -gencode=arch=compute_75,code=sm_75 -gencode=arch=compute_80,code=sm_80 -gencode=arch=compute_86,code=sm_86 -gencode=arch=compute_50,code=compute_50"
+                ;;
                 cu116)
                     export CUDA_HOME=/usr/local/cuda-11.6/
                     export CUDA_TAG=11.6
@@ -130,7 +143,7 @@ do
             conda create -y -n "$tag" "python=$python_version"
             conda activate "$tag"
             # shellcheck disable=SC2086
-            conda install -y -c pytorch $extra_channel "pytorch=$pytorch_version" "cudatoolkit=$CUDA_TAG" torchvision
+            conda install -y -c pytorch $extra_channel "pytorch=$pytorch_version" "$cudatools=$CUDA_TAG"
             pip install fvcore iopath
             echo "python version" "$python_version" "pytorch version" "$pytorch_version" "cuda version" "$cu_version" "tag" "$tag"
 

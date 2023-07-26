@@ -583,9 +583,9 @@ class GenericFrameDataBuilder(FrameDataBuilderBase[FrameDataSubtype], ABC):
             else None,
         )
 
+        fg_mask_np: Optional[np.ndarray] = None
         mask_annotation = frame_annotation.mask
         if mask_annotation is not None:
-            fg_mask_np: Optional[np.ndarray] = None
             if load_blobs and self.load_masks:
                 fg_mask_np, mask_path = self._load_fg_probability(frame_annotation)
                 frame_data.mask_path = mask_path
@@ -627,7 +627,7 @@ class GenericFrameDataBuilder(FrameDataBuilderBase[FrameDataSubtype], ABC):
                 frame_data.depth_map,
                 frame_data.depth_path,
                 frame_data.depth_mask,
-            ) = self._load_mask_depth(frame_annotation, frame_data.fg_probability)
+            ) = self._load_mask_depth(frame_annotation, fg_mask_np)
 
         if load_blobs and self.load_point_clouds and point_cloud is not None:
             pcl_path = self._fix_point_cloud_path(point_cloud.path)
@@ -683,7 +683,7 @@ class GenericFrameDataBuilder(FrameDataBuilderBase[FrameDataSubtype], ABC):
     def _load_mask_depth(
         self,
         entry: types.FrameAnnotation,
-        fg_probability: Optional[torch.Tensor],
+        fg_mask: Optional[np.ndarray],
     ) -> Tuple[torch.Tensor, str, torch.Tensor]:
         entry_depth = entry.depth
         dataset_root = self.dataset_root
@@ -693,15 +693,15 @@ class GenericFrameDataBuilder(FrameDataBuilderBase[FrameDataSubtype], ABC):
         depth_map = load_depth(self._local_path(path), entry_depth.scale_adjustment)
 
         if self.mask_depths:
-            assert fg_probability is not None
-            depth_map *= fg_probability
+            assert fg_mask is not None
+            depth_map *= fg_mask
 
         mask_path = entry_depth.mask_path
         if self.load_depth_masks and mask_path is not None:
             mask_path = os.path.join(dataset_root, mask_path)
             depth_mask = load_depth_mask(self._local_path(mask_path))
         else:
-            depth_mask = torch.ones_like(depth_map)
+            depth_mask = (depth_map > 0.0).astype(np.float32)
 
         return torch.tensor(depth_map), path, torch.tensor(depth_mask)
 

@@ -11,6 +11,7 @@ from pytorch3d.implicitron.tools import camera_utils
 from pytorch3d.implicitron.tools.config import registry, ReplaceableBase
 from pytorch3d.renderer import NDCMultinomialRaysampler
 from pytorch3d.renderer.cameras import CamerasBase
+from pytorch3d.renderer.implicit.utils import HeterogeneousRayBundle
 
 from .base import EvaluationMode, ImplicitronRayBundle, RenderSamplingMode
 
@@ -83,7 +84,20 @@ class AbstractMaskRaySampler(RaySamplerBase, torch.nn.Module):
         stratified_point_sampling_training: if set, performs stratified random sampling
             along the ray; otherwise takes ray points at deterministic offsets.
         stratified_point_sampling_evaluation: Same as above but for evaluation.
+        cast_ray_bundle_as_cone: If True, the sampling will generate the bins and radii
+            attribute of ImplicitronRayBundle. The `bins` contain the z-coordinate
+            (=depth) of each ray in world units and are of shape
+            `(batch_size, n_rays_per_image, n_pts_per_ray_training/evaluation + 1)`
+            while `lengths` is equal to the midpoint of the bins:
+            (0.5 * (bins[..., 1:] + bins[..., :-1]).
+            If False, `bins` is None, `radii` is None and `lengths` contains
+            the z-coordinate (=depth) of each ray in world units and are of shape
+            `(batch_size, n_rays_per_image, n_pts_per_ray_training/evaluation)`
 
+    Raises:
+        TypeError: if cast_ray_bundle_as_cone is set to True and n_rays_total_training
+            is not None will result in an error. HeterogeneousRayBundle is
+            not supported for conical frustum computation yet.
     """
 
     image_width: int = 400
@@ -97,6 +111,7 @@ class AbstractMaskRaySampler(RaySamplerBase, torch.nn.Module):
     # stratified sampling vs taking points at deterministic offsets
     stratified_point_sampling_training: bool = True
     stratified_point_sampling_evaluation: bool = False
+    cast_ray_bundle_as_cone: bool = False
 
     def __post_init__(self):
         if (self.n_rays_per_image_sampled_from_mask is not None) and (
@@ -114,10 +129,20 @@ class AbstractMaskRaySampler(RaySamplerBase, torch.nn.Module):
             ),
         }
 
+        n_pts_per_ray_training = (
+            self.n_pts_per_ray_training + 1
+            if self.cast_ray_bundle_as_cone
+            else self.n_pts_per_ray_training
+        )
+        n_pts_per_ray_evaluation = (
+            self.n_pts_per_ray_evaluation + 1
+            if self.cast_ray_bundle_as_cone
+            else self.n_pts_per_ray_evaluation
+        )
         self._training_raysampler = NDCMultinomialRaysampler(
             image_width=self.image_width,
             image_height=self.image_height,
-            n_pts_per_ray=self.n_pts_per_ray_training,
+            n_pts_per_ray=n_pts_per_ray_training,
             min_depth=0.0,
             max_depth=0.0,
             n_rays_per_image=self.n_rays_per_image_sampled_from_mask
@@ -132,7 +157,7 @@ class AbstractMaskRaySampler(RaySamplerBase, torch.nn.Module):
         self._evaluation_raysampler = NDCMultinomialRaysampler(
             image_width=self.image_width,
             image_height=self.image_height,
-            n_pts_per_ray=self.n_pts_per_ray_evaluation,
+            n_pts_per_ray=n_pts_per_ray_evaluation,
             min_depth=0.0,
             max_depth=0.0,
             n_rays_per_image=self.n_rays_per_image_sampled_from_mask
@@ -142,6 +167,11 @@ class AbstractMaskRaySampler(RaySamplerBase, torch.nn.Module):
             unit_directions=True,
             stratified_sampling=self.stratified_point_sampling_evaluation,
         )
+
+        max_y, min_y = self._training_raysampler.max_y, self._training_raysampler.min_y
+        max_x, min_x = self._training_raysampler.max_x, self._training_raysampler.min_x
+        self.pixel_height: float = (max_y - min_y) / (self.image_height - 1)
+        self.pixel_width: float = (max_x - min_x) / (self.image_width - 1)
 
     def _get_min_max_depth_bounds(self, cameras: CamerasBase) -> Tuple[float, float]:
         raise NotImplementedError()
@@ -171,7 +201,6 @@ class AbstractMaskRaySampler(RaySamplerBase, torch.nn.Module):
         """
         sample_mask = None
         if (
-            # pyre-fixme[29]
             self._sampling_mode[evaluation_mode] == RenderSamplingMode.MASK_SAMPLE
             and mask is not None
         ):
@@ -188,26 +217,41 @@ class AbstractMaskRaySampler(RaySamplerBase, torch.nn.Module):
             EvaluationMode.EVALUATION: self._evaluation_raysampler,
         }[evaluation_mode]
 
-        # pyre-fixme[29]:
         ray_bundle = raysampler(
             cameras=cameras,
             mask=sample_mask,
             min_depth=min_depth,
             max_depth=max_depth,
         )
-
-        if isinstance(ray_bundle, tuple):
-            return ImplicitronRayBundle(
-                # pyre-ignore[16]
-                **{k: v for k, v in ray_bundle._asdict().items()}
+        if self.cast_ray_bundle_as_cone and isinstance(
+            ray_bundle, HeterogeneousRayBundle
+        ):
+            # If this error rises it means that raysampler has among
+            # its arguments `n_ray_totals`. If it is the case
+            # then you should update the radii computation and lengths
+            # computation to handle padding and unpadding.
+            raise TypeError(
+                "Heterogeneous ray bundle is not supported for conical frustum computation yet"
             )
+        elif self.cast_ray_bundle_as_cone:
+            pixel_hw: Tuple[float, float] = (self.pixel_height, self.pixel_width)
+            pixel_radii_2d = compute_radii(cameras, ray_bundle.xys[..., :2], pixel_hw)
+            return ImplicitronRayBundle(
+                directions=ray_bundle.directions,
+                origins=ray_bundle.origins,
+                lengths=None,
+                xys=ray_bundle.xys,
+                bins=ray_bundle.lengths,
+                pixel_radii_2d=pixel_radii_2d,
+            )
+
         return ImplicitronRayBundle(
             directions=ray_bundle.directions,
             origins=ray_bundle.origins,
             lengths=ray_bundle.lengths,
             xys=ray_bundle.xys,
-            camera_ids=ray_bundle.camera_ids,
-            camera_counts=ray_bundle.camera_counts,
+            camera_counts=getattr(ray_bundle, "camera_counts", None),
+            camera_ids=getattr(ray_bundle, "camera_ids", None),
         )
 
 
@@ -276,3 +320,62 @@ class NearFarRaySampler(AbstractMaskRaySampler):
         Returns the stored near/far planes.
         """
         return self.min_depth, self.max_depth
+
+
+def compute_radii(
+    cameras: CamerasBase,
+    xy_grid: torch.Tensor,
+    pixel_hw_ndc: Tuple[float, float],
+) -> torch.Tensor:
+    """
+    Compute radii of conical frustums in world coordinates.
+
+    Args:
+        cameras: cameras object representing a batch of cameras.
+        xy_grid: torch.tensor grid of image xy coords.
+        pixel_hw_ndc: pixel height and width in NDC
+
+    Returns:
+        radii: A tensor of shape `(..., 1)` radii of a cone.
+    """
+    batch_size = xy_grid.shape[0]
+    spatial_size = xy_grid.shape[1:-1]
+    n_rays_per_image = spatial_size.numel()
+
+    xy = xy_grid.view(batch_size, n_rays_per_image, 2)
+
+    # [batch_size, 3 * n_rays_per_image, 2]
+    xy = torch.cat(
+        [
+            xy,
+            # Will allow to find the norm on the x axis
+            xy + torch.tensor([pixel_hw_ndc[1], 0], device=xy.device),
+            # Will allow to find the norm on the y axis
+            xy + torch.tensor([0, pixel_hw_ndc[0]], device=xy.device),
+        ],
+        dim=1,
+    )
+    # [batch_size, 3 * n_rays_per_image, 3]
+    xyz = torch.cat(
+        (
+            xy,
+            xy.new_ones(batch_size, 3 * n_rays_per_image, 1),
+        ),
+        dim=-1,
+    )
+
+    # unproject the points
+    unprojected_xyz = cameras.unproject_points(xyz, from_ndc=True)
+
+    plane_world, plane_world_dx, plane_world_dy = torch.split(
+        unprojected_xyz, n_rays_per_image, dim=1
+    )
+
+    # Distance from each unit-norm direction vector to its neighbors.
+    dx_norm = torch.linalg.norm(plane_world_dx - plane_world, dim=-1, keepdims=True)
+    dy_norm = torch.linalg.norm(plane_world_dy - plane_world, dim=-1, keepdims=True)
+    # Cut the distance in half to obtain the base radius: (dx_norm + dy_norm) * 0.5
+    # Scale it by 2/12**0.5 to match the variance of the pixel’s footprint
+    radii = (dx_norm + dy_norm) / 12**0.5
+
+    return radii.view(batch_size, *spatial_size, 1)
