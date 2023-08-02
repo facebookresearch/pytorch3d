@@ -422,8 +422,7 @@ class TestChamfer(TestCaseMixin, unittest.TestCase):
             ("sum", None),
             ("mean", None),
         ]
-        for (point_reduction, batch_reduction) in reductions:
-
+        for point_reduction, batch_reduction in reductions:
             # Reinitialize all the tensors so that the
             # backward pass can be computed.
             points_normals = TestChamfer.init_pointclouds(
@@ -482,8 +481,7 @@ class TestChamfer(TestCaseMixin, unittest.TestCase):
             ("sum", None),
             ("mean", None),
         ]
-        for (point_reduction, batch_reduction) in reductions:
-
+        for point_reduction, batch_reduction in reductions:
             # Reinitialize all the tensors so that the
             # backward pass can be computed.
             points_normals = TestChamfer.init_pointclouds(
@@ -880,9 +878,9 @@ class TestChamfer(TestCaseMixin, unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "batch_reduction must be one of"):
             chamfer_distance(p1, p2, weights=weights, batch_reduction="max")
 
-        # Error when point_reduction is not in ["mean", "sum"].
+        # Error when point_reduction is not in ["mean", "sum"] or None.
         with self.assertRaisesRegex(ValueError, "point_reduction must be one of"):
-            chamfer_distance(p1, p2, weights=weights, point_reduction=None)
+            chamfer_distance(p1, p2, weights=weights, point_reduction="max")
 
     def test_incorrect_weights(self):
         N, P1, P2 = 16, 64, 128
