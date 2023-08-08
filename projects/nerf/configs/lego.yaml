@@ -7,9 +7,9 @@ checkpoint_path: 'checkpoints/lego_pt3d.pth'
 data:
   dataset_name: 'lego'
   image_size: [800, 800] # [height, width]
-  precache_rays: True
+  precache_rays: False
 test:
-  mode: 'evaluation'
+  mode: 'export_video'
   trajectory_type: 'circular'
   up: [0.0, 0.0, 1.0]
   scene_center: [0.0, 0.0, 0.0]
