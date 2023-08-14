@@ -210,7 +210,7 @@ def chamfer_distance(
         2-element tuple containing
 
         - **loss**: Tensor giving the reduced distance between the pointclouds
-          in x and the pointclouds in y. If batch_reduction is None, a 2-element
+          in x and the pointclouds in y. If point_reduction is None, a 2-element
           tuple of Tensors containing forward and backward loss terms shaped (N, P1) and (N, P2) (if
           single_directional is False) or a Tensor containing loss terms shaped (N, P1) (if
           single_directional is True) is returned.
