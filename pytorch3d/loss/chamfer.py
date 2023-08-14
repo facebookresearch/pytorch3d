@@ -27,6 +27,8 @@ def _validate_chamfer_reduction_inputs(
         raise ValueError('batch_reduction must be one of ["mean", "sum"] or None')
     if point_reduction is not None and point_reduction not in ["mean", "sum"]:
         raise ValueError('point_reduction must be one of ["mean", "sum"] or None')
+    if point_reduction is None and batch_reduction is not None:
+        raise ValueError("Batch reduction must be None if point_reduction is None")
 
 
 def _handle_pointcloud_input(
@@ -97,7 +99,6 @@ def _chamfer_distance_single_direction(
             raise ValueError("weights must be of shape (N,).")
         if not (weights >= 0).all():
             raise ValueError("weights cannot be negative.")
-
         if weights.sum() == 0.0:
             weights = weights.view(N, 1)
             if batch_reduction in ["mean", "sum"]:
@@ -218,7 +219,7 @@ def chamfer_distance(
           x_normals and y_normals are None. If batch_reduction is None, a 2-element
           tuple of Tensors containing forward and backward loss terms (if
           single_directional is False) or a Tensor containing loss terms (if
-          signle_directional is True) is returned.
+          single_directional is True) is returned.
 
     """
     _validate_chamfer_reduction_inputs(batch_reduction, point_reduction)
