@@ -216,7 +216,7 @@ def chamfer_distance(
           single_directional is True) is returned.
         - **loss_normals**: Tensor giving the reduced cosine distance of normals
           between pointclouds in x and pointclouds in y. Returns None if
-          x_normals and y_normals are None. If batch_reduction is None, a 2-element
+          x_normals and y_normals are None. If point_reduction is None, a 2-element
           tuple of Tensors containing forward and backward loss terms shaped (N, P1) and (N, P2) (if
           single_directional is False) or a Tensor containing loss terms shaped (N, P1) (if
           single_directional is True) is returned.
