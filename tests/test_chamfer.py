@@ -421,9 +421,9 @@ class TestChamfer(TestCaseMixin, unittest.TestCase):
             ("mean", "mean"),
             ("sum", None),
             ("mean", None),
+            (None, None),
         ]
-        for (point_reduction, batch_reduction) in reductions:
-
+        for point_reduction, batch_reduction in reductions:
             # Reinitialize all the tensors so that the
             # backward pass can be computed.
             points_normals = TestChamfer.init_pointclouds(
@@ -450,24 +450,52 @@ class TestChamfer(TestCaseMixin, unittest.TestCase):
                 batch_reduction=batch_reduction,
             )
 
-            self.assertClose(cham_cloud, cham_tensor)
-            self.assertClose(norm_cloud, norm_tensor)
-            self._check_gradients(
-                cham_tensor,
-                norm_tensor,
-                cham_cloud,
-                norm_cloud,
-                points_normals.cloud1.points_list(),
-                points_normals.p1,
-                points_normals.cloud2.points_list(),
-                points_normals.p2,
-                points_normals.cloud1.normals_list(),
-                points_normals.n1,
-                points_normals.cloud2.normals_list(),
-                points_normals.n2,
-                points_normals.p1_lengths,
-                points_normals.p2_lengths,
-            )
+            if point_reduction is None:
+                cham_tensor_bidirectional = torch.hstack(
+                    [cham_tensor[0], cham_tensor[1]]
+                )
+                norm_tensor_bidirectional = torch.hstack(
+                    [norm_tensor[0], norm_tensor[1]]
+                )
+                cham_cloud_bidirectional = torch.hstack([cham_cloud[0], cham_cloud[1]])
+                norm_cloud_bidirectional = torch.hstack([norm_cloud[0], norm_cloud[1]])
+                self.assertClose(cham_cloud_bidirectional, cham_tensor_bidirectional)
+                self.assertClose(norm_cloud_bidirectional, norm_tensor_bidirectional)
+                self._check_gradients(
+                    cham_tensor_bidirectional,
+                    norm_tensor_bidirectional,
+                    cham_cloud_bidirectional,
+                    norm_cloud_bidirectional,
+                    points_normals.cloud1.points_list(),
+                    points_normals.p1,
+                    points_normals.cloud2.points_list(),
+                    points_normals.p2,
+                    points_normals.cloud1.normals_list(),
+                    points_normals.n1,
+                    points_normals.cloud2.normals_list(),
+                    points_normals.n2,
+                    points_normals.p1_lengths,
+                    points_normals.p2_lengths,
+                )
+            else:
+                self.assertClose(cham_cloud, cham_tensor)
+                self.assertClose(norm_cloud, norm_tensor)
+                self._check_gradients(
+                    cham_tensor,
+                    norm_tensor,
+                    cham_cloud,
+                    norm_cloud,
+                    points_normals.cloud1.points_list(),
+                    points_normals.p1,
+                    points_normals.cloud2.points_list(),
+                    points_normals.p2,
+                    points_normals.cloud1.normals_list(),
+                    points_normals.n1,
+                    points_normals.cloud2.normals_list(),
+                    points_normals.n2,
+                    points_normals.p1_lengths,
+                    points_normals.p2_lengths,
+                )
 
     def test_chamfer_pointcloud_object_nonormals(self):
         N = 5
@@ -481,9 +509,9 @@ class TestChamfer(TestCaseMixin, unittest.TestCase):
             ("mean", "mean"),
             ("sum", None),
             ("mean", None),
+            (None, None),
         ]
-        for (point_reduction, batch_reduction) in reductions:
-
+        for point_reduction, batch_reduction in reductions:
             # Reinitialize all the tensors so that the
             # backward pass can be computed.
             points_normals = TestChamfer.init_pointclouds(
@@ -508,19 +536,38 @@ class TestChamfer(TestCaseMixin, unittest.TestCase):
                 batch_reduction=batch_reduction,
             )
 
-            self.assertClose(cham_cloud, cham_tensor)
-            self._check_gradients(
-                cham_tensor,
-                None,
-                cham_cloud,
-                None,
-                points_normals.cloud1.points_list(),
-                points_normals.p1,
-                points_normals.cloud2.points_list(),
-                points_normals.p2,
-                lengths1=points_normals.p1_lengths,
-                lengths2=points_normals.p2_lengths,
-            )
+            if point_reduction is None:
+                cham_tensor_bidirectional = torch.hstack(
+                    [cham_tensor[0], cham_tensor[1]]
+                )
+                cham_cloud_bidirectional = torch.hstack([cham_cloud[0], cham_cloud[1]])
+                self.assertClose(cham_cloud_bidirectional, cham_tensor_bidirectional)
+                self._check_gradients(
+                    cham_tensor_bidirectional,
+                    None,
+                    cham_cloud_bidirectional,
+                    None,
+                    points_normals.cloud1.points_list(),
+                    points_normals.p1,
+                    points_normals.cloud2.points_list(),
+                    points_normals.p2,
+                    lengths1=points_normals.p1_lengths,
+                    lengths2=points_normals.p2_lengths,
+                )
+            else:
+                self.assertClose(cham_cloud, cham_tensor)
+                self._check_gradients(
+                    cham_tensor,
+                    None,
+                    cham_cloud,
+                    None,
+                    points_normals.cloud1.points_list(),
+                    points_normals.p1,
+                    points_normals.cloud2.points_list(),
+                    points_normals.p2,
+                    lengths1=points_normals.p1_lengths,
+                    lengths2=points_normals.p2_lengths,
+                )
 
     def test_chamfer_point_reduction_mean(self):
         """
@@ -707,6 +754,99 @@ class TestChamfer(TestCaseMixin, unittest.TestCase):
             loss, loss_norm, pred_loss_sum, pred_loss_norm_sum, p1, p11, p2, p22
         )
 
+    def test_chamfer_point_reduction_none(self):
+        """
+        Compare output of vectorized chamfer loss with naive implementation
+        for point_reduction = None and batch_reduction = None.
+        """
+        N, max_P1, max_P2 = 7, 10, 18
+        device = get_random_cuda_device()
+        points_normals = TestChamfer.init_pointclouds(N, max_P1, max_P2, device)
+        p1 = points_normals.p1
+        p2 = points_normals.p2
+        p1_normals = points_normals.n1
+        p2_normals = points_normals.n2
+        p11 = p1.detach().clone()
+        p22 = p2.detach().clone()
+        p11.requires_grad = True
+        p22.requires_grad = True
+
+        pred_loss, pred_loss_norm = TestChamfer.chamfer_distance_naive(
+            p1, p2, x_normals=p1_normals, y_normals=p2_normals
+        )
+
+        # point_reduction = None
+        loss, loss_norm = chamfer_distance(
+            p11,
+            p22,
+            x_normals=p1_normals,
+            y_normals=p2_normals,
+            batch_reduction=None,
+            point_reduction=None,
+        )
+
+        loss_bidirectional = torch.hstack([loss[0], loss[1]])
+        pred_loss_bidirectional = torch.hstack([pred_loss[0], pred_loss[1]])
+        loss_norm_bidirectional = torch.hstack([loss_norm[0], loss_norm[1]])
+        pred_loss_norm_bidirectional = torch.hstack(
+            [pred_loss_norm[0], pred_loss_norm[1]]
+        )
+
+        self.assertClose(loss_bidirectional, pred_loss_bidirectional)
+        self.assertClose(loss_norm_bidirectional, pred_loss_norm_bidirectional)
+
+        # Check gradients
+        self._check_gradients(
+            loss_bidirectional,
+            loss_norm_bidirectional,
+            pred_loss_bidirectional,
+            pred_loss_norm_bidirectional,
+            p1,
+            p11,
+            p2,
+            p22,
+        )
+
+    def test_single_direction_chamfer_point_reduction_none(self):
+        """
+        Compare output of vectorized chamfer loss with naive implementation
+        for point_reduction = None and batch_reduction = None.
+        """
+        N, max_P1, max_P2 = 7, 10, 18
+        device = get_random_cuda_device()
+        points_normals = TestChamfer.init_pointclouds(N, max_P1, max_P2, device)
+        p1 = points_normals.p1
+        p2 = points_normals.p2
+        p1_normals = points_normals.n1
+        p2_normals = points_normals.n2
+        p11 = p1.detach().clone()
+        p22 = p2.detach().clone()
+        p11.requires_grad = True
+        p22.requires_grad = True
+
+        pred_loss, pred_loss_norm = TestChamfer.chamfer_distance_naive(
+            p1, p2, x_normals=p1_normals, y_normals=p2_normals
+        )
+
+        # point_reduction = None
+        loss, loss_norm = chamfer_distance(
+            p11,
+            p22,
+            x_normals=p1_normals,
+            y_normals=p2_normals,
+            batch_reduction=None,
+            point_reduction=None,
+            single_directional=True,
+        )
+
+        self.assertClose(loss, pred_loss[0])
+        self.assertClose(loss_norm, pred_loss_norm[0])
+
+        # Check gradients
+        self._check_gradients(
+            loss, loss_norm, pred_loss[0], pred_loss_norm[0], p1, p11, p2, p22
+        )
+
     def _check_gradients(
         self,
         loss,
@@ -880,9 +1020,9 @@ class TestChamfer(TestCaseMixin, unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "batch_reduction must be one of"):
             chamfer_distance(p1, p2, weights=weights, batch_reduction="max")
 
-        # Error when point_reduction is not in ["mean", "sum"].
+        # Error when point_reduction is not in ["mean", "sum"] or None.
         with self.assertRaisesRegex(ValueError, "point_reduction must be one of"):
-            chamfer_distance(p1, p2, weights=weights, point_reduction=None)
+            chamfer_distance(p1, p2, weights=weights, point_reduction="max")
 
     def test_incorrect_weights(self):
         N, P1, P2 = 16, 64, 128
