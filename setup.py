@@ -12,7 +12,15 @@ import sys
 import warnings
 from typing import List, Optional
 
-import torch
+try:
+    import torch
+except ImportError:
+    import subprocess
+    import sys
+    if subprocess.call([sys.executable, "-m", "pip", "install", "torch"]) != 0:
+        raise RuntimeError("PyTorch not found. Install PyTorch to install PyTorch3D.")
+    else:
+        import torch
 from setuptools import find_packages, setup
 from torch.utils.cpp_extension import CppExtension, CUDA_HOME, CUDAExtension
 
