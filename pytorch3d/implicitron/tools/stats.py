@@ -21,7 +21,7 @@ from pytorch3d.implicitron.tools.vis_utils import get_visdom_connection
 logger = logging.getLogger(__name__)
 
 
-class AverageMeter(object):
+class AverageMeter:
     """Computes and stores the average and current value"""
 
     def __init__(self):
@@ -72,7 +72,7 @@ class AverageMeter(object):
         return self
 
 
-class Stats(object):
+class Stats:
     # TODO: update this with context manager
     """
     stats logging object useful for gathering statistics of training a deep net in pytorch
