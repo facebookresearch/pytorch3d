@@ -8,7 +8,6 @@
 
 #include <float.h>
 #include <math.h>
-#include <thrust/device_vector.h>
 #include <cstdio>
 #include "utils/float_math.cuh"
 
