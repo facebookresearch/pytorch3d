@@ -401,7 +401,9 @@ class CamerasBase(TensorProperties):
         kwargs = {}
 
         tensor_types = {
+            # pyre-fixme[16]: Module `cuda` has no attribute `BoolTensor`.
             "bool": (torch.BoolTensor, torch.cuda.BoolTensor),
+            # pyre-fixme[16]: Module `cuda` has no attribute `LongTensor`.
             "long": (torch.LongTensor, torch.cuda.LongTensor),
         }
         if not isinstance(
