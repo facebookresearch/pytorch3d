@@ -9,7 +9,7 @@ The core library is written in PyTorch. Several components have underlying imple
 
 - Linux or macOS or Windows
 - Python 3.8, 3.9 or 3.10
-- PyTorch 1.10.0, 1.10.1, 1.10.2, 1.11.0, 1.12.0, 1.12.1, 1.13.0, 2.0.0 or 2.0.1.
+- PyTorch 1.12.0, 1.12.1, 1.13.0, 2.0.0, 2.0.1 or 2.1.0.
 - torchvision that matches the PyTorch installation. You can install them together as explained at pytorch.org to make sure of this.
 - gcc & g++ ≥ 4.9
 - [fvcore](https://github.com/facebookresearch/fvcore)
@@ -77,13 +77,8 @@ Or, to install a nightly (non-official, alpha) build:
 # Anaconda Cloud
 conda install pytorch3d -c pytorch3d-nightly
 ```
-### 2. Install from PyPI, on Mac only.
-This works with pytorch 1.13.0 only. The build is CPU only.
-```
-pip install pytorch3d
-```
 
-### 3. Install wheels for Linux
+### 2. Install wheels for Linux
 We have prebuilt wheels with CUDA for Linux for PyTorch 1.11.0, for each of the supported CUDA versions,
 for Python 3.8 and 3.9. This is for ease of use on Google Colab.
 These are installed in a special way.

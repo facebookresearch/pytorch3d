@@ -20,16 +20,13 @@ from packaging import version
 # version of pytorch.
 # Pytorch 1.4 also supports cuda 10.0 but we no longer build for cuda 10.0 at all.
 CONDA_CUDA_VERSIONS = {
-    "1.10.0": ["cu102", "cu111", "cu113"],
-    "1.10.1": ["cu102", "cu111", "cu113"],
-    "1.10.2": ["cu102", "cu111", "cu113"],
-    "1.11.0": ["cu102", "cu111", "cu113", "cu115"],
     "1.12.0": ["cu102", "cu113", "cu116"],
     "1.12.1": ["cu102", "cu113", "cu116"],
     "1.13.0": ["cu116", "cu117"],
     "1.13.1": ["cu116", "cu117"],
     "2.0.0": ["cu117", "cu118"],
     "2.0.1": ["cu117", "cu118"],
+    "2.1.0": ["cu118", "cu121"],
 }
 
 
@@ -50,12 +47,18 @@ def pytorch_versions_for_python(python_version):
             for i in CONDA_CUDA_VERSIONS
             if version.Version(i) >= version.Version("1.11.0")
         ]
+    if python_version == "3.11":
+        return [
+            i
+            for i in CONDA_CUDA_VERSIONS
+            if version.Version(i) >= version.Version("2.1.0")
+        ]
 
 
 def workflows(prefix="", filter_branch=None, upload=False, indentation=6):
     w = []
     for btype in ["conda"]:
-        for python_version in ["3.8", "3.9", "3.10"]:
+        for python_version in ["3.8", "3.9", "3.10", "3.11"]:
             for pytorch_version in pytorch_versions_for_python(python_version):
                 for cu_version in CONDA_CUDA_VERSIONS[pytorch_version]:
                     w += workflow_pair(

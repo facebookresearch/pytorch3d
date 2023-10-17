@@ -59,12 +59,17 @@ def setup_cuda():
     )
     if CU_VERSION == "cu102":
         nvcc_flags = basic_nvcc_flags
-    elif CU_VERSION == "cu110":
-        nvcc_flags = "-gencode=arch=compute_80,code=sm_80 " + basic_nvcc_flags
+    elif CU_VERSION < ("cu118"):
+        nvcc_flags = (
+            "-gencode=arch=compute_80,code=sm_80 "
+            + "-gencode=arch=compute_86,code=sm_86 "
+            + basic_nvcc_flags
+        )
     else:
         nvcc_flags = (
             "-gencode=arch=compute_80,code=sm_80 "
             + "-gencode=arch=compute_86,code=sm_86 "
+            + "-gencode=arch=compute_90,code=sm_90 "
             + basic_nvcc_flags
         )
 
