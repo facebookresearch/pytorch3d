@@ -60,7 +60,7 @@ class FishEyeCameras(CamerasBase):
         "world_coordinates",
         "use_radial",
         "use_tangential",
-        "use_tin_prism",
+        "use_thin_prism",
         "device",
         "image_size",
     )
