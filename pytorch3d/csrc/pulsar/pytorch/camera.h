@@ -37,7 +37,7 @@ inline void fill_cam_vecs(
   res->pixel_dir_y.x = pixel_dir_y.data_ptr<float>()[0];
   res->pixel_dir_y.y = pixel_dir_y.data_ptr<float>()[1];
   res->pixel_dir_y.z = pixel_dir_y.data_ptr<float>()[2];
-  auto sensor_dir_z = pixel_dir_y.cross(pixel_dir_x);
+  auto sensor_dir_z = pixel_dir_y.cross(pixel_dir_x, -1);
   sensor_dir_z /= sensor_dir_z.norm();
   if (right_handed) {
     sensor_dir_z *= -1.f;
