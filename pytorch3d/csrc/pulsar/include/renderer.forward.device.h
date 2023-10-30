@@ -102,6 +102,7 @@ void forward(
       self->workspace_d,
       self->workspace_size,
       stream);
+  CHECKLAUNCH();
   SORT_ASCENDING_WS(
       self->min_depth_d,
       self->min_depth_sorted_d,
@@ -111,6 +112,7 @@ void forward(
       self->workspace_d,
       self->workspace_size,
       stream);
+  CHECKLAUNCH();
   SORT_ASCENDING_WS(
       self->min_depth_d,
       self->min_depth_sorted_d,
