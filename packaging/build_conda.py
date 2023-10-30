@@ -50,7 +50,6 @@ def setup_cuda():
     os.environ["FORCE_CUDA"] = "1"
 
     basic_nvcc_flags = (
-        "-gencode=arch=compute_35,code=sm_35 "
         "-gencode=arch=compute_50,code=sm_50 "
         "-gencode=arch=compute_60,code=sm_60 "
         "-gencode=arch=compute_70,code=sm_70 "
@@ -58,10 +57,11 @@ def setup_cuda():
         "-gencode=arch=compute_50,code=compute_50"
     )
     if CU_VERSION == "cu102":
-        nvcc_flags = basic_nvcc_flags
+        nvcc_flags = "-gencode=arch=compute_35,code=sm_35 " + basic_nvcc_flags
     elif CU_VERSION < ("cu118"):
         nvcc_flags = (
-            "-gencode=arch=compute_80,code=sm_80 "
+            "-gencode=arch=compute_35,code=sm_35 "
+            + "-gencode=arch=compute_80,code=sm_80 "
             + "-gencode=arch=compute_86,code=sm_86 "
             + basic_nvcc_flags
         )

@@ -64,7 +64,7 @@ jobs:
       CUDA_VERSION: "11.3"
     resource_class: gpu.nvidia.small.multi
     machine:
-      image: ubuntu-2004:202101-01
+      image: linux-cuda-11:default
     steps:
       - checkout
       - <<: *setupcuda
@@ -116,7 +116,7 @@ jobs:
       # so we aren't running the tests.
       - run:
           name: build
-          no_output_timeout: 20m
+          no_output_timeout: 40m
           command: MAX_JOBS=15 TEST_FLAG=--no-test python3 packaging/build_conda.py
       - store_artifacts:
           path: /opt/conda/conda-bld/linux-64
@@ -128,7 +128,7 @@ jobs:
   binary_linux_conda_cuda:
     <<: *binary_common
     machine:
-      image: ubuntu-1604-cuda-10.2:202012-01
+      image: linux-cuda-11:default
     resource_class: gpu.nvidia.small.multi
     steps:
     - checkout
@@ -145,7 +145,7 @@ jobs:
           docker pull $TESTRUN_DOCKER_IMAGE
     - run:
         name: Build and run tests
-        no_output_timeout: 20m
+        no_output_timeout: 40m
         command: |
           set -e
 
@@ -164,8 +164,8 @@ workflows:
       #     context: DOCKERHUB_TOKEN
       {{workflows()}}
       - binary_linux_conda_cuda:
-          name: testrun_conda_cuda_py38_cu102_pyt190
+          name: testrun_conda_cuda_py310_cu117_pyt201
           context: DOCKERHUB_TOKEN
-          python_version: "3.8"
-          pytorch_version: '1.9.0'
-          cu_version: "cu102"
+          python_version: "3.10"
+          pytorch_version: '2.0.1'
+          cu_version: "cu117"
