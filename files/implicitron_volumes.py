@@ -30,7 +30,7 @@ try:
 except ModuleNotFoundError:
     need_pytorch3d=True
 if need_pytorch3d:
-    if torch.__version__.startswith(("1.13.", "2.0.")) and sys.platform.startswith("linux"):
+    if torch.__version__.startswith("2.1.") and sys.platform.startswith("linux"):
         # We try to install PyTorch3D via a released wheel.
         pyt_version_str=torch.__version__.split("+")[0].replace(".", "")
         version_str="".join([

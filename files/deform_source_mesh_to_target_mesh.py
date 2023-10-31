@@ -48,7 +48,7 @@ try:
 except ModuleNotFoundError:
     need_pytorch3d=True
 if need_pytorch3d:
-    if torch.__version__.startswith(("1.13.", "2.0.")) and sys.platform.startswith("linux"):
+    if torch.__version__.startswith("2.1.") and sys.platform.startswith("linux"):
         # We try to install PyTorch3D via a released wheel.
         pyt_version_str=torch.__version__.split("+")[0].replace(".", "")
         version_str="".join([
@@ -153,7 +153,7 @@ def plot_pointcloud(mesh, title=""):
     points = sample_points_from_meshes(mesh, 5000)
     x, y, z = points.clone().detach().cpu().squeeze().unbind(1)    
     fig = plt.figure(figsize=(5, 5))
-    ax = Axes3D(fig)
+    ax = fig.add_subplot(111, projection='3d')
     ax.scatter3D(x, z, -y)
     ax.set_xlabel('x')
     ax.set_ylabel('z')
