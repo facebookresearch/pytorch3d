@@ -220,7 +220,7 @@ class TestRenderPoints(TestCaseMixin, unittest.TestCase):
                         # znear and zfar is required in this case.
                         self.assertRaises(
                             ValueError,
-                            lambda: renderer.forward(
+                            lambda renderer=renderer, pointclouds=pointclouds: renderer.forward(
                                 point_clouds=pointclouds, gamma=(1e-4,)
                             ),
                         )
@@ -233,7 +233,7 @@ class TestRenderPoints(TestCaseMixin, unittest.TestCase):
                         # znear and zfar must be batched.
                         self.assertRaises(
                             TypeError,
-                            lambda: renderer.forward(
+                            lambda renderer=renderer, pointclouds=pointclouds: renderer.forward(
                                 point_clouds=pointclouds,
                                 gamma=(1e-4,),
                                 znear=1.0,
@@ -242,7 +242,7 @@ class TestRenderPoints(TestCaseMixin, unittest.TestCase):
                         )
                         self.assertRaises(
                             TypeError,
-                            lambda: renderer.forward(
+                            lambda renderer=renderer, pointclouds=pointclouds: renderer.forward(
                                 point_clouds=pointclouds,
                                 gamma=(1e-4,),
                                 znear=(1.0,),
@@ -253,7 +253,7 @@ class TestRenderPoints(TestCaseMixin, unittest.TestCase):
                         # gamma must be batched.
                         self.assertRaises(
                             TypeError,
-                            lambda: renderer.forward(
+                            lambda renderer=renderer, pointclouds=pointclouds: renderer.forward(
                                 point_clouds=pointclouds, gamma=1e-4
                             ),
                         )
@@ -262,7 +262,7 @@ class TestRenderPoints(TestCaseMixin, unittest.TestCase):
                         renderer.rasterizer.raster_settings.image_size = 0
                         self.assertRaises(
                             ValueError,
-                            lambda: renderer.forward(
+                            lambda renderer=renderer, pointclouds=pointclouds: renderer.forward(
                                 point_clouds=pointclouds, gamma=(1e-4,)
                             ),
                         )
