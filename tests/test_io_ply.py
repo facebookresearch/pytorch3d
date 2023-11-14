@@ -20,10 +20,11 @@ from pytorch3d.renderer.mesh import TexturesVertex
 from pytorch3d.structures import Meshes, Pointclouds
 from pytorch3d.utils import torus
 
-from .common_testing import TestCaseMixin
+from .common_testing import get_tests_dir, TestCaseMixin
 
 
 global_path_manager = PathManager()
+DATA_DIR = get_tests_dir() / "data"
 
 
 def _load_ply_raw(stream):
@@ -777,6 +778,19 @@ class TestMeshPlyIO(TestCaseMixin, unittest.TestCase):
             self.assertListEqual(
                 data["minus_ones"], [-1, 255, -1, 65535, -1, 4294967295]
             )
+
+    def test_load_uvs(self):
+        io = IO()
+        mesh = io.load_mesh(DATA_DIR / "uvs.ply")
+        self.assertEqual(mesh.textures.verts_uvs_padded().shape, (1, 8, 2))
+        self.assertClose(
+            mesh.textures.verts_uvs_padded()[0],
+            torch.tensor([[0, 0]] + [[0.2, 0.3]] * 6 + [[0.4, 0.5]]),
+        )
+        self.assertEqual(
+            mesh.textures.faces_uvs_padded().shape, mesh.faces_padded().shape
+        )
+        self.assertEqual(mesh.textures.maps_padded().shape, (1, 512, 512, 3))
 
     def test_bad_ply_syntax(self):
         """Some syntactically bad ply files."""
