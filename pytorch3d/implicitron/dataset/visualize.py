@@ -89,9 +89,8 @@ def get_implicitron_sequence_pointcloud(
             frame_data.image_rgb,
             frame_data.depth_map,
             (cast(torch.Tensor, frame_data.fg_probability) > 0.5).float()
-            if frame_data.fg_probability is not None
+            if mask_points and frame_data.fg_probability is not None
             else None,
-            mask_points=mask_points,
         )
 
     return point_cloud, frame_data
