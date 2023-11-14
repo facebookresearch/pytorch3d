@@ -939,8 +939,11 @@ class TestMarchingCubes(TestCaseMixin, unittest.TestCase):
         u = u[None].float()
         verts, faces = marching_cubes_naive(u, 0, return_local_coords=False)
         verts2, faces2 = marching_cubes(u, 0, return_local_coords=False)
-        self.assertClose(verts[0], verts2[0])
-        self.assertClose(faces[0], faces2[0])
+        self.assertClose(verts2[0], verts[0])
+        self.assertClose(faces2[0], faces[0])
+        verts3, faces3 = marching_cubes(u.cuda(), 0, return_local_coords=False)
+        self.assertEqual(len(verts3), len(verts))
+        self.assertEqual(len(faces3), len(faces))
 
     @staticmethod
     def marching_cubes_with_init(algo_type: str, batch_size: int, V: int, device: str):
