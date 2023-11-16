@@ -30,6 +30,12 @@ class PointsRenderer(nn.Module):
     A class for rendering a batch of points. The class should
     be initialized with a rasterizer and compositor class which each have a forward
     function.
+
+    The points are rendered with with varying alpha (weights) values depending on
+    the distance of the pixel center to the true point in the xy plane. The purpose
+    of this is to soften the hard decision boundary, for differentiability.
+    See Section 3.2 of "SynSin: End-to-end View Synthesis from a Single Image"
+    (https://arxiv.org/pdf/1912.08804.pdf) for more details.
     """
 
     def __init__(self, rasterizer, compositor) -> None:

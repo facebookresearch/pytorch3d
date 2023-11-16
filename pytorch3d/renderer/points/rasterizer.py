@@ -16,8 +16,30 @@ from pytorch3d.structures import Pointclouds
 from .rasterize_points import rasterize_points
 
 
-# Class to store the outputs of point rasterization
 class PointFragments(NamedTuple):
+    """
+    Class to store the outputs of point rasterization
+
+    Members:
+        idx: int32 Tensor of shape (N, image_size, image_size, points_per_pixel)
+            giving the indices of the nearest points at each pixel, in ascending
+            z-order. Concretely `idx[n, y, x, k] = p` means that `points[p]` is the kth
+            closest point (along the z-direction) to pixel (y, x) - note that points
+            represents the packed points of shape (P, 3).
+            Pixels that are hit by fewer than points_per_pixel are padded with -1.
+        zbuf: Tensor of shape (N, image_size, image_size, points_per_pixel)
+            giving the z-coordinates of the nearest points at each pixel, sorted in
+            z-order. Concretely, if `idx[n, y, x, k] = p` then
+            `zbuf[n, y, x, k] = points[n, p, 2]`. Pixels hit by fewer than
+            points_per_pixel are padded with -1.
+        dists: Tensor of shape (N, image_size, image_size, points_per_pixel)
+            giving the squared Euclidean distance (in NDC units) in the x/y plane
+            for each point closest to the pixel. Concretely if `idx[n, y, x, k] = p`
+            then `dists[n, y, x, k]` is the squared distance between the pixel (y, x)
+            and the point `(points[n, p, 0], points[n, p, 1])`. Pixels hit with fewer
+            than points_per_pixel are padded with -1.
+    """
+
     idx: torch.Tensor
     zbuf: torch.Tensor
     dists: torch.Tensor
