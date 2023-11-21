@@ -30,11 +30,18 @@
 #define GLOBAL __global__
 #define RESTRICT __restrict__
 #define DEBUGBREAK()
+#ifdef __NVCC_DIAG_PRAGMA_SUPPORT__
+#pragma nv_diag_suppress  1866
+#pragma nv_diag_suppress  2941
+#pragma nv_diag_suppress  2951
+#pragma nv_diag_suppress  2967
+#else
 #pragma diag_suppress = attribute_not_allowed
 #pragma diag_suppress = 1866
 #pragma diag_suppress = 2941
 #pragma diag_suppress = 2951
 #pragma diag_suppress = 2967
+#endif
 #else // __CUDACC__
 #define INLINE inline
 #define HOST
