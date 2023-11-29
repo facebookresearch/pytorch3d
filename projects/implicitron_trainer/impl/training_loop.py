@@ -110,6 +110,8 @@ class ImplicitronTrainingLoop(TrainingLoopBase):
     def __post_init__(self):
         run_auto_creation(self)
 
+    # pyre-fixme[14]: `run` overrides method defined in `TrainingLoopBase`
+    #  inconsistently.
     def run(
         self,
         *,
@@ -391,7 +393,6 @@ class ImplicitronTrainingLoop(TrainingLoopBase):
             ):
                 prefix = f"e{stats.epoch}_it{stats.it[trainmode]}"
                 if hasattr(model, "visualize"):
-                    # pyre-ignore [29]
                     model.visualize(
                         viz,
                         visdom_env_imgs,

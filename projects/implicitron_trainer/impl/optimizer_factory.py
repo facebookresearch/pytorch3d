@@ -121,7 +121,6 @@ class ImplicitronOptimizerFactory(OptimizerFactoryBase):
         """
         # Get the parameters to optimize
         if hasattr(model, "_get_param_groups"):  # use the model function
-            # pyre-ignore[29]
             p_groups = model._get_param_groups(self.lr, wd=self.weight_decay)
         else:
             p_groups = [
