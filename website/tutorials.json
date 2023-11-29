@@ -46,5 +46,11 @@
          "id": "implicitron_config_system",
          "title": "Implicitron config system deep dive"
       }
+   ],
+   "Multitexture OBJ": [
+      {
+         "id": "multitexture_obj_IO_and_point_sampling",
+         "title": "Multitexture OBJ Support in PyTorch3d"
+      }
    ]
 }

@@ -1002,7 +1002,9 @@ class TexturesUV(TexturesBase):
             texture_maps = texture_maps.to(pixel_uvs.device)
         texels = F.grid_sample(
             texture_maps,
-            pixel_uvs,
+            pixel_uvs.type(
+                texture_maps.dtype
+            ),  # ensure that input and output are same dtype
             mode=self.sampling_mode,
             align_corners=self.align_corners,
             padding_mode=self.padding_mode,

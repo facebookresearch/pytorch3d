@@ -16,6 +16,7 @@ import torch
 from pytorch3d.ops.mesh_face_areas_normals import mesh_face_areas_normals
 from pytorch3d.ops.packed_to_padded import packed_to_padded
 from pytorch3d.renderer.mesh.rasterizer import Fragments as MeshFragments
+from pytorch3d.structures import Meshes
 
 
 def sample_points_from_meshes(
@@ -23,6 +24,7 @@ def sample_points_from_meshes(
     num_samples: int = 10000,
     return_normals: bool = False,
     return_textures: bool = False,
+    return_mappers: bool = False,
 ) -> Union[
     torch.Tensor,
     Tuple[torch.Tensor, torch.Tensor],
@@ -38,9 +40,9 @@ def sample_points_from_meshes(
         num_samples: Integer giving the number of point samples per mesh.
         return_normals: If True, return normals for the sampled points.
         return_textures: If True, return textures for the sampled points.
-
+        return_mappers: If True, return a mapping of each point to its origin face.
     Returns:
-        3-element tuple containing
+        4-element tuple containing
 
         - **samples**: FloatTensor of shape (N, num_samples, 3) giving the
           coordinates of sampled points for each mesh in the batch. For empty
@@ -53,8 +55,10 @@ def sample_points_from_meshes(
           texture vector to each sampled point. Only returned if return_textures is True.
           For empty meshes the corresponding row in the textures array will
           be filled with 0.
+        - **mappers**: IntTensor of shape (N, num_samples) providing a point to face
+          mapping for each point's origin face in the sample.
 
-        Note that in a future releases, we will replace the 3-element tuple output
+        Note that in a future releases, we will replace the 4-element tuple output
         with a `Pointclouds` datastructure, as follows
 
         .. code-block:: python
@@ -63,6 +67,9 @@ def sample_points_from_meshes(
     """
     if meshes.isempty():
         raise ValueError("Meshes are empty.")
+
+    # initialize all return values
+    samples, normals, textures, mappers = None, None, None, None
 
     verts = meshes.verts_packed()
     if not torch.isfinite(verts).all():
@@ -73,11 +80,7 @@ def sample_points_from_meshes(
 
     faces = meshes.faces_packed()
     mesh_to_face = meshes.mesh_to_faces_packed_first_idx()
-    num_meshes = len(meshes)
     num_valid_meshes = torch.sum(meshes.valid)  # Non empty meshes.
-
-    # Initialize samples tensor with fill value 0 for empty meshes.
-    samples = torch.zeros((num_meshes, num_samples, 3), device=meshes.device)
 
     # Only compute samples for non empty meshes
     with torch.no_grad():
@@ -91,51 +94,32 @@ def sample_points_from_meshes(
         sample_face_idxs = areas_padded.multinomial(
             num_samples, replacement=True
         )  # (N, num_samples)
+
+        if return_mappers:
+            # for each mesh, a mapping of each point to its origin face by the face index
+            mappers = sample_face_idxs.clone()
+
         sample_face_idxs += mesh_to_face[meshes.valid].view(num_valid_meshes, 1)
 
-    # Get the vertex coordinates of the sampled faces.
-    face_verts = verts[faces]
-    v0, v1, v2 = face_verts[:, 0], face_verts[:, 1], face_verts[:, 2]
-
-    # Randomly generate barycentric coords.
-    w0, w1, w2 = _rand_barycentric_coords(
-        num_valid_meshes, num_samples, verts.dtype, verts.device
+    (samples, (v0, v1, v2), (w0, w1, w2)) = _sample_points(
+        meshes,
+        num_samples,
+        sample_face_idxs,
+        verts,
+        faces,
     )
 
-    # Use the barycentric coords to get a point on each sampled face.
-    a = v0[sample_face_idxs]  # (N, num_samples, 3)
-    b = v1[sample_face_idxs]
-    c = v2[sample_face_idxs]
-    samples[meshes.valid] = w0[:, :, None] * a + w1[:, :, None] * b + w2[:, :, None] * c
-
     if return_normals:
-        # Initialize normals tensor with fill value 0 for empty meshes.
-        # Normals for the sampled points are face normals computed from
-        # the vertices of the face in which the sampled point lies.
-        normals = torch.zeros((num_meshes, num_samples, 3), device=meshes.device)
-        vert_normals = (v1 - v0).cross(v2 - v1, dim=1)
-        vert_normals = vert_normals / vert_normals.norm(dim=1, p=2, keepdim=True).clamp(
-            min=sys.float_info.epsilon
-        )
-        vert_normals = vert_normals[sample_face_idxs]
-        normals[meshes.valid] = vert_normals
+        normals = _sample_normals(meshes, num_samples, sample_face_idxs, v0, v1, v2)
 
     if return_textures:
-        # fragment data are of shape NxHxWxK. Here H=S, W=1 & K=1.
-        pix_to_face = sample_face_idxs.view(len(meshes), num_samples, 1, 1)  # NxSx1x1
-        bary = torch.stack((w0, w1, w2), dim=2).unsqueeze(2).unsqueeze(2)  # NxSx1x1x3
-        # zbuf and dists are not used in `sample_textures` so we initialize them with dummy
-        dummy = torch.zeros(
-            (len(meshes), num_samples, 1, 1), device=meshes.device, dtype=torch.float32
-        )  # NxSx1x1
-        fragments = MeshFragments(
-            pix_to_face=pix_to_face, zbuf=dummy, bary_coords=bary, dists=dummy
-        )
-        textures = meshes.sample_textures(fragments)  # NxSx1x1xC
-        textures = textures[:, :, 0, 0, :]  # NxSxC
+        textures = _sample_textures(meshes, num_samples, sample_face_idxs, w0, w1, w2)
 
     # return
     # TODO(gkioxari) consider returning a Pointclouds instance [breaking]
+    if return_mappers:
+        # return a 4-element tuple
+        return samples, normals, textures, mappers
     if return_normals and return_textures:
         # pyre-fixme[61]: `normals` may not be initialized here.
         # pyre-fixme[61]: `textures` may not be initialized here.
@@ -173,3 +157,136 @@ def _rand_barycentric_coords(
     w1 = u_sqrt * (1.0 - v)
     w2 = u_sqrt * v
     return w0, w1, w2
+
+
+def _sample_points(
+    meshes: Meshes,
+    num_samples: int,
+    sample_face_idxs: torch.Tensor,
+    verts: torch.Tensor,
+    faces: torch.Tensor,
+) -> Tuple[
+    torch.Tensor,
+    Tuple[torch.Tensor, torch.Tensor, torch.Tensor],
+    Tuple[torch.Tensor, torch.Tensor, torch.Tensor],
+]:
+    """This is a helper function that re-packages the core sampling function for points.
+    Args:
+        meshes: A Meshes object to sample points from.
+        num_samples: Integer number of samples to generate per mesh.
+        num_valid_meshes: Integer value, typically the value equal to torch.sum(meshes.valid).
+        sample_face_idxs: An array of face indices to sample from Meshes.
+        verts: torch.Tensor of verts, typically meshes.verts_packed().
+        faces: torch.Tensor of faces, typically meshes.faces_packed().
+
+    Returns:
+        A 3-Tuple of sampled points array, face_verts arrays as a 3-Tuple, and
+        barycentric coordinate arrays as a 3-Tuple.
+
+    """
+    # Initialize samples tensor with fill value 0 for empty meshes.
+    samples = _empty_sample(len(meshes), num_samples, verts.device, verts.dtype)
+
+    # Get the vertex coordinates of the sampled faces.
+    face_verts = verts[faces]
+    v0, v1, v2 = face_verts[:, 0], face_verts[:, 1], face_verts[:, 2]
+
+    # Randomly generate barycentric coords.
+    w0, w1, w2 = _rand_barycentric_coords(
+        torch.sum(meshes.valid), num_samples, verts.dtype, verts.device
+    )
+
+    # Use the barycentric coords to get a point on each sampled face.
+    a = v0[sample_face_idxs]  # (N, num_samples, 3)
+    b = v1[sample_face_idxs]
+    c = v2[sample_face_idxs]
+    samples[meshes.valid] = w0[:, :, None] * a + w1[:, :, None] * b + w2[:, :, None] * c
+    return samples, (v0, v1, v2), (w0, w1, w2)
+
+
+def _sample_normals(
+    meshes: Meshes,
+    num_samples: int,
+    sample_face_idxs: torch.Tensor,
+    v0: torch.Tensor,
+    v1: torch.Tensor,
+    v2: torch.Tensor,
+) -> torch.Tensor:
+    """This is a helper function that implements the core sampling function for point normals.
+
+    Args:
+        meshes: A Meshes object to sample points from.
+        num_samples: Integer number of samples to generate per mesh.
+        sample_face_idxs: An array of face indices to sample from Meshes.
+        v0, v1, v2: torch.Tensors of face_verts.
+
+    Returns:
+        a torch.Tensor of normals
+    """
+    # Initialize normals tensor with fill value 0 for empty meshes.
+    # Normals for the sampled points are face normals computed from
+    # the vertices of the face in which the sampled point lies.
+    normals = torch.zeros(
+        (len(meshes), num_samples, 3), device=meshes.device, dtype=v0.dtype
+    )
+    vert_normals = (v1 - v0).cross(v2 - v1, dim=1)
+    vert_normals = vert_normals / vert_normals.norm(dim=1, p=2, keepdim=True).clamp(
+        min=sys.float_info.epsilon
+    )
+    vert_normals = vert_normals[sample_face_idxs]
+    normals[meshes.valid] = vert_normals
+    return normals
+
+
+def _sample_textures(
+    meshes: Meshes,
+    num_samples: int,
+    sample_face_idxs: torch.Tensor,
+    w0: torch.Tensor,
+    w1: torch.Tensor,
+    w2: torch.Tensor,
+) -> torch.Tensor:
+    """This is a helper function that implements the core sampling function for point textures.
+
+    Args:
+        meshes: A Meshes object from which to sample textures.
+        num_samples: Integer value for number of texture samples.
+        sample_face_idxs: An array of face indices to sample from Meshes.
+        w0, w1, w2: Tensors giving random barycentric coordinates from _sample_points.
+
+    Returns:
+        A torch.Tensor of sampled textures for Meshes.
+    """
+    # fragment data are of shape NxHxWxK. Here H=S, W=1 & K=1.
+    pix_to_face = sample_face_idxs.view(len(meshes), num_samples, 1, 1)  # NxSx1x1
+    bary = torch.stack((w0, w1, w2), dim=2).unsqueeze(2).unsqueeze(2)  # NxSx1x1x3
+    # zbuf and dists are not used in `sample_textures` so we initialize them with dummy
+    dummy = torch.zeros(
+        (len(meshes), num_samples, 1, 1), device=meshes.device, dtype=bary.dtype
+    )  # NxSx1x1
+    fragments = MeshFragments(
+        pix_to_face=pix_to_face, zbuf=dummy, bary_coords=bary, dists=dummy
+    )
+    textures = meshes.sample_textures(fragments)  # NxSx1x1xC
+    textures = textures[:, :, 0, 0, :]  # NxSxC
+    return textures
+
+
+def _empty_sample(
+    num_meshes: int, num_samples: int, device: torch.device, dtype: torch.dtype = None
+) -> torch.Tensor:
+    """This is a helper function that returns an empty (zeros) tensor to initialize a point sample.
+
+    Args:
+        num_meshes: Integer value for dim 0 of the array.
+        num_samples: Integer value for dim 1 of the array.
+        device: torch.device
+        dtype: Optionally specify the torch.dtype to force a specific type.
+
+    Returns:
+        A torch.zeros Tensor in the shape of (num_meshes x num_samples x 3)
+    """
+    if dtype is not None:
+        return torch.zeros((num_meshes, num_samples, 3), device=device, dtype=dtype)
+    else:
+        return torch.zeros((num_meshes, num_samples, 3), device=device)
