@@ -48,14 +48,16 @@ def interpolate_face_attributes(
     # On CPU use the python version
     # TODO: Implement a C++ version of this function
     if not pix_to_face.is_cuda:
-        args = (pix_to_face, barycentric_coords, face_attributes)
+        # accomodate high_precision inputs and force float types where needed
+        args = (pix_to_face, barycentric_coords.float(), face_attributes.float())
         return interpolate_face_attributes_python(*args)
 
     # Otherwise flatten and call the custom autograd function
     N, H, W, K = pix_to_face.shape
     pix_to_face = pix_to_face.view(-1)
     barycentric_coords = barycentric_coords.view(N * H * W * K, 3)
-    args = (pix_to_face, barycentric_coords, face_attributes)
+    # accomodate high_precision inputs and force float types where needed
+    args = (pix_to_face, barycentric_coords.float(), face_attributes.float())
     out = _InterpFaceAttrs.apply(*args)
     out = out.view(N, H, W, K, -1)
     return out

@@ -1529,7 +1529,6 @@ class Meshes:
 
     def sample_textures(self, fragments):
         if self.textures is not None:
-
             # Check dimensions of textures match that of meshes
             shape_ok = self.textures.check_shapes(self._N, self._V, self._F)
             if not shape_ok:

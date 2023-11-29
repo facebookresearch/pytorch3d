@@ -10,20 +10,28 @@ import os
 import warnings
 from collections import namedtuple
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Dict, Union, Tuple
 
 import numpy as np
 import torch
 from iopath.common.file_io import PathManager
 from PIL import Image
+
+from pytorch3d.utils.obj_utils import (
+    parse_obj_to_mesh_by_texture,
+    _reindex_face_normals_by_index,
+    _reindex_obj_materials_by_index,
+    _reindex_verts_faces_by_index,
+    _reindex_verts_faces_uvs_by_index,
+    _validate_obj,
+)
 from pytorch3d.common.datatypes import Device
 from pytorch3d.io.mtl_io import load_mtl, make_mesh_texture_atlas
 from pytorch3d.io.utils import _check_faces_indices, _make_tensor, _open_file, PathOrStr
-from pytorch3d.renderer import TexturesAtlas, TexturesUV
-from pytorch3d.structures import join_meshes_as_batch, Meshes
+from pytorch3d.renderer.mesh.textures import TexturesAtlas, TexturesUV
+from pytorch3d.structures import join_meshes_as_batch, join_meshes_as_scene, Meshes
 
 from .pluggable_formats import endswith, MeshFormatInterpreter
-
 
 # Faces & Aux type returned from load_obj function.
 _Faces = namedtuple("Faces", "verts_idx normals_idx textures_idx materials_idx")
@@ -80,6 +88,7 @@ def load_obj(
     texture_wrap: Optional[str] = "repeat",
     device: Device = "cpu",
     path_manager: Optional[PathManager] = None,
+    high_precision: Optional[bool] = False,
 ):
     """
     Load a mesh from a .obj file and optionally textures from a .mtl file.
@@ -152,6 +161,7 @@ def load_obj(
             If None, then there is no transformation of the texture values.
         device: Device (as str or torch.device) on which to return the new tensors.
         path_manager: optionally a PathManager object to interpret paths.
+        high_precision: optionally use torch.float64 tensors instead of default torch.float32 tensors for vertices.
 
     Returns:
         6-element tuple containing
@@ -230,7 +240,175 @@ def load_obj(
             texture_wrap=texture_wrap,
             path_manager=path_manager,
             device=device,
+            high_precision=high_precision,
         )
+
+
+def subset_obj(
+    obj: Tuple[torch.Tensor, _Faces, _Aux],
+    faces_to_subset: torch.Tensor,
+    device: Device,
+) -> Tuple[torch.Tensor, _Faces, _Aux]:
+    """A utility function to subset an obj by a faces_to_subset that represents
+    the face indices to keep. Provides support for multitexture objs.
+
+    Args:
+        obj: An obj which is a 3-tuple of verts (torch.Tensor),
+            faces (NamedTuple containing: verts_idx normals_idx textures_idx materials_idx),
+            and aux (NamedTuple containing: normals verts_uvs material_colors texture_images texture_atlas).
+        faces_to_subset: A 1-dimentional tensor that represents the desired
+            indices of the faces to keep in the subset.
+        device: Device (as str or torch.device) on which to return the new tensors.
+
+    Returns:
+        An subset of the input obj which effectively copies the input according to faces_to_subset.
+        - obj: A subset copy of the input; 3-tuple of data structures of verts, faces, and aux.
+    """
+    # initialize default/empty values
+    _texture_images, _texture_atlas, _material_colors = None, None, None
+    _verts_uvs, _faces_uvs, _mtl_idx = None, None, None
+    _normals, _normals_idx = None, None
+
+    if len(obj) != 3:
+        message = "obj must be 3-tuple"
+        raise ValueError(message)
+
+    if not isinstance(obj[1], _Faces):
+        message = "obj[1] must be a _Faces NamedTuple object that defines obj faces"
+        raise ValueError(message)
+
+    if not isinstance(obj[2], _Aux):
+        message = "obj[2] must be an _Aux NamedTuple object that defines obj properties"
+        raise ValueError(message)
+
+    _validate_obj(
+        verts=obj[0],
+        faces=obj[1].verts_idx,
+        faces_uvs=obj[1].textures_idx,
+        verts_uvs=obj[2].verts_uvs,
+        texture_images=obj[2].texture_images,
+        materials_idx=obj[1].materials_idx,
+    )
+
+    # raise errors for specific conditions
+    if faces_to_subset.shape[0] == 0:
+        message = "faces_to_subset is empty."
+        raise ValueError(message)
+
+    if not isinstance(faces_to_subset, torch.Tensor):
+        message = "faces_to_subset must be a torch.Tensor"
+        raise ValueError(message)
+
+    unique_faces_to_subset = torch.unique(faces_to_subset)
+
+    if unique_faces_to_subset.shape[0] != faces_to_subset.shape[0]:
+        message = "Face indices are repeated in faces_to_subset."
+        warnings.warn(message)
+
+    if (
+        unique_faces_to_subset.max() >= obj[1].verts_idx.shape[0]
+        or unique_faces_to_subset.min() < 0
+    ):
+        message = "faces_to_subset contains invalid indices."
+        raise ValueError(message)
+
+    subset_device = faces_to_subset.device
+
+    if not all(
+        [
+            obj[0].device == subset_device,
+            obj[1].verts_idx.device == subset_device,
+            obj[1].normals_idx.device == subset_device
+            if obj[1].normals_idx is not None
+            else True,
+            obj[1].textures_idx.device == subset_device
+            if obj[1].textures_idx is not None
+            else True,
+            obj[1].materials_idx.device == subset_device
+            if obj[1].materials_idx is not None
+            else True,
+            obj[2].texture_atlas.device == subset_device
+            if obj[2].texture_atlas is not None
+            else True,
+            obj[2].verts_uvs.device == subset_device
+            if obj[2].verts_uvs is not None
+            else True,
+        ]
+    ):
+        message = "obj and faces_to_subset are not on the same device"
+        raise ValueError(message)
+
+    # reindex faces and verts according to faces_to_subset
+    _verts_idx, _faces = _reindex_verts_faces_by_index(
+        obj[1].verts_idx, faces_to_subset
+    )
+
+    # reindex face normals according to faces_to_subset, if present
+    if obj[2].normals is not None and obj[1].normals_idx is not None:
+        _normals_idx_orig, _normals_idx = _reindex_face_normals_by_index(
+            obj[1].normals_idx, faces_to_subset
+        )
+        _normals = obj[2].normals[_normals_idx_orig]
+
+    # slice texture_atlas by faces_to_subset, if present
+    if obj[2].texture_atlas is not None:
+        _texture_atlas = obj[2].texture_atlas[faces_to_subset].to(device)
+
+    if obj[2].verts_uvs is not None:
+        # if textures exist, reindex them in addition to faces and verts
+        _verts_uvs, _faces_uvs = _reindex_verts_faces_uvs_by_index(
+            obj[1].textures_idx, faces_to_subset
+        )
+        _mtl_idx_orig, _mtl_idx = _reindex_obj_materials_by_index(
+            obj[1].materials_idx, faces_to_subset
+        )
+
+        # obtain a list of the texture's image keys based on the original texture order
+        _tex_image_keys = list(obj[2].texture_images.keys())
+        # for each index in _mtl_idx_orig, get the corresponding value in _tex_image_keys
+        _tex_image_keys = list(map(_tex_image_keys.__getitem__, _mtl_idx_orig.tolist()))
+        # reconstruct the texture images dictionary with the new texture image keys
+        _texture_images = {
+            k: obj[2].texture_images[k].to(device) for k in _tex_image_keys
+        }
+
+        if len(_texture_images) != len(torch.unique(_mtl_idx)):
+            warnings.warn("Invalid textures.")
+
+        # select material_colors, if present, according to filtered texture_images
+        if obj[2].material_colors is not None:
+            _material_colors = {
+                k: {
+                    k_i: k_j.to(device)
+                    for k_i, k_j in obj[2].material_colors[k].items()
+                }
+                for k in list(_texture_images.keys())
+                if k in obj[2].material_colors.keys()
+            }
+
+    # use new index tensors to slice, assemble, and return a subset obj
+    verts = obj[0][_verts_idx].to(device)
+
+    faces = _Faces(
+        verts_idx=_faces.to(device),
+        normals_idx=_normals_idx.to(device)
+        if _normals_idx is not None
+        else _normals_idx,
+        textures_idx=_faces_uvs.to(device) if _faces_uvs is not None else _faces_uvs,
+        materials_idx=_mtl_idx.to(device) if _mtl_idx is not None else _mtl_idx,
+    )
+
+    aux = _Aux(
+        normals=_normals.to(device) if _normals is not None else None,
+        verts_uvs=obj[2].verts_uvs[_verts_uvs].to(device)
+        if _verts_uvs is not None
+        else None,
+        material_colors=_material_colors,
+        texture_images=_texture_images,
+        texture_atlas=_texture_atlas,
+    )
+
+    return verts, faces, aux
 
 
 def load_objs_as_meshes(
@@ -241,12 +419,13 @@ def load_objs_as_meshes(
     texture_atlas_size: int = 4,
     texture_wrap: Optional[str] = "repeat",
     path_manager: Optional[PathManager] = None,
+    high_precision: Optional[bool] = False,
 ):
     """
     Load meshes from a list of .obj files using the load_obj function, and
-    return them as a Meshes object. This only works for meshes which have a
-    single texture image for the whole mesh. See the load_obj function for more
-    details. material_colors and normals are not stored.
+    return them as a Meshes object. Input .obj files with multiple texture
+    images are supported. See the load_obj function for more details.
+    normals are not stored.
 
     Args:
         files: A list of file-like objects (with methods read, readline, tell,
@@ -256,6 +435,7 @@ def load_objs_as_meshes(
         load_textures: Boolean indicating whether material files are loaded
         create_texture_atlas, texture_atlas_size, texture_wrap: as for load_obj.
         path_manager: optionally a PathManager object to interpret paths.
+        high_precision: optionally use torch.float64 tensors instead of default torch.float32 tensors for vertices.
 
     Returns:
         New Meshes object.
@@ -269,29 +449,41 @@ def load_objs_as_meshes(
             texture_atlas_size=texture_atlas_size,
             texture_wrap=texture_wrap,
             path_manager=path_manager,
+            high_precision=high_precision,
         )
-        tex = None
+
         if create_texture_atlas:
             # TexturesAtlas type
-            tex = TexturesAtlas(atlas=[aux.texture_atlas.to(device)])
-        else:
-            # TexturesUV type
-            tex_maps = aux.texture_images
-            if tex_maps is not None and len(tex_maps) > 0:
-                verts_uvs = aux.verts_uvs.to(device)  # (V, 2)
-                faces_uvs = faces.textures_idx.to(device)  # (F, 3)
-                image = list(tex_maps.values())[0].to(device)[None]
-                tex = TexturesUV(
-                    verts_uvs=[verts_uvs], faces_uvs=[faces_uvs], maps=image
-                )
+            mesh = Meshes(
+                verts=[verts.to(device)],
+                faces=[faces.verts_idx.to(device)],
+                textures=TexturesAtlas(atlas=[aux.texture_atlas.to(device)]),
+            )
 
-        mesh = Meshes(
-            verts=[verts.to(device)], faces=[faces.verts_idx.to(device)], textures=tex
-        )
+        elif aux.texture_images is not None and len(aux.texture_images) > 0:
+            # TexturesUV type with support for multiple texture inputs
+            mesh = parse_obj_to_mesh_by_texture(
+                verts=verts,
+                faces=faces.verts_idx,
+                verts_uvs=aux.verts_uvs,
+                faces_uvs=faces.textures_idx,
+                texture_images=aux.texture_images,
+                device=device,
+                materials_idx=faces.materials_idx,
+                texture_atlas=aux.texture_atlas,
+            )
+            # combine partial meshes into a single scene
+            mesh = join_meshes_as_scene(mesh)
+        else:
+            # if there are no valid textures
+            mesh = Meshes(verts=[verts.to(device)], faces=[faces.verts_idx.to(device)])
+
         mesh_list.append(mesh)
+
     if len(mesh_list) == 1:
         return mesh_list[0]
-    return join_meshes_as_batch(mesh_list)
+    else:
+        return join_meshes_as_batch(mesh_list)
 
 
 class MeshObjFormat(MeshFormatInterpreter):
@@ -307,6 +499,7 @@ class MeshObjFormat(MeshFormatInterpreter):
         create_texture_atlas: bool = False,
         texture_atlas_size: int = 4,
         texture_wrap: Optional[str] = "repeat",
+        high_precision: Optional[bool] = False,
         **kwargs,
     ) -> Optional[Meshes]:
         if not endswith(path, self.known_suffixes):
@@ -319,6 +512,7 @@ class MeshObjFormat(MeshFormatInterpreter):
             texture_atlas_size=texture_atlas_size,
             texture_wrap=texture_wrap,
             path_manager=path_manager,
+            high_precision=high_precision,
         )
         return mesh
 
@@ -381,7 +575,9 @@ def _parse_face(
             if vert_props[1] != "":
                 # Texture index is present e.g. f 4/1/1.
                 face_textures.append(int(vert_props[1]))
-            if len(vert_props) > 2:
+            # if len(vert_props) > 2:
+            if len(vert_props) > 2 and len(vert_props[2]) != 0:
+                # do not parse normals if empty: ValueError: invalid literal for int() with base 10: ''
                 # Normal index present e.g. 4/1/1 or 4//1.
                 face_normals.append(int(vert_props[2]))
             if len(vert_props) > 3:
@@ -568,6 +764,7 @@ def _load_obj(
     texture_wrap: Optional[str] = "repeat",
     path_manager: PathManager,
     device: Device = "cpu",
+    high_precision: Optional[bool] = False,
 ):
     """
     Load a mesh from a file-like object. See load_obj function more details.
@@ -591,7 +788,12 @@ def _load_obj(
         mtl_path,
     ) = _parse_obj(f_obj, data_dir)
 
-    verts = _make_tensor(verts, cols=3, dtype=torch.float32, device=device)  # (V, 3)
+    verts = _make_tensor(
+        verts,
+        cols=3,
+        dtype=torch.float64 if high_precision else torch.float32,
+        device=device,
+    )  # (V, 3)
     normals = _make_tensor(
         normals,
         cols=3,
@@ -689,6 +891,12 @@ def save_obj(
     verts_uvs: Optional[torch.Tensor] = None,
     faces_uvs: Optional[torch.Tensor] = None,
     texture_map: Optional[torch.Tensor] = None,
+    texture_images: Optional[Dict[str, torch.tensor]] = None,
+    materials_idx: Optional[torch.Tensor] = None,
+    image_quality: Optional[int] = 75,
+    image_subsampling: Optional[Union[str, int]] = 0,
+    image_format: Optional[str] = "png",
+    **image_name_kwargs,
 ) -> None:
     """
     Save a mesh to an .obj file.
@@ -709,93 +917,274 @@ def save_obj(
             each vertex in the face.
         texture_map: FloatTensor of shape (H, W, 3) representing the texture map
             for the mesh which will be saved as an image. The values are expected
-            to be in the range [0, 1],
+            to be in the range [0, 1]. Supports saving an obj with a single texture.
+            If providing texture_map, texture_images must be None.
+        texture_images: Dictionary of str:FloatTensor of shape (H, W, 3) where
+            where each key value pair, in order, represnts a material name and
+            texture map; in objs, this value is often the aux.texture_images object.
+            Providing texture_images enables saving an obj with multiple textures
+            and texture files. If providing texture_images, texture_map must be None
+            and materials_idx must be provided.
+        materials_idx: IntTensor of shape (F, ) giving the material index that links
+            each face in faces to a texture in texture_images. If saving multiple
+            textures and providing a texture_images object, materials_idx must be
+            provided. This value is often the aux.materials_idx value in an obj.
+        image_quality: An optional integer value between 0 and 95 to pass through
+            to PIL that sets texture image quality. See PIL docs for details:
+            https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html.
+        image_subsampling: An optional string or integer value to pass through to
+            PIL that sets subsampling. See PIL docs for details:
+            https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html.
+        image_format: An optional string value that can be either 'png' or 'jpeg'
+            to pass through to PIL that sets the image type. See PIL docs for details:
+            https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html.
+        **image_name_kwargs: Optional kwargs to determine image file names.
+            For an obj with n textures, the default behavior saves an image name with
+            the obj basename appended with the index position of the texture. Example:
+            output.obj with 2 texture files writes output_0.png and output_1.png as
+            image files.
+
+            Available image_name_kwargs include:
+            * material_name_as_file_name: If True, the image file is saved with the
+            material name as the filename. Example: output.obj with material_1 and
+            material_2 as textures writes image files of material_1.png and
+            material_2.png, respectively.
+            * reuse_material_files: If True, material names are used as filenames.
+            In addition, image files are reused (without rewriting) for all objs within the
+            same directory that reference the same material name. This option may be
+            convenient if the same materials are re-used across obj files or if writing
+            subsets of the input obj to the origin directory. In the latter case the original
+            material files are preserverd and only new mtl and obj files of the subsets are written.
     """
-    if len(verts) and (verts.dim() != 2 or verts.size(1) != 3):
-        message = "'verts' should either be empty or of shape (num_verts, 3)."
+    _validate_obj(
+        verts=verts,
+        faces=faces,
+        faces_uvs=faces_uvs,
+        verts_uvs=verts_uvs,
+        texture_images=texture_images,
+        materials_idx=materials_idx,
+        normals=normals,
+        faces_normals_idx=faces_normals_idx,
+    )
+
+    if texture_map is not None and texture_images is not None:
+        message = "texture_map is not None and texture_images is not None; only one can be provided"
         raise ValueError(message)
 
-    if len(faces) and (faces.dim() != 2 or faces.size(1) != 3):
-        message = "'faces' should either be empty or of shape (num_faces, 3)."
+    if not any([image_format == i for i in ["png", "jpeg"]]):
+        message = "'image_format' must be either 'png' or 'jpeg'"
         raise ValueError(message)
 
-    if (normals is None) != (faces_normals_idx is None):
-        message = "'normals' and 'faces_normals_idx' must both be None or neither."
-        raise ValueError(message)
-
-    if faces_normals_idx is not None and (
-        faces_normals_idx.dim() != 2 or faces_normals_idx.size(1) != 3
-    ):
-        message = (
-            "'faces_normals_idx' should either be empty or of shape (num_faces, 3)."
-        )
-        raise ValueError(message)
-
-    if normals is not None and (normals.dim() != 2 or normals.size(1) != 3):
-        message = "'normals' should either be empty or of shape (num_verts, 3)."
-        raise ValueError(message)
-
-    if faces_uvs is not None and (faces_uvs.dim() != 2 or faces_uvs.size(1) != 3):
-        message = "'faces_uvs' should either be empty or of shape (num_faces, 3)."
-        raise ValueError(message)
-
-    if verts_uvs is not None and (verts_uvs.dim() != 2 or verts_uvs.size(1) != 2):
-        message = "'verts_uvs' should either be empty or of shape (num_verts, 2)."
-        raise ValueError(message)
-
-    if texture_map is not None and (texture_map.dim() != 3 or texture_map.size(2) != 3):
-        message = "'texture_map' should either be empty or of shape (H, W, 3)."
-        raise ValueError(message)
+    if image_quality < 1 or image_quality > 95:
+        message = "'image_quality is recommended to be set between 0 and 95 according to PIL documentation"
+        warnings.warn(message)
 
     if path_manager is None:
         path_manager = PathManager()
 
-    save_texture = all([t is not None for t in [faces_uvs, verts_uvs, texture_map]])
+    save_texture = all([t is not None for t in [faces_uvs, verts_uvs]]) and (
+        texture_map is not None or texture_images is not None
+    )
     output_path = Path(f)
+
+    if save_texture and texture_images is None:
+        # if a single texture map is given, treat it like a texture_images with a single image
+        texture_images = dict(mesh=texture_map)
+        materials_idx = torch.zeros(faces.shape[0], dtype=torch.int64)
+
+    # configure how image names are written to disk
+    enumerate_material_filename_by_index = True  # the default setting
+    reuse_material_files = False
+    material_name_as_file_name = False
+
+    if image_name_kwargs is not None:
+        image_name_options = image_name_kwargs.get("image_name_kwargs", None)
+    if image_name_options is not None:
+        reuse_material_files = image_name_options.get(
+            "reuse_material_files", reuse_material_files
+        )
+        material_name_as_file_name = image_name_options.get(
+            "material_name_as_file_name", material_name_as_file_name
+        )
+
+        if reuse_material_files or material_name_as_file_name:
+            enumerate_material_filename_by_index = False
 
     # Save the .obj file
     with _open_file(f, path_manager, "w") as f:
         if save_texture:
-            # Add the header required for the texture info to be loaded correctly
             obj_header = "\nmtllib {0}.mtl\nusemtl mesh\n\n".format(output_path.stem)
             f.write(obj_header)
-        _save(
-            f,
-            verts,
-            faces,
-            decimal_places,
-            normals=normals,
-            faces_normals_idx=faces_normals_idx,
-            verts_uvs=verts_uvs,
-            faces_uvs=faces_uvs,
-            save_texture=save_texture,
-            save_normals=normals is not None,
+
+            # init offsets and a mtl path
+            face_offset, uvs_offset, normals_offset = 0, 0, 0
+            mtl_path = output_path.with_suffix(".mtl")
+            # init an mtl list to accumulate material strings
+            mtl_lines = []
+
+            if isinstance(f, str):
+                # Back to str for iopath interpretation.
+                mtl_path = str(mtl_path)
+
+            # split the obj into sections by material
+            for tex_idx, (tex_name, tex_value) in enumerate(texture_images.items()):
+                faces_to_subset = materials_idx == tex_idx
+                faces_to_subset = faces_to_subset.nonzero().squeeze().ravel()
+
+                # parse obj by associated faces and verts for each material, if not None
+                if faces_to_subset.numel():
+                    # Add the header required for the texture info to be loaded correctly
+                    obj_header = (
+                        f"\nmtllib {output_path.stem}.mtl\nusemtl {tex_name}\n\n"
+                    )
+
+                    f.write(obj_header)
+
+                    # re-index verts and faces based on the current faces
+                    _verts_idx, _faces = _reindex_verts_faces_by_index(
+                        faces, faces_to_subset
+                    )
+
+                    # re-index vert uvs and face uvs  based on current faces
+                    _verts_uvs, _faces_uvs = _reindex_verts_faces_uvs_by_index(
+                        faces_uvs, faces_to_subset
+                    )
+
+                    if normals is not None and faces_normals_idx is not None:
+                        (
+                            _normals_idx_orig,
+                            _normals_idx,
+                        ) = _reindex_face_normals_by_index(
+                            faces_normals_idx, faces_to_subset
+                        )
+                        _normals = normals[_normals_idx_orig]
+                    else:
+                        _normals, _normals_idx = None, None
+
+                    # in multitexture obj output, the current faces may reference verts that reference other materials
+                    if not torch.any(
+                        _faces + face_offset >= verts.shape[0]
+                    ) and not torch.any(_faces_uvs + uvs_offset < 0):
+                        # supress where the current faces do not exceed the overall verts and do not violate other conditions
+                        supress_face_warning = True
+                    else:
+                        # if exceptional conditions are not met, disable supression
+                        supress_face_warning = False
+
+                    # write current lines to obj and appy offset to faces and uvs, subsequent iterations append to the open file
+                    _save(
+                        f,
+                        verts[_verts_idx],
+                        _faces + face_offset,
+                        decimal_places,
+                        normals=_normals,
+                        faces_normals_idx=_normals_idx + normals_offset
+                        if _normals is not None
+                        else _normals_idx,
+                        verts_uvs=verts_uvs[_verts_uvs],
+                        faces_uvs=_faces_uvs + uvs_offset,
+                        save_texture=save_texture,
+                        save_normals=_normals is not None,
+                        supress_face_warning=supress_face_warning,
+                    )
+
+                    # increment the offset by the size of verts and uvs for each material
+                    face_offset += verts[_verts_idx].shape[0]
+                    uvs_offset += verts_uvs[_verts_uvs].shape[0]
+                    if _normals is not None:
+                        normals_offset += _normals.shape[0]
+
+                    # set a path for the current texture and save the image
+                    if enumerate_material_filename_by_index:
+                        # if multiple images, append the index
+                        if len(texture_images) > 1:
+                            _image_name = f"{output_path.stem}_{tex_idx}.{image_format}"
+                        else:
+                            # if only one material, use only the stem
+                            _image_name = f"{output_path.stem}.{image_format}"
+
+                        image_path = output_path.parent / _image_name
+                    else:
+                        image_path = output_path.parent / f"{tex_name}.{image_format}"
+
+                    if isinstance(f, str):
+                        # Back to str for iopath interpretation.
+                        image_path = str(image_path)
+
+                    if os.path.exists(image_path) and reuse_material_files:
+                        skip_save_texture_image = True
+                    else:
+                        skip_save_texture_image = False
+
+                    if not skip_save_texture_image:
+                        _save_texture_image(
+                            tex_value,
+                            image_path,
+                            path_manager,
+                            image_format,
+                            image_subsampling,
+                            image_quality,
+                        )
+
+                    # accumulate materials as a list of strings
+                    mtl_lines.append(
+                        f"newmtl {tex_name}\n"
+                        f"map_Kd {image_path.stem}.{image_format}\n"
+                    )
+
+            # write accumlated materials to file after iterating by textures for obj lines and images
+            _save_material_lines(mtl_path, path_manager, mtl_lines)
+
+        else:
+            # if there are no given or valid textures, write only an obj
+            _save(
+                f,
+                verts,
+                faces,
+                decimal_places,
+                normals=normals,
+                faces_normals_idx=faces_normals_idx,
+                verts_uvs=verts_uvs,
+                faces_uvs=faces_uvs,
+                save_texture=save_texture,
+                save_normals=normals is not None,
+            )
+
+
+def _save_texture_image(
+    texture: torch.Tensor,
+    image_path: str,
+    path_manager: PathManager,
+    image_format: str,
+    image_subsampling: Union[str, int],
+    image_quality: int,
+):
+    """A utility function that writes image data as textures to file for objs."""
+
+    # Save texture map to output folder
+    # pyre-fixme[16] # undefined attribute cpu
+    texture = texture.detach().cpu() * 255.0
+    image = Image.fromarray(texture.numpy().astype(np.uint8))
+    with _open_file(image_path, path_manager, "wb") as im_f:
+        image.save(
+            im_f,
+            format=image_format.upper(),
+            subsampling=image_subsampling,
+            quality=image_quality,
         )
 
-    # Save the .mtl and .png files associated with the texture
-    if save_texture:
-        image_path = output_path.with_suffix(".png")
-        mtl_path = output_path.with_suffix(".mtl")
-        if isinstance(f, str):
-            # Back to str for iopath interpretation.
-            image_path = str(image_path)
-            mtl_path = str(mtl_path)
 
-        # Save texture map to output folder
-        # pyre-fixme[16] # undefined attribute cpu
-        texture_map = texture_map.detach().cpu() * 255.0
-        image = Image.fromarray(texture_map.numpy().astype(np.uint8))
-        with _open_file(image_path, path_manager, "wb") as im_f:
-            image.save(im_f)
-
-        # Create .mtl file with the material name and texture map filename
-        # TODO: enable material properties to also be saved.
-        with _open_file(mtl_path, path_manager, "w") as f_mtl:
-            lines = f"newmtl mesh\n" f"map_Kd {output_path.stem}.png\n"
-            f_mtl.write(lines)
+def _save_material_lines(
+    mtl_path: str, path_manager: PathManager, mtl_lines: List[str]
+):
+    """A utility function that writes material information to file for objs."""
+    # Create .mtl file with the material name and texture map filename
+    # TODO: enable material properties to also be saved.
+    with _open_file(mtl_path, path_manager, "w") as f_mtl:
+        for mtl_line in mtl_lines:
+            f_mtl.write(mtl_line)
 
 
-# TODO (nikhilar) Speed up this function.
 def _save(
     f,
     verts,
@@ -808,8 +1197,8 @@ def _save(
     faces_uvs: Optional[torch.Tensor] = None,
     save_texture: bool = False,
     save_normals: bool = False,
+    supress_face_warning: Optional[bool] = False,
 ) -> None:
-
     if len(verts) and (verts.dim() != 2 or verts.size(1) != 3):
         message = "'verts' should either be empty or of shape (num_verts, 3)."
         raise ValueError(message)
@@ -865,8 +1254,10 @@ def _save(
 
     f.write(lines)
 
-    if torch.any(faces >= verts.shape[0]) or torch.any(faces < 0):
-        warnings.warn("Faces have invalid indices")
+    if not supress_face_warning:
+        # this warning may not be valid if writing multi-texture obj
+        if torch.any(faces >= verts.shape[0]) or torch.any(faces < 0):
+            warnings.warn("Faces have invalid indices")
 
     if len(faces):
         _write_faces(

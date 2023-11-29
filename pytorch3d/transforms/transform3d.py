@@ -824,7 +824,8 @@ def _broadcast_bmm(a, b) -> torch.Tensor:
             a = a.expand(len(b), -1, -1)
         if len(b) == 1:
             b = b.expand(len(a), -1, -1)
-    return a.bmm(b)
+    # accomodate high_precision inputs and force float types where needed
+    return a.float().bmm(b.float()).type(a.dtype)
 
 
 @torch.no_grad()

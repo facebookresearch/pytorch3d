@@ -27,6 +27,7 @@ from .points_to_volumes import (
 )
 from .sample_farthest_points import sample_farthest_points
 from .sample_points_from_meshes import sample_points_from_meshes
+from .sample_points_from_obj import sample_points_from_obj
 from .subdivide_meshes import SubdivideMeshes
 from .utils import (
     convert_pointclouds_to_tensor,
