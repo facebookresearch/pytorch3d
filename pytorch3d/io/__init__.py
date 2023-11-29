@@ -5,7 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 
 
-from .obj_io import load_obj, load_objs_as_meshes, save_obj
+from .obj_io import load_obj, load_objs_as_meshes, save_obj, subset_obj
 from .pluggable import IO
 from .ply_io import load_ply, save_ply
 

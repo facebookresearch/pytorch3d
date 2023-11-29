@@ -14,22 +14,44 @@ from tempfile import NamedTemporaryFile, TemporaryDirectory
 
 import torch
 from iopath.common.file_io import PathManager
-from pytorch3d.io import IO, load_obj, load_objs_as_meshes, save_obj
+from pytorch3d.io import (
+    IO,
+    load_obj,
+    load_objs_as_meshes,
+    save_obj,
+    subset_obj,
+)
+from pytorch3d.io.obj_io import _Faces, _Aux
+from pytorch3d.utils.obj_utils import parse_obj_to_mesh_by_texture
 from pytorch3d.io.mtl_io import (
     _bilinear_interpolation_grid_sample,
     _bilinear_interpolation_vectorized,
     _parse_mtl,
 )
-from pytorch3d.renderer import TexturesAtlas, TexturesUV, TexturesVertex
-from pytorch3d.structures import join_meshes_as_batch, Meshes
+from pytorch3d.renderer import (
+    TexturesAtlas,
+    TexturesUV,
+    TexturesVertex,
+    look_at_view_transform,
+    FoVPerspectiveCameras,
+    RasterizationSettings,
+    PointLights,
+    MeshRenderer,
+    SoftPhongShader,
+    MeshRasterizer,
+)
+from pytorch3d.vis.texture_vis import texturesuv_image_matplotlib
+from pytorch3d.structures import join_meshes_as_batch, join_meshes_as_scene, Meshes
 from pytorch3d.utils import torus
-
+from pytorch3d.ops.estimate_pointcloud_normals import estimate_pointcloud_normals
 from .common_testing import (
     get_pytorch3d_dir,
     get_tests_dir,
     load_rgb_image,
     TestCaseMixin,
 )
+import numpy as np
+import matplotlib.pyplot as plt
 
 
 DATA_DIR = get_tests_dir() / "data"
@@ -1254,6 +1276,438 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
             # Check the texture image file is saved correctly
             texture_image = load_rgb_image("mesh.png", temp_dir)
             self.assertClose(texture_image, texture_map)
+
+    def test_multitexture_obj_IO(self):
+        """checking IO with multiple txtures.
+        Coverage for the following functions and their helper functions:
+            - obj_io.load_obj
+            - obj_io.subset_obj
+            - obj_io.save_obj
+            - utils.obj_utils.parse_obj_to_mesh_by_texture
+        """
+        obj_filename = "cow_mesh/cow.obj"
+        filename = os.path.join(TUTORIAL_DATA_DIR, obj_filename)
+        # load the cow mesh into as its individual elements
+        verts, faces, aux = load_obj(
+            filename, load_textures=True, create_texture_atlas=True, texture_wrap=None
+        )
+        # generate face normals based on verts to test subsetting operations
+        normals = estimate_pointcloud_normals(obj[0][None]).squeeze()
+
+        # create a new obj tuple from its individual components with normals
+        _faces = _Faces(
+            verts_idx=faces.verts_idx,
+            normals_idx=faces.verts_idx,  # include face normals
+            textures_idx=faces.textures_idx,
+            materials_idx=faces.materials_idx,
+        )
+        _texture_images = dict(
+            material_1=aux.texture_images["material_1"],
+        )
+        _material_colors = dict(
+            material_1=aux.material_colors["material_1"],
+        )
+        _aux = _Aux(
+            normals=normals,
+            verts_uvs=aux.verts_uvs,
+            material_colors=_material_colors,
+            texture_images=_texture_images,
+            texture_atlas=aux.texture_atlas,
+        )
+        # create a new obj object
+        obj = (verts, _faces, _aux)
+
+        # test internal function for parsing objs to mesh list
+        with self.assertRaises(ValueError) as err:
+            parse_obj_to_mesh_by_texture(
+                verts=verts,
+                faces=faces.verts_idx,
+                verts_uvs=aux.verts_uvs,
+                faces_uvs=faces.textures_idx,
+                texture_images=list(aux.texture_images.items()),
+                device=verts.device,
+                materials_idx=faces.materials_idx,
+                texture_atlas=aux.texture_atlas,
+                normals=normals,
+                faces_normals_idx=faces.verts_idx
+            )
+        self.assertTrue("texture_images must be a dictionary" in str(err.exception))
+
+        list_of_meshes = parse_obj_to_mesh_by_texture(
+            verts=verts,
+            faces=faces.verts_idx,
+            verts_uvs=aux.verts_uvs,
+            faces_uvs=faces.textures_idx,
+            texture_images=aux.texture_images,
+            device=verts.device,
+            materials_idx=faces.materials_idx,
+            texture_atlas=aux.texture_atlas,
+            normals=normals,
+            faces_normals_idx=faces.verts_idx
+        )
+
+        mesh = join_meshes_as_scene(list_of_meshes)
+
+        self.assertTrue(mesh.verts_packed().shape[0] == verts.shape[0])
+        self.assertTrue(mesh.faces_packed().shape[0] == faces.verts_idx.shape[0])
+
+        # check error conditions
+        with self.assertRaises(ValueError) as err:
+            subset_obj(obj=obj, faces_to_subset=torch.tensor([]), device=verts.device)
+        self.assertTrue("faces_to_subset is empty." in str(err.exception))
+
+        with self.assertRaises(ValueError) as err:
+            subset_obj(obj=obj, faces_to_subset=torch.tensor([-1]), device=verts.device)
+        self.assertTrue(
+            "faces_to_subset contains invalid indices." in str(err.exception)
+        )
+
+        with self.assertRaises(ValueError) as err:
+            subset_obj(
+                obj=obj,
+                faces_to_subset=torch.tensor([0, 1, obj[1].verts_idx.shape[0]]),
+                device=verts.device,
+            )
+        self.assertTrue(
+            "faces_to_subset contains invalid indices." in str(err.exception)
+        )
+
+        with self.assertRaises(ValueError) as err:
+            subset_obj(
+                obj=obj, faces_to_subset=np.array([0, 1, 2, 3]), device=verts.device
+            )
+        self.assertTrue("faces_to_subset must be a torch.Tensor" in str(err.exception))
+
+        message = "Face indices are repeated in faces_to_subset."
+        with self.assertWarnsRegex(UserWarning, message):
+            subset_obj(
+                obj=obj,
+                faces_to_subset=torch.tensor([0, 0, 0, 1, 1, 1, 2]).to(verts.device),
+                device=verts.device,
+            )
+
+        with self.assertRaises(ValueError) as err:
+            subset_obj(
+                obj=(obj[0],),
+                faces_to_subset=np.array([0, 1, 2, 3]),
+                device=verts.device,
+            )
+        self.assertTrue("obj must be 3-tuple" in str(err.exception))
+
+        with self.assertRaises(ValueError) as err:
+            subset_obj(
+                obj=(obj[0], torch.tensor([0, 1]), obj[2]),
+                faces_to_subset=np.array([0, 1, 2, 3]),
+                device=verts.device,
+            )
+        self.assertTrue(
+            "obj[1] must be a _Faces NamedTuple object that defines obj faces"
+            in str(err.exception)
+        )
+
+        with self.assertRaises(ValueError) as err:
+            subset_obj(
+                obj=(obj[0], obj[1], torch.tensor([0, 1])),
+                faces_to_subset=np.array([0, 1, 2, 3]),
+                device=verts.device,
+            )
+        self.assertTrue(
+            "obj[2] must be an _Aux NamedTuple object that defines obj properties"
+            in str(err.exception)
+        )
+
+        with self.assertRaises(ValueError) as err:
+            subset_obj(
+                obj=obj,
+                faces_to_subset=torch.tensor([0, 1, 2, 3]).to(torch.device("cuda:0")),
+                device=torch.device("cpu"),
+            )
+        self.assertTrue(
+            "obj and faces_to_subset are not on the same device" in str(err.exception)
+        )
+
+        # set up renderer according to tutorial
+        R, T = look_at_view_transform(2.7, 0, 180)
+        cameras = FoVPerspectiveCameras(device=verts.device, R=R, T=T)
+
+        raster_settings = RasterizationSettings(
+            image_size=512,
+            blur_radius=0.0,
+            faces_per_pixel=1,
+        )
+
+        lights = PointLights(device=verts.device, location=[[0.0, 0.0, -3.0]])
+
+        renderer = MeshRenderer(
+            rasterizer=MeshRasterizer(cameras=cameras, raster_settings=raster_settings),
+            shader=SoftPhongShader(device=verts.device, cameras=cameras, lights=lights),
+        )
+
+        # simulate aribitrary obj segmentation by quadrant
+        quadrants = [1, 2, 3, 4]
+        # use a copy of materails_idx to apply new materials for testing
+        quadrants_materials = _faces.materials_idx.clone()
+
+        # for each qudrant, output an obj of only the current faces
+        for quadrant_ix, quadrant in enumerate(quadrants):
+            # select verts by their quadrant in 3d space
+            verts_idx_to_select = self._split_verts_by_quadrant(verts, quadrant)
+            verts_idx = faces.verts_idx.numpy()
+            # mask provides which faces contain at least one vert that belong the current quadrant
+            mask = np.in1d(verts_idx, verts_idx_to_select).reshape(verts_idx.shape)
+            # select the faces, by index, that belong to a given quadrant as faces_to_subset
+            faces_to_subset = np.where(np.any(mask, axis=1))[0]
+            # apply zero-index quadrant refernces to materials_idx as a psuedo label
+            quadrants_materials[faces_to_subset] = quadrant_ix
+            # apply faces_to_subset to the obj
+            obj_subset = subset_obj(
+                obj=obj,
+                faces_to_subset=torch.from_numpy(faces_to_subset),
+                device=verts.device,
+            )
+            # split the subset obj into its elements for reference
+            _verts, _faces, _aux = obj_subset[0], obj_subset[1], obj_subset[2]
+            # generate an array of index to reference faces
+            _test_index = torch.arange(_faces.verts_idx.shape[0])
+            # check normals are split property according to origin data
+            self.assertClose(
+                obj[2].normals[obj[1].normals_idx[faces_to_subset]],
+                obj_subset[2].normals[_faces.normals_idx[_test_index]],
+            )
+            # check texture atlas are split property according to origin data
+            self.assertClose(
+                obj[2].texture_atlas[faces_to_subset],
+                obj_subset[2].texture_atlas[_test_index],
+            )
+            # check verts_uvs are split properly according to origin data
+            self.assertClose(
+                obj[2].verts_uvs[torch.unique(obj[1].textures_idx[faces_to_subset])],
+                obj_subset[2].verts_uvs,
+            )
+            # check that output faces are equal to expected input size
+            self.assertEqual(faces_to_subset.shape[0], obj_subset[1].verts_idx.shape[0])
+            # assert the obj_subset is valid given a warning message ("Faces have invalid indices") about invalid dims in obj_io
+            self.assertFalse(obj_subset[1].verts_idx.max() >= obj_subset[0].shape[0])
+            self.assertFalse(obj_subset[1].verts_idx.min() < 0)
+            # check that material images are the same as the origin data, if they are part of the subset
+            for material_key, material_value in obj[2].material_colors.items():
+                if material_key in obj_subset[2].material_colors.keys():
+                    np.testing.assert_array_equal(
+                        material_value, obj_subset[2].material_colors[material_key]
+                    )
+            # configure variable settings for writing mtl names
+            image_name_kwargs = dict(
+                material_name_as_file_name=True if quadrant == 1 else False,
+                reuse_material_files=True if quadrant in [2, 3] else False,
+            )
+            if quadrant == 4:
+                image_name_kwargs = None
+
+            obj_basename = "test_multitexture_obj_IO_Q"
+            obj_name = f"{obj_basename}{quadrant}.obj"
+            obj_file = os.path.join(DATA_DIR, obj_name)
+
+            # save an obj to disk having multiple textures
+            save_obj(
+                f=obj_file,
+                verts=obj_subset[0],
+                faces=obj_subset[1].verts_idx,
+                verts_uvs=obj_subset[2].verts_uvs,
+                faces_uvs=obj_subset[1].textures_idx,
+                texture_images=obj_subset[2].texture_images,
+                materials_idx=obj_subset[1].materials_idx,
+                image_name_kwargs=image_name_kwargs,
+                normals=obj_subset[2].normals,
+                faces_normals_idx=obj_subset[1].normals_idx
+            )
+
+            # test IO on subset obj as meshes object
+            mesh = load_objs_as_meshes(files=[obj_file], device=_verts.device)
+            # check that the output image array is equal to the input
+            # self.assertEqual(
+            #     obj[2].texture_images["material_1"].shape[1],
+            #     mesh.textures._maps_list[0].shape[1],
+            # )
+            # check the total expected length of faces against the input
+            self.assertEqual(
+                faces_to_subset.shape[0], mesh.textures.faces_uvs_list()[0].shape[0]
+            )
+
+            images = renderer(mesh)
+            plt.figure(figsize=(10, 10))
+            plt.imshow(images[0, ..., :3].cpu().numpy())
+            plt.axis("off")
+            plt.tight_layout()
+            image_name = f"{obj_basename}{quadrant}_render.png"
+            plt.savefig(os.path.join(DATA_DIR, image_name))
+            plt.clf()
+
+            mtl_name = f"{obj_basename}{quadrant}.mtl"
+            mtl_file = os.path.join(DATA_DIR, mtl_name)
+
+            with open(mtl_file, "r") as mtl_f:
+                mtl_lines = [line.strip().split(" ")[1] for line in mtl_f]
+                if quadrant in [1, 2, 3]:
+                    self.assertTrue("material_1" in mtl_lines)
+                if quadrant == 4:
+                    self.assertTrue(f"{obj_basename}4.png" in mtl_lines)
+
+        # test IO for a single output with multiple textures
+        # create a new obj tuple
+        _faces = _Faces(
+            verts_idx=faces.verts_idx,
+            normals_idx=faces.verts_idx,  # include face normals
+            textures_idx=faces.textures_idx,
+            materials_idx=quadrants_materials,  # use new material assignments per face
+        )
+        # change up colors per material aribitrarily
+        _texture_images = dict(
+            material_1=aux.texture_images["material_1"],
+            material_2=aux.texture_images["material_1"] + 0.4,
+            material_3=aux.texture_images["material_1"] + 0.6,
+            material_4=aux.texture_images["material_1"] + 0.8,
+        )
+        _material_colors = dict(
+            material_1=aux.material_colors["material_1"],
+            material_2=aux.material_colors["material_1"],
+            material_3=aux.material_colors["material_1"],
+            material_4=aux.material_colors["material_1"],
+        )
+        _aux = _Aux(
+            normals=normals,
+            verts_uvs=aux.verts_uvs,
+            material_colors=_material_colors,
+            texture_images=_texture_images,
+            texture_atlas=aux.texture_atlas,
+        )
+
+        # create a new obj object of the input mesh but with four textures
+        obj_basename = "test_multitexture_obj_IO_quad_cow"
+        obj_quad = (verts, _faces, _aux)
+
+        obj_name = f"{obj_basename}.obj"
+        obj_file = os.path.join(DATA_DIR, obj_name)
+
+        save_obj(
+            f=obj_file,
+            verts=obj_quad[0],
+            faces=obj_quad[1].verts_idx,
+            verts_uvs=obj_quad[2].verts_uvs,
+            faces_uvs=obj_quad[1].textures_idx,
+            texture_images=obj_quad[2].texture_images,
+            materials_idx=obj_quad[1].materials_idx,
+        )
+
+        _obj_name = f"{obj_basename}_im_100"
+        _obj_file = os.path.join(DATA_DIR, f"{_obj_name}.obj")
+        # check expected warnings and error condtions for save_obj
+        with self.assertRaises(ValueError) as err:
+            save_obj(
+                f=_obj_file,
+                verts=obj_quad[0],
+                faces=obj_quad[1].verts_idx,
+                verts_uvs=obj_quad[2].verts_uvs,
+                faces_uvs=obj_quad[1].textures_idx,
+                texture_images=obj_quad[2].texture_images,
+                materials_idx=obj_quad[1].materials_idx,
+                image_format='tiff'
+        )
+        self.assertTrue(
+            "'image_format' must be either 'png' or 'jpeg'"
+            in str(err.exception)
+        )
+
+        with self.assertRaises(ValueError) as err:
+            save_obj(
+                f=_obj_file,
+                verts=obj_quad[0],
+                faces=obj_quad[1].verts_idx,
+                verts_uvs=obj_quad[2].verts_uvs,
+                faces_uvs=obj_quad[1].textures_idx,
+                texture_images=obj_quad[2].texture_images,
+                texture_map=torch.rand((256, 256, 3)),
+                materials_idx=obj_quad[1].materials_idx,
+        )
+        self.assertTrue(
+            "texture_map is not None and texture_images is not None; only one can be provided"
+            in str(err.exception)
+        )
+
+        message = "'image_quality is recommended to be set between 0 and 95 according to PIL documentation"
+        with self.assertWarnsRegex(UserWarning, message):
+            save_obj(
+                f=_obj_file,
+                verts=obj_quad[0],
+                faces=obj_quad[1].verts_idx,
+                verts_uvs=obj_quad[2].verts_uvs,
+                faces_uvs=obj_quad[1].textures_idx,
+                texture_images=obj_quad[2].texture_images,
+                materials_idx=obj_quad[1].materials_idx,
+                image_quality=100
+        )
+
+        # test subset_obj functions in reading back multitexture obj
+        obj_multi = load_obj(obj_file, load_textures=True, create_texture_atlas=True)
+        # assert the obj_multi is valid given a warning message ("Faces have invalid indices") about invalid dims in obj_io
+        self.assertFalse(obj_multi[1].verts_idx.max() >= obj_multi[0].shape[0])
+        self.assertFalse(obj_multi[1].verts_idx.min() < 0)
+
+        # reading back multi texture obj as meshes
+        mesh = load_objs_as_meshes(files=[obj_file], device=verts.device)
+
+        images = renderer(mesh)
+        plt.figure(figsize=(10, 10))
+        plt.imshow(images[0, ..., :3].cpu().numpy())
+        plt.axis("off")
+        plt.tight_layout()
+        image_name = f"{obj_basename}_render.png"
+        plt.savefig(os.path.join(DATA_DIR, image_name))
+        plt.clf()
+
+        mtl_name = f"{obj_basename}.mtl"
+        mtl_file = os.path.join(DATA_DIR, mtl_name)
+
+        # check that the multitexture subsetter functions enable reading back multiple textures
+        image_size = 0
+        with open(mtl_file, "r") as mtl_f:
+            mtl_lines = [line.strip().split(" ")[1] for line in mtl_f]
+            for quadrant_ix, quadrant in enumerate(quadrants):
+                # check the contents of mtl
+                self.assertTrue(f"material_{quadrant}" in mtl_lines)
+                self.assertTrue(f"{obj_basename}_{quadrant_ix}.png" in mtl_lines)
+                # check the dimensions of the associated image array equal the sum of the concatenated texture inputs
+                image_size += (
+                    obj_quad[2].texture_images[f"material_{quadrant}"].shape[1]
+                )
+            self.assertEqual(image_size, mesh.textures._maps_list[0].shape[1])
+
+        # plot the visulization of verts to texture from the resulting mesh
+        plt.figure(figsize=(7, 7))
+        texturesuv_image_matplotlib(mesh.textures, subsample=None)
+        plt.axis("off")
+        plt.tight_layout()
+        image_name = f"test_multitexture_obj_IO_quad_cow_uv.png"
+        plt.savefig(os.path.join(DATA_DIR, image_name), bbox_inches="tight")
+        plt.clf()
+
+    @staticmethod
+    def _split_verts_by_quadrant(verts: np.ndarray, quadrant: int = 1):
+        """A utilty function for splitting 3D coordinate array (verts) into quadrants
+        Reference: https://stackoverflow.com/questions/69398528/how-to-determine-quadrant-given-x-and-y-coordinate-columns-in-pandas-dataframe
+        Args:
+            verts: An Nx3 array intended to represent vertices in a mesh.
+            quadrant: An integer (range from 1 to 4) of the desired quadrant.
+        Returns:
+            np.ndarray: A Nx array representing the indices to select that represent the given quadrant
+        """
+        if isinstance(verts, torch.Tensor):
+            verts = verts.cpu().numpy()
+
+        deg = np.round(180 * np.arctan2(verts[..., 1], verts[..., 0]) / np.pi).astype(
+            int
+        )
+        quadrants = 1 + ((deg + 360) % 360) // 90
+        return np.flatnonzero([quadrants == quadrant])
 
     @staticmethod
     def _bm_save_obj(verts: torch.Tensor, faces: torch.Tensor, decimal_places: int):
