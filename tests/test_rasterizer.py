@@ -419,16 +419,16 @@ class TestMeshRasterizerOpenGLUtils(TestCaseMixin, unittest.TestCase):
         fragments = rasterizer(self.meshes_world, raster_settings=raster_settings)
         self.assertEqual(fragments.pix_to_face.shape, torch.Size([1, 10, 2047, 1]))
 
+        raster_settings.image_size = (2049, 512)
         with self.assertRaisesRegex(ValueError, "Max rasterization size is"):
-            raster_settings.image_size = (2049, 512)
             rasterizer(self.meshes_world, raster_settings=raster_settings)
 
+        raster_settings.image_size = (512, 2049)
         with self.assertRaisesRegex(ValueError, "Max rasterization size is"):
-            raster_settings.image_size = (512, 2049)
             rasterizer(self.meshes_world, raster_settings=raster_settings)
 
+        raster_settings.image_size = (2049, 2049)
         with self.assertRaisesRegex(ValueError, "Max rasterization size is"):
-            raster_settings.image_size = (2049, 2049)
             rasterizer(self.meshes_world, raster_settings=raster_settings)
 
 

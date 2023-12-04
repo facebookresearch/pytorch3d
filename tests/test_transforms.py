@@ -936,8 +936,8 @@ class TestTransformBroadcast(unittest.TestCase):
         y = torch.tensor([0.3] * M)
         z = torch.tensor([0.4] * M)
         tM = Translate(x, y, z)
+        t = tN.compose(tM)
         with self.assertRaises(ValueError):
-            t = tN.compose(tM)
             t.get_matrix()
 
     def test_multiple_broadcast_compose(self):

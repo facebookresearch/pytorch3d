@@ -1698,7 +1698,7 @@ def join_meshes_as_batch(meshes: List[Meshes], include_textures: bool = True) ->
     # Now we know there are multiple meshes and they have textures to merge.
     all_textures = [mesh.textures for mesh in meshes]
     first = all_textures[0]
-    tex_types_same = all(type(tex) == type(first) for tex in all_textures)
+    tex_types_same = all(type(tex) == type(first) for tex in all_textures)  # noqa: E721
 
     if not tex_types_same:
         raise ValueError("All meshes in the batch must have the same type of texture.")

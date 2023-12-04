@@ -15,14 +15,13 @@ from pytorch3d.implicitron.models.utils import preprocess_input, weighted_sum_lo
 class TestUtils(unittest.TestCase):
     def test_prepare_inputs_wrong_num_dim(self):
         img = torch.randn(3, 3, 3)
-        with self.assertRaises(ValueError) as context:
+        text = (
+            "Model received unbatched inputs. "
+            + "Perhaps they came from a FrameData which had not been collated."
+        )
+        with self.assertRaisesRegex(ValueError, text):
             img, fg_prob, depth_map = preprocess_input(
                 img, None, None, True, True, 0.5, (0.0, 0.0, 0.0)
-            )
-            self.assertEqual(
-                "Model received unbatched inputs. "
-                + "Perhaps they came from a FrameData which had not been collated.",
-                context.exception,
             )
 
     def test_prepare_inputs_mask_image_true(self):

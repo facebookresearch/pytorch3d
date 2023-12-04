@@ -224,6 +224,7 @@ class TestFrameDataBuilder(TestCaseMixin, unittest.TestCase):
 
     def test_load_mask(self):
         path = os.path.join(self.dataset_root, self.frame_annotation.mask.path)
+        path = self.path_manager.get_local_path(path)
         mask = load_mask(path)
         self.assertEqual(mask.dtype, np.float32)
         self.assertLessEqual(np.max(mask), 1.0)
@@ -231,12 +232,14 @@ class TestFrameDataBuilder(TestCaseMixin, unittest.TestCase):
 
     def test_load_depth(self):
         path = os.path.join(self.dataset_root, self.frame_annotation.depth.path)
+        path = self.path_manager.get_local_path(path)
         depth_map = load_depth(path, self.frame_annotation.depth.scale_adjustment)
         self.assertEqual(depth_map.dtype, np.float32)
         self.assertEqual(len(depth_map.shape), 3)
 
     def test_load_16big_png_depth(self):
         path = os.path.join(self.dataset_root, self.frame_annotation.depth.path)
+        path = self.path_manager.get_local_path(path)
         depth_map = load_16big_png_depth(path)
         self.assertEqual(depth_map.dtype, np.float32)
         self.assertEqual(len(depth_map.shape), 2)
@@ -245,6 +248,7 @@ class TestFrameDataBuilder(TestCaseMixin, unittest.TestCase):
         mask_path = os.path.join(
             self.dataset_root, self.frame_annotation.depth.mask_path
         )
+        mask_path = self.path_manager.get_local_path(mask_path)
         mask = load_1bit_png_mask(mask_path)
         self.assertEqual(mask.dtype, np.float32)
         self.assertEqual(len(mask.shape), 2)
@@ -253,6 +257,7 @@ class TestFrameDataBuilder(TestCaseMixin, unittest.TestCase):
         mask_path = os.path.join(
             self.dataset_root, self.frame_annotation.depth.mask_path
         )
+        mask_path = self.path_manager.get_local_path(mask_path)
         mask = load_depth_mask(mask_path)
         self.assertEqual(mask.dtype, np.float32)
         self.assertEqual(len(mask.shape), 3)

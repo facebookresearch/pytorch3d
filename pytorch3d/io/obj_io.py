@@ -750,7 +750,7 @@ def save_obj(
     if path_manager is None:
         path_manager = PathManager()
 
-    save_texture = all([t is not None for t in [faces_uvs, verts_uvs, texture_map]])
+    save_texture = all(t is not None for t in [faces_uvs, verts_uvs, texture_map])
     output_path = Path(f)
 
     # Save the .obj file

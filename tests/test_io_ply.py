@@ -308,9 +308,9 @@ class TestMeshPlyIO(TestCaseMixin, unittest.TestCase):
 
     def test_save_ply_invalid_shapes(self):
         # Invalid vertices shape
+        verts = torch.FloatTensor([[0.1, 0.2, 0.3, 0.4]])  # (V, 4)
+        faces = torch.LongTensor([[0, 1, 2]])
         with self.assertRaises(ValueError) as error:
-            verts = torch.FloatTensor([[0.1, 0.2, 0.3, 0.4]])  # (V, 4)
-            faces = torch.LongTensor([[0, 1, 2]])
             save_ply(BytesIO(), verts, faces)
         expected_message = (
             "Argument 'verts' should either be empty or of shape (num_verts, 3)."
@@ -318,9 +318,9 @@ class TestMeshPlyIO(TestCaseMixin, unittest.TestCase):
         self.assertTrue(expected_message, error.exception)
 
         # Invalid faces shape
+        verts = torch.FloatTensor([[0.1, 0.2, 0.3]])
+        faces = torch.LongTensor([[0, 1, 2, 3]])  # (F, 4)
         with self.assertRaises(ValueError) as error:
-            verts = torch.FloatTensor([[0.1, 0.2, 0.3]])
-            faces = torch.LongTensor([[0, 1, 2, 3]])  # (F, 4)
             save_ply(BytesIO(), verts, faces)
         expected_message = (
             "Argument 'faces' should either be empty or of shape (num_faces, 3)."

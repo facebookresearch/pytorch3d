@@ -148,31 +148,28 @@ class TestPointclouds(TestCaseMixin, unittest.TestCase):
         features_list = clouds.features_list()
         normals_list = clouds.normals_list()
 
-        with self.assertRaises(ValueError) as cm:
+        with self.assertRaisesRegex(ValueError, "same device"):
             Pointclouds(
                 points=points_list, features=features_list, normals=normals_list
             )
-            self.assertTrue("same device" in cm.msg)
 
         points_list = clouds.points_list()
         features_list = [
             f.to("cpu") if random.uniform(0, 1) > 0.2 else f for f in features_list
         ]
-        with self.assertRaises(ValueError) as cm:
+        with self.assertRaisesRegex(ValueError, "same device"):
             Pointclouds(
                 points=points_list, features=features_list, normals=normals_list
             )
-            self.assertTrue("same device" in cm.msg)
 
         points_padded = clouds.points_padded()  # on cuda:0
         features_padded = clouds.features_padded().to("cpu")
         normals_padded = clouds.normals_padded()
 
-        with self.assertRaises(ValueError) as cm:
+        with self.assertRaisesRegex(ValueError, "same device"):
             Pointclouds(
                 points=points_padded, features=features_padded, normals=normals_padded
             )
-            self.assertTrue("same device" in cm.msg)
 
     def test_all_constructions(self):
         public_getters = [

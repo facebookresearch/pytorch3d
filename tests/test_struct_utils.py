@@ -80,8 +80,8 @@ class TestStructUtils(TestCaseMixin, unittest.TestCase):
             self.assertClose(x_padded, torch.stack(x, 0))
 
         # catch ValueError for invalid dimensions
+        pad_size = [K] * (ndim + 1)
         with self.assertRaisesRegex(ValueError, "Pad size must"):
-            pad_size = [K] * (ndim + 1)
             struct_utils.list_to_padded(
                 x, pad_size=pad_size, pad_value=0.0, equisized=False
             )
@@ -196,9 +196,9 @@ class TestStructUtils(TestCaseMixin, unittest.TestCase):
 
         # Case 6: Input has more than 3 dims.
         # Raise an error.
+        x = torch.rand((N, K, K, K, K), device=device)
+        split_size = torch.randint(1, K, size=(N,)).tolist()
         with self.assertRaisesRegex(ValueError, "Supports only"):
-            x = torch.rand((N, K, K, K, K), device=device)
-            split_size = torch.randint(1, K, size=(N,)).tolist()
             struct_utils.padded_to_packed(x, split_size=split_size)
 
     def test_list_to_packed(self):

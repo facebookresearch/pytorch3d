@@ -453,6 +453,6 @@ def parse_image_size(
         raise ValueError("Image size can only be a tuple/list of (H, W)")
     if not all(i > 0 for i in image_size):
         raise ValueError("Image sizes must be greater than 0; got %d, %d" % image_size)
-    if not all(type(i) == int for i in image_size):
+    if not all(isinstance(i, int) for i in image_size):
         raise ValueError("Image sizes must be integers; got %f, %f" % image_size)
     return tuple(image_size)

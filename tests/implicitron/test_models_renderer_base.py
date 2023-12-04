@@ -38,22 +38,23 @@ class TestRendererBase(TestCaseMixin, unittest.TestCase):
     def test_implicitron_raise_value_error_bins_is_set_and_try_to_set_lengths(
         self,
     ) -> None:
-        with self.assertRaises(ValueError) as context:
-            ray_bundle = ImplicitronRayBundle(
-                origins=torch.rand(2, 3, 4, 3),
-                directions=torch.rand(2, 3, 4, 3),
-                lengths=None,
-                xys=torch.rand(2, 3, 4, 2),
-                bins=torch.rand(2, 3, 4, 1),
-            )
+        ray_bundle = ImplicitronRayBundle(
+            origins=torch.rand(2, 3, 4, 3),
+            directions=torch.rand(2, 3, 4, 3),
+            lengths=None,
+            xys=torch.rand(2, 3, 4, 2),
+            bins=torch.rand(2, 3, 4, 14),
+        )
+        with self.assertRaisesRegex(
+            ValueError,
+            "If the bins attribute is not None you cannot set the lengths attribute.",
+        ):
             ray_bundle.lengths = torch.empty(2)
-            self.assertEqual(
-                str(context.exception),
-                "If the bins attribute is not None you cannot set the lengths attribute.",
-            )
 
     def test_implicitron_raise_value_error_if_bins_dim_equal_1(self) -> None:
-        with self.assertRaises(ValueError) as context:
+        with self.assertRaisesRegex(
+            ValueError, "The last dim of bins must be at least superior or equal to 2."
+        ):
             ImplicitronRayBundle(
                 origins=torch.rand(2, 3, 4, 3),
                 directions=torch.rand(2, 3, 4, 3),
@@ -61,25 +62,20 @@ class TestRendererBase(TestCaseMixin, unittest.TestCase):
                 xys=torch.rand(2, 3, 4, 2),
                 bins=torch.rand(2, 3, 4, 1),
             )
-            self.assertEqual(
-                str(context.exception),
-                "The last dim of bins must be at least superior or equal to 2.",
-            )
 
     def test_implicitron_raise_value_error_if_neither_bins_or_lengths_provided(
         self,
     ) -> None:
-        with self.assertRaises(ValueError) as context:
+        with self.assertRaisesRegex(
+            ValueError,
+            "Please set either bins or lengths to initialize an ImplicitronRayBundle.",
+        ):
             ImplicitronRayBundle(
                 origins=torch.rand(2, 3, 4, 3),
                 directions=torch.rand(2, 3, 4, 3),
                 lengths=None,
                 xys=torch.rand(2, 3, 4, 2),
                 bins=None,
-            )
-            self.assertEqual(
-                str(context.exception),
-                "Please set either bins or lengths to initialize an ImplicitronRayBundle.",
             )
 
     def test_conical_frustum_to_gaussian(self) -> None:
@@ -266,8 +262,6 @@ class TestRendererBase(TestCaseMixin, unittest.TestCase):
         ray = ImplicitronRayBundle(
             origins=origins, directions=directions, lengths=lengths, xys=None
         )
-        with self.assertRaises(ValueError) as context:
-            _ = conical_frustum_to_gaussian(ray)
 
         expected_error_message = (
             "RayBundle pixel_radii_2d or bins have not been provided."
@@ -276,7 +270,8 @@ class TestRendererBase(TestCaseMixin, unittest.TestCase):
             "`cast_ray_bundle_as_cone` to True?"
         )
 
-        self.assertEqual(expected_error_message, str(context.exception))
+        with self.assertRaisesRegex(ValueError, expected_error_message):
+            _ = conical_frustum_to_gaussian(ray)
 
         # Ensure message is coherent with AbstractMaskRaySampler
         class FakeRaySampler(AbstractMaskRaySampler):

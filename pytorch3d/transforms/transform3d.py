@@ -440,22 +440,22 @@ class Transform3d:
 
     def translate(self, *args, **kwargs) -> "Transform3d":
         return self.compose(
-            Translate(device=self.device, dtype=self.dtype, *args, **kwargs)
+            Translate(*args, device=self.device, dtype=self.dtype, **kwargs)
         )
 
     def scale(self, *args, **kwargs) -> "Transform3d":
         return self.compose(
-            Scale(device=self.device, dtype=self.dtype, *args, **kwargs)
+            Scale(*args, device=self.device, dtype=self.dtype, **kwargs)
         )
 
     def rotate(self, *args, **kwargs) -> "Transform3d":
         return self.compose(
-            Rotate(device=self.device, dtype=self.dtype, *args, **kwargs)
+            Rotate(*args, device=self.device, dtype=self.dtype, **kwargs)
         )
 
     def rotate_axis_angle(self, *args, **kwargs) -> "Transform3d":
         return self.compose(
-            RotateAxisAngle(device=self.device, dtype=self.dtype, *args, **kwargs)
+            RotateAxisAngle(*args, device=self.device, dtype=self.dtype, **kwargs)
         )
 
     def clone(self) -> "Transform3d":

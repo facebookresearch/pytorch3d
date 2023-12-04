@@ -324,17 +324,15 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
         ]
         faces_list = mesh.faces_list()
 
-        with self.assertRaises(ValueError) as cm:
+        with self.assertRaisesRegex(ValueError, "same device"):
             Meshes(verts=verts_list, faces=faces_list)
-            self.assertTrue("same device" in cm.msg)
 
         verts_padded = mesh.verts_padded()  # on cpu
         verts_padded = verts_padded.to("cuda:0")
         faces_padded = mesh.faces_padded()
 
-        with self.assertRaises(ValueError) as cm:
+        with self.assertRaisesRegex(ValueError, "same device"):
             Meshes(verts=verts_padded, faces=faces_padded)
-            self.assertTrue("same device" in cm.msg)
 
     def test_simple_random_meshes(self):
 

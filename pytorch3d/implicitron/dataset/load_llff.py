@@ -34,11 +34,7 @@ def _minify(basedir, path_manager, factors=(), resolutions=()):
 
     imgdir = os.path.join(basedir, "images")
     imgs = [os.path.join(imgdir, f) for f in sorted(_ls(path_manager, imgdir))]
-    imgs = [
-        f
-        for f in imgs
-        if any([f.endswith(ex) for ex in ["JPG", "jpg", "png", "jpeg", "PNG"]])
-    ]
+    imgs = [f for f in imgs if f.endswith("JPG", "jpg", "png", "jpeg", "PNG")]
     imgdir_orig = imgdir
 
     wd = os.getcwd()

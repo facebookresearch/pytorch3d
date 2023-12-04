@@ -4,6 +4,7 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+import re
 import unittest
 from itertools import product
 
@@ -102,62 +103,56 @@ class TestRasterizeRectangleImagesErrors(TestCaseMixin, unittest.TestCase):
     def test_mesh_image_size_arg(self):
         meshes = Meshes(verts=[verts0], faces=[faces0])
 
-        with self.assertRaises(ValueError) as cm:
+        with self.assertRaisesRegex(ValueError, re.escape("tuple/list of (H, W)")):
             rasterize_meshes(
                 meshes,
                 (100, 200, 3),
                 0.0001,
                 faces_per_pixel=1,
             )
-            self.assertTrue("tuple/list of (H, W)" in cm.msg)
 
-        with self.assertRaises(ValueError) as cm:
+        with self.assertRaisesRegex(ValueError, "sizes must be greater than 0"):
             rasterize_meshes(
                 meshes,
                 (0, 10),
                 0.0001,
                 faces_per_pixel=1,
             )
-            self.assertTrue("sizes must be positive" in cm.msg)
 
-        with self.assertRaises(ValueError) as cm:
+        with self.assertRaisesRegex(ValueError, "sizes must be integers"):
             rasterize_meshes(
                 meshes,
                 (100.5, 120.5),
                 0.0001,
                 faces_per_pixel=1,
             )
-            self.assertTrue("sizes must be integers" in cm.msg)
 
     def test_points_image_size_arg(self):
         points = Pointclouds([verts0])
 
-        with self.assertRaises(ValueError) as cm:
+        with self.assertRaisesRegex(ValueError, re.escape("tuple/list of (H, W)")):
             rasterize_points(
                 points,
                 (100, 200, 3),
                 0.0001,
                 points_per_pixel=1,
             )
-            self.assertTrue("tuple/list of (H, W)" in cm.msg)
 
-        with self.assertRaises(ValueError) as cm:
+        with self.assertRaisesRegex(ValueError, "sizes must be greater than 0"):
             rasterize_points(
                 points,
                 (0, 10),
                 0.0001,
                 points_per_pixel=1,
             )
-            self.assertTrue("sizes must be positive" in cm.msg)
 
-        with self.assertRaises(ValueError) as cm:
+        with self.assertRaisesRegex(ValueError, "sizes must be integers"):
             rasterize_points(
                 points,
                 (100.5, 120.5),
                 0.0001,
                 points_per_pixel=1,
             )
-            self.assertTrue("sizes must be integers" in cm.msg)
 
 
 class TestRasterizeRectangleImagesMeshes(TestCaseMixin, unittest.TestCase):

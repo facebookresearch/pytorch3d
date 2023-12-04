@@ -964,8 +964,8 @@ class TestFoVPerspectiveProjection(TestCaseMixin, unittest.TestCase):
         with self.assertRaisesRegex(IndexError, "out of bounds"):
             cam[N_CAMERAS]
 
+        index = torch.tensor([1, 0, 1], dtype=torch.bool)
         with self.assertRaisesRegex(ValueError, "does not match cameras"):
-            index = torch.tensor([1, 0, 1], dtype=torch.bool)
             cam[index]
 
         with self.assertRaisesRegex(ValueError, "Invalid index type"):
@@ -974,8 +974,8 @@ class TestFoVPerspectiveProjection(TestCaseMixin, unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Invalid index type"):
             cam[[True, False]]
 
+        index = torch.tensor(SLICE, dtype=torch.float32)
         with self.assertRaisesRegex(ValueError, "Invalid index type"):
-            index = torch.tensor(SLICE, dtype=torch.float32)
             cam[index]
 
     def test_get_full_transform(self):

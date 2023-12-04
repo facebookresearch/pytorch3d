@@ -1055,7 +1055,7 @@ class TestRectanglePacking(TestCaseMixin, unittest.TestCase):
 
     def test_simple(self):
         self.assert_bb([(3, 4), (4, 3)], {6, 4})
-        self.assert_bb([(2, 2), (2, 4), (2, 2)], {4, 4})
+        self.assert_bb([(2, 2), (2, 4), (2, 2)], {4})
 
         # many squares
         self.assert_bb([(2, 2)] * 9, {2, 18})
