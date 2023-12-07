@@ -382,9 +382,9 @@ class VolumeSampler(torch.nn.Module):
         rays_densities = torch.nn.functional.grid_sample(
             volumes_densities,
             rays_points_local_flat,
-            align_corners=True,
             mode=self._sample_mode,
             padding_mode=self._padding_mode,
+            align_corners=self._volumes.get_align_corners(),
         )
 
         # permute the dimensions & reshape densities after sampling
@@ -400,9 +400,9 @@ class VolumeSampler(torch.nn.Module):
             rays_features = torch.nn.functional.grid_sample(
                 volumes_features,
                 rays_points_local_flat,
-                align_corners=True,
                 mode=self._sample_mode,
                 padding_mode=self._padding_mode,
+                align_corners=self._volumes.get_align_corners(),
             )
 
             # permute the dimensions & reshape features after sampling

@@ -291,6 +291,7 @@ def add_pointclouds_to_volumes(
         mask=mask,
         mode=mode,
         rescale_features=rescale_features,
+        align_corners=initial_volumes.get_align_corners(),
         _python=_python,
     )
 
@@ -310,6 +311,7 @@ def add_points_features_to_volume_densities_features(
     grid_sizes: Optional[torch.LongTensor] = None,
     rescale_features: bool = True,
     _python: bool = False,
+    align_corners: bool = True,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
     """
     Convert a batch of point clouds represented with tensors of per-point
@@ -356,6 +358,7 @@ def add_points_features_to_volume_densities_features(
                             output densities are just summed without rescaling, so
                             you may need to rescale them afterwards.
         _python: Set to True to use a pure Python implementation.
+        align_corners: as for grid_sample.
     Returns:
         volume_features: Output volume of shape `(minibatch, feature_dim, D, H, W)`
         volume_densities: Occupancy volume of shape `(minibatch, 1, D, H, W)`
@@ -409,7 +412,7 @@ def add_points_features_to_volume_densities_features(
         grid_sizes,
         1.0,  # point_weight
         mask,
-        True,  # align_corners
+        align_corners,  # align_corners
         splat,
     )
 

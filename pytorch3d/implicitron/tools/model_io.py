@@ -98,6 +98,13 @@ def save_model(model, stats, fl, optimizer=None, cfg=None):
     return flstats, flmodel, flopt
 
 
+def save_stats(stats, fl, cfg=None):
+    flstats = get_stats_path(fl)
+    logger.info("saving model stats to %s" % flstats)
+    stats.save(flstats)
+    return flstats
+
+
 def load_model(fl, map_location: Optional[dict]):
     flstats = get_stats_path(fl)
     flmodel = get_model_path(fl)

@@ -85,7 +85,7 @@ class Volumes:
               are linearly interpolated over the spatial dimensions of the volume.
             - Note that the convention is the same as for the 5D version of the
               `torch.nn.functional.grid_sample` function called with
-              `align_corners==True`.
+              the same value of `align_corners` argument.
             - Note that the local coordinate convention of `Volumes`
               (+X = left to right, +Y = top to bottom, +Z = away from the user)
               is *different* from the world coordinate convention of the
@@ -143,7 +143,7 @@ class Volumes:
                 torch.nn.functional.grid_sample(
                     v.densities(),
                     v.get_coord_grid(world_coordinates=False),
-                    align_corners=True,
+                    align_corners=align_corners,
                 ) == v.densities(),
 
             i.e. sampling the volume at trivial local coordinates
@@ -157,6 +157,7 @@ class Volumes:
         features: Optional[_TensorBatch] = None,
         voxel_size: _VoxelSize = 1.0,
         volume_translation: _Translation = (0.0, 0.0, 0.0),
+        align_corners: bool = True,
     ) -> None:
         """
         Args:
@@ -186,6 +187,10 @@ class Volumes:
                 b) a Tensor of shape (3,)
                 c) a Tensor of shape (minibatch, 3)
                 d) a Tensor of shape (1,) (square voxels)
+            **align_corners**: If set (default), the coordinates of the corner voxels are
+                exactly −1 or +1 in the local coordinate system. Otherwise, the coordinates
+                correspond to the centers of the corner voxels. Cf. the namesake argument to
+                `torch.nn.functional.grid_sample`.
         """
 
         # handle densities
@@ -206,6 +211,7 @@ class Volumes:
             voxel_size=voxel_size,
             volume_translation=volume_translation,
             device=self.device,
+            align_corners=align_corners,
         )
 
         # handle features
@@ -335,6 +341,13 @@ class Volumes:
             # pyre-fixme[7]: Expected `List[torch.Tensor]` but got `None`.
             return None
         return self._features_densities_list(features_)
+
+    def get_align_corners(self) -> bool:
+        """
+        Return whether the corners of the voxels should be aligned with the
+        image pixels.
+        """
+        return self.locator._align_corners
 
     def _features_densities_list(self, x: torch.Tensor) -> List[torch.Tensor]:
         """
@@ -576,7 +589,7 @@ class VolumeLocator:
               are linearly interpolated over the spatial dimensions of the volume.
             - Note that the convention is the same as for the 5D version of the
               `torch.nn.functional.grid_sample` function called with
-              `align_corners==True`.
+              the same value of `align_corners` argument.
             - Note that the local coordinate convention of `VolumeLocator`
               (+X = left to right, +Y = top to bottom, +Z = away from the user)
               is *different* from the world coordinate convention of the
@@ -634,7 +647,7 @@ class VolumeLocator:
                 torch.nn.functional.grid_sample(
                     v.densities(),
                     v.get_coord_grid(world_coordinates=False),
-                    align_corners=True,
+                    align_corners=align_corners,
                 ) == v.densities(),
 
             i.e. sampling the volume at trivial local coordinates
@@ -651,6 +664,7 @@ class VolumeLocator:
         device: torch.device,
         voxel_size: _VoxelSize = 1.0,
         volume_translation: _Translation = (0.0, 0.0, 0.0),
+        align_corners: bool = True,
     ):
         """
         **batch_size** : Batch size of the underlying grids
@@ -674,15 +688,21 @@ class VolumeLocator:
             b) a Tensor of shape (3,)
             c) a Tensor of shape (minibatch, 3)
             d) a Tensor of shape (1,) (square voxels)
+        **align_corners**: If set (default), the coordinates of the corner voxels are
+            exactly −1 or +1 in the local coordinate system. Otherwise, the coordinates
+            correspond to the centers of the corner voxels. Cf. the namesake argument to
+            `torch.nn.functional.grid_sample`.
         """
         self.device = device
         self._batch_size = batch_size
         self._grid_sizes = self._convert_grid_sizes2tensor(grid_sizes)
         self._resolution = tuple(torch.max(self._grid_sizes.cpu(), dim=0).values)
+        self._align_corners = align_corners
 
         # set the local_to_world transform
         self._set_local_to_world_transform(
-            voxel_size=voxel_size, volume_translation=volume_translation
+            voxel_size=voxel_size,
+            volume_translation=volume_translation,
         )
 
     def _convert_grid_sizes2tensor(
@@ -806,8 +826,17 @@ class VolumeLocator:
         grid_sizes = self.get_grid_sizes()
 
         # generate coordinate axes
+        def corner_coord_adjustment(r):
+            return 0.0 if self._align_corners else 1.0 / r
+
         vol_axes = [
-            torch.linspace(-1.0, 1.0, r, dtype=torch.float32, device=self.device)
+            torch.linspace(
+                -1.0 + corner_coord_adjustment(r),
+                1.0 - corner_coord_adjustment(r),
+                r,
+                dtype=torch.float32,
+                device=self.device,
+            )
             for r in (de, he, wi)
         ]
 

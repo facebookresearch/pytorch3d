@@ -312,6 +312,49 @@ class TestVolumes(TestCaseMixin, unittest.TestCase):
         ).permute(0, 2, 3, 4, 1)
         self.assertClose(grid_world_resampled, grid_world, atol=1e-7)
 
+        for align_corners in [True, False]:
+            v_trivial = Volumes(densities=densities, align_corners=align_corners)
+
+            # check the case with x_world=(0,0,0)
+            pts_world = torch.zeros(
+                num_volumes, 1, 3, device=device, dtype=torch.float32
+            )
+            pts_local = v_trivial.world_to_local_coords(pts_world)
+            pts_local_expected = torch.zeros_like(pts_local)
+            self.assertClose(pts_local, pts_local_expected)
+
+            # check the case with x_world=(-2, 3, -2)
+            pts_world_tuple = [-2, 3, -2]
+            pts_world = torch.tensor(
+                pts_world_tuple, device=device, dtype=torch.float32
+            )[None, None].repeat(num_volumes, 1, 1)
+            pts_local = v_trivial.world_to_local_coords(pts_world)
+            pts_local_expected = torch.tensor(
+                [-1, 1, -1], device=device, dtype=torch.float32
+            )[None, None].repeat(num_volumes, 1, 1)
+            self.assertClose(pts_local, pts_local_expected)
+
+            # # check that the central voxel has coords x_world=(0, 0, 0) and x_local(0, 0, 0)
+            grid_world = v_trivial.get_coord_grid(world_coordinates=True)
+            grid_local = v_trivial.get_coord_grid(world_coordinates=False)
+            for grid in (grid_world, grid_local):
+                x0 = grid[0, :, :, 2, 0]
+                y0 = grid[0, :, 3, :, 1]
+                z0 = grid[0, 2, :, :, 2]
+                for coord_line in (x0, y0, z0):
+                    self.assertClose(
+                        coord_line, torch.zeros_like(coord_line), atol=1e-7
+                    )
+
+            # resample grid_world using grid_sampler with local coords
+            # -> make sure the resampled version is the same as original
+            grid_world_resampled = torch.nn.functional.grid_sample(
+                grid_world.permute(0, 4, 1, 2, 3),
+                grid_local,
+                align_corners=align_corners,
+            ).permute(0, 2, 3, 4, 1)
+            self.assertClose(grid_world_resampled, grid_world, atol=1e-7)
+
     def test_coord_grid_convention_heterogeneous(
         self, num_channels=4, dtype=torch.float32
     ):
