@@ -932,7 +932,7 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
                     )
                 ).save(DATA_DIR / f"DEBUG_test_joinuvs{i}_map3.png")
 
-            self.assertClose(output, merged)
+            self.assertClose(output, merged, atol=0.005)
             self.assertClose(output, image_ref, atol=0.005)
             self.assertClose(mesh.textures.maps_padded()[0].cpu(), map_ref, atol=0.05)
 

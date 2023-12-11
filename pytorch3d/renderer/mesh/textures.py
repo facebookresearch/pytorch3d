@@ -995,9 +995,13 @@ class TexturesUV(TexturesBase):
         #   is the left-top pixel of input, and values x = 1, y = 1 is the
         #   right-bottom pixel of input.
 
-        pixel_uvs = pixel_uvs * 2.0 - 1.0
+        # map to a range of [-1, 1] and flip the y axis
+        pixel_uvs = torch.lerp(
+            pixel_uvs.new_tensor([-1.0, 1.0]),
+            pixel_uvs.new_tensor([1.0, -1.0]),
+            pixel_uvs,
+        )
 
-        texture_maps = torch.flip(texture_maps, [2])  # flip y axis of the texture map
         if texture_maps.device != pixel_uvs.device:
             texture_maps = texture_maps.to(pixel_uvs.device)
         texels = F.grid_sample(
@@ -1035,8 +1039,12 @@ class TexturesUV(TexturesBase):
         texture_maps = self.maps_padded()  # NxHxWxC
         texture_maps = texture_maps.permute(0, 3, 1, 2)  # NxCxHxW
 
-        faces_verts_uvs = faces_verts_uvs * 2.0 - 1.0
-        texture_maps = torch.flip(texture_maps, [2])  # flip y axis of the texture map
+        # map to a range of [-1, 1] and flip the y axis
+        faces_verts_uvs = torch.lerp(
+            faces_verts_uvs.new_tensor([-1.0, 1.0]),
+            faces_verts_uvs.new_tensor([1.0, -1.0]),
+            faces_verts_uvs,
+        )
 
         textures = F.grid_sample(
             texture_maps,
