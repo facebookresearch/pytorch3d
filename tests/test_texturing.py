@@ -1002,6 +1002,49 @@ class TestTexturesUV(TestCaseMixin, unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "do not match the dimensions"):
             meshes.sample_textures(None)
 
+    def test_submeshes(self):
+        N = 2
+        faces_uvs_list = [
+            torch.LongTensor([[0, 1, 2], [3, 5, 4], [7, 6, 8]]),
+            torch.LongTensor([[0, 1, 2], [3, 4, 5]]),
+        ]
+        verts_uvs_list = [
+            torch.arange(18, dtype=torch.float32).reshape(9, 2),
+            torch.ones(6, 2),
+        ]
+        tex = TexturesUV(
+            maps=torch.rand((N, 16, 16, 3)),
+            faces_uvs=faces_uvs_list,
+            verts_uvs=verts_uvs_list,
+        )
+
+        sub_faces = [
+            [torch.tensor([0, 1]), torch.tensor([1, 2])],
+            [],
+        ]
+
+        mesh = Meshes(
+            verts=[torch.rand(9, 3), torch.rand(6, 3)],
+            faces=faces_uvs_list,
+            textures=tex,
+        )
+        subtex = mesh.submeshes(sub_faces).textures
+        subtex_faces = subtex.faces_uvs_padded()
+        self.assertEqual(len(subtex_faces), 2)
+        self.assertClose(
+            subtex_faces[0],
+            torch.tensor([[0, 1, 2], [3, 5, 4]]),
+        )
+        self.assertClose(
+            subtex.verts_uvs_list()[0][subtex.faces_uvs_list()[0].flatten()]
+            .flatten()
+            .msort(),
+            torch.arange(12, dtype=torch.float32),
+        )
+        self.assertClose(
+            subtex.maps_padded(), tex.maps_padded()[:1].expand(2, -1, -1, -1)
+        )
+
 
 class TestRectanglePacking(TestCaseMixin, unittest.TestCase):
     def setUp(self) -> None:

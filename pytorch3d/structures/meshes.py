@@ -1576,7 +1576,7 @@ class Meshes:
         Returns:
           Meshes object of length `sum(len(ids) for ids in face_indices)`.
 
-        Submeshing only works with no textures or with the TexturesVertex texture.
+        Submeshing only works with no textures, TexturesVertex, or TexturesUV.
 
         Example 1:
 
@@ -1616,16 +1616,13 @@ class Meshes:
         sub_verts = []
         sub_verts_ids = []
         sub_faces = []
-        sub_face_ids = []
 
         for face_ids_per_mesh, faces, verts in zip(
             face_indices, self.faces_list(), self.verts_list()
         ):
             sub_verts_ids.append([])
-            sub_face_ids.append([])
             for submesh_face_ids in face_ids_per_mesh:
                 faces_to_keep = faces[submesh_face_ids]
-                sub_face_ids[-1].append(faces_to_keep)
 
                 # Say we are keeping two faces from a mesh with six vertices:
                 # faces_to_keep = [[0, 6, 4],
@@ -1652,7 +1649,7 @@ class Meshes:
             verts=sub_verts,
             faces=sub_faces,
             textures=(
-                self.textures.submeshes(sub_verts_ids, sub_face_ids)
+                self.textures.submeshes(sub_verts_ids, face_indices)
                 if self.textures
                 else None
             ),
