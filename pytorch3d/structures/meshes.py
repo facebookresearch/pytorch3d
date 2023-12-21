@@ -1576,8 +1576,6 @@ class Meshes:
         Returns:
           Meshes object of length `sum(len(ids) for ids in face_indices)`.
 
-        Submeshing only works with no textures, TexturesVertex, or TexturesUV.
-
         Example 1:
 
         If `meshes` has batch size 1, and `face_indices` is a 1D LongTensor,

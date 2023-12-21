@@ -549,6 +549,33 @@ class TexturesAtlas(TexturesBase):
 
         return texels
 
+    def submeshes(
+        self,
+        vertex_ids_list: List[List[torch.LongTensor]],
+        faces_ids_list: List[List[torch.LongTensor]],
+    ) -> "TexturesAtlas":
+        """
+        Extract a sub-texture for use in a submesh.
+
+        If the meshes batch corresponding to this TextureAtlas contains
+        `n = len(faces_ids_list)` meshes, then self.atlas_list()
+        will be of length n. After submeshing, we obtain a batch of
+        `k = sum(len(v) for v in atlas_list` submeshes (see Meshes.submeshes). This
+        function creates a corresponding TexturesAtlas object with `atlas_list`
+        of length `k`.
+        """
+        if len(faces_ids_list) != len(self.atlas_list()):
+            raise IndexError(
+                "faces_ids_list must be of " "the same length as atlas_list."
+            )
+
+        sub_features = []
+        for atlas, faces_ids in zip(self.atlas_list(), faces_ids_list):
+            for faces_ids_submesh in faces_ids:
+                sub_features.append(atlas[faces_ids_submesh])
+
+        return self.__class__(sub_features)
+
     def faces_verts_textures_packed(self) -> torch.Tensor:
         """
         Samples texture from each vertex for each face in the mesh.
