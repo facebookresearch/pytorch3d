@@ -73,6 +73,13 @@ struct float2 {
 struct float3 {
   float x, y, z;
 };
+inline float3 make_float3(const float& x, const float& y, const float& z) {
+  float3 res;
+  res.x = x;
+  res.y = y;
+  res.z = z;
+  return res;
+}
 #endif
 namespace py = pybind11;
 
