@@ -97,20 +97,6 @@ class TestSO3(TestCaseMixin, unittest.TestCase):
             so3_log_map(rot)
         self.assertTrue("Input has to be a batch of 3x3 Tensors." in str(err.exception))
 
-        # trace of rot definitely bigger than 3 or smaller than -1
-        rot = torch.cat(
-            (
-                torch.rand(size=[5, 3, 3], device=device) + 4.0,
-                torch.rand(size=[5, 3, 3], device=device) - 3.0,
-            )
-        )
-        with self.assertRaises(ValueError) as err:
-            so3_log_map(rot)
-        self.assertTrue(
-            "A matrix has trace outside valid range [-1-eps,3+eps]."
-            in str(err.exception)
-        )
-
     def test_so3_exp_singularity(self, batch_size: int = 100):
         """
         Tests whether the `so3_exp_map` is robust to the input vectors
