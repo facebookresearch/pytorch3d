@@ -80,7 +80,9 @@ def get_rgbd_point_cloud(
         mode="bilinear",
         align_corners=False,
     )
-    pts_colors = pts_colors.permute(0, 2, 3, 1).reshape(-1, 3)[pts_mask]
+    pts_colors = pts_colors.permute(0, 2, 3, 1).reshape(-1, image_rgb.shape[1])[
+        pts_mask
+    ]
 
     return Pointclouds(points=pts_3d[None], features=pts_colors[None])
 

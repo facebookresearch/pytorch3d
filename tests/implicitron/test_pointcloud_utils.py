@@ -62,3 +62,11 @@ class TestPointCloudUtils(TestCaseMixin, unittest.TestCase):
             )
             [points] = cloud.points_list()
             self.assertConstant(torch.norm(points, dim=1), depth, atol=1e-5)
+
+            # 3. four channels
+            get_rgbd_point_cloud(
+                camera,
+                image_rgb=image[None],
+                depth_map=image[3:][None],
+                euclidean=True,
+            )
