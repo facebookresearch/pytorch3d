@@ -495,7 +495,7 @@ __global__ void KNearestNeighborBackwardKernel(
     if ((p1_idx < num1) && (k < num2)) {
       const float grad_dist = grad_dists[n * P1 * K + p1_idx * K + k];
       // index of point in p2 corresponding to the k-th nearest neighbor
-      const size_t p2_idx = idxs[n * P1 * K + p1_idx * K + k];
+      const int64_t p2_idx = idxs[n * P1 * K + p1_idx * K + k];
       // If the index is the pad value of -1 then ignore it
       if (p2_idx == -1) {
         continue;
