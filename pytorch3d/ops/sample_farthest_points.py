@@ -153,6 +153,7 @@ def sample_farthest_points_naive(
         )
 
         # Select a random point index and save it as the starting point
+        # pyre-fixme[6]: For 2nd argument expected `int` but got `Tensor`.
         selected_idx = randint(0, lengths[n] - 1) if random_start_point else 0
         sample_idx_batch[0] = selected_idx
 
