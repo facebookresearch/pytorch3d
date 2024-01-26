@@ -304,6 +304,7 @@ def _show_predictions(
     pred_all = []
     # Randomly choose a subset of the rendered images, sort by ordr in the sequence
     n_samples = min(n_samples, len(preds))
+    # pyre-fixme[20]: Argument `k` expected.
     pred_idx = sorted(random.sample(list(range(len(preds))), n_samples))
     for predi in pred_idx:
         # Make the concatentation for the same camera vertically
