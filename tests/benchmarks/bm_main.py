@@ -12,7 +12,7 @@ import sys
 from os.path import dirname, isfile, join
 
 
-if __name__ == "__main__":
+def main() -> None:
     # pyre-ignore[16]
     if len(sys.argv) > 1:
         # Parse from flags.
@@ -36,3 +36,7 @@ if __name__ == "__main__":
     os.environ["PYTHONPATH"] = ":".join(sys.path)
     for file_name in file_names:
         subprocess.check_call([sys.executable, file_name])
+
+
+if __name__ == "__main__":
+    main()  # pragma: no cover
