@@ -26,12 +26,13 @@ CONDA_CUDA_VERSIONS = {
     "2.0.0": ["cu117", "cu118"],
     "2.0.1": ["cu117", "cu118"],
     "2.1.0": ["cu118", "cu121"],
+    "2.1.1": ["cu118", "cu121"],
+    "2.1.2": ["cu118", "cu121"],
+    "2.2.0": ["cu118", "cu121"],
 }
 
 
 def conda_docker_image_for_cuda(cuda_version):
-    if cuda_version in ("cu101", "cu102", "cu111"):
-        return None
     if len(cuda_version) != 5:
         raise ValueError("Unknown cuda version")
     return "pytorch/conda-builder:cuda" + cuda_version[2:]
@@ -52,12 +53,18 @@ def pytorch_versions_for_python(python_version):
             for i in CONDA_CUDA_VERSIONS
             if version.Version(i) >= version.Version("2.1.0")
         ]
+    if python_version == "3.12":
+        return [
+            i
+            for i in CONDA_CUDA_VERSIONS
+            if version.Version(i) >= version.Version("2.2.0")
+        ]
 
 
 def workflows(prefix="", filter_branch=None, upload=False, indentation=6):
     w = []
     for btype in ["conda"]:
-        for python_version in ["3.8", "3.9", "3.10", "3.11"]:
+        for python_version in ["3.8", "3.9", "3.10", "3.11", "3.12"]:
             for pytorch_version in pytorch_versions_for_python(python_version):
                 for cu_version in CONDA_CUDA_VERSIONS[pytorch_version]:
                     w += workflow_pair(
