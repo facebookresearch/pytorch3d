@@ -854,6 +854,18 @@ class TestMarchingCubes(TestCaseMixin, unittest.TestCase):
             self.assertClose(verts2[0], expected_verts)
             self.assertClose(faces2[0], expected_faces)
 
+    def test_single_large_ellipsoid(self):
+        if USE_SCIKIT:
+            from skimage.draw import ellipsoid
+
+            ellip_base = ellipsoid(50, 60, 16, levelset=True)
+            volume = torch.Tensor(ellip_base).unsqueeze(0).cpu()
+            verts, faces = marching_cubes_naive(volume, 0)
+            verts2, faces2 = marching_cubes(volume, 0)
+
+            self.assertClose(verts[0], verts2[0], atol=1e-6)
+            self.assertClose(faces[0], faces2[0], atol=1e-6)
+
     def test_cube_surface_area(self):
         if USE_SCIKIT:
             from skimage.measure import marching_cubes_classic, mesh_surface_area

@@ -71,8 +71,8 @@ std::tuple<at::Tensor, at::Tensor, at::Tensor> MarchingCubesCpu(
           if ((j + 1) % 3 == 0 && ps[0] != ps[1] && ps[1] != ps[2] &&
               ps[2] != ps[0]) {
             for (int k = 0; k < 3; k++) {
-              int v = tri[k];
-              edge_id_to_v[tri.at(k)] = ps.at(k);
+              int64_t v = tri.at(k);
+              edge_id_to_v[v] = ps.at(k);
               if (!uniq_edge_id.count(v)) {
                 uniq_edge_id[v] = verts.size();
                 verts.push_back(edge_id_to_v[v]);
