@@ -29,7 +29,7 @@ from pytorch3d.renderer.opengl import MeshRasterizerOpenGL
 from pytorch3d.structures import Meshes, Pointclouds
 from pytorch3d.utils.ico_sphere import ico_sphere
 
-from .common_testing import TestCaseMixin
+from .common_testing import TestCaseMixin, usesOpengl
 
 
 # Set the number of GPUS you want to test with
@@ -119,6 +119,7 @@ class TestRenderMeshesMultiGPU(TestCaseMixin, unittest.TestCase):
     def test_mesh_renderer_to(self):
         self._mesh_renderer_to(MeshRasterizer, SoftPhongShader)
 
+    @usesOpengl
     def test_mesh_renderer_opengl_to(self):
         self._mesh_renderer_to(MeshRasterizerOpenGL, SplatterPhongShader)
 
@@ -177,6 +178,7 @@ class TestRenderMeshesMultiGPU(TestCaseMixin, unittest.TestCase):
         self._render_meshes(MeshRasterizer, HardGouraudShader)
 
     # @unittest.skip("Multi-GPU OpenGL training is currently not supported.")
+    @usesOpengl
     def test_render_meshes_opengl(self):
         self._render_meshes(MeshRasterizerOpenGL, SplatterPhongShader)
 

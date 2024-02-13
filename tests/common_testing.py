@@ -24,6 +24,13 @@ def interactive_testing_requested() -> bool:
     return os.environ.get("PYTORCH3D_INTERACTIVE_TESTING", "") == "1"
 
 
+def skip_opengl_requested() -> bool:
+    return os.environ.get("PYTORCH3D_NO_TEST_OPENGL", "") == "1"
+
+
+usesOpengl = unittest.skipIf(skip_opengl_requested(), "uses opengl")
+
+
 def get_tests_dir() -> Path:
     """
     Returns Path for the directory containing this file.

@@ -33,7 +33,12 @@ from pytorch3d.structures import Pointclouds
 from pytorch3d.structures.meshes import Meshes
 from pytorch3d.utils.ico_sphere import ico_sphere
 
-from .common_testing import get_tests_dir, TestCaseMixin
+from .common_testing import (
+    get_tests_dir,
+    skip_opengl_requested,
+    TestCaseMixin,
+    usesOpengl,
+)
 
 
 DATA_DIR = get_tests_dir() / "data"
@@ -55,6 +60,7 @@ class TestMeshRasterizer(unittest.TestCase):
     def test_simple_sphere_fisheye(self):
         self._simple_sphere_fisheye_against_perspective(MeshRasterizer)
 
+    @usesOpengl
     def test_simple_sphere_opengl(self):
         self._simple_sphere(MeshRasterizerOpenGL)
 
@@ -250,9 +256,11 @@ class TestMeshRasterizer(unittest.TestCase):
         rasterizer = MeshRasterizer()
         rasterizer.to(device)
 
-        rasterizer = MeshRasterizerOpenGL()
-        rasterizer.to(device)
+        if not skip_opengl_requested():
+            rasterizer = MeshRasterizerOpenGL()
+            rasterizer.to(device)
 
+    @usesOpengl
     def test_compare_rasterizers(self):
         device = torch.device("cuda:0")
 
@@ -321,6 +329,7 @@ class TestMeshRasterizer(unittest.TestCase):
         )
 
 
+@usesOpengl
 class TestMeshRasterizerOpenGLUtils(TestCaseMixin, unittest.TestCase):
     def setUp(self):
         verts = torch.tensor(

@@ -51,6 +51,7 @@ from .common_testing import (
     get_tests_dir,
     load_rgb_image,
     TestCaseMixin,
+    usesOpengl,
 )
 
 
@@ -454,6 +455,7 @@ class TestRasterizeRectangleImagesMeshes(TestCaseMixin, unittest.TestCase):
     def test_render_cow(self):
         self._render_cow(MeshRasterizer)
 
+    @usesOpengl
     def test_render_cow_opengl(self):
         self._render_cow(MeshRasterizerOpenGL)
 

@@ -26,7 +26,7 @@ from pytorch3d.renderer.opengl.opengl_utils import (  # noqa
     global_device_context_store,
 )
 
-from .common_testing import TestCaseMixin  # noqa
+from .common_testing import TestCaseMixin, usesOpengl  # noqa
 
 MAX_EGL_HEIGHT = global_device_context_store.max_egl_height
 MAX_EGL_WIDTH = global_device_context_store.max_egl_width
@@ -82,6 +82,7 @@ def _draw_squares_with_context_store(
             result[thread_id] = data
 
 
+@usesOpengl
 class TestDeviceContextStore(TestCaseMixin, unittest.TestCase):
     def test_cuda_context(self):
         cuda_context_1 = global_device_context_store.get_cuda_context(
@@ -118,6 +119,7 @@ class TestDeviceContextStore(TestCaseMixin, unittest.TestCase):
         self.assertIsNot(egl_context_1, egl_context_3)
 
 
+@usesOpengl
 class TestUtils(TestCaseMixin, unittest.TestCase):
     def test_load_extensions(self):
         # This should work
@@ -145,6 +147,7 @@ class TestUtils(TestCaseMixin, unittest.TestCase):
         self.assertEqual(attribute_array[2], egl.EGL_NONE)
 
 
+@usesOpengl
 class TestOpenGLSingleThreaded(TestCaseMixin, unittest.TestCase):
     def test_draw_square(self):
         context = EGLContext(width=MAX_EGL_WIDTH, height=MAX_EGL_HEIGHT)
@@ -184,6 +187,7 @@ class TestOpenGLSingleThreaded(TestCaseMixin, unittest.TestCase):
         )
 
 
+@usesOpengl
 class TestOpenGLMultiThreaded(TestCaseMixin, unittest.TestCase):
     def test_multiple_renders_single_gpu_single_context(self):
         _draw_squares_with_context()
@@ -321,6 +325,7 @@ class TestOpenGLMultiThreaded(TestCaseMixin, unittest.TestCase):
             thread.join()
 
 
+@usesOpengl
 class TestOpenGLUtils(TestCaseMixin, unittest.TestCase):
     @classmethod
     def tearDownClass(cls):

@@ -59,7 +59,9 @@ from .common_testing import (
     get_pytorch3d_dir,
     get_tests_dir,
     load_rgb_image,
+    skip_opengl_requested,
     TestCaseMixin,
+    usesOpengl,
 )
 
 # If DEBUG=True, save out images generated in the tests for debugging.
@@ -159,13 +161,16 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
                     MeshRasterizer, HardGouraudShader, "gouraud", "hard_gouraud"
                 ),
                 RasterizerTest(MeshRasterizer, HardFlatShader, "flat", "hard_flat"),
-                RasterizerTest(
-                    MeshRasterizerOpenGL,
-                    SplatterPhongShader,
-                    "splatter",
-                    "splatter_phong",
-                ),
             ]
+            if not skip_opengl_requested():
+                rasterizer_tests.append(
+                    RasterizerTest(
+                        MeshRasterizerOpenGL,
+                        SplatterPhongShader,
+                        "splatter",
+                        "splatter_phong",
+                    )
+                )
             for test in rasterizer_tests:
                 shader = test.shader(
                     lights=lights,
@@ -400,13 +405,16 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
                 MeshRasterizer, HardGouraudShader, "gouraud", "hard_gouraud"
             ),
             RasterizerTest(MeshRasterizer, HardFlatShader, "flat", "hard_flat"),
-            RasterizerTest(
-                MeshRasterizerOpenGL,
-                SplatterPhongShader,
-                "splatter",
-                "splatter_phong",
-            ),
         ]
+        if not skip_opengl_requested():
+            rasterizer_tests.append(
+                RasterizerTest(
+                    MeshRasterizerOpenGL,
+                    SplatterPhongShader,
+                    "splatter",
+                    "splatter_phong",
+                )
+            )
         for test in rasterizer_tests:
             reference_name = test.reference_name
             debug_name = test.debug_name
@@ -518,6 +526,7 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
         """
         self._texture_map_per_rasterizer(MeshRasterizer)
 
+    @usesOpengl
     def test_texture_map_opengl(self):
         """
         Test a mesh with a texture map is loaded and rendered correctly.
@@ -694,6 +703,7 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
     def test_batch_uvs(self):
         self._batch_uvs(MeshRasterizer)
 
+    @usesOpengl
     def test_batch_uvs_opengl(self):
         self._batch_uvs(MeshRasterizer)
 
@@ -786,6 +796,7 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
     def test_join_uvs(self):
         self._join_uvs(MeshRasterizer)
 
+    @usesOpengl
     def test_join_uvs_opengl(self):
         self._join_uvs(MeshRasterizerOpenGL)
 
@@ -975,6 +986,7 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
     def test_join_verts(self):
         self._join_verts(MeshRasterizer)
 
+    @usesOpengl
     def test_join_verts_opengl(self):
         self._join_verts(MeshRasterizerOpenGL)
 
@@ -1051,6 +1063,7 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
     def test_join_atlas(self):
         self._join_atlas(MeshRasterizer)
 
+    @usesOpengl
     def test_join_atlas_opengl(self):
         self._join_atlas(MeshRasterizerOpenGL)
 
@@ -1151,6 +1164,7 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
     def test_joined_spheres(self):
         self._joined_spheres(MeshRasterizer)
 
+    @usesOpengl
     def test_joined_spheres_opengl(self):
         self._joined_spheres(MeshRasterizerOpenGL)
 
@@ -1233,6 +1247,7 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
     def test_texture_map_atlas(self):
         self._texture_map_atlas(MeshRasterizer)
 
+    @usesOpengl
     def test_texture_map_atlas_opengl(self):
         self._texture_map_atlas(MeshRasterizerOpenGL)
 
@@ -1351,6 +1366,7 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
     def test_simple_sphere_outside_zfar(self):
         self._simple_sphere_outside_zfar(MeshRasterizer)
 
+    @usesOpengl
     def test_simple_sphere_outside_zfar_opengl(self):
         self._simple_sphere_outside_zfar(MeshRasterizerOpenGL)
 
@@ -1445,13 +1461,16 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
         # No elevation or azimuth rotation
         rasterizer_tests = [
             RasterizerTest(MeshRasterizer, HardPhongShader, "phong", "hard_phong"),
-            RasterizerTest(
-                MeshRasterizerOpenGL,
-                SplatterPhongShader,
-                "splatter",
-                "splatter_phong",
-            ),
         ]
+        if not skip_opengl_requested():
+            rasterizer_tests.append(
+                RasterizerTest(
+                    MeshRasterizerOpenGL,
+                    SplatterPhongShader,
+                    "splatter",
+                    "splatter_phong",
+                )
+            )
         R, T = look_at_view_transform(2.7, 0.0, 0.0)
         for cam_type in (
             FoVPerspectiveCameras,
