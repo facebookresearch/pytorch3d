@@ -31,6 +31,7 @@
 #include "rasterize_points/rasterize_points.h"
 #include "sample_farthest_points/sample_farthest_points.h"
 #include "sample_pdf/sample_pdf.h"
+#include "closest_point_on_surface/closest_point_on_surface.h"
 
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
   m.def("face_areas_normals_forward", &FaceAreasNormalsForward);
@@ -42,6 +43,9 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
 #ifdef WITH_CUDA
   m.def("knn_check_version", &KnnCheckVersion);
 #endif
+
+  m.def("closest_point_on_surface_forward", &closestPointonSurface_forward);
+
   m.def("knn_points_idx", &KNearestNeighborIdx);
   m.def("knn_points_backward", &KNearestNeighborBackward);
   m.def("ball_query", &BallQuery);
