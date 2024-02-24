@@ -133,14 +133,14 @@ def list_to_packed(x: List[torch.Tensor]):
         - **item_packed_to_list_idx**: tensor of shape sum(Mi) containing the
           index of the element in the list the item belongs to.
     """
+    if not x:
+        raise ValueError("Input list is empty")
     device = x[0].device
-    N = len(x)
-    Mi = x[0].shape[0]
-    num_items = torch.full((N,), Mi, dtype=torch.int64).to(device)
+    sizes = [xi.shape[0] for xi in x]
+    num_items = torch.tensor(sizes, dtype=torch.int64).to(device)
     item_packed_first_idx = torch.zeros_like(num_items)
     item_packed_first_idx[1:] = torch.cumsum(num_items[:-1], dim=0)
-    total_items = N * Mi
-    item_packed_to_list_idx = torch.arange(total_items, dtype=torch.int64).to(device)
+    item_packed_to_list_idx = torch.arange(torch.sum(num_items), dtype=torch.int64).to(device)
     item_packed_to_list_idx = torch.bucketize(item_packed_to_list_idx, item_packed_first_idx, right=True) - 1
     x_packed = torch.cat(x, dim=0)
 
