@@ -124,9 +124,9 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
             dimension of the cropping bounding box, relative to box size.
     """
 
-    frame_annotations_type: ClassVar[
-        Type[types.FrameAnnotation]
-    ] = types.FrameAnnotation
+    frame_annotations_type: ClassVar[Type[types.FrameAnnotation]] = (
+        types.FrameAnnotation
+    )
 
     path_manager: Any = None
     frame_annotations_file: str = ""

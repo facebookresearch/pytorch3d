@@ -146,9 +146,11 @@ def cat_dataclass(batch, tensor_collator: Callable):
             )
         elif isinstance(elem_f, collections.abc.Mapping):
             collated[f.name] = {
-                k: tensor_collator([getattr(e, f.name)[k] for e in batch])
-                if elem_f[k] is not None
-                else None
+                k: (
+                    tensor_collator([getattr(e, f.name)[k] for e in batch])
+                    if elem_f[k] is not None
+                    else None
+                )
                 for k in elem_f
             }
         else:

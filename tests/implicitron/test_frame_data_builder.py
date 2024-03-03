@@ -85,11 +85,11 @@ class TestFrameDataBuilder(TestCaseMixin, unittest.TestCase):
             camera_quality_score=safe_as_tensor(
                 self.seq_annotation.viewpoint_quality_score, torch.float
             ),
-            point_cloud_quality_score=safe_as_tensor(
-                point_cloud.quality_score, torch.float
-            )
-            if point_cloud is not None
-            else None,
+            point_cloud_quality_score=(
+                safe_as_tensor(point_cloud.quality_score, torch.float)
+                if point_cloud is not None
+                else None
+            ),
         )
 
     def test_frame_data_builder_args(self):

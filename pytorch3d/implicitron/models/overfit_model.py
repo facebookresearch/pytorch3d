@@ -356,9 +356,12 @@ class OverfitModel(ImplicitronModelBase):  # pyre-ignore: 13
         ray_bundle: ImplicitronRayBundle = self.raysampler(
             camera,
             evaluation_mode,
-            mask=mask_crop
-            if mask_crop is not None and sampling_mode == RenderSamplingMode.MASK_SAMPLE
-            else None,
+            mask=(
+                mask_crop
+                if mask_crop is not None
+                and sampling_mode == RenderSamplingMode.MASK_SAMPLE
+                else None
+            ),
         )
 
         inputs_to_be_chunked = {}
@@ -381,10 +384,12 @@ class OverfitModel(ImplicitronModelBase):  # pyre-ignore: 13
                 frame_timestamp=frame_timestamp,
             )
             implicit_functions = [
-                functools.partial(implicit_function, global_code=global_code)
-                if isinstance(implicit_function, Callable)
-                else functools.partial(
-                    implicit_function.forward, global_code=global_code
+                (
+                    functools.partial(implicit_function, global_code=global_code)
+                    if isinstance(implicit_function, Callable)
+                    else functools.partial(
+                        implicit_function.forward, global_code=global_code
+                    )
                 )
                 for implicit_function in implicit_functions
             ]

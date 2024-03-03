@@ -241,9 +241,9 @@ class _Registry:
     """
 
     def __init__(self) -> None:
-        self._mapping: Dict[
-            Type[ReplaceableBase], Dict[str, Type[ReplaceableBase]]
-        ] = defaultdict(dict)
+        self._mapping: Dict[Type[ReplaceableBase], Dict[str, Type[ReplaceableBase]]] = (
+            defaultdict(dict)
+        )
 
     def register(self, some_class: Type[_X]) -> Type[_X]:
         """

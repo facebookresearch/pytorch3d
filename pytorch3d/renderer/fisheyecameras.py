@@ -81,7 +81,6 @@ class FishEyeCameras(CamerasBase):
         device: Device = "cpu",
         image_size: Optional[Union[List, Tuple, torch.Tensor]] = None,
     ) -> None:
-
         """
 
         Args:

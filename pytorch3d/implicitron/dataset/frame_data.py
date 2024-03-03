@@ -576,11 +576,11 @@ class GenericFrameDataBuilder(FrameDataBuilderBase[FrameDataSubtype], ABC):
             camera_quality_score=safe_as_tensor(
                 sequence_annotation.viewpoint_quality_score, torch.float
             ),
-            point_cloud_quality_score=safe_as_tensor(
-                point_cloud.quality_score, torch.float
-            )
-            if point_cloud is not None
-            else None,
+            point_cloud_quality_score=(
+                safe_as_tensor(point_cloud.quality_score, torch.float)
+                if point_cloud is not None
+                else None
+            ),
         )
 
         fg_mask_np: Optional[np.ndarray] = None

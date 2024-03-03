@@ -415,7 +415,7 @@ class RayTracing(Configurable, nn.Module):
             ]
             sampler_dists[mask_intersect_idx[p_out_mask]] = pts_intervals[
                 p_out_mask,
-                :
+                :,
                 # pyre-fixme[6]: For 1st param expected `Union[bool, float, int]` but
                 #  got `Tensor`.
             ][torch.arange(n_p_out), out_pts_idx]

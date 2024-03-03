@@ -292,9 +292,11 @@ class _OpenGLMachinery:
                 pix_to_face, bary_coord, zbuf = self._rasterize_mesh(
                     mesh,
                     image_size,
-                    projection_matrix=projection_matrix[mesh_id]
-                    if projection_matrix.shape[0] > 1
-                    else None,
+                    projection_matrix=(
+                        projection_matrix[mesh_id]
+                        if projection_matrix.shape[0] > 1
+                        else None
+                    ),
                 )
                 pix_to_faces.append(pix_to_face)
                 bary_coords.append(bary_coord)

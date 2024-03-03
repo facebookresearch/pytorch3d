@@ -282,9 +282,9 @@ def eval_batch(
             image_rgb_masked=image_rgb_masked,
             depth_render=cloned_render["depth_render"],
             depth_map=frame_data.depth_map,
-            depth_mask=frame_data.depth_mask[:1]
-            if frame_data.depth_mask is not None
-            else None,
+            depth_mask=(
+                frame_data.depth_mask[:1] if frame_data.depth_mask is not None else None
+            ),
             visdom_env=visualize_visdom_env,
         )
 

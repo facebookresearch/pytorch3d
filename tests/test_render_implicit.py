@@ -284,7 +284,7 @@ class TestRenderImplicit(TestCaseMixin, unittest.TestCase):
             os.makedirs(outdir, exist_ok=True)
 
             frames = []
-            for (image_opacity, image_opacity_mesh) in zip(
+            for image_opacity, image_opacity_mesh in zip(
                 images_opacities, images_opacities_meshes
             ):
                 image, opacity = image_opacity.split([3, 1], dim=-1)

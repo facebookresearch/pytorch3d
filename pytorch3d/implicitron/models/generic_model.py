@@ -395,9 +395,11 @@ class GenericModel(ImplicitronModelBase):  # pyre-ignore: 13
         n_targets = (
             1
             if evaluation_mode == EvaluationMode.EVALUATION
-            else batch_size
-            if self.n_train_target_views <= 0
-            else min(self.n_train_target_views, batch_size)
+            else (
+                batch_size
+                if self.n_train_target_views <= 0
+                else min(self.n_train_target_views, batch_size)
+            )
         )
 
         # A helper function for selecting n_target first elements from the input
@@ -422,9 +424,12 @@ class GenericModel(ImplicitronModelBase):  # pyre-ignore: 13
         ray_bundle: ImplicitronRayBundle = self.raysampler(
             target_cameras,
             evaluation_mode,
-            mask=mask_crop[:n_targets]
-            if mask_crop is not None and sampling_mode == RenderSamplingMode.MASK_SAMPLE
-            else None,
+            mask=(
+                mask_crop[:n_targets]
+                if mask_crop is not None
+                and sampling_mode == RenderSamplingMode.MASK_SAMPLE
+                else None
+            ),
         )
 
         # custom_args hold additional arguments to the implicit function.

@@ -303,7 +303,6 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
         self.test_simple_sphere(check_depth=True)
 
     def test_simple_sphere_screen(self):
-
         """
         Test output when rendering with PerspectiveCameras & OrthographicCameras
         in NDC vs screen space.
@@ -1221,7 +1220,7 @@ class TestRenderMeshes(TestCaseMixin, unittest.TestCase):
             "flat": HardFlatShader,
             "splatter": SplatterPhongShader,
         }
-        for (name, shader_init) in shaders.items():
+        for name, shader_init in shaders.items():
             if rasterizer_type == MeshRasterizerOpenGL and name != "splatter":
                 continue
             if rasterizer_type == MeshRasterizer and name == "splatter":

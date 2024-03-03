@@ -193,9 +193,9 @@ class NeuralRadianceFieldBase(ImplicitFunctionBase, torch.nn.Module):
         embeds = create_embeddings_for_implicit_function(
             xyz_world=rays_points_world,
             #  for 2nd param but got `Union[None, torch.Tensor, torch.nn.Module]`.
-            xyz_embedding_function=self.harmonic_embedding_xyz
-            if self.input_xyz
-            else None,
+            xyz_embedding_function=(
+                self.harmonic_embedding_xyz if self.input_xyz else None
+            ),
             global_code=global_code,
             fun_viewpool=fun_viewpool,
             xyz_in_camera_coords=self.xyz_ray_dir_in_camera_coords,
