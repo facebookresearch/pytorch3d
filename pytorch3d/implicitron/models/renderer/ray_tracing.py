@@ -2,6 +2,8 @@
 # Adapted from https://github.com/lioryariv/idr
 # Copyright (c) 2020 Lior Yariv
 
+# pyre-unsafe
+
 from typing import Any, Callable, Tuple
 
 import torch

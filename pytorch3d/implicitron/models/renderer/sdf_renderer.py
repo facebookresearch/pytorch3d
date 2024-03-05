@@ -2,6 +2,8 @@
 # Adapted from https://github.com/lioryariv/idr/blob/main/code/model/
 #              implicit_differentiable_renderer.py
 # Copyright (c) 2020 Lior Yariv
+
+# pyre-unsafe
 import functools
 from typing import List, Optional, Tuple
 

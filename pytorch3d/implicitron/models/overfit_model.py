@@ -4,6 +4,8 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-unsafe
+
 
 # Note: The #noqa comments below are for unused imports of pluggable implementations
 # which are part of implicitron. They ensure that the registry is prepopulated.

@@ -3,6 +3,8 @@
 # https://github.com/lioryariv/idr/
 # Copyright (c) 2020 Lior Yariv
 
+# pyre-unsafe
+
 import logging
 from typing import List, Tuple
 

@@ -4,6 +4,8 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-unsafe
+
 # Allows to register the models
 # see: pytorch3d.implicitron.tools.config.registry:register
 from pytorch3d.implicitron.models.generic_model import GenericModel
