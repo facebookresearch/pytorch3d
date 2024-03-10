@@ -73,6 +73,7 @@ struct float2 {
 struct float3 {
   float x, y, z;
 };
+#ifndef WITH_CUDA
 inline float3 make_float3(const float& x, const float& y, const float& z) {
   float3 res;
   res.x = x;
@@ -80,6 +81,7 @@ inline float3 make_float3(const float& x, const float& y, const float& z) {
   res.z = z;
   return res;
 }
+#endif
 #endif
 namespace py = pybind11;
 
