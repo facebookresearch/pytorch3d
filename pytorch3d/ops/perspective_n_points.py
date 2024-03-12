@@ -4,6 +4,8 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-unsafe
+
 """
 This file contains Efficient PnP algorithm for Perspective-n-Points problem.
 It finds a camera position (defined by rotation `R` and translation `T`) that

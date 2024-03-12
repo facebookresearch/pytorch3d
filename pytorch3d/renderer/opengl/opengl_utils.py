@@ -4,6 +4,8 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-unsafe
+
 # Utilities useful for OpenGL rendering.
 #
 # NOTE: This module MUST be imported before any other OpenGL modules in this Python

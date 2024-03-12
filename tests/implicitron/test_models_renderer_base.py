@@ -222,10 +222,7 @@ class TestRendererBase(TestCaseMixin, unittest.TestCase):
         np.testing.assert_allclose(
             (delta**2) / 3
             - (4 / 15)
-            * (
-                (delta**4 * (12 * mu**2 - delta**2))
-                / (3 * mu**2 + delta**2) ** 2
-            ),
+            * ((delta**4 * (12 * mu**2 - delta**2)) / (3 * mu**2 + delta**2) ** 2),
             t_var.numpy(),
         )
         np.testing.assert_allclose(

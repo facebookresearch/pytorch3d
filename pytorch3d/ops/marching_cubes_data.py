@@ -4,6 +4,8 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-unsafe
+
 
 # Maps each edge (by index) to the corresponding cube vertices
 EDGE_TO_VERTICES = [

@@ -343,12 +343,14 @@ class RadianceFieldRenderer(torch.nn.Module):
             # For a full render pass concatenate the output chunks,
             # and reshape to image size.
             out = {
-                k: torch.cat(
-                    [ch_o[k] for ch_o in chunk_outputs],
-                    dim=1,
-                ).view(-1, *self._image_size, 3)
-                if chunk_outputs[0][k] is not None
-                else None
+                k: (
+                    torch.cat(
+                        [ch_o[k] for ch_o in chunk_outputs],
+                        dim=1,
+                    ).view(-1, *self._image_size, 3)
+                    if chunk_outputs[0][k] is not None
+                    else None
+                )
                 for k in ("rgb_fine", "rgb_coarse", "rgb_gt")
             }
         else:

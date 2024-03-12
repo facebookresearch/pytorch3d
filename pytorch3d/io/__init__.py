@@ -4,6 +4,8 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-unsafe
+
 
 from .obj_io import load_obj, load_objs_as_meshes, save_obj
 from .pluggable import IO

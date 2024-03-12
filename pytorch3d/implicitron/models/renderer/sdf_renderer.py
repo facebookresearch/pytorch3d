@@ -2,6 +2,8 @@
 # Adapted from https://github.com/lioryariv/idr/blob/main/code/model/
 #              implicit_differentiable_renderer.py
 # Copyright (c) 2020 Lior Yariv
+
+# pyre-unsafe
 import functools
 from typing import List, Optional, Tuple
 
@@ -43,9 +45,9 @@ class SignedDistanceFunctionRenderer(BaseRenderer, torch.nn.Module):  # pyre-ign
 
         run_auto_creation(self)
 
-        self.ray_normal_coloring_network_args[
-            "feature_vector_size"
-        ] = render_features_dimensions
+        self.ray_normal_coloring_network_args["feature_vector_size"] = (
+            render_features_dimensions
+        )
         self._rgb_network = RayNormalColoringNetwork(
             **self.ray_normal_coloring_network_args
         )
@@ -201,15 +203,15 @@ class SignedDistanceFunctionRenderer(BaseRenderer, torch.nn.Module):  # pyre-ign
                 None, :, 0, :
             ]
             normals_full.view(-1, 3)[surface_mask] = normals
-            render_full.view(-1, self.render_features_dimensions)[
-                surface_mask
-            ] = self._rgb_network(
-                features,
-                differentiable_surface_points[None],
-                normals,
-                ray_bundle,
-                surface_mask[None, :, None],
-                pooling_fn=None,  # TODO
+            render_full.view(-1, self.render_features_dimensions)[surface_mask] = (
+                self._rgb_network(
+                    features,
+                    differentiable_surface_points[None],
+                    normals,
+                    ray_bundle,
+                    surface_mask[None, :, None],
+                    pooling_fn=None,  # TODO
+                )
             )
             mask_full.view(-1, 1)[~surface_mask] = torch.sigmoid(
                 # pyre-fixme[6]: For 1st param expected `Tensor` but got `float`.

@@ -4,6 +4,8 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-unsafe
+
 # NOTE: This module (as well as rasterizer_opengl) will not be imported into pytorch3d
 # if you do not have pycuda.gl and pyopengl installed. In addition, please make sure
 # your Python application *does not* import OpenGL before importing PyTorch3D, unless
@@ -292,9 +294,11 @@ class _OpenGLMachinery:
                 pix_to_face, bary_coord, zbuf = self._rasterize_mesh(
                     mesh,
                     image_size,
-                    projection_matrix=projection_matrix[mesh_id]
-                    if projection_matrix.shape[0] > 1
-                    else None,
+                    projection_matrix=(
+                        projection_matrix[mesh_id]
+                        if projection_matrix.shape[0] > 1
+                        else None
+                    ),
                 )
                 pix_to_faces.append(pix_to_face)
                 bary_coords.append(bary_coord)

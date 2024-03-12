@@ -392,7 +392,7 @@ class TestRenderVolumes(TestCaseMixin, unittest.TestCase):
                 os.makedirs(outdir, exist_ok=True)
 
                 frames = []
-                for (image, image_pts) in zip(images, images_pts):
+                for image, image_pts in zip(images, images_pts):
                     diff_image = (
                         ((image - image_pts) * 0.5 + 0.5)
                         .mean(dim=2, keepdim=True)

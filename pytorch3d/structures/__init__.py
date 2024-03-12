@@ -4,6 +4,8 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-unsafe
+
 from .meshes import join_meshes_as_batch, join_meshes_as_scene, Meshes
 from .pointclouds import (
     join_pointclouds_as_batch,

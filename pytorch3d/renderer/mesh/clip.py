@@ -4,6 +4,8 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-unsafe
+
 from typing import Any, List, Optional, Tuple
 
 import torch
@@ -712,9 +714,9 @@ def convert_clipped_rasterization_to_original_faces(
         )
 
         bary_coords_unclipped_subset = bary_coords_unclipped_subset.reshape([N * 3])
-        bary_coords_unclipped[
-            faces_to_convert_mask_expanded
-        ] = bary_coords_unclipped_subset
+        bary_coords_unclipped[faces_to_convert_mask_expanded] = (
+            bary_coords_unclipped_subset
+        )
 
         # dists for case 4 faces will be handled in the rasterizer
         # so no need to modify them here.

@@ -100,7 +100,7 @@ class TestVertAlign(TestCaseMixin, unittest.TestCase):
     def init_feats(batch_size: int = 10, num_channels: int = 256, device: str = "cuda"):
         H, W = [14, 28], [14, 28]
         feats = []
-        for (h, w) in zip(H, W):
+        for h, w in zip(H, W):
             feats.append(torch.rand((batch_size, num_channels, h, w), device=device))
         return feats
 

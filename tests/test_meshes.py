@@ -983,7 +983,7 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
         verts_list = []
         faces_list = []
         verts_faces = [(10, 100), (20, 200)]
-        for (V, F) in verts_faces:
+        for V, F in verts_faces:
             verts = torch.rand((V, 3), dtype=torch.float32, device=device)
             faces = torch.randint(V, size=(F, 3), dtype=torch.int64, device=device)
             verts_list.append(verts)
@@ -1007,7 +1007,7 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
         device = torch.device("cuda:0")
         verts_list = []
         faces_list = []
-        for (V, F) in [(10, 100)]:
+        for V, F in [(10, 100)]:
             verts = torch.rand((V, 3), dtype=torch.float32, device=device)
             faces = torch.randint(V, size=(F, 3), dtype=torch.int64, device=device)
             verts_list.append(verts)
@@ -1025,7 +1025,7 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
         verts_list = []
         faces_list = []
         verts_faces = [(10, 100), (20, 200), (30, 300)]
-        for (V, F) in verts_faces:
+        for V, F in verts_faces:
             verts = torch.rand((V, 3), dtype=torch.float32, device=device)
             faces = torch.randint(V, size=(F, 3), dtype=torch.int64, device=device)
             verts_list.append(verts)
@@ -1047,7 +1047,7 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
         verts_list = []
         faces_list = []
         verts_faces = [(10, 100), (20, 200), (30, 300)]
-        for (V, F) in verts_faces:
+        for V, F in verts_faces:
             verts = torch.rand((V, 3), dtype=torch.float32, device=device)
             faces = torch.randint(V, size=(F, 3), dtype=torch.int64, device=device)
             verts_list.append(verts)

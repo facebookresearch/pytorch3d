@@ -4,6 +4,8 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-unsafe
+
 import copy
 import functools
 import gzip
@@ -124,9 +126,9 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
             dimension of the cropping bounding box, relative to box size.
     """
 
-    frame_annotations_type: ClassVar[
-        Type[types.FrameAnnotation]
-    ] = types.FrameAnnotation
+    frame_annotations_type: ClassVar[Type[types.FrameAnnotation]] = (
+        types.FrameAnnotation
+    )
 
     path_manager: Any = None
     frame_annotations_file: str = ""

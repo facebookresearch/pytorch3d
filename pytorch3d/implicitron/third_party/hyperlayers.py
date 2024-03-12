@@ -1,6 +1,8 @@
 # a copy-paste from https://github.com/vsitzmann/scene-representation-networks/blob/master/hyperlayers.py
 # fmt: off
 # flake8: noqa
+
+# pyre-unsafe
 '''Pytorch implementations of hyper-network modules.
 '''
 import functools

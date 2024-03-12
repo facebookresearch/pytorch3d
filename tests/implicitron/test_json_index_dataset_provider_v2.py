@@ -168,7 +168,10 @@ def _make_random_json_dataset_map_provider_v2_data(
                 mask_path = os.path.join(maskdir, f"frame{i:05d}.png")
                 mask = np.zeros((H, W))
                 mask[H // 2 :, W // 2 :] = 1
-                Image.fromarray((mask * 255.0).astype(np.uint8), mode="L",).convert(
+                Image.fromarray(
+                    (mask * 255.0).astype(np.uint8),
+                    mode="L",
+                ).convert(
                     "L"
                 ).save(mask_path)
 

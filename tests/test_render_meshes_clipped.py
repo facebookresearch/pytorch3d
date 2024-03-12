@@ -620,7 +620,7 @@ class TestRenderMeshesClipping(TestCaseMixin, unittest.TestCase):
         plane into a quadrilateral, there shouldn't be duplicates indices of
         the face in the pix_to_face output of rasterization.
         """
-        for (device, bin_size) in [("cpu", 0), ("cuda:0", 0), ("cuda:0", None)]:
+        for device, bin_size in [("cpu", 0), ("cuda:0", 0), ("cuda:0", None)]:
             verts = torch.tensor(
                 [[0.0, -10.0, 1.0], [-1.0, 2.0, -2.0], [1.0, 5.0, -10.0]],
                 dtype=torch.float32,
@@ -673,7 +673,7 @@ class TestRenderMeshesClipping(TestCaseMixin, unittest.TestCase):
         device = "cuda:0"
         mesh1 = torus(20.0, 85.0, 32, 16, device=device)
         mesh2 = torus(2.0, 3.0, 32, 16, device=device)
-        for (mesh, z_clip) in [(mesh1, None), (mesh2, 5.0)]:
+        for mesh, z_clip in [(mesh1, None), (mesh2, 5.0)]:
             tex = TexturesVertex(verts_features=torch.rand_like(mesh.verts_padded()))
             mesh.textures = tex
             raster_settings = RasterizationSettings(
