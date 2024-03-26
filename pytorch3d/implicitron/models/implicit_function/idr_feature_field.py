@@ -2,6 +2,8 @@
 # Adapted from https://github.com/lioryariv/idr/blob/main/code/model/
 #              implicit_differentiable_renderer.py
 # Copyright (c) 2020 Lior Yariv
+
+# pyre-unsafe
 import math
 from typing import Optional, Tuple
 
@@ -102,9 +104,7 @@ class IdrFeatureField(ImplicitFunctionBase, torch.nn.Module):
                 elif self.n_harmonic_functions_xyz >= 0 and layer_idx == 0:
                     torch.nn.init.constant_(lin.bias, 0.0)
                     torch.nn.init.constant_(lin.weight[:, 3:], 0.0)
-                    torch.nn.init.normal_(
-                        lin.weight[:, :3], 0.0, 2**0.5 / out_dim**0.5
-                    )
+                    torch.nn.init.normal_(lin.weight[:, :3], 0.0, 2**0.5 / out_dim**0.5)
                 elif self.n_harmonic_functions_xyz >= 0 and layer_idx in self.skip_in:
                     torch.nn.init.constant_(lin.bias, 0.0)
                     torch.nn.init.normal_(lin.weight, 0.0, 2**0.5 / out_dim**0.5)

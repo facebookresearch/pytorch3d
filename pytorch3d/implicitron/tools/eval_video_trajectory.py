@@ -4,6 +4,8 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-unsafe
+
 import logging
 import math
 from typing import Optional, Tuple
@@ -139,9 +141,11 @@ def generate_eval_video_cameras(
         fit = fit_circle_in_3d(
             cam_centers,
             angles=angle,
-            offset=angle.new_tensor(traj_offset_canonical)
-            if traj_offset_canonical is not None
-            else None,
+            offset=(
+                angle.new_tensor(traj_offset_canonical)
+                if traj_offset_canonical is not None
+                else None
+            ),
             up=angle.new_tensor(up),
         )
         traj = fit.generated_points

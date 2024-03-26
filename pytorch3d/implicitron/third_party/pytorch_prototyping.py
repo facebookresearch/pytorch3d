@@ -1,6 +1,8 @@
 # a copy-paste from https://raw.githubusercontent.com/vsitzmann/pytorch_prototyping/10f49b1e7df38a58fd78451eac91d7ac1a21df64/pytorch_prototyping.py
 # fmt: off
 # flake8: noqa
+
+# pyre-unsafe
 '''A number of custom pytorch modules with sane defaults that I find useful for model prototyping.
 '''
 import torch

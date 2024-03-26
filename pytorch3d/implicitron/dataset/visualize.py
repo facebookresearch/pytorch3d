@@ -4,6 +4,8 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-unsafe
+
 from typing import cast, Optional, Tuple
 
 import torch
@@ -88,9 +90,11 @@ def get_implicitron_sequence_pointcloud(
             frame_data.camera,
             frame_data.image_rgb,
             frame_data.depth_map,
-            (cast(torch.Tensor, frame_data.fg_probability) > 0.5).float()
-            if mask_points and frame_data.fg_probability is not None
-            else None,
+            (
+                (cast(torch.Tensor, frame_data.fg_probability) > 0.5).float()
+                if mask_points and frame_data.fg_probability is not None
+                else None
+            ),
         )
 
     return point_cloud, frame_data

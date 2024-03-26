@@ -4,6 +4,8 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-unsafe
+
 from typing import Optional, Tuple
 
 import torch
@@ -145,10 +147,12 @@ class AbstractMaskRaySampler(RaySamplerBase, torch.nn.Module):
             n_pts_per_ray=n_pts_per_ray_training,
             min_depth=0.0,
             max_depth=0.0,
-            n_rays_per_image=self.n_rays_per_image_sampled_from_mask
-            if self._sampling_mode[EvaluationMode.TRAINING]
-            == RenderSamplingMode.MASK_SAMPLE
-            else None,
+            n_rays_per_image=(
+                self.n_rays_per_image_sampled_from_mask
+                if self._sampling_mode[EvaluationMode.TRAINING]
+                == RenderSamplingMode.MASK_SAMPLE
+                else None
+            ),
             n_rays_total=self.n_rays_total_training,
             unit_directions=True,
             stratified_sampling=self.stratified_point_sampling_training,
@@ -160,10 +164,12 @@ class AbstractMaskRaySampler(RaySamplerBase, torch.nn.Module):
             n_pts_per_ray=n_pts_per_ray_evaluation,
             min_depth=0.0,
             max_depth=0.0,
-            n_rays_per_image=self.n_rays_per_image_sampled_from_mask
-            if self._sampling_mode[EvaluationMode.EVALUATION]
-            == RenderSamplingMode.MASK_SAMPLE
-            else None,
+            n_rays_per_image=(
+                self.n_rays_per_image_sampled_from_mask
+                if self._sampling_mode[EvaluationMode.EVALUATION]
+                == RenderSamplingMode.MASK_SAMPLE
+                else None
+            ),
             unit_directions=True,
             stratified_sampling=self.stratified_point_sampling_evaluation,
         )

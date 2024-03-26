@@ -1,6 +1,8 @@
 # @lint-ignore-every LICENSELINT
 # Adapted from https://github.com/vsitzmann/scene-representation-networks
 # Copyright (c) 2019 Vincent Sitzmann
+
+# pyre-unsafe
 from typing import Any, cast, Optional, Tuple
 
 import torch

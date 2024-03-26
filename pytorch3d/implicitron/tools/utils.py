@@ -4,6 +4,8 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-unsafe
+
 
 import collections
 import dataclasses
@@ -146,9 +148,11 @@ def cat_dataclass(batch, tensor_collator: Callable):
             )
         elif isinstance(elem_f, collections.abc.Mapping):
             collated[f.name] = {
-                k: tensor_collator([getattr(e, f.name)[k] for e in batch])
-                if elem_f[k] is not None
-                else None
+                k: (
+                    tensor_collator([getattr(e, f.name)[k] for e in batch])
+                    if elem_f[k] is not None
+                    else None
+                )
                 for k in elem_f
             }
         else:

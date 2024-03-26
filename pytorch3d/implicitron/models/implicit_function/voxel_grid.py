@@ -4,6 +4,8 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-unsafe
+
 """
 This file contains classes that implement Voxel grids, both in their full resolution
 as in the factorized form. There are two factorized forms implemented, Tensor rank decomposition

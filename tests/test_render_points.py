@@ -384,7 +384,7 @@ class TestRenderPoints(TestCaseMixin, unittest.TestCase):
             (AlphaCompositor, alpha_composite),
         ]
 
-        for (compositor_class, composite_func) in compositor_funcs:
+        for compositor_class, composite_func in compositor_funcs:
 
             compositor = compositor_class(background_color)
 
@@ -435,7 +435,7 @@ class TestRenderPoints(TestCaseMixin, unittest.TestCase):
             (AlphaCompositor, alpha_composite),
         ]
 
-        for (compositor_class, composite_func) in compositor_funcs:
+        for compositor_class, composite_func in compositor_funcs:
 
             compositor = compositor_class(background_color)
 

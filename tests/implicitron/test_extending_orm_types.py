@@ -61,9 +61,9 @@ class ExtendedSqlFrameAnnotation(SqlFrameAnnotation):
 
 
 class ExtendedSqlIndexDataset(SqlIndexDataset):
-    frame_annotations_type: ClassVar[
-        Type[SqlFrameAnnotation]
-    ] = ExtendedSqlFrameAnnotation
+    frame_annotations_type: ClassVar[Type[SqlFrameAnnotation]] = (
+        ExtendedSqlFrameAnnotation
+    )
 
 
 class CanineFrameData(FrameData):
@@ -96,9 +96,9 @@ class CanineFrameDataBuilder(
 
 
 class CanineSqlIndexDataset(SqlIndexDataset):
-    frame_annotations_type: ClassVar[
-        Type[SqlFrameAnnotation]
-    ] = ExtendedSqlFrameAnnotation
+    frame_annotations_type: ClassVar[Type[SqlFrameAnnotation]] = (
+        ExtendedSqlFrameAnnotation
+    )
 
     frame_data_builder_class_type: str = "CanineFrameDataBuilder"
 

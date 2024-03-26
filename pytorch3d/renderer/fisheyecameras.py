@@ -4,6 +4,8 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-unsafe
+
 import math
 from typing import List, Optional, Tuple, Union
 
@@ -81,7 +83,6 @@ class FishEyeCameras(CamerasBase):
         device: Device = "cpu",
         image_size: Optional[Union[List, Tuple, torch.Tensor]] = None,
     ) -> None:
-
         """
 
         Args:

@@ -1,6 +1,8 @@
 # @lint-ignore-every LICENSELINT
 # Adapted from https://github.com/bmild/nerf/blob/master/load_llff.py
 # Copyright (c) 2020 bmild
+
+# pyre-unsafe
 import logging
 import os
 import warnings
