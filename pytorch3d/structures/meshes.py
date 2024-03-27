@@ -853,6 +853,7 @@ class Meshes:
             refresh: Set to True to force recomputation of face areas.
                      Default: False.
         """
+        # pyre-fixme[21]: Could not find module `pytorch3d.ops.mesh_face_areas_normals`.
         from ..ops.mesh_face_areas_normals import mesh_face_areas_normals
 
         if not (

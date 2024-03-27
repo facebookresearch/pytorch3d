@@ -15,6 +15,7 @@ import torch.nn as nn
 from pytorch3d.renderer.cameras import try_get_projection_transform
 from pytorch3d.structures import Pointclouds
 
+# pyre-fixme[21]: Could not find module `pytorch3d.renderer.points.rasterize_points`.
 from .rasterize_points import rasterize_points
 
 

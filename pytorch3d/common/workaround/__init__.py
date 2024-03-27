@@ -6,5 +6,6 @@
 
 # pyre-unsafe
 
+# pyre-fixme[21]: Could not find module `pytorch3d.common.workaround.symeig3x3`.
 from .symeig3x3 import symeig3x3
 from .utils import _safe_det_3x3

@@ -12,8 +12,14 @@ from .camera_conversions import (
     pulsar_from_cameras_projection,
     pulsar_from_opencv_projection,
 )
+
+# pyre-fixme[21]: Could not find module `pytorch3d.utils.checkerboard`.
 from .checkerboard import checkerboard
+
+# pyre-fixme[21]: Could not find module `pytorch3d.utils.ico_sphere`.
 from .ico_sphere import ico_sphere
+
+# pyre-fixme[21]: Could not find module `pytorch3d.utils.torus`.
 from .torus import torus
 
 
