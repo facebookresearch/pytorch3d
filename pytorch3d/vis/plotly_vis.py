@@ -783,7 +783,7 @@ def _add_camera_trace(
         camera_scale: the size of the wireframe used to render the Cameras object.
     """
     cam_wires = get_camera_wireframe(camera_scale).to(cameras.device)
-    cam_trans = cameras.get_world_to_view_transform().inverse()
+    cam_trans = cameras.get_world_to_view_transform()
     cam_wires_trans = cam_trans.transform_points(cam_wires).detach().cpu()
     # if batch size is 1, unsqueeze to add dimension
     if len(cam_wires_trans.shape) < 3:
