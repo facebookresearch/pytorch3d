@@ -9,7 +9,6 @@
 from .compositor import AlphaCompositor, NormWeightedCompositor
 from .pulsar.unified import PulsarPointsRenderer
 
-# pyre-fixme[21]: Could not find module `pytorch3d.renderer.points.rasterize_points`.
 from .rasterize_points import rasterize_points
 from .rasterizer import PointsRasterizationSettings, PointsRasterizer
 from .renderer import PointsRenderer

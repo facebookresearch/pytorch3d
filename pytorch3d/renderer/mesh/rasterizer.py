@@ -13,7 +13,6 @@ import torch
 import torch.nn as nn
 from pytorch3d.renderer.cameras import try_get_projection_transform
 
-# pyre-fixme[21]: Could not find module `pytorch3d.renderer.mesh.rasterize_meshes`.
 from .rasterize_meshes import rasterize_meshes
 
 

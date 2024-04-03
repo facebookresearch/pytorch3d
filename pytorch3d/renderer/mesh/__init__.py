@@ -13,7 +13,6 @@ from .clip import (
     convert_clipped_rasterization_to_original_faces,
 )
 
-# pyre-fixme[21]: Could not find module `pytorch3d.renderer.mesh.rasterize_meshes`.
 from .rasterize_meshes import rasterize_meshes
 from .rasterizer import MeshRasterizer, RasterizationSettings
 from .renderer import MeshRenderer, MeshRendererWithFragments

@@ -6,11 +6,9 @@
 
 # pyre-unsafe
 
-# pyre-fixme[21]: Could not find module `pytorch3d.ops.ball_query`.
 from .ball_query import ball_query
 from .cameras_alignment import corresponding_cameras_alignment
 
-# pyre-fixme[21]: Could not find module `pytorch3d.ops.cubify`.
 from .cubify import cubify
 from .graph_conv import GraphConv
 from .interp_face_attrs import interpolate_face_attributes
@@ -18,11 +16,9 @@ from .iou_box3d import box3d_overlap
 from .knn import knn_gather, knn_points
 from .laplacian_matrices import cot_laplacian, laplacian, norm_laplacian
 
-# pyre-fixme[21]: Could not find module `pytorch3d.ops.mesh_face_areas_normals`.
 from .mesh_face_areas_normals import mesh_face_areas_normals
 from .mesh_filtering import taubin_smoothing
 
-# pyre-fixme[21]: Could not find module `pytorch3d.ops.packed_to_padded`.
 from .packed_to_padded import packed_to_padded, padded_to_packed
 from .perspective_n_points import efficient_pnp
 from .points_alignment import corresponding_points_alignment, iterative_closest_point
@@ -35,10 +31,8 @@ from .points_to_volumes import (
     add_points_features_to_volume_densities_features,
 )
 
-# pyre-fixme[21]: Could not find module `pytorch3d.ops.sample_farthest_points`.
 from .sample_farthest_points import sample_farthest_points
 
-# pyre-fixme[21]: Could not find module `pytorch3d.ops.sample_points_from_meshes`.
 from .sample_points_from_meshes import sample_points_from_meshes
 from .subdivide_meshes import SubdivideMeshes
 from .utils import (
@@ -49,7 +43,6 @@ from .utils import (
     wmean,
 )
 
-# pyre-fixme[21]: Could not find module `pytorch3d.ops.vert_align`.
 from .vert_align import vert_align
 
 
