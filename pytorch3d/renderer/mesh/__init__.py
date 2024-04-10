@@ -12,6 +12,7 @@ from .clip import (
     ClippedFaces,
     convert_clipped_rasterization_to_original_faces,
 )
+
 from .rasterize_meshes import rasterize_meshes
 from .rasterizer import MeshRasterizer, RasterizationSettings
 from .renderer import MeshRenderer, MeshRendererWithFragments

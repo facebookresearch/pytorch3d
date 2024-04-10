@@ -15,7 +15,9 @@ import sys
 from typing import Tuple, Union
 
 import torch
+
 from pytorch3d.ops.mesh_face_areas_normals import mesh_face_areas_normals
+
 from pytorch3d.ops.packed_to_padded import packed_to_padded
 from pytorch3d.renderer.mesh.rasterizer import Fragments as MeshFragments
 
