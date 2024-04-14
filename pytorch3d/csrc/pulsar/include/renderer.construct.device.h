@@ -93,7 +93,7 @@ HOST void construct(
   MALLOC(self->di_sorted_d, DrawInfo, max_num_balls);
   MALLOC(self->region_flags_d, char, max_num_balls);
   MALLOC(self->num_selected_d, size_t, 1);
-  MALLOC(self->forw_info_d, float, width* height*(3 + 2 * n_track));
+  MALLOC(self->forw_info_d, float, width* height * (3 + 2 * n_track));
   MALLOC(self->min_max_pixels_d, IntersectInfo, 1);
   MALLOC(self->grad_pos_d, float3, max_num_balls);
   MALLOC(self->grad_col_d, float, max_num_balls* n_channels);
