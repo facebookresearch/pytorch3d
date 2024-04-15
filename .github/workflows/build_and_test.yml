@@ -1,0 +1,176 @@
+name: facebookresearch/pytorch3d/build_and_test
+on:
+  pull_request:
+    branches:
+      - main
+jobs:
+  binary_linux_conda:
+    runs-on: 4-core-ubuntu-gpu-t4
+    strategy:
+      fail-fast: false
+      matrix:
+        python_version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+        pytorch_version: ["1.12.0", "1.12.1", "1.13.0", "1.13.1", "2.0.0", "2.0.1", "2.1.0", "2.1.1", "2.1.2", "2.2.0"]
+        cu_version: ["113", "116", "117", "118", "121"]
+        exclude:
+          # exclude pytorch 1.12.0 and cu [117, 118, 121]
+          - pytorch_version: "1.12.0"
+            cu_version: "117"
+          - pytorch_version: "1.12.0"
+            cu_version: "118"
+          - pytorch_version: "1.12.0"
+            cu_version: "121"
+          # exclude pytorch 1.12.1 and cu [117, 118, 121]
+          - pytorch_version: "1.12.1"
+            cu_version: "117"
+          - pytorch_version: "1.12.1"
+            cu_version: "118"
+          - pytorch_version: "1.12.1"
+            cu_version: "121"
+          # exclude pytorch 1.13.0 and cu [113, 118, 121]
+          - pytorch_version: "1.13.0"
+            cu_version: "113"
+          - pytorch_version: "1.13.0"
+            cu_version: "118"
+          - pytorch_version: "1.13.0"
+            cu_version: "121"
+          # exclude pytorch 1.13.1 and cu [113, 118, 121]
+          - pytorch_version: "1.13.1"
+            cu_version: "113"
+          - pytorch_version: "1.13.1"
+            cu_version: "118"
+          - pytorch_version: "1.13.1"
+            cu_version: "121"
+          # exclude pytorch 2.0.0 and cu [113, 116, 121]
+          - pytorch_version: "2.0.0"
+            cu_version: "113"
+          - pytorch_version: "2.0.0"
+            cu_version: "116"
+          - pytorch_version: "2.0.0"
+            cu_version: "121"
+          # exclude pytorch 2.0.1 and cu [113, 116, 121]
+          - pytorch_version: "2.0.1"
+            cu_version: "113"
+          - pytorch_version: "2.0.1"
+            cu_version: "116"
+          - pytorch_version: "2.0.1"
+            cu_version: "121"
+          # exclude pytorch 2.1.0 and cu [113, 116, 117]
+          - pytorch_version: "2.1.0"
+            cu_version: "113"
+          - pytorch_version: "2.1.0"
+            cu_version: "116"
+          - pytorch_version: "2.1.0"
+            cu_version: "117"
+          # exclude pytorch 2.1.1 and cu [113, 116, 117]
+          - pytorch_version: "2.1.1"
+            cu_version: "113"
+          - pytorch_version: "2.1.1"
+            cu_version: "116"
+          - pytorch_version: "2.1.1"
+            cu_version: "117"
+          # exclude pytorch 2.1.2 and cu [113, 116, 117]
+          - pytorch_version: "2.1.2"
+            cu_version: "113"
+          - pytorch_version: "2.1.2"
+            cu_version: "116"
+          - pytorch_version: "2.1.2"
+            cu_version: "117"
+          # exclude pytorch 2.2.0 and cu [113, 116, 117]
+          - pytorch_version: "2.2.0"
+            cu_version: "113"
+          - pytorch_version: "2.2.0"
+            cu_version: "116"
+          - pytorch_version: "2.2.0"
+            cu_version: "117"
+          # exlcude python 3.11 and cu [113, 116, 117]
+          - python_version: "3.11"
+            cu_version: "113"
+          - python_version: "3.11"
+            cu_version: "116"
+          - python_version: "3.11"
+            cu_version: "117"
+          # exclude python 3.11 and pytorch [1.12.0, 1.12.1, 1.13.0, 1.3.1, 2.0.0, 2.0.1]
+          - python_version: "3.11"
+            pytorch_version: "1.12.0"
+          - python_version: "3.11"
+            pytorch_version: "1.12.1"
+          - python_version: "3.11"
+            pytorch_version: "1.13.0"
+          - python_version: "3.11"
+            pytorch_version: "1.13.1"
+          - python_version: "3.11"
+            pytorch_version: "2.0.0"
+          - python_version: "3.11"
+            pytorch_version: "2.0.1"
+          # exlcude python 3.12 and cu [113, 116, 117]
+          - python_version: "3.12"
+            cu_version: "113"
+          - python_version: "3.12"
+            cu_version: "116"
+          - python_version: "3.12"
+            cu_version: "117"
+          # exclude python 3.11 and pytorch [1.12.0, 1.12.1, 1.13.0, 1.3.1, 2.0.0, 2.0.1, 2.1.0, 2.1.1, 2.1.2]
+          - python_version: "3.12"
+            pytorch_version: "1.12.0"
+          - python_version: "3.12"
+            pytorch_version: "1.12.1"
+          - python_version: "3.12"
+            pytorch_version: "1.13.0"
+          - python_version: "3.12"
+            pytorch_version: "1.13.1"
+          - python_version: "3.12"
+            pytorch_version: "2.0.0"
+          - python_version: "3.12"
+            pytorch_version: "2.0.1"
+          - python_version: "3.12"
+            pytorch_version: "2.1.0"
+          - python_version: "3.12"
+            pytorch_version: "2.1.1"
+          - python_version: "3.12"
+            pytorch_version: "2.1.2"
+    container:
+      image: pytorch/conda-builder:cuda${{ matrix.cu_version }}
+      credentials:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+    env:
+      PYTHON_VERSION: "${{ matrix.python_version }}"
+      BUILD_VERSION: "${{ github.run_number }}"
+      PYTORCH_VERSION: "${{ matrix.pytorch_version }}"
+      CU_VERSION: "cu${{ matrix.cu_version }}"
+      TESTRUN_DOCKER_IMAGE: "pytorch/conda-builder:cuda${{ matrix.cu_version }}"
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+    steps:
+    - uses: actions/checkout@v3
+    - name: build
+      run: MAX_JOBS=15 TEST_FLAG=--no-test python3 packaging/build_conda.py
+    - uses: actions/upload-artifact@v3
+      with:
+        path: "/opt/conda/conda-bld/linux-64"
+  binary_linux_conda_cuda:
+    runs-on: 4-core-ubuntu-gpu-t4
+    container:
+      image: pytorch/conda-cuda
+      credentials:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+    env:
+      PYTHON_VERSION: "3.10"
+      BUILD_VERSION: "${{ github.run_number }}"
+      PYTORCH_VERSION: "2.0.1"
+      CU_VERSION: "cu117"
+      TESTRUN_DOCKER_IMAGE: "pytorch/conda-cuda"
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+      JUST_TESTRUN: 1
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build and run tests
+      run: |-
+        # set -e
+        # export JUST_TESTRUN=1
+        # VARS_TO_PASS="-e PYTHON_VERSION -e BUILD_VERSION -e PYTORCH_VERSION -e CU_VERSION -e JUST_TESTRUN"
+        # docker run --gpus all  --ipc=host -v $(pwd):/remote -w /remote ${VARS_TO_PASS} ${TESTRUN_DOCKER_IMAGE} python3 ./packaging/build_conda.py
+        python3 ./packaging/build_conda.py
