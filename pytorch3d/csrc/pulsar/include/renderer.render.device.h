@@ -99,7 +99,7 @@ GLOBAL void render(
   /** Whether loading of balls is completed. */
   SHARED bool loading_done;
   /** The number of balls loaded overall (just for statistics). */
-  SHARED int n_balls_loaded;
+  [[maybe_unused]] SHARED int n_balls_loaded;
   /** The area this thread block covers. */
   SHARED IntersectInfo block_area;
   if (thread_block.thread_rank() == 0) {
