@@ -187,7 +187,6 @@ def _format_radius(
 
 class _RasterizePoints(torch.autograd.Function):
     @staticmethod
-    # pyre-fixme[14]: `forward` overrides method defined in `Function` inconsistently.
     def forward(
         ctx,
         points,  # (P, 3)
