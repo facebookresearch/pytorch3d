@@ -915,7 +915,7 @@ class FoVOrthographicCameras(CamerasBase):
             K = [
                     [scale_x,        0,         0,  -mid_x],
                     [0,        scale_y,         0,  -mix_y],
-                    [0,              0,  -scale_z,  -mid_z],
+                    [0,              0,  scale_z,  -mid_z],
                     [0,              0,         0,       1],
             ]
         """
