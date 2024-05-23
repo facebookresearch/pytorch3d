@@ -198,7 +198,9 @@ class Transform3d:
         """
         if isinstance(index, int):
             index = [index]
-        return self.__class__(matrix=self.get_matrix()[index])
+        instance = self.__class__.__new__(self.__class__)
+        instance._matrix = self.get_matrix()[index]
+        return instance
 
     def compose(self, *others: "Transform3d") -> "Transform3d":
         """
