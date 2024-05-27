@@ -886,8 +886,8 @@ class FoVOrthographicCameras(CamerasBase):
 
         # NOTE: This maps the z coordinate to the range [0, 1] and replaces the
         # the OpenGL z normalization to [-1, 1]
-        K[:, 2, 2] = z_sign * (1.0 / (zfar - znear)) * scale_xyz[:, 2]
-        K[:, 2, 3] = -znear / (zfar - znear)
+        K[:, 2, 2] = z_sign * (2.0 / (zfar - znear)) * scale_xyz[:, 2]
+        K[:, 2, 3] = -2*znear / (zfar - znear)
 
         return K
 
@@ -910,7 +910,7 @@ class FoVOrthographicCameras(CamerasBase):
             scale_z = 2 / (far-near)
             mid_x = (max_x + min_x) / (max_x - min_x)
             mix_y = (max_y + min_y) / (max_y - min_y)
-            mid_z = (far + near) / (far - near)
+            mid_z = 2 * near / (far - near)
 
             K = [
                     [scale_x,        0,         0,  -mid_x],
