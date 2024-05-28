@@ -200,6 +200,8 @@ class Transform3d:
             index = [index]
         instance = self.__class__.__new__(self.__class__)
         instance._matrix = self.get_matrix()[index]
+        for attr in ('_transforms', '_lu', 'device', 'dtype'):
+            setattr(instance, attr, getattr(self, attr))
         return instance
 
     def compose(self, *others: "Transform3d") -> "Transform3d":
