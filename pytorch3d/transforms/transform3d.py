@@ -198,11 +198,7 @@ class Transform3d:
         """
         if isinstance(index, int):
             index = [index]
-        instance = self.__class__.__new__(self.__class__)
-        instance._matrix = self.get_matrix()[index]
-        for attr in ('_transforms', '_lu', 'device', 'dtype'):
-            setattr(instance, attr, getattr(self, attr))
-        return instance
+        return self.__class__(matrix=self.get_matrix()[index])
 
     def compose(self, *others: "Transform3d") -> "Transform3d":
         """
@@ -568,6 +564,22 @@ class Translate(Transform3d):
         i_matrix = self._matrix * inv_mask
         return i_matrix
 
+    def __getitem__(
+        self, index: Union[int, List[int], slice, torch.BoolTensor, torch.LongTensor]
+    ) -> "Transform3d":
+        """
+        Args:
+            index: Specifying the index of the transform to retrieve.
+                Can be an int, slice, list of ints, boolean, long tensor.
+                Supports negative indices.
+
+        Returns:
+            Transform3d object with selected transforms. The tensors are not cloned.
+        """
+        if isinstance(index, int):
+            index = [index]
+        return self.__class__(self.get_matrix()[index, 3, :3])
+
 
 class Scale(Transform3d):
     def __init__(
@@ -617,6 +629,26 @@ class Scale(Transform3d):
         imat = torch.diag_embed(ixyz, dim1=1, dim2=2)
         return imat
 
+    def __getitem__(
+        self, index: Union[int, List[int], slice, torch.BoolTensor, torch.LongTensor]
+    ) -> "Transform3d":
+        """
+        Args:
+            index: Specifying the index of the transform to retrieve.
+                Can be an int, slice, list of ints, boolean, long tensor.
+                Supports negative indices.
+
+        Returns:
+            Transform3d object with selected transforms. The tensors are not cloned.
+        """
+        if isinstance(index, int):
+            index = [index]
+        mat = self.get_matrix()[index]
+        x = mat[:, 0, 0]
+        y = mat[:, 1, 1]
+        z = mat[:, 2, 2]
+        return self.__class__(x, y, z)
+
 
 class Rotate(Transform3d):
     def __init__(
@@ -658,6 +690,22 @@ class Rotate(Transform3d):
         Return the inverse of self._matrix.
         """
         return self._matrix.permute(0, 2, 1).contiguous()
+
+    def __getitem__(
+        self, index: Union[int, List[int], slice, torch.BoolTensor, torch.LongTensor]
+    ) -> "Transform3d":
+        """
+        Args:
+            index: Specifying the index of the transform to retrieve.
+                Can be an int, slice, list of ints, boolean, long tensor.
+                Supports negative indices.
+
+        Returns:
+            Transform3d object with selected transforms. The tensors are not cloned.
+        """
+        if isinstance(index, int):
+            index = [index]
+        return self.__class__(self.get_matrix()[index, :3, :3])
 
 
 class RotateAxisAngle(Rotate):
