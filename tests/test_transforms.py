@@ -685,6 +685,15 @@ class TestTranslate(unittest.TestCase):
         self.assertTrue(torch.allclose(im, im_comp))
         self.assertTrue(torch.allclose(im, im_2))
 
+    def test_get_item(self, batch_size=5):
+        device = torch.device("cuda:0")
+        xyz = torch.randn(size=[batch_size, 3], device=device, dtype=torch.float32)
+        t3d = Translate(xyz)
+        index = 1
+        t3d_selected = t3d[index]
+        self.assertEqual(len(t3d_selected), 1)
+        self.assertIsInstance(t3d_selected, Translate)
+
 
 class TestScale(unittest.TestCase):
     def test_single_python_scalar(self):
@@ -871,6 +880,15 @@ class TestScale(unittest.TestCase):
         self.assertTrue(torch.allclose(im, im_comp))
         self.assertTrue(torch.allclose(im, im_2))
 
+    def test_get_item(self, batch_size=5):
+        device = torch.device("cuda:0")
+        s = torch.randn(size=[batch_size, 3], device=device, dtype=torch.float32)
+        t3d = Scale(s)
+        index = 1
+        t3d_selected = t3d[index]
+        self.assertEqual(len(t3d_selected), 1)
+        self.assertIsInstance(t3d_selected, Scale)
+
 
 class TestTransformBroadcast(unittest.TestCase):
     def test_broadcast_transform_points(self):
@@ -985,6 +1003,15 @@ class TestRotate(unittest.TestCase):
         im_comp = t.get_matrix().inverse()
         self.assertTrue(torch.allclose(im, im_comp, atol=1e-4))
         self.assertTrue(torch.allclose(im, im_2, atol=1e-4))
+
+    def test_get_item(self, batch_size=5):
+        device = torch.device("cuda:0")
+        r = random_rotations(batch_size, dtype=torch.float32, device=device)
+        t3d = Rotate(r)
+        index = 1
+        t3d_selected = t3d[index]
+        self.assertEqual(len(t3d_selected), 1)
+        self.assertIsInstance(t3d_selected, Rotate)
 
 
 class TestRotateAxisAngle(unittest.TestCase):
