@@ -303,6 +303,34 @@ workflows:
           python_version: '3.8'
           pytorch_version: 2.2.0
       - binary_linux_conda:
+          conda_docker_image: pytorch/conda-builder:cuda118
+          context: DOCKERHUB_TOKEN
+          cu_version: cu118
+          name: linux_conda_py38_cu118_pyt222
+          python_version: '3.8'
+          pytorch_version: 2.2.2
+      - binary_linux_conda:
+          conda_docker_image: pytorch/conda-builder:cuda121
+          context: DOCKERHUB_TOKEN
+          cu_version: cu121
+          name: linux_conda_py38_cu121_pyt222
+          python_version: '3.8'
+          pytorch_version: 2.2.2
+      - binary_linux_conda:
+          conda_docker_image: pytorch/conda-builder:cuda118
+          context: DOCKERHUB_TOKEN
+          cu_version: cu118
+          name: linux_conda_py38_cu118_pyt231
+          python_version: '3.8'
+          pytorch_version: 2.3.1
+      - binary_linux_conda:
+          conda_docker_image: pytorch/conda-builder:cuda121
+          context: DOCKERHUB_TOKEN
+          cu_version: cu121
+          name: linux_conda_py38_cu121_pyt231
+          python_version: '3.8'
+          pytorch_version: 2.3.1
+      - binary_linux_conda:
           conda_docker_image: pytorch/conda-builder:cuda113
           context: DOCKERHUB_TOKEN
           cu_version: cu113
@@ -442,6 +470,34 @@ workflows:
           name: linux_conda_py39_cu121_pyt220
           python_version: '3.9'
           pytorch_version: 2.2.0
+      - binary_linux_conda:
+          conda_docker_image: pytorch/conda-builder:cuda118
+          context: DOCKERHUB_TOKEN
+          cu_version: cu118
+          name: linux_conda_py39_cu118_pyt222
+          python_version: '3.9'
+          pytorch_version: 2.2.2
+      - binary_linux_conda:
+          conda_docker_image: pytorch/conda-builder:cuda121
+          context: DOCKERHUB_TOKEN
+          cu_version: cu121
+          name: linux_conda_py39_cu121_pyt222
+          python_version: '3.9'
+          pytorch_version: 2.2.2
+      - binary_linux_conda:
+          conda_docker_image: pytorch/conda-builder:cuda118
+          context: DOCKERHUB_TOKEN
+          cu_version: cu118
+          name: linux_conda_py39_cu118_pyt231
+          python_version: '3.9'
+          pytorch_version: 2.3.1
+      - binary_linux_conda:
+          conda_docker_image: pytorch/conda-builder:cuda121
+          context: DOCKERHUB_TOKEN
+          cu_version: cu121
+          name: linux_conda_py39_cu121_pyt231
+          python_version: '3.9'
+          pytorch_version: 2.3.1
       - binary_linux_conda:
           conda_docker_image: pytorch/conda-builder:cuda113
           context: DOCKERHUB_TOKEN
@@ -586,6 +642,34 @@ workflows:
           conda_docker_image: pytorch/conda-builder:cuda118
           context: DOCKERHUB_TOKEN
           cu_version: cu118
+          name: linux_conda_py310_cu118_pyt222
+          python_version: '3.10'
+          pytorch_version: 2.2.2
+      - binary_linux_conda:
+          conda_docker_image: pytorch/conda-builder:cuda121
+          context: DOCKERHUB_TOKEN
+          cu_version: cu121
+          name: linux_conda_py310_cu121_pyt222
+          python_version: '3.10'
+          pytorch_version: 2.2.2
+      - binary_linux_conda:
+          conda_docker_image: pytorch/conda-builder:cuda118
+          context: DOCKERHUB_TOKEN
+          cu_version: cu118
+          name: linux_conda_py310_cu118_pyt231
+          python_version: '3.10'
+          pytorch_version: 2.3.1
+      - binary_linux_conda:
+          conda_docker_image: pytorch/conda-builder:cuda121
+          context: DOCKERHUB_TOKEN
+          cu_version: cu121
+          name: linux_conda_py310_cu121_pyt231
+          python_version: '3.10'
+          pytorch_version: 2.3.1
+      - binary_linux_conda:
+          conda_docker_image: pytorch/conda-builder:cuda118
+          context: DOCKERHUB_TOKEN
+          cu_version: cu118
           name: linux_conda_py311_cu118_pyt210
           python_version: '3.11'
           pytorch_version: 2.1.0
@@ -642,6 +726,34 @@ workflows:
           conda_docker_image: pytorch/conda-builder:cuda118
           context: DOCKERHUB_TOKEN
           cu_version: cu118
+          name: linux_conda_py311_cu118_pyt222
+          python_version: '3.11'
+          pytorch_version: 2.2.2
+      - binary_linux_conda:
+          conda_docker_image: pytorch/conda-builder:cuda121
+          context: DOCKERHUB_TOKEN
+          cu_version: cu121
+          name: linux_conda_py311_cu121_pyt222
+          python_version: '3.11'
+          pytorch_version: 2.2.2
+      - binary_linux_conda:
+          conda_docker_image: pytorch/conda-builder:cuda118
+          context: DOCKERHUB_TOKEN
+          cu_version: cu118
+          name: linux_conda_py311_cu118_pyt231
+          python_version: '3.11'
+          pytorch_version: 2.3.1
+      - binary_linux_conda:
+          conda_docker_image: pytorch/conda-builder:cuda121
+          context: DOCKERHUB_TOKEN
+          cu_version: cu121
+          name: linux_conda_py311_cu121_pyt231
+          python_version: '3.11'
+          pytorch_version: 2.3.1
+      - binary_linux_conda:
+          conda_docker_image: pytorch/conda-builder:cuda118
+          context: DOCKERHUB_TOKEN
+          cu_version: cu118
           name: linux_conda_py312_cu118_pyt220
           python_version: '3.12'
           pytorch_version: 2.2.0
@@ -652,6 +764,34 @@ workflows:
           name: linux_conda_py312_cu121_pyt220
           python_version: '3.12'
           pytorch_version: 2.2.0
+      - binary_linux_conda:
+          conda_docker_image: pytorch/conda-builder:cuda118
+          context: DOCKERHUB_TOKEN
+          cu_version: cu118
+          name: linux_conda_py312_cu118_pyt222
+          python_version: '3.12'
+          pytorch_version: 2.2.2
+      - binary_linux_conda:
+          conda_docker_image: pytorch/conda-builder:cuda121
+          context: DOCKERHUB_TOKEN
+          cu_version: cu121
+          name: linux_conda_py312_cu121_pyt222
+          python_version: '3.12'
+          pytorch_version: 2.2.2
+      - binary_linux_conda:
+          conda_docker_image: pytorch/conda-builder:cuda118
+          context: DOCKERHUB_TOKEN
+          cu_version: cu118
+          name: linux_conda_py312_cu118_pyt231
+          python_version: '3.12'
+          pytorch_version: 2.3.1
+      - binary_linux_conda:
+          conda_docker_image: pytorch/conda-builder:cuda121
+          context: DOCKERHUB_TOKEN
+          cu_version: cu121
+          name: linux_conda_py312_cu121_pyt231
+          python_version: '3.12'
+          pytorch_version: 2.3.1
       - binary_linux_conda_cuda:
           name: testrun_conda_cuda_py310_cu117_pyt201
           context: DOCKERHUB_TOKEN
