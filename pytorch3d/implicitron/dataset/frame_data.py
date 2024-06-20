@@ -434,7 +434,7 @@ class FrameData(Mapping[str, Any]):
             # TODO: don't store K; enforce working in NDC space
             return join_cameras_as_batch(batch)
         else:
-            return torch.utils.data._utils.collate.default_collate(batch)
+            return torch.utils.data.dataloader.default_collate(batch)
 
 
 FrameDataSubtype = TypeVar("FrameDataSubtype", bound=FrameData)
