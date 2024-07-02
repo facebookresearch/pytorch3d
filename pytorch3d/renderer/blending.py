@@ -212,15 +212,15 @@ def softmax_rgb_blend(
 
     # Reshape to be compatible with (N, H, W, K) values in fragments
     if torch.is_tensor(zfar):
-        # pyre-fixme[16]
         zfar = zfar[:, None, None, None]
     if torch.is_tensor(znear):
-        # pyre-fixme[16]: Item `float` of `Union[float, Tensor]` has no attribute
-        #  `__getitem__`.
         znear = znear[:, None, None, None]
 
+    # pyre-fixme[6]: Expected `float` but got `Union[float, Tensor]`
     z_inv = (zfar - fragments.zbuf) / (zfar - znear) * mask
+    # pyre-fixme[6]: Expected `Tensor` but got `float`
     z_inv_max = torch.max(z_inv, dim=-1).values[..., None].clamp(min=eps)
+    # pyre-fixme[6]: Expected `Tensor` but got `float`
     weights_num = prob_map * torch.exp((z_inv - z_inv_max) / blend_params.gamma)
 
     # Also apply exp normalize trick for the background color weight.

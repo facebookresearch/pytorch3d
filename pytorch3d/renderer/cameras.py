@@ -1782,8 +1782,6 @@ def get_ndc_to_screen_transform(
     K = torch.zeros((cameras._N, 4, 4), device=cameras.device, dtype=torch.float32)
     if not torch.is_tensor(image_size):
         image_size = torch.tensor(image_size, device=cameras.device)
-    # pyre-fixme[16]: Item `List` of `Union[List[typing.Any], Tensor, Tuple[Any,
-    #  ...]]` has no attribute `view`.
     image_size = image_size.view(-1, 2)  # of shape (1 or B)x2
     height, width = image_size.unbind(1)
 

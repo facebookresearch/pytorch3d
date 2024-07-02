@@ -12,8 +12,9 @@ requirements:
 
   host:
     - python
-    - setuptools
+    {{ environ.get('SETUPTOOLS_CONSTRAINT') }}
     {{ environ.get('CONDA_PYTORCH_BUILD_CONSTRAINT') }}
+    {{ environ.get('CONDA_PYTORCH_MKL_CONSTRAINT') }}
     {{ environ.get('CONDA_CUDATOOLKIT_CONSTRAINT') }}
     {{ environ.get('CONDA_CPUONLY_FEATURE') }}
 
