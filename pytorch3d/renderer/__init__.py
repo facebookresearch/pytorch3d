@@ -45,7 +45,7 @@ from .implicit import (
     VolumeRenderer,
     VolumeSampler,
 )
-from .lighting import AmbientLights, diffuse, DirectionalLights, EnvMapLights, PointLights,  specular
+from .lighting import AmbientLights, diffuse, DirectionalLights, EnvMapLights, PointLights, specular
 from .materials import Materials
 from .mesh import (
     gouraud_shading,
