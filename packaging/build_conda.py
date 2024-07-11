@@ -123,7 +123,7 @@ def do_build(start_args: List[str]):
     if test_flag is not None:
         args.append(test_flag)
 
-    args.extend(["-c", "bottler", "-c", "fvcore", "-c", "iopath", "-c", "conda-forge"])
+    args.extend(["-c", "bottler", "-c", "iopath", "-c", "conda-forge"])
     args.append("--no-anaconda-upload")
     args.extend(["--python", os.environ["PYTHON_VERSION"]])
     args.append("packaging/pytorch3d")

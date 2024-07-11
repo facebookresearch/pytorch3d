@@ -12,7 +12,6 @@ The core library is written in PyTorch. Several components have underlying imple
 - PyTorch 2.0.0, 2.0.1, 2.1.0, 2.1.1, 2.1.2, 2.2.0, 2.2.1, 2.2.2, 2.3.0 or 2.3.1.
 - torchvision that matches the PyTorch installation. You can install them together as explained at pytorch.org to make sure of this.
 - gcc & g++ ≥ 4.9
-- [fvcore](https://github.com/facebookresearch/fvcore)
 - [ioPath](https://github.com/facebookresearch/iopath)
 - If CUDA is to be used, use a version which is supported by the corresponding pytorch version and at least version 9.2.
 - If CUDA older than 11.7 is to be used and you are building from source, the CUB library must be available. We recommend version 1.10.0.
@@ -22,7 +21,7 @@ The runtime dependencies can be installed by running:
 conda create -n pytorch3d python=3.9
 conda activate pytorch3d
 conda install pytorch=1.13.0 torchvision pytorch-cuda=11.6 -c pytorch -c nvidia
-conda install -c fvcore -c iopath -c conda-forge fvcore iopath
+conda install -c iopath iopath
 ```
 
 For the CUB build time dependency, which you only need if you have CUDA older than 11.7, if you are using conda, you can continue with
@@ -49,6 +48,7 @@ For developing on top of PyTorch3D or contributing, you will need to run the lin
 - tdqm
 - jupyter
 - imageio
+- fvcore
 - plotly
 - opencv-python
 
@@ -59,6 +59,7 @@ conda install jupyter
 pip install scikit-image matplotlib imageio plotly opencv-python
 
 # Tests/Linting
+conda install -c fvcore -c conda-forge fvcore
 pip install black usort flake8 flake8-bugbear flake8-comprehensions
 ```
 
@@ -97,7 +98,7 @@ version_str="".join([
     torch.version.cuda.replace(".",""),
     f"_pyt{pyt_version_str}"
 ])
-!pip install fvcore iopath
+!pip install iopath
 !pip install --no-index --no-cache-dir pytorch3d -f https://dl.fbaipublicfiles.com/pytorch3d/packaging/wheels/{version_str}/download.html
 ```
 

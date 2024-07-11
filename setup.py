@@ -153,7 +153,7 @@ setup(
     )
     + [trainer],
     package_dir={trainer: "projects/implicitron_trainer"},
-    install_requires=["fvcore", "iopath"],
+    install_requires=["iopath"],
     extras_require={
         "all": ["matplotlib", "tqdm>4.29.0", "imageio", "ipywidgets"],
         "dev": ["flake8", "usort"],

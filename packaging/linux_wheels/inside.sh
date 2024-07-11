@@ -144,7 +144,7 @@ do
             conda activate "$tag"
             # shellcheck disable=SC2086
             conda install -y -c pytorch $extra_channel "pytorch=$pytorch_version" "$cudatools=$CUDA_TAG"
-            pip install fvcore iopath
+            pip install iopath
             echo "python version" "$python_version" "pytorch version" "$pytorch_version" "cuda version" "$cu_version" "tag" "$tag"
 
             rm -rf dist
