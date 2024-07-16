@@ -276,6 +276,7 @@ class FrameData(Mapping[str, Any]):
             image_size_hw=tuple(self.effective_image_size_hw),  # pyre-ignore
         )
         crop_bbox_xywh = bbox_xyxy_to_xywh(clamp_bbox_xyxy)
+        self.crop_bbox_xywh = crop_bbox_xywh
 
         if self.fg_probability is not None:
             self.fg_probability = crop_around_box(
