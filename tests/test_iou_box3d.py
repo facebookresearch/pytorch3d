@@ -21,7 +21,7 @@ from .common_testing import get_random_cuda_device, get_tests_dir, TestCaseMixin
 OBJECTRON_TO_PYTORCH3D_FACE_IDX = [0, 4, 6, 2, 1, 5, 7, 3]
 DATA_DIR = get_tests_dir() / "data"
 DEBUG = False
-DOT_EPS = 1e-3
+DOT_EPS = 1e-4
 AREA_EPS = 1e-4
 
 UNIT_BOX = [
