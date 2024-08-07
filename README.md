@@ -18,7 +18,7 @@ PyTorch3D is designed to integrate smoothly with deep learning methods for predi
 For this reason, all operators in PyTorch3D:
 
 - Are implemented using PyTorch tensors
-- Can handle minibatches of hetereogenous data
+- Can handle minibatches of heterogeneous data
 - Can be differentiated
 - Can utilize GPUs for acceleration
 
