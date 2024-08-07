@@ -8,7 +8,7 @@
 The core library is written in PyTorch. Several components have underlying implementation in CUDA for improved performance. A subset of these components have CPU implementations in C++/PyTorch. It is advised to use PyTorch3D with GPU support in order to use all the features.
 
 - Linux or macOS or Windows
-- Python 3.8, 3.9 or 3.10
+- Python
 - PyTorch 2.0.0, 2.0.1, 2.1.0, 2.1.1, 2.1.2, 2.2.0, 2.2.1, 2.2.2, 2.3.0 or 2.3.1.
 - torchvision that matches the PyTorch installation. You can install them together as explained at pytorch.org to make sure of this.
 - gcc & g++ ≥ 4.9
