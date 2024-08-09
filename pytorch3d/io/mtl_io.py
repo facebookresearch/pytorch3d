@@ -409,6 +409,7 @@ def _parse_mtl(
     texture_files = {}
     material_name = ""
 
+    # pyre-fixme[9]: f has type `str`; used as `IO[typing.Any]`.
     with _open_file(f, path_manager, "r") as f:
         for line in f:
             tokens = line.strip().split()

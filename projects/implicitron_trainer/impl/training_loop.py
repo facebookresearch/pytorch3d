@@ -30,13 +30,13 @@ from .utils import seed_all_random_engines
 logger = logging.getLogger(__name__)
 
 
-# pyre-fixme[13]: Attribute `evaluator` is never initialized.
 class TrainingLoopBase(ReplaceableBase):
     """
     Members:
         evaluator: An EvaluatorBase instance, used to evaluate training results.
     """
 
+    # pyre-fixme[13]: Attribute `evaluator` is never initialized.
     evaluator: Optional[EvaluatorBase]
     evaluator_class_type: Optional[str] = "ImplicitronEvaluator"
 

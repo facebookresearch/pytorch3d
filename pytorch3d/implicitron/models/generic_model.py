@@ -65,7 +65,7 @@ logger = logging.getLogger(__name__)
 
 
 @registry.register
-class GenericModel(ImplicitronModelBase):  # pyre-ignore: 13
+class GenericModel(ImplicitronModelBase):
     """
     GenericModel is a wrapper for the neural implicit
     rendering and reconstruction pipeline which consists
@@ -226,34 +226,42 @@ class GenericModel(ImplicitronModelBase):  # pyre-ignore: 13
 
     # ---- global encoder settings
     global_encoder_class_type: Optional[str] = None
+    # pyre-fixme[13]: Attribute `global_encoder` is never initialized.
     global_encoder: Optional[GlobalEncoderBase]
 
     # ---- raysampler
     raysampler_class_type: str = "AdaptiveRaySampler"
+    # pyre-fixme[13]: Attribute `raysampler` is never initialized.
     raysampler: RaySamplerBase
 
     # ---- renderer configs
     renderer_class_type: str = "MultiPassEmissionAbsorptionRenderer"
+    # pyre-fixme[13]: Attribute `renderer` is never initialized.
     renderer: BaseRenderer
 
     # ---- image feature extractor settings
     # (This is only created if view_pooler is enabled)
+    # pyre-fixme[13]: Attribute `image_feature_extractor` is never initialized.
     image_feature_extractor: Optional[FeatureExtractorBase]
     image_feature_extractor_class_type: Optional[str] = None
     # ---- view pooler settings
     view_pooler_enabled: bool = False
+    # pyre-fixme[13]: Attribute `view_pooler` is never initialized.
     view_pooler: Optional[ViewPooler]
 
     # ---- implicit function settings
     implicit_function_class_type: str = "NeuralRadianceFieldImplicitFunction"
     # This is just a model, never constructed.
     # The actual implicit functions live in self._implicit_functions
+    # pyre-fixme[13]: Attribute `implicit_function` is never initialized.
     implicit_function: ImplicitFunctionBase
 
     # ----- metrics
+    # pyre-fixme[13]: Attribute `view_metrics` is never initialized.
     view_metrics: ViewMetricsBase
     view_metrics_class_type: str = "ViewMetrics"
 
+    # pyre-fixme[13]: Attribute `regularization_metrics` is never initialized.
     regularization_metrics: RegularizationMetricsBase
     regularization_metrics_class_type: str = "RegularizationMetrics"
 

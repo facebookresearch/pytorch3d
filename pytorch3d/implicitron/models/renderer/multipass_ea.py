@@ -18,9 +18,7 @@ from .raymarcher import RaymarcherBase
 
 
 @registry.register
-class MultiPassEmissionAbsorptionRenderer(  # pyre-ignore: 13
-    BaseRenderer, torch.nn.Module
-):
+class MultiPassEmissionAbsorptionRenderer(BaseRenderer, torch.nn.Module):
     """
     Implements the multi-pass rendering function, in particular,
     with emission-absorption ray marching used in NeRF [1]. First, it evaluates
@@ -86,6 +84,7 @@ class MultiPassEmissionAbsorptionRenderer(  # pyre-ignore: 13
     """
 
     raymarcher_class_type: str = "EmissionAbsorptionRaymarcher"
+    # pyre-fixme[13]: Attribute `raymarcher` is never initialized.
     raymarcher: RaymarcherBase
 
     n_pts_per_ray_fine_training: int = 64

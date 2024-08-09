@@ -56,7 +56,7 @@ logger = logging.getLogger(__name__)
 
 
 @registry.register
-class JsonIndexDatasetMapProviderV2(DatasetMapProviderBase):  # pyre-ignore [13]
+class JsonIndexDatasetMapProviderV2(DatasetMapProviderBase):
     """
     Generates the training, validation, and testing dataset objects for
     a dataset laid out on disk like CO3Dv2, with annotations in gzipped json files.
@@ -171,7 +171,9 @@ class JsonIndexDatasetMapProviderV2(DatasetMapProviderBase):  # pyre-ignore [13]
         path_manager_factory_class_type: The class type of `path_manager_factory`.
     """
 
+    # pyre-fixme[13]: Attribute `category` is never initialized.
     category: str
+    # pyre-fixme[13]: Attribute `subset_name` is never initialized.
     subset_name: str
     dataset_root: str = _CO3DV2_DATASET_ROOT
 
@@ -183,8 +185,10 @@ class JsonIndexDatasetMapProviderV2(DatasetMapProviderBase):  # pyre-ignore [13]
     n_known_frames_for_test: int = 0
 
     dataset_class_type: str = "JsonIndexDataset"
+    # pyre-fixme[13]: Attribute `dataset` is never initialized.
     dataset: JsonIndexDataset
 
+    # pyre-fixme[13]: Attribute `path_manager_factory` is never initialized.
     path_manager_factory: PathManagerFactory
     path_manager_factory_class_type: str = "PathManagerFactory"
 

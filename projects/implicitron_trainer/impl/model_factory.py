@@ -45,7 +45,7 @@ class ModelFactoryBase(ReplaceableBase):
 
 
 @registry.register
-class ImplicitronModelFactory(ModelFactoryBase):  # pyre-ignore [13]
+class ImplicitronModelFactory(ModelFactoryBase):
     """
     A factory class that initializes an implicit rendering model.
 
@@ -61,6 +61,7 @@ class ImplicitronModelFactory(ModelFactoryBase):  # pyre-ignore [13]
 
     """
 
+    # pyre-fixme[13]: Attribute `model` is never initialized.
     model: ImplicitronModelBase
     model_class_type: str = "GenericModel"
     resume: bool = True

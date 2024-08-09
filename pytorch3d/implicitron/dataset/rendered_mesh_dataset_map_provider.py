@@ -32,7 +32,7 @@ from .utils import DATASET_TYPE_KNOWN
 
 
 @registry.register
-class RenderedMeshDatasetMapProvider(DatasetMapProviderBase):  # pyre-ignore [13]
+class RenderedMeshDatasetMapProvider(DatasetMapProviderBase):
     """
     A simple single-scene dataset based on PyTorch3D renders of a mesh.
     Provides `num_views` renders of the mesh as train, with no val
@@ -76,6 +76,7 @@ class RenderedMeshDatasetMapProvider(DatasetMapProviderBase):  # pyre-ignore [13
     resolution: int = 128
     use_point_light: bool = True
     gpu_idx: Optional[int] = 0
+    # pyre-fixme[13]: Attribute `path_manager_factory` is never initialized.
     path_manager_factory: PathManagerFactory
     path_manager_factory_class_type: str = "PathManagerFactory"
 

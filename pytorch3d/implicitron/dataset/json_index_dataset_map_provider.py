@@ -66,7 +66,7 @@ _NEED_CONTROL: Tuple[str, ...] = (
 
 
 @registry.register
-class JsonIndexDatasetMapProvider(DatasetMapProviderBase):  # pyre-ignore [13]
+class JsonIndexDatasetMapProvider(DatasetMapProviderBase):
     """
     Generates the training / validation and testing dataset objects for
     a dataset laid out on disk like Co3D, with annotations in json files.
@@ -95,6 +95,7 @@ class JsonIndexDatasetMapProvider(DatasetMapProviderBase):  # pyre-ignore [13]
         path_manager_factory_class_type: The class type of `path_manager_factory`.
     """
 
+    # pyre-fixme[13]: Attribute `category` is never initialized.
     category: str
     task_str: str = "singlesequence"
     dataset_root: str = _CO3D_DATASET_ROOT
@@ -104,8 +105,10 @@ class JsonIndexDatasetMapProvider(DatasetMapProviderBase):  # pyre-ignore [13]
     test_restrict_sequence_id: int = -1
     assert_single_seq: bool = False
     only_test_set: bool = False
+    # pyre-fixme[13]: Attribute `dataset` is never initialized.
     dataset: JsonIndexDataset
     dataset_class_type: str = "JsonIndexDataset"
+    # pyre-fixme[13]: Attribute `path_manager_factory` is never initialized.
     path_manager_factory: PathManagerFactory
     path_manager_factory_class_type: str = "PathManagerFactory"
 

@@ -24,9 +24,10 @@ from .rgb_net import RayNormalColoringNetwork
 
 
 @registry.register
-class SignedDistanceFunctionRenderer(BaseRenderer, torch.nn.Module):  # pyre-ignore[13]
+class SignedDistanceFunctionRenderer(BaseRenderer, torch.nn.Module):
     render_features_dimensions: int = 3
     object_bounding_sphere: float = 1.0
+    # pyre-fixme[13]: Attribute `ray_tracer` is never initialized.
     ray_tracer: RayTracing
     ray_normal_coloring_network_args: DictConfig = get_default_args_field(
         RayNormalColoringNetwork

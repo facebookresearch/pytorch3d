@@ -83,7 +83,6 @@ class SingleSceneDataset(DatasetBase, Configurable):
         return self.eval_batches
 
 
-# pyre-fixme[13]: Uninitialized attribute
 class SingleSceneDatasetMapProviderBase(DatasetMapProviderBase):
     """
     Base for provider of data for one scene from LLFF or blender datasets.
@@ -100,8 +99,11 @@ class SingleSceneDatasetMapProviderBase(DatasetMapProviderBase):
             testing frame.
     """
 
+    # pyre-fixme[13]: Attribute `base_dir` is never initialized.
     base_dir: str
+    # pyre-fixme[13]: Attribute `object_name` is never initialized.
     object_name: str
+    # pyre-fixme[13]: Attribute `path_manager_factory` is never initialized.
     path_manager_factory: PathManagerFactory
     path_manager_factory_class_type: str = "PathManagerFactory"
     n_known_frames_for_test: Optional[int] = None

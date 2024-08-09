@@ -16,8 +16,6 @@ from pytorch3d.renderer.implicit.sample_pdf import sample_pdf
 
 
 @expand_args_fields
-# pyre-fixme[13]: Attribute `n_pts_per_ray` is never initialized.
-# pyre-fixme[13]: Attribute `random_sampling` is never initialized.
 class RayPointRefiner(Configurable, torch.nn.Module):
     """
     Implements the importance sampling of points along rays.
@@ -45,7 +43,9 @@ class RayPointRefiner(Configurable, torch.nn.Module):
             for Anti-Aliasing Neural Radiance Fields." ICCV 2021.
     """
 
+    # pyre-fixme[13]: Attribute `n_pts_per_ray` is never initialized.
     n_pts_per_ray: int
+    # pyre-fixme[13]: Attribute `random_sampling` is never initialized.
     random_sampling: bool
     add_input_samples: bool = True
     blurpool_weights: bool = False
