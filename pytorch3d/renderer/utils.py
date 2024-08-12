@@ -270,6 +270,8 @@ class TensorProperties(nn.Module):
                         # to have the same shape as the input tensor.
                         new_dims = len(tensor_dims) - len(idx_dims)
                         new_shape = idx_dims + (1,) * new_dims
+                        # pyre-fixme[58]: `+` is not supported for operand types
+                        # `Tuple[int]` and `torch._C.Size`
                         expand_dims = (-1,) + tensor_dims[1:]
                         _batch_idx = _batch_idx.view(*new_shape)
                         _batch_idx = _batch_idx.expand(*expand_dims)

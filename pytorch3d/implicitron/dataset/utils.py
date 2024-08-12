@@ -348,6 +348,7 @@ def adjust_camera_to_image_scale_(
     camera: PerspectiveCameras,
     original_size_wh: torch.Tensor,
     new_size_wh: torch.LongTensor,
+    # pyre-fixme[7]: Expected `PerspectiveCameras` but got implicit return value of `None`.
 ) -> PerspectiveCameras:
     focal_length_px, principal_point_px = _convert_ndc_to_pixels(
         camera.focal_length[0],
@@ -367,7 +368,7 @@ def adjust_camera_to_image_scale_(
         image_size_wh_output,
     )
     camera.focal_length = focal_length_scaled[None]
-    camera.principal_point = principal_point_scaled[None]  # pyre-ignore
+    camera.principal_point = principal_point_scaled[None]
 
 
 # NOTE this cache is per-worker; they are implemented as processes.

@@ -244,7 +244,6 @@ class MLPWithInputSkips(Configurable, torch.nn.Module):
 
 
 @registry.register
-# pyre-fixme[13]: Attribute `network` is never initialized.
 class MLPDecoder(DecoderFunctionBase):
     """
     Decoding function which uses `MLPWithIputSkips` to convert the embedding to output.
@@ -272,6 +271,7 @@ class MLPDecoder(DecoderFunctionBase):
 
     input_dim: int = 3
     param_groups: Dict[str, str] = field(default_factory=lambda: {})
+    # pyre-fixme[13]: Attribute `network` is never initialized.
     network: MLPWithInputSkips
 
     def __post_init__(self):

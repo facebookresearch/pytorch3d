@@ -41,7 +41,7 @@ class DataSourceBase(ReplaceableBase):
 
 
 @registry.register
-class ImplicitronDataSource(DataSourceBase):  # pyre-ignore[13]
+class ImplicitronDataSource(DataSourceBase):
     """
     Represents the data used in Implicitron. This is the only implementation
     of DataSourceBase provided.
@@ -52,8 +52,11 @@ class ImplicitronDataSource(DataSourceBase):  # pyre-ignore[13]
         data_loader_map_provider_class_type: identifies type for data_loader_map_provider.
     """
 
+    # pyre-fixme[13]: Attribute `dataset_map_provider` is never initialized.
     dataset_map_provider: DatasetMapProviderBase
+    # pyre-fixme[13]: Attribute `dataset_map_provider_class_type` is never initialized.
     dataset_map_provider_class_type: str
+    # pyre-fixme[13]: Attribute `data_loader_map_provider` is never initialized.
     data_loader_map_provider: DataLoaderMapProviderBase
     data_loader_map_provider_class_type: str = "SequenceDataLoaderMapProvider"
 

@@ -80,6 +80,12 @@ def setup_cuda():
 def setup_conda_pytorch_constraint() -> List[str]:
     pytorch_constraint = f"- pytorch=={PYTORCH_VERSION}"
     os.environ["CONDA_PYTORCH_CONSTRAINT"] = pytorch_constraint
+    if pytorch_major_minor < (2, 2):
+        os.environ["CONDA_PYTORCH_MKL_CONSTRAINT"] = "- mkl!=2024.1.0"
+        os.environ["SETUPTOOLS_CONSTRAINT"] = "- setuptools<70"
+    else:
+        os.environ["CONDA_PYTORCH_MKL_CONSTRAINT"] = ""
+        os.environ["SETUPTOOLS_CONSTRAINT"] = "- setuptools"
     os.environ["CONDA_PYTORCH_BUILD_CONSTRAINT"] = pytorch_constraint
     os.environ["PYTORCH_VERSION_NODOT"] = PYTORCH_VERSION.replace(".", "")
 
@@ -117,7 +123,7 @@ def do_build(start_args: List[str]):
     if test_flag is not None:
         args.append(test_flag)
 
-    args.extend(["-c", "bottler", "-c", "fvcore", "-c", "iopath", "-c", "conda-forge"])
+    args.extend(["-c", "bottler", "-c", "iopath", "-c", "conda-forge"])
     args.append("--no-anaconda-upload")
     args.extend(["--python", os.environ["PYTHON_VERSION"]])
     args.append("packaging/pytorch3d")

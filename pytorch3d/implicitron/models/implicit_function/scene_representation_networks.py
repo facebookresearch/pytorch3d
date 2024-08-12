@@ -318,10 +318,11 @@ class SRNRaymarchHyperNet(Configurable, torch.nn.Module):
 
 
 @registry.register
-# pyre-fixme[13]: Uninitialized attribute
 class SRNImplicitFunction(ImplicitFunctionBase, torch.nn.Module):
     latent_dim: int = 0
+    # pyre-fixme[13]: Attribute `raymarch_function` is never initialized.
     raymarch_function: SRNRaymarchFunction
+    # pyre-fixme[13]: Attribute `pixel_generator` is never initialized.
     pixel_generator: SRNPixelGenerator
 
     def __post_init__(self):
@@ -366,7 +367,6 @@ class SRNImplicitFunction(ImplicitFunctionBase, torch.nn.Module):
 
 
 @registry.register
-# pyre-fixme[13]: Uninitialized attribute
 class SRNHyperNetImplicitFunction(ImplicitFunctionBase, torch.nn.Module):
     """
     This implicit function uses a hypernetwork to generate the
@@ -377,7 +377,9 @@ class SRNHyperNetImplicitFunction(ImplicitFunctionBase, torch.nn.Module):
 
     latent_dim_hypernet: int = 0
     latent_dim: int = 0
+    # pyre-fixme[13]: Attribute `hypernet` is never initialized.
     hypernet: SRNRaymarchHyperNet
+    # pyre-fixme[13]: Attribute `pixel_generator` is never initialized.
     pixel_generator: SRNPixelGenerator
 
     def __post_init__(self):

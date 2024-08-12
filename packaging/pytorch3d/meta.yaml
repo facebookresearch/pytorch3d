@@ -12,8 +12,9 @@ requirements:
 
   host:
     - python
-    - setuptools
+    {{ environ.get('SETUPTOOLS_CONSTRAINT') }}
     {{ environ.get('CONDA_PYTORCH_BUILD_CONSTRAINT') }}
+    {{ environ.get('CONDA_PYTORCH_MKL_CONSTRAINT') }}
     {{ environ.get('CONDA_CUDATOOLKIT_CONSTRAINT') }}
     {{ environ.get('CONDA_CPUONLY_FEATURE') }}
 
@@ -21,7 +22,6 @@ requirements:
     - python
     - numpy >=1.11
     - torchvision >=0.5
-    - fvcore
     - iopath
     {{ environ.get('CONDA_PYTORCH_CONSTRAINT') }}
     {{ environ.get('CONDA_CUDATOOLKIT_CONSTRAINT') }}

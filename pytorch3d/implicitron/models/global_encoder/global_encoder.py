@@ -59,12 +59,13 @@ class GlobalEncoderBase(ReplaceableBase):
 
 # TODO: probabilistic embeddings?
 @registry.register
-class SequenceAutodecoder(GlobalEncoderBase, torch.nn.Module):  # pyre-ignore: 13
+class SequenceAutodecoder(GlobalEncoderBase, torch.nn.Module):
     """
     A global encoder implementation which provides an autodecoder encoding
     of the frame's sequence identifier.
     """
 
+    # pyre-fixme[13]: Attribute `autodecoder` is never initialized.
     autodecoder: Autodecoder
 
     def __post_init__(self):

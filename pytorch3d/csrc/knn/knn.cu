@@ -338,7 +338,7 @@ std::tuple<at::Tensor, at::Tensor> KNearestNeighborIdxCuda(
 
   TORCH_CHECK((norm == 1) || (norm == 2), "Norm must be 1 or 2.");
 
-  TORCH_CHECK(p2.size(2) == D, "Point sets must have the same last dimension");
+  TORCH_CHECK(p1.size(2) == D, "Point sets must have the same last dimension");
   auto long_dtype = lengths1.options().dtype(at::kLong);
   auto idxs = at::zeros({N, P1, K}, long_dtype);
   auto dists = at::zeros({N, P1, K}, p1.options());

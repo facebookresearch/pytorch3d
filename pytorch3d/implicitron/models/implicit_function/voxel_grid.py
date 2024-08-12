@@ -805,7 +805,6 @@ class VMFactorizedVoxelGrid(VoxelGridBase):
         )
 
 
-# pyre-fixme[13]: Attribute `voxel_grid` is never initialized.
 class VoxelGridModule(Configurable, torch.nn.Module):
     """
     A wrapper torch.nn.Module for the VoxelGrid classes, which
@@ -845,6 +844,7 @@ class VoxelGridModule(Configurable, torch.nn.Module):
     """
 
     voxel_grid_class_type: str = "FullResolutionVoxelGrid"
+    # pyre-fixme[13]: Attribute `voxel_grid` is never initialized.
     voxel_grid: VoxelGridBase
 
     extents: Tuple[float, float, float] = (2.0, 2.0, 2.0)

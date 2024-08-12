@@ -16,7 +16,6 @@ from .feature_aggregator import FeatureAggregatorBase
 from .view_sampler import ViewSampler
 
 
-# pyre-ignore: 13
 class ViewPooler(Configurable, torch.nn.Module):
     """
     Implements sampling of image-based features at the 2d projections of a set
@@ -35,8 +34,10 @@ class ViewPooler(Configurable, torch.nn.Module):
             from a set of source images. FeatureAggregator executes step (4) above.
     """
 
+    # pyre-fixme[13]: Attribute `view_sampler` is never initialized.
     view_sampler: ViewSampler
     feature_aggregator_class_type: str = "AngleWeightedReductionFeatureAggregator"
+    # pyre-fixme[13]: Attribute `feature_aggregator` is never initialized.
     feature_aggregator: FeatureAggregatorBase
 
     def __post_init__(self):

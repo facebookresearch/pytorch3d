@@ -382,11 +382,13 @@ class _OpenGLMachinery:
 
         # Free GL resources.
         gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, self.fbo)
+        # pyre-fixme[16]: Module `GL_3_0` has no attribute `glDeleteFramebuffers`.
         gl.glDeleteFramebuffers(1, [self.fbo])
         gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, 0)
         del self.fbo
 
         gl.glBindBufferBase(gl.GL_SHADER_STORAGE_BUFFER, 0, self.mesh_buffer_object)
+        # pyre-fixme[16]: Module `GL_1_5` has no attribute `glDeleteBuffers`.
         gl.glDeleteBuffers(1, [self.mesh_buffer_object])
         gl.glBindBufferBase(gl.GL_SHADER_STORAGE_BUFFER, 0, 0)
         del self.mesh_buffer_object
@@ -402,6 +404,7 @@ class _OpenGLMachinery:
             projection matrix: A 3x3 float tensor.
         """
         gl.glUseProgram(self.program)
+        # pyre-fixme[16]: Module `GL_2_0` has no attribute `glUniformMatrix4fv`.
         gl.glUniformMatrix4fv(
             self.perspective_projection_uniform,
             1,
@@ -592,6 +595,7 @@ class _OpenGLMachinery:
         # from pytorch/cuda. The buffer needs enough space to store the three vertices
         # of each face, that is its size in bytes is
         # max_faces * 3 (vertices) * 3 (coordinates) * 4 (bytes)
+        # pyre-fixme[16]: Module `GL_1_5` has no attribute `glGenBuffers`.
         mesh_buffer_object = gl.glGenBuffers(1)
         gl.glBindBufferBase(gl.GL_SHADER_STORAGE_BUFFER, 0, mesh_buffer_object)
 
@@ -604,11 +608,13 @@ class _OpenGLMachinery:
 
         # Input vertex array object. We will only use it implicitly for indexing the
         # vertices, but the actual input data is passed in the shader storage buffer.
+        # pyre-fixme[16]: Module `GL_3_0` has no attribute `glGenVertexArrays`.
         vao = gl.glGenVertexArrays(1)
 
         # Create the framebuffer object (fbo) where we'll store output data.
         MAX_EGL_WIDTH = global_device_context_store.max_egl_width
         MAX_EGL_HEIGHT = global_device_context_store.max_egl_height
+        # pyre-fixme[16]: Module `GL_3_0` has no attribute `glGenRenderbuffers`.
         color_buffer = gl.glGenRenderbuffers(1)
         gl.glBindRenderbuffer(gl.GL_RENDERBUFFER, color_buffer)
         gl.glRenderbufferStorage(
@@ -616,6 +622,7 @@ class _OpenGLMachinery:
         )
         gl.glBindRenderbuffer(gl.GL_RENDERBUFFER, 0)
 
+        # pyre-fixme[16]: Module `GL_3_0` has no attribute `glGenRenderbuffers`.
         depth_buffer = gl.glGenRenderbuffers(1)
         gl.glBindRenderbuffer(gl.GL_RENDERBUFFER, depth_buffer)
         gl.glRenderbufferStorage(
@@ -623,6 +630,7 @@ class _OpenGLMachinery:
         )
         gl.glBindRenderbuffer(gl.GL_RENDERBUFFER, 0)
 
+        # pyre-fixme[16]: Module `GL_3_0` has no attribute `glGenFramebuffers`.
         fbo = gl.glGenFramebuffers(1)
         gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, fbo)
         gl.glFramebufferRenderbuffer(

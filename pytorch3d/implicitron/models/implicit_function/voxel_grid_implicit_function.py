@@ -39,7 +39,6 @@ enable_get_default_args(HarmonicEmbedding)
 
 
 @registry.register
-# pyre-ignore[13]
 class VoxelGridImplicitFunction(ImplicitFunctionBase, torch.nn.Module):
     """
     This implicit function consists of two streams, one for the density calculation and one
@@ -145,9 +144,11 @@ class VoxelGridImplicitFunction(ImplicitFunctionBase, torch.nn.Module):
     """
 
     # ---- voxel grid for density
+    # pyre-fixme[13]: Attribute `voxel_grid_density` is never initialized.
     voxel_grid_density: VoxelGridModule
 
     # ---- voxel grid for color
+    # pyre-fixme[13]: Attribute `voxel_grid_color` is never initialized.
     voxel_grid_color: VoxelGridModule
 
     # ---- harmonic embeddings density
@@ -163,10 +164,12 @@ class VoxelGridImplicitFunction(ImplicitFunctionBase, torch.nn.Module):
 
     # ---- decoder function for density
     decoder_density_class_type: str = "MLPDecoder"
+    # pyre-fixme[13]: Attribute `decoder_density` is never initialized.
     decoder_density: DecoderFunctionBase
 
     # ---- decoder function for color
     decoder_color_class_type: str = "MLPDecoder"
+    # pyre-fixme[13]: Attribute `decoder_color` is never initialized.
     decoder_color: DecoderFunctionBase
 
     # ---- cuda streams

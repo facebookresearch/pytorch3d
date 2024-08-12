@@ -756,10 +756,13 @@ def save_obj(
     output_path = Path(f)
 
     # Save the .obj file
+    # pyre-fixme[9]: f has type `Union[Path, str]`; used as `IO[typing.Any]`.
     with _open_file(f, path_manager, "w") as f:
         if save_texture:
             # Add the header required for the texture info to be loaded correctly
             obj_header = "\nmtllib {0}.mtl\nusemtl mesh\n\n".format(output_path.stem)
+            # pyre-fixme[16]: Item `Path` of `Union[Path, str]` has no attribute
+            #  `write`.
             f.write(obj_header)
         _save(
             f,

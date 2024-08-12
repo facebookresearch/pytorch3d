@@ -244,8 +244,7 @@ at::Tensor RasterizeCoarseCuda(
   if (num_bins_y >= kMaxItemsPerBin || num_bins_x >= kMaxItemsPerBin) {
     std::stringstream ss;
     ss << "In RasterizeCoarseCuda got num_bins_y: " << num_bins_y
-       << ", num_bins_x: " << num_bins_x << ", "
-       << "; that's too many!";
+       << ", num_bins_x: " << num_bins_x << ", " << "; that's too many!";
     AT_ERROR(ss.str());
   }
   auto opts = elems_per_batch.options().dtype(at::kInt);

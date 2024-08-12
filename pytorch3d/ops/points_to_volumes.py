@@ -617,6 +617,7 @@ def _splat_points_to_volumes(
                 w = wX * wY * wZ
 
                 # valid - binary indicators of votes that fall into the volume
+                # pyre-fixme[16]: `int` has no attribute `long`.
                 valid = (
                     (0 <= X_)
                     * (X_ < grid_sizes_xyz[:, None, 0:1])
@@ -635,14 +636,19 @@ def _splat_points_to_volumes(
                 idx_valid = idx * valid + rand_idx * (1 - valid)
                 w_valid = w * valid.type_as(w)
                 if mask is not None:
+                    # pyre-fixme[6]: For 1st argument expected `Tensor` but got `int`.
                     w_valid = w_valid * mask.type_as(w)[:, :, None]
 
                 # scatter add casts the votes into the weight accumulator
                 # and the feature accumulator
+                # pyre-fixme[6]: For 3rd argument expected `Tensor` but got
+                #  `Union[int, Tensor]`.
                 volume_densities.scatter_add_(1, idx_valid, w_valid)
 
                 # reshape idx_valid -> (minibatch, feature_dim, n_points)
                 idx_valid = idx_valid.view(ba, 1, n_points).expand_as(points_features)
+                # pyre-fixme[16]: Item `int` of `Union[int, Tensor]` has no
+                #  attribute `view`.
                 w_valid = w_valid.view(ba, 1, n_points)
 
                 # volume_features of shape (minibatch, feature_dim, n_voxels)
@@ -724,6 +730,7 @@ def _round_points_to_volumes(
     # valid - binary indicators of votes that fall into the volume
     # pyre-fixme[9]: grid_sizes has type `LongTensor`; used as `Tensor`.
     grid_sizes = grid_sizes.type_as(XYZ)
+    # pyre-fixme[16]: `int` has no attribute `long`.
     valid = (
         (0 <= X)
         * (X < grid_sizes_xyz[:, None, 0:1])

@@ -69,7 +69,7 @@ IMPLICIT_FUNCTION_ARGS_TO_REMOVE: List[str] = [
 
 
 @registry.register
-class OverfitModel(ImplicitronModelBase):  # pyre-ignore: 13
+class OverfitModel(ImplicitronModelBase):
     """
     OverfitModel is a wrapper for the neural implicit
     rendering and reconstruction pipeline which consists
@@ -198,27 +198,34 @@ class OverfitModel(ImplicitronModelBase):  # pyre-ignore: 13
 
     # ---- global encoder settings
     global_encoder_class_type: Optional[str] = None
+    # pyre-fixme[13]: Attribute `global_encoder` is never initialized.
     global_encoder: Optional[GlobalEncoderBase]
 
     # ---- raysampler
     raysampler_class_type: str = "AdaptiveRaySampler"
+    # pyre-fixme[13]: Attribute `raysampler` is never initialized.
     raysampler: RaySamplerBase
 
     # ---- renderer configs
     renderer_class_type: str = "MultiPassEmissionAbsorptionRenderer"
+    # pyre-fixme[13]: Attribute `renderer` is never initialized.
     renderer: BaseRenderer
 
     # ---- implicit function settings
     share_implicit_function_across_passes: bool = False
     implicit_function_class_type: str = "NeuralRadianceFieldImplicitFunction"
+    # pyre-fixme[13]: Attribute `implicit_function` is never initialized.
     implicit_function: ImplicitFunctionBase
     coarse_implicit_function_class_type: Optional[str] = None
+    # pyre-fixme[13]: Attribute `coarse_implicit_function` is never initialized.
     coarse_implicit_function: Optional[ImplicitFunctionBase]
 
     # ----- metrics
+    # pyre-fixme[13]: Attribute `view_metrics` is never initialized.
     view_metrics: ViewMetricsBase
     view_metrics_class_type: str = "ViewMetrics"
 
+    # pyre-fixme[13]: Attribute `regularization_metrics` is never initialized.
     regularization_metrics: RegularizationMetricsBase
     regularization_metrics_class_type: str = "RegularizationMetrics"
 
