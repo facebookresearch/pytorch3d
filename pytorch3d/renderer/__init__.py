@@ -6,6 +6,8 @@
 
 # pyre-unsafe
 
+import torch
+
 from .blending import (
     BlendParams,
     hard_rgb_blend,
@@ -74,9 +76,13 @@ from .points import (
     PointsRasterizationSettings,
     PointsRasterizer,
     PointsRenderer,
-    PulsarPointsRenderer,
     rasterize_points,
 )
+
+# Pulsar is not enabled on amd.
+if not torch.version.hip:
+    from .points import PulsarPointsRenderer
+
 from .splatter_blend import SplatterBlender
 from .utils import (
     convert_to_tensors_and_broadcast,
