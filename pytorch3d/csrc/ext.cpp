@@ -7,11 +7,15 @@
  */
 
 // clang-format off
+#if !defined(USE_ROCM)
 #include "./pulsar/global.h" // Include before <torch/extension.h>.
+#endif
 #include <torch/extension.h>
 // clang-format on
+#if !defined(USE_ROCM)
 #include "./pulsar/pytorch/renderer.h"
 #include "./pulsar/pytorch/tensor_util.h"
+#endif
 #include "ball_query/ball_query.h"
 #include "blending/sigmoid_alpha_blend.h"
 #include "compositing/alpha_composite.h"
@@ -99,6 +103,8 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
   m.def("marching_cubes", &MarchingCubes);
 
   // Pulsar.
+  // Pulsar not enabled on AMD.
+#if !defined(USE_ROCM)
 #ifdef PULSAR_LOGGING_ENABLED
   c10::ShowLogInfoToStderr();
 #endif
@@ -183,4 +189,5 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
   m.attr("MAX_UINT") = py::int_(MAX_UINT);
   m.attr("MAX_USHORT") = py::int_(MAX_USHORT);
   m.attr("PULSAR_MAX_GRAD_SPHERES") = py::int_(MAX_GRAD_SPHERES);
+#endif
 }

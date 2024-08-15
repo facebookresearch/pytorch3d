@@ -144,7 +144,7 @@ __device__ void CheckPixelInsideFace(
   const bool zero_face_area =
       (face_area <= kEpsilon && face_area >= -1.0f * kEpsilon);
 
-  if (zmax < 0 || cull_backfaces && back_face || outside_bbox ||
+  if (zmax < 0 || (cull_backfaces && back_face) || outside_bbox ||
       zero_face_area) {
     return;
   }
