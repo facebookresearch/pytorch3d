@@ -649,8 +649,7 @@ def _load_obj(
         # Create an array of strings of material names for each face.
         # If faces_materials_idx == -1 then that face doesn't have a material.
         idx = faces_materials_idx.cpu().numpy()
-        face_material_names = np.array(material_names)[idx]  # (F,)
-        face_material_names[idx == -1] = ""
+        face_material_names = np.array([""] + material_names)[idx + 1]  # (F,)
 
         # Construct the atlas.
         texture_atlas = make_mesh_texture_atlas(
