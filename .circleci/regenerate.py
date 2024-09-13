@@ -19,8 +19,6 @@ from packaging import version
 # The CUDA versions which have pytorch conda packages available for linux for each
 # version of pytorch.
 CONDA_CUDA_VERSIONS = {
-    "2.0.0": ["cu117", "cu118"],
-    "2.0.1": ["cu117", "cu118"],
     "2.1.0": ["cu118", "cu121"],
     "2.1.1": ["cu118", "cu121"],
     "2.1.2": ["cu118", "cu121"],
