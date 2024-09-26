@@ -674,7 +674,6 @@ def _add_mesh_trace(
     verts[~verts_used] = verts_center
 
     row, col = subplot_idx // ncols + 1, subplot_idx % ncols + 1
-    # pyre-fixme[16]: `Figure` has no attribute `add_trace`.
     fig.add_trace(
         go.Mesh3d(
             x=verts[:, 0],
@@ -741,7 +740,6 @@ def _add_pointcloud_trace(
 
     row = subplot_idx // ncols + 1
     col = subplot_idx % ncols + 1
-    # pyre-fixme[16]: `Figure` has no attribute `add_trace`.
     fig.add_trace(
         go.Scatter3d(
             x=verts[:, 0],
@@ -803,7 +801,6 @@ def _add_camera_trace(
     x, y, z = all_cam_wires.detach().cpu().numpy().T.astype(float)
 
     row, col = subplot_idx // ncols + 1, subplot_idx % ncols + 1
-    # pyre-fixme[16]: `Figure` has no attribute `add_trace`.
     fig.add_trace(
         go.Scatter3d(x=x, y=y, z=z, marker={"size": 1}, name=trace_name),
         row=row,
@@ -898,7 +895,6 @@ def _add_ray_bundle_trace(
         ray_lines = torch.cat((ray_lines, nan_tensor, ray_line))
     x, y, z = ray_lines.detach().cpu().numpy().T.astype(float)
     row, col = subplot_idx // ncols + 1, subplot_idx % ncols + 1
-    # pyre-fixme[16]: `Figure` has no attribute `add_trace`.
     fig.add_trace(
         go.Scatter3d(
             x=x,
@@ -1010,7 +1006,6 @@ def _update_axes_bounds(
 
     # Ensure that within a subplot, the bounds capture all traces
     old_xrange, old_yrange, old_zrange = (
-        # pyre-fixme[16]: `Scene` has no attribute `__getitem__`.
         current_layout["xaxis"]["range"],
         current_layout["yaxis"]["range"],
         current_layout["zaxis"]["range"],
@@ -1029,7 +1024,6 @@ def _update_axes_bounds(
     xaxis = {"range": x_range}
     yaxis = {"range": y_range}
     zaxis = {"range": z_range}
-    # pyre-fixme[16]: `Scene` has no attribute `update`.
     current_layout.update({"xaxis": xaxis, "yaxis": yaxis, "zaxis": zaxis})
 
 

@@ -163,6 +163,9 @@ def _read_chunks(
     if binary_data is not None:
         binary_data = np.frombuffer(binary_data, dtype=np.uint8)
 
+    # pyre-fixme[7]: Expected `Optional[Tuple[Dict[str, typing.Any],
+    #  ndarray[typing.Any, typing.Any]]]` but got `Tuple[typing.Any,
+    #  Optional[ndarray[typing.Any, dtype[typing.Any]]]]`.
     return json_data, binary_data
 
 
