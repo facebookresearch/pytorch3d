@@ -1826,7 +1826,7 @@ class TexturesVertex(TexturesBase):
                 representation) which overlap the pixel.
 
         Returns:
-            texels: An texture per pixel of shape (N, H, W, K, C).
+            texels: A texture per pixel of shape (N, H, W, K, C).
             There will be one C dimensional value for each element in
             fragments.pix_to_face.
         """
