@@ -14,7 +14,7 @@
 #include "./commands.h"
 
 namespace pulsar {
-IHD CamGradInfo::CamGradInfo() {
+IHD CamGradInfo::CamGradInfo(int x) {
   cam_pos = make_float3(0.f, 0.f, 0.f);
   pixel_0_0_center = make_float3(0.f, 0.f, 0.f);
   pixel_dir_x = make_float3(0.f, 0.f, 0.f);

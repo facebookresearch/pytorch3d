@@ -10,9 +10,7 @@ import torch
 
 from .compositor import AlphaCompositor, NormWeightedCompositor
 
-# Pulsar not enabled on amd.
-if not torch.version.hip:
-    from .pulsar.unified import PulsarPointsRenderer
+from .pulsar.unified import PulsarPointsRenderer
 
 from .rasterize_points import rasterize_points
 from .rasterizer import PointsRasterizationSettings, PointsRasterizer

@@ -46,6 +46,7 @@ IHD float3 outer_product_sum(const float3& a) {
 }
 
 // TODO: put intrinsics here.
+#if !defined(USE_ROCM)
 IHD float3 operator+(const float3& a, const float3& b) {
   return make_float3(a.x + b.x, a.y + b.y, a.z + b.z);
 }
@@ -93,6 +94,7 @@ IHD float3 operator*(const float3& a, const float3& b) {
 IHD float3 operator*(const float& a, const float3& b) {
   return b * a;
 }
+#endif //! USE_ROCM
 
 INLINE DEVICE float length(const float3& v) {
   // TODO: benchmark what's faster.

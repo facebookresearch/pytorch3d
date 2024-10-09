@@ -36,11 +36,13 @@
 #pragma nv_diag_suppress 2951
 #pragma nv_diag_suppress 2967
 #else
+#if !defined(USE_ROCM)
 #pragma diag_suppress = attribute_not_allowed
 #pragma diag_suppress = 1866
 #pragma diag_suppress = 2941
 #pragma diag_suppress = 2951
 #pragma diag_suppress = 2967
+#endif //! USE_ROCM
 #endif
 #else // __CUDACC__
 #define INLINE inline
@@ -56,7 +58,9 @@
 #pragma clang diagnostic pop
 #ifdef WITH_CUDA
 #include <ATen/cuda/CUDAContext.h>
+#if !defined(USE_ROCM)
 #include <vector_functions.h>
+#endif //! USE_ROCM
 #else
 #ifndef cudaStream_t
 typedef void* cudaStream_t;

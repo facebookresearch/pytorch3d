@@ -63,7 +63,7 @@ inline bool operator==(const CamInfo& a, const CamInfo& b) {
 };
 
 struct CamGradInfo {
-  HOST DEVICE CamGradInfo();
+  HOST DEVICE CamGradInfo(int = 0);
   float3 cam_pos;
   float3 pixel_0_0_center;
   float3 pixel_dir_x;

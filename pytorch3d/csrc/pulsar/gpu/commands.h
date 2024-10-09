@@ -59,6 +59,11 @@ getLastCudaError(const char* errorMessage, const char* file, const int line) {
 #define SHARED __shared__
 #define ACTIVEMASK() __activemask()
 #define BALLOT(mask, val) __ballot_sync((mask), val)
+
+/* TODO (ROCM-6.2): None of the WARP_* are used anywhere and ROCM-6.2 natively
+ * supports __shfl_*. Disabling until the move to ROCM-6.2.
+ */
+#if !defined(USE_ROCM)
 /**
  * Find the cumulative sum within a warp up to the current
  * thread lane, with each mask thread contributing base.
@@ -115,6 +120,7 @@ INLINE DEVICE float3 WARP_SUM_FLOAT3(
   ret.z = WARP_SUM(group, mask, base.z);
   return ret;
 }
+#endif //! USE_ROCM
 
 // Floating point.
 // #define FMUL(a, b) __fmul_rn((a), (b))
@@ -142,6 +148,7 @@ INLINE DEVICE float3 WARP_SUM_FLOAT3(
 #define FMA(x, y, z) __fmaf_rn((x), (y), (z))
 #define I2F(a) __int2float_rn(a)
 #define FRCP(x) __frcp_rn(x)
+#if !defined(USE_ROCM)
 __device__ static float atomicMax(float* address, float val) {
   int* address_as_i = (int*)address;
   int old = *address_as_i, assumed;
@@ -166,6 +173,7 @@ __device__ static float atomicMin(float* address, float val) {
   } while (assumed != old);
   return __int_as_float(old);
 }
+#endif //! USE_ROCM
 #define DMAX(a, b) FMAX(a, b)
 #define DMIN(a, b) FMIN(a, b)
 #define DSQRT(a) sqrt(a)

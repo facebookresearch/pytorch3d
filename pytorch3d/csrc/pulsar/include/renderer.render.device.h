@@ -283,9 +283,15 @@ GLOBAL void render(
           (percent_allowed_difference > 0.f &&
            max_closest_possible_intersection > depth_threshold) ||
           tracker.get_n_hits() >= max_n_hits;
+#if defined(__CUDACC__) && defined(__HIP_PLATFORM_AMD__)
+      unsigned long long warp_done = __ballot(done);
+      int warp_done_bit_cnt = __popcll(warp_done);
+#else
       uint warp_done = thread_warp.ballot(done);
+      int warp_done_bit_cnt = POPC(warp_done);
+#endif //__CUDACC__ && __HIP_PLATFORM_AMD__
       if (thread_warp.thread_rank() == 0)
-        ATOMICADD_B(&n_pixels_done, POPC(warp_done));
+        ATOMICADD_B(&n_pixels_done, warp_done_bit_cnt);
       // This sync is necessary to keep n_loaded until all threads are done with
       // painting.
       thread_block.sync();
