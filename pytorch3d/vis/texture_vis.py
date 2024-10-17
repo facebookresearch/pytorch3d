@@ -59,6 +59,8 @@ def texturesuv_image_matplotlib(
     for i in indices:
         # setting clip_on=False makes it obvious when
         # we have UV coordinates outside the correct range
+        # pyre-fixme[6]: For 1st argument expected `Tuple[float, float]` but got
+        #  `ndarray[Any, Any]`.
         ax.add_patch(Circle(centers[i], radius, color=color, clip_on=False))
 
 
