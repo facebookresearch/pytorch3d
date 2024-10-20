@@ -8,17 +8,11 @@ jobs:
     runs-on: 4-core-ubuntu-gpu-t4
     container:
       image: pytorch/conda-cuda
-      credentials:
-        username: ${{ secrets.DOCKERHUB_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_TOKEN }}
     env:
       PYTHON_VERSION: "3.12"
       BUILD_VERSION: "${{ github.run_number }}"
       PYTORCH_VERSION: "2.4.1"
       CU_VERSION: "cu121"
-      TESTRUN_DOCKER_IMAGE: "pytorch/conda-cuda"
-      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
       JUST_TESTRUN: 1
     steps:
     - uses: actions/checkout@v3
