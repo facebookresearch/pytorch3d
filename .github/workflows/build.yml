@@ -6,8 +6,6 @@ on:
 jobs:
   binary_linux_conda_cuda:
     runs-on: 4-core-ubuntu-gpu-t4
-    container:
-      image: pytorch/conda-builder:cuda121
     env:
       PYTHON_VERSION: "3.12"
       BUILD_VERSION: "${{ github.run_number }}"
