@@ -15,7 +15,7 @@ jobs:
       CU_VERSION: "cu121"
       JUST_TESTRUN: 1
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Build and run tests
       run: |-
         # set -e
