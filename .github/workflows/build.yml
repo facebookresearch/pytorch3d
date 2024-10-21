@@ -20,5 +20,5 @@ jobs:
         # export JUST_TESTRUN=1
         # VARS_TO_PASS="-e PYTHON_VERSION -e BUILD_VERSION -e PYTORCH_VERSION -e CU_VERSION -e JUST_TESTRUN"
         # docker run --gpus all  --ipc=host -v $(pwd):/remote -w /remote ${VARS_TO_PASS} ${TESTRUN_DOCKER_IMAGE} python3 ./packaging/build_conda.py
-        conda install conda-build
+        sudo conda install --yes --quiet conda-build
         python3 ./packaging/build_conda.py
