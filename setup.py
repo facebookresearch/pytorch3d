@@ -10,8 +10,10 @@ import os
 import runpy
 import sys
 import warnings
+from pprint import pprint
 from typing import List, Optional
 
+pprint(dict(os.environ))
 import torch
 from setuptools import find_packages, setup
 from torch.utils.cpp_extension import CppExtension, CUDA_HOME, CUDAExtension
