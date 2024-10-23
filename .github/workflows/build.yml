@@ -14,11 +14,13 @@ jobs:
       JUST_TESTRUN: 1
     steps:
     - uses: actions/checkout@v4
+      - name: Setup & build
+        uses: ./.github/actions/setup-env-build
+        with:
+          arch: 7.5
     - name: Build and run tests
       run: |-
-        # set -e
-        # export JUST_TESTRUN=1
-        # VARS_TO_PASS="-e PYTHON_VERSION -e BUILD_VERSION -e PYTORCH_VERSION -e CU_VERSION -e JUST_TESTRUN"
-        # docker run --gpus all  --ipc=host -v $(pwd):/remote -w /remote ${VARS_TO_PASS} ${TESTRUN_DOCKER_IMAGE} python3 ./packaging/build_conda.py
-        conda create --name env --yes --quiet conda-build
-        conda run --no-capture-output --name env python3 ./packaging/build_conda.py
+        python -m unittest discover -v -s tests -t .
+
+        #conda create --name env --yes --quiet conda-build
+        #conda run --no-capture-output --name env python3 ./packaging/build_conda.py
