@@ -128,6 +128,9 @@ def do_build(start_args: List[str]):
     args.extend(["--python", os.environ["PYTHON_VERSION"]])
     args.append("packaging/pytorch3d")
     print(args)
+    from pprint import pprint
+
+    pprint(dict(os.environ))
     subprocess.check_call(args)
 
 
