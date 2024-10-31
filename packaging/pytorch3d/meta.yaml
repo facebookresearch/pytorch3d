@@ -8,10 +8,13 @@ source:
 requirements:
   build:
     - {{ compiler('c') }} # [win]
+    {{ environ.get('CONDA_CUDA_TOOLKIT_BUILD_CONSTRAINT1', '') }}
+    {{ environ.get('CONDA_CUDA_TOOLKIT_BUILD_CONSTRAINT2', '') }}
     {{ environ.get('CONDA_CUB_CONSTRAINT') }}
 
   host:
     - python
+    - mkl =2023  # [x86_64]
     {{ environ.get('SETUPTOOLS_CONSTRAINT') }}
     {{ environ.get('CONDA_PYTORCH_BUILD_CONSTRAINT') }}
     {{ environ.get('CONDA_PYTORCH_MKL_CONSTRAINT') }}
@@ -22,12 +25,14 @@ requirements:
     - python
     - numpy >=1.11
     - torchvision >=0.5
+    - mkl =2023  # [x86_64]
     - iopath
     {{ environ.get('CONDA_PYTORCH_CONSTRAINT') }}
     {{ environ.get('CONDA_CUDATOOLKIT_CONSTRAINT') }}
 
 build:
   string: py{{py}}_{{ environ['CU_VERSION'] }}_pyt{{ environ['PYTORCH_VERSION_NODOT']}}
+  # script: LD_LIBRARY_PATH=$PREFIX/lib:$BUILD_PREFIX/lib:$LD_LIBRARY_PATH python setup.py install --single-version-externally-managed --record=record.txt # [not win]
   script: python setup.py install --single-version-externally-managed --record=record.txt # [not win]
   script_env:
     - CUDA_HOME
@@ -47,6 +52,10 @@ test:
     - imageio
     - hydra-core
     - accelerate
+    - matplotlib
+    - tabulate
+    - pandas
+    - sqlalchemy
   commands:
     #pytest .
     python -m unittest discover -v -s tests -t .

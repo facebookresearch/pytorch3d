@@ -1,0 +1,20 @@
+name: facebookresearch/pytorch3d/build_and_test
+on:
+  pull_request:
+    branches:
+      - main
+jobs:
+  binary_linux_conda_cuda:
+    runs-on: 4-core-ubuntu-gpu-t4
+    env:
+      PYTHON_VERSION: "3.12"
+      BUILD_VERSION: "${{ github.run_number }}"
+      PYTORCH_VERSION: "2.4.1"
+      CU_VERSION: "cu121"
+      JUST_TESTRUN: 1
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build and run tests
+      run: |-
+        conda create --name env --yes --quiet conda-build
+        conda run --no-capture-output --name env python3 ./packaging/build_conda.py --use-conda-cuda
