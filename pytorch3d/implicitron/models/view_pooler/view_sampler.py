@@ -209,6 +209,7 @@ def handle_seq_id(
         seq_id = torch.tensor(seq_id, dtype=torch.long, device=device)
     # pyre-fixme[16]: Item `List` of `Union[List[int], List[str], LongTensor]` has
     #  no attribute `to`.
+    # pyre-fixme[7]: Expected `LongTensor` but got `Tensor`.
     return seq_id.to(device)
 
 
