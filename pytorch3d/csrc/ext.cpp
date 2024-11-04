@@ -149,10 +149,10 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
           py::arg("gamma"),
           py::arg("max_depth"),
           py::arg("min_depth") /* = 0.f*/,
-          py::arg(
-              "bg_col") /* = at::nullopt not exposed properly in pytorch 1.1. */
+          py::arg("bg_col") /* = std::nullopt not exposed properly in
+                               pytorch 1.1. */
           ,
-          py::arg("opacity") /* = at::nullopt ... */,
+          py::arg("opacity") /* = std::nullopt ... */,
           py::arg("percent_allowed_difference") = 0.01f,
           py::arg("max_n_hits") = MAX_UINT,
           py::arg("mode") = 0)
