@@ -4,10 +4,11 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+import argparse
 import os.path
 import runpy
 import subprocess
-from typing import List
+from typing import List, Tuple
 
 # required env vars:
 # CU_VERSION: E.g. cu112
@@ -23,7 +24,7 @@ pytorch_major_minor = tuple(int(i) for i in PYTORCH_VERSION.split(".")[:2])
 source_root_dir = os.environ["PWD"]
 
 
-def version_constraint(version):
+def version_constraint(version) -> str:
     """
     Given version "11.3" returns " >=11.3,<11.4"
     """
@@ -32,7 +33,7 @@ def version_constraint(version):
     return f" >={version},<{upper}"
 
 
-def get_cuda_major_minor():
+def get_cuda_major_minor() -> Tuple[str, str]:
     if CU_VERSION == "cpu":
         raise ValueError("fn only for cuda builds")
     if len(CU_VERSION) != 5 or CU_VERSION[:2] != "cu":
@@ -42,11 +43,10 @@ def get_cuda_major_minor():
     return major, minor
 
 
-def setup_cuda():
+def setup_cuda(use_conda_cuda: bool) -> List[str]:
     if CU_VERSION == "cpu":
-        return
+        return []
     major, minor = get_cuda_major_minor()
-    os.environ["CUDA_HOME"] = f"/usr/local/cuda-{major}.{minor}/"
     os.environ["FORCE_CUDA"] = "1"
 
     basic_nvcc_flags = (
@@ -75,6 +75,15 @@ def setup_cuda():
 
     if os.environ.get("JUST_TESTRUN", "0") != "1":
         os.environ["NVCC_FLAGS"] = nvcc_flags
+    if use_conda_cuda:
+        os.environ["CONDA_CUDA_TOOLKIT_BUILD_CONSTRAINT1"] = "- cuda-toolkit"
+        os.environ["CONDA_CUDA_TOOLKIT_BUILD_CONSTRAINT2"] = (
+            f"- cuda-version={major}.{minor}"
+        )
+        return ["-c", f"nvidia/label/cuda-{major}.{minor}.0"]
+    else:
+        os.environ["CUDA_HOME"] = f"/usr/local/cuda-{major}.{minor}/"
+        return []
 
 
 def setup_conda_pytorch_constraint() -> List[str]:
@@ -95,7 +104,7 @@ def setup_conda_pytorch_constraint() -> List[str]:
         return ["-c", "pytorch", "-c", "nvidia"]
 
 
-def setup_conda_cudatoolkit_constraint():
+def setup_conda_cudatoolkit_constraint() -> None:
     if CU_VERSION == "cpu":
         os.environ["CONDA_CPUONLY_FEATURE"] = "- cpuonly"
         os.environ["CONDA_CUDATOOLKIT_CONSTRAINT"] = ""
@@ -116,7 +125,7 @@ def setup_conda_cudatoolkit_constraint():
     os.environ["CONDA_CUDATOOLKIT_CONSTRAINT"] = toolkit
 
 
-def do_build(start_args: List[str]):
+def do_build(start_args: List[str]) -> None:
     args = start_args.copy()
 
     test_flag = os.environ.get("TEST_FLAG")
@@ -132,8 +141,16 @@ def do_build(start_args: List[str]):
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Build the conda package.")
+    parser.add_argument(
+        "--use-conda-cuda",
+        action="store_true",
+        help="get cuda from conda ignoring local cuda",
+    )
+    our_args = parser.parse_args()
+
     args = ["conda", "build"]
-    setup_cuda()
+    args += setup_cuda(use_conda_cuda=our_args.use_conda_cuda)
 
     init_path = source_root_dir + "/pytorch3d/__init__.py"
     build_version = runpy.run_path(init_path)["__version__"]
