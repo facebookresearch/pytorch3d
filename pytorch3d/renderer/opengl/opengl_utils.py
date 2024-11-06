@@ -184,7 +184,7 @@ class EGLContext:
         """
         # Lock used to prevent multiple threads from rendering on the same device
         # at the same time, creating/destroying contexts at the same time, etc.
-        self.lock = threading.Lock()
+        self.lock = threading.RLock()
         self.cuda_device_id = cuda_device_id
         self.device = _get_cuda_device(self.cuda_device_id)
         self.width = width
@@ -224,15 +224,14 @@ class EGLContext:
         Throws:
             EGLError when the context cannot be made current or make non-current.
         """
-        self.lock.acquire()
-        egl.eglMakeCurrent(self.dpy, self.surface, self.surface, self.context)
-        try:
-            yield
-        finally:
-            egl.eglMakeCurrent(
-                self.dpy, egl.EGL_NO_SURFACE, egl.EGL_NO_SURFACE, egl.EGL_NO_CONTEXT
-            )
-            self.lock.release()
+        with self.lock:
+            egl.eglMakeCurrent(self.dpy, self.surface, self.surface, self.context)
+            try:
+                yield
+            finally:
+                egl.eglMakeCurrent(
+                    self.dpy, egl.EGL_NO_SURFACE, egl.EGL_NO_SURFACE, egl.EGL_NO_CONTEXT
+                )
 
     def get_context_info(self) -> Dict[str, Any]:
         """
