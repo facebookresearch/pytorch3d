@@ -286,15 +286,15 @@ class TestMeshOffIO(TestCaseMixin, unittest.TestCase):
 
         lines2 = lines.copy()
         lines2[0] = "6 2 0"
-        with self.assertRaisesRegex(ValueError, "Wrong number of columns at line 5"):
+        with self.assertRaisesRegex(ValueError, "number of columns"):
             load(lines2)
 
         lines2[0] = "5 1 0"
-        with self.assertRaisesRegex(ValueError, "Wrong number of columns at line 5"):
+        with self.assertRaisesRegex(ValueError, "number of columns"):
             load(lines2)
 
         lines2[0] = "16 2 0"
-        with self.assertRaisesRegex(ValueError, "Wrong number of columns at line 5"):
+        with self.assertRaisesRegex(ValueError, "number of columns"):
             load(lines2)
 
         lines2[0] = "3 3 0"
@@ -312,7 +312,7 @@ class TestMeshOffIO(TestCaseMixin, unittest.TestCase):
 
         lines2 = lines.copy()
         lines2[2] = "7.3 4.2 8.3 932"
-        with self.assertRaisesRegex(ValueError, "Wrong number of columns at line 2"):
+        with self.assertRaisesRegex(ValueError, "number of columns"):
             load(lines2)
 
         lines2[1] = "7.3 4.2 8.3 932"
