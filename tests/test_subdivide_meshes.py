@@ -217,6 +217,15 @@ class TestSubdivideMeshes(TestCaseMixin, unittest.TestCase):
         self.assertClose(new_feats, gt_feats)
         self.assertTrue(new_feats.requires_grad == gt_feats.requires_grad)
 
+    def test_with_empty(self):
+        verts_list = [[[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0]], []]
+        faces_list = [[[0, 1, 2], [0, 2, 3]], []]
+        verts_list = [torch.tensor(verts, dtype=torch.float64) for verts in verts_list]
+        face_list = [torch.tensor(faces, dtype=torch.long) for faces in faces_list]
+        meshes = Meshes(verts=verts_list, faces=face_list)
+        subdivided_meshes = SubdivideMeshes()(meshes)
+        self.assertEqual(len(subdivided_meshes), 2)
+
     @staticmethod
     def subdivide_meshes_with_init(num_meshes: int = 10, same_topo: bool = False):
         device = torch.device("cuda:0")
