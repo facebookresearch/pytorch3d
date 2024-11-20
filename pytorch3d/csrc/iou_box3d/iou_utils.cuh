@@ -728,7 +728,7 @@ __device__ inline int BoxIntersections(
       }
     }
     // Update the face_verts_out tris
-    num_tris = offset;
+    num_tris = min(MAX_TRIS, offset);
     for (int j = 0; j < num_tris; ++j) {
       face_verts_out[j] = tri_verts_updated[j];
     }
