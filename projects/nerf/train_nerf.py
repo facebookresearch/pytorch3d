@@ -77,7 +77,7 @@ def main(cfg: DictConfig):
         # Resume training if requested.
         if cfg.resume and os.path.isfile(checkpoint_path):
             print(f"Resuming from checkpoint {checkpoint_path}.")
-            loaded_data = torch.load(checkpoint_path)
+            loaded_data = torch.load(checkpoint_path, weights_only=True)
             model.load_state_dict(loaded_data["model"])
             stats = pickle.loads(loaded_data["stats"])
             print(f"   => resuming from epoch {stats.epoch}.")

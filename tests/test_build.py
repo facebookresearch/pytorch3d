@@ -43,7 +43,7 @@ class TestBuild(unittest.TestCase):
         tutorials = sorted(tutorials_dir.glob("*.ipynb"))
 
         for tutorial in tutorials:
-            with open(tutorial) as f:
+            with open(tutorial, encoding="utf8") as f:
                 json.load(f)
 
     @unittest.skipIf(in_conda_build or in_re_worker, "In conda build, or RE worker")

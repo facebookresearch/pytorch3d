@@ -63,7 +63,7 @@ def main(cfg: DictConfig):
         raise ValueError(f"Model checkpoint {checkpoint_path} does not exist!")
 
     print(f"Loading checkpoint {checkpoint_path}.")
-    loaded_data = torch.load(checkpoint_path)
+    loaded_data = torch.load(checkpoint_path, weights_only=True)
     # Do not load the cached xy grid.
     # - this allows setting an arbitrary evaluation image size.
     state_dict = {

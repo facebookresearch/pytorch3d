@@ -689,7 +689,7 @@ class TestRenderVolumes(TestCaseMixin, unittest.TestCase):
                             outfile = (
                                 outdir
                                 + f"/rgb_{sample_mode}"
-                                + f"_{str(volume_size).replace(' ','')}"
+                                + f"_{str(volume_size).replace(' ', '')}"
                                 + f"_{imidx:003d}"
                             )
                             if image_ is image:

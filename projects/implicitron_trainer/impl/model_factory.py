@@ -116,7 +116,9 @@ class ImplicitronModelFactory(ModelFactoryBase):
                         "cuda:%d" % 0: "cuda:%d" % accelerator.local_process_index
                     }
                 model_state_dict = torch.load(
-                    model_io.get_model_path(model_path), map_location=map_location
+                    model_io.get_model_path(model_path),
+                    map_location=map_location,
+                    weights_only=True,
                 )
 
                 try:

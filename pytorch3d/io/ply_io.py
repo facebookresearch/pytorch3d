@@ -1246,13 +1246,10 @@ def _save_ply(
         return
 
     color_np_type = np.ubyte if colors_as_uint8 else np.float32
-    verts_dtype = [("verts", np.float32, 3)]
+    verts_dtype: list = [("verts", np.float32, 3)]
     if verts_normals is not None:
         verts_dtype.append(("normals", np.float32, 3))
     if verts_colors is not None:
-        # pyre-fixme[6]: For 1st argument expected `Tuple[str,
-        #  Type[floating[_32Bit]], int]` but got `Tuple[str,
-        #  Type[Union[floating[_32Bit], unsignedinteger[typing.Any]]], int]`.
         verts_dtype.append(("colors", color_np_type, 3))
 
     vert_data = np.zeros(verts.shape[0], dtype=verts_dtype)

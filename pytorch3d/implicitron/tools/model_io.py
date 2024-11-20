@@ -111,10 +111,10 @@ def load_model(fl, map_location: Optional[dict]):
     flstats = get_stats_path(fl)
     flmodel = get_model_path(fl)
     flopt = get_optimizer_path(fl)
-    model_state_dict = torch.load(flmodel, map_location=map_location)
+    model_state_dict = torch.load(flmodel, map_location=map_location, weights_only=True)
     stats = load_stats(flstats)
     if os.path.isfile(flopt):
-        optimizer = torch.load(flopt, map_location=map_location)
+        optimizer = torch.load(flopt, map_location=map_location, weights_only=True)
     else:
         optimizer = None
 

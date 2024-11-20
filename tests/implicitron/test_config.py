@@ -246,7 +246,7 @@ class TestConfig(unittest.TestCase):
 
         enable_get_default_args(Foo)
 
-        @dataclass()
+        @dataclass(frozen=True)
         class Bar:
             aa: int = 9
             bb: int = 9

@@ -36,5 +36,5 @@ then
 
   echo "Running pyre..."
   echo "To restart/kill pyre server, run 'pyre restart' or 'pyre kill' in fbcode/"
-  ( cd ~/fbsource/fbcode; pyre -l vision/fair/pytorch3d/ )
+  ( cd ~/fbsource/fbcode; arc pyre check //vision/fair/pytorch3d/... )
 fi

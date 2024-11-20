@@ -53,7 +53,7 @@ def _write(mesh, path, **kwargs) -> None:
     io.save_mesh(mesh, path, **kwargs)
 
     with open(path, "rb") as f:
-        _, stored_length = _read_header(f)
+        _, stored_length = _read_header(f)  # pyre-ignore
     assert stored_length == os.path.getsize(path)
 
 
@@ -191,14 +191,14 @@ class TestMeshGltfIO(TestCaseMixin, unittest.TestCase):
         mesh = _load(glb, device=device)
 
         # save the mesh to a glb file
-        glb = DATA_DIR / "cow_write.glb"
-        _write(mesh, glb)
+        glb_reload = DATA_DIR / "cow_write.glb"
+        _write(mesh, glb_reload)
 
         # load again
-        glb_reload = DATA_DIR / "cow_write.glb"
         self.assertTrue(glb_reload.is_file())
         device = torch.device("cuda:0")
         mesh_reload = _load(glb_reload, device=device)
+        glb_reload.unlink()
 
         # assertions
         self.assertEqual(mesh_reload.faces_packed().shape, (5856, 3))
@@ -232,6 +232,7 @@ class TestMeshGltfIO(TestCaseMixin, unittest.TestCase):
         # reload the ico_sphere
         device = torch.device("cuda:0")
         mesh_reload = _load(glb, device=device, include_textures=False)
+        glb.unlink()
 
         self.assertClose(
             ico_sphere_mesh.verts_padded().cpu(),
@@ -299,9 +300,9 @@ class TestMeshGltfIO(TestCaseMixin, unittest.TestCase):
         _write(mesh, glb)
 
         # reload the mesh glb file saved in TexturesVertex format
-        glb = DATA_DIR / "cow_write_texturesvertex.glb"
         self.assertTrue(glb.is_file())
         mesh_dash = _load(glb, device=device)
+        glb.unlink()
         self.assertEqual(len(mesh_dash), 1)
 
         self.assertEqual(mesh_dash.faces_packed().shape, (5856, 3))
@@ -381,3 +382,4 @@ class TestMeshGltfIO(TestCaseMixin, unittest.TestCase):
 
         glb = DATA_DIR / "example_write_texturesvertex.glb"
         _write(mesh, glb)
+        glb.unlink()

@@ -639,4 +639,4 @@ class TestRaysampling(TestCaseMixin, unittest.TestCase):
                                 origin1, origin2, rtol=1e-4, atol=1e-4
                             ) == (id1 == id2), (origin1, origin2, id1, id2)
                             assert not torch.allclose(dir1, dir2), (dir1, dir2)
-                            self.assertClose(len1, len2), (len1, len2)
+                            self.assertClose(len1, len2)

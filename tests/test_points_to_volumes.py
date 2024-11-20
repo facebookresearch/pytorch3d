@@ -196,7 +196,7 @@ class TestPointsToVolumes(TestCaseMixin, unittest.TestCase):
         Generate a batch of `batch_size` cube meshes.
         """
 
-        device = torch.device(device)
+        device_ = torch.device(device)
 
         verts, faces = [], []
 
@@ -213,7 +213,7 @@ class TestPointsToVolumes(TestCaseMixin, unittest.TestCase):
                     [0.0, 0.0, 1.0],
                 ],
                 dtype=torch.float32,
-                device=device,
+                device=device_,
             )
             verts.append(v)
             faces.append(
@@ -233,7 +233,7 @@ class TestPointsToVolumes(TestCaseMixin, unittest.TestCase):
                         [0, 1, 6],
                     ],
                     dtype=torch.int64,
-                    device=device,
+                    device=device_,
                 )
             )
 
@@ -316,7 +316,7 @@ class TestPointsToVolumes(TestCaseMixin, unittest.TestCase):
                             outfile = (
                                 outdir
                                 + f"/rgb_{interp_mode}"
-                                + f"_{str(volume_size).replace(' ','')}"
+                                + f"_{str(volume_size).replace(' ', '')}"
                                 + f"_{vidx:003d}_sldim{slice_dim}.png"
                             )
                             im.save(outfile)

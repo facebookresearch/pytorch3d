@@ -106,7 +106,7 @@ class ResNetFeatureExtractor(FeatureExtractorBase):
             self.layers = torch.nn.ModuleList()
             self.proj_layers = torch.nn.ModuleList()
             for stage in range(self.max_stage):
-                stage_name = f"layer{stage+1}"
+                stage_name = f"layer{stage + 1}"
                 feature_name = self._get_resnet_stage_feature_name(stage)
                 if (stage + 1) in self.stages:
                     if (
@@ -139,7 +139,7 @@ class ResNetFeatureExtractor(FeatureExtractorBase):
         self.stages = set(self.stages)  # convert to set for faster "in"
 
     def _get_resnet_stage_feature_name(self, stage) -> str:
-        return f"res_layer_{stage+1}"
+        return f"res_layer_{stage + 1}"
 
     def _resnet_normalize_image(self, img: torch.Tensor) -> torch.Tensor:
         return (img - self._resnet_mean) / self._resnet_std

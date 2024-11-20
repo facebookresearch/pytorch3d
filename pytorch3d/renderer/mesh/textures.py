@@ -726,15 +726,17 @@ class TexturesUV(TexturesBase):
                     for each face
             verts_uvs: (N, V, 2) tensor giving the uv coordinates per vertex
                     (a FloatTensor with values between 0 and 1).
-            maps_ids: Used if there are to be multiple maps per face. This can be either a list of map_ids [(F,)]
+            maps_ids: Used if there are to be multiple maps per face.
+                    This can be either a list of map_ids [(F,)]
                     or a long tensor of shape (N, F) giving the id of the texture map
                     for each face. If maps_ids is present, the maps has an extra dimension M
                     (so maps_padded is (N, M, H, W, C) and maps_list has elements of
                     shape (M, H, W, C)).
                     Specifically, the color
-                    of a vertex V is given by an average of maps_padded[i, maps_ids[i, f], u, v, :]
+                    of a vertex V is given by an average of
+                       maps_padded[i, maps_ids[i, f], u, v, :]
                     over u and v integers adjacent to
-                    _verts_uvs_padded[i, _faces_uvs_padded[i, f, 0], :] .
+                       _verts_uvs_padded[i, _faces_uvs_padded[i, f, 0], :] .
             align_corners: If true, the extreme values 0 and 1 for verts_uvs
                     indicate the centers of the edge pixels in the maps.
             padding_mode: padding mode for outside grid values
@@ -1237,7 +1239,8 @@ class TexturesUV(TexturesBase):
             texels = texels.reshape(N, K, C, H_out, W_out).permute(0, 3, 4, 1, 2)
             return texels
         else:
-            # We have maps_ids_padded: (N, F), textures_map: (N, M, Hi, Wi, C),fragmenmts.pix_to_face: (N, Ho, Wo, K)
+            # We have maps_ids_padded: (N, F), textures_map: (N, M, Hi, Wi, C),
+            # fragments.pix_to_face: (N, Ho, Wo, K)
             # Get pixel_to_map_ids: (N, K, Ho, Wo) by indexing pix_to_face into maps_ids
             N, M, H_in, W_in, C = texture_maps.shape  # 3 for RGB
 
@@ -1827,7 +1830,7 @@ class TexturesVertex(TexturesBase):
                 representation) which overlap the pixel.
 
         Returns:
-            texels: An texture per pixel of shape (N, H, W, K, C).
+            texels: A texture per pixel of shape (N, H, W, K, C).
             There will be one C dimensional value for each element in
             fragments.pix_to_face.
         """

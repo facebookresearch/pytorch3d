@@ -84,9 +84,9 @@ def get_nerf_datasets(
 
     if autodownload and any(not os.path.isfile(p) for p in (cameras_path, image_path)):
         # Automatically download the data files if missing.
-        download_data((dataset_name,), data_root=data_root)
+        download_data([dataset_name], data_root=data_root)
 
-    train_data = torch.load(cameras_path)
+    train_data = torch.load(cameras_path, weights_only=True)
     n_cameras = train_data["cameras"]["R"].shape[0]
 
     _image_max_image_pixels = Image.MAX_IMAGE_PIXELS

@@ -168,7 +168,7 @@ def _get_culled_faces(face_verts: torch.Tensor, frustum: ClipFrustum) -> torch.T
             position of the clipping planes.
 
     Returns:
-        faces_culled: An boolean tensor of size F specifying whether or not each face should be
+        faces_culled: boolean tensor of size F specifying whether or not each face should be
             culled.
     """
     clipping_planes = (

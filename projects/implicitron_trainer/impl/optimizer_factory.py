@@ -241,7 +241,7 @@ class ImplicitronOptimizerFactory(OptimizerFactoryBase):
                     map_location = {
                         "cuda:%d" % 0: "cuda:%d" % accelerator.local_process_index
                     }
-                optimizer_state = torch.load(opt_path, map_location)
+                optimizer_state = torch.load(opt_path, map_location, weights_only=True)
             else:
                 raise FileNotFoundError(f"Optimizer state {opt_path} does not exist.")
         return optimizer_state
