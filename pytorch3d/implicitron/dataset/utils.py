@@ -329,6 +329,7 @@ def adjust_camera_to_bbox_crop_(
 
     focal_length_px, principal_point_px = _convert_ndc_to_pixels(
         camera.focal_length[0],
+        # pyre-fixme[29]: `Union[(self: TensorBase, indices: Union[None, slice[Any, A...
         camera.principal_point[0],
         image_size_wh,
     )
@@ -341,6 +342,7 @@ def adjust_camera_to_bbox_crop_(
     )
 
     camera.focal_length = focal_length[None]
+    # pyre-fixme[16]: `PerspectiveCameras` has no attribute `principal_point`.
     camera.principal_point = principal_point_cropped[None]
 
 
@@ -352,6 +354,7 @@ def adjust_camera_to_image_scale_(
 ) -> PerspectiveCameras:
     focal_length_px, principal_point_px = _convert_ndc_to_pixels(
         camera.focal_length[0],
+        # pyre-fixme[29]: `Union[(self: TensorBase, indices: Union[None, slice[Any, A...
         camera.principal_point[0],
         original_size_wh,
     )
@@ -368,6 +371,7 @@ def adjust_camera_to_image_scale_(
         image_size_wh_output,
     )
     camera.focal_length = focal_length_scaled[None]
+    # pyre-fixme[16]: `PerspectiveCameras` has no attribute `principal_point`.
     camera.principal_point = principal_point_scaled[None]
 
 

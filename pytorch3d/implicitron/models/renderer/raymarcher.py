@@ -179,8 +179,10 @@ class AccumulativeRaymarcherBase(RaymarcherBase, torch.nn.Module):
             rays_densities = torch.relu(rays_densities)
 
         weighted_densities = deltas * rays_densities
+        # pyre-fixme[29]: `Union[Tensor, Module]` is not a function.
         capped_densities = self._capping_function(weighted_densities)
 
+        # pyre-fixme[29]: `Union[Tensor, Module]` is not a function.
         rays_opacities = self._capping_function(
             torch.cumsum(weighted_densities, dim=-1)
         )
@@ -190,6 +192,7 @@ class AccumulativeRaymarcherBase(RaymarcherBase, torch.nn.Module):
         )
         absorption_shifted[..., : self.surface_thickness] = 1.0
 
+        # pyre-fixme[29]: `Union[Tensor, Module]` is not a function.
         weights = self._weight_function(capped_densities, absorption_shifted)
         features = (weights[..., None] * rays_features).sum(dim=-2)
         depth = (weights * ray_lengths)[..., None].sum(dim=-2)
@@ -197,6 +200,8 @@ class AccumulativeRaymarcherBase(RaymarcherBase, torch.nn.Module):
         alpha = opacities if self.blend_output else 1
         if self._bg_color.shape[-1] not in [1, features.shape[-1]]:
             raise ValueError("Wrong number of background color channels.")
+        # pyre-fixme[58]: `*` is not supported for operand types `int` and
+        #  `Union[Tensor, Module]`.
         features = alpha * features + (1 - opacities) * self._bg_color
 
         return RendererOutput(

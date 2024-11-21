@@ -395,6 +395,7 @@ class ImplicitronTrainingLoop(TrainingLoopBase):
             ):
                 prefix = f"e{stats.epoch}_it{stats.it[trainmode]}"
                 if hasattr(model, "visualize"):
+                    # pyre-fixme[29]: `Union[Tensor, Module]` is not a function.
                     model.visualize(
                         viz,
                         visdom_env_imgs,

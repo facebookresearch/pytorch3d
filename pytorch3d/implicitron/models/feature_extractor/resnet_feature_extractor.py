@@ -142,9 +142,15 @@ class ResNetFeatureExtractor(FeatureExtractorBase):
         return f"res_layer_{stage + 1}"
 
     def _resnet_normalize_image(self, img: torch.Tensor) -> torch.Tensor:
+        # pyre-fixme[58]: `-` is not supported for operand types `Tensor` and
+        #  `Union[Tensor, Module]`.
+        # pyre-fixme[58]: `/` is not supported for operand types `Tensor` and
+        #  `Union[Tensor, Module]`.
         return (img - self._resnet_mean) / self._resnet_std
 
     def get_feat_dims(self) -> int:
+        # pyre-fixme[29]: `Union[(self: TensorBase) -> Tensor, Tensor, Module]` is
+        #  not a function.
         return sum(self._feat_dim.values())
 
     def forward(
@@ -183,7 +189,12 @@ class ResNetFeatureExtractor(FeatureExtractorBase):
             else:
                 imgs_normed = imgs_resized
             #  is not a function.
+            # pyre-fixme[29]: `Union[Tensor, Module]` is not a function.
             feats = self.stem(imgs_normed)
+            # pyre-fixme[6]: For 1st argument expected `Iterable[_T1]` but got
+            #  `Union[Tensor, Module]`.
+            # pyre-fixme[6]: For 2nd argument expected `Iterable[_T2]` but got
+            #  `Union[Tensor, Module]`.
             for stage, (layer, proj) in enumerate(zip(self.layers, self.proj_layers)):
                 feats = layer(feats)
                 # just a sanity check below

@@ -123,6 +123,7 @@ class ImplicitronOptimizerFactory(OptimizerFactoryBase):
         """
         # Get the parameters to optimize
         if hasattr(model, "_get_param_groups"):  # use the model function
+            # pyre-fixme[29]: `Union[Tensor, Module]` is not a function.
             p_groups = model._get_param_groups(self.lr, wd=self.weight_decay)
         else:
             p_groups = [

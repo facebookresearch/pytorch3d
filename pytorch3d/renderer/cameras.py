@@ -203,7 +203,9 @@ class CamerasBase(TensorProperties):
         """
         R: torch.Tensor = kwargs.get("R", self.R)
         T: torch.Tensor = kwargs.get("T", self.T)
+        # pyre-fixme[16]: `CamerasBase` has no attribute `R`.
         self.R = R
+        # pyre-fixme[16]: `CamerasBase` has no attribute `T`.
         self.T = T
         world_to_view_transform = get_world_to_view_transform(R=R, T=T)
         return world_to_view_transform
@@ -228,7 +230,9 @@ class CamerasBase(TensorProperties):
             a Transform3d object which represents a batch of transforms
             of shape (N, 3, 3)
         """
+        # pyre-fixme[16]: `CamerasBase` has no attribute `R`.
         self.R: torch.Tensor = kwargs.get("R", self.R)
+        # pyre-fixme[16]: `CamerasBase` has no attribute `T`.
         self.T: torch.Tensor = kwargs.get("T", self.T)
         world_to_view_transform = self.get_world_to_view_transform(R=self.R, T=self.T)
         view_to_proj_transform = self.get_projection_transform(**kwargs)

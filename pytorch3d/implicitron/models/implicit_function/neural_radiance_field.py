@@ -123,8 +123,10 @@ class NeuralRadianceFieldBase(ImplicitFunctionBase, torch.nn.Module):
         # Normalize the ray_directions to unit l2 norm.
         rays_directions_normed = torch.nn.functional.normalize(rays_directions, dim=-1)
         # Obtain the harmonic embedding of the normalized ray directions.
+        # pyre-fixme[29]: `Union[Tensor, Module]` is not a function.
         rays_embedding = self.harmonic_embedding_dir(rays_directions_normed)
 
+        # pyre-fixme[29]: `Union[Tensor, Module]` is not a function.
         return self.color_layer((self.intermediate_linear(features), rays_embedding))
 
     @staticmethod
@@ -195,6 +197,8 @@ class NeuralRadianceFieldBase(ImplicitFunctionBase, torch.nn.Module):
         embeds = create_embeddings_for_implicit_function(
             xyz_world=rays_points_world,
             #  for 2nd param but got `Union[None, torch.Tensor, torch.nn.Module]`.
+            # pyre-fixme[6]: For 2nd argument expected `Optional[(...) -> Any]` but
+            #  got `Union[None, Tensor, Module]`.
             xyz_embedding_function=(
                 self.harmonic_embedding_xyz if self.input_xyz else None
             ),
@@ -206,12 +210,14 @@ class NeuralRadianceFieldBase(ImplicitFunctionBase, torch.nn.Module):
         )
 
         # embeds.shape = [minibatch x n_src x n_rays x n_pts x self.n_harmonic_functions*6+3]
+        # pyre-fixme[29]: `Union[Tensor, Module]` is not a function.
         features = self.xyz_encoder(embeds)
         # features.shape = [minibatch x ... x self.n_hidden_neurons_xyz]
         # NNs operate on the flattenned rays; reshaping to the correct spatial size
         # TODO: maybe make the transformer work on non-flattened tensors to avoid this reshape
         features = features.reshape(*rays_points_world.shape[:-1], -1)
 
+        # pyre-fixme[29]: `Union[Tensor, Module]` is not a function.
         raw_densities = self.density_layer(features)
         # raw_densities.shape = [minibatch x ... x 1] in [0-1]
 
@@ -219,6 +225,8 @@ class NeuralRadianceFieldBase(ImplicitFunctionBase, torch.nn.Module):
             if camera is None:
                 raise ValueError("Camera must be given if xyz_ray_dir_in_camera_coords")
 
+            # pyre-fixme[58]: `@` is not supported for operand types `Tensor` and
+            #  `Union[Tensor, Module]`.
             directions = ray_bundle.directions @ camera.R
         else:
             directions = ray_bundle.directions

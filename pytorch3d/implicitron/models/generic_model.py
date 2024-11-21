@@ -478,6 +478,8 @@ class GenericModel(ImplicitronModelBase):
             )
         custom_args["global_code"] = global_code
 
+        # pyre-fixme[29]: `Union[(self: Tensor) -> Any, Tensor, Module]` is not a
+        #  function.
         for func in self._implicit_functions:
             func.bind_args(**custom_args)
 
@@ -500,6 +502,8 @@ class GenericModel(ImplicitronModelBase):
         # Unbind the custom arguments to prevent pytorch from storing
         # large buffers of intermediate results due to points in the
         # bound arguments.
+        # pyre-fixme[29]: `Union[(self: Tensor) -> Any, Tensor, Module]` is not a
+        #  function.
         for func in self._implicit_functions:
             func.unbind_args()
 

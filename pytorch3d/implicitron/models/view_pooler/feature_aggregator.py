@@ -532,6 +532,7 @@ def _get_ray_dir_dot_prods(camera: CamerasBase, pts: torch.Tensor):
 
     # does not produce nans randomly unlike get_camera_center() below
     cam_centers_rep = -torch.bmm(
+        # pyre-fixme[29]: `Union[(self: TensorBase, indices: Union[None, slice[Any, A...
         camera_rep.T[:, None],
         camera_rep.R.permute(0, 2, 1),
     ).reshape(-1, *([1] * (pts.ndim - 2)), 3)

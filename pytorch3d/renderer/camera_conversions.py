@@ -65,7 +65,11 @@ def _opencv_from_cameras_projection(
     cameras: PerspectiveCameras,
     image_size: torch.Tensor,
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    # pyre-fixme[29]: `Union[(self: TensorBase, memory_format:
+    #  Optional[memory_format] = ...) -> Tensor, Tensor, Module]` is not a function.
     R_pytorch3d = cameras.R.clone()
+    # pyre-fixme[29]: `Union[(self: TensorBase, memory_format:
+    #  Optional[memory_format] = ...) -> Tensor, Tensor, Module]` is not a function.
     T_pytorch3d = cameras.T.clone()
     focal_pytorch3d = cameras.focal_length
     p0_pytorch3d = cameras.principal_point

@@ -266,7 +266,9 @@ class PointLights(TensorProperties):
         shape (P, 3) or (N, H, W, K, 3).
         """
         if self.location.ndim == points.ndim:
+            # pyre-fixme[7]: Expected `Tensor` but got `Union[Tensor, Module]`.
             return self.location
+        # pyre-fixme[29]: `Union[(self: TensorBase, indices: Union[None, slice[Any, A...
         return self.location[:, None, None, None, :]
 
     def diffuse(self, normals, points) -> torch.Tensor:
