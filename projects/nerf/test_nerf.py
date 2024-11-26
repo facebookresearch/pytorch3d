@@ -24,7 +24,6 @@ CONFIG_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "configs"
 
 @hydra.main(config_path=CONFIG_DIR, config_name="lego")
 def main(cfg: DictConfig):
-
     # Device on which to run.
     if torch.cuda.is_available():
         device = "cuda"

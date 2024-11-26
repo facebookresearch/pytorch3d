@@ -8,6 +8,7 @@
 
 
 """This module implements utility functions for loading and saving meshes."""
+
 import os
 import warnings
 from collections import namedtuple
@@ -813,7 +814,6 @@ def _save(
     save_texture: bool = False,
     save_normals: bool = False,
 ) -> None:
-
     if len(verts) and (verts.dim() != 2 or verts.size(1) != 3):
         message = "'verts' should either be empty or of shape (num_verts, 3)."
         raise ValueError(message)

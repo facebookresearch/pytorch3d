@@ -220,8 +220,7 @@ class SignedDistanceFunctionRenderer(BaseRenderer, torch.nn.Module):
             )
             mask_full.view(-1, 1)[~surface_mask] = torch.sigmoid(
                 # pyre-fixme[6]: For 1st param expected `Tensor` but got `float`.
-                -self.soft_mask_alpha
-                * sdf_output[~surface_mask]
+                -self.soft_mask_alpha * sdf_output[~surface_mask]
             )
 
         # scatter points with surface_mask

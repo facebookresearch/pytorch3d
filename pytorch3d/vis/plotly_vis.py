@@ -311,9 +311,7 @@ def plot_scene(
             )
         else:
             msg = "Invalid number {} of viewpoint cameras were provided. Either 1 \
-            or {} cameras are required".format(
-                len(viewpoint_cameras), len(subplots)
-            )
+            or {} cameras are required".format(len(viewpoint_cameras), len(subplots))
             warnings.warn(msg)
 
     for subplot_idx in range(len(subplots)):

@@ -11,7 +11,6 @@ from tests.test_knn import TestKNN
 
 
 def bm_knn() -> None:
-
     backends = ["cpu", "cuda:0"]
 
     kwargs_list = []

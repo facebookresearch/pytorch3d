@@ -301,7 +301,6 @@ class TestSamplePoints(TestCaseMixin, unittest.TestCase):
                     )
 
     def test_outputs(self):
-
         for add_texture in (True, False):
             meshes = init_meshes(device=torch.device("cuda:0"), add_texture=add_texture)
             out1 = sample_points_from_meshes(meshes, num_samples=100)

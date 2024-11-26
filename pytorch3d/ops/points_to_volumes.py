@@ -85,7 +85,6 @@ class _points_to_volumes_function(Function):
         align_corners: bool,
         splat: bool,
     ):
-
         ctx.mark_dirty(volume_densities, volume_features)
 
         N, P, D = points_3d.shape
@@ -497,7 +496,6 @@ def _check_points_to_volumes_inputs(
     grid_sizes: torch.LongTensor,
     mask: Optional[torch.Tensor] = None,
 ) -> None:
-
     max_grid_size = grid_sizes.max(dim=0).values
     if torch.prod(max_grid_size) > volume_densities.shape[1]:
         raise ValueError(

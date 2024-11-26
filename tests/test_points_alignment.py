@@ -56,7 +56,6 @@ class TestICP(TestCaseMixin, unittest.TestCase):
         use_pointclouds=False,
         estimate_scale=False,
     ):
-
         device = torch.device("cuda:0")
 
         # initialize a ground truth point cloud
@@ -433,7 +432,6 @@ class TestCorrespondingPointsAlignment(TestCaseMixin, unittest.TestCase):
         reflect=False,
         random_weights=False,
     ):
-
         device = torch.device("cuda:0")
 
         # initialize a ground truth point cloud

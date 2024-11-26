@@ -299,7 +299,6 @@ def eval_batch(
     )
 
     for loss_fg_mask, name_postfix in zip((mask_crop, mask_fg), ("_masked", "_fg")):
-
         loss_mask_now = mask_crop * loss_fg_mask
 
         for rgb_metric_name, rgb_metric_fun in zip(

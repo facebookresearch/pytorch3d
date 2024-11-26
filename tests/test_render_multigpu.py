@@ -134,7 +134,6 @@ class TestRenderMeshesMultiGPU(TestCaseMixin, unittest.TestCase):
                 self.renderer = self.init_render(device)
 
             def init_render(self, device):
-
                 cameras = FoVPerspectiveCameras().to(device)
                 raster_settings = RasterizationSettings(
                     image_size=128, blur_radius=0.0, faces_per_pixel=1

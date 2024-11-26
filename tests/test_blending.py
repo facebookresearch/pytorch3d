@@ -401,7 +401,10 @@ class TestBlending(TestCaseMixin, unittest.TestCase):
         dists1 = torch.randn(size=(N, S, S, K), requires_grad=True, device=device)
         zbuf = torch.randn(size=(N, S, S, K), requires_grad=True, device=device)
         fragments = Fragments(
-            pix_to_face=pix_to_face, bary_coords=empty, zbuf=zbuf, dists=dists1  # dummy
+            pix_to_face=pix_to_face,
+            bary_coords=empty,
+            zbuf=zbuf,
+            dists=dists1,  # dummy
         )
         blend_params = BlendParams(sigma=1e-3)
 

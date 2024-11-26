@@ -40,7 +40,6 @@ def create_embeddings_for_implicit_function(
     xyz_embedding_function: Optional[Callable],
     diag_cov: Optional[torch.Tensor] = None,
 ) -> torch.Tensor:
-
     bs, *spatial_size, pts_per_ray, _ = xyz_world.shape
 
     if xyz_in_camera_coords:
@@ -64,7 +63,6 @@ def create_embeddings_for_implicit_function(
             0,
         )
     else:
-
         embeds = xyz_embedding_function(ray_points_for_embed, diag_cov=diag_cov)
         embeds = embeds.reshape(
             bs,

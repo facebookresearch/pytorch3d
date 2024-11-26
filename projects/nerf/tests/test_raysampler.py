@@ -42,7 +42,6 @@ class TestRaysampler(unittest.TestCase):
         cameras, rays = [], []
 
         for _ in range(batch_size):
-
             R = random_rotations(1)
             T = torch.randn(1, 3)
             focal_length = torch.rand(1, 2) + 0.5

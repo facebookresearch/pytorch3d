@@ -88,7 +88,6 @@ def workflow_pair(
     upload=False,
     filter_branch,
 ):
-
     w = []
     py = python_version.replace(".", "")
     pyt = pytorch_version.replace(".", "")
@@ -127,7 +126,6 @@ def generate_base_workflow(
     btype,
     filter_branch=None,
 ):
-
     d = {
         "name": base_workflow_name,
         "python_version": python_version,

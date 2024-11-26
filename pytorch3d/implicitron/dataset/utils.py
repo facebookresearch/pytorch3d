@@ -201,7 +201,6 @@ def resize_image(
     image_width: Optional[int],
     mode: str = "bilinear",
 ) -> Tuple[torch.Tensor, float, torch.Tensor]:
-
     if isinstance(image, np.ndarray):
         image = torch.from_numpy(image)
 

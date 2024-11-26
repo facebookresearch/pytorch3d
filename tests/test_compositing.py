@@ -17,7 +17,6 @@ from .common_testing import get_random_cuda_device, TestCaseMixin
 
 
 class TestAccumulatePoints(TestCaseMixin, unittest.TestCase):
-
     # NAIVE PYTHON IMPLEMENTATIONS (USED FOR TESTING)
     @staticmethod
     def accumulate_alphacomposite_python(points_idx, alphas, features):
@@ -63,7 +62,6 @@ class TestAccumulatePoints(TestCaseMixin, unittest.TestCase):
             for c in range(0, C):
                 for i in range(0, W):
                     for j in range(0, H):
-
                         for k in range(0, K):
                             n_idx = points_idx[b, k, j, i]
 
@@ -237,16 +235,16 @@ class TestAccumulatePoints(TestCaseMixin, unittest.TestCase):
                     [
                         # fmt: off
                         [
-                            [0,  0,  0,  0],  # noqa: E241, E201
+                            [0, 0, 0, 0],  # noqa: E241, E201
                             [0, -1, -1, -1],  # noqa: E241, E201
-                            [0,  1,  1,  0],  # noqa: E241, E201
-                            [0,  0,  0,  0],  # noqa: E241, E201
+                            [0, 1, 1, 0],  # noqa: E241, E201
+                            [0, 0, 0, 0],  # noqa: E241, E201
                         ],
                         [
-                            [2,  2,  2,  2],  # noqa: E241, E201
-                            [2,  3,  3,  2],  # noqa: E241, E201
-                            [2,  3,  3,  2],  # noqa: E241, E201
-                            [2,  2, -1,  2],  # noqa: E241, E201
+                            [2, 2, 2, 2],  # noqa: E241, E201
+                            [2, 3, 3, 2],  # noqa: E241, E201
+                            [2, 3, 3, 2],  # noqa: E241, E201
+                            [2, 2, -1, 2],  # noqa: E241, E201
                         ],
                         # fmt: on
                     ]

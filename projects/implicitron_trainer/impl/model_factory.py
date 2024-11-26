@@ -26,7 +26,6 @@ logger = logging.getLogger(__name__)
 
 
 class ModelFactoryBase(ReplaceableBase):
-
     resume: bool = True  # resume from the last checkpoint
 
     def __call__(self, **kwargs) -> ImplicitronModelBase:

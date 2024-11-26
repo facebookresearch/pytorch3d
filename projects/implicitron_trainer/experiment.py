@@ -7,7 +7,7 @@
 
 # pyre-unsafe
 
-""""
+""" "
 This file is the entry point for launching experiments with Implicitron.
 
 Launch Training
@@ -44,6 +44,7 @@ The outputs of the experiment are saved and logged in multiple ways:
         config file.
 
 """
+
 import logging
 import os
 import warnings

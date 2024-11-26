@@ -1274,7 +1274,7 @@ def join_pointclouds_as_batch(pointclouds: Sequence[Pointclouds]) -> Pointclouds
 
 
 def join_pointclouds_as_scene(
-    pointclouds: Union[Pointclouds, List[Pointclouds]]
+    pointclouds: Union[Pointclouds, List[Pointclouds]],
 ) -> Pointclouds:
     """
     Joins a batch of point cloud in the form of a Pointclouds object or a list of Pointclouds

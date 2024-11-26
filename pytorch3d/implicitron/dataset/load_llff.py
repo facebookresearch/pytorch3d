@@ -75,7 +75,6 @@ def _minify(basedir, path_manager, factors=(), resolutions=()):
 def _load_data(
     basedir, factor=None, width=None, height=None, load_imgs=True, path_manager=None
 ):
-
     poses_arr = np.load(
         _local_path(path_manager, os.path.join(basedir, "poses_bounds.npy"))
     )
@@ -164,7 +163,6 @@ def ptstocam(pts, c2w):
 
 
 def poses_avg(poses):
-
     hwf = poses[0, :3, -1:]
 
     center = poses[:, :3, 3].mean(0)
@@ -192,7 +190,6 @@ def render_path_spiral(c2w, up, rads, focal, zdelta, zrate, rots, N):
 
 
 def recenter_poses(poses):
-
     poses_ = poses + 0
     bottom = np.reshape([0, 0, 0, 1.0], [1, 4])
     c2w = poses_avg(poses)
@@ -256,7 +253,6 @@ def spherify_poses(poses, bds):
     new_poses = []
 
     for th in np.linspace(0.0, 2.0 * np.pi, 120):
-
         camorigin = np.array([radcircle * np.cos(th), radcircle * np.sin(th), zh])
         up = np.array([0, 0, -1.0])
 
@@ -311,7 +307,6 @@ def load_llff_data(
     path_zflat=False,
     path_manager=None,
 ):
-
     poses, bds, imgs = _load_data(
         basedir, factor=factor, path_manager=path_manager
     )  # factor=8 downsamples original imgs by 8x

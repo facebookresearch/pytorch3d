@@ -308,7 +308,6 @@ class TestRenderVolumes(TestCaseMixin, unittest.TestCase):
 
         # init the boundary volume
         for shape in ("sphere", "cube"):
-
             if not DEBUG and shape == "cube":
                 # do not run numeric checks for the cube as the
                 # differences in rendering equations make the renders incomparable
@@ -515,7 +514,6 @@ class TestRenderVolumes(TestCaseMixin, unittest.TestCase):
 
         for shape in ("sphere", "cube"):
             for sample_mode in ("bilinear", "nearest"):
-
                 volumes = init_boundary_volume(
                     volume_size=volume_size, batch_size=n_frames, shape=shape
                 )[0]
@@ -593,7 +591,6 @@ class TestRenderVolumes(TestCaseMixin, unittest.TestCase):
 
         for volume_size in ([25, 25, 25],):
             for sample_mode in ("bilinear", "nearest"):
-
                 volume_translation = torch.zeros(4, 3)
                 volume_translation.requires_grad = True
                 volumes, volume_voxel_size, _ = init_boundary_volume(

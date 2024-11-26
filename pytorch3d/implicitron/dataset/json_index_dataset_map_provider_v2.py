@@ -222,7 +222,6 @@ class JsonIndexDatasetMapProviderV2(DatasetMapProviderBase):
         self.dataset_map = dataset_map
 
     def _load_category(self, category: str) -> DatasetMap:
-
         frame_file = os.path.join(self.dataset_root, category, "frame_annotations.jgz")
         sequence_file = os.path.join(
             self.dataset_root, category, "sequence_annotations.jgz"

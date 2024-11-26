@@ -18,6 +18,7 @@ This example is not available yet through the 'unified' interface,
 because opacity support has not landed in PyTorch3D for general data
 structures yet.
 """
+
 import logging
 import math
 from os import path

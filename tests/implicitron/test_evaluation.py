@@ -71,7 +71,6 @@ class TestEvaluation(unittest.TestCase):
 
         for diff in 10 ** torch.linspace(-5, 0, 6):
             for crop in (0, 5):
-
                 pred = gt + (torch.rand_like(gt) - 0.5) * 2 * diff
 
                 # scaled prediction test

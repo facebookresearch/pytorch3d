@@ -231,7 +231,6 @@ class TestTensorProperties(TestCaseMixin, unittest.TestCase):
 
         # check both H > W and W > H
         for flip_axes in [False, True]:
-
             # non-batched version
             for xy_ndc, xy_gs in xy_ndc_gs:
                 xy_gs_predicted = ndc_to_grid_sample_coords(

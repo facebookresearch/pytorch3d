@@ -161,7 +161,6 @@ class ImplicitronTrainingLoop(TrainingLoopBase):
         for epoch in range(start_epoch, self.max_epochs):
             # automatic new_epoch and plotting of stats at every epoch start
             with stats:
-
                 # Make sure to re-seed random generators to ensure reproducibility
                 # even after restart.
                 seed_all_random_engines(seed + epoch)

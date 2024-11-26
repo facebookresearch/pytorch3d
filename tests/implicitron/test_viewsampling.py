@@ -142,7 +142,6 @@ class TestViewsampling(unittest.TestCase):
         expand_args_fields(ViewSampler)
 
         for masked_sampling in (True, False):
-
             view_sampler = ViewSampler(masked_sampling=masked_sampling)
 
             feats_sampled, masks_sampled = view_sampler(

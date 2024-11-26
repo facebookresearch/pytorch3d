@@ -67,7 +67,7 @@ class HeterogeneousRayBundle:
 
 
 def ray_bundle_to_ray_points(
-    ray_bundle: Union[RayBundle, HeterogeneousRayBundle]
+    ray_bundle: Union[RayBundle, HeterogeneousRayBundle],
 ) -> torch.Tensor:
     """
     Converts rays parametrized with a `ray_bundle` (an instance of the `RayBundle`

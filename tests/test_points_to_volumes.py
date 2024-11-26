@@ -258,9 +258,7 @@ class TestPointsToVolumes(TestCaseMixin, unittest.TestCase):
         batch_size = 4
 
         for volume_size in ([25, 25, 25], [30, 25, 15]):
-
             for python, interp_mode in product([True, False], ["trilinear", "nearest"]):
-
                 (pointclouds, initial_volumes) = init_volume_boundary_pointcloud(
                     volume_size=volume_size,
                     n_points=int(1e5),

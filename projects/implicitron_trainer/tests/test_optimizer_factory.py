@@ -81,8 +81,9 @@ class TestOptimizerFactory(unittest.TestCase):
 
     def test_param_overrides_self_param_group_assignment(self):
         pa, pb, pc = [torch.nn.Parameter(data=torch.tensor(i * 1.0)) for i in range(3)]
-        na, nb = Node(params=[pa]), Node(
-            params=[pb], param_groups={"self": "pb_self", "p1": "pb_param"}
+        na, nb = (
+            Node(params=[pa]),
+            Node(params=[pb], param_groups={"self": "pb_self", "p1": "pb_param"}),
         )
         root = Node(children=[na, nb], params=[pc], param_groups={"m1": "pb_member"})
         param_groups = self._get_param_groups(root)

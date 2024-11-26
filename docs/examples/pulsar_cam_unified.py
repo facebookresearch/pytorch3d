@@ -14,6 +14,7 @@ distorted. Gradient-based optimization is used to converge towards the
 original camera parameters.
 Output: cam-pt3d.gif
 """
+
 import logging
 from os import path
 

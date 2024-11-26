@@ -10,6 +10,7 @@ This example demonstrates the most trivial, direct interface of the pulsar
 sphere renderer. It renders and saves an image with 10 random spheres.
 Output: basic.png.
 """
+
 import logging
 import math
 from os import path

@@ -5,6 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 
 """Test right hand/left hand system compatibility."""
+
 import logging
 import sys
 import unittest

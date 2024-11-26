@@ -62,7 +62,7 @@ def cubify(
     *,
     feats: Optional[torch.Tensor] = None,
     device=None,
-    align: str = "topleft"
+    align: str = "topleft",
 ) -> Meshes:
     r"""
     Converts a voxel to a mesh by replacing each occupied voxel with a cube

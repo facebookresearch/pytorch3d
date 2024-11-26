@@ -100,7 +100,6 @@ def render_point_cloud_pytorch3d(
     bin_size: Optional[int] = None,
     **kwargs,
 ):
-
     # feature dimension
     featdim = point_cloud.features_packed().shape[-1]
 

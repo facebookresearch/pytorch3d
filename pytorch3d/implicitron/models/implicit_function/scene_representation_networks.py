@@ -306,7 +306,6 @@ class SRNRaymarchHyperNet(Configurable, torch.nn.Module):
         global_code=None,
         **kwargs,
     ):
-
         if global_code is None:
             raise ValueError("SRN Hypernetwork requires a non-trivial global code.")
 

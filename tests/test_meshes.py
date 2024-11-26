@@ -335,7 +335,6 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
             Meshes(verts=verts_padded, faces=faces_padded)
 
     def test_simple_random_meshes(self):
-
         # Define the test mesh object either as a list or tensor of faces/verts.
         for lists_to_tensors in (False, True):
             N = 10
@@ -1120,7 +1119,6 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
         self.assertClose(face_areas, expected_areas)
 
     def test_compute_normals(self):
-
         # Simple case with one mesh where normals point in either +/- ijk
         verts = torch.tensor(
             [

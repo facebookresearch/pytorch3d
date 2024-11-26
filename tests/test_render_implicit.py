@@ -215,9 +215,7 @@ class TestRenderImplicit(TestCaseMixin, unittest.TestCase):
             volumetric_function=spherical_volumetric_function,
             sphere_centroid=sphere_centroid,
             sphere_diameter=sphere_diameter,
-        )[
-            0
-        ]
+        )[0]
 
         # check that the renderer does not erase gradients
         loss = images_opacities.sum()

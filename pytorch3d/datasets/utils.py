@@ -36,7 +36,6 @@ def collate_batched_meshes(batch: List[Dict]):  # pragma: no cover
 
     collated_dict["mesh"] = None
     if {"verts", "faces"}.issubset(collated_dict.keys()):
-
         textures = None
         if "textures" in collated_dict:
             textures = TexturesAtlas(atlas=collated_dict["textures"])

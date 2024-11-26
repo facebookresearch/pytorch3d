@@ -14,6 +14,7 @@ meshes as .off files.
 This format is introduced, for example, at
 http://www.geomview.org/docs/html/OFF.html .
 """
+
 import warnings
 from typing import cast, Optional, Tuple, Union
 

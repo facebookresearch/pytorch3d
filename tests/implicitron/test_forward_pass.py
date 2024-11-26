@@ -74,7 +74,6 @@ class TestGenericModel(unittest.TestCase):
         eval_test: bool = True,
         bw_test: bool = True,
     ):
-
         R, T = look_at_view_transform(azim=torch.rand(n_train_cameras) * 360)
         cameras = PerspectiveCameras(R=R, T=T, device=device)
 

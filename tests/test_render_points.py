@@ -8,6 +8,7 @@
 """
 Sanity checks for output images from the pointcloud renderer.
 """
+
 import unittest
 import warnings
 from os import path
@@ -220,7 +221,8 @@ class TestRenderPoints(TestCaseMixin, unittest.TestCase):
                         # znear and zfar is required in this case.
                         self.assertRaises(
                             ValueError,
-                            lambda renderer=renderer, pointclouds=pointclouds: renderer.forward(
+                            lambda renderer=renderer,
+                            pointclouds=pointclouds: renderer.forward(
                                 point_clouds=pointclouds, gamma=(1e-4,)
                             ),
                         )
@@ -233,7 +235,8 @@ class TestRenderPoints(TestCaseMixin, unittest.TestCase):
                         # znear and zfar must be batched.
                         self.assertRaises(
                             TypeError,
-                            lambda renderer=renderer, pointclouds=pointclouds: renderer.forward(
+                            lambda renderer=renderer,
+                            pointclouds=pointclouds: renderer.forward(
                                 point_clouds=pointclouds,
                                 gamma=(1e-4,),
                                 znear=1.0,
@@ -242,7 +245,8 @@ class TestRenderPoints(TestCaseMixin, unittest.TestCase):
                         )
                         self.assertRaises(
                             TypeError,
-                            lambda renderer=renderer, pointclouds=pointclouds: renderer.forward(
+                            lambda renderer=renderer,
+                            pointclouds=pointclouds: renderer.forward(
                                 point_clouds=pointclouds,
                                 gamma=(1e-4,),
                                 znear=(1.0,),
@@ -253,7 +257,8 @@ class TestRenderPoints(TestCaseMixin, unittest.TestCase):
                         # gamma must be batched.
                         self.assertRaises(
                             TypeError,
-                            lambda renderer=renderer, pointclouds=pointclouds: renderer.forward(
+                            lambda renderer=renderer,
+                            pointclouds=pointclouds: renderer.forward(
                                 point_clouds=pointclouds, gamma=1e-4
                             ),
                         )
@@ -262,7 +267,8 @@ class TestRenderPoints(TestCaseMixin, unittest.TestCase):
                         renderer.rasterizer.raster_settings.image_size = 0
                         self.assertRaises(
                             ValueError,
-                            lambda renderer=renderer, pointclouds=pointclouds: renderer.forward(
+                            lambda renderer=renderer,
+                            pointclouds=pointclouds: renderer.forward(
                                 point_clouds=pointclouds, gamma=(1e-4,)
                             ),
                         )
@@ -372,7 +378,6 @@ class TestRenderPoints(TestCaseMixin, unittest.TestCase):
             self.assertClose(rgb, image_ref)
 
     def test_compositor_background_color_rgba(self):
-
         N, H, W, K, C, P = 1, 15, 15, 20, 4, 225
         ptclds = torch.randn((C, P))
         alphas = torch.rand((N, K, H, W))
@@ -385,7 +390,6 @@ class TestRenderPoints(TestCaseMixin, unittest.TestCase):
         ]
 
         for compositor_class, composite_func in compositor_funcs:
-
             compositor = compositor_class(background_color)
 
             # run the forward method to generate masked images
@@ -423,7 +427,6 @@ class TestRenderPoints(TestCaseMixin, unittest.TestCase):
             )
 
     def test_compositor_background_color_rgb(self):
-
         N, H, W, K, C, P = 1, 15, 15, 20, 3, 225
         ptclds = torch.randn((C, P))
         alphas = torch.rand((N, K, H, W))
@@ -436,7 +439,6 @@ class TestRenderPoints(TestCaseMixin, unittest.TestCase):
         ]
 
         for compositor_class, composite_func in compositor_funcs:
-
             compositor = compositor_class(background_color)
 
             # run the forward method to generate masked images

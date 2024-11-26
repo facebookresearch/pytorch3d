@@ -7,6 +7,7 @@
 # pyre-unsafe
 
 """This module implements utility functions for loading .mtl files and textures."""
+
 import os
 import warnings
 from typing import Dict, List, Optional, Tuple

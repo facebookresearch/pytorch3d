@@ -1176,7 +1176,12 @@ class PerspectiveCameras(CamerasBase):
 
         unprojection_transform = to_camera_transform.inverse()
         xy_inv_depth = torch.cat(
-            (xy_depth[..., :2], 1.0 / xy_depth[..., 2:3]), dim=-1  # type: ignore
+            # pyre-fixme[6]: For 1st argument expected `Union[List[Tensor],
+            #  tuple[Tensor, ...]]` but got `Tuple[Tensor, float]`.
+            # pyre-fixme[58]: `/` is not supported for operand types `float` and
+            #  `Tensor`.
+            (xy_depth[..., :2], 1.0 / xy_depth[..., 2:3]),
+            dim=-1,  # type: ignore
         )
         return unprojection_transform.transform_points(xy_inv_depth)
 

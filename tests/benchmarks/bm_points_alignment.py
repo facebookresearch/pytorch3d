@@ -12,7 +12,6 @@ from tests.test_points_alignment import TestCorrespondingPointsAlignment, TestIC
 
 
 def bm_iterative_closest_point() -> None:
-
     case_grid = {
         "batch_size": [1, 10],
         "dim": [3, 20],
@@ -43,7 +42,6 @@ def bm_iterative_closest_point() -> None:
 
 
 def bm_corresponding_points_alignment() -> None:
-
     case_grid = {
         "allow_reflection": [True, False],
         "batch_size": [1, 10, 100],

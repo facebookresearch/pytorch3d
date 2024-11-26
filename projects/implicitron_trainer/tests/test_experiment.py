@@ -53,12 +53,8 @@ class TestExperiment(unittest.TestCase):
         cfg.data_source_ImplicitronDataSource_args.dataset_map_provider_class_type = (
             "JsonIndexDatasetMapProvider"
         )
-        dataset_args = (
-            cfg.data_source_ImplicitronDataSource_args.dataset_map_provider_JsonIndexDatasetMapProvider_args
-        )
-        dataloader_args = (
-            cfg.data_source_ImplicitronDataSource_args.data_loader_map_provider_SequenceDataLoaderMapProvider_args
-        )
+        dataset_args = cfg.data_source_ImplicitronDataSource_args.dataset_map_provider_JsonIndexDatasetMapProvider_args
+        dataloader_args = cfg.data_source_ImplicitronDataSource_args.data_loader_map_provider_SequenceDataLoaderMapProvider_args
         dataset_args.category = "skateboard"
         dataset_args.test_restrict_sequence_id = 0
         dataset_args.dataset_root = "manifold://co3d/tree/extracted"
@@ -94,12 +90,8 @@ class TestExperiment(unittest.TestCase):
         cfg.data_source_ImplicitronDataSource_args.dataset_map_provider_class_type = (
             "JsonIndexDatasetMapProvider"
         )
-        dataset_args = (
-            cfg.data_source_ImplicitronDataSource_args.dataset_map_provider_JsonIndexDatasetMapProvider_args
-        )
-        dataloader_args = (
-            cfg.data_source_ImplicitronDataSource_args.data_loader_map_provider_SequenceDataLoaderMapProvider_args
-        )
+        dataset_args = cfg.data_source_ImplicitronDataSource_args.dataset_map_provider_JsonIndexDatasetMapProvider_args
+        dataloader_args = cfg.data_source_ImplicitronDataSource_args.data_loader_map_provider_SequenceDataLoaderMapProvider_args
         dataset_args.category = "skateboard"
         dataset_args.test_restrict_sequence_id = 0
         dataset_args.dataset_root = "manifold://co3d/tree/extracted"
@@ -111,9 +103,7 @@ class TestExperiment(unittest.TestCase):
         cfg.training_loop_ImplicitronTrainingLoop_args.max_epochs = 2
         cfg.training_loop_ImplicitronTrainingLoop_args.store_checkpoints = False
         cfg.optimizer_factory_ImplicitronOptimizerFactory_args.lr_policy = "Exponential"
-        cfg.optimizer_factory_ImplicitronOptimizerFactory_args.exponential_lr_step_size = (
-            2
-        )
+        cfg.optimizer_factory_ImplicitronOptimizerFactory_args.exponential_lr_step_size = 2
 
         if DEBUG:
             experiment.dump_cfg(cfg)

@@ -194,7 +194,6 @@ class Stats:
         it = self.it[stat_set]
 
         for stat in self.log_vars:
-
             if stat not in self.stats[stat_set]:
                 self.stats[stat_set][stat] = AverageMeter()
 

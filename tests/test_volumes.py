@@ -66,7 +66,6 @@ class TestVolumes(TestCaseMixin, unittest.TestCase):
         volume_size=(10, 13, 8),
         dtype=torch.float32,
     ):
-
         device = torch.device("cuda:0")
 
         # make sure we have at least 3 volumes to prevent indexing crash
@@ -94,7 +93,6 @@ class TestVolumes(TestCaseMixin, unittest.TestCase):
         for features_, densities_ in zip(
             (None, features, features_list), (densities, densities, densities_list)
         ):
-
             # init the volume structure
             v = Volumes(
                 features=features_,
@@ -205,7 +203,6 @@ class TestVolumes(TestCaseMixin, unittest.TestCase):
 
         # try for 10 sets of different random sizes/centers/voxel_sizes
         for _ in range(10):
-
             size = torch.randint(high=10, size=(3,), low=3).tolist()
 
             densities = torch.randn(
@@ -433,7 +430,6 @@ class TestVolumes(TestCaseMixin, unittest.TestCase):
 
         # try for 10 sets of different random sizes/centers/voxel_sizes
         for _ in range(10):
-
             size = torch.randint(high=10, size=(3,), low=3).tolist()
 
             center = torch.randn(num_volumes, 3, dtype=torch.float32, device=device)
@@ -449,7 +445,6 @@ class TestVolumes(TestCaseMixin, unittest.TestCase):
                     num_volumes, 3, size, num_channels, device, rand_sizes=None
                 )[0],
             ):
-
                 # init the volume structure
                 v = Volumes(
                     densities=densities,
@@ -794,9 +789,7 @@ class TestVolumes(TestCaseMixin, unittest.TestCase):
                 size=[num_volumes + 1, num_channels, *size],
                 device=device,
                 dtype=torch.float32,
-            ).unbind(
-                0
-            ),  # list with diff batch size
+            ).unbind(0),  # list with diff batch size
             torch.randn(
                 size=[num_volumes + 1, num_channels, *size],
                 device=device,
@@ -806,9 +799,7 @@ class TestVolumes(TestCaseMixin, unittest.TestCase):
                 size=[num_volumes, num_channels, *diff_size],
                 device=device,
                 dtype=torch.float32,
-            ).unbind(
-                0
-            ),  # list with different size
+            ).unbind(0),  # list with different size
             torch.randn(
                 size=[num_volumes, num_channels, *diff_size],
                 device=device,
@@ -823,9 +814,7 @@ class TestVolumes(TestCaseMixin, unittest.TestCase):
                 size=[num_volumes, num_channels, *size],
                 device=diff_device,
                 dtype=torch.float32,
-            ).unbind(
-                0
-            ),  # list with different device
+            ).unbind(0),  # list with different device
         ]
 
         # good ways to define features
@@ -834,9 +823,7 @@ class TestVolumes(TestCaseMixin, unittest.TestCase):
                 size=[num_volumes, num_channels, *size],
                 device=device,
                 dtype=torch.float32,
-            ).unbind(
-                0
-            ),  # list of features of correct size
+            ).unbind(0),  # list of features of correct size
             torch.randn(
                 size=[num_volumes, num_channels, *size],
                 device=device,
@@ -872,9 +859,7 @@ class TestVolumes(TestCaseMixin, unittest.TestCase):
                 size=[num_volumes, num_channels, *size],
                 device=device,
                 dtype=torch.float32,
-            ).unbind(
-                0
-            ),  # list of features
+            ).unbind(0),  # list of features
             None,  # no features
         ]
 
@@ -890,9 +875,7 @@ class TestVolumes(TestCaseMixin, unittest.TestCase):
             ),  # 4 dims
             torch.randn(
                 size=[num_volumes, *size], device=device, dtype=torch.float32
-            ).unbind(
-                0
-            ),  # list of 4 dim tensors
+            ).unbind(0),  # list of 4 dim tensors
         ]
 
         # all ways to define densities
@@ -902,9 +885,7 @@ class TestVolumes(TestCaseMixin, unittest.TestCase):
             ),  # padded tensor
             torch.randn(
                 size=[num_volumes, 1, *size], device=device, dtype=torch.float32
-            ).unbind(
-                0
-            ),  # list of densities
+            ).unbind(0),  # list of densities
         ]
 
         # bad ways to define densities
@@ -915,9 +896,7 @@ class TestVolumes(TestCaseMixin, unittest.TestCase):
             ),  # 6-dim tensor
             torch.randn(
                 size=[num_volumes, 1, 1, *size], device=device, dtype=torch.float32
-            ).unbind(
-                0
-            ),  # list of 5-dim densities
+            ).unbind(0),  # list of 5-dim densities
         ]
 
         # all possible ways to define the voxels sizes

@@ -11,7 +11,6 @@ from tests.test_sample_pdf import TestSamplePDF
 
 
 def bm_sample_pdf() -> None:
-
     backends = ["python_cuda", "cuda", "python_cpu", "cpu"]
 
     kwargs_list = []

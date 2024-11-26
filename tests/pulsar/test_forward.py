@@ -5,6 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 
 """Basic rendering test."""
+
 import logging
 import os
 import sys

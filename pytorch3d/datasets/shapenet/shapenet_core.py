@@ -83,7 +83,7 @@ class ShapeNetCore(ShapeNetBase):  # pragma: no cover
                 ):
                     synset_set.add(synset)
                 elif (synset in self.synset_inv.keys()) and (
-                    (path.isdir(path.join(data_dir, self.synset_inv[synset])))
+                    path.isdir(path.join(data_dir, self.synset_inv[synset]))
                 ):
                     synset_set.add(self.synset_inv[synset])
                 else:

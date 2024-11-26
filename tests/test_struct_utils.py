@@ -105,7 +105,6 @@ class TestStructUtils(TestCaseMixin, unittest.TestCase):
         ndim = 2
 
         for ndim in (2, 3, 4):
-
             dims = [K] * ndim
             x = torch.rand([N] + dims, device=device)
 

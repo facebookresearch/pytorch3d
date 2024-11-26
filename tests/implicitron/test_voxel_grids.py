@@ -275,7 +275,6 @@ class TestVoxelGrids(TestCaseMixin, unittest.TestCase):
         return torch.cat(result)
 
     def test_interpolation(self):
-
         with self.subTest("1D interpolation"):
             points = self.get_random_normalized_points(
                 n_grids=4, n_points=5, dimension=1

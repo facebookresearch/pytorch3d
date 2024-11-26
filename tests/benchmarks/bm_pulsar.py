@@ -5,6 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 
 """Test render speed."""
+
 import logging
 import sys
 from os import path

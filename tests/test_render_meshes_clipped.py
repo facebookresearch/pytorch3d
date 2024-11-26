@@ -12,6 +12,7 @@ behind the image plane. These faces are clipped and then rasterized.
 See pytorch3d/renderer/mesh/clip.py for more details about the
 clipping process.
 """
+
 import unittest
 
 import imageio

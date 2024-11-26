@@ -1072,7 +1072,6 @@ class TestPointclouds(TestCaseMixin, unittest.TestCase):
         for with_normals in (True, False):
             for run_padded in (True, False):
                 for run_packed in (True, False):
-
                     clouds = TestPointclouds.init_cloud(
                         3,
                         100,

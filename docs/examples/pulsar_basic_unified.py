@@ -11,6 +11,7 @@ interface for sphere renderering. It renders and saves an image with
 10 random spheres.
 Output: basic-pt3d.png.
 """
+
 import logging
 from os import path
 

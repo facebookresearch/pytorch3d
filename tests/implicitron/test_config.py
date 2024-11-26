@@ -576,7 +576,6 @@ class TestConfig(unittest.TestCase):
             a: int = 9
 
         for Unprocessed in [UnprocessedConfigurable, UnprocessedReplaceable]:
-
             self.assertFalse(_is_actually_dataclass(Unprocessed))
             unprocessed = Unprocessed()
             self.assertTrue(_is_actually_dataclass(Unprocessed))

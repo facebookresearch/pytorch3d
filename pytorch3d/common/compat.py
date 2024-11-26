@@ -17,7 +17,7 @@ Some functions which depend on PyTorch or Python versions.
 
 
 def meshgrid_ij(
-    *A: Union[torch.Tensor, Sequence[torch.Tensor]]
+    *A: Union[torch.Tensor, Sequence[torch.Tensor]],
 ) -> Tuple[torch.Tensor, ...]:  # pragma: no cover
     """
     Like torch.meshgrid was before PyTorch 1.10.0, i.e. with indexing set to ij

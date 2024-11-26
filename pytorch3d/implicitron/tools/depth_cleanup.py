@@ -21,7 +21,6 @@ def cleanup_eval_depth(
     sigma: float = 0.01,
     image=None,
 ):
-
     ba, _, H, W = depth.shape
 
     pcl = point_cloud.points_padded()

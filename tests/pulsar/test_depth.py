@@ -5,6 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 
 """Test the sorting of the closest spheres."""
+
 import logging
 import os
 import sys

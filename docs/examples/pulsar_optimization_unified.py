@@ -13,6 +13,7 @@ The scene is initialized with random spheres. Gradient-based
 optimization is used to converge towards a faithful
 scene representation.
 """
+
 import logging
 import math
 

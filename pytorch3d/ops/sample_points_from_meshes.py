@@ -11,6 +11,7 @@
 This module implements utility functions for sampling points from
 batches of meshes.
 """
+
 import sys
 from typing import Tuple, Union
 

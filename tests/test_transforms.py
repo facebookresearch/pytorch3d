@@ -308,9 +308,7 @@ class TestTransform(TestCaseMixin, unittest.TestCase):
         t1._matrix = torch.FloatTensor(persp_proj)
         points = torch.tensor(
             [[0.0, 1.0, 0.0], [0.0, 0.0, 1e-5], [-1.0, 0.0, 1e-5]]
-        ).view(
-            1, 3, 3
-        )  # a set of points with z-coord very close to 0
+        ).view(1, 3, 3)  # a set of points with z-coord very close to 0
 
         proj = t1.transform_points(points)
         proj_eps = t1.transform_points(points, eps=1e-4)
@@ -323,7 +321,6 @@ class TestTransform(TestCaseMixin, unittest.TestCase):
 
         # generate a random chain of transforms
         for _ in range(10):  # 10 different tries
-
             # list of transform matrices
             ts = []
 

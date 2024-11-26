@@ -13,7 +13,6 @@ from tests.test_sample_points_from_meshes import TestSamplePoints
 
 
 def bm_sample_points() -> None:
-
     backend = ["cpu"]
     if torch.cuda.is_available():
         backend.append("cuda:0")

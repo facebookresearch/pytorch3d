@@ -37,7 +37,6 @@ class AverageMeter:
         self.count = 0
 
     def update(self, val, n=1, epoch=0):
-
         # make sure the history is of the same len as epoch
         while len(self.history) <= epoch:
             self.history.append([])
@@ -115,7 +114,6 @@ class Stats:
         visdom_server="http://localhost",
         visdom_port=8097,
     ):
-
         self.log_vars = log_vars
         self.visdom_env = visdom_env
         self.visdom_server = visdom_server
@@ -202,7 +200,6 @@ class Stats:
                 self.log_vars.append(add_log_var)
 
     def update(self, preds, time_start=None, freeze_iter=False, stat_set="train"):
-
         if self.epoch == -1:  # uninitialized
             logger.warning(
                 "epoch==-1 means uninitialized stats structure -> new_epoch() called"
@@ -219,7 +216,6 @@ class Stats:
         epoch = self.epoch
 
         for stat in self.log_vars:
-
             if stat not in self.stats[stat_set]:
                 self.stats[stat_set][stat] = AverageMeter()
 
@@ -248,7 +244,6 @@ class Stats:
                 self.stats[stat_set][stat].update(val, epoch=epoch, n=1)
 
     def get_epoch_averages(self, epoch=None):
-
         stat_sets = list(self.stats.keys())
 
         if epoch is None:
@@ -345,7 +340,6 @@ class Stats:
     def plot_stats(
         self, visdom_env=None, plot_file=None, visdom_server=None, visdom_port=None
     ):
-
         # use the cached visdom env if none supplied
         if visdom_env is None:
             visdom_env = self.visdom_env
@@ -449,7 +443,6 @@ class Stats:
                 warnings.warn("Cant dump stats due to insufficient permissions!")
 
     def synchronize_logged_vars(self, log_vars, default_val=float("NaN")):
-
         stat_sets = list(self.stats.keys())
 
         # remove the additional log_vars
@@ -490,11 +483,12 @@ class Stats:
                 for ep in range(lastep):
                     self.stats[stat_set][stat].update(default_val, n=1, epoch=ep)
                 epoch_generated = self.stats[stat_set][stat].get_epoch()
-                assert (
-                    epoch_generated == self.epoch + 1
-                ), "bad epoch of synchronized log_var! %d vs %d" % (
-                    self.epoch + 1,
-                    epoch_generated,
+                assert epoch_generated == self.epoch + 1, (
+                    "bad epoch of synchronized log_var! %d vs %d"
+                    % (
+                        self.epoch + 1,
+                        epoch_generated,
+                    )
                 )
 
 

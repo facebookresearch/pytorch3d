@@ -7,6 +7,7 @@
 """
 Sanity checks for loading ShapeNetCore.
 """
+
 import os
 import unittest
 

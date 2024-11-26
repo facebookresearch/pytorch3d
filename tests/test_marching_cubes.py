@@ -23,7 +23,6 @@ def convert_to_local(verts, volume_dim):
 
 
 class TestCubeConfiguration(TestCaseMixin, unittest.TestCase):
-
     # Test single cubes. Each case corresponds to the corresponding
     # cube vertex configuration in each case here (0-indexed):
     # https://en.wikipedia.org/wiki/Marching_cubes#/media/File:MarchingCubes.svg

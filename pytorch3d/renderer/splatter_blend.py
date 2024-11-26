@@ -133,8 +133,7 @@ def _get_splat_kernel_normalization(
     epsilon = 0.05
     normalization_constant = torch.exp(
         # pyre-fixme[58]: `**` is not supported for operand types `Tensor` and `int`.
-        -(offsets**2).sum(dim=1)
-        / (2 * sigma**2)
+        -(offsets**2).sum(dim=1) / (2 * sigma**2)
     ).sum()
 
     # We add an epsilon to the normalization constant to ensure the gradient will travel

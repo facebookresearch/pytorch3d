@@ -281,8 +281,10 @@ class FishEyeCameras(CamerasBase):
         # project from camera space to image space
         N = len(self.radial_params)
         if not self.check_input(points, N):
-            msg = "Expected points of (P, 3) with batch_size 1 or N, or shape (M, P, 3) \
+            msg = (
+                "Expected points of (P, 3) with batch_size 1 or N, or shape (M, P, 3) \
             with batch_size 1; got points of shape %r and batch_size %r"
+            )
             raise ValueError(msg % (points.shape, N))
 
         if N == 1:

@@ -95,7 +95,6 @@ class TestIoU3D(TestCaseMixin, unittest.TestCase):
         return ious
 
     def _test_iou(self, overlap_fn, device):
-
         box1 = torch.tensor(
             UNIT_BOX,
             dtype=torch.float32,

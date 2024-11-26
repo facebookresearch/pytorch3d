@@ -65,7 +65,6 @@ class TestModelVisualize(unittest.TestCase):
         visdom_show_preds = Visdom().check_connection()
 
         for load_dataset_pointcloud in [True, False]:
-
             model = _PointcloudRenderingModel(
                 train_dataset,
                 show_sequence_name,

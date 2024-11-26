@@ -11,7 +11,6 @@ from tests.test_cameras_alignment import TestCamerasAlignment
 
 
 def bm_cameras_alignment() -> None:
-
     case_grid = {
         "batch_size": [10, 100, 1000],
         "mode": ["centers", "extrinsics"],

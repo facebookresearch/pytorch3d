@@ -11,7 +11,6 @@ from tests.test_ball_query import TestBallQuery
 
 
 def bm_ball_query() -> None:
-
     backends = ["cpu", "cuda:0"]
 
     kwargs_list = []
