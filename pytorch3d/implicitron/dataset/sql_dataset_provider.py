@@ -43,7 +43,7 @@ logger = logging.getLogger(__name__)
 
 
 @registry.register
-class SqlIndexDatasetMapProvider(DatasetMapProviderBase):  # pyre-ignore [13]
+class SqlIndexDatasetMapProvider(DatasetMapProviderBase):
     """
     Generates the training, validation, and testing dataset objects for
     a dataset laid out on disk like SQL-CO3D, with annotations in an SQLite data base.
@@ -193,9 +193,9 @@ class SqlIndexDatasetMapProvider(DatasetMapProviderBase):  # pyre-ignore [13]
 
     # this is a mould that is never constructed, used to build self._dataset_map values
     dataset_class_type: str = "SqlIndexDataset"
-    dataset: SqlIndexDataset
+    dataset: SqlIndexDataset  # pyre-ignore [13]
 
-    path_manager_factory: PathManagerFactory
+    path_manager_factory: PathManagerFactory  # pyre-ignore [13]
     path_manager_factory_class_type: str = "PathManagerFactory"
 
     def __post_init__(self):
