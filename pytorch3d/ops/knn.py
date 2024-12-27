@@ -98,13 +98,6 @@ class _knn_points(Function):
     def backward(ctx, grad_dists, grad_idx):
         p1, p2, lengths1, lengths2, idx = ctx.saved_tensors
         norm = ctx.norm
-        # TODO(gkioxari) Change cast to floats once we add support for doubles.
-        if not (grad_dists.dtype == torch.float32):
-            grad_dists = grad_dists.float()
-        if not (p1.dtype == torch.float32):
-            p1 = p1.float()
-        if not (p2.dtype == torch.float32):
-            p2 = p2.float()
         grad_p1, grad_p2 = _C.knn_points_backward(
             p1, p2, lengths1, lengths2, idx, norm, grad_dists
         )
