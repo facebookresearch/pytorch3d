@@ -122,9 +122,9 @@ class FrameData(Mapping[str, Any]):
         meta: A dict for storing additional frame information.
     """
 
-    frame_number: Optional[torch.LongTensor]
-    sequence_name: Union[str, List[str]]
-    sequence_category: Union[str, List[str]]
+    frame_number: Optional[torch.LongTensor] = None
+    sequence_name: Union[str, List[str]] = ""
+    sequence_category: Union[str, List[str]] = ""
     frame_timestamp: Optional[torch.Tensor] = None
     image_size_hw: Optional[torch.LongTensor] = None
     effective_image_size_hw: Optional[torch.LongTensor] = None
