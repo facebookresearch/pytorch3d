@@ -134,7 +134,15 @@ T = TypeVar("T", bound=torch.Tensor)
 def bbox_xyxy_to_xywh(xyxy: T) -> T:
     wh = xyxy[2:] - xyxy[:2]
     xywh = torch.cat([xyxy[:2], wh])
-    return xywh  # pyre-ignore
+    return xywh  # pyre-ignore[7]
+
+
+def bbox_xywh_to_xyxy(xywh: T, clamp_size: float | int | None = None) -> T:
+    wh = xywh[2:]
+    if clamp_size is not None:
+        wh = wh.clamp(min=clamp_size)
+    xyxy = torch.cat([xywh[:2], xywh[:2] + wh])
+    return xyxy  # pyre-ignore[7]
 
 
 def get_clamp_bbox(
@@ -178,16 +186,6 @@ def rescale_bbox(
     # pyre-ignore
     rel_size = (new_res[0] / orig_res[0] + new_res[1] / orig_res[1]) / 2.0
     return bbox * rel_size
-
-
-def bbox_xywh_to_xyxy(
-    xywh: torch.Tensor, clamp_size: Optional[int] = None
-) -> torch.Tensor:
-    xyxy = xywh.clone()
-    if clamp_size is not None:
-        xyxy[2:] = torch.clamp(xyxy[2:], clamp_size)
-    xyxy[2:] += xyxy[:2]
-    return xyxy
 
 
 def get_1d_bounds(arr: np.ndarray) -> Tuple[int, int]:
