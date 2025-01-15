@@ -589,7 +589,8 @@ class GenericFrameDataBuilder(FrameDataBuilderBase[FrameDataSubtype], ABC):
             ),
         )
 
-        fg_mask_np: Optional[np.ndarray] = None
+        fg_mask_np: np.ndarray | None = None
+        bbox_xywh: tuple[float, float, float, float] | None = None
         mask_annotation = frame_annotation.mask
         if mask_annotation is not None:
             if load_blobs and self.load_masks:
@@ -598,10 +599,6 @@ class GenericFrameDataBuilder(FrameDataBuilderBase[FrameDataSubtype], ABC):
                 frame_data.fg_probability = safe_as_tensor(fg_mask_np, torch.float)
 
             bbox_xywh = mask_annotation.bounding_box_xywh
-            if bbox_xywh is None and fg_mask_np is not None:
-                bbox_xywh = get_bbox_from_mask(fg_mask_np, self.box_crop_mask_thr)
-
-            frame_data.bbox_xywh = safe_as_tensor(bbox_xywh, torch.float)
 
         if frame_annotation.image is not None:
             image_size_hw = safe_as_tensor(frame_annotation.image.size, torch.long)
@@ -618,10 +615,26 @@ class GenericFrameDataBuilder(FrameDataBuilderBase[FrameDataSubtype], ABC):
                 if image_path is None:
                     raise ValueError("Image path is required to load images.")
 
-                image_np = load_image(self._local_path(image_path))
+                no_mask = fg_mask_np is None  # didn’t read the mask file
+                image_np = load_image(
+                    self._local_path(image_path), try_read_alpha=no_mask
+                )
+                if image_np.shape[0] == 4:  # RGBA image
+                    if no_mask:
+                        fg_mask_np = image_np[3:]
+                        frame_data.fg_probability = safe_as_tensor(
+                            fg_mask_np, torch.float
+                        )
+
+                    image_np = image_np[:3]
+
                 frame_data.image_rgb = self._postprocess_image(
                     image_np, frame_annotation.image.size, frame_data.fg_probability
                 )
+
+        if bbox_xywh is None and fg_mask_np is not None:
+            bbox_xywh = get_bbox_from_mask(fg_mask_np, self.box_crop_mask_thr)
+        frame_data.bbox_xywh = safe_as_tensor(bbox_xywh, torch.float)
 
         depth_annotation = frame_annotation.depth
         if (

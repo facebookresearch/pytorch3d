@@ -87,6 +87,15 @@ def is_train_frame(
 def get_bbox_from_mask(
     mask: np.ndarray, thr: float, decrease_quant: float = 0.05
 ) -> Tuple[int, int, int, int]:
+    # these corner cases need to be handled in order to avoid an infinite loop
+    if mask.size == 0:
+        warnings.warn("Empty mask is provided for bbox extraction.", stacklevel=1)
+        return 0, 0, 1, 1
+
+    if not mask.min() >= 0.0:
+        warnings.warn("Negative values in the mask for bbox extraction.", stacklevel=1)
+        mask = mask.clip(min=0.0)
+
     # bbox in xywh
     masks_for_box = np.zeros_like(mask)
     while masks_for_box.sum() <= 1.0:
@@ -229,9 +238,20 @@ def transpose_normalize_image(image: np.ndarray) -> np.ndarray:
     return im.astype(np.float32) / 255.0
 
 
-def load_image(path: str) -> np.ndarray:
+def load_image(path: str, try_read_alpha: bool = False) -> np.ndarray:
+    """
+    Load an image from a path and return it as a numpy array.
+    If try_read_alpha is True, the image is read as RGBA and the alpha channel is
+    returned as the fourth channel.
+    Otherwise, the image is read as RGB and a three-channel image is returned.
+    """
+
     with Image.open(path) as pil_im:
-        im = np.array(pil_im.convert("RGB"))
+        # Check if the image has an alpha channel
+        if try_read_alpha and pil_im.mode == "RGBA":
+            im = np.array(pil_im)
+        else:
+            im = np.array(pil_im.convert("RGB"))
 
     return transpose_normalize_image(im)
 
