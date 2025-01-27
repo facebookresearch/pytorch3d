@@ -6,7 +6,6 @@
 
 # pyre-unsafe
 
-
 import warnings
 from typing import Any, Dict, Optional
 
@@ -298,9 +297,8 @@ class ViewMetrics(ViewMetricsBase):
                 _rgb_metrics(
                     image_rgb,
                     image_rgb_pred,
-                    fg_probability,
-                    fg_probability_pred,
-                    mask_crop,
+                    masks=fg_probability,
+                    masks_crop=mask_crop,
                 )
             )
 
@@ -310,9 +308,21 @@ class ViewMetrics(ViewMetricsBase):
             metrics["mask_neg_iou"] = utils.neg_iou_loss(
                 fg_probability_pred, fg_probability, mask=mask_crop
             )
-            metrics["mask_bce"] = utils.calc_bce(
-                fg_probability_pred, fg_probability, mask=mask_crop
-            )
+            if torch.is_autocast_enabled():
+                # To avoid issues with mixed precision
+                metrics["mask_bce"] = utils.calc_bce(
+                    fg_probability_pred.logit(),
+                    fg_probability,
+                    mask=mask_crop,
+                    pred_logits=True,
+                )
+            else:
+                metrics["mask_bce"] = utils.calc_bce(
+                    fg_probability_pred,
+                    fg_probability,
+                    mask=mask_crop,
+                    pred_logits=False,
+                )
 
         if depth_map is not None and depth_map_pred is not None:
             assert mask_crop is not None
@@ -324,7 +334,11 @@ class ViewMetrics(ViewMetricsBase):
             if fg_probability is not None:
                 mask = fg_probability * mask_crop
                 _, abs_ = utils.eval_depth(
-                    depth_map_pred, depth_map, get_best_scale=True, mask=mask, crop=0
+                    depth_map_pred,
+                    depth_map,
+                    get_best_scale=True,
+                    mask=mask,
+                    crop=0,
                 )
                 metrics["depth_abs_fg"] = abs_.mean()
 
@@ -346,18 +360,26 @@ class ViewMetrics(ViewMetricsBase):
         return metrics
 
 
-def _rgb_metrics(images, images_pred, masks, masks_pred, masks_crop):
+def _rgb_metrics(
+    images,
+    images_pred,
+    masks=None,
+    masks_crop=None,
+    huber_scaling: float = 0.03,
+):
     assert masks_crop is not None
     if images.shape[1] != images_pred.shape[1]:
         raise ValueError(
             f"Network output's RGB images had {images_pred.shape[1]} "
             f"channels. {images.shape[1]} expected."
         )
+    rgb_abs = ((images_pred - images).abs()).mean(dim=1, keepdim=True)
     rgb_squared = ((images_pred - images) ** 2).mean(dim=1, keepdim=True)
-    rgb_loss = utils.huber(rgb_squared, scaling=0.03)
+    rgb_loss = utils.huber(rgb_squared, scaling=huber_scaling)
     crop_mass = masks_crop.sum().clamp(1.0)
     results = {
         "rgb_huber": (rgb_loss * masks_crop).sum() / crop_mass,
+        "rgb_l1": (rgb_abs * masks_crop).sum() / crop_mass,
         "rgb_mse": (rgb_squared * masks_crop).sum() / crop_mass,
         "rgb_psnr": utils.calc_psnr(images_pred, images, mask=masks_crop),
     }

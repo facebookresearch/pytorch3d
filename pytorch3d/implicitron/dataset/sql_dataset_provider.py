@@ -284,8 +284,14 @@ class SqlIndexDatasetMapProvider(DatasetMapProviderBase):
                 logger.info(f"Val dataset: {str(val_dataset)}")
 
             logger.debug("Extracting test dataset.")
-            eval_batches_file = self._get_lists_file("eval_batches")
-            del common_dataset_kwargs["eval_batches_file"]
+            if self.eval_batches_path is None:
+                eval_batches_file = None
+            else:
+                eval_batches_file = self._get_lists_file("eval_batches")
+
+            if "eval_batches_file" in common_dataset_kwargs:
+                common_dataset_kwargs.pop("eval_batches_file", None)
+
             test_dataset = dataset_type(
                 **common_dataset_kwargs,
                 subsets=self._get_subsets(self.test_subsets, True),
