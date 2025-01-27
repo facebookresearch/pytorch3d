@@ -6,11 +6,14 @@
 
 # pyre-unsafe
 
+import logging
 import math
 from typing import Optional, Tuple
 
 import torch
 from torch.nn import functional as F
+
+logger = logging.getLogger(__name__)
 
 
 def eval_depth(
@@ -21,6 +24,8 @@ def eval_depth(
     get_best_scale: bool = True,
     mask_thr: float = 0.5,
     best_scale_clamp_thr: float = 1e-4,
+    use_disparity: bool = False,
+    disparity_eps: float = 1e-4,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
     """
     Evaluate the depth error between the prediction `pred` and the ground
@@ -63,6 +68,13 @@ def eval_depth(
         # mult preds by a scalar "scale_best"
         # 	s.t. we get best possible mse error
         scale_best = estimate_depth_scale_factor(pred, gt, dmask, best_scale_clamp_thr)
+        pred = pred * scale_best[:, None, None, None]
+    if use_disparity:
+        gt = torch.div(1.0, (gt + disparity_eps))
+        pred = torch.div(1.0, (pred + disparity_eps))
+        scale_best = estimate_depth_scale_factor(
+            pred, gt, dmask, best_scale_clamp_thr
+        ).detach()
         pred = pred * scale_best[:, None, None, None]
 
     df = gt - pred
@@ -117,6 +129,7 @@ def calc_bce(
     pred_eps: float = 0.01,
     mask: Optional[torch.Tensor] = None,
     lerp_bound: Optional[float] = None,
+    pred_logits: bool = False,
 ) -> torch.Tensor:
     """
     Calculates the binary cross entropy.
@@ -139,9 +152,23 @@ def calc_bce(
         weight = torch.ones_like(gt) * mask
 
     if lerp_bound is not None:
+        # binary_cross_entropy_lerp requires pred to be in [0, 1]
+        if pred_logits:
+            pred = F.sigmoid(pred)
+
         return binary_cross_entropy_lerp(pred, gt, weight, lerp_bound)
     else:
-        return F.binary_cross_entropy(pred, gt, reduction="mean", weight=weight)
+        if pred_logits:
+            loss = F.binary_cross_entropy_with_logits(
+                pred,
+                gt,
+                reduction="none",
+                weight=weight,
+            )
+        else:
+            loss = F.binary_cross_entropy(pred, gt, reduction="none", weight=weight)
+
+        return loss.mean()
 
 
 def binary_cross_entropy_lerp(

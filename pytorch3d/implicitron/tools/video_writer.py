@@ -16,7 +16,16 @@ from typing import Optional, Tuple, Union
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
+import torch
+
 from PIL import Image
+
+_NO_TORCHVISION = False
+try:
+    import torchvision
+except ImportError:
+    _NO_TORCHVISION = True
+
 
 _DEFAULT_FFMPEG = os.environ.get("FFMPEG", "ffmpeg")
 
@@ -36,6 +45,7 @@ class VideoWriter:
         fps: int = 20,
         output_format: str = "visdom",
         rmdir_allowed: bool = False,
+        use_torchvision_video_writer: bool = False,
         **kwargs,
     ) -> None:
         """
@@ -49,6 +59,8 @@ class VideoWriter:
                 is supported.
             rmdir_allowed: If `True` delete and create `cache_dir` in case
                 it is not empty.
+            use_torchvision_video_writer: If `True` use `torchvision.io.write_video`
+            to write the video
         """
         self.rmdir_allowed = rmdir_allowed
         self.output_format = output_format
@@ -56,9 +68,13 @@ class VideoWriter:
         self.out_path = out_path
         self.cache_dir = cache_dir
         self.ffmpeg_bin = ffmpeg_bin
+        self.use_torchvision_video_writer = use_torchvision_video_writer
         self.frames = []
         self.regexp = "frame_%08d.png"
         self.frame_num = 0
+
+        if self.use_torchvision_video_writer:
+            assert not _NO_TORCHVISION, "torchvision not available"
 
         if self.cache_dir is not None:
             self.tmp_dir = None
@@ -114,7 +130,7 @@ class VideoWriter:
                 resize = im.size
             # make sure size is divisible by 2
             resize = tuple([resize[i] + resize[i] % 2 for i in (0, 1)])
-            # pyre-fixme[16]: Module `Image` has no attribute `ANTIALIAS`.
+
             im = im.resize(resize, Image.ANTIALIAS)
             im.save(outfile)
 
@@ -139,38 +155,56 @@ class VideoWriter:
         #  got `Optional[str]`.
         regexp = os.path.join(self.cache_dir, self.regexp)
 
-        if shutil.which(self.ffmpeg_bin) is None:
-            raise ValueError(
-                f"Cannot find ffmpeg as `{self.ffmpeg_bin}`. "
-                + "Please set FFMPEG in the environment or ffmpeg_bin on this class."
-            )
-
         if self.output_format == "visdom":  # works for ppt too
-            args = [
-                self.ffmpeg_bin,
-                "-r",
-                str(self.fps),
-                "-i",
-                regexp,
-                "-vcodec",
-                "h264",
-                "-f",
-                "mp4",
-                "-y",
-                "-crf",
-                "18",
-                "-b",
-                "2000k",
-                "-pix_fmt",
-                "yuv420p",
-                self.out_path,
-            ]
-            if quiet:
-                subprocess.check_call(
-                    args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+            # Video codec parameters
+            video_codec = "h264"
+            crf = "18"
+            b = "2000k"
+            pix_fmt = "yuv420p"
+
+            if self.use_torchvision_video_writer:
+                torchvision.io.write_video(
+                    self.out_path,
+                    torch.stack(
+                        [torch.from_numpy(np.array(Image.open(f))) for f in self.frames]
+                    ),
+                    fps=self.fps,
+                    video_codec=video_codec,
+                    options={"crf": crf, "b": b, "pix_fmt": pix_fmt},
                 )
+
             else:
-                subprocess.check_call(args)
+                if shutil.which(self.ffmpeg_bin) is None:
+                    raise ValueError(
+                        f"Cannot find ffmpeg as `{self.ffmpeg_bin}`. "
+                        + "Please set FFMPEG in the environment or ffmpeg_bin on this class."
+                    )
+
+                args = [
+                    self.ffmpeg_bin,
+                    "-r",
+                    str(self.fps),
+                    "-i",
+                    regexp,
+                    "-vcodec",
+                    video_codec,
+                    "-f",
+                    "mp4",
+                    "-y",
+                    "-crf",
+                    crf,
+                    "-b",
+                    b,
+                    "-pix_fmt",
+                    pix_fmt,
+                    self.out_path,
+                ]
+                if quiet:
+                    subprocess.check_call(
+                        args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+                    )
+                else:
+                    subprocess.check_call(args)
         else:
             raise ValueError("no such output type %s" % str(self.output_format))
 
