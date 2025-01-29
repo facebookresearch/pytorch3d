@@ -22,7 +22,7 @@
 // are orthogonal (or coplanar). It's an epsilon on cos(θ).
 // With dEpsilon = 0.001, two unit vectors are considered co-planar
 // if their θ = 2.5 deg.
-const auto dEpsilon = 1e-3;
+const auto dEpsilon = 1e-4;
 // aEpsilon: Used once in main function to check for small face areas
 const auto aEpsilon = 1e-4;
 // kEpsilon: Used only for norm(u) = u/max(||u||, kEpsilon)
