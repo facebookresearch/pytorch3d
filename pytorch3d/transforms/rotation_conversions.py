@@ -476,7 +476,43 @@ def axis_angle_to_matrix(axis_angle: torch.Tensor) -> torch.Tensor:
     Returns:
         Rotation matrices as tensor of shape (..., 3, 3).
     """
-    return quaternion_to_matrix(axis_angle_to_quaternion(axis_angle))
+    shape = axis_angle.shape
+    angle = torch.norm(axis_angle, dim=-1, keepdim=True)
+    axis = axis_angle / torch.where(
+        angle > 1e-7, angle, torch.ones_like(angle, device=axis_angle.device)
+    )
+    cos_theta = torch.cos(angle)[..., None]
+    sin_theta = torch.sin(angle)[..., None]
+
+    identity = torch.eye(3, device=axis_angle.device)
+    identity = (
+        identity[None]
+        .repeat(int(axis_angle.numel() / 3), 1, 1)
+        .reshape(shape + torch.Size([3]))
+    )
+
+    cross_product_matrix = torch.stack(
+        [
+            torch.zeros(shape[:-1], device=axis_angle.device),
+            -axis[..., 2],
+            axis[..., 1],
+            axis[..., 2],
+            torch.zeros(shape[:-1], device=axis_angle.device),
+            -axis[..., 0],
+            -axis[..., 1],
+            axis[..., 0],
+            torch.zeros(shape[:-1], device=axis_angle.device),
+        ],
+        dim=len(shape) - 1,
+    ).reshape(identity.shape)
+    outer_product = axis[..., None] @ axis[..., None, :]
+
+    # Use Rodrigues' rotation formula to compute the rotation matrix
+    return (
+        cos_theta * identity
+        + sin_theta * cross_product_matrix
+        + (1 - cos_theta) * outer_product
+    )
 
 
 def matrix_to_axis_angle(matrix: torch.Tensor) -> torch.Tensor:
@@ -492,7 +528,21 @@ def matrix_to_axis_angle(matrix: torch.Tensor) -> torch.Tensor:
             turned anticlockwise in radians around the vector's
             direction.
     """
-    return quaternion_to_axis_angle(matrix_to_quaternion(matrix))
+    trace = torch.diagonal(matrix, dim1=-2, dim2=-1).sum(-1)
+    theta = torch.acos((trace - 1) / 2)[..., None]
+    omega = (
+        1
+        / (2 * torch.sin(theta) + 1e-9)
+        * torch.stack(
+            [
+                matrix[..., 2, 1] - matrix[..., 1, 2],
+                matrix[..., 0, 2] - matrix[..., 2, 0],
+                matrix[..., 1, 0] - matrix[..., 0, 1],
+            ],
+            dim=len(matrix.shape) - 2,
+        )
+    )
+    return theta * omega / (torch.norm(omega, dim=-1, keepdim=True) + 1e-9)
 
 
 def axis_angle_to_quaternion(axis_angle: torch.Tensor) -> torch.Tensor:
