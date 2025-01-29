@@ -15,6 +15,6 @@ from .mesh_laplacian_smoothing import mesh_laplacian_smoothing
 
 from .mesh_normal_consistency import mesh_normal_consistency
 from .point_mesh_distance import point_mesh_edge_distance, point_mesh_face_distance
-
+from .dirdist import DirDist_P2P,DirDist_M2P,DirDist_M2M
 
 __all__ = [k for k in globals().keys() if not k.startswith("_")]
