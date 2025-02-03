@@ -476,7 +476,28 @@ def axis_angle_to_matrix(axis_angle: torch.Tensor) -> torch.Tensor:
     Returns:
         Rotation matrices as tensor of shape (..., 3, 3).
     """
-    return quaternion_to_matrix(axis_angle_to_quaternion(axis_angle))
+    eps = 1e-6
+    shape = axis_angle.shape
+    device, dtype = axis_angle.device, axis_angle.dtype
+
+    angles = torch.norm(axis_angle, p=2, dim=-1, keepdim=True)
+    axis = axis_angle / torch.where(angles.abs() < eps, 1, angles)
+
+    cos_theta = torch.cos(angles)[..., None]
+    sin_theta = torch.sin(angles)[..., None]
+
+    rx, ry, rz = axis[..., 0], axis[..., 1], axis[..., 2]
+    zeros = torch.zeros(shape[:-1], dtype=dtype, device=device)
+    cross_product_matrix = torch.stack(
+        [zeros, -rz, ry, rz, zeros, -rx, -ry, rx, zeros], dim=-1
+    ).view(shape + torch.Size([3]))
+
+    identity = torch.eye(3, dtype=dtype, device=device)
+    return (
+        identity.expand(cross_product_matrix.shape)
+        + sin_theta * cross_product_matrix
+        + (1 - cos_theta) * torch.bmm(cross_product_matrix, cross_product_matrix)
+    )
 
 
 def matrix_to_axis_angle(matrix: torch.Tensor) -> torch.Tensor:
@@ -492,7 +513,27 @@ def matrix_to_axis_angle(matrix: torch.Tensor) -> torch.Tensor:
             turned anticlockwise in radians around the vector's
             direction.
     """
-    return quaternion_to_axis_angle(matrix_to_quaternion(matrix))
+    if matrix.size(-1) != 3 or matrix.size(-2) != 3:
+        raise ValueError(f"Invalid rotation matrix shape {matrix.shape}.")
+
+    omegas = torch.stack(
+        [
+            matrix[..., 2, 1] - matrix[..., 1, 2],
+            matrix[..., 0, 2] - matrix[..., 2, 0],
+            matrix[..., 1, 0] - matrix[..., 0, 1],
+        ],
+        dim=-1,
+    )
+    norms = torch.norm(omegas, p=2, dim=-1, keepdim=True)
+    traces = torch.diagonal(matrix, dim1=-2, dim2=-1).sum(-1).unsqueeze(-1)
+    angles = torch.atan2(norms, traces - 1)
+
+    zeros = torch.zeros(3, dtype=matrix.dtype, device=matrix.device)
+    omegas = torch.where(
+        torch.isclose(angles, torch.zeros_like(angles)), zeros, omegas
+    )
+
+    return 0.5 * omegas / torch.sinc(angles/torch.pi)
 
 
 def axis_angle_to_quaternion(axis_angle: torch.Tensor) -> torch.Tensor:
