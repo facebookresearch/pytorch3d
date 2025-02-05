@@ -547,13 +547,18 @@ def matrix_to_axis_angle(matrix: torch.Tensor, fast: bool=False) -> torch.Tensor
     near_pi = torch.isclose(
         ((traces - 1) / 2).abs(), torch.ones_like(traces)
     ).squeeze(-1)
+
     axis_angles = torch.empty_like(omegas)
-    axis_angles[~near_pi] = (
-        0.5 * omegas[~near_pi] / torch.sinc(angles[~near_pi] / torch.pi)
+    axis_angles[~near_pi] = 0.5 * omegas[~near_pi] / torch.sinc(
+        angles[~near_pi] / torch.pi
     )
-    axis_angles[near_pi] = (
-        quaternion_to_axis_angle(matrix_to_quaternion(matrix[near_pi]))
+
+    # this derives from: nnT = (R + 1) / 2
+    n = 0.5 * (
+        matrix[near_pi][..., 0, :] +
+        torch.eye(1, 3, dtype=matrix.dtype, device=matrix.device)
     )
+    axis_angles[near_pi] = angles[near_pi] * n / torch.norm(n)
 
     return axis_angles
 
