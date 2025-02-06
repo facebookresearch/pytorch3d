@@ -96,21 +96,15 @@ class TestFrameDataBuilder(TestCaseMixin, unittest.TestCase):
         # test that FrameDataBuilder works with get_default_args
         get_default_args(FrameDataBuilder)
 
-    def test_fix_point_cloud_path(self):
-        """Some files in Co3Dv2 have an accidental absolute path stored."""
-        original_path = "some_file_path"
-        modified_path = self.frame_data_builder._fix_point_cloud_path(original_path)
-        self.assertIn(original_path, modified_path)
-        self.assertIn(self.frame_data_builder.dataset_root, modified_path)
-
     def test_load_and_adjust_frame_data(self):
         self.frame_data.image_size_hw = safe_as_tensor(
             self.frame_annotation.image.size, torch.long
         )
         self.frame_data.effective_image_size_hw = self.frame_data.image_size_hw
 
-        fg_mask_np, mask_path = self.frame_data_builder._load_fg_probability(
-            self.frame_annotation
+        mask_path = os.path.join(self.dataset_root, self.frame_annotation.mask.path)
+        fg_mask_np = self.frame_data_builder._load_fg_probability(
+            self.frame_annotation, mask_path
         )
         self.frame_data.mask_path = mask_path
         self.frame_data.fg_probability = safe_as_tensor(fg_mask_np, torch.float)
@@ -118,7 +112,6 @@ class TestFrameDataBuilder(TestCaseMixin, unittest.TestCase):
         bbox_xywh = get_bbox_from_mask(fg_mask_np, mask_thr)
         self.frame_data.bbox_xywh = safe_as_tensor(bbox_xywh, torch.long)
 
-        self.assertIsNotNone(self.frame_data.mask_path)
         self.assertTrue(torch.is_tensor(self.frame_data.fg_probability))
         self.assertTrue(torch.is_tensor(self.frame_data.bbox_xywh))
         # assert bboxes shape
@@ -134,16 +127,16 @@ class TestFrameDataBuilder(TestCaseMixin, unittest.TestCase):
         )
         self.assertIsInstance(self.frame_data.image_rgb, torch.Tensor)
 
+        depth_path = os.path.join(self.dataset_root, self.frame_annotation.depth.path)
         (
             self.frame_data.depth_map,
-            depth_path,
             self.frame_data.depth_mask,
         ) = self.frame_data_builder._load_mask_depth(
             self.frame_annotation,
+            depth_path,
             self.frame_data.fg_probability,
         )
         self.assertTrue(torch.is_tensor(self.frame_data.depth_map))
-        self.assertIsNotNone(depth_path)
         self.assertTrue(torch.is_tensor(self.frame_data.depth_mask))
 
         new_size = (self.image_height, self.image_width)
