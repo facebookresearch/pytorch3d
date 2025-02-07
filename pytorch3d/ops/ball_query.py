@@ -36,13 +36,6 @@ class _ball_query(Function):
     @once_differentiable
     def backward(ctx, grad_dists, grad_idx):
         p1, p2, lengths1, lengths2, idx = ctx.saved_tensors
-        # TODO(gkioxari) Change cast to floats once we add support for doubles.
-        if not (grad_dists.dtype == torch.float32):
-            grad_dists = grad_dists.float()
-        if not (p1.dtype == torch.float32):
-            p1 = p1.float()
-        if not (p2.dtype == torch.float32):
-            p2 = p2.float()
 
         # Reuse the KNN backward function
         # by default, norm is 2
