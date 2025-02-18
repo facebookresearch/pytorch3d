@@ -204,6 +204,9 @@ class TestRotationConversion(TestCaseMixin, unittest.TestCase):
         n_repetitions = 20
         data = torch.rand(n_repetitions, 3)
         matrices = axis_angle_to_matrix(data)
+        self.assertClose(data, matrix_to_axis_angle(matrices), atol=2e-6)
+        self.assertClose(data, matrix_to_axis_angle(matrices, fast=True), atol=2e-6)
+        matrices = axis_angle_to_matrix(data, fast=True)
         mdata = matrix_to_axis_angle(matrices)
         self.assertClose(data, mdata, atol=2e-6)
 
@@ -221,8 +224,10 @@ class TestRotationConversion(TestCaseMixin, unittest.TestCase):
         """mtx -> axis_angle -> mtx"""
         data = random_rotations(13, dtype=torch.float64)
         euler_angles = matrix_to_axis_angle(data)
-        mdata = axis_angle_to_matrix(euler_angles)
-        self.assertClose(data, mdata)
+        euler_angles_fast = matrix_to_axis_angle(data)
+        self.assertClose(data, axis_angle_to_matrix(euler_angles))
+        self.assertClose(data, axis_angle_to_matrix(euler_angles_fast))
+        self.assertClose(data, axis_angle_to_matrix(euler_angles, fast=True))
 
     def test_quaternion_application(self):
         """Applying a quaternion is the same as applying the matrix."""
