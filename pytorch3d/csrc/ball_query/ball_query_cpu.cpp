@@ -7,7 +7,6 @@
  */
 
 #include <torch/extension.h>
-#include <queue>
 #include <tuple>
 
 std::tuple<at::Tensor, at::Tensor> BallQueryCpu(

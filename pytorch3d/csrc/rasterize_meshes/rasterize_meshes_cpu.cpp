@@ -9,7 +9,6 @@
 #include <torch/extension.h>
 #include <algorithm>
 #include <list>
-#include <queue>
 #include <thread>
 #include <tuple>
 #include "ATen/core/TensorAccessor.h"

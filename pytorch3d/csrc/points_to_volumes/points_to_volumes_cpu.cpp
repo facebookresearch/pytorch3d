@@ -8,9 +8,7 @@
 
 #include <torch/csrc/autograd/VariableTypeUtils.h>
 #include <torch/extension.h>
-#include <algorithm>
 #include <cmath>
-#include <thread>
 #include <vector>
 
 // In the x direction, the location {0, ..., grid_size_x - 1} correspond to
