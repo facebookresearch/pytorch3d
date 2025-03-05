@@ -7,6 +7,7 @@
  */
 
 #ifdef WITH_CUDA
+#include <c10/cuda/CUDAException.h>
 #include <cuda_runtime_api.h>
 
 namespace pulsar {
@@ -17,7 +18,8 @@ void cudaDevToDev(
     const void* src,
     const int& size,
     const cudaStream_t& stream) {
-  cudaMemcpyAsync(trg, src, size, cudaMemcpyDeviceToDevice, stream);
+  C10_CUDA_CHECK(
+      cudaMemcpyAsync(trg, src, size, cudaMemcpyDeviceToDevice, stream));
 }
 
 void cudaDevToHost(
@@ -25,7 +27,8 @@ void cudaDevToHost(
     const void* src,
     const int& size,
     const cudaStream_t& stream) {
-  cudaMemcpyAsync(trg, src, size, cudaMemcpyDeviceToHost, stream);
+  C10_CUDA_CHECK(
+      cudaMemcpyAsync(trg, src, size, cudaMemcpyDeviceToHost, stream));
 }
 
 } // namespace pytorch

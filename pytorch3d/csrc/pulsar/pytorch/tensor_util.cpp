@@ -8,6 +8,7 @@
 
 #ifdef WITH_CUDA
 #include <ATen/cuda/CUDAContext.h>
+#include <c10/cuda/CUDAException.h>
 #include <cuda_runtime_api.h>
 #endif
 #include <torch/extension.h>
@@ -33,13 +34,13 @@ torch::Tensor sphere_ids_from_result_info_nograd(
           .contiguous();
   if (forw_info.device().type() == c10::DeviceType::CUDA) {
 #ifdef WITH_CUDA
-    cudaMemcpyAsync(
+    C10_CUDA_CHECK(cudaMemcpyAsync(
         result.data_ptr(),
         tmp.data_ptr(),
         sizeof(uint32_t) * tmp.size(0) * tmp.size(1) * tmp.size(2) *
             tmp.size(3),
         cudaMemcpyDeviceToDevice,
-        at::cuda::getCurrentCUDAStream());
+        at::cuda::getCurrentCUDAStream()));
 #else
     throw std::runtime_error(
         "Copy on CUDA device initiated but built "
