@@ -28,7 +28,6 @@ __global__ void alphaCompositeCudaForwardKernel(
     const at::PackedTensorAccessor64<float, 4, at::RestrictPtrTraits> alphas,
     const at::PackedTensorAccessor64<int64_t, 4, at::RestrictPtrTraits> points_idx) {
   // clang-format on
-  const int64_t batch_size = result.size(0);
   const int64_t C = features.size(0);
   const int64_t H = points_idx.size(2);
   const int64_t W = points_idx.size(3);
@@ -79,7 +78,6 @@ __global__ void alphaCompositeCudaBackwardKernel(
     const at::PackedTensorAccessor64<float, 4, at::RestrictPtrTraits> alphas,
     const at::PackedTensorAccessor64<int64_t, 4, at::RestrictPtrTraits> points_idx) {
   // clang-format on
-  const int64_t batch_size = points_idx.size(0);
   const int64_t C = features.size(0);
   const int64_t H = points_idx.size(2);
   const int64_t W = points_idx.size(3);

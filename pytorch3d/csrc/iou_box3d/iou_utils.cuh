@@ -461,10 +461,8 @@ __device__ inline std::tuple<float3, float3> ArgMaxVerts(
 __device__ inline bool IsCoplanarTriTri(
     const FaceVerts& tri1,
     const FaceVerts& tri2) {
-  const float3 tri1_ctr = FaceCenter({tri1.v0, tri1.v1, tri1.v2});
   const float3 tri1_n = FaceNormal({tri1.v0, tri1.v1, tri1.v2});
 
-  const float3 tri2_ctr = FaceCenter({tri2.v0, tri2.v1, tri2.v2});
   const float3 tri2_n = FaceNormal({tri2.v0, tri2.v1, tri2.v2});
 
   // Check if parallel
@@ -500,7 +498,6 @@ __device__ inline bool IsCoplanarTriPlane(
     const FaceVerts& tri,
     const FaceVerts& plane,
     const float3& normal) {
-  const float3 tri_ctr = FaceCenter({tri.v0, tri.v1, tri.v2});
   const float3 nt = FaceNormal({tri.v0, tri.v1, tri.v2});
 
   // check if parallel

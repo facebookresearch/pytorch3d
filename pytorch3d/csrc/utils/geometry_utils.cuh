@@ -376,8 +376,6 @@ PointLineDistanceBackward(
   float tt = t_top / t_bot;
   tt = __saturatef(tt);
   const float2 p_proj = (1.0f - tt) * v0 + tt * v1;
-  const float2 d = p - p_proj;
-  const float dist = sqrt(dot(d, d));
 
   const float2 grad_p = -1.0f * grad_dist * 2.0f * (p_proj - p);
   const float2 grad_v0 = grad_dist * (1.0f - tt) * 2.0f * (p_proj - p);

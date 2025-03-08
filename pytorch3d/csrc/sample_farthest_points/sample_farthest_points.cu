@@ -35,8 +35,6 @@ __global__ void FarthestPointSamplingKernel(
   __shared__ int64_t selected_store;
 
   // Get constants
-  const int64_t N = points.size(0);
-  const int64_t P = points.size(1);
   const int64_t D = points.size(2);
 
   // Get batch index and thread index
