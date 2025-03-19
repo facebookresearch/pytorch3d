@@ -97,8 +97,8 @@ __global__ void RasterizePointsNaiveCudaKernel(
     float* zbuf, // (N, H, W, K)
     float* pix_dists) { // (N, H, W, K)
   // Simple version: One thread per output pixel
-  const int num_threads = gridDim.x * blockDim.x;
-  const int tid = blockDim.x * blockIdx.x + threadIdx.x;
+  const auto num_threads = gridDim.x * blockDim.x;
+  const auto tid = blockDim.x * blockIdx.x + threadIdx.x;
   for (int i = tid; i < N * H * W; i += num_threads) {
     // Convert linear index to 3D index
     const int n = i / (H * W); // Batch index
@@ -237,8 +237,8 @@ __global__ void RasterizePointsFineCudaKernel(
     float* pix_dists) { // (N, H, W, K)
   // This can be more than H * W if H or W are not divisible by bin_size.
   const int num_pixels = N * BH * BW * bin_size * bin_size;
-  const int num_threads = gridDim.x * blockDim.x;
-  const int tid = blockIdx.x * blockDim.x + threadIdx.x;
+  const auto num_threads = gridDim.x * blockDim.x;
+  const auto tid = blockIdx.x * blockDim.x + threadIdx.x;
 
   for (int pid = tid; pid < num_pixels; pid += num_threads) {
     // Convert linear index into bin and pixel indices. We make the within
@@ -376,8 +376,8 @@ __global__ void RasterizePointsBackwardCudaKernel(
     float* grad_points) { // (P, 3)
   // Parallelized over each of K points per pixel, for each pixel in images of
   // size H * W, for each image in the batch of size N.
-  int num_threads = gridDim.x * blockDim.x;
-  int tid = blockIdx.x * blockDim.x + threadIdx.x;
+  auto num_threads = gridDim.x * blockDim.x;
+  auto tid = blockIdx.x * blockDim.x + threadIdx.x;
   for (int i = tid; i < N * H * W * K; i += num_threads) {
     // const int n = i / (H * W * K); // batch index (not needed).
     const int yxk = i % (H * W * K);

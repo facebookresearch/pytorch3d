@@ -110,7 +110,7 @@ __global__ void DistanceForwardKernel(
     __syncthreads();
 
     // Perform reduction in shared memory.
-    for (int s = blockDim.x / 2; s > 32; s >>= 1) {
+    for (auto s = blockDim.x / 2; s > 32; s >>= 1) {
       if (tid < s) {
         if (min_dists[tid] > min_dists[tid + s]) {
           min_dists[tid] = min_dists[tid + s];
@@ -502,8 +502,8 @@ __global__ void PointFaceArrayForwardKernel(
   const float3* tris_f3 = (float3*)tris;
 
   // Parallelize over P * S computations
-  const int num_threads = gridDim.x * blockDim.x;
-  const int tid = blockIdx.x * blockDim.x + threadIdx.x;
+  const auto num_threads = gridDim.x * blockDim.x;
+  const auto tid = blockIdx.x * blockDim.x + threadIdx.x;
 
   for (int t_i = tid; t_i < P * T; t_i += num_threads) {
     const int t = t_i / P; // segment index.
@@ -576,8 +576,8 @@ __global__ void PointFaceArrayBackwardKernel(
   const float3* tris_f3 = (float3*)tris;
 
   // Parallelize over P * S computations
-  const int num_threads = gridDim.x * blockDim.x;
-  const int tid = blockIdx.x * blockDim.x + threadIdx.x;
+  const auto num_threads = gridDim.x * blockDim.x;
+  const auto tid = blockIdx.x * blockDim.x + threadIdx.x;
 
   for (int t_i = tid; t_i < P * T; t_i += num_threads) {
     const int t = t_i / P; // triangle index.
@@ -683,8 +683,8 @@ __global__ void PointEdgeArrayForwardKernel(
   float3* segms_f3 = (float3*)segms;
 
   // Parallelize over P * S computations
-  const int num_threads = gridDim.x * blockDim.x;
-  const int tid = blockIdx.x * blockDim.x + threadIdx.x;
+  const auto num_threads = gridDim.x * blockDim.x;
+  const auto tid = blockIdx.x * blockDim.x + threadIdx.x;
 
   for (int t_i = tid; t_i < P * S; t_i += num_threads) {
     const int s = t_i / P; // segment index.
@@ -752,8 +752,8 @@ __global__ void PointEdgeArrayBackwardKernel(
   float3* segms_f3 = (float3*)segms;
 
   // Parallelize over P * S computations
-  const int num_threads = gridDim.x * blockDim.x;
-  const int tid = blockIdx.x * blockDim.x + threadIdx.x;
+  const auto num_threads = gridDim.x * blockDim.x;
+  const auto tid = blockIdx.x * blockDim.x + threadIdx.x;
 
   for (int t_i = tid; t_i < P * S; t_i += num_threads) {
     const int s = t_i / P; // segment index.

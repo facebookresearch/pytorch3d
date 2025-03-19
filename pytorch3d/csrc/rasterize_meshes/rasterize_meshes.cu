@@ -260,8 +260,8 @@ __global__ void RasterizeMeshesNaiveCudaKernel(
     float* pix_dists,
     float* bary) {
   // Simple version: One thread per output pixel
-  int num_threads = gridDim.x * blockDim.x;
-  int tid = blockDim.x * blockIdx.x + threadIdx.x;
+  auto num_threads = gridDim.x * blockDim.x;
+  auto tid = blockDim.x * blockIdx.x + threadIdx.x;
 
   for (int i = tid; i < N * H * W; i += num_threads) {
     // Convert linear index to 3D index
@@ -446,8 +446,8 @@ __global__ void RasterizeMeshesBackwardCudaKernel(
 
   // Parallelize over each pixel in images of
   // size H * W, for each image in the batch of size N.
-  const int num_threads = gridDim.x * blockDim.x;
-  const int tid = blockIdx.x * blockDim.x + threadIdx.x;
+  const auto num_threads = gridDim.x * blockDim.x;
+  const auto tid = blockIdx.x * blockDim.x + threadIdx.x;
 
   for (int t_i = tid; t_i < N * H * W; t_i += num_threads) {
     // Convert linear index to 3D index
@@ -650,8 +650,8 @@ __global__ void RasterizeMeshesFineCudaKernel(
 ) {
   // This can be more than H * W if H or W are not divisible by bin_size.
   int num_pixels = N * BH * BW * bin_size * bin_size;
-  int num_threads = gridDim.x * blockDim.x;
-  int tid = blockIdx.x * blockDim.x + threadIdx.x;
+  auto num_threads = gridDim.x * blockDim.x;
+  auto tid = blockIdx.x * blockDim.x + threadIdx.x;
 
   for (int pid = tid; pid < num_pixels; pid += num_threads) {
     // Convert linear index into bin and pixel indices. We make the within

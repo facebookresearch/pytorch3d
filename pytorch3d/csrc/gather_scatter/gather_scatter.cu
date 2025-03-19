@@ -20,14 +20,14 @@ __global__ void GatherScatterCudaKernel(
     const size_t V,
     const size_t D,
     const size_t E) {
-  const int tid = threadIdx.x;
+  const auto tid = threadIdx.x;
 
   // Reverse the vertex order if backward.
   const int v0_idx = backward ? 1 : 0;
   const int v1_idx = backward ? 0 : 1;
 
   // Edges are split evenly across the blocks.
-  for (int e = blockIdx.x; e < E; e += gridDim.x) {
+  for (auto e = blockIdx.x; e < E; e += gridDim.x) {
     // Get indices of vertices which form the edge.
     const int64_t v0 = edges[2 * e + v0_idx];
     const int64_t v1 = edges[2 * e + v1_idx];
@@ -35,7 +35,7 @@ __global__ void GatherScatterCudaKernel(
     // Split vertex features evenly across threads.
     // This implementation will be quite wasteful when D<128 since there will be
     // a lot of threads doing nothing.
-    for (int d = tid; d < D; d += blockDim.x) {
+    for (auto d = tid; d < D; d += blockDim.x) {
       const float val = input[v1 * D + d];
       float* address = output + v0 * D + d;
       atomicAdd(address, val);
