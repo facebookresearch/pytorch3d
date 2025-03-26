@@ -70,11 +70,6 @@ struct CamGradInfo {
   float3 pixel_dir_y;
 };
 
-// TODO: remove once https://github.com/NVlabs/cub/issues/172 is resolved.
-struct IntWrapper {
-  int val;
-};
-
 } // namespace pulsar
 
 #endif

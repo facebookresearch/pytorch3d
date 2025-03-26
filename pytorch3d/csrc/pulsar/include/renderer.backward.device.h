@@ -155,8 +155,8 @@ void backward(
         stream);
     CHECKLAUNCH();
     SUM_WS(
-        (IntWrapper*)(self->ids_sorted_d),
-        (IntWrapper*)(self->n_grad_contributions_d),
+        self->ids_sorted_d,
+        self->n_grad_contributions_d,
         static_cast<int>(num_balls),
         self->workspace_d,
         self->workspace_size,
