@@ -202,8 +202,9 @@ def euler_angles_to_matrix(euler_angles: torch.Tensor, convention: str) -> torch
 
     Args:
         euler_angles: Euler angles in radians as tensor of shape (..., 3).
-        convention: Convention string of three uppercase letters from
-            {"X", "Y", and "Z"}.
+        convention: Convention string of three letters from
+            {"X", "Y", "Z"} for intrinsic rotations, or {"x", "y", "z"}
+            for extrinsic rotations.
 
     Returns:
         Rotation matrices as tensor of shape (..., 3, 3).
@@ -215,12 +216,16 @@ def euler_angles_to_matrix(euler_angles: torch.Tensor, convention: str) -> torch
     if convention[1] in (convention[0], convention[2]):
         raise ValueError(f"Invalid convention {convention}.")
     for letter in convention:
-        if letter not in ("X", "Y", "Z"):
+        if letter.upper() not in ("X", "Y", "Z"):
             raise ValueError(f"Invalid letter {letter} in convention string.")
-    matrices = [
-        _axis_angle_rotation(c, e)
-        for c, e in zip(convention, torch.unbind(euler_angles, -1))
-    ]
+    angles = torch.unbind(euler_angles, -1)
+    if convention == convention.lower():
+        # Convert extrinsic to intrinsic rotations
+        convention = convention[::-1].upper()
+        angles = angles[::-1]
+    elif convention != convention.upper():
+        raise ValueError(f"Invalid convention {convention}.")
+    matrices = [_axis_angle_rotation(c, e) for c, e in zip(convention, angles)]
     # return functools.reduce(torch.matmul, matrices)
     return torch.matmul(torch.matmul(matrices[0], matrices[1]), matrices[2])
 
@@ -274,7 +279,9 @@ def matrix_to_euler_angles(matrix: torch.Tensor, convention: str) -> torch.Tenso
 
     Args:
         matrix: Rotation matrices as tensor of shape (..., 3, 3).
-        convention: Convention string of three uppercase letters.
+        convention: Convention string of three letters from
+            {"X", "Y", "Z"} for intrinsic rotations, or {"x", "y", "z"}
+            for extrinsic rotations.
 
     Returns:
         Euler angles in radians as tensor of shape (..., 3).
@@ -284,8 +291,14 @@ def matrix_to_euler_angles(matrix: torch.Tensor, convention: str) -> torch.Tenso
     if convention[1] in (convention[0], convention[2]):
         raise ValueError(f"Invalid convention {convention}.")
     for letter in convention:
-        if letter not in ("X", "Y", "Z"):
+        if letter.upper() not in ("X", "Y", "Z"):
             raise ValueError(f"Invalid letter {letter} in convention string.")
+    extrinsic = False
+    if convention == convention.lower():
+        extrinsic = True
+        convention = convention[::-1].upper()
+    elif convention != convention.upper():
+        raise ValueError(f"Invalid convention {convention}.")
     if matrix.size(-1) != 3 or matrix.size(-2) != 3:
         raise ValueError(f"Invalid rotation matrix shape {matrix.shape}.")
     i0 = _index_from_letter(convention[0])
@@ -307,6 +320,8 @@ def matrix_to_euler_angles(matrix: torch.Tensor, convention: str) -> torch.Tenso
             convention[2], convention[1], matrix[..., i0, :], True, tait_bryan
         ),
     )
+    if extrinsic:
+        o = o[::-1]
     return torch.stack(o, -1)
 
 
