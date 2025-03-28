@@ -149,11 +149,6 @@ IHD CamGradInfo operator*(const CamGradInfo& a, const float& b) {
   return res;
 }
 
-IHD IntWrapper operator+(const IntWrapper& a, const IntWrapper& b) {
-  IntWrapper res;
-  res.val = a.val + b.val;
-  return res;
-}
 } // namespace pulsar
 
 #endif
