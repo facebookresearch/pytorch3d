@@ -15,8 +15,8 @@
 #endif
 
 #if defined(_WIN64) || defined(_WIN32)
-#define uint unsigned int
-#define ushort unsigned short
+using uint = unsigned int;
+using ushort = unsigned short;
 #endif
 
 #include "./logging.h" // <- include before torch/extension.h
