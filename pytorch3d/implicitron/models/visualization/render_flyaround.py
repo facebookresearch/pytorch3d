@@ -304,11 +304,11 @@ def _show_predictions(
     assert isinstance(preds, list)
 
     pred_all = []
-    # Randomly choose a subset of the rendered images, sort by ordr in the sequence
+    # Randomly choose a subset of the rendered images, sort by order in the sequence
     n_samples = min(n_samples, len(preds))
     pred_idx = sorted(random.sample(list(range(len(preds))), n_samples))
     for predi in pred_idx:
-        # Make the concatentation for the same camera vertically
+        # Make the concatenation for the same camera vertically
         pred_all.append(
             torch.cat(
                 [
@@ -359,7 +359,7 @@ def _generate_prediction_videos(
     vws = {}
     for k in predicted_keys:
         if k not in preds[0]:
-            logger.warn(f"Cannot generate video for prediction key '{k}'")
+            logger.warning(f"Cannot generate video for prediction key '{k}'")
             continue
         cache_dir = (
             None
