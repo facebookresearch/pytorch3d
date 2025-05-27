@@ -6,9 +6,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "./global.h"
-#include "./logging.h"
-
 /**
  * A compilation unit to provide warnings about the code and avoid
  * repeated messages.
