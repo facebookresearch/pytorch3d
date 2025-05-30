@@ -21,8 +21,6 @@ import logging
 import warnings
 from collections.abc import Mapping
 from dataclasses import dataclass, field
-
-from distutils.version import LooseVersion
 from typing import Any, Callable, ClassVar, Dict, Iterator, List, Optional, Tuple, Type
 
 import torch
@@ -222,7 +220,8 @@ class VoxelGridBase(ReplaceableBase, torch.nn.Module):
                 + "| 'bicubic' | 'linear' | 'area' | 'nearest-exact'"
             )
 
-        interpolate_has_antialias = LooseVersion(torch.__version__) >= "1.11"
+        # We assume PyTorch 1.11 and newer.
+        interpolate_has_antialias = True
 
         if antialias and not interpolate_has_antialias:
             warnings.warn("Antialiased interpolation requires PyTorch 1.11+; ignoring")
