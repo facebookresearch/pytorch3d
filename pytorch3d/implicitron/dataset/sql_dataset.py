@@ -755,7 +755,7 @@ class SqlIndexDataset(DatasetBase, ReplaceableBase):
         if pick_sequences:
             old_len = len(eval_batches)
             eval_batches = [b for b in eval_batches if b[0][0] in pick_sequences]
-            logger.warn(
+            logger.warning(
                 f"Picked eval batches by sequence/cat: {old_len} -> {len(eval_batches)}"
             )
 
@@ -763,7 +763,7 @@ class SqlIndexDataset(DatasetBase, ReplaceableBase):
             old_len = len(eval_batches)
             exclude_sequences = set(self.exclude_sequences)
             eval_batches = [b for b in eval_batches if b[0][0] not in exclude_sequences]
-            logger.warn(
+            logger.warning(
                 f"Excluded eval batches by sequence: {old_len} -> {len(eval_batches)}"
             )
 
