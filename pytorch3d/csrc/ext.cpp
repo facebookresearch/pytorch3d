@@ -8,7 +8,6 @@
 
 // clang-format off
 #include "./pulsar/global.h" // Include before <torch/extension.h>.
-#include <torch/extension.h>
 // clang-format on
 #include "./pulsar/pytorch/renderer.h"
 #include "./pulsar/pytorch/tensor_util.h"
