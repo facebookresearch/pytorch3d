@@ -417,7 +417,7 @@ __device__ static float atomicMin(float* address, float val) {
       (OUT_PTR),              \
       (NUM_SELECTED_PTR),     \
       (NUM_ITEMS),            \
-      stream = (STREAM));
+      (STREAM));
 
 #define COPY_HOST_DEV(PTR_D, PTR_H, TYPE, SIZE) \
   HANDLECUDA(cudaMemcpy(                        \
