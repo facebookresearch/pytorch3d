@@ -62,6 +62,10 @@ Get started with PyTorch3D by trying one of the tutorial notebooks.
 |:------------------------------------------------------------:|:--------------------------------------------------:|
 | [Fit Textured Volume in Implicitron](https://github.com/facebookresearch/pytorch3d/blob/main/docs/tutorials/implicitron_volumes.ipynb)| [Implicitron Config System](https://github.com/facebookresearch/pytorch3d/blob/main/docs/tutorials/implicitron_config_system.ipynb)|
 
+| <img src="https://raw.githubusercontent.com/facebookresearch/pytorch3d/main/.github/inverse_rendering.gif" width="310"/> | 
+|:------------------------------------------------------------:|
+| [Inverse Rendering](https://github.com/facebookresearch/pytorch3d/blob/main/docs/tutorials/inverse_rendering.ipynb) |
+
 
 
 
