@@ -81,6 +81,8 @@ inline std::tuple<at::Tensor, at::Tensor> BallQuery(
     AT_ERROR("Not compiled with GPU support.");
 #endif
   }
+  CHECK_CPU(p1);
+  CHECK_CPU(p2);
   return BallQueryCpu(
       p1.contiguous(),
       p2.contiguous(),

@@ -98,6 +98,11 @@ at::Tensor SigmoidAlphaBlendBackward(
     AT_ERROR("Not compiled with GPU support.");
 #endif
   }
+  CHECK_CPU(distances);
+  CHECK_CPU(pix_to_face);
+  CHECK_CPU(alphas);
+  CHECK_CPU(grad_alphas);
+
   return SigmoidAlphaBlendBackwardCpu(
       grad_alphas, alphas, distances, pix_to_face, sigma);
 }
