@@ -60,6 +60,8 @@ std::tuple<at::Tensor, at::Tensor> FaceAreasNormalsForward(
     AT_ERROR("Not compiled with GPU support.");
 #endif
   }
+  CHECK_CPU(verts);
+  CHECK_CPU(faces);
   return FaceAreasNormalsForwardCpu(verts, faces);
 }
 
@@ -80,5 +82,9 @@ at::Tensor FaceAreasNormalsBackward(
     AT_ERROR("Not compiled with GPU support.");
 #endif
   }
+  CHECK_CPU(grad_areas);
+  CHECK_CPU(grad_normals);
+  CHECK_CPU(verts);
+  CHECK_CPU(faces);
   return FaceAreasNormalsBackwardCpu(grad_areas, grad_normals, verts, faces);
 }

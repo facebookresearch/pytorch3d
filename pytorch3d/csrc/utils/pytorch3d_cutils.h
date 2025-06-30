@@ -15,3 +15,7 @@
 #define CHECK_CONTIGUOUS_CUDA(x) \
   CHECK_CUDA(x);                 \
   CHECK_CONTIGUOUS(x)
+#define CHECK_CPU(x)                    \
+  TORCH_CHECK(                          \
+      x.device().type() == torch::kCPU, \
+      "Cannot use CPU implementation: " #x " not on CPU.")

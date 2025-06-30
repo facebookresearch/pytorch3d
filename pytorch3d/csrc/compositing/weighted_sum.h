@@ -72,6 +72,9 @@ torch::Tensor weightedSumForward(
     AT_ERROR("Not compiled with GPU support");
 #endif
   } else {
+    CHECK_CPU(features);
+    CHECK_CPU(alphas);
+    CHECK_CPU(points_idx);
     return weightedSumCpuForward(features, alphas, points_idx);
   }
 }
@@ -98,6 +101,11 @@ std::tuple<torch::Tensor, torch::Tensor> weightedSumBackward(
     AT_ERROR("Not compiled with GPU support");
 #endif
   } else {
+    CHECK_CPU(grad_outputs);
+    CHECK_CPU(features);
+    CHECK_CPU(alphas);
+    CHECK_CPU(points_idx);
+
     return weightedSumCpuBackward(grad_outputs, features, alphas, points_idx);
   }
 }

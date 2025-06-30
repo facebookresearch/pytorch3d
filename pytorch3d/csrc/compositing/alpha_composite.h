@@ -74,6 +74,9 @@ torch::Tensor alphaCompositeForward(
     AT_ERROR("Not compiled with GPU support");
 #endif
   } else {
+    CHECK_CPU(features);
+    CHECK_CPU(alphas);
+    CHECK_CPU(points_idx);
     return alphaCompositeCpuForward(features, alphas, points_idx);
   }
 }
@@ -101,6 +104,11 @@ std::tuple<torch::Tensor, torch::Tensor> alphaCompositeBackward(
     AT_ERROR("Not compiled with GPU support");
 #endif
   } else {
+    CHECK_CPU(grad_outputs);
+    CHECK_CPU(features);
+    CHECK_CPU(alphas);
+    CHECK_CPU(points_idx);
+
     return alphaCompositeCpuBackward(
         grad_outputs, features, alphas, points_idx);
   }
