@@ -74,6 +74,8 @@ std::tuple<at::Tensor, at::Tensor> KNearestNeighborIdx(
     AT_ERROR("Not compiled with GPU support.");
 #endif
   }
+  CHECK_CPU(p1);
+  CHECK_CPU(p2);
   return KNearestNeighborIdxCpu(p1, p2, lengths1, lengths2, norm, K);
 }
 
@@ -140,6 +142,8 @@ std::tuple<at::Tensor, at::Tensor> KNearestNeighborBackward(
     AT_ERROR("Not compiled with GPU support.");
 #endif
   }
+  CHECK_CPU(p1);
+  CHECK_CPU(p2);
   return KNearestNeighborBackwardCpu(
       p1, p2, lengths1, lengths2, idxs, norm, grad_dists);
 }

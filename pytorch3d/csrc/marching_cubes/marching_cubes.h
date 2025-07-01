@@ -58,5 +58,6 @@ inline std::tuple<at::Tensor, at::Tensor, at::Tensor> MarchingCubes(
     AT_ERROR("Not compiled with GPU support.");
 #endif
   }
+  CHECK_CPU(vol);
   return MarchingCubesCpu(vol.contiguous(), isolevel);
 }

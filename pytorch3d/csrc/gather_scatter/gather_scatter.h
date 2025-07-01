@@ -53,5 +53,7 @@ at::Tensor GatherScatter(
     AT_ERROR("Not compiled with GPU support.");
 #endif
   }
+  CHECK_CPU(input);
+  CHECK_CPU(edges);
   return GatherScatterCpu(input, edges, directed, backward);
 }

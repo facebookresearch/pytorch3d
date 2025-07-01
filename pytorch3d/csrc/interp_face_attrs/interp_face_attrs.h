@@ -57,6 +57,8 @@ at::Tensor InterpFaceAttrsForward(
     AT_ERROR("Not compiled with GPU support.");
 #endif
   }
+  CHECK_CPU(face_attrs);
+  CHECK_CPU(barycentric_coords);
   return InterpFaceAttrsForwardCpu(pix_to_face, barycentric_coords, face_attrs);
 }
 
@@ -106,6 +108,9 @@ std::tuple<at::Tensor, at::Tensor> InterpFaceAttrsBackward(
     AT_ERROR("Not compiled with GPU support.");
 #endif
   }
+  CHECK_CPU(face_attrs);
+  CHECK_CPU(barycentric_coords);
+  CHECK_CPU(grad_pix_attrs);
   return InterpFaceAttrsBackwardCpu(
       pix_to_face, barycentric_coords, face_attrs, grad_pix_attrs);
 }

@@ -44,5 +44,7 @@ inline std::tuple<at::Tensor, at::Tensor> IoUBox3D(
     AT_ERROR("Not compiled with GPU support.");
 #endif
   }
+  CHECK_CPU(boxes1);
+  CHECK_CPU(boxes2);
   return IoUBox3DCpu(boxes1.contiguous(), boxes2.contiguous());
 }
