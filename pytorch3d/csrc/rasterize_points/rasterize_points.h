@@ -91,6 +91,10 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> RasterizePointsNaive(
     AT_ERROR("Not compiled with GPU support");
 #endif
   } else {
+    CHECK_CPU(points);
+    CHECK_CPU(cloud_to_packed_first_idx);
+    CHECK_CPU(num_points_per_cloud);
+    CHECK_CPU(radius);
     return RasterizePointsNaiveCpu(
         points,
         cloud_to_packed_first_idx,
@@ -166,6 +170,10 @@ torch::Tensor RasterizePointsCoarse(
     AT_ERROR("Not compiled with GPU support");
 #endif
   } else {
+    CHECK_CPU(points);
+    CHECK_CPU(cloud_to_packed_first_idx);
+    CHECK_CPU(num_points_per_cloud);
+    CHECK_CPU(radius);
     return RasterizePointsCoarseCpu(
         points,
         cloud_to_packed_first_idx,
@@ -232,6 +240,8 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> RasterizePointsFine(
     AT_ERROR("Not compiled with GPU support");
 #endif
   } else {
+    CHECK_CPU(points);
+    CHECK_CPU(bin_points);
     AT_ERROR("NOT IMPLEMENTED");
   }
 }
@@ -284,6 +294,10 @@ torch::Tensor RasterizePointsBackward(
     AT_ERROR("Not compiled with GPU support");
 #endif
   } else {
+    CHECK_CPU(points);
+    CHECK_CPU(idxs);
+    CHECK_CPU(grad_zbuf);
+    CHECK_CPU(grad_dists);
     return RasterizePointsBackwardCpu(points, idxs, grad_zbuf, grad_dists);
   }
 }

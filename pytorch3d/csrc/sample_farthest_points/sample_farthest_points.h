@@ -68,5 +68,9 @@ at::Tensor FarthestPointSampling(
     AT_ERROR("Not compiled with GPU support.");
 #endif
   }
+  CHECK_CPU(points);
+  CHECK_CPU(lengths);
+  CHECK_CPU(K);
+  CHECK_CPU(start_idxs);
   return FarthestPointSamplingCpu(points, lengths, K, start_idxs);
 }

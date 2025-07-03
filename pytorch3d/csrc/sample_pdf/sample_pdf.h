@@ -71,6 +71,8 @@ inline void SamplePdf(
     AT_ERROR("Not compiled with GPU support.");
 #endif
   }
+  CHECK_CPU(weights);
+  CHECK_CPU(outputs);
   CHECK_CONTIGUOUS(outputs);
   SamplePdfCpu(bins, weights, outputs, eps);
 }

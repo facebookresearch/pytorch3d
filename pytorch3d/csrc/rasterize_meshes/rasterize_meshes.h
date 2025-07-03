@@ -138,6 +138,9 @@ RasterizeMeshesNaive(
     AT_ERROR("Not compiled with GPU support");
 #endif
   } else {
+    CHECK_CPU(face_verts);
+    CHECK_CPU(mesh_to_face_first_idx);
+    CHECK_CPU(num_faces_per_mesh);
     return RasterizeMeshesNaiveCpu(
         face_verts,
         mesh_to_face_first_idx,
@@ -232,6 +235,11 @@ torch::Tensor RasterizeMeshesBackward(
     AT_ERROR("Not compiled with GPU support");
 #endif
   } else {
+    CHECK_CPU(face_verts);
+    CHECK_CPU(pix_to_face);
+    CHECK_CPU(grad_zbuf);
+    CHECK_CPU(grad_bary);
+    CHECK_CPU(grad_dists);
     return RasterizeMeshesBackwardCpu(
         face_verts,
         pix_to_face,
@@ -306,6 +314,9 @@ torch::Tensor RasterizeMeshesCoarse(
     AT_ERROR("Not compiled with GPU support");
 #endif
   } else {
+    CHECK_CPU(face_verts);
+    CHECK_CPU(mesh_to_face_first_idx);
+    CHECK_CPU(num_faces_per_mesh);
     return RasterizeMeshesCoarseCpu(
         face_verts,
         mesh_to_face_first_idx,
@@ -423,6 +434,8 @@ RasterizeMeshesFine(
     AT_ERROR("Not compiled with GPU support");
 #endif
   } else {
+    CHECK_CPU(face_verts);
+    CHECK_CPU(bin_faces);
     AT_ERROR("NOT IMPLEMENTED");
   }
 }
