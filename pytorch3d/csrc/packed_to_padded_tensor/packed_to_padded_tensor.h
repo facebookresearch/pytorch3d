@@ -88,6 +88,8 @@ at::Tensor PackedToPadded(
     AT_ERROR("Not compiled with GPU support.");
 #endif
   }
+  CHECK_CPU(inputs_packed);
+  CHECK_CPU(first_idxs);
   return PackedToPaddedCpu(inputs_packed, first_idxs, max_size);
 }
 
@@ -105,5 +107,7 @@ at::Tensor PaddedToPacked(
     AT_ERROR("Not compiled with GPU support.");
 #endif
   }
+  CHECK_CPU(inputs_padded);
+  CHECK_CPU(first_idxs);
   return PaddedToPackedCpu(inputs_padded, first_idxs, num_inputs);
 }

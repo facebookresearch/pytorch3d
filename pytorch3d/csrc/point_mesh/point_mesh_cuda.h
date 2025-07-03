@@ -88,6 +88,10 @@ std::tuple<torch::Tensor, torch::Tensor> PointFaceDistanceForward(
     AT_ERROR("Not compiled with GPU support.");
 #endif
   }
+  CHECK_CPU(points);
+  CHECK_CPU(points_first_idx);
+  CHECK_CPU(tris);
+  CHECK_CPU(tris_first_idx);
   return PointFaceDistanceForwardCpu(
       points, points_first_idx, tris, tris_first_idx, min_triangle_area);
 }
@@ -143,6 +147,10 @@ std::tuple<torch::Tensor, torch::Tensor> PointFaceDistanceBackward(
     AT_ERROR("Not compiled with GPU support.");
 #endif
   }
+  CHECK_CPU(points);
+  CHECK_CPU(tris);
+  CHECK_CPU(idx_points);
+  CHECK_CPU(grad_dists);
   return PointFaceDistanceBackwardCpu(
       points, tris, idx_points, grad_dists, min_triangle_area);
 }
@@ -221,6 +229,10 @@ std::tuple<torch::Tensor, torch::Tensor> FacePointDistanceForward(
     AT_ERROR("Not compiled with GPU support.");
 #endif
   }
+  CHECK_CPU(points);
+  CHECK_CPU(points_first_idx);
+  CHECK_CPU(tris);
+  CHECK_CPU(tris_first_idx);
   return FacePointDistanceForwardCpu(
       points, points_first_idx, tris, tris_first_idx, min_triangle_area);
 }
@@ -277,6 +289,10 @@ std::tuple<torch::Tensor, torch::Tensor> FacePointDistanceBackward(
     AT_ERROR("Not compiled with GPU support.");
 #endif
   }
+  CHECK_CPU(points);
+  CHECK_CPU(tris);
+  CHECK_CPU(idx_tris);
+  CHECK_CPU(grad_dists);
   return FacePointDistanceBackwardCpu(
       points, tris, idx_tris, grad_dists, min_triangle_area);
 }
@@ -346,6 +362,10 @@ std::tuple<torch::Tensor, torch::Tensor> PointEdgeDistanceForward(
     AT_ERROR("Not compiled with GPU support.");
 #endif
   }
+  CHECK_CPU(points);
+  CHECK_CPU(points_first_idx);
+  CHECK_CPU(segms);
+  CHECK_CPU(segms_first_idx);
   return PointEdgeDistanceForwardCpu(
       points, points_first_idx, segms, segms_first_idx, max_points);
 }
@@ -396,6 +416,10 @@ std::tuple<torch::Tensor, torch::Tensor> PointEdgeDistanceBackward(
     AT_ERROR("Not compiled with GPU support.");
 #endif
   }
+  CHECK_CPU(points);
+  CHECK_CPU(segms);
+  CHECK_CPU(idx_points);
+  CHECK_CPU(grad_dists);
   return PointEdgeDistanceBackwardCpu(points, segms, idx_points, grad_dists);
 }
 
@@ -464,6 +488,10 @@ std::tuple<torch::Tensor, torch::Tensor> EdgePointDistanceForward(
     AT_ERROR("Not compiled with GPU support.");
 #endif
   }
+  CHECK_CPU(points);
+  CHECK_CPU(points_first_idx);
+  CHECK_CPU(segms);
+  CHECK_CPU(segms_first_idx);
   return EdgePointDistanceForwardCpu(
       points, points_first_idx, segms, segms_first_idx, max_segms);
 }
@@ -514,6 +542,10 @@ std::tuple<torch::Tensor, torch::Tensor> EdgePointDistanceBackward(
     AT_ERROR("Not compiled with GPU support.");
 #endif
   }
+  CHECK_CPU(points);
+  CHECK_CPU(segms);
+  CHECK_CPU(idx_segms);
+  CHECK_CPU(grad_dists);
   return EdgePointDistanceBackwardCpu(points, segms, idx_segms, grad_dists);
 }
 
@@ -567,6 +599,8 @@ torch::Tensor PointFaceArrayDistanceForward(
     AT_ERROR("Not compiled with GPU support.");
 #endif
   }
+  CHECK_CPU(points);
+  CHECK_CPU(tris);
   return PointFaceArrayDistanceForwardCpu(points, tris, min_triangle_area);
 }
 
@@ -613,6 +647,9 @@ std::tuple<torch::Tensor, torch::Tensor> PointFaceArrayDistanceBackward(
     AT_ERROR("Not compiled with GPU support.");
 #endif
   }
+  CHECK_CPU(points);
+  CHECK_CPU(tris);
+  CHECK_CPU(grad_dists);
   return PointFaceArrayDistanceBackwardCpu(
       points, tris, grad_dists, min_triangle_area);
 }
@@ -661,6 +698,8 @@ torch::Tensor PointEdgeArrayDistanceForward(
     AT_ERROR("Not compiled with GPU support.");
 #endif
   }
+  CHECK_CPU(points);
+  CHECK_CPU(segms);
   return PointEdgeArrayDistanceForwardCpu(points, segms);
 }
 
@@ -703,5 +742,8 @@ std::tuple<torch::Tensor, torch::Tensor> PointEdgeArrayDistanceBackward(
     AT_ERROR("Not compiled with GPU support.");
 #endif
   }
+  CHECK_CPU(points);
+  CHECK_CPU(segms);
+  CHECK_CPU(grad_dists);
   return PointEdgeArrayDistanceBackwardCpu(points, segms, grad_dists);
 }

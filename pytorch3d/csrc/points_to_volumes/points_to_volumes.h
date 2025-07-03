@@ -104,6 +104,12 @@ inline void PointsToVolumesForward(
     AT_ERROR("Not compiled with GPU support.");
 #endif
   }
+  CHECK_CPU(points_3d);
+  CHECK_CPU(points_features);
+  CHECK_CPU(volume_densities);
+  CHECK_CPU(volume_features);
+  CHECK_CPU(grid_sizes);
+  CHECK_CPU(mask);
   PointsToVolumesForwardCpu(
       points_3d,
       points_features,
@@ -183,6 +189,14 @@ inline void PointsToVolumesBackward(
     AT_ERROR("Not compiled with GPU support.");
 #endif
   }
+  CHECK_CPU(points_3d);
+  CHECK_CPU(points_features);
+  CHECK_CPU(grid_sizes);
+  CHECK_CPU(mask);
+  CHECK_CPU(grad_volume_densities);
+  CHECK_CPU(grad_volume_features);
+  CHECK_CPU(grad_points_3d);
+  CHECK_CPU(grad_points_features);
   PointsToVolumesBackwardCpu(
       points_3d,
       points_features,
