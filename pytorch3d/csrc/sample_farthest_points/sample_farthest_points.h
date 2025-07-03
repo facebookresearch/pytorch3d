@@ -43,7 +43,8 @@ at::Tensor FarthestPointSamplingCuda(
     const at::Tensor& points,
     const at::Tensor& lengths,
     const at::Tensor& K,
-    const at::Tensor& start_idxs);
+    const at::Tensor& start_idxs,
+    const at::Tensor& min_point_dist);
 
 at::Tensor FarthestPointSamplingCpu(
     const at::Tensor& points,
@@ -56,14 +57,16 @@ at::Tensor FarthestPointSampling(
     const at::Tensor& points,
     const at::Tensor& lengths,
     const at::Tensor& K,
-    const at::Tensor& start_idxs) {
+    const at::Tensor& start_idxs,
+    const at::Tensor& min_point_dist) {
   if (points.is_cuda() || lengths.is_cuda() || K.is_cuda()) {
 #ifdef WITH_CUDA
     CHECK_CUDA(points);
     CHECK_CUDA(lengths);
     CHECK_CUDA(K);
     CHECK_CUDA(start_idxs);
-    return FarthestPointSamplingCuda(points, lengths, K, start_idxs);
+    CHECK_CUDA(min_point_dist);
+    return FarthestPointSamplingCuda(points, lengths, K, start_idxs, min_point_dist);
 #else
     AT_ERROR("Not compiled with GPU support.");
 #endif
