@@ -294,10 +294,10 @@ def matrix_to_euler_angles(matrix: torch.Tensor, convention: str) -> torch.Tenso
     tait_bryan = i0 != i2
     if tait_bryan:
         central_angle = torch.asin(
-            matrix[..., i0, i2] * (-1.0 if i0 - i2 in [-1, 2] else 1.0)
+            torch.clamp(matrix[..., i0, i2], -1, 1) * (-1.0 if i0 - i2 in [-1, 2] else 1.0)
         )
     else:
-        central_angle = torch.acos(matrix[..., i0, i0])
+        central_angle = torch.acos(torch.clamp(matrix[..., i0, i0], -1, 1))
 
     o = (
         _angle_from_tan(
