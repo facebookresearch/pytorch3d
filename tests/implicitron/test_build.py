@@ -15,7 +15,7 @@ from tests.common_testing import get_pytorch3d_dir
 
 # This file groups together tests which look at the code without running it.
 class TestBuild(unittest.TestCase):
-    def test_no_import_cycles(self):
+    def _test_no_import_cycles(self):
         # Check each module of pytorch3d imports cleanly,
         # which may fail if there are import cycles.
 

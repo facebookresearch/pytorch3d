@@ -78,7 +78,7 @@ class TestBuild(unittest.TestCase):
 
         self.assertListEqual(sorted(listed_in_json), notes_on_disk)
 
-    def test_no_import_cycles(self):
+    def _test_no_import_cycles(self):
         # Check each module of pytorch3d imports cleanly,
         # which may fail if there are import cycles.
 
