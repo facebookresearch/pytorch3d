@@ -15,19 +15,19 @@
 #include <cub/cub.cuh>
 #include "utils/warp_reduce.cuh"
 
-template <unsigned int block_size>
+template <unsigned int block_size, typename scalar_t>
 __global__ void FarthestPointSamplingKernel(
     // clang-format off
-    const at::PackedTensorAccessor64<float, 3, at::RestrictPtrTraits> points,
+    const at::PackedTensorAccessor64<scalar_t, 3, at::RestrictPtrTraits> points,
     const at::PackedTensorAccessor64<int64_t, 1, at::RestrictPtrTraits> lengths,
     const at::PackedTensorAccessor64<int64_t, 1, at::RestrictPtrTraits> K,
     at::PackedTensorAccessor64<int64_t, 2, at::RestrictPtrTraits> idxs,
-    at::PackedTensorAccessor64<float, 2, at::RestrictPtrTraits> min_point_dist,
+    at::PackedTensorAccessor64<scalar_t, 2, at::RestrictPtrTraits> min_point_dist,
     const at::PackedTensorAccessor64<int64_t, 1, at::RestrictPtrTraits> start_idxs
     // clang-format on
 ) {
   typedef cub::BlockReduce<
-      cub::KeyValuePair<int64_t, float>,
+      cub::KeyValuePair<int64_t, scalar_t>,
       block_size,
       cub::BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY>
       BlockReduce;
@@ -55,16 +55,16 @@ __global__ void FarthestPointSamplingKernel(
     // Keep track of the maximum of the minimum distance to previously selected
     // points seen by this thread
     int64_t max_dist_idx = 0;
-    float max_dist = -1.0;
+    scalar_t max_dist = -1.0;
 
     // Iterate through all the points in this pointcloud. For already selected
     // points, the minimum distance to the set of previously selected points
     // will be 0.0 so they won't be selected again.
     for (int64_t p = tid; p < lengths[batch_idx]; p += block_size) {
       // Calculate the distance to the last selected point
-      float dist2 = 0.0;
+      scalar_t dist2 = 0.0;
       for (int64_t d = 0; d < D; ++d) {
-        float diff = points[batch_idx][selected][d] - points[batch_idx][p][d];
+        scalar_t diff = points[batch_idx][selected][d] - points[batch_idx][p][d];
         dist2 += (diff * diff);
       }
 
@@ -72,7 +72,7 @@ __global__ void FarthestPointSamplingKernel(
       // less than the previous minimum distance of p to the set of selected
       // points, then updated the corresponding value in min_point_dist
       // so it always contains the min distance.
-      const float p_min_dist = min(dist2, min_point_dist[batch_idx][p]);
+      const scalar_t p_min_dist = min(dist2, min_point_dist[batch_idx][p]);
       min_point_dist[batch_idx][p] = p_min_dist;
 
       // Update the max distance and point idx for this thread.
@@ -86,7 +86,7 @@ __global__ void FarthestPointSamplingKernel(
     selected =
         BlockReduce(temp_storage)
             .Reduce(
-                cub::KeyValuePair<int64_t, float>(max_dist_idx, max_dist),
+                cub::KeyValuePair<int64_t, scalar_t>(max_dist_idx, max_dist),
                 cub::ArgMax(),
                 block_size)
             .key;
@@ -107,13 +107,16 @@ at::Tensor FarthestPointSamplingCuda(
     const at::Tensor& points, // (N, P, 3)
     const at::Tensor& lengths, // (N,)
     const at::Tensor& K, // (N,)
-    const at::Tensor& start_idxs) {
+    const at::Tensor& start_idxs, // (N, P)
+    const at::Tensor& min_point_dist
+    ) {
   // Check inputs are on the same device
-  at::TensorArg p_t{points, "points", 1}, lengths_t{lengths, "lengths", 2},
-      k_t{K, "K", 3}, start_idxs_t{start_idxs, "start_idxs", 4};
-  at::CheckedFrom c = "FarthestPointSamplingCuda";
-  at::checkAllSameGPU(c, {p_t, lengths_t, k_t, start_idxs_t});
-  at::checkAllSameType(c, {lengths_t, k_t, start_idxs_t});
+   at::TensorArg p_t{points, "points", 1}, lengths_t{lengths, "lengths", 2},
+       k_t{K, "K", 3}, start_idxs_t{start_idxs, "start_idxs", 4}, min_point_dist_t{min_point_dist, "min_point_dist", 5};
+   at::CheckedFrom c = "FarthestPointSamplingCuda";
+   at::checkAllSameGPU(c, {p_t, lengths_t, k_t, start_idxs_t, min_point_dist_t});
+   at::checkAllSameType(c, {p_t, min_point_dist_t});
+   at::checkAllSameType(c, {lengths_t, k_t, start_idxs_t});
 
   // Set the device for the kernel launch based on the device of points
   at::cuda::CUDAGuard device_guard(points.device());
@@ -133,7 +136,6 @@ at::Tensor FarthestPointSamplingCuda(
 
   // Initialize the output tensor with the sampled indices
   auto idxs = at::full({N, max_K}, -1, lengths.options());
-  auto min_point_dist = at::full({N, P}, 1e10, points.options());
 
   if (N == 0 || P == 0) {
     AT_CUDA_CHECK(cudaGetLastError());
@@ -156,15 +158,10 @@ at::Tensor FarthestPointSamplingCuda(
   const size_t threads = max(min(1 << points_pow_2, MAX_THREADS_PER_BLOCK), 2);
 
   // Create the accessors
-  auto points_a = points.packed_accessor64<float, 3, at::RestrictPtrTraits>();
-  auto lengths_a =
-      lengths.packed_accessor64<int64_t, 1, at::RestrictPtrTraits>();
+  auto lengths_a = lengths.packed_accessor64<int64_t, 1, at::RestrictPtrTraits>();
   auto K_a = K.packed_accessor64<int64_t, 1, at::RestrictPtrTraits>();
   auto idxs_a = idxs.packed_accessor64<int64_t, 2, at::RestrictPtrTraits>();
-  auto start_idxs_a =
-      start_idxs.packed_accessor64<int64_t, 1, at::RestrictPtrTraits>();
-  auto min_point_dist_a =
-      min_point_dist.packed_accessor64<float, 2, at::RestrictPtrTraits>();
+  auto start_idxs_a = start_idxs.packed_accessor64<int64_t, 1, at::RestrictPtrTraits>();
 
   // TempStorage for the reduction uses static shared memory only.
   size_t shared_mem = 0;
@@ -173,50 +170,124 @@ at::Tensor FarthestPointSamplingCuda(
   // block.
   switch (threads) {
     case 1024:
-      FarthestPointSamplingKernel<1024>
-          <<<blocks, threads, shared_mem, stream>>>(
-              points_a, lengths_a, K_a, idxs_a, min_point_dist_a, start_idxs_a);
+      AT_DISPATCH_FLOATING_TYPES_AND_HALF(
+          points.scalar_type(), "fps_kernel_cuda", ([&] {
+            FarthestPointSamplingKernel<1024, scalar_t>
+                <<<blocks, threads, shared_mem, stream>>>(
+                    points.packed_accessor64<scalar_t, 3, at::RestrictPtrTraits>(), lengths_a, K_a, idxs_a,
+                    min_point_dist.packed_accessor64<scalar_t, 2, at::RestrictPtrTraits>(), start_idxs_a
+                );
+          })
+      );
       break;
     case 512:
-      FarthestPointSamplingKernel<512><<<blocks, threads, shared_mem, stream>>>(
-          points_a, lengths_a, K_a, idxs_a, min_point_dist_a, start_idxs_a);
+      AT_DISPATCH_FLOATING_TYPES_AND_HALF(
+          points.scalar_type(), "fps_kernel_cuda", ([&] {
+            FarthestPointSamplingKernel<512, scalar_t>
+                <<<blocks, threads, shared_mem, stream>>>(
+                    points.packed_accessor64<scalar_t, 3, at::RestrictPtrTraits>(), lengths_a, K_a, idxs_a,
+                    min_point_dist.packed_accessor64<scalar_t, 2, at::RestrictPtrTraits>(), start_idxs_a
+                );
+          })
+      );
       break;
     case 256:
-      FarthestPointSamplingKernel<256><<<blocks, threads, shared_mem, stream>>>(
-          points_a, lengths_a, K_a, idxs_a, min_point_dist_a, start_idxs_a);
+      AT_DISPATCH_FLOATING_TYPES_AND_HALF(
+          points.scalar_type(), "fps_kernel_cuda", ([&] {
+            FarthestPointSamplingKernel<256, scalar_t>
+                <<<blocks, threads, shared_mem, stream>>>(
+                    points.packed_accessor64<scalar_t, 3, at::RestrictPtrTraits>(), lengths_a, K_a, idxs_a,
+                    min_point_dist.packed_accessor64<scalar_t, 2, at::RestrictPtrTraits>(), start_idxs_a
+                );
+          }));
       break;
     case 128:
-      FarthestPointSamplingKernel<128><<<blocks, threads, shared_mem, stream>>>(
-          points_a, lengths_a, K_a, idxs_a, min_point_dist_a, start_idxs_a);
+      AT_DISPATCH_FLOATING_TYPES_AND_HALF(
+          points.scalar_type(), "fps_kernel_cuda", ([&] {
+            FarthestPointSamplingKernel<128, scalar_t>
+                <<<blocks, threads, shared_mem, stream>>>(
+                    points.packed_accessor64<scalar_t, 3, at::RestrictPtrTraits>(), lengths_a, K_a, idxs_a,
+                    min_point_dist.packed_accessor64<scalar_t, 2, at::RestrictPtrTraits>(), start_idxs_a
+                );
+          })
+      );
       break;
     case 64:
-      FarthestPointSamplingKernel<64><<<blocks, threads, shared_mem, stream>>>(
-          points_a, lengths_a, K_a, idxs_a, min_point_dist_a, start_idxs_a);
+      AT_DISPATCH_FLOATING_TYPES_AND_HALF(
+          points.scalar_type(), "fps_kernel_cuda", ([&] {
+            FarthestPointSamplingKernel<64, scalar_t>
+                <<<blocks, threads, shared_mem, stream>>>(
+                    points.packed_accessor64<scalar_t, 3, at::RestrictPtrTraits>(), lengths_a, K_a, idxs_a,
+                    min_point_dist.packed_accessor64<scalar_t, 2, at::RestrictPtrTraits>(), start_idxs_a
+                );
+          })
+      );
       break;
     case 32:
-      FarthestPointSamplingKernel<32><<<blocks, threads, shared_mem, stream>>>(
-          points_a, lengths_a, K_a, idxs_a, min_point_dist_a, start_idxs_a);
+      AT_DISPATCH_FLOATING_TYPES_AND_HALF(
+          points.scalar_type(), "fps_kernel_cuda", ([&] {
+            FarthestPointSamplingKernel<32, scalar_t>
+                <<<blocks, threads, shared_mem, stream>>>(
+                    points.packed_accessor64<scalar_t, 3, at::RestrictPtrTraits>(), lengths_a, K_a, idxs_a,
+                    min_point_dist.packed_accessor64<scalar_t, 2, at::RestrictPtrTraits>(), start_idxs_a
+                );
+          })
+      );
       break;
     case 16:
-      FarthestPointSamplingKernel<16><<<blocks, threads, shared_mem, stream>>>(
-          points_a, lengths_a, K_a, idxs_a, min_point_dist_a, start_idxs_a);
+      AT_DISPATCH_FLOATING_TYPES_AND_HALF(
+          points.scalar_type(), "fps_kernel_cuda", ([&] {
+            FarthestPointSamplingKernel<16, scalar_t>
+                <<<blocks, threads, shared_mem, stream>>>(
+                    points.packed_accessor64<scalar_t, 3, at::RestrictPtrTraits>(), lengths_a, K_a, idxs_a,
+                    min_point_dist.packed_accessor64<scalar_t, 2, at::RestrictPtrTraits>(), start_idxs_a
+                );
+          })
+      );
       break;
     case 8:
-      FarthestPointSamplingKernel<8><<<blocks, threads, shared_mem, stream>>>(
-          points_a, lengths_a, K_a, idxs_a, min_point_dist_a, start_idxs_a);
+      AT_DISPATCH_FLOATING_TYPES_AND_HALF(
+          points.scalar_type(), "fps_kernel_cuda", ([&] {
+            FarthestPointSamplingKernel<8, scalar_t>
+                <<<blocks, threads, shared_mem, stream>>>(
+                    points.packed_accessor64<scalar_t, 3, at::RestrictPtrTraits>(), lengths_a, K_a, idxs_a,
+                    min_point_dist.packed_accessor64<scalar_t, 2, at::RestrictPtrTraits>(), start_idxs_a
+                );
+          })
+      );
       break;
     case 4:
-      FarthestPointSamplingKernel<4><<<threads, threads, shared_mem, stream>>>(
-          points_a, lengths_a, K_a, idxs_a, min_point_dist_a, start_idxs_a);
+      AT_DISPATCH_FLOATING_TYPES_AND_HALF(
+          points.scalar_type(), "fps_kernel_cuda", ([&] {
+            FarthestPointSamplingKernel<4, scalar_t>
+                <<<threads, threads, shared_mem, stream>>>(
+                    points.packed_accessor64<scalar_t, 3, at::RestrictPtrTraits>(), lengths_a, K_a, idxs_a,
+                    min_point_dist.packed_accessor64<scalar_t, 2, at::RestrictPtrTraits>(), start_idxs_a
+                );
+          })
+      );
       break;
     case 2:
-      FarthestPointSamplingKernel<2><<<threads, threads, shared_mem, stream>>>(
-          points_a, lengths_a, K_a, idxs_a, min_point_dist_a, start_idxs_a);
+      AT_DISPATCH_FLOATING_TYPES_AND_HALF(
+          points.scalar_type(), "fps_kernel_cuda", ([&] {
+            FarthestPointSamplingKernel<2, scalar_t>
+                <<<threads, threads, shared_mem, stream>>>(
+                    points.packed_accessor64<scalar_t, 3, at::RestrictPtrTraits>(), lengths_a, K_a, idxs_a,
+                    min_point_dist.packed_accessor64<scalar_t, 2, at::RestrictPtrTraits>(), start_idxs_a
+                );
+          })
+      );
       break;
     default:
-      FarthestPointSamplingKernel<1024>
-          <<<blocks, threads, shared_mem, stream>>>(
-              points_a, lengths_a, K_a, idxs_a, min_point_dist_a, start_idxs_a);
+      AT_DISPATCH_FLOATING_TYPES_AND_HALF(
+          points.scalar_type(), "fps_kernel_cuda", ([&] {
+            FarthestPointSamplingKernel<1024, scalar_t>
+                <<<blocks, threads, shared_mem, stream>>>(
+                    points.packed_accessor64<scalar_t, 3, at::RestrictPtrTraits>(), lengths_a, K_a, idxs_a,
+                    min_point_dist.packed_accessor64<scalar_t, 2, at::RestrictPtrTraits>(), start_idxs_a
+                );
+          })
+      );
   }
 
   AT_CUDA_CHECK(cudaGetLastError());
