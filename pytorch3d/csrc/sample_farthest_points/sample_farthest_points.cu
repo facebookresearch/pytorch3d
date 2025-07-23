@@ -107,7 +107,8 @@ at::Tensor FarthestPointSamplingCuda(
     const at::Tensor& points, // (N, P, 3)
     const at::Tensor& lengths, // (N,)
     const at::Tensor& K, // (N,)
-    const at::Tensor& start_idxs) {
+    const at::Tensor& start_idxs,
+    const int64_t max_K_known = -1) {
   // Check inputs are on the same device
   at::TensorArg p_t{points, "points", 1}, lengths_t{lengths, "lengths", 2},
       k_t{K, "K", 3}, start_idxs_t{start_idxs, "start_idxs", 4};
@@ -129,7 +130,12 @@ at::Tensor FarthestPointSamplingCuda(
 
   const int64_t N = points.size(0);
   const int64_t P = points.size(1);
-  const int64_t max_K = at::max(K).item<int64_t>();
+  int64_t max_K;
+  if (max_K_known > 0) {
+    max_K = max_K_known;
+  } else {
+    max_K = at::max(K).item<int64_t>();
+  }
 
   // Initialize the output tensor with the sampled indices
   auto idxs = at::full({N, max_K}, -1, lengths.options());
