@@ -110,8 +110,8 @@ std::tuple<at::Tensor, at::Tensor> BallQueryCuda(
   const size_t blocks = 256;
   const size_t threads = 256;
 
-  AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      p1.scalar_type(), "ball_query_kernel_cuda", ([&] {
+  AT_DISPATCH_FLOATING_TYPES_AND2(
+      at::kHalf, at::kBFloat16, p1.scalar_type(), "ball_query_kernel_cuda", ([&] {
         BallQueryKernel<scalar_t><<<blocks, threads, 0, stream>>>(
             p1.packed_accessor64<scalar_t, 3, at::RestrictPtrTraits>(),
             p2.packed_accessor64<scalar_t, 3, at::RestrictPtrTraits>(),

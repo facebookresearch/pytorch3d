@@ -172,7 +172,8 @@ at::Tensor FarthestPointSamplingCuda(
   // block.
   switch (threads) {
     case 1024:
-      AT_DISPATCH_FLOATING_TYPES_AND_HALF(
+      AT_DISPATCH_FLOATING_TYPES_AND2(
+          at::kHalf, at::kBFloat16, 
           points.scalar_type(), "fps_kernel_cuda", ([&] {
             FarthestPointSamplingKernel<1024, scalar_t>
                 <<<blocks, threads, shared_mem, stream>>>(
@@ -183,7 +184,8 @@ at::Tensor FarthestPointSamplingCuda(
       );
       break;
     case 512:
-      AT_DISPATCH_FLOATING_TYPES_AND_HALF(
+      AT_DISPATCH_FLOATING_TYPES_AND2(
+          at::kHalf, at::kBFloat16, 
           points.scalar_type(), "fps_kernel_cuda", ([&] {
             FarthestPointSamplingKernel<512, scalar_t>
                 <<<blocks, threads, shared_mem, stream>>>(
@@ -194,7 +196,8 @@ at::Tensor FarthestPointSamplingCuda(
       );
       break;
     case 256:
-      AT_DISPATCH_FLOATING_TYPES_AND_HALF(
+      AT_DISPATCH_FLOATING_TYPES_AND2(
+          at::kHalf, at::kBFloat16, 
           points.scalar_type(), "fps_kernel_cuda", ([&] {
             FarthestPointSamplingKernel<256, scalar_t>
                 <<<blocks, threads, shared_mem, stream>>>(
@@ -204,7 +207,8 @@ at::Tensor FarthestPointSamplingCuda(
           }));
       break;
     case 128:
-      AT_DISPATCH_FLOATING_TYPES_AND_HALF(
+      AT_DISPATCH_FLOATING_TYPES_AND2(
+          at::kHalf, at::kBFloat16, 
           points.scalar_type(), "fps_kernel_cuda", ([&] {
             FarthestPointSamplingKernel<128, scalar_t>
                 <<<blocks, threads, shared_mem, stream>>>(
@@ -215,7 +219,8 @@ at::Tensor FarthestPointSamplingCuda(
       );
       break;
     case 64:
-      AT_DISPATCH_FLOATING_TYPES_AND_HALF(
+      AT_DISPATCH_FLOATING_TYPES_AND2(
+          at::kHalf, at::kBFloat16, 
           points.scalar_type(), "fps_kernel_cuda", ([&] {
             FarthestPointSamplingKernel<64, scalar_t>
                 <<<blocks, threads, shared_mem, stream>>>(
@@ -226,7 +231,8 @@ at::Tensor FarthestPointSamplingCuda(
       );
       break;
     case 32:
-      AT_DISPATCH_FLOATING_TYPES_AND_HALF(
+      AT_DISPATCH_FLOATING_TYPES_AND2(
+          at::kHalf, at::kBFloat16, 
           points.scalar_type(), "fps_kernel_cuda", ([&] {
             FarthestPointSamplingKernel<32, scalar_t>
                 <<<blocks, threads, shared_mem, stream>>>(
@@ -237,7 +243,8 @@ at::Tensor FarthestPointSamplingCuda(
       );
       break;
     case 16:
-      AT_DISPATCH_FLOATING_TYPES_AND_HALF(
+      AT_DISPATCH_FLOATING_TYPES_AND2(
+          at::kHalf, at::kBFloat16, 
           points.scalar_type(), "fps_kernel_cuda", ([&] {
             FarthestPointSamplingKernel<16, scalar_t>
                 <<<blocks, threads, shared_mem, stream>>>(
@@ -248,7 +255,8 @@ at::Tensor FarthestPointSamplingCuda(
       );
       break;
     case 8:
-      AT_DISPATCH_FLOATING_TYPES_AND_HALF(
+      AT_DISPATCH_FLOATING_TYPES_AND2(
+          at::kHalf, at::kBFloat16, 
           points.scalar_type(), "fps_kernel_cuda", ([&] {
             FarthestPointSamplingKernel<8, scalar_t>
                 <<<blocks, threads, shared_mem, stream>>>(
@@ -259,7 +267,8 @@ at::Tensor FarthestPointSamplingCuda(
       );
       break;
     case 4:
-      AT_DISPATCH_FLOATING_TYPES_AND_HALF(
+      AT_DISPATCH_FLOATING_TYPES_AND2(
+          at::kHalf, at::kBFloat16, 
           points.scalar_type(), "fps_kernel_cuda", ([&] {
             FarthestPointSamplingKernel<4, scalar_t>
                 <<<threads, threads, shared_mem, stream>>>(
@@ -270,7 +279,8 @@ at::Tensor FarthestPointSamplingCuda(
       );
       break;
     case 2:
-      AT_DISPATCH_FLOATING_TYPES_AND_HALF(
+      AT_DISPATCH_FLOATING_TYPES_AND2(
+          at::kHalf, at::kBFloat16, 
           points.scalar_type(), "fps_kernel_cuda", ([&] {
             FarthestPointSamplingKernel<2, scalar_t>
                 <<<threads, threads, shared_mem, stream>>>(
@@ -281,7 +291,8 @@ at::Tensor FarthestPointSamplingCuda(
       );
       break;
     default:
-      AT_DISPATCH_FLOATING_TYPES_AND_HALF(
+      AT_DISPATCH_FLOATING_TYPES_AND2(
+          at::kHalf, at::kBFloat16, 
           points.scalar_type(), "fps_kernel_cuda", ([&] {
             FarthestPointSamplingKernel<1024, scalar_t>
                 <<<blocks, threads, shared_mem, stream>>>(
