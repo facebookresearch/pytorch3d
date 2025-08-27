@@ -72,6 +72,7 @@ class TestKNN(TestCaseMixin, unittest.TestCase):
         factors = [Ns, Ds, P1s, P2s, Ks, norms]
         for N, D, P1, P2, K, norm in product(*factors):
             for version in versions:
+                torch.manual_seed(2)
                 if version == 3 and K > 4:
                     continue
                 x = torch.randn(N, P1, D, device=device, requires_grad=True)

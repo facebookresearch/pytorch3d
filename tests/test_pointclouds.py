@@ -17,7 +17,7 @@ from pytorch3d.structures.pointclouds import (
     Pointclouds,
 )
 
-from .common_testing import TestCaseMixin
+from .common_testing import needs_multigpu, TestCaseMixin
 
 
 class TestPointclouds(TestCaseMixin, unittest.TestCase):
@@ -703,6 +703,7 @@ class TestPointclouds(TestCaseMixin, unittest.TestCase):
         self.assertEqual(cuda_device, cloud.device)
         self.assertIsNot(cloud, converted_cloud)
 
+    @needs_multigpu
     def test_to_list(self):
         cloud = self.init_cloud(5, 100, 10)
         device = torch.device("cuda:1")
@@ -740,6 +741,7 @@ class TestPointclouds(TestCaseMixin, unittest.TestCase):
         self.assertTrue(cloud._P == new_cloud._P)
         self.assertTrue(cloud._C == new_cloud._C)
 
+    @needs_multigpu
     def test_to_tensor(self):
         cloud = self.init_cloud(5, 100, 10, lists_to_tensors=True)
         device = torch.device("cuda:1")

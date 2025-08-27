@@ -10,7 +10,7 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 DIR=$(dirname "${DIR}")
 
-if [[ -f "${DIR}/TARGETS" ]]
+if [[ -f "${DIR}/BUCK" ]]
 then
   pyfmt "${DIR}"
 else

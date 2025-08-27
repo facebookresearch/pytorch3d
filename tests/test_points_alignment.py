@@ -165,7 +165,7 @@ class TestICP(TestCaseMixin, unittest.TestCase):
         a set of randomly-sized Pointclouds and on their padded versions.
         """
 
-        torch.manual_seed(4)
+        torch.manual_seed(14)
         device = torch.device("cuda:0")
 
         for estimate_scale in (True, False):

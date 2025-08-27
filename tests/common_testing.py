@@ -31,6 +31,13 @@ def skip_opengl_requested() -> bool:
 usesOpengl = unittest.skipIf(skip_opengl_requested(), "uses opengl")
 
 
+def have_multiple_gpus() -> bool:
+    return torch.cuda.device_count() > 1
+
+
+needs_multigpu = unittest.skipIf(not have_multiple_gpus(), "needs multiple GPUs")
+
+
 def get_tests_dir() -> Path:
     """
     Returns Path for the directory containing this file.

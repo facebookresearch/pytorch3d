@@ -134,7 +134,7 @@ if os.getenv("PYTORCH3D_NO_NINJA", "0") == "1":
 
     class BuildExtension(torch.utils.cpp_extension.BuildExtension):
         def __init__(self, *args, **kwargs):
-            super().__init__(use_ninja=False, *args, **kwargs)
+            super().__init__(*args, use_ninja=False, **kwargs)
 
 else:
     BuildExtension = torch.utils.cpp_extension.BuildExtension
