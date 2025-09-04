@@ -8,7 +8,6 @@
 import itertools
 import math
 import unittest
-from distutils.version import LooseVersion
 from typing import Optional, Union
 
 import numpy as np
@@ -271,7 +270,6 @@ class TestRotationConversion(TestCaseMixin, unittest.TestCase):
             torch.matmul(r, r.permute(0, 2, 1)), torch.eye(3).expand_as(r), atol=1e-6
         )
 
-    @unittest.skipIf(LooseVersion(torch.__version__) < "1.9", "recent torchscript only")
     def test_scriptable(self):
         torch.jit.script(axis_angle_to_matrix)
         torch.jit.script(axis_angle_to_quaternion)

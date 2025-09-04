@@ -7,7 +7,6 @@
 
 import math
 import unittest
-from distutils.version import LooseVersion
 
 import numpy as np
 import torch
@@ -255,7 +254,6 @@ class TestSO3(TestCaseMixin, unittest.TestCase):
                 # all grad values have to be finite
                 self.assertTrue(torch.isfinite(r.grad).all())
 
-    @unittest.skipIf(LooseVersion(torch.__version__) < "1.9", "recent torchscript only")
     def test_scriptable(self):
         torch.jit.script(so3_exp_map)
         torch.jit.script(so3_log_map)
