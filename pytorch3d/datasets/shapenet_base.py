@@ -45,6 +45,7 @@ class ShapeNetBase(torch.utils.data.Dataset):  # pragma: no cover
         self.model_dir = "model.obj"
         self.load_textures = True
         self.texture_resolution = 4
+        self.texture_wrap = "clamp"
 
     def __len__(self) -> int:
         """
@@ -90,6 +91,7 @@ class ShapeNetBase(torch.utils.data.Dataset):  # pragma: no cover
             create_texture_atlas=self.load_textures,
             load_textures=self.load_textures,
             texture_atlas_size=self.texture_resolution,
+            texture_wrap = self.texture_wrap
         )
         if self.load_textures:
             textures = aux.texture_atlas
