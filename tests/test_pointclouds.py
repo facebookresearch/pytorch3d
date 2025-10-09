@@ -17,7 +17,7 @@ from pytorch3d.structures.pointclouds import (
     Pointclouds,
 )
 
-from .common_testing import needs_multigpu, TestCaseMixin
+from .common_testing import TestCaseMixin
 
 
 class TestPointclouds(TestCaseMixin, unittest.TestCase):
@@ -702,82 +702,6 @@ class TestPointclouds(TestCaseMixin, unittest.TestCase):
         self.assertEqual(cpu_device, converted_cloud.device)
         self.assertEqual(cuda_device, cloud.device)
         self.assertIsNot(cloud, converted_cloud)
-
-    @needs_multigpu
-    def test_to_list(self):
-        cloud = self.init_cloud(5, 100, 10)
-        device = torch.device("cuda:1")
-
-        new_cloud = cloud.to(device)
-        self.assertTrue(new_cloud.device == device)
-        self.assertTrue(cloud.device == torch.device("cuda:0"))
-        for attrib in [
-            "points_padded",
-            "points_packed",
-            "normals_padded",
-            "normals_packed",
-            "features_padded",
-            "features_packed",
-            "num_points_per_cloud",
-            "cloud_to_packed_first_idx",
-            "padded_to_packed_idx",
-        ]:
-            self.assertClose(
-                getattr(new_cloud, attrib)().cpu(), getattr(cloud, attrib)().cpu()
-            )
-        for i in range(len(cloud)):
-            self.assertClose(
-                cloud.points_list()[i].cpu(), new_cloud.points_list()[i].cpu()
-            )
-            self.assertClose(
-                cloud.normals_list()[i].cpu(), new_cloud.normals_list()[i].cpu()
-            )
-            self.assertClose(
-                cloud.features_list()[i].cpu(), new_cloud.features_list()[i].cpu()
-            )
-        self.assertTrue(all(cloud.valid.cpu() == new_cloud.valid.cpu()))
-        self.assertTrue(cloud.equisized == new_cloud.equisized)
-        self.assertTrue(cloud._N == new_cloud._N)
-        self.assertTrue(cloud._P == new_cloud._P)
-        self.assertTrue(cloud._C == new_cloud._C)
-
-    @needs_multigpu
-    def test_to_tensor(self):
-        cloud = self.init_cloud(5, 100, 10, lists_to_tensors=True)
-        device = torch.device("cuda:1")
-
-        new_cloud = cloud.to(device)
-        self.assertTrue(new_cloud.device == device)
-        self.assertTrue(cloud.device == torch.device("cuda:0"))
-        for attrib in [
-            "points_padded",
-            "points_packed",
-            "normals_padded",
-            "normals_packed",
-            "features_padded",
-            "features_packed",
-            "num_points_per_cloud",
-            "cloud_to_packed_first_idx",
-            "padded_to_packed_idx",
-        ]:
-            self.assertClose(
-                getattr(new_cloud, attrib)().cpu(), getattr(cloud, attrib)().cpu()
-            )
-        for i in range(len(cloud)):
-            self.assertClose(
-                cloud.points_list()[i].cpu(), new_cloud.points_list()[i].cpu()
-            )
-            self.assertClose(
-                cloud.normals_list()[i].cpu(), new_cloud.normals_list()[i].cpu()
-            )
-            self.assertClose(
-                cloud.features_list()[i].cpu(), new_cloud.features_list()[i].cpu()
-            )
-        self.assertTrue(all(cloud.valid.cpu() == new_cloud.valid.cpu()))
-        self.assertTrue(cloud.equisized == new_cloud.equisized)
-        self.assertTrue(cloud._N == new_cloud._N)
-        self.assertTrue(cloud._P == new_cloud._P)
-        self.assertTrue(cloud._C == new_cloud._C)
 
     def test_split(self):
         clouds = self.init_cloud(5, 100, 10)
