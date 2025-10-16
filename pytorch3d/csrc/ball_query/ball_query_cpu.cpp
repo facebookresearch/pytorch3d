@@ -7,6 +7,7 @@
  */
 
 #include <torch/extension.h>
+#include <math.h>
 #include <tuple>
 
 std::tuple<at::Tensor, at::Tensor> BallQueryCpu(
@@ -37,12 +38,21 @@ std::tuple<at::Tensor, at::Tensor> BallQueryCpu(
     const int64_t length2 = lengths2_a[n];
     for (int64_t i = 0; i < length1; ++i) {
       for (int64_t j = 0, count = 0; j < length2 && count < K; ++j) {
+        bool is_within_radius = true;
+        for (int d = 0; is_within_radius && d < D; ++d) {
+          float abs_diff = fabs(p1_a[n][i][d] - p2_a[n][j][d]);
+          is_within_radius = (abs_diff < radius);
+        }
+        if (!is_within_radius) {
+          continue;
+        }
         float dist2 = 0;
         for (int d = 0; d < D; ++d) {
-          float diff = p1_a[n][i][d] - p2_a[n][j][d];
-          dist2 += diff * diff;
+          float abs_diff = fabs(p1_a[n][i][d] - p2_a[n][j][d]);
+          dist2 += abs_diff * abs_diff;
         }
-        if (dist2 < radius2) {
+        is_within_radius = (dist2 < radius2);
+        if (is_within_radius) {
           dists_a[n][i][count] = dist2;
           idxs_a[n][i][count] = j;
           ++count;

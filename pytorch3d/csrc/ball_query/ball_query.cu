@@ -32,6 +32,7 @@ __global__ void BallQueryKernel(
     at::PackedTensorAccessor64<int64_t, 3, at::RestrictPtrTraits> idxs,
     at::PackedTensorAccessor64<scalar_t, 3, at::RestrictPtrTraits> dists,
     const int64_t K,
+    const float radius,
     const float radius2) {
   const int64_t N = p1.size(0);
   const int64_t chunks_per_cloud = (1 + (p1.size(1) - 1) / blockDim.x);
@@ -51,14 +52,26 @@ __global__ void BallQueryKernel(
     // Iterate over points in p2 until desired count is reached or
     // all points have been considered
     for (int64_t j = 0, count = 0; j < lengths2[n] && count < K; ++j) {
-      // Calculate the distance between the points
+      bool is_within_radius = true;
+
+      // Filter when any one coordinate is already outside the radius
+      for (int d = 0; is_within_radius && d < D; ++d) {
+        scalar_t abs_diff = fabs(p1[n][i][d] - p2[n][j][d]);
+        is_within_radius = (abs_diff < radius);
+      }
+      if (!is_within_radius) {
+        continue;
+      }
+
+      // Else, calculate the distance between the points and compare
       scalar_t dist2 = 0.0;
       for (int d = 0; d < D; ++d) {
         scalar_t diff = p1[n][i][d] - p2[n][j][d];
         dist2 += (diff * diff);
       }
+      is_within_radius = (dist2 < radius2);
 
-      if (dist2 < radius2) {
+      if (is_within_radius) {
         // If the point is within the radius
         // Set the value of the index to the point index
         idxs[n][i][count] = j;
@@ -120,6 +133,7 @@ std::tuple<at::Tensor, at::Tensor> BallQueryCuda(
             idxs.packed_accessor64<int64_t, 3, at::RestrictPtrTraits>(),
             dists.packed_accessor64<float, 3, at::RestrictPtrTraits>(),
             K_64,
+            radius,
             radius2);
       }));
 
