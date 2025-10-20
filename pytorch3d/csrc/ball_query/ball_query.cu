@@ -69,9 +69,8 @@ __global__ void BallQueryKernel(
         scalar_t diff = p1[n][i][d] - p2[n][j][d];
         dist2 += (diff * diff);
       }
-      is_within_radius = (dist2 < radius2);
 
-      if (is_within_radius) {
+      if (dist2 < radius2) {
         // If the point is within the radius
         // Set the value of the index to the point index
         idxs[n][i][count] = j;

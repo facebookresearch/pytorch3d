@@ -48,11 +48,10 @@ std::tuple<at::Tensor, at::Tensor> BallQueryCpu(
         }
         float dist2 = 0;
         for (int d = 0; d < D; ++d) {
-          float abs_diff = fabs(p1_a[n][i][d] - p2_a[n][j][d]);
-          dist2 += abs_diff * abs_diff;
+          float diff = p1_a[n][i][d] - p2_a[n][j][d];
+          dist2 += diff * diff;
         }
-        is_within_radius = (dist2 < radius2);
-        if (is_within_radius) {
+        if (dist2 < radius2) {
           dists_a[n][i][count] = dist2;
           idxs_a[n][i][count] = j;
           ++count;
