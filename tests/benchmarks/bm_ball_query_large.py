@@ -21,7 +21,7 @@ def ball_query_square(
     torch.cuda.synchronize()
 
     def output():
-        out = ball_query(pts1, pts2, K=K, radius=radius)
+        out = ball_query(pts1, pts2, K=K, radius=radius, skip_points_outside_cube=True)
         torch.cuda.synchronize()
 
     return output

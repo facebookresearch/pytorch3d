@@ -23,11 +23,12 @@ class _ball_query(Function):
     """
 
     @staticmethod
-    def forward(ctx, p1, p2, lengths1, lengths2, K, radius):
+    def forward(ctx, p1, p2, lengths1, lengths2, K, radius, skip_points_outside_cube):
         """
         Arguments defintions the same as in the ball_query function
         """
-        idx, dists = _C.ball_query(p1, p2, lengths1, lengths2, K, radius)
+        idx, dists = _C.ball_query(p1, p2, lengths1, lengths2, K, radius,
+                                    skip_points_outside_cube)
         ctx.save_for_backward(p1, p2, lengths1, lengths2, idx)
         ctx.mark_non_differentiable(idx)
         return dists, idx
@@ -49,7 +50,7 @@ class _ball_query(Function):
         grad_p1, grad_p2 = _C.knn_points_backward(
             p1, p2, lengths1, lengths2, idx, 2, grad_dists
         )
-        return grad_p1, grad_p2, None, None, None, None
+        return grad_p1, grad_p2, None, None, None, None, None
 
 
 def ball_query(
@@ -60,6 +61,7 @@ def ball_query(
     K: int = 500,
     radius: float = 0.2,
     return_nn: bool = True,
+    skip_points_outside_cube: bool = False,
 ):
     """
     Ball Query is an alternative to KNN. It can be
@@ -98,6 +100,9 @@ def ball_query(
             within the radius
         radius: the radius around each point within which the neighbors need to be located
         return_nn: If set to True returns the K neighbor points in p2 for each point in p1.
+        skip_points_outside_cube: If set to True, reduce multiplications of float values
+            by not explicitly calculating distances to points that fall outside the
+            D-cube with side length (2*radius) centered at each point in p1.
 
     Returns:
         dists: Tensor of shape (N, P1, K) giving the squared distances to
@@ -134,7 +139,8 @@ def ball_query(
     if lengths2 is None:
         lengths2 = torch.full((N,), P2, dtype=torch.int64, device=p1.device)
 
-    dists, idx = _ball_query.apply(p1, p2, lengths1, lengths2, K, radius)
+    dists, idx = _ball_query.apply(p1, p2, lengths1, lengths2, K, radius,
+                                    skip_points_outside_cube)
 
     # Gather the neighbors if needed
     points_nn = masked_gather(p2, idx) if return_nn else None

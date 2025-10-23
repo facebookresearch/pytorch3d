@@ -33,7 +33,8 @@ __global__ void BallQueryKernel(
     at::PackedTensorAccessor64<scalar_t, 3, at::RestrictPtrTraits> dists,
     const int64_t K,
     const float radius,
-    const float radius2) {
+    const float radius2,
+    const bool skip_points_outside_cube) {
   const int64_t N = p1.size(0);
   const int64_t chunks_per_cloud = (1 + (p1.size(1) - 1) / blockDim.x);
   const int64_t chunks_to_do = N * chunks_per_cloud;
@@ -52,15 +53,16 @@ __global__ void BallQueryKernel(
     // Iterate over points in p2 until desired count is reached or
     // all points have been considered
     for (int64_t j = 0, count = 0; j < lengths2[n] && count < K; ++j) {
-      bool is_within_radius = true;
-
-      // Filter when any one coordinate is already outside the radius
-      for (int d = 0; is_within_radius && d < D; ++d) {
-        scalar_t abs_diff = fabs(p1[n][i][d] - p2[n][j][d]);
-        is_within_radius = (abs_diff < radius);
-      }
-      if (!is_within_radius) {
-        continue;
+      if (skip_points_outside_cube) {
+        bool is_within_radius = true;
+        // Filter when any one coordinate is already outside the radius
+        for (int d = 0; is_within_radius && d < D; ++d) {
+          scalar_t abs_diff = fabs(p1[n][i][d] - p2[n][j][d]);
+          is_within_radius = (abs_diff < radius);
+        }
+        if (!is_within_radius) {
+          continue;
+        }
       }
 
       // Else, calculate the distance between the points and compare
@@ -89,7 +91,8 @@ std::tuple<at::Tensor, at::Tensor> BallQueryCuda(
     const at::Tensor& lengths1, // (N,)
     const at::Tensor& lengths2, // (N,)
     int K,
-    float radius) {
+    float radius,
+    bool skip_points_outside_cube) {
   // Check inputs are on the same device
   at::TensorArg p1_t{p1, "p1", 1}, p2_t{p2, "p2", 2},
       lengths1_t{lengths1, "lengths1", 3}, lengths2_t{lengths2, "lengths2", 4};
@@ -133,7 +136,8 @@ std::tuple<at::Tensor, at::Tensor> BallQueryCuda(
             dists.packed_accessor64<float, 3, at::RestrictPtrTraits>(),
             K_64,
             radius,
-            radius2);
+            radius2,
+            skip_points_outside_cube);
       }));
 
   AT_CUDA_CHECK(cudaGetLastError());

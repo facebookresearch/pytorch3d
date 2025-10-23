@@ -25,6 +25,9 @@
 //      within the radius
 //    radius: the radius around each point within which the neighbors need to be
 //      located
+//    skip_points_outside_cube: If true, reduce multiplications of float values
+//      by not explicitly calculating distances to points that fall outside the
+//      D-cube with side length (2*radius) centered at each point in p1.
 //
 // Returns:
 //    p1_neighbor_idx: LongTensor of shape (N, P1, K), where
@@ -46,7 +49,8 @@ std::tuple<at::Tensor, at::Tensor> BallQueryCpu(
     const at::Tensor& lengths1,
     const at::Tensor& lengths2,
     const int K,
-    const float radius);
+    const float radius,
+    const bool skip_points_outside_cube);
 
 // CUDA implementation
 std::tuple<at::Tensor, at::Tensor> BallQueryCuda(
@@ -55,7 +59,8 @@ std::tuple<at::Tensor, at::Tensor> BallQueryCuda(
     const at::Tensor& lengths1,
     const at::Tensor& lengths2,
     const int K,
-    const float radius);
+    const float radius,
+    const bool skip_points_outside_cube);
 
 // Implementation which is exposed
 // Note: the backward pass reuses the KNearestNeighborBackward kernel
@@ -65,7 +70,8 @@ inline std::tuple<at::Tensor, at::Tensor> BallQuery(
     const at::Tensor& lengths1,
     const at::Tensor& lengths2,
     int K,
-    float radius) {
+    float radius,
+    bool skip_points_outside_cube) {
   if (p1.is_cuda() || p2.is_cuda()) {
 #ifdef WITH_CUDA
     CHECK_CUDA(p1);
@@ -76,7 +82,8 @@ inline std::tuple<at::Tensor, at::Tensor> BallQuery(
         lengths1.contiguous(),
         lengths2.contiguous(),
         K,
-        radius);
+        radius,
+        skip_points_outside_cube);
 #else
     AT_ERROR("Not compiled with GPU support.");
 #endif
@@ -89,5 +96,6 @@ inline std::tuple<at::Tensor, at::Tensor> BallQuery(
       lengths1.contiguous(),
       lengths2.contiguous(),
       K,
-      radius);
+      radius,
+      skip_points_outside_cube);
 }
