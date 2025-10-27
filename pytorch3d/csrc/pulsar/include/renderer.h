@@ -255,7 +255,7 @@ GLOBAL void calc_signature(
  * for every iteration through the loading loop every thread could add a
  * 'hit' to the buffer.
  */
-#define RENDER_BUFFER_SIZE RENDER_BLOCK_SIZE* RENDER_BLOCK_SIZE * 2
+#define RENDER_BUFFER_SIZE RENDER_BLOCK_SIZE * RENDER_BLOCK_SIZE * 2
 /**
  * The threshold after which the spheres that are in the render buffer
  * are rendered and the buffer is flushed.

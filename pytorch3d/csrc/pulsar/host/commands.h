@@ -357,11 +357,11 @@ void MAX_WS(
 //
 //
 #define END_PARALLEL() \
-  end_parallel :;      \
+  end_parallel:;       \
   }
 #define END_PARALLEL_NORET() }
 #define END_PARALLEL_2D() \
-  end_parallel :;         \
+  end_parallel:;          \
   }                       \
   }
 #define END_PARALLEL_2D_NORET() \

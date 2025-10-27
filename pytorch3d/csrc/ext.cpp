@@ -105,15 +105,16 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
   py::class_<
       pulsar::pytorch::Renderer,
       std::shared_ptr<pulsar::pytorch::Renderer>>(m, "PulsarRenderer")
-      .def(py::init<
-           const uint&,
-           const uint&,
-           const uint&,
-           const bool&,
-           const bool&,
-           const float&,
-           const uint&,
-           const uint&>())
+      .def(
+          py::init<
+              const uint&,
+              const uint&,
+              const uint&,
+              const bool&,
+              const bool&,
+              const float&,
+              const uint&,
+              const uint&>())
       .def(
           "__eq__",
           [](const pulsar::pytorch::Renderer& a,

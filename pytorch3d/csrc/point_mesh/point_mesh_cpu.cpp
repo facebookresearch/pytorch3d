@@ -174,8 +174,8 @@ std::tuple<at::Tensor, at::Tensor> HullHullDistanceForwardCpu(
   at::Tensor idxs = at::zeros({A_N,}, as_first_idx.options());
   // clang-format on
 
-  auto as_a = as.accessor < float, H1 == 1 ? 2 : 3 > ();
-  auto bs_a = bs.accessor < float, H2 == 1 ? 2 : 3 > ();
+  auto as_a = as.accessor<float, H1 == 1 ? 2 : 3>();
+  auto bs_a = bs.accessor<float, H2 == 1 ? 2 : 3>();
   auto as_first_idx_a = as_first_idx.accessor<int64_t, 1>();
   auto bs_first_idx_a = bs_first_idx.accessor<int64_t, 1>();
   auto dists_a = dists.accessor<float, 1>();
@@ -230,10 +230,10 @@ std::tuple<at::Tensor, at::Tensor> HullHullDistanceBackwardCpu(
   at::Tensor grad_as = at::zeros_like(as);
   at::Tensor grad_bs = at::zeros_like(bs);
 
-  auto as_a = as.accessor < float, H1 == 1 ? 2 : 3 > ();
-  auto bs_a = bs.accessor < float, H2 == 1 ? 2 : 3 > ();
-  auto grad_as_a = grad_as.accessor < float, H1 == 1 ? 2 : 3 > ();
-  auto grad_bs_a = grad_bs.accessor < float, H2 == 1 ? 2 : 3 > ();
+  auto as_a = as.accessor<float, H1 == 1 ? 2 : 3>();
+  auto bs_a = bs.accessor<float, H2 == 1 ? 2 : 3>();
+  auto grad_as_a = grad_as.accessor<float, H1 == 1 ? 2 : 3>();
+  auto grad_bs_a = grad_bs.accessor<float, H2 == 1 ? 2 : 3>();
   auto idx_bs_a = idx_bs.accessor<int64_t, 1>();
   auto grad_dists_a = grad_dists.accessor<float, 1>();
 

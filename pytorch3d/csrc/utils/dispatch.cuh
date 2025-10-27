@@ -99,8 +99,7 @@ namespace {
 // and increment it via template recursion until it is equal to the run-time
 // argument N.
 template <
-    template <typename, int64_t>
-    class Kernel,
+    template <typename, int64_t> class Kernel,
     typename T,
     int64_t minN,
     int64_t maxN,
@@ -124,8 +123,7 @@ struct DispatchKernelHelper1D {
 // 1D dispatch: Specialization when curN == maxN
 // We need this base case to avoid infinite template recursion.
 template <
-    template <typename, int64_t>
-    class Kernel,
+    template <typename, int64_t> class Kernel,
     typename T,
     int64_t minN,
     int64_t maxN,
@@ -145,8 +143,7 @@ struct DispatchKernelHelper1D<Kernel, T, minN, maxN, maxN, Args...> {
 // the run-time values of N and M, at which point we dispatch to the run
 // method of the kernel.
 template <
-    template <typename, int64_t, int64_t>
-    class Kernel,
+    template <typename, int64_t, int64_t> class Kernel,
     typename T,
     int64_t minN,
     int64_t maxN,
@@ -203,8 +200,7 @@ struct DispatchKernelHelper2D {
 
 // 2D dispatch, specialization for curN == maxN
 template <
-    template <typename, int64_t, int64_t>
-    class Kernel,
+    template <typename, int64_t, int64_t> class Kernel,
     typename T,
     int64_t minN,
     int64_t maxN,
@@ -243,8 +239,7 @@ struct DispatchKernelHelper2D<
 
 // 2D dispatch, specialization for curM == maxM
 template <
-    template <typename, int64_t, int64_t>
-    class Kernel,
+    template <typename, int64_t, int64_t> class Kernel,
     typename T,
     int64_t minN,
     int64_t maxN,
@@ -283,8 +278,7 @@ struct DispatchKernelHelper2D<
 
 // 2D dispatch, specialization for curN == maxN, curM == maxM
 template <
-    template <typename, int64_t, int64_t>
-    class Kernel,
+    template <typename, int64_t, int64_t> class Kernel,
     typename T,
     int64_t minN,
     int64_t maxN,
@@ -313,8 +307,7 @@ struct DispatchKernelHelper2D<
 
 // This is the function we expect users to call to dispatch to 1D functions
 template <
-    template <typename, int64_t>
-    class Kernel,
+    template <typename, int64_t> class Kernel,
     typename T,
     int64_t minN,
     int64_t maxN,
@@ -330,8 +323,7 @@ void DispatchKernel1D(const int64_t N, Args... args) {
 
 // This is the function we expect users to call to dispatch to 2D functions
 template <
-    template <typename, int64_t, int64_t>
-    class Kernel,
+    template <typename, int64_t, int64_t> class Kernel,
     typename T,
     int64_t minN,
     int64_t maxN,

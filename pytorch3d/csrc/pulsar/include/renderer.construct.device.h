@@ -52,7 +52,7 @@ HOST void construct(
   self->cam.film_width = width;
   self->cam.film_height = height;
   self->max_num_balls = max_num_balls;
-  MALLOC(self->result_d, float, width* height* n_channels);
+  MALLOC(self->result_d, float, width * height * n_channels);
   self->cam.orthogonal_projection = orthogonal_projection;
   self->cam.right_handed = right_handed_system;
   self->cam.background_normalization_depth = background_normalization_depth;
@@ -93,7 +93,7 @@ HOST void construct(
   MALLOC(self->di_sorted_d, DrawInfo, max_num_balls);
   MALLOC(self->region_flags_d, char, max_num_balls);
   MALLOC(self->num_selected_d, size_t, 1);
-  MALLOC(self->forw_info_d, float, width* height * (3 + 2 * n_track));
+  MALLOC(self->forw_info_d, float, width * height * (3 + 2 * n_track));
   MALLOC(self->min_max_pixels_d, IntersectInfo, 1);
   MALLOC(self->grad_pos_d, float3, max_num_balls);
   MALLOC(self->grad_col_d, float, max_num_balls* n_channels);
