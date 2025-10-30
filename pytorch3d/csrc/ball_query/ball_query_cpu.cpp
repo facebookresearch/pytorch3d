@@ -6,6 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <math.h>
 #include <torch/extension.h>
 #include <tuple>
 
@@ -15,7 +16,8 @@ std::tuple<at::Tensor, at::Tensor> BallQueryCpu(
     const at::Tensor& lengths1,
     const at::Tensor& lengths2,
     int K,
-    float radius) {
+    float radius,
+    bool skip_points_outside_cube) {
   const int N = p1.size(0);
   const int P1 = p1.size(1);
   const int D = p1.size(2);
@@ -37,6 +39,16 @@ std::tuple<at::Tensor, at::Tensor> BallQueryCpu(
     const int64_t length2 = lengths2_a[n];
     for (int64_t i = 0; i < length1; ++i) {
       for (int64_t j = 0, count = 0; j < length2 && count < K; ++j) {
+        if (skip_points_outside_cube) {
+          bool is_within_radius = true;
+          for (int d = 0; is_within_radius && d < D; ++d) {
+            float abs_diff = fabs(p1_a[n][i][d] - p2_a[n][j][d]);
+            is_within_radius = (abs_diff <= radius);
+          }
+          if (!is_within_radius) {
+            continue;
+          }
+        }
         float dist2 = 0;
         for (int d = 0; d < D; ++d) {
           float diff = p1_a[n][i][d] - p2_a[n][j][d];
