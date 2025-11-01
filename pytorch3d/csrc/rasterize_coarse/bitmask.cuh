@@ -25,7 +25,7 @@ class BitMask {
 
   // Use all threads in the current block to clear all bits of this BitMask
   __device__ void block_clear() {
-    for (auto i = threadIdx.x; i < H * W * D; i += blockDim.x) {
+    for (int i = threadIdx.x; i < H * W * D; i += blockDim.x) {
       data[i] = 0;
     }
     __syncthreads();
