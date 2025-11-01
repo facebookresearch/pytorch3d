@@ -438,7 +438,7 @@ def ndc_to_grid_sample_coords(
 
 
 def parse_image_size(
-    image_size: Union[List[int], Tuple[int, int], int],
+    image_size: Union[torch.Tensor, List[int], Tuple[int, int], int]
 ) -> Tuple[int, int]:
     """
     Args:
@@ -450,6 +450,8 @@ def parse_image_size(
     Throws:
         ValueError if got more than two ints, any negative numbers or non-ints.
     """
+    if isinstance(image_size, torch.Tensor):
+        return parse_image_size(image_size.tolist()[0])
     if not isinstance(image_size, (tuple, list)):
         return (image_size, image_size)
     if len(image_size) != 2:
