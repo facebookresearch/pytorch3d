@@ -75,6 +75,21 @@ def get_extensions():
         ]
         if os.name != "nt":
             nvcc_args.append("-std=c++17")
+
+        # CUDA 13.0+ compatibility flags for pulsar.
+        # Starting with CUDA 13, __global__ function visibility changed.
+        # See: https://developer.nvidia.com/blog/
+        #      cuda-c-compiler-updates-impacting-elf-visibility-and-linkage/
+        cuda_version = torch.version.cuda
+        if cuda_version is not None:
+            major = int(cuda_version.split(".")[0])
+            if major >= 13:
+                nvcc_args.extend(
+                    [
+                        "--device-entity-has-hidden-visibility=false",
+                        "-static-global-template-stub=false",
+                    ]
+                )
         if cub_home is None:
             prefix = os.environ.get("CONDA_PREFIX", None)
             if prefix is not None and os.path.isdir(prefix + "/include/cub"):
