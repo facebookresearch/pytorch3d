@@ -19,7 +19,6 @@
 #
 import os
 import sys
-
 import unittest.mock as mock
 
 from recommonmark.parser import CommonMarkParser

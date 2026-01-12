@@ -17,11 +17,8 @@ from typing import Any, Dict, Optional, Tuple
 import torch
 import tqdm
 from pytorch3d.common.compat import prod
-
 from pytorch3d.implicitron.models.renderer.base import ImplicitronRayBundle
-
 from pytorch3d.implicitron.tools import image_utils
-
 from pytorch3d.implicitron.tools.utils import cat_dataclass
 
 
@@ -83,9 +80,9 @@ def preprocess_input(
 
     if mask_depths and fg_mask is not None and depth_map is not None:
         # mask the depths
-        assert (
-            mask_threshold > 0.0
-        ), "Depths should be masked only with thresholded masks"
+        assert mask_threshold > 0.0, (
+            "Depths should be masked only with thresholded masks"
+        )
         warnings.warn("Masking depths!")
         depth_map = depth_map * fg_mask
 

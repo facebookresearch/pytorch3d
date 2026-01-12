@@ -13,7 +13,6 @@ from typing import Tuple
 import torch
 from pytorch3d.implicitron.dataset.json_index_dataset import JsonIndexDataset
 from pytorch3d.implicitron.dataset.visualize import get_implicitron_sequence_pointcloud
-
 from pytorch3d.implicitron.models.visualization.render_flyaround import render_flyaround
 from pytorch3d.implicitron.tools.config import expand_args_fields
 from pytorch3d.implicitron.tools.point_cloud_utils import render_point_cloud_pytorch3d

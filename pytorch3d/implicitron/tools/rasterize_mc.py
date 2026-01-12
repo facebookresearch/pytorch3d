@@ -10,7 +10,6 @@ import math
 from typing import Optional, Tuple
 
 import pytorch3d
-
 import torch
 from pytorch3d.ops import packed_to_padded
 from pytorch3d.renderer import PerspectiveCameras

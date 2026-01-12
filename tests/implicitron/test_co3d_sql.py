@@ -9,7 +9,6 @@ import os
 import unittest
 
 import torch
-
 from pytorch3d.implicitron.dataset.data_loader_map_provider import (  # noqa
     SequenceDataLoaderMapProvider,
     SimpleDataLoaderMapProvider,

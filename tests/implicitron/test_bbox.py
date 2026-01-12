@@ -7,9 +7,7 @@
 import unittest
 
 import numpy as np
-
 import torch
-
 from pytorch3d.implicitron.dataset.utils import (
     bbox_xywh_to_xyxy,
     bbox_xyxy_to_xywh,
@@ -21,7 +19,6 @@ from pytorch3d.implicitron.dataset.utils import (
     rescale_bbox,
     resize_image,
 )
-
 from tests.common_testing import TestCaseMixin
 
 

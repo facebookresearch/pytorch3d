@@ -21,7 +21,6 @@ from pytorch3d.renderer.cameras import CamerasBase
 
 from .dataset_map_provider import DatasetMap, DatasetMapProviderBase, PathManagerFactory
 from .json_index_dataset import JsonIndexDataset
-
 from .utils import (
     DATASET_TYPE_KNOWN,
     DATASET_TYPE_TEST,

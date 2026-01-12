@@ -673,9 +673,7 @@ class TestMeshPlyIO(TestCaseMixin, unittest.TestCase):
 
     def test_load_simple_binary(self):
         for big_endian in [True, False]:
-            verts = (
-                "0 0 0 " "0 0 1 " "0 1 1 " "0 1 0 " "1 0 0 " "1 0 1 " "1 1 1 " "1 1 0"
-            ).split()
+            verts = ("0 0 0 0 0 1 0 1 1 0 1 0 1 0 0 1 0 1 1 1 1 1 1 0").split()
             faces = (
                 "4 0 1 2 3 "
                 "4 7 6 5 4 "
@@ -688,7 +686,7 @@ class TestMeshPlyIO(TestCaseMixin, unittest.TestCase):
                 "3 4 5 1"
             ).split()
             short_one = b"\00\01" if big_endian else b"\01\00"
-            mixed_data = b"\00\00" b"\03\03" + (short_one + b"\00\01\01\01" b"\00\02")
+            mixed_data = b"\00\00\03\03" + (short_one + b"\00\01\01\01\00\02")
             minus_one_data = b"\xff" * 14
             endian_char = ">" if big_endian else "<"
             format = (

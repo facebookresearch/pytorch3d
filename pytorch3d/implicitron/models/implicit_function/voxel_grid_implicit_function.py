@@ -13,9 +13,7 @@ from dataclasses import fields
 from typing import Callable, Dict, Optional, Tuple
 
 import torch
-
 from omegaconf import DictConfig
-
 from pytorch3d.implicitron.models.implicit_function.base import ImplicitFunctionBase
 from pytorch3d.implicitron.models.implicit_function.decoding_functions import (
     DecoderFunctionBase,

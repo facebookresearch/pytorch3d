@@ -17,15 +17,12 @@ import numpy as np
 import OpenGL.GL as gl
 import pycuda.gl
 import torch
-
 import torch.nn as nn
-
 from pytorch3d.structures.meshes import Meshes
 
 from ..cameras import FoVOrthographicCameras, FoVPerspectiveCameras
 from ..mesh.rasterizer import Fragments, RasterizationSettings
 from ..utils import parse_image_size
-
 from .opengl_utils import _torch_to_opengl, global_device_context_store
 
 # Shader strings, used below to compile an OpenGL program.

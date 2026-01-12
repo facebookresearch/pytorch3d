@@ -9,9 +9,7 @@
 import torch
 
 from .compositor import AlphaCompositor, NormWeightedCompositor
-
 from .pulsar.unified import PulsarPointsRenderer
-
 from .rasterize_points import rasterize_points
 from .rasterizer import PointsRasterizationSettings, PointsRasterizer
 from .renderer import PointsRenderer

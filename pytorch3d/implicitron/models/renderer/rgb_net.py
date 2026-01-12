@@ -12,7 +12,6 @@ import torch
 from pytorch3d.implicitron.models.renderer.base import ImplicitronRayBundle
 from pytorch3d.implicitron.tools.config import enable_get_default_args
 from pytorch3d.renderer.implicit import HarmonicEmbedding
-
 from torch import nn
 
 

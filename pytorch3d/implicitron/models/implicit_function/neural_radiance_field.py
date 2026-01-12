@@ -21,7 +21,6 @@ from pytorch3d.renderer.implicit import HarmonicEmbedding
 from pytorch3d.renderer.implicit.utils import ray_bundle_to_ray_points
 
 from .base import ImplicitFunctionBase
-
 from .decoding_functions import (  # noqa
     _xavier_init,
     MLPWithInputSkips,

@@ -14,9 +14,7 @@ from dataclasses import field
 from typing import Any, Dict, List, Optional, Tuple
 
 import torch.optim
-
 from accelerate import Accelerator
-
 from pytorch3d.implicitron.models.base_model import ImplicitronModelBase
 from pytorch3d.implicitron.tools import model_io
 from pytorch3d.implicitron.tools.config import (

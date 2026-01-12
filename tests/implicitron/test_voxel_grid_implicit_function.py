@@ -8,13 +8,11 @@
 import unittest
 
 import torch
-
 from omegaconf import DictConfig, OmegaConf
 from pytorch3d.implicitron.models.implicit_function.voxel_grid_implicit_function import (
     VoxelGridImplicitFunction,
 )
 from pytorch3d.implicitron.models.renderer.base import ImplicitronRayBundle
-
 from pytorch3d.implicitron.tools.config import expand_args_fields, get_default_args
 from pytorch3d.renderer import ray_bundle_to_ray_points
 from tests.common_testing import TestCaseMixin

@@ -48,22 +48,18 @@ The outputs of the experiment are saved and logged in multiple ways:
 import logging
 import os
 import warnings
-
 from dataclasses import field
 
 import hydra
-
 import torch
 from accelerate import Accelerator
 from omegaconf import DictConfig, OmegaConf
 from packaging import version
-
 from pytorch3d.implicitron.dataset.data_source import (
     DataSourceBase,
     ImplicitronDataSource,
 )
 from pytorch3d.implicitron.models.base_model import ImplicitronModelBase
-
 from pytorch3d.implicitron.models.renderer.multipass_ea import (
     MultiPassEmissionAbsorptionRenderer,
 )

@@ -14,7 +14,6 @@ import torch
 from pytorch3d import _C
 
 from ..utils import parse_image_size
-
 from .clip import (
     clip_faces,
     ClipFrustum,

@@ -10,9 +10,7 @@ import unittest
 from collections import Counter
 
 import pkg_resources
-
 import torch
-
 from pytorch3d.implicitron.dataset.sql_dataset import SqlIndexDataset
 
 NO_BLOBS_KWARGS = {

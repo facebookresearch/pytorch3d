@@ -15,7 +15,6 @@ from typing import List, Optional, Tuple, TypeVar, Union
 import numpy as np
 import torch
 from PIL import Image
-
 from pytorch3d.io import IO
 from pytorch3d.renderer.cameras import PerspectiveCameras
 from pytorch3d.structures.pointclouds import Pointclouds

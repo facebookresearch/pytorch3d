@@ -10,7 +10,6 @@ import hashlib
 import json
 import logging
 import os
-
 import urllib
 from dataclasses import dataclass, Field, field
 from typing import (
@@ -32,13 +31,11 @@ import pandas as pd
 import sqlalchemy as sa
 import torch
 from pytorch3d.implicitron.dataset.dataset_base import DatasetBase
-
 from pytorch3d.implicitron.dataset.frame_data import (
     FrameData,
     FrameDataBuilder,  # noqa
     FrameDataBuilderBase,
 )
-
 from pytorch3d.implicitron.tools.config import (
     registry,
     ReplaceableBase,

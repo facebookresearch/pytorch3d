@@ -25,7 +25,6 @@ from typing import (
 
 import numpy as np
 import torch
-
 from pytorch3d.implicitron.dataset import orm_types, types
 from pytorch3d.implicitron.dataset.utils import (
     adjust_camera_to_bbox_crop_,

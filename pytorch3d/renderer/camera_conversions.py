@@ -153,12 +153,12 @@ def _pulsar_from_opencv_projection(
     # Check image sizes.
     image_w = image_size_wh[0, 0]
     image_h = image_size_wh[0, 1]
-    assert torch.all(
-        image_size_wh[:, 0] == image_w
-    ), "All images in a batch must have the same width!"
-    assert torch.all(
-        image_size_wh[:, 1] == image_h
-    ), "All images in a batch must have the same height!"
+    assert torch.all(image_size_wh[:, 0] == image_w), (
+        "All images in a batch must have the same width!"
+    )
+    assert torch.all(image_size_wh[:, 1] == image_h), (
+        "All images in a batch must have the same height!"
+    )
     # Focal length.
     fx = camera_matrix[:, 0, 0].unsqueeze(1)
     fy = camera_matrix[:, 1, 1].unsqueeze(1)

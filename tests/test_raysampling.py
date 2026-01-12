@@ -604,9 +604,9 @@ class TestRaysampling(TestCaseMixin, unittest.TestCase):
                     # test weather they are of the correct shape
                     for attr in ("origins", "directions", "lengths", "xys"):
                         tensor = getattr(ray_bundle, attr)
-                        assert tensor.shape[:2] == torch.Size(
-                            (n_rays_total, 1)
-                        ), tensor.shape
+                        assert tensor.shape[:2] == torch.Size((n_rays_total, 1)), (
+                            tensor.shape
+                        )
 
                     # if two camera ids are same than origins should also be the same
                     # directions and xys are always different and lengths equal

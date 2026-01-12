@@ -9,7 +9,6 @@
 from typing import Callable, Optional
 
 import torch
-
 import torch.nn.functional as F
 from pytorch3d.common.compat import prod
 from pytorch3d.implicitron.models.renderer.base import ImplicitronRayBundle

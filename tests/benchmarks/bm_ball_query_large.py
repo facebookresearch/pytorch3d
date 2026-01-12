@@ -8,7 +8,6 @@ from itertools import product
 
 import torch
 from fvcore.common.benchmark import benchmark
-
 from pytorch3d.ops.ball_query import ball_query
 
 

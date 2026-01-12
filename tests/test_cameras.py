@@ -60,7 +60,6 @@ from pytorch3d.transforms.rotation_conversions import random_rotations
 from pytorch3d.transforms.so3 import so3_exp_map
 
 from .common_camera_utils import init_random_cameras
-
 from .common_testing import TestCaseMixin
 
 

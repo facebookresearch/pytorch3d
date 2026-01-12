@@ -796,7 +796,7 @@ def save_obj(
         # Create .mtl file with the material name and texture map filename
         # TODO: enable material properties to also be saved.
         with _open_file(mtl_path, path_manager, "w") as f_mtl:
-            lines = f"newmtl mesh\n" f"map_Kd {output_path.stem}.png\n"
+            lines = f"newmtl mesh\nmap_Kd {output_path.stem}.png\n"
             f_mtl.write(lines)
 
 

@@ -7,7 +7,6 @@
 import unittest
 from itertools import product
 from typing import Tuple
-
 from unittest.mock import patch
 
 import torch
@@ -18,7 +17,6 @@ from pytorch3d.implicitron.models.renderer.ray_sampler import (
     compute_radii,
     NearFarRaySampler,
 )
-
 from pytorch3d.renderer.cameras import (
     CamerasBase,
     FoVOrthographicCameras,
@@ -28,7 +26,6 @@ from pytorch3d.renderer.cameras import (
 )
 from pytorch3d.renderer.implicit.utils import HeterogeneousRayBundle
 from tests.common_camera_utils import init_random_cameras
-
 from tests.common_testing import TestCaseMixin
 
 CAMERA_TYPES = (

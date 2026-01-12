@@ -433,9 +433,9 @@ class Pointclouds:
             list of tensors of points of shape (P_n, 3).
         """
         if self._points_list is None:
-            assert (
-                self._points_padded is not None
-            ), "points_padded is required to compute points_list."
+            assert self._points_padded is not None, (
+                "points_padded is required to compute points_list."
+            )
             points_list = []
             for i in range(self._N):
                 points_list.append(

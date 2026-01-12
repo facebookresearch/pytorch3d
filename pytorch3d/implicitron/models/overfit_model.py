@@ -17,7 +17,6 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, TYPE_CHECKING, Un
 
 import torch
 from omegaconf import DictConfig
-
 from pytorch3d.implicitron.models.base_model import (
     ImplicitronModelBase,
     ImplicitronRender,
@@ -28,7 +27,6 @@ from pytorch3d.implicitron.models.metrics import (
     RegularizationMetricsBase,
     ViewMetricsBase,
 )
-
 from pytorch3d.implicitron.models.renderer.base import (
     BaseRenderer,
     EvaluationMode,
@@ -50,7 +48,6 @@ from pytorch3d.implicitron.tools.config import (
     registry,
     run_auto_creation,
 )
-
 from pytorch3d.implicitron.tools.rasterize_mc import rasterize_sparse_ray_bundle
 from pytorch3d.renderer import utils as rend_utils
 from pytorch3d.renderer.cameras import CamerasBase

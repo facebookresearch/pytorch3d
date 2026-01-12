@@ -531,9 +531,9 @@ class Meshes:
             list of tensors of vertices of shape (V_n, 3).
         """
         if self._verts_list is None:
-            assert (
-                self._verts_padded is not None
-            ), "verts_padded is required to compute verts_list."
+            assert self._verts_padded is not None, (
+                "verts_padded is required to compute verts_list."
+            )
             self._verts_list = struct_utils.padded_to_list(
                 self._verts_padded, self.num_verts_per_mesh().tolist()
             )
@@ -547,9 +547,9 @@ class Meshes:
             list of tensors of faces of shape (F_n, 3).
         """
         if self._faces_list is None:
-            assert (
-                self._faces_padded is not None
-            ), "faces_padded is required to compute faces_list."
+            assert self._faces_padded is not None, (
+                "faces_padded is required to compute faces_list."
+            )
             self._faces_list = struct_utils.padded_to_list(
                 self._faces_padded, self.num_faces_per_mesh().tolist()
             )
@@ -925,9 +925,9 @@ class Meshes:
 
         verts_list = self.verts_list()
         faces_list = self.faces_list()
-        assert (
-            faces_list is not None and verts_list is not None
-        ), "faces_list and verts_list arguments are required"
+        assert faces_list is not None and verts_list is not None, (
+            "faces_list and verts_list arguments are required"
+        )
 
         if self.isempty():
             self._faces_padded = torch.zeros(

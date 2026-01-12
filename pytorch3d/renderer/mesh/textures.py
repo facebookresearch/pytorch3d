@@ -625,9 +625,7 @@ class TexturesAtlas(TexturesBase):
         of length `k`.
         """
         if len(faces_ids_list) != len(self.atlas_list()):
-            raise IndexError(
-                "faces_ids_list must be of " "the same length as atlas_list."
-            )
+            raise IndexError("faces_ids_list must be of the same length as atlas_list.")
 
         sub_features = []
         for atlas, faces_ids in zip(self.atlas_list(), faces_ids_list):
@@ -1657,7 +1655,7 @@ class TexturesUV(TexturesBase):
             raise NotImplementedError("This function does not support multiple maps.")
         if len(faces_ids_list) != len(self.faces_uvs_padded()):
             raise IndexError(
-                "faces_uvs_padded must be of " "the same length as face_ids_list."
+                "faces_uvs_padded must be of the same length as face_ids_list."
             )
 
         sub_faces_uvs, sub_verts_uvs, sub_maps = [], [], []
@@ -1871,7 +1869,7 @@ class TexturesVertex(TexturesBase):
         """
         if len(vertex_ids_list) != len(self.verts_features_list()):
             raise IndexError(
-                "verts_features_list must be of " "the same length as vertex_ids_list."
+                "verts_features_list must be of the same length as vertex_ids_list."
             )
 
         sub_features = []

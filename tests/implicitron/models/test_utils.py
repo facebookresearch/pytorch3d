@@ -8,7 +8,6 @@
 import unittest
 
 import torch
-
 from pytorch3d.implicitron.models.utils import preprocess_input, weighted_sum_losses
 
 

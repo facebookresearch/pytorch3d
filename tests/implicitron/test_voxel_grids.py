@@ -10,7 +10,6 @@ from typing import Optional, Tuple
 
 import torch
 from omegaconf import DictConfig, OmegaConf
-
 from pytorch3d.implicitron.models.implicit_function.utils import (
     interpolate_line,
     interpolate_plane,
@@ -22,7 +21,6 @@ from pytorch3d.implicitron.models.implicit_function.voxel_grid import (
     VMFactorizedVoxelGrid,
     VoxelGridModule,
 )
-
 from pytorch3d.implicitron.tools.config import expand_args_fields, get_default_args
 from tests.common_testing import TestCaseMixin
 

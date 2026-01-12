@@ -24,7 +24,6 @@ from typing import Any, Dict
 
 os.environ["PYOPENGL_PLATFORM"] = "egl"
 import OpenGL.EGL as egl  # noqa
-
 import pycuda.driver as cuda  # noqa
 from OpenGL._opaque import opaque_pointer_cls  # noqa
 from OpenGL.raw.EGL._errors import EGLError  # noqa

@@ -12,7 +12,6 @@ from typing import List
 
 import numpy as np
 import torch
-
 from pytorch3d.implicitron.dataset import types
 from pytorch3d.implicitron.dataset.dataset_base import FrameData
 from pytorch3d.implicitron.dataset.frame_data import FrameDataBuilder
@@ -29,7 +28,6 @@ from pytorch3d.implicitron.dataset.utils import (
 )
 from pytorch3d.implicitron.tools.config import get_default_args
 from pytorch3d.renderer.cameras import PerspectiveCameras
-
 from tests.common_testing import TestCaseMixin
 from tests.implicitron.common_resources import get_skateboard_data
 

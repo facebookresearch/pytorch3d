@@ -21,7 +21,6 @@ from typing import (
 )
 
 import torch
-
 from pytorch3d.implicitron.dataset.frame_data import FrameData
 from pytorch3d.implicitron.dataset.utils import GenericWorkaround
 

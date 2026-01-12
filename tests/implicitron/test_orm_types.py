@@ -7,7 +7,6 @@
 import unittest
 
 import numpy as np
-
 from pytorch3d.implicitron.dataset.orm_types import ArrayTypeFactory, TupleTypeFactory
 
 

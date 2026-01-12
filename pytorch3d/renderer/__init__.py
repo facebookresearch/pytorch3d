@@ -69,7 +69,6 @@ from .mesh import (
     TexturesUV,
     TexturesVertex,
 )
-
 from .points import (
     AlphaCompositor,
     NormWeightedCompositor,

@@ -10,7 +10,6 @@ from abc import ABC, abstractmethod
 from typing import Optional
 
 from pytorch3d.implicitron.models.renderer.base import ImplicitronRayBundle
-
 from pytorch3d.implicitron.tools.config import ReplaceableBase
 from pytorch3d.renderer.cameras import CamerasBase
 

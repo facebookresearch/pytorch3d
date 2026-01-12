@@ -8,7 +8,6 @@ import os
 import unittest
 
 from pytorch3d.implicitron import eval_demo
-
 from tests.common_testing import interactive_testing_requested
 
 from .common_resources import CO3D_MANIFOLD_PATH

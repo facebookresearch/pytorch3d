@@ -11,12 +11,10 @@ from dataclasses import dataclass
 from itertools import product
 
 import numpy as np
-
 import torch
 from pytorch3d.implicitron.dataset.data_loader_map_provider import (
     DoublePoolBatchSampler,
 )
-
 from pytorch3d.implicitron.dataset.dataset_base import DatasetBase
 from pytorch3d.implicitron.dataset.frame_data import FrameData
 from pytorch3d.implicitron.dataset.scene_batch_sampler import SceneBatchSampler

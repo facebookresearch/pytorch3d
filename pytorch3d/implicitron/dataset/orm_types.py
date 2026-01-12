@@ -13,7 +13,6 @@ import struct
 from typing import Optional, Tuple
 
 import numpy as np
-
 from pytorch3d.implicitron.dataset.types import (
     DepthAnnotation,
     ImageAnnotation,
@@ -22,7 +21,6 @@ from pytorch3d.implicitron.dataset.types import (
     VideoAnnotation,
     ViewpointAnnotation,
 )
-
 from sqlalchemy import LargeBinary
 from sqlalchemy.orm import (
     composite,

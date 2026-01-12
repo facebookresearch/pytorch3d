@@ -11,7 +11,6 @@ import copy
 import torch
 from pytorch3d.implicitron.models.renderer.base import ImplicitronRayBundle
 from pytorch3d.implicitron.tools.config import Configurable, expand_args_fields
-
 from pytorch3d.renderer.implicit.sample_pdf import sample_pdf
 
 

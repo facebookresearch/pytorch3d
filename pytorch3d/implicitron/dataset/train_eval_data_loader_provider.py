@@ -18,7 +18,6 @@ from pytorch3d.implicitron.dataset.dataset_base import DatasetBase
 from pytorch3d.implicitron.dataset.dataset_map_provider import DatasetMap
 from pytorch3d.implicitron.dataset.frame_data import FrameData
 from pytorch3d.implicitron.tools.config import registry, run_auto_creation
-
 from torch.utils.data import DataLoader
 
 logger = logging.getLogger(__name__)

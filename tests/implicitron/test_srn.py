@@ -16,7 +16,6 @@ from pytorch3d.implicitron.models.implicit_function.scene_representation_network
 from pytorch3d.implicitron.models.renderer.ray_sampler import ImplicitronRayBundle
 from pytorch3d.implicitron.tools.config import get_default_args
 from pytorch3d.renderer import PerspectiveCameras
-
 from tests.common_testing import TestCaseMixin
 
 _BATCH_SIZE: int = 3

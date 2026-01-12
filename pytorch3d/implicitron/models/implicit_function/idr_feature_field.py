@@ -11,7 +11,6 @@ import torch
 from pytorch3d.implicitron.models.renderer.base import ImplicitronRayBundle
 from pytorch3d.implicitron.tools.config import registry
 from pytorch3d.renderer.implicit import HarmonicEmbedding
-
 from torch import nn
 
 from .base import ImplicitFunctionBase

@@ -8,9 +8,7 @@
 import unittest
 
 import numpy as np
-
 import torch
-
 from pytorch3d.implicitron.models.renderer.base import (
     approximate_conical_frustum_as_gaussians,
     compute_3d_diagonal_covariance_gaussian,
@@ -18,7 +16,6 @@ from pytorch3d.implicitron.models.renderer.base import (
     ImplicitronRayBundle,
 )
 from pytorch3d.implicitron.models.renderer.ray_sampler import AbstractMaskRaySampler
-
 from tests.common_testing import TestCaseMixin
 
 

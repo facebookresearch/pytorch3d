@@ -12,7 +12,6 @@ import unittest
 from pathlib import Path
 
 import torch
-
 from hydra import compose, initialize_config_dir
 from omegaconf import OmegaConf
 from projects.implicitron_trainer.impl.optimizer_factory import (

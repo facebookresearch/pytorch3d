@@ -18,7 +18,6 @@ from typing import Dict, List, Optional, Tuple, Type, Union
 
 import numpy as np
 from iopath.common.file_io import PathManager
-
 from omegaconf import DictConfig
 from pytorch3d.implicitron.dataset.dataset_map_provider import (
     DatasetMap,
@@ -31,7 +30,6 @@ from pytorch3d.implicitron.tools.config import (
     registry,
     run_auto_creation,
 )
-
 from pytorch3d.renderer.cameras import CamerasBase
 from tqdm import tqdm
 

@@ -16,14 +16,11 @@ This file contains
 
 import logging
 from dataclasses import field
-
 from enum import Enum
 from typing import Dict, Optional, Tuple
 
 import torch
-
 from omegaconf import DictConfig
-
 from pytorch3d.implicitron.tools.config import (
     Configurable,
     registry,

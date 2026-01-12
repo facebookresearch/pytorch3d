@@ -12,7 +12,6 @@ import torch
 from pytorch3d.implicitron.tools.config import registry
 
 from .load_llff import load_llff_data
-
 from .single_sequence_dataset import (
     _interpret_blender_cameras,
     SingleSceneDatasetMapProviderBase,

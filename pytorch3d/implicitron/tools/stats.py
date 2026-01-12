@@ -499,7 +499,7 @@ class StatsJSONEncoder(json.JSONEncoder):
             return enc
         else:
             raise TypeError(
-                f"Object of type {o.__class__.__name__} " f"is not JSON serializable"
+                f"Object of type {o.__class__.__name__} is not JSON serializable"
             )
 
 

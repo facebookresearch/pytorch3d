@@ -8,7 +8,6 @@ import unittest
 from itertools import product
 
 import torch
-
 from pytorch3d.implicitron.models.renderer.ray_point_refiner import (
     apply_blurpool_on_weights,
     RayPointRefiner,

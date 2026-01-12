@@ -15,7 +15,6 @@ import unittest
 import lpips
 import numpy as np
 import torch
-
 from pytorch3d.implicitron.dataset.frame_data import FrameData
 from pytorch3d.implicitron.dataset.json_index_dataset import JsonIndexDataset
 from pytorch3d.implicitron.evaluation.evaluate_new_view_synthesis import eval_batch

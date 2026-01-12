@@ -14,7 +14,6 @@ from typing import ClassVar, Optional, Type
 import pandas as pd
 import pkg_resources
 import sqlalchemy as sa
-
 from pytorch3d.implicitron.dataset import types
 from pytorch3d.implicitron.dataset.frame_data import FrameData, GenericFrameDataBuilder
 from pytorch3d.implicitron.dataset.orm_types import (

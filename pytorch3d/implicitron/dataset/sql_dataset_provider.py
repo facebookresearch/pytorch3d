@@ -12,9 +12,7 @@ import os
 from typing import List, Optional, Tuple, Type
 
 import numpy as np
-
 from omegaconf import DictConfig, OmegaConf
-
 from pytorch3d.implicitron.dataset.dataset_map_provider import (
     DatasetMap,
     DatasetMapProviderBase,
