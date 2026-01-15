@@ -208,7 +208,7 @@ class PulsarPointsRenderer(nn.Module):
                         "The orthographic camera scale must be ((1.0, 1.0, 1.0),). "
                         f"{kwargs.get('scale_xyz', cameras.scale_xyz)[cloud_idx]}."
                     )
-                sensor_width = max_x - min_x
+                sensor_width = (max_x - min_x) * (self.renderer._renderer.width / self.renderer._renderer.height)
                 if not sensor_width > 0.0:
                     raise ValueError(
                         f"The orthographic camera must have positive size! Is: {sensor_width}."  # noqa: B950
@@ -222,24 +222,25 @@ class PulsarPointsRenderer(nn.Module):
                 focal_length_conf = kwargs.get("focal_length", cameras.focal_length)[
                     cloud_idx
                 ]
-                if (
-                    focal_length_conf.numel() == 2
-                    and focal_length_conf[0] * self.renderer._renderer.width
-                    - focal_length_conf[1] * self.renderer._renderer.height
-                    > 1e-5
-                ):
+                if torch.any(focal_length_conf <= 0.0):
+                    raise ValueError(f"Pulsar requires focal lengths > 0.0. Provided: {focal_length_conf}.")
+                if cameras.in_ndc():
+                    focal_length_conf *= self.renderer._renderer.height / 2.0
+                if (focal_length_conf.numel() == 2 and abs(focal_length_conf[0] - focal_length_conf[1]) > 1e-5):
                     raise ValueError(
                         "Pulsar only supports a single focal length! "
                         "Provided: %s." % (str(focal_length_conf))
                     )
                 if focal_length_conf.numel() == 2:
-                    sensor_width = 2.0 / focal_length_conf[0]
+                    focal_length_px = focal_length_conf[0]
                 else:
                     if focal_length_conf.numel() != 1:
                         raise ValueError(
                             "Focal length not parsable: %s." % (str(focal_length_conf))
                         )
-                    sensor_width = 2.0 / focal_length_conf
+                    focal_length_px = focal_length_conf
+                focal_length_px /= self.renderer._renderer.width / 2.0
+                sensor_width = 2.0 / focal_length_px
                 if "znear" not in kwargs.keys() or "zfar" not in kwargs.keys():
                     raise ValueError(
                         "pulsar needs znear and zfar values for "
@@ -250,16 +251,19 @@ class PulsarPointsRenderer(nn.Module):
                 zfar = kwargs["zfar"][cloud_idx]
                 principal_point_x = (
                     kwargs.get("principal_point", cameras.principal_point)[cloud_idx][0]
-                    * 0.5
-                    * self.renderer._renderer.width
                 )
                 principal_point_y = (
                     kwargs.get("principal_point", cameras.principal_point)[cloud_idx][1]
-                    * 0.5
-                    * self.renderer._renderer.height
                 )
+                if cameras.in_ndc():
+                    principal_point_x *= 0.5 * self.renderer._renderer.width * (self.renderer._renderer.height / self.renderer._renderer.width)
+                    principal_point_y *= -0.5 * self.renderer._renderer.height
+                else:
+                    principal_point_x = self.renderer._renderer.width / 2.0 - principal_point_x
+                    principal_point_y -= self.renderer._renderer.height / 2.0
         else:
             if not isinstance(cameras, PerspectiveCameras):
+                # This currently means FoVPerspectiveCameras.
                 # Create a virtual focal length that is closer than znear.
                 znear = kwargs.get("znear", cameras.znear)[cloud_idx]
                 zfar = kwargs.get("zfar", cameras.zfar)[cloud_idx]
@@ -268,7 +272,10 @@ class PulsarPointsRenderer(nn.Module):
                 afov = kwargs.get("fov", cameras.fov)[cloud_idx]
                 if kwargs.get("degrees", cameras.degrees):
                     afov *= math.pi / 180.0
-                sensor_width = math.tan(afov / 2.0) * 2.0 * focal_length
+                aspect_ratio = kwargs.get("aspect_ratio", cameras.aspect_ratio)[cloud_idx]
+                if aspect_ratio != 1.0:
+                    raise ValueError(f"Pulsar only supports aspect ration 1.0! Provided: {aspect_ratio}.")
+                sensor_width = math.tan(afov / 2.0) * 2.0 * focal_length * (self.renderer._renderer.width / self.renderer._renderer.height)
                 if not (
                     kwargs.get("aspect_ratio", cameras.aspect_ratio)[cloud_idx]
                     - self.renderer._renderer.width / self.renderer._renderer.height
@@ -288,10 +295,13 @@ class PulsarPointsRenderer(nn.Module):
                 focal_length_conf = kwargs.get("focal_length", cameras.focal_length)[
                     cloud_idx
                 ]
+                if torch.any(focal_length_conf <= 0.0):
+                    raise ValueError(f"Pulsar requires focal lengths > 0.0. Provided: {focal_length_conf}.")
+                if cameras.in_ndc():
+                    focal_length_conf *= self.renderer._renderer.height / 2.0
                 if (
                     focal_length_conf.numel() == 2
-                    and focal_length_conf[0] * self.renderer._renderer.width
-                    - focal_length_conf[1] * self.renderer._renderer.height
+                    and abs(focal_length_conf[0] - focal_length_conf[1])
                     > 1e-5
                 ):
                     raise ValueError(
@@ -314,6 +324,7 @@ class PulsarPointsRenderer(nn.Module):
                             "Focal length not parsable: %s." % (str(focal_length_conf))
                         )
                     focal_length_px = focal_length_conf
+                focal_length_px /= self.renderer._renderer.width / 2.0
                 focal_length = torch.tensor(
                     [
                         znear - 1e-6,
@@ -324,14 +335,16 @@ class PulsarPointsRenderer(nn.Module):
                 sensor_width = focal_length / focal_length_px * 2.0
                 principal_point_x = (
                     kwargs.get("principal_point", cameras.principal_point)[cloud_idx][0]
-                    * 0.5
-                    * self.renderer._renderer.width
                 )
                 principal_point_y = (
                     kwargs.get("principal_point", cameras.principal_point)[cloud_idx][1]
-                    * 0.5
-                    * self.renderer._renderer.height
                 )
+                if cameras.in_ndc():
+                    principal_point_x *= 0.5 * self.renderer._renderer.width * (self.renderer._renderer.height / self.renderer._renderer.width)
+                    principal_point_y *= -0.5 * self.renderer._renderer.height
+                else:
+                    principal_point_x = self.renderer._renderer.width / 2.0 - principal_point_x
+                    principal_point_y -= self.renderer._renderer.height / 2.0
         focal_length = _ensure_float_tensor(focal_length, device)
         sensor_width = _ensure_float_tensor(sensor_width, device)
         principal_point_x = _ensure_float_tensor(principal_point_x, device)
@@ -375,7 +388,7 @@ class PulsarPointsRenderer(nn.Module):
         return cam_pos, cam_rot
 
     def _get_vert_rad(
-        self, vert_pos, cam_pos, orthogonal_projection, focal_length, kwargs, cloud_idx
+        self, vert_pos, cam_pos, orthogonal_projection, focal_length, sensor_width, kwargs, cloud_idx
     ) -> torch.Tensor:
         """
         Get point radiuses.
@@ -405,12 +418,8 @@ class PulsarPointsRenderer(nn.Module):
             )
         else:
             point_dists = torch.norm((vert_pos - cam_pos), p=2, dim=1, keepdim=False)
-            vert_rad = raster_rad / focal_length.to(vert_pos.device) * point_dists
-            if isinstance(self.rasterizer.cameras, PerspectiveCameras):
-                # NDC normalization happens through adjusted focal length.
-                pass
-            else:
-                vert_rad = vert_rad / 2.0  # NDC normalization.
+            vert_rad = raster_rad / focal_length.to(vert_pos.device) * point_dists * sensor_width
+            vert_rad = vert_rad / 2.0  # NDC normalization.
         return vert_rad
 
     # point_clouds is not typed to avoid a cyclic dependency.
@@ -505,6 +514,7 @@ class PulsarPointsRenderer(nn.Module):
                 cam_pos,
                 orthogonal_projection,
                 focal_length,
+                sensor_width,
                 kwargs,
                 cloud_idx,
             )
