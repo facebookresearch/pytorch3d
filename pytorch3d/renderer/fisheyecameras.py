@@ -62,7 +62,7 @@ class FishEyeCameras(CamerasBase):
         "world_coordinates",
         "use_radial",
         "use_tangential",
-        "use_tin_prism",
+        "use_thin_prism",
         "device",
         "image_size",
     )
@@ -172,7 +172,10 @@ class FishEyeCameras(CamerasBase):
 
         """
         assert points.shape[-1] == 3, "points shape incorrect"
-        ab = points[..., :2] / points[..., 2:]
+        denom = points[..., 2:]
+        denom_sign = denom.sign() + (denom == 0).type_as(denom)
+        denom = denom_sign * torch.clamp(denom.abs(), self.epsilon)
+        ab = points[..., :2] / denom
         uv_distorted = ab
 
         r = ab.norm(dim=-1)
