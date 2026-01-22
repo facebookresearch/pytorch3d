@@ -247,15 +247,15 @@ class TestRotationConversion(TestCaseMixin, unittest.TestCase):
         r = random_rotations(13, dtype=torch.float64)
 
         # 6D representation is not unique,
-        # but we implement it by taking the first two rows of the matrix
+        # but we implement it by taking the first two columns of the matrix
         r6d = matrix_to_rotation_6d(r)
-        self.assertClose(r6d, r[:, :2, :].reshape(-1, 6))
+        self.assertClose(r6d, r[:, :, :2].reshape(-1, 6))
 
         # going to 6D and back should not change the matrix
         r_hat = rotation_6d_to_matrix(r6d)
         self.assertClose(r_hat, r)
 
-        # moving the second row R2 in the span of (R1, R2) should not matter
+        # moving the second column R2 in the span of (R1, R2) should not matter
         r6d[:, 3:] += 2 * r6d[:, :3]
         r6d[:, :3] *= 3.0
         r_hat = rotation_6d_to_matrix(r6d)

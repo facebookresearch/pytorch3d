@@ -624,13 +624,13 @@ def rotation_6d_to_matrix(d6: torch.Tensor) -> torch.Tensor:
     b2 = a2 - (b1 * a2).sum(-1, keepdim=True) * b1
     b2 = F.normalize(b2, dim=-1)
     b3 = torch.cross(b1, b2, dim=-1)
-    return torch.stack((b1, b2, b3), dim=-2)
+    return torch.stack((b1, b2, b3), dim=-1)
 
 
 def matrix_to_rotation_6d(matrix: torch.Tensor) -> torch.Tensor:
     """
     Converts rotation matrices to 6D rotation representation by Zhou et al. [1]
-    by dropping the last row. Note that 6D representation is not unique.
+    by dropping the last column. Note that 6D representation is not unique.
     Args:
         matrix: batch of rotation matrices of size (*, 3, 3)
 
@@ -643,4 +643,4 @@ def matrix_to_rotation_6d(matrix: torch.Tensor) -> torch.Tensor:
     Retrieved from http://arxiv.org/abs/1812.07035
     """
     batch_dim = matrix.size()[:-2]
-    return matrix[..., :2, :].clone().reshape(batch_dim + (6,))
+    return matrix[..., :, :2].clone().reshape(batch_dim + (6,))
