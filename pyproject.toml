@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel", "torch==2.8.0"]
+build-backend = "setuptools.build_meta"
+
+# Configure uv to use PyTorch CUDA index for torch
+# This is used when building with uv (including pixi)
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
+
+[tool.uv.sources]
+torch = [
+    { index = "pytorch-cu128", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+]
