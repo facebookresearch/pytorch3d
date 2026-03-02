@@ -18,7 +18,7 @@ template <
         std::is_same<T, double>::value || std::is_same<T, float>::value>>
 struct vec3 {
   T x, y, z;
-  typedef T scalar_t;
+  using scalar_t = T;
   vec3(T x, T y, T z) : x(x), y(y), z(z) {}
 };
 

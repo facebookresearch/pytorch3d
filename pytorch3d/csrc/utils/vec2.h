@@ -19,7 +19,7 @@ template <
         std::is_same<T, double>::value || std::is_same<T, float>::value>>
 struct vec2 {
   T x, y;
-  typedef T scalar_t;
+  using scalar_t = T;
   vec2(T x, T y) : x(x), y(y) {}
 };
 
