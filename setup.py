@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # Copyright (c) Meta Platforms, Inc. and affiliates.
-# Test commit for branch protection
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
