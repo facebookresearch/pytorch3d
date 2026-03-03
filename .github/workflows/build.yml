@@ -17,23 +17,30 @@ jobs:
       PYTORCH_VERSION: "2.8.0"
       CU_VERSION: "cu128"
       FORCE_CUDA: "1"
+      CONDA_ENV: "pytorch3d-build"
     
     steps:
     - uses: actions/checkout@v4
     
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
+    - name: Setup conda environment
+      run: |
+        # Remove existing env if it exists
+        conda env remove -n ${{ env.CONDA_ENV }} || true
+        # Create fresh conda environment
+        conda create -n ${{ env.CONDA_ENV }} python=${{ env.PYTHON_VERSION }} -y
     
     - name: Install dependencies
       run: |
+        source $(conda info --base)/etc/profile.d/conda.sh
+        conda activate ${{ env.CONDA_ENV }}
         python -m pip install --upgrade pip
         pip install torch==${{ env.PYTORCH_VERSION }} --index-url https://download.pytorch.org/whl/${{ env.CU_VERSION }}
         pip install setuptools wheel numpy iopath
     
     - name: Build wheel
       run: |
+        source $(conda info --base)/etc/profile.d/conda.sh
+        conda activate ${{ env.CONDA_ENV }}
         export MAX_JOBS=$(nproc)
         echo "Building with MAX_JOBS=$MAX_JOBS"
         python setup.py clean
@@ -49,6 +56,8 @@ jobs:
     
     - name: Run basic tests
       run: |
+        source $(conda info --base)/etc/profile.d/conda.sh
+        conda activate ${{ env.CONDA_ENV }}
         pip install dist/*.whl
         python -c "import pytorch3d; print(f'PyTorch3D version: {pytorch3d.__version__}')"
         python -c "from pytorch3d import transforms; print('Transforms module loaded')"
@@ -63,6 +72,11 @@ jobs:
         scp "$WHEEL_FILE" pypi@ci-cd-linux3.quidient.com:/home/pypi/packages/
         echo "Wheel uploaded. Install with:"
         echo "  pip install pytorch3d --index-url http://ci-cd-linux3.quidient.com/pypi/simple/"
+    
+    - name: Cleanup conda environment
+      if: always()
+      run: |
+        conda env remove -n ${{ env.CONDA_ENV }} || true
 
   build_wheel_windows:
     runs-on: self-hosted-windows
@@ -72,18 +86,23 @@ jobs:
       CU_VERSION: "cu128"
       FORCE_CUDA: "1"
       DISTUTILS_USE_SDK: "1"
+      CONDA_ENV: "pytorch3d-build"
     
     steps:
     - uses: actions/checkout@v4
     
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
+    - name: Setup conda environment
+      shell: pwsh
+      run: |
+        # Remove existing env if it exists
+        conda env remove -n ${{ env.CONDA_ENV }} 2>$null
+        # Create fresh conda environment
+        conda create -n ${{ env.CONDA_ENV }} python=${{ env.PYTHON_VERSION }} -y
     
     - name: Install dependencies
       shell: pwsh
       run: |
+        conda activate ${{ env.CONDA_ENV }}
         python -m pip install --upgrade pip
         pip install torch==${{ env.PYTORCH_VERSION }} --index-url https://download.pytorch.org/whl/${{ env.CU_VERSION }}
         pip install setuptools wheel numpy iopath
@@ -91,6 +110,7 @@ jobs:
     - name: Build wheel
       shell: pwsh
       run: |
+        conda activate ${{ env.CONDA_ENV }}
         $env:MAX_JOBS = (Get-CimInstance Win32_ComputerSystem).NumberOfLogicalProcessors
         Write-Host "Building with MAX_JOBS=$env:MAX_JOBS"
         python setup.py clean
@@ -107,6 +127,7 @@ jobs:
     - name: Run basic tests
       shell: pwsh
       run: |
+        conda activate ${{ env.CONDA_ENV }}
         pip install (Get-ChildItem dist/*.whl).FullName
         python -c "import pytorch3d; print(f'PyTorch3D version: {pytorch3d.__version__}')"
         python -c "from pytorch3d import transforms; print('Transforms module loaded')"
@@ -122,3 +143,9 @@ jobs:
         scp $WHEEL_FILE.FullName pypi@ci-cd-linux3.quidient.com:/home/pypi/packages/
         Write-Host "Wheel uploaded. Install with:"
         Write-Host "  pip install pytorch3d --index-url http://ci-cd-linux3.quidient.com/pypi/simple/"
+    
+    - name: Cleanup conda environment
+      if: always()
+      shell: pwsh
+      run: |
+        conda env remove -n ${{ env.CONDA_ENV }} 2>$null
