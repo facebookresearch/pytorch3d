@@ -17,6 +17,7 @@ jobs:
       PYTORCH_VERSION: "2.8.0"
       CU_VERSION: "cu128"
       FORCE_CUDA: "1"
+      TORCH_CUDA_ARCH_LIST: "8.0;8.6;8.9;9.0"
       CONDA_ENV: "pytorch3d-build"
     
     steps:
@@ -86,6 +87,7 @@ jobs:
       CU_VERSION: "cu128"
       FORCE_CUDA: "1"
       DISTUTILS_USE_SDK: "1"
+      TORCH_CUDA_ARCH_LIST: "8.0;8.6;8.9;9.0"
       CONDA_ENV: "pytorch3d-build"
     
     steps:
@@ -110,6 +112,8 @@ jobs:
     - name: Build wheel
       shell: pwsh
       run: |
+        # Enter VS Developer Shell for cl.exe discovery
+        .\scripts\enter_vs_dev_shell.ps1
         conda activate ${{ env.CONDA_ENV }}
         $env:MAX_JOBS = (Get-CimInstance Win32_ComputerSystem).NumberOfLogicalProcessors
         Write-Host "Building with MAX_JOBS=$env:MAX_JOBS"
