@@ -17,7 +17,7 @@ jobs:
       PYTORCH_VERSION: "2.8.0"
       CU_VERSION: "cu128"
       FORCE_CUDA: "1"
-      TORCH_CUDA_ARCH_LIST: "8.0;8.6;8.9;9.0"
+      TORCH_CUDA_ARCH_LIST: "8.0;8.6;8.9;9.0;12.0"
       CONDA_ENV: "pytorch3d-build"
     
     steps:
@@ -87,7 +87,7 @@ jobs:
       CU_VERSION: "cu128"
       FORCE_CUDA: "1"
       DISTUTILS_USE_SDK: "1"
-      TORCH_CUDA_ARCH_LIST: "8.0;8.6;8.9;9.0"
+      TORCH_CUDA_ARCH_LIST: "8.0;8.6;8.9;9.0;12.0"
       CONDA_ENV: "pytorch3d-build"
     
     steps:
