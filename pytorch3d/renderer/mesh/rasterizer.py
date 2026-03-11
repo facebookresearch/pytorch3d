@@ -34,10 +34,12 @@ class Fragments:
 
         zbuf:
             FloatTensor of shape (N, image_size, image_size, faces_per_pixel) giving
-            the NDC z-coordinates of the nearest faces at each pixel, sorted in
-            ascending z-order. Concretely, if ``pix_to_face[n, y, x, k] = f`` then
-            ``zbuf[n, y, x, k] = face_verts[f, 2]``. Pixels hit by fewer than
-            faces_per_pixel are padded with -1.
+            the view-space z-coordinates of the nearest faces at each pixel,
+            sorted in ascending z-order. Concretely, if
+            ``pix_to_face[n, y, x, k] = f`` then ``zbuf[n, y, x, k]`` is the
+            barycentric interpolation of the view-space z-coordinates of the
+            vertices of face ``f`` at pixel ``(y, x)``. Pixels hit by fewer
+            than faces_per_pixel are padded with -1.
 
         bary_coords:
             FloatTensor of shape (N, image_size, image_size, faces_per_pixel, 3)
@@ -175,7 +177,8 @@ class MeshRasterizer(nn.Module):
 
         Returns:
             meshes_proj: a Meshes object with the vertex positions projected
-            in NDC space
+            for rasterization, with ``x`` and ``y`` in NDC space and ``z`` in
+            view space.
 
         NOTE: keeping this as a separate function for readability but it could
         be moved into forward.
