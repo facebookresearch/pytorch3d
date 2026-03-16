@@ -74,20 +74,6 @@ class HomeSplash extends React.Component {
   }
 }
 
-function SocialBanner() {
-  return (
-    <div className="socialBanner">
-      <div>
-        Support Ukraine 🇺🇦{' '}
-        <a href="https://opensource.fb.com/support-ukraine">
-          Help Provide Humanitarian Aid to Ukraine
-        </a>
-        .
-      </div>
-    </div>
-  );
-}
-
 class Index extends React.Component {
   render() {
     const {config: siteConfig, language = ''} = this.props;
@@ -226,7 +212,6 @@ loss_chamfer, _ = chamfer_distance(sample_sphere, sample_test)
 
     return (
       <div>
-        <SocialBanner />
         <HomeSplash siteConfig={siteConfig} language={language} />
         <div className="landingPage mainContainer">
           <Features />
