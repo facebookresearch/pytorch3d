@@ -64,16 +64,12 @@ class ImplicitronDataSource(DataSourceBase):
     def pre_expand(cls) -> None:
         # use try/finally to bypass cinder's lazy imports
         try:
-            from .blender_dataset_map_provider import (  # noqa: F401
-                BlenderDatasetMapProvider,
-            )
             from .json_index_dataset_map_provider import (  # noqa: F401
                 JsonIndexDatasetMapProvider,
             )
             from .json_index_dataset_map_provider_v2 import (  # noqa: F401
                 JsonIndexDatasetMapProviderV2,
             )
-            from .llff_dataset_map_provider import LlffDatasetMapProvider  # noqa: F401
             from .rendered_mesh_dataset_map_provider import (  # noqa: F401
                 RenderedMeshDatasetMapProvider,
             )

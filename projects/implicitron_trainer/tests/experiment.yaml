@@ -13,13 +13,6 @@ hydra:
 data_source_ImplicitronDataSource_args:
   dataset_map_provider_class_type: ???
   data_loader_map_provider_class_type: SequenceDataLoaderMapProvider
-  dataset_map_provider_BlenderDatasetMapProvider_args:
-    base_dir: ???
-    object_name: ???
-    path_manager_factory_class_type: PathManagerFactory
-    n_known_frames_for_test: null
-    path_manager_factory_PathManagerFactory_args:
-      silence_logs: true
   dataset_map_provider_JsonIndexDatasetMapProvider_args:
     category: ???
     task_str: singlesequence
@@ -91,14 +84,6 @@ data_source_ImplicitronDataSource_args:
       sort_frames: false
     path_manager_factory_PathManagerFactory_args:
       silence_logs: true
-  dataset_map_provider_LlffDatasetMapProvider_args:
-    base_dir: ???
-    object_name: ???
-    path_manager_factory_class_type: PathManagerFactory
-    n_known_frames_for_test: null
-    path_manager_factory_PathManagerFactory_args:
-      silence_logs: true
-    downscale_factor: 4
   dataset_map_provider_RenderedMeshDatasetMapProvider_args:
     num_views: 40
     data_file: null

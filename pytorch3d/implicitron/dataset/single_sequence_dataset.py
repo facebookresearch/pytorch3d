@@ -85,7 +85,7 @@ class SingleSceneDataset(DatasetBase, Configurable):
 
 class SingleSceneDatasetMapProviderBase(DatasetMapProviderBase):
     """
-    Base for provider of data for one scene from LLFF or blender datasets.
+    Base for provider of data for one scene.
 
     Members:
         base_dir: directory holding the data for the scene.
@@ -171,40 +171,3 @@ class SingleSceneDatasetMapProviderBase(DatasetMapProviderBase):
         # pyre-ignore[16]
         cameras = [self.poses[i] for i in self.i_split[0]]
         return join_cameras_as_batch(cameras)
-
-
-def _interpret_blender_cameras(
-    poses: torch.Tensor, focal: float
-) -> List[PerspectiveCameras]:
-    """
-    Convert 4x4 matrices representing cameras in blender format
-    to PyTorch3D format.
-
-    Args:
-        poses: N x 3 x 4 camera matrices
-        focal: ndc space focal length
-    """
-    pose_target_cameras = []
-    for pose_target in poses:
-        pose_target = pose_target[:3, :4]
-        mtx = torch.eye(4, dtype=pose_target.dtype)
-        mtx[:3, :3] = pose_target[:3, :3].t()
-        mtx[3, :3] = pose_target[:, 3]
-        mtx = mtx.inverse()
-
-        # flip the XZ coordinates.
-        mtx[:, [0, 2]] *= -1.0
-
-        Rpt3, Tpt3 = mtx[:, :3].split([3, 1], dim=0)
-
-        focal_length_pt3 = torch.FloatTensor([[focal, focal]])
-        principal_point_pt3 = torch.FloatTensor([[0.0, 0.0]])
-
-        cameras = PerspectiveCameras(
-            focal_length=focal_length_pt3,
-            principal_point=principal_point_pt3,
-            R=Rpt3[None],
-            T=Tpt3,
-        )
-        pose_target_cameras.append(cameras)
-    return pose_target_cameras
