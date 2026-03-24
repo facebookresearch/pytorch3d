@@ -16,7 +16,7 @@ The renderer is designed to be modular, extensible and support batching and grad
 The **rasterizer** returns 4 output tensors in a named tuple.
 
 - **`pix_to_face`**: LongTensor of shape `(N, image_size, image_size, faces_per_pixel)` specifying the indices of the faces (in the packed faces) which overlap each pixel in the image.
-- **`zbuf`**: FloatTensor of shape `(N, image_size, image_size, faces_per_pixel)` giving the z-coordinates of the nearest faces at each pixel in world coordinates, sorted in ascending z-order.
+- **`zbuf`**: FloatTensor of shape `(N, image_size, image_size, faces_per_pixel)` giving the view-space z-coordinates of the nearest faces at each pixel, sorted in ascending z-order.
 - **`bary_coords`**: FloatTensor of shape `(N, image_size, image_size, faces_per_pixel, 3)`
   giving the barycentric coordinates in NDC units of the nearest faces at each pixel, sorted in ascending z-order.
 - **`pix_dists`**: FloatTensor of shape `(N, image_size, image_size, faces_per_pixel)` giving the signed Euclidean distance (in NDC units) in the x/y plane of each point closest to the pixel.

@@ -27,9 +27,10 @@ After rasterization, the Fragments from the clipped/modified triangles
 are mapped back to the triangles in the original mesh. The indices,
 barycentric coordinates and distances are all relative to original mesh triangles.
 
-NOTE: It is assumed that all z-coordinates are in world coordinates (not NDC
-coordinates), while x and y coordinates may be in NDC/screen coordinates
-(i.e after applying a projective transform e.g. cameras.transform_points(points)).
+NOTE: It is assumed that all z-coordinates store view-space depth values
+(not NDC coordinates), while x and y coordinates may be in NDC/screen
+coordinates (i.e after applying a projective transform such as
+``cameras.transform_points``).
 """
 
 
@@ -52,11 +53,11 @@ class ClippedFaces:
         faces_clipped_to_unclipped_idx: (F_clipped,) shaped LongTensor mapping each clipped
             face back to the face in faces_unclipped (i.e. the faces in the original meshes
             obtained using meshes.faces_packed())
-        barycentric_conversion: (T, 3, 3) FloatTensor, where barycentric_conversion[i, :, k]
-            stores the barycentric weights in terms of the world coordinates of the original
-            (big) unclipped triangle for the kth vertex in the clipped (small) triangle.
-            If the rasterizer then expresses some NDC coordinate in terms of barycentric
-            world coordinates for the clipped (small) triangle as alpha_clipped[i,:],
+        barycentric_conversion: (T, 3, 3) FloatTensor, where
+            barycentric_conversion[i, :, k] stores the barycentric weights of
+            the kth vertex in the clipped (small) triangle with respect to the
+            original (big) unclipped triangle. If the rasterizer then expresses
+            some point in the clipped (small) triangle as alpha_clipped[i,:],
             alpha_unclipped[i, :] = barycentric_conversion[i, :, :]*alpha_clipped[i, :]
         faces_clipped_to_conversion_idx: (F_clipped,) shaped LongTensor mapping each clipped
             face to the applicable row of barycentric_conversion (or set to -1 if conversion is
@@ -109,8 +110,8 @@ class ClipFrustum:
         right: NDC coordinate of the right clipping plane (along x axis)
         top: NDC coordinate of the top clipping plane (along y axis)
         bottom: NDC coordinate of the bottom clipping plane (along y axis)
-        znear: world space z coordinate of the near clipping plane
-        zfar: world space z coordinate of the far clipping plane
+        znear: view-space z coordinate of the near clipping plane
+        zfar: view-space z coordinate of the far clipping plane
         perspective_correct: should be set to True for a perspective camera
         cull: if True, triangles outside the frustum should be culled
         z_clip_value: if not None, then triangles should be clipped (possibly into
@@ -223,8 +224,9 @@ def _find_verts_intersecting_clipping_plane(
         face_verts: An (F,3,3) tensor, where F is the number of faces in
             the packed representation of the Meshes, the 2nd dimension represents
             the 3 vertices of the face, and the 3rd dimension stores the xyz locations of each
-            vertex.  The z-coordinates must be represented in world coordinates, while
-            the xy-coordinates may be in NDC/screen coordinates (i.e. after projection).
+            vertex. The z-coordinates must be represented as view-space depth values,
+            while the xy-coordinates may be in NDC/screen coordinates (i.e. after
+            projection).
         p1_face_ind: A tensor of shape (N,) with values in the range of 0 to 2.  In each
             case 3/case 4 triangle, two vertices are on the same side of the
             clipping plane and the 3rd is on the other side.  p1_face_ind stores the index of
@@ -267,21 +269,20 @@ def _find_verts_intersecting_clipping_plane(
     # p4 is a (T, 3) tensor is the point on the segment between p1 and p2 that
     # intersects the clipping plane.
     # Solve for the weight w2 such that p1.z*(1-w2) + p2.z*w2 = clip_value.
-    # Then interpolate p4 = p1*(1-w2) + p2*w2 where it is assumed that z-coordinates
-    # are expressed in world coordinates (since we want to clip z in world coordinates).
+    # Then interpolate p4 = p1*(1-w2) + p2*w2 where z stores view-space depth.
     w2 = (p1[:, 2] - clip_value) / (p1[:, 2] - p2[:, 2])
     p4 = p1 * (1 - w2[:, None]) + p2 * w2[:, None]
     if perspective_correct:
-        # It is assumed that all z-coordinates are in world coordinates (not NDC
+        # It is assumed that all z-coordinates are view-space depths (not NDC
         # coordinates), while x and y coordinates may be in NDC/screen coordinates.
         # If x and y are in NDC/screen coordinates and a projective transform was used
         # in a perspective camera, then we effectively want to:
-        # 1. Convert back to world coordinates (by multiplying by z)
+        # 1. Convert back to view coordinates (by multiplying by z)
         # 2. Interpolate using w2
         # 3. Convert back to NDC/screen coordinates (by dividing by the new z=clip_value)
-        p1_world = p1[:, :2] * p1[:, 2:3]
-        p2_world = p2[:, :2] * p2[:, 2:3]
-        p4[:, :2] = (p1_world * (1 - w2[:, None]) + p2_world * w2[:, None]) / clip_value
+        p1_view = p1[:, :2] * p1[:, 2:3]
+        p2_view = p2[:, :2] * p2[:, 2:3]
+        p4[:, :2] = (p1_view * (1 - w2[:, None]) + p2_view * w2[:, None]) / clip_value
 
     ##################################
     # Solve for intersection point p5
@@ -295,11 +296,11 @@ def _find_verts_intersecting_clipping_plane(
     w3 = w3.detach()
     p5 = p1 * (1 - w3[:, None]) + p3 * w3[:, None]
     if perspective_correct:
-        # Again if using a perspective camera, convert back to world coordinates
+        # Again if using a perspective camera, convert back to view coordinates
         # interpolate and convert back
-        p1_world = p1[:, :2] * p1[:, 2:3]
-        p3_world = p3[:, :2] * p3[:, 2:3]
-        p5[:, :2] = (p1_world * (1 - w3[:, None]) + p3_world * w3[:, None]) / clip_value
+        p1_view = p1[:, :2] * p1[:, 2:3]
+        p3_view = p3[:, :2] * p3[:, 2:3]
+        p5[:, :2] = (p1_view * (1 - w3[:, None]) + p3_view * w3[:, None]) / clip_value
 
     # Set the barycentric coordinates of p1,p2,p3,p4,p5 in terms of the original
     # unclipped triangle in face_verts.
@@ -344,8 +345,8 @@ def clip_faces(
         face_verts_unclipped: An (F, 3, 3) tensor, where F is the number of faces in
             the packed representation of Meshes, the 2nd dimension represents the 3 vertices
             of the triangle, and the 3rd dimension stores the xyz locations of each
-            vertex.  The z-coordinates must be represented in world coordinates, while
-            the xy-coordinates may be in NDC/screen coordinates
+            vertex. The z-coordinates must be represented as view-space depth values,
+            while the xy-coordinates may be in NDC/screen coordinates.
         mesh_to_face_first_idx: an tensor of shape (N,), where N is the number of meshes
             in the batch.  The ith element stores the index into face_verts_unclipped
             of the first face of the ith mesh.
@@ -559,11 +560,11 @@ def clip_faces(
     # Triangles that were clipped (case 3 & case 4) will require conversion of
     # barycentric coordinates from being in terms of the smaller clipped triangle to in terms
     # of the original big triangle.  If there are T clipped triangles,
-    # barycentric_conversion is a (T, 3, 3) tensor, where barycentric_conversion[i, :, k]
-    # stores the barycentric weights in terms of the world coordinates of the original
-    # (big) triangle for the kth vertex in the clipped (small) triangle.  If our
-    # rasterizer then expresses some NDC coordinate in terms of barycentric
-    # world coordinates for the clipped (small) triangle as alpha_clipped[i,:],
+    # barycentric_conversion is a (T, 3, 3) tensor, where
+    # barycentric_conversion[i, :, k] stores the barycentric weights of the kth
+    # vertex in the clipped (small) triangle with respect to the original
+    # (big) triangle. If our rasterizer then expresses some point in the
+    # clipped (small) triangle as alpha_clipped[i,:],
     #   alpha_unclipped[i, :] = barycentric_conversion[i, :, :]*alpha_clipped[i, :]
     barycentric_conversion = torch.cat((t_barycentric, t1_barycentric, t2_barycentric))
 
@@ -626,8 +627,8 @@ def convert_clipped_rasterization_to_original_faces(
             are hit by fewer than faces_per_pixel are padded with -1.
         bary_coords_clipped: FloatTensor of shape
             (N, image_size, image_size, faces_per_pixel, 3) giving the barycentric
-            coordinates in world coordinates of the nearest faces at each pixel, sorted
-            in ascending z-order.  Concretely, if ``pix_to_face_clipped[n, y, x, k] = f``
+            coordinates of the nearest faces at each pixel, sorted in ascending
+            z-order. Concretely, if ``pix_to_face_clipped[n, y, x, k] = f``
             then ``[w0, w1, w2] = bary_coords_clipped[n, y, x, k]`` gives the
             barycentric coords for pixel (y, x) relative to the face defined by
             ``unproject(face_verts_clipped[f])``. Pixels hit by fewer than
