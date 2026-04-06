@@ -25,7 +25,9 @@ template <bool DEV>
 GLOBAL void norm_cam_gradients(Renderer renderer) {
   GET_PARALLEL_IDX_1D(idx, 1);
   CamGradInfo* cgi = reinterpret_cast<CamGradInfo*>(renderer.grad_cam_d);
-  *cgi = *cgi * FRCP(static_cast<float>(*renderer.n_grad_contributions_d));
+  if (*renderer.n_grad_contributions_d > 0) {
+    *cgi = *cgi * FRCP(static_cast<float>(*renderer.n_grad_contributions_d));
+  }
   END_PARALLEL_NORET();
 };
 
