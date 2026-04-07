@@ -9,6 +9,8 @@
 #ifndef PULSAR_NATIVE_INCLUDE_RENDERER_FILL_BG_DEVICE_H_
 #define PULSAR_NATIVE_INCLUDE_RENDERER_FILL_BG_DEVICE_H_
 
+#include <cstring>
+
 #include "../global.h"
 #include "./camera.h"
 #include "./commands.h"
@@ -41,7 +43,7 @@ GLOBAL void fill_bg(
     // sphere IDs and intersection depths.
     for (int i = 0; i < renderer.n_track; ++i) {
       int sphere_id = -1;
-      IASF(sphere_id, renderer.forw_info_d[write_loc + 3 + i * 2]);
+      memcpy(&renderer.forw_info_d[write_loc + 3 + i * 2], &sphere_id, sizeof(float));
       renderer.forw_info_d[write_loc + 3 + i * 2 + 1] = -1.f;
     }
     if (mode == 0) {
