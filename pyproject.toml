@@ -1,0 +1,16 @@
+[build-system]
+requires = [
+    "setuptools>=64",
+    "wheel",
+    "torch",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pytorch3d"
+version = "0.7.9"
+description = "PyTorch3D is FAIR's library of reusable components for deep learning with 3D data."
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = ["iopath"]
+dynamic = ["authors", "optional-dependencies", "scripts"]
