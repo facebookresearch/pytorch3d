@@ -14,6 +14,9 @@ pytorch3d/csrc/**/*_hip.cpp
 pytorch3d/csrc/**/*_hip.h
 pytorch3d/csrc/**/*_hip.cuh
 
+# Debug PNG dumps written by pulsar tests when FB_TEST is unset.
+tests/pulsar/test_out/
+
 
 # Docusaurus site
 website/yarn.lock

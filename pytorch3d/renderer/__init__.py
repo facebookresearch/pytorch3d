@@ -75,16 +75,9 @@ from .points import (
     PointsRasterizationSettings,
     PointsRasterizer,
     PointsRenderer,
+    PulsarPointsRenderer,
     rasterize_points,
 )
-
-# PulsarPointsRenderer is only exposed when the native pulsar renderer was
-# built into pytorch3d._C (CUDA builds). On ROCm builds, pulsar is excluded
-# and the symbol simply will not exist on this module.
-try:
-    from .points import PulsarPointsRenderer  # noqa: F401
-except ImportError:
-    pass
 from .splatter_blend import SplatterBlender
 from .utils import (
     convert_to_tensors_and_broadcast,

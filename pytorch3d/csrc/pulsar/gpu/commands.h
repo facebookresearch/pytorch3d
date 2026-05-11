@@ -125,29 +125,45 @@ INLINE DEVICE float3 WARP_SUM_FLOAT3(
 // Floating point.
 // #define FMUL(a, b) __fmul_rn((a), (b))
 #define FMUL(a, b) ((a) * (b))
-#define FDIV(a, b) __fdiv_rn((a), (b))
 // #define FSUB(a, b) __fsub_rn((a), (b))
 #define FSUB(a, b) ((a) - (b))
+// HIP has no per-instruction rounding-mode override (round-to-nearest-even is
+// the default at the hardware level), so the CUDA *_rn intrinsics have no
+// runtime equivalent and we use plain operators. The HIP/clang compiler may
+// fuse a+b*c into a single-rounding FMA where CUDA's _rn would have prevented
+// it; if that becomes a numerical issue, add `-ffp-contract=off` to the pulsar
+// nvcc_args in setup.py.
+#if defined(USE_ROCM)
+#define FDIV(a, b) ((a) / (b))
+#define FADD(a, b) ((a) + (b))
+#define FSQRT(a) sqrtf(a)
+#define FPOW(a, b) powf((a), (b))
+#define FSATURATE(x) fmaxf(0.0f, fminf(1.0f, (x)))
+#define FMA(x, y, z) fmaf((x), (y), (z))
+#define FRCP(x) (1.0f / (x))
+#else
+#define FDIV(a, b) __fdiv_rn((a), (b))
 #define FADD(a, b) __fadd_rn((a), (b))
 #define FSQRT(a) __fsqrt_rn(a)
+#define FPOW(a, b) __powf((a), (b))
+#define FSATURATE(x) __saturatef(x)
+/** Calculates x*y+z. */
+#define FMA(x, y, z) __fmaf_rn((x), (y), (z))
+#define FRCP(x) __frcp_rn(x)
+#endif
 #define FEXP(a) fasterexp(a)
 #define FLN(a) fasterlog(a)
-#define FPOW(a, b) __powf((a), (b))
 #define FMAX(a, b) fmax((a), (b))
 #define FMIN(a, b) fmin((a), (b))
 #define FCEIL(a) ceilf(a)
 #define FFLOOR(a) floorf(a)
 #define FROUND(x) nearbyintf(x)
-#define FSATURATE(x) __saturatef(x)
 #define FABS(a) abs(a)
 #define IASF(a, loc) (loc) = __int_as_float(a)
 #define FASI(a, loc) (loc) = __float_as_int(a)
 #define FABSLEQAS(a, b, c) \
   ((a) <= (b) ? FSUB((b), (a)) <= (c) : FSUB((a), (b)) < (c))
-/** Calculates x*y+z. */
-#define FMA(x, y, z) __fmaf_rn((x), (y), (z))
 #define I2F(a) __int2float_rn(a)
-#define FRCP(x) __frcp_rn(x)
 #if !defined(USE_ROCM)
 __device__ static float atomicMax(float* address, float val) {
   int* address_as_i = (int*)address;
@@ -201,8 +217,17 @@ __device__ static float atomicMin(float* address, float val) {
   ATOMICADD(&((PTR)->x), VAL.x); \
   ATOMICADD(&((PTR)->y), VAL.y); \
   ATOMICADD(&((PTR)->z), VAL.z);
-#if (CUDART_VERSION >= 10000) && (__CUDA_ARCH__ >= 600)
+#if !defined(USE_ROCM) && \
+    (CUDART_VERSION >= 10000) && (__CUDA_ARCH__ >= 600)
 #define ATOMICADD_B(PTR, VAL) atomicAdd_block((PTR), (VAL))
+#elif defined(USE_ROCM)
+// HIP has no atomicAdd_block, but the semantic equivalent is a relaxed
+// fetch_add scoped to the workgroup (HIP's name for a CUDA thread block).
+// This avoids device-wide L2-coherent atomics for what are block-local
+// counters in pulsar's inner sphere-loading loop.
+#define ATOMICADD_B(PTR, VAL)                            \
+  __hip_atomic_fetch_add((PTR), (VAL), __ATOMIC_RELAXED, \
+                         __HIP_MEMORY_SCOPE_WORKGROUP)
 #else
 #define ATOMICADD_B(PTR, VAL) ATOMICADD(PTR, VAL)
 #endif

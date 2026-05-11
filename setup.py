@@ -59,9 +59,7 @@ def get_extensions():
     include_dirs = [extensions_dir]
 
     # ROCm/HIP support. When PyTorch is built with HIP, the cpp_extension
-    # BuildExtension auto-hipifies .cu sources and swaps nvcc -> hipcc. Pulsar
-    # is not currently portable to ROCm and is excluded from the build; see
-    # the comment in pytorch3d/csrc/ext.cpp ("Pulsar not enabled on AMD").
+    # BuildExtension auto-hipifies .cu sources and swaps nvcc -> hipcc.
     is_rocm = torch.version.hip is not None
 
     force_cuda = os.getenv("FORCE_CUDA", "0") == "1"
@@ -73,13 +71,6 @@ def get_extensions():
         not force_no_cuda and torch.cuda.is_available() and gpu_home_available
     ) or force_cuda:
         extension = CUDAExtension
-
-        if is_rocm:
-            pulsar_prefix = os.path.join(extensions_dir, "pulsar") + os.sep
-            sources = [s for s in sources if not s.startswith(pulsar_prefix)]
-            source_cuda = [
-                s for s in source_cuda if not s.startswith(pulsar_prefix)
-            ]
 
         sources += source_cuda
         define_macros += [("WITH_CUDA", None)]
