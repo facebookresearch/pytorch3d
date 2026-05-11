@@ -30,10 +30,10 @@ jobs:
   linux_rocm_build:
     runs-on: ubuntu-latest
     container:
-      image: rocm/dev-ubuntu-22.04:6.2.4
+      image: rocm/dev-ubuntu-22.04:7.2.3
     env:
-      PYTORCH_VERSION: "2.4.1"
-      ROCM_INDEX: "rocm6.2"
+      PYTORCH_VERSION: "2.11.0"
+      ROCM_INDEX: "rocm7.2"
     steps:
     - uses: actions/checkout@v4
     - name: Install Python and torch+rocm
