@@ -21,3 +21,38 @@ jobs:
       run: |-
         conda create --name env --yes --quiet conda-build
         conda run --no-capture-output --name env python3 ./packaging/build_conda.py --use-conda-cuda
+
+  # Build-only verification for the ROCm/HIP code paths. Runs in an AMD ROCm
+  # dev container on a CPU-only GitHub runner; we don't need an AMD GPU just
+  # to compile, and not running tests keeps the CI cost low. Catches build
+  # regressions in the ROCm code paths (USE_ROCM guards, hipify-touched sources,
+  # the pulsar HIP intrinsic replacements, etc.).
+  linux_rocm_build:
+    runs-on: ubuntu-latest
+    container:
+      image: rocm/dev-ubuntu-22.04:6.2.4
+    env:
+      PYTORCH_VERSION: "2.4.1"
+      ROCM_INDEX: "rocm6.2"
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install Python and torch+rocm
+      run: |-
+        apt-get update
+        apt-get install -y --no-install-recommends python3 python3-dev python3-pip git
+        python3 -m pip install --upgrade pip
+        python3 -m pip install --index-url https://download.pytorch.org/whl/${ROCM_INDEX} torch==${PYTORCH_VERSION}
+    - name: Verify torch is ROCm-built
+      run: |-
+        python3 -c "import torch; assert torch.version.hip is not None, 'torch is not HIP-built'; print('torch.version.hip:', torch.version.hip)"
+    - name: Build pytorch3d _C extension (build only, no tests)
+      env:
+        # CPU-only runner: torch.cuda.is_available() is False, so force the
+        # CUDAExtension path. ROCM_HOME is auto-detected from /opt/rocm in
+        # the rocm/dev-ubuntu container.
+        FORCE_CUDA: "1"
+      run: |-
+        python3 -m pip install --no-build-isolation -v -e .
+    - name: Smoke import
+      run: |-
+        python3 -c "from pytorch3d import _C; print('PulsarRenderer:', hasattr(_C, 'PulsarRenderer')); print('n_symbols:', len([s for s in dir(_C) if not s.startswith('_')]))"
