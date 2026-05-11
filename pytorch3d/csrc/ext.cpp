@@ -6,11 +6,15 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+// Pulsar is not currently portable to ROCm/HIP and is excluded from the
+// build there. Tracked as a separate follow-up port.
+#ifndef USE_ROCM
 // clang-format off
 #include "./pulsar/global.h" // Include before <torch/extension.h>.
 // clang-format on
 #include "./pulsar/pytorch/renderer.h"
 #include "./pulsar/pytorch/tensor_util.h"
+#endif // !USE_ROCM
 #include "ball_query/ball_query.h"
 #include "blending/sigmoid_alpha_blend.h"
 #include "compositing/alpha_composite.h"
@@ -99,6 +103,7 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
 
   // Pulsar.
   // Pulsar not enabled on AMD.
+#ifndef USE_ROCM
 #ifdef PULSAR_LOGGING_ENABLED
   c10::ShowLogInfoToStderr();
 #endif
@@ -184,4 +189,5 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
   m.attr("MAX_UINT") = py::int_(MAX_UINT);
   m.attr("MAX_USHORT") = py::int_(MAX_USHORT);
   m.attr("PULSAR_MAX_GRAD_SPHERES") = py::int_(MAX_GRAD_SPHERES);
+#endif // !USE_ROCM
 }

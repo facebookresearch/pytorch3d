@@ -6,6 +6,14 @@ dist/
 **/.ipynb_checkpoints
 **/.ipynb_checkpoints/**
 
+# Build artifacts produced in-place by torch.utils.cpp_extension auto-hipify
+# when pytorch3d is built against a ROCm PyTorch.
+*.so
+pytorch3d/csrc/**/*.hip
+pytorch3d/csrc/**/*_hip.cpp
+pytorch3d/csrc/**/*_hip.h
+pytorch3d/csrc/**/*_hip.cuh
+
 
 # Docusaurus site
 website/yarn.lock

@@ -6,4 +6,13 @@
 
 # pyre-unsafe
 
-from .renderer import Renderer  # noqa: F401
+from pytorch3d import _C
+
+
+# The pulsar native renderer is not yet ported to ROCm/HIP; the C++ extension
+# omits PulsarRenderer when built for AMD. Importing the Python wrapper would
+# crash at class-definition time on those builds (it references _C.MAX_UINT /
+# _C.PulsarRenderer at module load). Gate the wrapper symbol on availability
+# of the native class so the rest of pytorch3d.renderer remains importable.
+if hasattr(_C, "PulsarRenderer"):
+    from .renderer import Renderer  # noqa: F401

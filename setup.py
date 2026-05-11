@@ -14,7 +14,12 @@ from typing import List, Optional
 
 import torch
 from setuptools import find_packages, setup
-from torch.utils.cpp_extension import CppExtension, CUDA_HOME, CUDAExtension
+from torch.utils.cpp_extension import (
+    CppExtension,
+    CUDA_HOME,
+    CUDAExtension,
+    ROCM_HOME,
+)
 
 
 def get_existing_ccbin(nvcc_args: List[str]) -> Optional[str]:
@@ -53,12 +58,29 @@ def get_extensions():
     define_macros = []
     include_dirs = [extensions_dir]
 
+    # ROCm/HIP support. When PyTorch is built with HIP, the cpp_extension
+    # BuildExtension auto-hipifies .cu sources and swaps nvcc -> hipcc. Pulsar
+    # is not currently portable to ROCm and is excluded from the build; see
+    # the comment in pytorch3d/csrc/ext.cpp ("Pulsar not enabled on AMD").
+    is_rocm = torch.version.hip is not None
+
     force_cuda = os.getenv("FORCE_CUDA", "0") == "1"
     force_no_cuda = os.getenv("PYTORCH3D_FORCE_NO_CUDA", "0") == "1"
+    gpu_home_available = (
+        CUDA_HOME is not None or (is_rocm and ROCM_HOME is not None)
+    )
     if (
-        not force_no_cuda and torch.cuda.is_available() and CUDA_HOME is not None
+        not force_no_cuda and torch.cuda.is_available() and gpu_home_available
     ) or force_cuda:
         extension = CUDAExtension
+
+        if is_rocm:
+            pulsar_prefix = os.path.join(extensions_dir, "pulsar") + os.sep
+            sources = [s for s in sources if not s.startswith(pulsar_prefix)]
+            source_cuda = [
+                s for s in source_cuda if not s.startswith(pulsar_prefix)
+            ]
+
         sources += source_cuda
         define_macros += [("WITH_CUDA", None)]
         # Thrust is only used for its tuple objects.
@@ -66,7 +88,6 @@ def get_extensions():
         # We take the risk that CUB and Thrust are incompatible, because
         # we aren't using parts of Thrust which actually use CUB.
         define_macros += [("THRUST_IGNORE_CUB_VERSION_CHECK", None)]
-        cub_home = os.environ.get("CUB_HOME", None)
         nvcc_args = [
             "-DCUDA_HAS_FP16=1",
             "-D__CUDA_NO_HALF_OPERATORS__",
@@ -76,35 +97,40 @@ def get_extensions():
         if os.name != "nt":
             nvcc_args.append("-std=c++17")
 
-        # CUDA 13.0+ compatibility flags for pulsar.
-        # Starting with CUDA 13, __global__ function visibility changed.
-        # See: https://developer.nvidia.com/blog/
-        #      cuda-c-compiler-updates-impacting-elf-visibility-and-linkage/
-        cuda_version = torch.version.cuda
-        if cuda_version is not None:
-            major = int(cuda_version.split(".")[0])
-            if major >= 13:
-                nvcc_args.extend(
-                    [
-                        "--device-entity-has-hidden-visibility=false",
-                        "-static-global-template-stub=false",
-                    ]
-                )
-        if cub_home is None:
-            prefix = os.environ.get("CONDA_PREFIX", None)
-            if prefix is not None and os.path.isdir(prefix + "/include/cub"):
-                cub_home = prefix + "/include"
+        if not is_rocm:
+            # CUDA 13.0+ compatibility flags for pulsar.
+            # Starting with CUDA 13, __global__ function visibility changed.
+            # See: https://developer.nvidia.com/blog/
+            #      cuda-c-compiler-updates-impacting-elf-visibility-and-linkage/
+            cuda_version = torch.version.cuda
+            if cuda_version is not None:
+                major = int(cuda_version.split(".")[0])
+                if major >= 13:
+                    nvcc_args.extend(
+                        [
+                            "--device-entity-has-hidden-visibility=false",
+                            "-static-global-template-stub=false",
+                        ]
+                    )
 
-        if cub_home is None:
-            warnings.warn(
-                "The environment variable `CUB_HOME` was not found. "
-                "NVIDIA CUB is required for compilation and can be downloaded "
-                "from `https://github.com/NVIDIA/cub/releases`. You can unpack "
-                "it to a location of your choice and set the environment variable "
-                "`CUB_HOME` to the folder containing the `CMakeListst.txt` file."
-            )
-        else:
-            include_dirs.append(os.path.realpath(cub_home).replace("\\ ", " "))
+            # NVIDIA CUB. On ROCm, hipcub from the ROCm toolchain is used and
+            # no external CUB_HOME is required.
+            cub_home = os.environ.get("CUB_HOME", None)
+            if cub_home is None:
+                prefix = os.environ.get("CONDA_PREFIX", None)
+                if prefix is not None and os.path.isdir(prefix + "/include/cub"):
+                    cub_home = prefix + "/include"
+
+            if cub_home is None:
+                warnings.warn(
+                    "The environment variable `CUB_HOME` was not found. "
+                    "NVIDIA CUB is required for compilation and can be downloaded "
+                    "from `https://github.com/NVIDIA/cub/releases`. You can unpack "
+                    "it to a location of your choice and set the environment variable "
+                    "`CUB_HOME` to the folder containing the `CMakeListst.txt` file."
+                )
+            else:
+                include_dirs.append(os.path.realpath(cub_home).replace("\\ ", " "))
         nvcc_flags_env = os.getenv("NVCC_FLAGS", "")
         if nvcc_flags_env != "":
             nvcc_args.extend(nvcc_flags_env.split(" "))
@@ -113,7 +139,9 @@ def get_extensions():
         # https://github.com/facebookresearch/pytorch3d/issues/436
         # It is harmless after https://github.com/pytorch/pytorch/pull/47404 .
         # But it can be problematic in torch 1.7.0 and 1.7.1
-        if torch.__version__[:4] != "1.7.":
+        # On ROCm the host compiler is selected by hipcc itself; -ccbin is
+        # an nvcc-only flag.
+        if not is_rocm and torch.__version__[:4] != "1.7.":
             CC = os.environ.get("CC", None)
             if CC is not None:
                 existing_CC = get_existing_ccbin(nvcc_args)
