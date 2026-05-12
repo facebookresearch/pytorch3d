@@ -10,10 +10,20 @@
 #include <math.h>
 #include <cstdio>
 
-// Helper functions WarpReduceMin and WarpReduceMax used in .cu files
-// Starting in Volta, instructions are no longer synchronous within a warp.
-// We need to call __syncwarp() to sync the 32 threads in the warp
-// instead of all the threads in the block.
+// Helper functions WarpReduceMin and WarpReduceMax used in .cu files.
+// Starting in Volta, instructions are no longer synchronous within a warp,
+// so on CUDA __syncwarp() is required between dependent shared-memory
+// accesses in the unrolled tail reduction.
+//
+// On AMD/HIP no __syncwarp() is needed here: all wavefront lanes execute
+// in lockstep (AMD has no equivalent of NVIDIA's Independent Thread
+// Scheduling), and the AMDGPU memory model guarantees that LDS operations
+// issued by the same wavefront are observed in program order without an
+// explicit s_waitcnt — see the LLVM AMDGPU backend memory-model rules
+// (https://llvm.org/docs/AMDGPUUsage.html) and the HIP hardware-
+// implementation docs. This holds for both wave32 (RDNA, gfx10xx/11xx/
+// 12xx) and wave64 (CDNA, gfx9xx), so the USE_ROCM skip is
+// architecture-independent.
 
 template <typename scalar_t>
 __device__ void
@@ -23,8 +33,6 @@ WarpReduceMin(scalar_t* min_dists, int64_t* min_idxs, const size_t tid) {
     min_idxs[tid] = min_idxs[tid + 32];
     min_dists[tid] = min_dists[tid + 32];
   }
-// AMD does not use explicit syncwarp and instead automatically inserts memory
-// fences during compilation.
 #if !defined(USE_ROCM)
   __syncwarp();
 #endif
