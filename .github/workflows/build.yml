@@ -52,7 +52,7 @@ jobs:
         # the rocm/dev-ubuntu container.
         FORCE_CUDA: "1"
       run: |-
-        python3 -m pip install --no-build-isolation -v -e .
+        python3 -m pip install --no-build-isolation -v .
     - name: Smoke import
       run: |-
         python3 -c "from pytorch3d import _C; print('PulsarRenderer:', hasattr(_C, 'PulsarRenderer')); print('n_symbols:', len([s for s in dir(_C) if not s.startswith('_')]))"
