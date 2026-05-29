@@ -62,4 +62,4 @@ jobs:
       # shadow the site-packages install via sys.path[0] for `python -c`.
       run: |-
         cd /tmp
-        python3 -c "from pytorch3d import _C; print('PulsarRenderer:', hasattr(_C, 'PulsarRenderer')); print('n_symbols:', len([s for s in dir(_C) if not s.startswith('_')]))"
+        python3 -c "import torch; from pytorch3d import _C; print('PulsarRenderer:', hasattr(_C, 'PulsarRenderer')); print('n_symbols:', len([s for s in dir(_C) if not s.startswith('_')]))"
