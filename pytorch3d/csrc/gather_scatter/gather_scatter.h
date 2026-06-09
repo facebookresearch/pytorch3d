@@ -44,6 +44,12 @@ at::Tensor GatherScatter(
     const at::Tensor& edges,
     bool directed,
     bool backward) {
+  TORCH_CHECK(input.device() == edges.device(), "input and edges must be on the same device");
+  TORCH_CHECK(input.dim() == 2, "input must be a 2D tensor");
+  TORCH_CHECK(input.scalar_type() == at::ScalarType::Float, "input must be a float32 tensor");
+  TORCH_CHECK(edges.dim() == 2, "edges must be a 2D tensor");
+  TORCH_CHECK(edges.scalar_type() == at::ScalarType::Long, "edges must be an int64 tensor");
+  TORCH_CHECK(edges.size(1) == 2, "edges must have shape (E, 2)");
   if (input.is_cuda() && edges.is_cuda()) {
 #ifdef WITH_CUDA
     CHECK_CUDA(input);
