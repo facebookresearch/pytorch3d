@@ -181,3 +181,7 @@ Please see below for a timeline of the codebase updates in reverse chronological
 **[March 8th 2020]:**   PyTorch3D [v0.1.1](https://github.com/facebookresearch/pytorch3d/releases/tag/v0.1.1) bug fix release
 
 **[Jan 23rd 2020]:**   PyTorch3D [v0.1.0](https://github.com/facebookresearch/pytorch3d/releases/tag/v0.1.0) released. [Mesh R-CNN](https://arxiv.org/abs/1906.02739) codebase released: https://github.com/facebookresearch/meshrcnn
+
+---
+
+*[Mukller](https://github.com/Mukller)*
