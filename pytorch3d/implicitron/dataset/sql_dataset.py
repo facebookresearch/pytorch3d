@@ -221,6 +221,7 @@ class SqlIndexDataset(DatasetBase, ReplaceableBase):
     def __len__(self) -> int:
         return len(self._index)
 
+    # pyrefly: ignore [bad-override-param-name]
     def __getitem__(self, frame_idx: Union[int, Tuple[str, int]]) -> FrameData:
         """
         Fetches FrameData by either iloc in the index or by (sequence, frame_no) pair
@@ -424,6 +425,7 @@ class SqlIndexDataset(DatasetBase, ReplaceableBase):
 
     # override
     @property
+    # pyrefly: ignore [bad-override]
     def frame_data_type(self) -> Type[FrameData]:
         return self.frame_data_builder.frame_data_type
 
@@ -630,7 +632,9 @@ class SqlIndexDataset(DatasetBase, ReplaceableBase):
                 # dev load: 94 s / 23 s (3.1M / 500K)
                 pick_frames_criteria.append(
                     sa.or_(
+                        # pyrefly: ignore [missing-attribute]
                         self.frame_annotations_type._mask_mass.is_(None),
+                        # pyrefly: ignore [missing-attribute]
                         self.frame_annotations_type._mask_mass != 0,
                     )
                 )
@@ -695,8 +699,10 @@ class SqlIndexDataset(DatasetBase, ReplaceableBase):
         if self.remove_empty_masks:
             logger.info("  excluding samples with empty masks")
             where_conditions.append(
+                # pyrefly: ignore [bad-argument-type]
                 sa.or_(
                     self.frame_annotations_type._mask_mass.is_(None),  # pyre-ignore[16]
+                    # pyrefly: ignore [missing-attribute]
                     self.frame_annotations_type._mask_mass != 0,
                 )
             )

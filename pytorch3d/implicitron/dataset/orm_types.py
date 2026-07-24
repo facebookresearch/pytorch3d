@@ -90,6 +90,7 @@ def TupleTypeFactory(dtype=float, shape: Tuple[int, ...] = (2,)):
         impl = LargeBinary
         _format = format_symbol * math.prod(shape)
 
+        # pyrefly: ignore [bad-override-param-name]
         def process_bind_param(self, value, _):
             if value is None:
                 return None
@@ -99,6 +100,7 @@ def TupleTypeFactory(dtype=float, shape: Tuple[int, ...] = (2,)):
 
             return struct.pack(TupleType._format, *value)
 
+        # pyrefly: ignore [bad-override-param-name]
         def process_result_value(self, value, _):
             if value is None:
                 return None

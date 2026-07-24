@@ -247,6 +247,7 @@ class _marching_cubes(Function):
         return verts, faces, ids
 
     @staticmethod
+    # pyrefly: ignore [bad-override]
     def backward(ctx, grad_verts, grad_faces):
         raise ValueError("marching_cubes backward is not supported")
 

@@ -52,6 +52,7 @@ class Materials(TensorProperties):
             specular_color=specular_color,
             shininess=shininess,
         )
+        # pyrefly: ignore [bad-index]
         C = self.ambient_color.shape[-1]
         for n in ["ambient_color", "diffuse_color", "specular_color"]:
             t = getattr(self, n)
@@ -62,6 +63,7 @@ class Materials(TensorProperties):
             msg = "shininess should have shape (N); got %r"
             raise ValueError(msg % repr(self.shininess.shape))
 
+    # pyrefly: ignore [bad-override]
     def clone(self):
         other = Materials(device=self.device)
         return super().clone(other)

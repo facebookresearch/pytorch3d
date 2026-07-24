@@ -51,6 +51,7 @@ class _CompositeAlphaPoints(torch.autograd.Function):
         return pt_cld
 
     @staticmethod
+    # pyrefly: ignore [bad-override]
     def backward(ctx, grad_output):
         grad_features = None
         grad_alphas = None
@@ -130,6 +131,7 @@ class _CompositeNormWeightedSumPoints(torch.autograd.Function):
         return pt_cld
 
     @staticmethod
+    # pyrefly: ignore [bad-override]
     def backward(ctx, grad_output):
         grad_features = None
         grad_alphas = None
@@ -208,6 +210,7 @@ class _CompositeWeightedSumPoints(torch.autograd.Function):
         return pt_cld
 
     @staticmethod
+    # pyrefly: ignore [bad-override]
     def backward(ctx, grad_output):
         grad_features = None
         grad_alphas = None

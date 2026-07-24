@@ -878,10 +878,14 @@ def _get_verts_column_indices(
     ):
         color_scale = 1.0 / 255
     return _VertsColumnIndices(
+        # pyrefly: ignore [bad-argument-type]
         point_idxs=point_idxs,
+        # pyrefly: ignore [bad-argument-type]
         color_idxs=None if None in color_idxs else color_idxs,
         color_scale=color_scale,
+        # pyrefly: ignore [bad-argument-type]
         normal_idxs=None if None in normal_idxs else normal_idxs,
+        # pyrefly: ignore [bad-argument-type]
         texture_uv_idxs=None if None in texture_uv_idxs else texture_uv_idxs,
     )
 

@@ -190,10 +190,12 @@ class DirectionalLights(TensorProperties):
             direction=direction,
         )
         _validate_light_properties(self)
+        # pyrefly: ignore [bad-index]
         if self.direction.shape[-1] != 3:
             msg = "Expected direction to have shape (N, 3); got %r"
             raise ValueError(msg % repr(self.direction.shape))
 
+    # pyrefly: ignore [bad-override]
     def clone(self):
         other = self.__class__(device=self.device)
         return super().clone(other)
@@ -251,10 +253,12 @@ class PointLights(TensorProperties):
             location=location,
         )
         _validate_light_properties(self)
+        # pyrefly: ignore [bad-index]
         if self.location.shape[-1] != 3:
             msg = "Expected location to have shape (N, 3); got %r"
             raise ValueError(msg % repr(self.location.shape))
 
+    # pyrefly: ignore [bad-override]
     def clone(self):
         other = self.__class__(device=self.device)
         return super().clone(other)
@@ -319,6 +323,7 @@ class AmbientLights(TensorProperties):
             ambient_color = ((1.0, 1.0, 1.0),)
         super().__init__(ambient_color=ambient_color, device=device)
 
+    # pyrefly: ignore [bad-override]
     def clone(self):
         other = self.__class__(device=self.device)
         return super().clone(other)
@@ -330,7 +335,9 @@ class AmbientLights(TensorProperties):
         return self._zeros_channels(points)
 
     def _zeros_channels(self, points: torch.Tensor) -> torch.Tensor:
+        # pyrefly: ignore [bad-index]
         ch = self.ambient_color.shape[-1]
+        # pyrefly: ignore [no-matching-overload]
         return torch.zeros(*points.shape[:-1], ch, device=points.device)
 
 

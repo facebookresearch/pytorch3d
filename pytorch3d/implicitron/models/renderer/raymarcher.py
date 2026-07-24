@@ -198,6 +198,7 @@ class AccumulativeRaymarcherBase(RaymarcherBase, torch.nn.Module):
         depth = (weights * ray_lengths)[..., None].sum(dim=-2)
 
         alpha = opacities if self.blend_output else 1
+        # pyrefly: ignore [bad-index]
         if self._bg_color.shape[-1] not in [1, features.shape[-1]]:
             raise ValueError("Wrong number of background color channels.")
         # pyre-fixme[58]: `*` is not supported for operand types `int` and

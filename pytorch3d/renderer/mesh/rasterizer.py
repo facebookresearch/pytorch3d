@@ -161,6 +161,7 @@ class MeshRasterizer(nn.Module):
         self.cameras = cameras
         self.raster_settings = raster_settings
 
+    # pyrefly: ignore [bad-override]
     def to(self, device):
         # Manually move to device cameras as it is not a subclass of nn.Module
         if self.cameras is not None:
@@ -238,10 +239,12 @@ class MeshRasterizer(nn.Module):
         if raster_settings.perspective_correct is not None:
             perspective_correct = raster_settings.perspective_correct
         else:
+            # pyrefly: ignore [missing-attribute]
             perspective_correct = cameras.is_perspective()
         if raster_settings.z_clip_value is not None:
             z_clip = raster_settings.z_clip_value
         else:
+            # pyrefly: ignore [missing-attribute]
             znear = cameras.get_znear()
             if isinstance(znear, torch.Tensor):
                 znear = znear.min().item()

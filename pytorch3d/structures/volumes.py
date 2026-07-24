@@ -1010,6 +1010,7 @@ class VolumeLocator:
                 Defaults to all items (`:`).
         """
         device = device if device is not None else self.device
+        # pyrefly: ignore [bad-assignment]
         other._grid_sizes = self._grid_sizes[index].to(device)
         other._local_to_world_transform = self.get_local_to_world_coords_transform()[
             # pyre-fixme[6]: For 1st param expected `Union[List[int], int, slice,
@@ -1114,6 +1115,7 @@ class VolumeLocator:
             return other
 
         other.device = device_
+        # pyrefly: ignore [bad-assignment]
         other._grid_sizes = self._grid_sizes.to(device_)
         other._local_to_world_transform = self.get_local_to_world_coords_transform().to(
             device

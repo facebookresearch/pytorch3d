@@ -135,6 +135,7 @@ def visualize_reconstruction(
                 "device": device,
                 **render_flyaround_kwargs,
             }
+            # pyrefly: ignore [bad-argument-type]
             render_flyaround(**render_kwargs)
 
 

@@ -216,6 +216,7 @@ class _RasterizePoints(torch.autograd.Function):
         return idx, zbuf, dists
 
     @staticmethod
+    # pyrefly: ignore [bad-override]
     def backward(ctx, grad_idx, grad_zbuf, grad_dists):
         grad_points = None
         grad_cloud_to_packed_first_idx = None

@@ -231,7 +231,9 @@ class Configurable:
         return obj
 
 
+# pyrefly: ignore [invalid-type-var]
 _X = TypeVar("X", bound=ReplaceableBase)
+# pyrefly: ignore [invalid-type-var]
 _Y = TypeVar("Y", bound=Union[ReplaceableBase, Configurable])
 
 
@@ -890,10 +892,13 @@ def expand_args_fields(
             continue
         expand_args_fields(base, _do_not_process=_do_not_process)
         if "_creation_functions" in base.__dict__:
+            # pyrefly: ignore [missing-attribute]
             creation_functions.extend(base._creation_functions)
         if "_known_implementations" in base.__dict__:
+            # pyrefly: ignore [missing-attribute]
             known_implementations.update(base._known_implementations)
         if "_processed_members" in base.__dict__:
+            # pyrefly: ignore [missing-attribute]
             processed_members.update(base._processed_members)
 
     to_process: List[Tuple[str, Type, _ProcessType]] = []

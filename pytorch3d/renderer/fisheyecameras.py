@@ -124,6 +124,7 @@ class FishEyeCameras(CamerasBase):
         else:
             self.image_size = None
 
+        # pyrefly: ignore [bad-assignment]
         self.device = device
         self.focal = focal_length.to(self.device)
         self.principal_point = principal_point.to(self.device)

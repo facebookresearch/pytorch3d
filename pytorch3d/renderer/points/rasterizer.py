@@ -143,6 +143,7 @@ class PointsRasterizer(nn.Module):
         point_clouds = point_clouds.update_padded(pts_ndc)
         return point_clouds
 
+    # pyrefly: ignore [bad-override]
     def to(self, device):
         # Manually move to device cameras as it is not a subclass of nn.Module
         if self.cameras is not None:

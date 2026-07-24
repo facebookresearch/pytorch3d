@@ -464,6 +464,7 @@ class SplatterBlender(torch.nn.Module):
             input_shape, device
         )
 
+    # pyrefly: ignore [bad-override]
     def to(self, device):
         self.offsets = self.offsets.to(device)
         self.crop_ids_h = self.crop_ids_h.to(device)

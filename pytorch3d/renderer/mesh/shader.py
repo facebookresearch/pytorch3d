@@ -72,6 +72,7 @@ class ShaderBase(nn.Module):
         cameras = self.cameras
         if cameras is not None:
             self.cameras = cameras.to(device)
+        # pyrefly: ignore [bad-assignment]
         self.materials = self.materials.to(device)
         self.lights = self.lights.to(device)
         return self

@@ -141,6 +141,7 @@ def sample_farthest_points_naive(
 
     for n in range(N):
         # Initialize an array for the sampled indices, shape: (max_K,)
+        # pyrefly: ignore [no-matching-overload]
         sample_idx_batch = torch.full(
             # pyre-fixme[6]: For 1st param expected `Union[List[int], Size,
             #  typing.Tuple[int, ...]]` but got `Tuple[Tensor]`.

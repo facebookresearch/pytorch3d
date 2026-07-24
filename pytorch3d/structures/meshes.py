@@ -432,13 +432,17 @@ class Meshes:
 
         # Set the num verts/faces on the textures if present.
         if textures is not None:
+            # pyrefly: ignore [missing-attribute]
             shape_ok = self.textures.check_shapes(self._N, self._V, self._F)
             if not shape_ok:
                 msg = "Textures do not match the dimensions of Meshes."
                 raise ValueError(msg)
 
+            # pyrefly: ignore [missing-attribute]
             self.textures._num_faces_per_mesh = self._num_faces_per_mesh.tolist()
+            # pyrefly: ignore [missing-attribute]
             self.textures._num_verts_per_mesh = self._num_verts_per_mesh.tolist()
+            # pyrefly: ignore [missing-attribute]
             self.textures.valid = self.valid
 
         if verts_normals is not None:
@@ -449,6 +453,7 @@ class Meshes:
             if len(verts_normals) != self._N:
                 raise ValueError("Invalid verts_normals input")
 
+            # pyrefly: ignore [bad-argument-type]
             for item, n_verts in zip(verts_normals, self._num_verts_per_mesh):
                 if (
                     not isinstance(item, torch.Tensor)
@@ -466,7 +471,10 @@ class Meshes:
             ):
                 raise ValueError("Vertex normals tensor has incorrect dimensions.")
             self._verts_normals_packed = struct_utils.padded_to_packed(
-                verts_normals, split_size=self._num_verts_per_mesh.tolist()
+                # pyrefly: ignore [missing-attribute]
+                verts_normals,
+                # pyrefly: ignore [missing-attribute]
+                split_size=self._num_verts_per_mesh.tolist(),
             )
         else:
             raise ValueError("verts_normals must be a list or tensor")
@@ -497,8 +505,11 @@ class Meshes:
             # NOTE consider converting index to cpu for efficiency
             if index.dtype == torch.bool:
                 # advanced indexing on a single dimension
+                # pyrefly: ignore [bad-assignment]
                 index = index.nonzero()
+                # pyrefly: ignore [missing-attribute]
                 index = index.squeeze(1) if index.numel() > 0 else index
+                # pyrefly: ignore [missing-attribute]
                 index = index.tolist()
             verts = [self.verts_list()[i] for i in index]
             faces = [self.faces_list()[i] for i in index]
@@ -521,6 +532,7 @@ class Meshes:
         Returns:
             bool indicating whether there is any data.
         """
+        # pyrefly: ignore [missing-attribute]
         return self._N == 0 or self.valid.eq(False).all()
 
     def verts_list(self):
@@ -1059,6 +1071,7 @@ class Meshes:
         # All edges including duplicates.
         edges = torch.cat([e12, e20, e01], dim=0)  # (sum(F_n)*3, 2)
         edge_to_mesh = torch.cat(
+            # pyrefly: ignore [bad-argument-type]
             [
                 self._faces_packed_to_mesh_idx,
                 self._faces_packed_to_mesh_idx,
@@ -1082,6 +1095,7 @@ class Meshes:
         # unique_edges[inverse_idxs] == edges
         # i.e. inverse_idxs[i] == j means that edges[i] == unique_edges[j]
 
+        # pyrefly: ignore [missing-attribute]
         V = self._verts_packed.shape[0]
         edges_hash = V * edges[:, 0] + edges[:, 1]
         u, inverse_idxs = torch.unique(edges_hash, return_inverse=True)
@@ -1699,6 +1713,7 @@ def join_meshes_as_batch(meshes: List[Meshes], include_textures: bool = True) ->
     if not tex_types_same:
         raise ValueError("All meshes in the batch must have the same type of texture.")
 
+    # pyrefly: ignore [missing-attribute]
     tex = first.join_batch(all_textures[1:])
     return Meshes(verts=verts, faces=faces, textures=tex)
 

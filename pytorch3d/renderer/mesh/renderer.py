@@ -41,6 +41,7 @@ class MeshRenderer(nn.Module):
         self.rasterizer = rasterizer
         self.shader = shader
 
+    # pyrefly: ignore [bad-override]
     def to(self, device):
         # Rasterizer and shader have submodules which are not of type nn.Module
         self.rasterizer.to(device)
@@ -85,6 +86,7 @@ class MeshRendererWithFragments(nn.Module):
         self.rasterizer = rasterizer
         self.shader = shader
 
+    # pyrefly: ignore [bad-override]
     def to(self, device):
         # Rasterizer and shader have submodules which are not of type nn.Module
         self.rasterizer.to(device)

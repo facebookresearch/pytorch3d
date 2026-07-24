@@ -121,11 +121,17 @@ class RenderedMeshDatasetMapProvider(DatasetMapProviderBase):
         self.poses = poses.cpu()
         # pyre-ignore[16]
         self.train_dataset = SingleSceneDataset(  # pyre-ignore[28]
+            # pyrefly: ignore [unexpected-keyword]
             object_name="cow",
+            # pyrefly: ignore [unexpected-keyword]
             images=list(images.permute(0, 3, 1, 2).cpu()),
+            # pyrefly: ignore [unexpected-keyword]
             fg_probabilities=list(masks[:, None].cpu()),
+            # pyrefly: ignore [unexpected-keyword]
             poses=[self.poses[i] for i in range(len(poses))],
+            # pyrefly: ignore [unexpected-keyword]
             frame_types=[DATASET_TYPE_KNOWN] * len(poses),
+            # pyrefly: ignore [unexpected-keyword]
             eval_batches=None,
         )
 

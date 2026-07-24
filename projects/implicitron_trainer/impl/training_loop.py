@@ -199,6 +199,7 @@ class ImplicitronTrainingLoop(TrainingLoopBase):
                     and self.test_interval > 0
                     and epoch % self.test_interval == 0
                 ):
+                    # pyrefly: ignore [missing-attribute]
                     self.evaluator.run(
                         device=device,
                         dataloader=test_loader,
@@ -215,6 +216,7 @@ class ImplicitronTrainingLoop(TrainingLoopBase):
 
         if self.test_when_finished:
             if test_loader is not None:
+                # pyrefly: ignore [missing-attribute]
                 self.evaluator.run(
                     device=device,
                     dump_to_json=True,

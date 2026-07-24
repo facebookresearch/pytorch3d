@@ -113,6 +113,7 @@ class VideoWriter:
         elif isinstance(frame, np.ndarray):
             if frame.dtype in (np.float64, np.float32, float):
                 frame = (np.transpose(frame, (1, 2, 0)) * 255.0).astype(np.uint8)
+            # pyrefly: ignore [bad-argument-type]
             im = Image.fromarray(frame)
         elif isinstance(frame, Image.Image):
             im = frame
@@ -124,12 +125,15 @@ class VideoWriter:
         if im is not None:
             if resize is not None:
                 if isinstance(resize, float):
+                    # pyrefly: ignore [bad-assignment]
                     resize = [int(resize * s) for s in im.size]
             else:
                 resize = im.size
             # make sure size is divisible by 2
+            # pyrefly: ignore [bad-assignment, bad-index, unsupported-operation]
             resize = tuple([resize[i] + resize[i] % 2 for i in (0, 1)])
 
+            # pyrefly: ignore [bad-argument-type]
             im = im.resize(resize, Image.Resampling.LANCZOS)
             im.save(outfile)
 

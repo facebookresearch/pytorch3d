@@ -628,6 +628,7 @@ def _add_struct_from_batch(
         # pyre-ignore[16]
         struct = batched_struct[struct_idx]
     trace_name = "trace{}-{}".format(scene_num + 1, trace_idx)
+    # pyrefly: ignore [unsupported-operation]
     scene_dictionary[subplot_title][trace_name] = struct
 
 

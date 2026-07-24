@@ -50,6 +50,7 @@ class _MeshFaceAreasNormals(Function):
 
     @staticmethod
     @once_differentiable
+    # pyrefly: ignore [bad-override]
     def backward(ctx, grad_areas, grad_normals):
         grad_areas = grad_areas.contiguous()
         grad_normals = grad_normals.contiguous()

@@ -36,6 +36,7 @@ class _ball_query(Function):
 
     @staticmethod
     @once_differentiable
+    # pyrefly: ignore [bad-override]
     def backward(ctx, grad_dists, grad_idx):
         p1, p2, lengths1, lengths2, idx = ctx.saved_tensors
         # TODO(gkioxari) Change cast to floats once we add support for doubles.

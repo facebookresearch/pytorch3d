@@ -52,6 +52,7 @@ class ShapeNetBase(torch.utils.data.Dataset):  # pragma: no cover
         """
         return len(self.model_ids)
 
+    # pyrefly: ignore [bad-override-param-name]
     def __getitem__(self, idx) -> Dict:
         """
         Read a model by the given index. Need to be implemented for every child class
@@ -147,12 +148,17 @@ class ShapeNetBase(torch.utils.data.Dataset):  # pragma: no cover
         idxs = self._handle_render_inputs(model_ids, categories, sample_nums, idxs)
         # Use the getitem method which loads mesh + texture
         models = [self[idx] for idx in idxs]
+        # pyrefly: ignore [unsupported-operation]
         meshes = collate_batched_meshes(models)["mesh"]
+        # pyrefly: ignore [missing-attribute]
         if meshes.textures is None:
+            # pyrefly: ignore [missing-attribute]
             meshes.textures = TexturesVertex(
+                # pyrefly: ignore [missing-attribute]
                 verts_features=torch.ones_like(meshes.verts_padded(), device=device)
             )
 
+        # pyrefly: ignore [missing-attribute]
         meshes = meshes.to(device)
         cameras = kwargs.get("cameras", FoVPerspectiveCameras()).to(device)
         if len(cameras) != 1 and len(cameras) % len(meshes) != 0:

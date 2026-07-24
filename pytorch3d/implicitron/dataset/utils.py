@@ -117,6 +117,7 @@ def crop_around_box(
     # bbox is xyxy, where the upper bound is corrected with +1
     bbox = clamp_box_to_image_bounds_and_round(
         bbox,
+        # pyrefly: ignore [bad-argument-type]
         image_size_hw=tuple(tensor.shape[-2:]),
     )
     tensor = tensor[..., bbox[1] : bbox[3], bbox[0] : bbox[2]]

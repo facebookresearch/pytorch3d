@@ -197,6 +197,7 @@ class MultinomialRaysampler(torch.nn.Module):
                 "`n_rays_total` and `n_rays_per_image` cannot both be defined."
             )
         if n_rays_total:
+            # pyrefly: ignore [bad-assignment]
             (
                 cameras,
                 mask,
@@ -221,6 +222,7 @@ class MultinomialRaysampler(torch.nn.Module):
         if mask is not None and n_rays_per_image is None:
             # if num rays not given, sample according to the smallest mask
             n_rays_per_image = (
+                # pyrefly: ignore [bad-assignment]
                 n_rays_per_image or mask.sum(dim=(1, 2)).min().int().item()
             )
 
@@ -453,6 +455,7 @@ class MonteCarloRaysampler(torch.nn.Module):
         # of shape (batch_size, n_rays_per_image, 2)
         rays_xy = torch.cat(
             [
+                # pyrefly: ignore [no-matching-overload]
                 torch.rand(
                     size=(batch_size, n_rays_per_image, 1),
                     dtype=torch.float32,

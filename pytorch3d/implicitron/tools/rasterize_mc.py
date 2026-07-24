@@ -62,9 +62,14 @@ def rasterize_sparse_ray_bundle(
 
         max_size = torch.max(camera_counts).item()
         features_depth_ras = packed_to_padded(
-            features_depth_ras[:, 0], first_idxs, max_size
+            # pyrefly: ignore [bad-argument-type]
+            features_depth_ras[:, 0],
+            first_idxs,
+            # pyrefly: ignore [bad-argument-type]
+            max_size,
         )
         if masks is not None:
+            # pyrefly: ignore [bad-argument-type]
             padded_mask = packed_to_padded(masks.flatten(1, -1), first_idxs, max_size)
             masks_ras = padded_mask * masks_ras
 

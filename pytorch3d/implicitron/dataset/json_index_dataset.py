@@ -425,6 +425,7 @@ class JsonIndexDataset(DatasetBase, ReplaceableBase):
                 raise ValueError("subsets not loaded")
             if is_known_frame_scalar(frame_type):
                 cameras.append(self[frame_idx].camera)
+        # pyrefly: ignore [bad-argument-type]
         return join_cameras_as_batch(cameras)
 
     def __getitem__(self, index) -> FrameData:

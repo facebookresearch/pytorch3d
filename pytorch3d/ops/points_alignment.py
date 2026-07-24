@@ -103,14 +103,17 @@ def iterative_closest_point(
     Xt, num_points_X = oputil.convert_pointclouds_to_tensor(X)
     Yt, num_points_Y = oputil.convert_pointclouds_to_tensor(Y)
 
+    # pyrefly: ignore [missing-attribute]
     b, size_X, dim = Xt.shape
 
+    # pyrefly: ignore [missing-attribute]
     if (Xt.shape[2] != Yt.shape[2]) or (Xt.shape[0] != Yt.shape[0]):
         raise ValueError(
             "Point sets X and Y have to have the same "
             + "number of batches and data dimensions."
         )
 
+    # pyrefly: ignore [missing-attribute]
     if ((num_points_Y < Yt.shape[1]).any() or (num_points_X < Xt.shape[1]).any()) and (
         num_points_Y != num_points_X
     ).any():
@@ -121,6 +124,7 @@ def iterative_closest_point(
             < num_points_X[:, None]
         ).type_as(Xt)
     else:
+        # pyrefly: ignore [missing-attribute]
         mask_X = Xt.new_ones(b, size_X)
 
     # clone the initial point cloud
@@ -145,11 +149,15 @@ def iterative_closest_point(
                 "of scalars of shape (minibatch,)."
             ) from None
         # apply the init transform to the input point cloud
+        # pyrefly: ignore [bad-argument-type]
         Xt = _apply_similarity_transform(Xt, R, T, s)
     else:
         # initialize the transformation with identity
+        # pyrefly: ignore [missing-attribute]
         R = oputil.eyes(dim, b, device=Xt.device, dtype=Xt.dtype)
+        # pyrefly: ignore [missing-attribute]
         T = Xt.new_zeros((b, dim))
+        # pyrefly: ignore [missing-attribute]
         s = Xt.new_ones(b)
 
     prev_rmse = None
@@ -163,7 +171,14 @@ def iterative_closest_point(
     # the main loop over ICP iterations
     for iteration in range(max_iterations):
         Xt_nn_points = knn_points(
-            Xt, Yt, lengths1=num_points_X, lengths2=num_points_Y, K=1, return_nn=True
+            # pyrefly: ignore [bad-argument-type]
+            Xt,
+            # pyrefly: ignore [bad-argument-type]
+            Yt,
+            lengths1=num_points_X,
+            lengths2=num_points_Y,
+            K=1,
+            return_nn=True,
         ).knn[:, :, 0, :]
 
         # get the alignment of the nearest neighbors from Yt with Xt_init
@@ -216,6 +231,7 @@ def iterative_closest_point(
     if oputil.is_pointclouds(X):
         Xt = X.update_padded(Xt)  # type: ignore
 
+    # pyrefly: ignore [bad-argument-type]
     return ICPSolution(converged, rmse, Xt, SimilarityTransform(R, T, s), t_history)
 
 
@@ -276,6 +292,7 @@ def corresponding_points_alignment(
     Xt, num_points = oputil.convert_pointclouds_to_tensor(X)
     Yt, num_points_Y = oputil.convert_pointclouds_to_tensor(Y)
 
+    # pyrefly: ignore [missing-attribute]
     if (Xt.shape != Yt.shape) or (num_points != num_points_Y).any():
         raise ValueError(
             "Point sets X and Y have to have the same \
@@ -291,25 +308,33 @@ def corresponding_points_alignment(
             weights = [w[..., None] for w in weights]
             weights = strutil.list_to_padded(weights)[..., 0]
 
+        # pyrefly: ignore [bad-index]
         if Xt.shape[:2] != weights.shape:
             raise ValueError("weights should have the same first two dimensions as X.")
 
+    # pyrefly: ignore [not-iterable]
     b, n, dim = Xt.shape
 
+    # pyrefly: ignore [bad-index, missing-attribute]
     if (num_points < Xt.shape[1]).any() or (num_points < Yt.shape[1]).any():
         # in case we got Pointclouds as input, mask the unused entries in Xc, Yc
         mask = (
             torch.arange(n, dtype=torch.int64, device=Xt.device)[None]
             < num_points[:, None]
         ).type_as(Xt)
+        # pyrefly: ignore [bad-argument-type]
         weights = mask if weights is None else mask * weights.type_as(Xt)
 
     # compute the centroids of the point sets
+    # pyrefly: ignore [bad-argument-type]
     Xmu = oputil.wmean(Xt, weight=weights, eps=eps)
+    # pyrefly: ignore [bad-argument-type]
     Ymu = oputil.wmean(Yt, weight=weights, eps=eps)
 
     # mean-center the point sets
+    # pyrefly: ignore [unsupported-operation]
     Xc = Xt - Xmu
+    # pyrefly: ignore [unsupported-operation]
     Yc = Yt - Ymu
 
     total_weight = torch.clamp(num_points, 1)

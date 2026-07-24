@@ -67,12 +67,14 @@ class TensorAccessor(nn.Module):
         if (
             v.dim() == 0
             and isinstance(self.index, slice)
-            and len(value) != len(self.index)
+            and len(value) != len(self.index)  # pyrefly: ignore [bad-argument-type]
         ):
             msg = "Expected value to have len %r; got %r"
+            # pyrefly: ignore [bad-argument-type]
             raise ValueError(msg % (len(self.index), len(value)))
         self.class_object.__dict__[name][self.index] = value
 
+    # pyrefly: ignore [bad-override]
     def __getattr__(self, name: str):
         """
         Return the value of the attribute given by "name" on self.class_object
@@ -85,6 +87,7 @@ class TensorAccessor(nn.Module):
             return self.class_object.__dict__[name][self.index]
         else:
             msg = "Attribute %s not found on %r"
+            # pyrefly: ignore [missing-attribute]
             return AttributeError(msg % (name, self.class_object.__name__))
 
 
@@ -456,4 +459,5 @@ def parse_image_size(
         raise ValueError("Image sizes must be greater than 0; got %d, %d" % image_size)
     if not all(isinstance(i, int) for i in image_size):
         raise ValueError("Image sizes must be integers; got %f, %f" % image_size)
+    # pyrefly: ignore [bad-return]
     return tuple(image_size)

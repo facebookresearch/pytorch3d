@@ -476,6 +476,7 @@ class VoxelGridImplicitFunction(ImplicitFunctionBase, torch.nn.Module):
         call_epochs = list(
             set(self.scaffold_calculating_epochs) | set(self.volume_cropping_epochs)
         )
+        # pyrefly: ignore [bad-return]
         return call_epochs, callback
 
     def _crop(self, epoch: int) -> bool:
@@ -581,6 +582,7 @@ class VoxelGridImplicitFunction(ImplicitFunctionBase, torch.nn.Module):
         )
 
         cls = registry.get(DecoderFunctionBase, type_)
+        # pyrefly: ignore [bad-argument-type]
         need_input_dim = any(field.name == "input_dim" for field in fields(cls))
         if need_input_dim:
             self.decoder_density = cls(input_dim=input_dim, **args)
@@ -621,6 +623,7 @@ class VoxelGridImplicitFunction(ImplicitFunctionBase, torch.nn.Module):
         input_dim = input_dim0 + input_dim1
 
         cls = registry.get(DecoderFunctionBase, type_)
+        # pyrefly: ignore [bad-argument-type]
         need_input_dim = any(field.name == "input_dim" for field in fields(cls))
         if need_input_dim:
             self.decoder_color = cls(input_dim=input_dim, **args)

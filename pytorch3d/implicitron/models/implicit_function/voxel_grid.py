@@ -907,6 +907,7 @@ class VoxelGridModule(Configurable, torch.nn.Module):
         else:
             # Torch Module to hold parameters since they can only be registered
             # at object level.
+            # pyrefly: ignore [bad-assignment]
             self.params = _RegistratedBufferDict(vars(params))
 
     @staticmethod

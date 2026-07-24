@@ -202,8 +202,10 @@ def join_cameras_as_batch(cameras_list: Sequence[CamerasBase]) -> CamerasBase:
             # In the init, all inputs will be converted to
             # batched tensors before set as attributes
             # Join as a tensor along the batch dimension
+            # pyrefly: ignore [unsupported-operation]
             kwargs[field] = torch.cat(attrs_list, dim=0)
         else:
             raise ValueError(f"Field {field} type is not supported for batching")
 
+    # pyrefly: ignore [bad-argument-type]
     return c0.__class__(**kwargs)

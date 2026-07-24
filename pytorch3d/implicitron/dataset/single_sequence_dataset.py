@@ -131,10 +131,11 @@ class SingleSceneDatasetMapProviderBase(DatasetMapProviderBase):
             None
             # pyre-ignore[16]
             if self.fg_probabilities is None
-            else self.fg_probabilities[split]
+            else self.fg_probabilities[split]  # pyrefly: ignore [bad-index]
         )
         eval_batches = [[i] for i in range(len(split))]
         if split_idx != 0 and self.n_known_frames_for_test is not None:
+            # pyrefly: ignore [missing-attribute]
             train_split = self.i_split[0]
             if set_eval_batches:
                 generator = np.random.default_rng(seed=0)

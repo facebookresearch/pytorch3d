@@ -119,6 +119,7 @@ def estimate_pointcloud_local_coord_frames(
 
     points_padded, num_points = convert_pointclouds_to_tensor(pointclouds)
 
+    # pyrefly: ignore [missing-attribute]
     ba, N, dim = points_padded.shape
     if dim != 3:
         raise ValueError(
@@ -133,6 +134,7 @@ def estimate_pointcloud_local_coord_frames(
 
     # undo global mean for stability
     # TODO: replace with tutil.wmean once landed
+    # pyrefly: ignore [missing-attribute]
     pcl_mean = points_padded.sum(1) / num_points[:, None]
     points_centered = points_padded - pcl_mean[:, None, :]
 
@@ -154,17 +156,26 @@ def estimate_pointcloud_local_coord_frames(
     if disambiguate_directions:
         # disambiguate normal
         n = _disambiguate_vector_directions(
-            points_centered, knns, local_coord_frames[:, :, :, 0]
+            # pyrefly: ignore [unsupported-operation]
+            points_centered,
+            knns,
+            # pyrefly: ignore [unsupported-operation]
+            local_coord_frames[:, :, :, 0],
         )
         # disambiguate the main curvature
         z = _disambiguate_vector_directions(
-            points_centered, knns, local_coord_frames[:, :, :, 2]
+            # pyrefly: ignore [unsupported-operation]
+            points_centered,
+            knns,
+            # pyrefly: ignore [unsupported-operation]
+            local_coord_frames[:, :, :, 2],
         )
         # the secondary curvature is just a cross between n and z
         y = torch.cross(n, z, dim=2)
         # cat to form the set of principal directions
         local_coord_frames = torch.stack((n, y, z), dim=3)
 
+    # pyrefly: ignore [bad-return]
     return curvatures, local_coord_frames
 
 

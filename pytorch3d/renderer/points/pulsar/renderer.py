@@ -171,6 +171,7 @@ class _Render(torch.autograd.Function):
             return image
 
     @staticmethod
+    # pyrefly: ignore [bad-override]
     def backward(ctx, grad_im, *args):
         global GAMMA_WARNING_EMITTED
         (

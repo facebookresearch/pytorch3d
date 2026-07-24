@@ -62,8 +62,10 @@ def collate_batched_R2N2(batch: List[Dict]):  # pragma: no cover
     # all models have the same number of views V, stack the batches of
     # views of each model into a new batch of shape (N, V, H, W, 3).
     # Otherwise leave it as a list.
+    # pyrefly: ignore [not-iterable]
     if "images" in collated_dict:
         try:
+            # pyrefly: ignore [unsupported-operation]
             collated_dict["images"] = torch.stack(collated_dict["images"])
         except RuntimeError:
             print(
@@ -75,10 +77,14 @@ def collate_batched_R2N2(batch: List[Dict]):  # pragma: no cover
     # matrices and that all models have the same number of views V, stack each
     # type of matrices into a new batch of shape (N, V, ...).
     # Otherwise leave them as lists.
+    # pyrefly: ignore [not-iterable]
     if all(x in collated_dict for x in ["R", "T", "K"]):
         try:
+            # pyrefly: ignore [unsupported-operation]
             collated_dict["R"] = torch.stack(collated_dict["R"])  # (N, V, 3, 3)
+            # pyrefly: ignore [unsupported-operation]
             collated_dict["T"] = torch.stack(collated_dict["T"])  # (N, V, 3)
+            # pyrefly: ignore [unsupported-operation]
             collated_dict["K"] = torch.stack(collated_dict["K"])  # (N, V, 4, 4)
         except RuntimeError:
             print(
@@ -89,8 +95,10 @@ def collate_batched_R2N2(batch: List[Dict]):  # pragma: no cover
     # If collate_batched_meshes receives voxels and all models have the same
     # number of views V, stack the batches of voxels into a new batch of shape
     # (N, V, S, S, S), where S is the voxel size.
+    # pyrefly: ignore [not-iterable]
     if "voxels" in collated_dict:
         try:
+            # pyrefly: ignore [unsupported-operation]
             collated_dict["voxels"] = torch.stack(collated_dict["voxels"])
         except RuntimeError:
             print(

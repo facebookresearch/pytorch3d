@@ -311,6 +311,7 @@ class JsonIndexDatasetMapProviderV2(DatasetMapProviderBase):
                     subset_mapping["test"],
                 ) = self._extend_test_data_with_known_views(
                     subset_mapping,
+                    # pyrefly: ignore [bad-argument-type]
                     eval_batch_index,
                 )
 
@@ -322,6 +323,7 @@ class JsonIndexDatasetMapProviderV2(DatasetMapProviderBase):
                 try:
                     test_dataset.eval_batches = (
                         test_dataset.seq_frame_index_to_dataset_index(
+                            # pyrefly: ignore [bad-argument-type]
                             eval_batch_index,
                         )
                     )
@@ -335,6 +337,7 @@ class JsonIndexDatasetMapProviderV2(DatasetMapProviderBase):
                     )
                     test_dataset.eval_batches = (
                         test_dataset.seq_frame_index_to_dataset_index(
+                            # pyrefly: ignore [bad-argument-type]
                             eval_batch_index,
                             allow_missing_indices=True,
                             remove_missing_indices=True,

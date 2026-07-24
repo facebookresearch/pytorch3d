@@ -45,6 +45,7 @@ class PointsRenderer(nn.Module):
         self.rasterizer = rasterizer
         self.compositor = compositor
 
+    # pyrefly: ignore [bad-override]
     def to(self, device):
         # Manually move to device rasterizer as the cameras
         # within the class are not of type nn.Module

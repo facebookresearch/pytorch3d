@@ -90,6 +90,7 @@ class _SymEig3x3(nn.Module):
         )
 
         p = torch.sqrt(p2 / 6.0)
+        # pyrefly: ignore [unsupported-operation]
         B = (inputs - q[..., None, None] * self._identity) / p[..., None, None]
 
         r = torch.det(B) / 2.0
@@ -174,8 +175,10 @@ class _SymEig3x3(nn.Module):
         """
 
         # Find the eigenvector corresponding to alpha0, its eigenvalue is distinct
+        # pyrefly: ignore [unsupported-operation]
         ev0 = self._get_ev0(inputs - alpha0[..., None, None] * self._identity)
         u, v = self._get_uv(ev0)
+        # pyrefly: ignore [unsupported-operation]
         ev1 = self._get_ev1(inputs - alpha1[..., None, None] * self._identity, u, v)
         # Third eigenvector is computed as the cross-product of the other two
         ev2 = torch.cross(ev0, ev1, dim=-1)
@@ -250,6 +253,7 @@ class _SymEig3x3(nn.Module):
         """
 
         min_idx = w.abs().argmin(dim=-1)
+        # pyrefly: ignore [bad-index]
         rotation_2d = self._rotations_3d[min_idx].to(w)
 
         u = F.normalize((rotation_2d @ w[..., None])[..., 0], dim=-1)

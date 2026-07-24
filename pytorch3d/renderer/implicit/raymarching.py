@@ -226,6 +226,7 @@ def _check_raymarcher_inputs(
     if not z_can_be_none and rays_z.shape != rays_shape:
         raise ValueError("rays_z have to be of the same shape as rays_densities.")
 
+    # pyrefly: ignore [missing-attribute]
     if not features_can_be_none and rays_features.shape[:-1] != rays_shape:
         raise ValueError(
             "The first to previous to last dimensions of rays_features"

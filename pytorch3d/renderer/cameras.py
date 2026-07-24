@@ -362,6 +362,7 @@ class CamerasBase(TensorProperties):
             self, with_xyflip=with_xyflip, image_size=image_size
         ).transform_points(points_ndc, eps=eps)
 
+    # pyrefly: ignore [bad-override]
     def clone(self):
         """
         Returns a copy of `self`.
@@ -390,6 +391,7 @@ class CamerasBase(TensorProperties):
         """
         return getattr(self, "image_size", None)
 
+    # pyrefly: ignore [bad-override]
     def __getitem__(
         self, index: Union[int, List[int], torch.BoolTensor, torch.LongTensor]
     ) -> "CamerasBase":
@@ -455,11 +457,14 @@ class CamerasBase(TensorProperties):
             elif isinstance(val, torch.Tensor):
                 # In the init, all inputs will be converted to
                 # tensors before setting as attributes
+                # pyrefly: ignore [unsupported-operation]
                 kwargs[field] = val[index]
             else:
                 raise ValueError(f"Field {field} type is not supported for indexing")
 
+        # pyrefly: ignore [unsupported-operation]
         kwargs["device"] = self.device
+        # pyrefly: ignore [bad-argument-type]
         return self.__class__(**kwargs)
 
 
@@ -1741,7 +1746,11 @@ def look_at_view_transform(
         dist, elev, azim, at, up = broadcasted_args
         C = (
             camera_position_from_spherical_angles(
-                dist, elev, azim, degrees=degrees, device=device
+                dist,  # pyrefly: ignore [bad-argument-type]
+                elev,  # pyrefly: ignore [bad-argument-type]
+                azim,  # pyrefly: ignore [bad-argument-type]
+                degrees=degrees,
+                device=device,  # pyrefly: ignore [bad-argument-type]
             )
             + at
         )
@@ -1787,6 +1796,7 @@ def get_ndc_to_screen_transform(
     K = torch.zeros((cameras._N, 4, 4), device=cameras.device, dtype=torch.float32)
     if not torch.is_tensor(image_size):
         image_size = torch.tensor(image_size, device=cameras.device)
+    # pyrefly: ignore [missing-attribute]
     image_size = image_size.view(-1, 2)  # of shape (1 or B)x2
     height, width = image_size.unbind(1)
 

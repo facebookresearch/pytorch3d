@@ -162,6 +162,7 @@ def load_dataclass(f: IO, cls: Type[_X], binary: bool = False) -> _X:
     else:
         res = _dataclass_from_dict(asdict, cls)
 
+    # pyrefly: ignore [bad-return]
     return res
 
 

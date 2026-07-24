@@ -319,6 +319,7 @@ class Pointclouds:
 
         if len(aux_input) != self._N:
             raise ValueError("Points and auxiliary input must be the same length.")
+        # pyrefly: ignore [bad-argument-type]
         for p, d in zip(self._num_points_per_cloud, aux_input):
             valid_but_empty = p == 0 and d is not None and d.ndim == 2
             if p > 0 or valid_but_empty:
@@ -350,6 +351,7 @@ class Pointclouds:
             if good_empty is None:
                 good_empty = torch.zeros((0, aux_input_C), device=self.device)
             aux_input_out = []
+            # pyrefly: ignore [bad-argument-type]
             for p, d in zip(self._num_points_per_cloud, aux_input):
                 valid_but_empty = p == 0 and d is not None and d.ndim == 2
                 if p > 0 or valid_but_empty:
@@ -403,8 +405,11 @@ class Pointclouds:
             # NOTE consider converting index to cpu for efficiency
             if index.dtype == torch.bool:
                 # advanced indexing on a single dimension
+                # pyrefly: ignore [bad-assignment]
                 index = index.nonzero()
+                # pyrefly: ignore [missing-attribute]
                 index = index.squeeze(1) if index.numel() > 0 else index
+                # pyrefly: ignore [missing-attribute]
                 index = index.tolist()
             points = [self.points_list()[i] for i in index]
             if normals_list is not None:
@@ -423,6 +428,7 @@ class Pointclouds:
         Returns:
             bool indicating whether there is any data.
         """
+        # pyrefly: ignore [missing-attribute]
         return self._N == 0 or self.valid.eq(False).all()
 
     def points_list(self) -> List[torch.Tensor]:
@@ -486,6 +492,7 @@ class Pointclouds:
             tensor of points of shape (sum(P_n), 3).
         """
         self._compute_packed()
+        # pyrefly: ignore [bad-return]
         return self._points_packed
 
     def normals_packed(self) -> Optional[torch.Tensor]:
@@ -541,6 +548,7 @@ class Pointclouds:
         Returns:
             1D tensor of sizes.
         """
+        # pyrefly: ignore [bad-return]
         return self._num_points_per_cloud
 
     def points_padded(self) -> torch.Tensor:
@@ -551,6 +559,7 @@ class Pointclouds:
             tensor of points of shape (N, max(P_n), 3).
         """
         self._compute_padded()
+        # pyrefly: ignore [bad-return]
         return self._points_padded
 
     def normals_padded(self) -> Optional[torch.Tensor]:
@@ -636,6 +645,7 @@ class Pointclouds:
             if features_list is not None:
                 self._features_padded = struct_utils.list_to_padded(
                     features_list,
+                    # pyrefly: ignore [bad-argument-type]
                     (self._P, self._C),
                     pad_value=0.0,
                     equisized=self.equisized,
@@ -686,6 +696,7 @@ class Pointclouds:
 
         points_list_to_packed = struct_utils.list_to_packed(points_list)
         self._points_packed = points_list_to_packed[0]
+        # pyrefly: ignore [bad-argument-type]
         if not torch.allclose(self._num_points_per_cloud, points_list_to_packed[1]):
             raise ValueError("Inconsistent list to packed conversion")
         self._cloud_to_packed_first_idx = points_list_to_packed[2]
@@ -1066,6 +1077,7 @@ class Pointclouds:
                 self.normals_list()
             if self._points_packed is not None:
                 # update self._normals_packed
+                # pyrefly: ignore [bad-argument-type]
                 self._normals_packed = torch.cat(self._normals_list, dim=0)
 
         return normals_est

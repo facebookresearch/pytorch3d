@@ -106,6 +106,7 @@ class _box3d_overlap(Function):
         return vol, iou
 
     @staticmethod
+    # pyrefly: ignore [bad-override]
     def backward(ctx, grad_vol, grad_iou):
         raise ValueError("box3d_overlap backward is not supported")
 

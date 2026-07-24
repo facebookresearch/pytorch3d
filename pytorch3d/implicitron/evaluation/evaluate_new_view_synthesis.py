@@ -312,6 +312,7 @@ def eval_batch(
             )
 
             if visualize:
+                # pyrefly: ignore [unbound-name]
                 visualizer.show_rgb(
                     results[metric_name].item(), metric_name, loss_mask_now
                 )
@@ -330,6 +331,7 @@ def eval_batch(
             results["depth_abs" + name_postfix] = abs_.mean()
 
             if visualize:
+                # pyrefly: ignore [unbound-name]
                 visualizer.show_depth(abs_.mean().item(), name_postfix, loss_mask_now)
                 if break_after_visualising:
                     breakpoint()  # noqa: B601

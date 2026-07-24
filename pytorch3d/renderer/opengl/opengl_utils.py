@@ -114,6 +114,7 @@ def _get_cuda_device(requested_device_id: int):
 
     # Iterate over all the EGL devices, and check if their CUDA ID matches the request.
     for device in devices:
+        # pyrefly: ignore [bad-argument-type]
         available_device_id = egl.EGLAttrib(ctypes.c_int(-1))
         # pyre-ignore Undefined attribute [16]
         egl.eglQueryDeviceAttribEXT(device, EGL_CUDA_DEVICE_NV, available_device_id)

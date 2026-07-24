@@ -54,6 +54,7 @@ class _PackedToPadded(Function):
 
     @staticmethod
     @once_differentiable
+    # pyrefly: ignore [bad-override]
     def backward(ctx, grad_output):
         grad_output = grad_output.contiguous()
         first_idxs = ctx.saved_tensors[0]
@@ -143,6 +144,7 @@ class _PaddedToPacked(Function):
 
     @staticmethod
     @once_differentiable
+    # pyrefly: ignore [bad-override]
     def backward(ctx, grad_output):
         grad_output = grad_output.contiguous()
         first_idxs = ctx.saved_tensors[0]

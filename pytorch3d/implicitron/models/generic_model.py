@@ -472,6 +472,7 @@ class GenericModel(ImplicitronModelBase):
                 sequence_name=safe_slice_targets(sequence_name),
                 frame_timestamp=safe_slice_targets(frame_timestamp),
             )
+        # pyrefly: ignore [unsupported-operation]
         custom_args["global_code"] = global_code
 
         # pyre-fixme[29]: `Union[(self: Tensor) -> Any, Tensor, Module]` is not a

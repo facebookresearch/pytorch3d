@@ -193,6 +193,7 @@ class Experiment(Configurable):
             last_epoch=start_epoch,
             model=model,
             resume=self.model_factory.resume,
+            # pyrefly: ignore [missing-attribute]
             resume_epoch=self.model_factory.resume_epoch,
         )
 
@@ -212,6 +213,7 @@ class Experiment(Configurable):
 
         # Enter the main training loop.
         self.training_loop.run(
+            # pyrefly: ignore [bad-argument-type]
             train_loader=train_loader,
             val_loader=val_loader,
             test_loader=test_loader,

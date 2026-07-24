@@ -168,6 +168,7 @@ class GatherScatter(Function):
 
     @staticmethod
     @once_differentiable
+    # pyrefly: ignore [bad-override]
     def backward(ctx, grad_output):
         grad_output = grad_output.contiguous()
         edges = ctx.saved_tensors[0]

@@ -34,12 +34,14 @@ def collate_batched_meshes(batch: List[Dict]):  # pragma: no cover
     for k in batch[0].keys():
         collated_dict[k] = [d[k] for d in batch]
 
+    # pyrefly: ignore [unsupported-operation]
     collated_dict["mesh"] = None
     if {"verts", "faces"}.issubset(collated_dict.keys()):
         textures = None
         if "textures" in collated_dict:
             textures = TexturesAtlas(atlas=collated_dict["textures"])
 
+        # pyrefly: ignore [unsupported-operation]
         collated_dict["mesh"] = Meshes(
             verts=collated_dict["verts"],
             faces=collated_dict["faces"],

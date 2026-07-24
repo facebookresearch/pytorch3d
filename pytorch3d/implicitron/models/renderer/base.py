@@ -110,6 +110,7 @@ class ImplicitronRayBundle:
             # equivalent to: 0.5 * (bins[..., 1:] + bins[..., :-1]) but more efficient
             # pyre-ignore
             return torch.lerp(self.bins[..., :-1], self.bins[..., 1:], 0.5)
+        # pyrefly: ignore [bad-return]
         return self._lengths
 
     @lengths.setter
@@ -166,6 +167,7 @@ class ImplicitronRayBundle:
         )
         num_inputs = camera_counts.sum().item()
         max_size = torch.max(camera_counts).item()
+        # pyrefly: ignore [bad-argument-type]
         xys = packed_to_padded(self.xys, first_idxs, max_size)
         # pyre-ignore [7] pytorch typeshed inaccuracy
         return xys, first_idxs, num_inputs
