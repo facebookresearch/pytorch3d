@@ -66,19 +66,23 @@ std::tuple<at::Tensor, at::Tensor, at::Tensor> MarchingCubesCpu(
           tri.push_back(edge);
           ps.push_back(interp_points[e]);
 
-          // Check if the triangle face is degenerate. A triangle face
-          // is degenerate if any of the two verices share the same 3D position
-          if ((j + 1) % 3 == 0 && ps[0] != ps[1] && ps[1] != ps[2] &&
-              ps[2] != ps[0]) {
-            for (int k = 0; k < 3; k++) {
-              int64_t v = tri.at(k);
-              edge_id_to_v[v] = ps.at(k);
-              if (!uniq_edge_id.count(v)) {
-                uniq_edge_id[v] = verts.size();
-                verts.push_back(edge_id_to_v[v]);
+          if (ps.size() == 3) {
+            // Check if the triangle face is degenerate. A triangle face
+            // is degenerate if any of the two vertices share the same 3D
+            // position
+            if (ps[0] != ps[1] && ps[1] != ps[2] && ps[2] != ps[0]) {
+              for (int k = 0; k < 3; k++) {
+                int64_t v = tri.at(k);
+                edge_id_to_v[v] = ps.at(k);
+                if (!uniq_edge_id.count(v)) {
+                  uniq_edge_id[v] = verts.size();
+                  verts.push_back(edge_id_to_v[v]);
+                }
+                faces.push_back(uniq_edge_id[v]);
               }
-              faces.push_back(uniq_edge_id[v]);
             }
+            // Clear unconditionally - a rejected degenerate triangle must not
+            // corrupt the buffer for the next triangle in this cube.
             tri.clear();
             ps.clear();
           } // endif
