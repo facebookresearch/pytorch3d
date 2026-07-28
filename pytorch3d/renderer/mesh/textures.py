@@ -525,7 +525,9 @@ class TexturesAtlas(TexturesBase):
                 )
             else:
                 self._atlas_padded = _list_to_padded_wrapper(
-                    self._atlas_list, pad_value=0.0
+                    # pyrefly: ignore [bad-argument-type]
+                    self._atlas_list,
+                    pad_value=0.0,
                 )
         return self._atlas_padded
 
@@ -537,7 +539,9 @@ class TexturesAtlas(TexturesBase):
                 ] * self._N
             # pyrefly: ignore [bad-assignment]
             self._atlas_list = _padded_to_list_wrapper(
-                self._atlas_padded, split_size=self._num_faces_per_mesh
+                # pyrefly: ignore [bad-argument-type]
+                self._atlas_padded,
+                split_size=self._num_faces_per_mesh,
             )
         return self._atlas_list
 
@@ -1082,7 +1086,9 @@ class TexturesUV(TexturesBase):
                 )
             else:
                 self._faces_uvs_padded = list_to_padded(
-                    self._faces_uvs_list, pad_value=0.0
+                    # pyrefly: ignore [bad-argument-type]
+                    self._faces_uvs_list,
+                    pad_value=0.0,
                 )
         return self._faces_uvs_padded
 
@@ -1095,7 +1101,9 @@ class TexturesUV(TexturesBase):
             else:
                 # pyrefly: ignore [bad-assignment]
                 self._faces_uvs_list = padded_to_list(
-                    self._faces_uvs_padded, split_size=self._num_faces_per_mesh
+                    # pyrefly: ignore [bad-argument-type]
+                    self._faces_uvs_padded,
+                    split_size=self._num_faces_per_mesh,
                 )
         # pyrefly: ignore [bad-return]
         return self._faces_uvs_list
@@ -1108,7 +1116,9 @@ class TexturesUV(TexturesBase):
                 )
             else:
                 self._verts_uvs_padded = list_to_padded(
-                    self._verts_uvs_list, pad_value=0.0
+                    # pyrefly: ignore [bad-argument-type]
+                    self._verts_uvs_list,
+                    pad_value=0.0,
                 )
         return self._verts_uvs_padded
 
@@ -1122,7 +1132,7 @@ class TexturesUV(TexturesBase):
                 # The number of vertices in the mesh and in verts_uvs can differ
                 # e.g. if a vertex is shared between 3 faces, it can
                 # have up to 3 different uv coordinates.
-                # pyrefly: ignore [bad-assignment]
+                # pyrefly: ignore [bad-assignment, missing-attribute]
                 self._verts_uvs_list = list(self._verts_uvs_padded.unbind(0))
         # pyrefly: ignore [bad-return]
         return self._verts_uvs_list
@@ -1147,6 +1157,7 @@ class TexturesUV(TexturesBase):
     def maps_list(self) -> List[torch.Tensor]:
         if self._maps_list is not None:
             return self._maps_list
+        # pyrefly: ignore [bad-return]
         return self._maps_padded.unbind(0)
 
     def extend(self, N: int) -> "TexturesUV":
@@ -1808,7 +1819,9 @@ class TexturesVertex(TexturesBase):
                 )
             else:
                 self._verts_features_padded = list_to_padded(
-                    self._verts_features_list, pad_value=0.0
+                    # pyrefly: ignore [bad-argument-type]
+                    self._verts_features_list,
+                    pad_value=0.0,
                 )
         return self._verts_features_padded
 
@@ -1821,7 +1834,9 @@ class TexturesVertex(TexturesBase):
             else:
                 # pyrefly: ignore [bad-assignment]
                 self._verts_features_list = padded_to_list(
-                    self._verts_features_padded, split_size=self._num_verts_per_mesh
+                    # pyrefly: ignore [bad-argument-type]
+                    self._verts_features_padded,
+                    split_size=self._num_verts_per_mesh,
                 )
         # pyrefly: ignore [bad-return]
         return self._verts_features_list

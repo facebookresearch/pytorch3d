@@ -625,6 +625,7 @@ def _field_annotations_for_default_args(
             field_ = dataclasses.field(default=default)
         field_annotations.append((pname, defval.annotation, field_))
 
+    # pyrefly: ignore [bad-return]
     return field_annotations
 
 
