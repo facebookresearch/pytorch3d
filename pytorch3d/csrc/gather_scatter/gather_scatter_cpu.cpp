@@ -30,6 +30,10 @@ at::Tensor GatherScatterCpu(
     const int64_t v0 = edges_a[e][v0_idx];
     const int64_t v1 = edges_a[e][v1_idx];
 
+    TORCH_CHECK(
+        v0 >= 0 && v0 < num_vertices && v1 >= 0 && v1 < num_vertices,
+        "Edge vertex index out of bounds");
+
     for (int d = 0; d < input_feature_dim; ++d) {
       output_a[v0][d] += input_a[v1][d];
       if (!directed) {
