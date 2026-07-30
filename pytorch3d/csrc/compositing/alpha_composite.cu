@@ -33,11 +33,11 @@ __global__ void alphaCompositeCudaForwardKernel(
   const int64_t W = points_idx.size(3);
 
   // Get the batch and index
-  const auto batch = blockIdx.x;
+  const int batch = blockIdx.x;
 
   const int num_pixels = C * H * W;
-  const auto num_threads = gridDim.y * blockDim.x;
-  const auto tid = blockIdx.y * blockDim.x + threadIdx.x;
+  const int num_threads = gridDim.y * blockDim.x;
+  const int tid = blockIdx.y * blockDim.x + threadIdx.x;
 
   // Iterate over each feature in each pixel
   for (int pid = tid; pid < num_pixels; pid += num_threads) {
@@ -83,11 +83,11 @@ __global__ void alphaCompositeCudaBackwardKernel(
   const int64_t W = points_idx.size(3);
 
   // Get the batch and index
-  const auto batch = blockIdx.x;
+  const int batch = blockIdx.x;
 
   const int num_pixels = C * H * W;
-  const auto num_threads = gridDim.y * blockDim.x;
-  const auto tid = blockIdx.y * blockDim.x + threadIdx.x;
+  const int num_threads = gridDim.y * blockDim.x;
+  const int tid = blockIdx.y * blockDim.x + threadIdx.x;
 
   // Parallelize over each feature in each pixel in images of size H * W,
   // for each image in the batch of size batch_size
