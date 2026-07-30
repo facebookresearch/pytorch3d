@@ -115,11 +115,13 @@ def rasterize_meshes(
           to pixel (y, x). Pixels that are hit by fewer than
           faces_per_pixel are padded with -1.
         - **zbuf**: FloatTensor of shape (N, image_size, image_size, faces_per_pixel)
-          giving the NDC z-coordinates of the nearest faces at each pixel,
-          sorted in ascending z-order.
+          giving the interpolated z-coordinates of the nearest faces at each
+          pixel, sorted in ascending z-order. When ``meshes`` comes from
+          ``MeshRasterizer.transform``, these are view-space z-coordinates.
           Concretely, if ``pix_to_face[n, y, x, k] = f`` then
-          ``zbuf[n, y, x, k] = face_verts[f, 2]``. Pixels hit by fewer than
-          faces_per_pixel are padded with -1.
+          ``zbuf[n, y, x, k]`` is the barycentric interpolation of the vertex
+          z-coordinates of face ``f`` at pixel ``(y, x)``. Pixels hit by fewer
+          than faces_per_pixel are padded with -1.
         - **barycentric**: FloatTensor of shape
           (N, image_size, image_size, faces_per_pixel, 3)
           giving the barycentric coordinates in NDC units of the
