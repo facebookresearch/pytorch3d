@@ -489,15 +489,18 @@ def axis_angle_to_matrix(axis_angle: torch.Tensor, fast: bool = False) -> torch.
     cross_product_matrix = torch.stack(
         [zeros, -rz, ry, rz, zeros, -rx, -ry, rx, zeros], dim=-1
     ).view(shape + (3,))
-    cross_product_matrix_sqrd = cross_product_matrix @ cross_product_matrix
+    outer_product = axis_angle.unsqueeze(-1) * axis_angle.unsqueeze(-2)
 
+    # This is the Rodrigues formula written with the identities
+    #     cross_product_matrix^2 == outer_product - angle^2 * I
+    #     (1 - cos(angle)) / angle^2 == sinc(angle / (2*pi))^2 / 2
+    # which save a matrix multiplication and, as sinc is defined at zero,
+    # remove the need to special-case a zero angle.
     identity = torch.eye(3, dtype=dtype, device=device)
-    angles_sqrd = angles * angles
-    angles_sqrd = torch.where(angles_sqrd == 0, 1, angles_sqrd)
     return (
-        identity.expand(cross_product_matrix.shape)
+        torch.cos(angles) * identity
         + torch.sinc(angles / torch.pi) * cross_product_matrix
-        + ((1 - torch.cos(angles)) / angles_sqrd) * cross_product_matrix_sqrd
+        + 0.5 * torch.sinc(angles / (2 * torch.pi)) ** 2 * outer_product
     )
 
 
@@ -536,24 +539,52 @@ def matrix_to_axis_angle(matrix: torch.Tensor, fast: bool = False) -> torch.Tens
     traces = torch.diagonal(matrix, dim1=-2, dim2=-1).sum(-1).unsqueeze(-1)
     angles = torch.atan2(norms, traces - 1)
 
-    zeros = torch.zeros(3, dtype=matrix.dtype, device=matrix.device)
-    omegas = torch.where(torch.isclose(angles, torch.zeros_like(angles)), zeros, omegas)
+    # omegas is 2*sin(angle) times the axis, so the relative precision of the
+    # axis it gives decays like 1/(pi - angle). Above the following angle the
+    # axis is taken from the symmetric part of the matrix instead. Switching
+    # over 0.01 radians before pi keeps the error close to that of the slow
+    # implementation, while leaving under 1% of uniformly random rotations on
+    # the more expensive branch.
+    near_pi = angles > torch.pi - 1e-2
 
-    near_pi = angles.isclose(angles.new_full((1,), torch.pi)).squeeze(-1)
+    # An angle of zero needs no special case: torch.sinc(0) is 1, and omegas
+    # is then zero, which is the right answer. torch.sinc is instead zero at
+    # an angle of pi, so those entries are given a harmless denominator here
+    # and overwritten below.
+    sincs = torch.sinc(angles / torch.pi)
+    axis_angles = omegas * (0.5 / torch.where(near_pi, 1.0, sincs))
 
-    axis_angles = torch.empty_like(omegas)
-    axis_angles[~near_pi] = (
-        0.5 * omegas[~near_pi] / torch.sinc(angles[~near_pi] / torch.pi)
+    # Rotations by nearly pi are a small minority, so it is worth selecting
+    # them rather than evaluating the following densely. The selection index is
+    # computed once, because each boolean mask index would recompute it (and,
+    # on the GPU, synchronize).
+    flat_axis_angles = axis_angles.reshape(-1, 3)
+    index = near_pi.reshape(-1).nonzero().squeeze(-1)
+    near_pi_matrix = matrix.reshape(-1, 3, 3).index_select(0, index)
+    near_pi_omegas = omegas.reshape(-1, 3).index_select(0, index)
+
+    # this derives from: R + R^T - 2*cos(angle)*I = 2*(1 - cos(angle))*nnT,
+    # together with trace(R) - 1 == 2*cos(angle)
+    double_cosines = traces.reshape(-1, 1, 1).index_select(0, index) - 1
+    nnT = (
+        near_pi_matrix
+        + near_pi_matrix.transpose(-1, -2)
+        - double_cosines * torch.eye(3, dtype=matrix.dtype, device=matrix.device)
     )
+    # Every column of nnT is a multiple of n. Taking the one whose diagonal
+    # entry is largest means the multiplier has absolute value at least
+    # 1/sqrt(3), so the column is never degenerate.
+    largest = torch.diagonal(nnT, dim1=-2, dim2=-1).argmax(dim=-1)
+    n = nnT.gather(-1, largest.reshape(-1, 1, 1).expand(-1, 3, 1)).squeeze(-1)
+    n = n / torch.linalg.vector_norm(n, dim=-1, keepdim=True)
+    # nnT determines n only up to sign, which omegas resolves. (At exactly pi
+    # the sign is arbitrary, and there omegas is zero.)
+    n = torch.where((n * near_pi_omegas).sum(-1, keepdim=True) < 0, -n, n)
 
-    # this derives from: nnT = (R + 1) / 2
-    n = 0.5 * (
-        matrix[near_pi][..., 0, :]
-        + torch.eye(1, 3, dtype=matrix.dtype, device=matrix.device)
+    near_pi_angles = angles.reshape(-1, 1).index_select(0, index)
+    return torch.index_copy(flat_axis_angles, 0, index, near_pi_angles * n).reshape(
+        axis_angles.shape
     )
-    axis_angles[near_pi] = angles[near_pi] * n / torch.norm(n)
-
-    return axis_angles
 
 
 def axis_angle_to_quaternion(axis_angle: torch.Tensor) -> torch.Tensor:

@@ -228,6 +228,165 @@ class TestRotationConversion(TestCaseMixin, unittest.TestCase):
         self.assertClose(data, axis_angle_to_matrix(euler_angles_fast))
         self.assertClose(data, axis_angle_to_matrix(euler_angles, fast=True))
 
+    def test_axis_angle_by_pi(self):
+        """Rotations by exactly pi are recovered, and don't depend on the batch."""
+        options = [0.0, -1.0, 1.0]
+        axes = torch.nn.functional.normalize(
+            torch.stack(
+                [
+                    torch.tensor(vec, dtype=torch.float64)
+                    for vec in itertools.islice(  # exclude [0, 0, 0]
+                        itertools.product(options, options, options), 1, None
+                    )
+                ]
+            ),
+            dim=-1,
+        )
+        # Rotation by pi around unit vector x is given by 2 x x^T - Id.
+        R = 2 * torch.matmul(axes[..., None], axes[..., None, :]) - torch.eye(
+            3, dtype=torch.float64
+        )
+        for fast in [False, True]:
+            axis_angles = matrix_to_axis_angle(R, fast=fast)
+            self.assertClose(
+                axis_angles.norm(dim=-1),
+                torch.full(axes.shape[:1], math.pi, dtype=torch.float64),
+            )
+            self.assertClose(axis_angle_to_matrix(axis_angles), R)
+            # The axis of one rotation cannot depend on the others.
+            singly = torch.stack(
+                [matrix_to_axis_angle(r, fast=fast) for r in R.unbind()]
+            )
+            self.assertClose(singly, axis_angles)
+
+    def test_axis_angle_near_pi(self):
+        """The fast path stays accurate as the angle approaches pi."""
+        for dtype, atol in [(torch.float64, 1e-9), (torch.float32, 1e-4)]:
+            axes = torch.nn.functional.normalize(
+                torch.randn(50, 3, dtype=dtype), dim=-1
+            )
+            for angle in [
+                math.pi,
+                math.pi - 1e-7,
+                math.pi - 1e-5,
+                math.pi - 1e-3,
+                math.pi - 1e-2,
+                math.pi - 0.1,
+                2.0,
+            ]:
+                data = axes * angle
+                R = axis_angle_to_matrix(data)
+                axis_angles = matrix_to_axis_angle(R, fast=True)
+                self.assertClose(axis_angle_to_matrix(axis_angles), R, atol=atol)
+                self.assertClose(
+                    axis_angles.norm(dim=-1),
+                    torch.full(axes.shape[:1], angle, dtype=dtype),
+                    atol=atol,
+                )
+                if angle < math.pi - 1e-2:
+                    # Closer to pi than this, the sign of the axis is not
+                    # determined to float32 precision (and both signs describe
+                    # the same rotation to within the tolerance above).
+                    self.assertClose(axis_angles, data, atol=atol)
+
+    def test_axis_angle_to_matrix_fast(self):
+        """The Rodrigues implementation agrees with the quaternion one."""
+        data = torch.randn(100, 3, dtype=torch.float64)
+        normalized = torch.nn.functional.normalize(data, dim=-1)
+        data[:5] = 0.0
+        data[5:10] = normalized[5:10] * math.pi
+        data[10:15] = normalized[10:15] * 1e-12
+        self.assertClose(
+            axis_angle_to_matrix(data, fast=True),
+            axis_angle_to_matrix(data),
+            atol=1e-14,
+        )
+
+        # A zero angle is not a special case, but must still have gradients.
+        zeros = torch.zeros(1, 3, dtype=torch.float64, requires_grad=True)
+        matrices = axis_angle_to_matrix(zeros, fast=True)
+        self.assertClose(matrices, torch.eye(3, dtype=torch.float64)[None])
+        (grad,) = torch.autograd.grad(matrices.sum(), zeros)
+        self.assertTrue(torch.isfinite(grad).all())
+
+    def test_axis_angle_tiny(self):
+        """Tiny angles are preserved, not flattened to zero, and have grads."""
+        axis = torch.nn.functional.normalize(
+            torch.tensor([[0.3, -0.5, 0.81]], dtype=torch.float64), dim=-1
+        )
+        for angle in [1e-3, 1e-8, 1e-9, 1e-12]:
+            data = axis * angle
+            R = axis_angle_to_matrix(data)
+            for fast in [False, True]:
+                # atol must be 0 here: the default would accept zero.
+                self.assertClose(matrix_to_axis_angle(R, fast=fast), data, atol=0)
+
+        identity = torch.eye(3, dtype=torch.float64)
+        for fast in [False, True]:
+            R = identity.clone().requires_grad_(True)
+            axis_angles = matrix_to_axis_angle(R, fast=fast)
+            self.assertClose(axis_angles, torch.zeros(3, dtype=torch.float64))
+            (grad,) = torch.autograd.grad(axis_angles.sum(), R)
+            self.assertTrue(torch.isfinite(grad).all())
+
+    def test_axis_angle_batch_independence(self):
+        """Every matrix in a batch is converted independently of the others."""
+        angles = torch.tensor(
+            [math.pi, math.pi, math.pi - 1e-9, math.pi - 1e-3, 3.0, 1.0, 0.5, 0.0],
+            dtype=torch.float64,
+        )
+        axes = torch.nn.functional.normalize(
+            torch.randn(angles.shape[0], 3, dtype=torch.float64), dim=-1
+        )
+        R = axis_angle_to_matrix(axes * angles[:, None])
+        for fast in [False, True]:
+            batched = matrix_to_axis_angle(R, fast=fast)
+            singly = torch.stack(
+                [matrix_to_axis_angle(r, fast=fast) for r in R.unbind()]
+            )
+            self.assertClose(batched, singly)
+
+    def test_axis_angle_shapes(self):
+        """Arbitrary leading dimensions, including none and zero."""
+        R = random_rotations(24, dtype=torch.float64).reshape(2, 3, 4, 3, 3)
+        # A rotation by pi, so that the near-pi branch is used too.
+        axis = torch.tensor([0.0, 0.6, -0.8], dtype=torch.float64)
+        R[1, 2, 0] = 2 * torch.outer(axis, axis) - torch.eye(3, dtype=torch.float64)
+        for fast in [False, True]:
+            axis_angles = matrix_to_axis_angle(R, fast=fast)
+            self.assertEqual(axis_angles.shape, (2, 3, 4, 3))
+            self.assertClose(axis_angle_to_matrix(axis_angles), R)
+
+            self.assertEqual(matrix_to_axis_angle(R[0, 0, 0], fast=fast).shape, (3,))
+            empty = torch.zeros(0, 3, 3, dtype=torch.float64)
+            self.assertEqual(matrix_to_axis_angle(empty, fast=fast).shape, (0, 3))
+
+    def test_axis_angle_near_pi_grad(self):
+        """Round tripping is the identity, so its derivative is too."""
+        axis = torch.nn.functional.normalize(
+            torch.tensor([0.3, -0.5, 0.81], dtype=torch.float64), dim=-1
+        )
+        eye = torch.eye(3, dtype=torch.float64)
+        for angle in [0.5, 2.0, math.pi - 0.02, math.pi - 1e-4]:
+            data = axis * angle
+            for fast in [False, True]:
+                jacobian = torch.autograd.functional.jacobian(
+                    lambda x, fast=fast: matrix_to_axis_angle(
+                        axis_angle_to_matrix(x), fast=fast
+                    ),
+                    data,
+                )
+                self.assertClose(jacobian, eye, atol=1e-8)
+
+        # At exactly pi the axis, and so the derivative, is ambiguous, but the
+        # result must still be usable.
+        R = (2 * torch.outer(axis, axis) - eye).requires_grad_(True)
+        for fast in [False, True]:
+            (grad,) = torch.autograd.grad(
+                matrix_to_axis_angle(R, fast=fast).sum(), R, retain_graph=True
+            )
+            self.assertTrue(torch.isfinite(grad).all())
+
     def test_quaternion_application(self):
         """Applying a quaternion is the same as applying the matrix."""
         quaternions = random_quaternions(3, torch.float64)
