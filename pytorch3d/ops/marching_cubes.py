@@ -159,7 +159,6 @@ def marching_cubes_naive(
     """
     batched_verts, batched_faces = [], []
     D, H, W = vol_batch.shape[1:]
-
     # each edge is represented with its two endpoints (represented with global id)
     for i in range(len(vol_batch)):
         vol = vol_batch[i]
@@ -184,7 +183,7 @@ def marching_cubes_naive(
                     # triangle vertex IDs and positions
                     tri = []
                     ps = []
-                    for i, edge in enumerate(edge_indices):
+                    for edge in edge_indices:
                         interp_points[edge] = cube.vert_interp(thresh, edge, vol)
 
                         # Bind interpolated vertex with a global edge_id, which
@@ -196,20 +195,19 @@ def marching_cubes_naive(
                         )
                         tri.append(edge_id)
                         ps.append(interp_points[edge])
-                        # when the isolevel are the same as the edge endpoints, the interploated
-                        # vertices can share the same values, and lead to degenerate triangles.
-                        if (
-                            (i + 1) % 3 == 0
-                            and ps[0] != ps[1]
-                            and ps[1] != ps[2]
-                            and ps[2] != ps[0]
-                        ):
-                            for j, edge_id in enumerate(tri):
-                                edge_id_to_v[edge_id] = ps[j]
-                                if edge_id not in uniq_edge_id:
-                                    uniq_edge_id[edge_id] = len(verts)
-                                    verts.append(edge_id_to_v[edge_id])
-                            faces.append([uniq_edge_id[tri[j]] for j in range(3)])
+                        if len(ps) == 3:
+                            # when the isolevel are the same as the edge
+                            # endpoints, the interpolated vertices can share
+                            # the same values, and lead to degenerate
+                            # triangles.
+                            if ps[0] != ps[1] and ps[1] != ps[2] and ps[2] != ps[0]:
+                                for j, edge_id in enumerate(tri):
+                                    edge_id_to_v[edge_id] = ps[j]
+                                    if edge_id not in uniq_edge_id:
+                                        uniq_edge_id[edge_id] = len(verts)
+                                        verts.append(edge_id_to_v[edge_id])
+                                faces.append([uniq_edge_id[tri[j]] for j in range(3)])
+
                             tri = []
                             ps = []
 

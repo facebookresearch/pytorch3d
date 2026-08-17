@@ -780,6 +780,79 @@ class TestMarchingCubes(TestCaseMixin, unittest.TestCase):
         self.assertClose(faces[0], expected_faces)
         self.assertTrue(verts[0].ge(-1).all() and verts[0].le(1).all())
 
+    def test_degenerate_triangle_keeps_later_faces(self):
+        # A cube whose first triangle is degenerate must not suppress the
+        # remaining triangles of the same cube. Here the isolevel coincides
+        # with the value of the outside corners, so every interpolated point
+        # snaps onto a corner and the cube's 4 candidate triangles collapse
+        # onto the 4 outside corners: triangles 1 and 4 become degenerate
+        # while triangles 2 and 3 stay valid.
+        volume_data = torch.ones(1, 2, 2, 2)  # (B, W, H, D)
+        volume_data[0, 1, 0, 0] = 0
+        volume_data[0, 1, 0, 1] = 0
+        volume_data[0, 0, 1, 1] = 0
+        volume_data[0, 1, 1, 1] = 0
+        volume_data = volume_data.permute(0, 3, 2, 1)  # (B, D, H, W)
+
+        # The four inside corners are separated from the four outside corners
+        # (1, 1, 0), (0, 0, 1), (0, 1, 0) and (0, 0, 0), which the surface
+        # passes exactly through, giving a quad made of two triangles.
+        expected_verts = torch.tensor(
+            [
+                [1.0, 1.0, 0.0],
+                [0.0, 0.0, 1.0],
+                [0.0, 1.0, 0.0],
+                [0.0, 0.0, 0.0],
+            ]
+        )
+        expected_faces = torch.tensor([[0, 1, 2], [0, 3, 1]])
+
+        verts, faces = marching_cubes_naive(volume_data, 1, return_local_coords=False)
+        self.assertClose(verts[0], expected_verts)
+        self.assertClose(faces[0], expected_faces)
+
+        verts, faces = marching_cubes(volume_data, 1, return_local_coords=False)
+        self.assertClose(verts[0], expected_verts)
+        self.assertClose(faces[0], expected_faces)
+
+    def test_large_grid_edge_ids(self):
+        # The C++ implementation identifies a vertex by hashing the pair of
+        # grid-point ids of the edge it lies on. Grid-point ids run up to
+        # W * H * D - 1, so once the grid exceeds 2 ** 24 points the ids must
+        # not be computed in float32 or distinct edges collide and their
+        # vertices get merged. Use a long, thin volume to cross that bound
+        # with a volume small enough to allocate (~67MB).
+        W, H, D = 4_200_000, 2, 2
+        # Isolated points on the (y=1, z=1) row, whose ids are x + W + W * H
+        # and therefore the largest in the grid. Spacing 3 keeps the blobs
+        # from sharing a cube while cycling through every id residue.
+        first_x = 2**24 - W * H - W
+        xs = [first_x + 3 * i for i in range(16)]
+        self.assertLess(xs[-1] + 1, W)
+
+        vol = torch.ones(1, D, H, W)
+        for x in xs:
+            vol[0, 1, 1, x] = 0.0
+        verts, faces = marching_cubes(vol, 0.5, return_local_coords=False)
+
+        # Each isolated point cuts the four grid edges leading away from it,
+        # so every blob contributes 4 distinct vertices and 2 faces.
+        expected_verts = set()
+        for x in xs:
+            expected_verts.update(
+                [
+                    (x - 0.5, 1.0, 1.0),
+                    (x + 0.5, 1.0, 1.0),
+                    (float(x), 0.5, 1.0),
+                    (float(x), 1.0, 0.5),
+                ]
+            )
+        self.assertEqual(
+            {tuple(v) for v in verts[0].tolist()},
+            expected_verts,
+        )
+        self.assertEqual(faces[0].shape[0], 2 * len(xs))
+
     def test_sphere(self):
         # (B, W, H, D)
         volume = torch.Tensor(

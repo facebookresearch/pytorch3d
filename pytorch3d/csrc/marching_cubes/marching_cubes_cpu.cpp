@@ -34,6 +34,18 @@ std::tuple<at::Tensor, at::Tensor, at::Tensor> MarchingCubesCpu(
   const int H = vol.size(1);
   const int W = vol.size(2);
 
+  // The edge-id hash packs two grid-point ids as v1_id * (W*H*D) + v2_id, whose
+  // maximum value is (W*H*D)^2 - 1. Guard against signed int64 overflow so an
+  // oversized volume fails loudly instead of silently producing colliding edge
+  // ids and a corrupted mesh. floor(sqrt(INT64_MAX)) == 3037000499 (~1448^3).
+  const int64_t num_grid_points = (int64_t)W * H * D;
+  TORCH_CHECK(
+      num_grid_points <= 3037000499LL,
+      "Volume too large for CPU marching cubes: W*H*D (",
+      num_grid_points,
+      ") exceeds 3037000499 (~1448^3), which would overflow the int64 edge-id "
+      "hash and corrupt the mesh.");
+
   // Create tensor accessors
   auto vol_a = vol.accessor<float, 3>();
   // edge_id_to_v maps from an edge id to a vertex position
@@ -66,19 +78,23 @@ std::tuple<at::Tensor, at::Tensor, at::Tensor> MarchingCubesCpu(
           tri.push_back(edge);
           ps.push_back(interp_points[e]);
 
-          // Check if the triangle face is degenerate. A triangle face
-          // is degenerate if any of the two verices share the same 3D position
-          if ((j + 1) % 3 == 0 && ps[0] != ps[1] && ps[1] != ps[2] &&
-              ps[2] != ps[0]) {
-            for (int k = 0; k < 3; k++) {
-              int64_t v = tri.at(k);
-              edge_id_to_v[v] = ps.at(k);
-              if (!uniq_edge_id.count(v)) {
-                uniq_edge_id[v] = verts.size();
-                verts.push_back(edge_id_to_v[v]);
+          if (ps.size() == 3) {
+            // Check if the triangle face is degenerate. A triangle face
+            // is degenerate if any of the two vertices share the same 3D
+            // position
+            if (ps[0] != ps[1] && ps[1] != ps[2] && ps[2] != ps[0]) {
+              for (int k = 0; k < 3; k++) {
+                int64_t v = tri.at(k);
+                edge_id_to_v[v] = ps.at(k);
+                if (!uniq_edge_id.count(v)) {
+                  uniq_edge_id[v] = verts.size();
+                  verts.push_back(edge_id_to_v[v]);
+                }
+                faces.push_back(uniq_edge_id[v]);
               }
-              faces.push_back(uniq_edge_id[v]);
             }
+            // Clear unconditionally - a rejected degenerate triangle must not
+            // corrupt the buffer for the next triangle in this cube.
             tri.clear();
             ps.clear();
           } // endif

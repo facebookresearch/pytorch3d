@@ -126,8 +126,7 @@ struct Cube {
   // edge with an integer to address floating point precision issue.
   //
   // Args:
-  //    v1_id: global id of vertex 1
-  //    v2_id: global id of vertex 2
+  //    edge: edge (ID) whose two endpoint vertices are hashed
   //    W: width of the 3d grid
   //    H: height of the 3d grid
   //    D: depth of the 3d grid
@@ -135,11 +134,19 @@ struct Cube {
   // Returns:
   //    hashing for a pair of vertex ids
   //
-  int64_t HashVpair(const int edge, int W, int H, int D) {
+  int64_t HashVpair(const int edge, int64_t W, int64_t H, int64_t D) const {
     const int v1 = _EDGE_TO_VERTICES[edge][0];
     const int v2 = _EDGE_TO_VERTICES[edge][1];
-    const int v1_id = p[v1].x + p[v1].y * W + p[v1].z * W * H;
-    const int v2_id = p[v2].x + p[v2].y * W + p[v2].z * W * H;
-    return (int64_t)v1_id * (W + W * H + W * H * D) + (int64_t)v2_id;
+    // p[v].x/y/z hold integral corner coordinates, so casting to int64_t is
+    // exact. We cast before multiplication to avoid float32 precision loss at
+    // grids > 256^3.
+    const int64_t v1_id =
+        (int64_t)p[v1].x + (int64_t)p[v1].y * W + (int64_t)p[v1].z * W * H;
+    const int64_t v2_id =
+        (int64_t)p[v2].x + (int64_t)p[v2].y * W + (int64_t)p[v2].z * W * H;
+    // v_id max is (W*H*D - 1). A stride of W*H*D perfectly separates v1 and v2.
+    // Note: This hash fits in int64_t safely up to grids of ~1448^3.
+    const int64_t stride = W * H * D;
+    return v1_id * stride + v2_id;
   }
 };
