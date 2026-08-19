@@ -571,7 +571,6 @@ def _get_sphere_intersection(
     # cam_loc = cam_loc.unsqueeze(-1)
     # ray_cam_dot = torch.bmm(ray_directions, cam_loc).squeeze()
     ray_cam_dot = (ray_directions * cam_loc).sum(-1)  # n_images x n_rays
-    # pyre-fixme[58]: `**` is not supported for operand types `Tensor` and `int`.
     under_sqrt = ray_cam_dot**2 - (cam_loc.norm(2, dim=-1) ** 2 - r**2)
 
     under_sqrt = under_sqrt.reshape(-1)

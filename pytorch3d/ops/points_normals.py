@@ -156,7 +156,6 @@ def estimate_pointcloud_local_coord_frames(
     if disambiguate_directions:
         # disambiguate normal
         n = _disambiguate_vector_directions(
-            # pyrefly: ignore [unsupported-operation]
             points_centered,
             knns,
             # pyrefly: ignore [unsupported-operation]
@@ -164,7 +163,6 @@ def estimate_pointcloud_local_coord_frames(
         )
         # disambiguate the main curvature
         z = _disambiguate_vector_directions(
-            # pyrefly: ignore [unsupported-operation]
             points_centered,
             knns,
             # pyrefly: ignore [unsupported-operation]

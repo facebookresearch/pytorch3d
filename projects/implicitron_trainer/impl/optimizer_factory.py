@@ -169,7 +169,6 @@ class ImplicitronOptimizerFactory(OptimizerFactoryBase):
                 gamma=self.gamma,
             )
         elif self.lr_policy.casefold() == "Exponential".casefold():
-            # pyre-fixme[28]: Unexpected keyword argument `verbose`.
             scheduler = torch.optim.lr_scheduler.LambdaLR(
                 optimizer,
                 lambda epoch: self.gamma ** (epoch / self.exponential_lr_step_size),
@@ -190,9 +189,7 @@ class ImplicitronOptimizerFactory(OptimizerFactoryBase):
                     gamma = self.gamma ** (epoch_rest / self.exponential_lr_step_size)
                 return gamma
 
-            # pyre-fixme[28]: Unexpected keyword argument `verbose`.
             scheduler = torch.optim.lr_scheduler.LambdaLR(
-                # pyrefly: ignore [unexpected-keyword]
                 optimizer,
                 _get_lr,
                 # pyrefly: ignore [unexpected-keyword]

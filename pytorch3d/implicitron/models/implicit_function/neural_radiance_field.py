@@ -125,7 +125,6 @@ class NeuralRadianceFieldBase(ImplicitFunctionBase, torch.nn.Module):
         # pyre-fixme[29]: `Union[Tensor, Module]` is not a function.
         rays_embedding = self.harmonic_embedding_dir(rays_directions_normed)
 
-        # pyre-fixme[29]: `Union[Tensor, Module]` is not a function.
         return self.color_layer((self.intermediate_linear(features), rays_embedding))
 
     @staticmethod
@@ -196,7 +195,6 @@ class NeuralRadianceFieldBase(ImplicitFunctionBase, torch.nn.Module):
         embeds = create_embeddings_for_implicit_function(
             xyz_world=rays_points_world,
             #  for 2nd param but got `Union[None, torch.Tensor, torch.nn.Module]`.
-            # pyre-fixme[6]: For 2nd argument expected `Optional[(...) -> Any]` but
             #  got `Union[None, Tensor, Module]`.
             xyz_embedding_function=(
                 self.harmonic_embedding_xyz if self.input_xyz else None
@@ -224,7 +222,6 @@ class NeuralRadianceFieldBase(ImplicitFunctionBase, torch.nn.Module):
             if camera is None:
                 raise ValueError("Camera must be given if xyz_ray_dir_in_camera_coords")
 
-            # pyre-fixme[58]: `@` is not supported for operand types `Tensor` and
             #  `Union[Tensor, Module]`.
             directions = ray_bundle.directions @ camera.R
         else:

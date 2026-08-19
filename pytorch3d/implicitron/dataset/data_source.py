@@ -52,11 +52,8 @@ class ImplicitronDataSource(DataSourceBase):
         data_loader_map_provider_class_type: identifies type for data_loader_map_provider.
     """
 
-    # pyre-fixme[13]: Attribute `dataset_map_provider` is never initialized.
     dataset_map_provider: DatasetMapProviderBase
-    # pyre-fixme[13]: Attribute `dataset_map_provider_class_type` is never initialized.
     dataset_map_provider_class_type: str
-    # pyre-fixme[13]: Attribute `data_loader_map_provider` is never initialized.
     data_loader_map_provider: DataLoaderMapProviderBase
     data_loader_map_provider_class_type: str = "SequenceDataLoaderMapProvider"
 
@@ -78,7 +75,7 @@ class ImplicitronDataSource(DataSourceBase):
             )
 
             try:
-                from .sql_dataset_provider import (  # noqa: F401  # pyre-ignore
+                from .sql_dataset_provider import (  # noqa: F401
                     SqlIndexDatasetMapProvider,
                 )
             except ModuleNotFoundError:
@@ -100,7 +97,7 @@ class ImplicitronDataSource(DataSourceBase):
         """
         DEPRECATED! The property will be removed in future versions.
         """
-        if self._all_train_cameras_cache is None:  # pyre-ignore[16]
+        if self._all_train_cameras_cache is None:
             all_train_cameras = self.dataset_map_provider.get_all_train_cameras()
             self._all_train_cameras_cache = (all_train_cameras,)
 

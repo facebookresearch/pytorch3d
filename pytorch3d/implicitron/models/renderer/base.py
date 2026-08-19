@@ -108,7 +108,6 @@ class ImplicitronRayBundle:
     def lengths(self) -> torch.Tensor:
         if self.bins is not None:
             # equivalent to: 0.5 * (bins[..., 1:] + bins[..., :-1]) but more efficient
-            # pyre-ignore
             return torch.lerp(self.bins[..., :-1], self.bins[..., 1:], 0.5)
         # pyrefly: ignore [bad-return]
         return self._lengths

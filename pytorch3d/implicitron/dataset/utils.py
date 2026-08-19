@@ -192,7 +192,6 @@ def rescale_bbox(
     assert bbox is not None
     assert np.prod(orig_res) > 1e-8
     # average ratio of dimensions
-    # pyre-ignore
     rel_size = (new_res[0] / orig_res[0] + new_res[1] / orig_res[1]) / 2.0
     return bbox * rel_size
 
@@ -368,7 +367,6 @@ def adjust_camera_to_bbox_crop_(
     )
 
     camera.focal_length = focal_length[None]
-    # pyre-fixme[16]: `PerspectiveCameras` has no attribute `principal_point`.
     camera.principal_point = principal_point_cropped[None]
 
 
@@ -397,8 +395,7 @@ def adjust_camera_to_image_scale_(
         image_size_wh_output,
     )
     camera.focal_length = focal_length_scaled[None]
-    # pyre-fixme[16]: `PerspectiveCameras` has no attribute `principal_point`.
-    camera.principal_point = principal_point_scaled[None]  # pyre-ignore[16]
+    camera.principal_point = principal_point_scaled[None]
 
 
 # NOTE this cache is per-worker; they are implemented as processes.

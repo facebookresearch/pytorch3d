@@ -59,7 +59,6 @@ class ImplicitronModelFactory(ModelFactoryBase):
 
     """
 
-    # pyre-fixme[13]: Attribute `model` is never initialized.
     model: ImplicitronModelBase
     model_class_type: str = "GenericModel"
     resume: bool = True

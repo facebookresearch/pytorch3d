@@ -205,7 +205,7 @@ class SqlIndexDataset(DatasetBase, ReplaceableBase):
         logger.info(str(self))
 
         if self.scoped_session:
-            self._session_factory = sessionmaker(bind=self._sql_engine)  # pyre-ignore
+            self._session_factory = sessionmaker(bind=self._sql_engine)
 
         if self.precompute_seq_to_idx:
             # This is deprecated and will be removed in the future.
@@ -215,7 +215,7 @@ class SqlIndexDataset(DatasetBase, ReplaceableBase):
             )
             self._index["rowid"] = np.arange(len(self._index))
             groupby = self._index.groupby("sequence_name", sort=False)["rowid"]
-            self._seq_to_indices = dict(groupby.apply(list))  # pyre-ignore
+            self._seq_to_indices = dict(groupby.apply(list))
             del self._index["rowid"]
 
     def __len__(self) -> int:
@@ -280,7 +280,6 @@ class SqlIndexDataset(DatasetBase, ReplaceableBase):
             self.sequence_annotations_type.sequence_name == seq
         )
         if self.scoped_session:
-            # pyre-ignore
             with scoped_session(self._session_factory)() as session:
                 entry = session.scalars(stmt).one()
                 seq_metadata = session.scalars(seq_stmt).one()
@@ -404,7 +403,6 @@ class SqlIndexDataset(DatasetBase, ReplaceableBase):
         only dataset indices.
         """
         if self.precompute_seq_to_idx and subset_filter is None:
-            # pyre-ignore
             yield from self._seq_to_indices[seq_name]
         else:
             for _, _, idx in self.sequence_frames_in_order(seq_name, subset_filter):
@@ -836,7 +834,7 @@ class SqlIndexDataset(DatasetBase, ReplaceableBase):
 
         if self.scoped_session:
             stmt_text = str(stmt.compile(compile_kwargs={"literal_binds": True}))
-            with scoped_session(self._session_factory)() as session:  # pyre-ignore
+            with scoped_session(self._session_factory)() as session:
                 frame_no_ts = pd.read_sql_query(stmt_text, session.connection())
         else:
             with self._sql_engine.connect() as connection:

@@ -135,7 +135,6 @@ class LSTMRenderer(BaseRenderer, torch.nn.Module):
                 break
 
             # run the lstm marcher
-            # pyre-fixme[29]: `Union[Tensor, Module]` is not a function.
             state_h, state_c = self._lstm(
                 raymarch_features.view(-1, raymarch_features.shape[-1]),
                 states[-1],

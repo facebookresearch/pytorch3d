@@ -171,7 +171,6 @@ class SRNPixelGenerator(Configurable, torch.nn.Module):
         # Obtain the harmonic embedding of the normalized ray directions.
         # pyre-fixme[29]: `Union[Tensor, Module]` is not a function.
         rays_embedding = self._harmonic_embedding(rays_directions_normed)
-        # pyre-fixme[29]: `Union[Tensor, Module]` is not a function.
         return self._color_layer((features, rays_embedding))
 
     def forward(
@@ -208,7 +207,6 @@ class SRNPixelGenerator(Configurable, torch.nn.Module):
             if camera is None:
                 raise ValueError("Camera must be given if xyz_ray_dir_in_camera_coords")
 
-            # pyre-fixme[58]: `@` is not supported for operand types `Tensor` and
             #  `Union[Tensor, Module]`.
             directions = ray_bundle.directions @ camera.R
         else:
@@ -331,9 +329,7 @@ class SRNRaymarchHyperNet(Configurable, torch.nn.Module):
 @registry.register
 class SRNImplicitFunction(ImplicitFunctionBase, torch.nn.Module):
     latent_dim: int = 0
-    # pyre-fixme[13]: Attribute `raymarch_function` is never initialized.
     raymarch_function: SRNRaymarchFunction
-    # pyre-fixme[13]: Attribute `pixel_generator` is never initialized.
     pixel_generator: SRNPixelGenerator
 
     def __post_init__(self):
@@ -389,9 +385,7 @@ class SRNHyperNetImplicitFunction(ImplicitFunctionBase, torch.nn.Module):
 
     latent_dim_hypernet: int = 0
     latent_dim: int = 0
-    # pyre-fixme[13]: Attribute `hypernet` is never initialized.
     hypernet: SRNRaymarchHyperNet
-    # pyre-fixme[13]: Attribute `pixel_generator` is never initialized.
     pixel_generator: SRNPixelGenerator
 
     def __post_init__(self):

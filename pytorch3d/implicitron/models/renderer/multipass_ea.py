@@ -84,7 +84,6 @@ class MultiPassEmissionAbsorptionRenderer(BaseRenderer, torch.nn.Module):
     """
 
     raymarcher_class_type: str = "EmissionAbsorptionRaymarcher"
-    # pyre-fixme[13]: Attribute `raymarcher` is never initialized.
     raymarcher: RaymarcherBase
 
     n_pts_per_ray_fine_training: int = 64

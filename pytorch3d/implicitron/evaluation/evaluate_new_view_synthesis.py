@@ -321,7 +321,6 @@ def eval_batch(
             # only record depth metrics for the foreground
             _, abs_ = eval_depth(
                 cloned_render["depth_render"],
-                # pyre-fixme[6]: For 2nd param expected `Tensor` but got
                 #  `Optional[Tensor]`.
                 frame_data.depth_map,
                 get_best_scale=True,

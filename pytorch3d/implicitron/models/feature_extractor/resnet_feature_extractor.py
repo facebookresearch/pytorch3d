@@ -220,6 +220,5 @@ class ResNetFeatureExtractor(FeatureExtractorBase):
         if self.feature_rescale != 1.0:
             out_feats = {k: self.feature_rescale * f for k, f in out_feats.items()}
 
-        # pyre-fixme[7]: Incompatible return type, expected `Dict[typing.Any, Tensor]`
         # but got `Dict[typing.Any, float]`
         return out_feats

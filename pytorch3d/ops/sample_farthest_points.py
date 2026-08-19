@@ -168,9 +168,7 @@ def sample_farthest_points_naive(
         sample_idx_batch[0] = selected_idx
 
         # If the pointcloud has fewer than K points then only iterate over the min
-        # pyre-fixme[6]: For 1st param expected `SupportsRichComparisonT` but got
         #  `Tensor`.
-        # pyre-fixme[6]: For 2nd param expected `SupportsRichComparisonT` but got
         #  `Tensor`.
         k_n = min(lengths[n], K[n])
 

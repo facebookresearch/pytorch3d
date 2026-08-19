@@ -207,7 +207,6 @@ class AbstractMaskRaySampler(RaySamplerBase, torch.nn.Module):
         """
         sample_mask = None
         if (
-            # pyre-fixme[29]: `Union[(self: TensorBase, indices: Union[None, slice[An...
             self._sampling_mode[evaluation_mode] == RenderSamplingMode.MASK_SAMPLE
             and mask is not None
         ):
@@ -242,7 +241,6 @@ class AbstractMaskRaySampler(RaySamplerBase, torch.nn.Module):
                 "Heterogeneous ray bundle is not supported for conical frustum computation yet"
             )
         elif self.cast_ray_bundle_as_cone:
-            # pyre-fixme[9]: pixel_hw has type `Tuple[float, float]`; used as
             #  `Tuple[Union[Tensor, Module], Union[Tensor, Module]]`.
             pixel_hw: Tuple[float, float] = (self.pixel_height, self.pixel_width)
             pixel_radii_2d = compute_radii(cameras, ray_bundle.xys[..., :2], pixel_hw)

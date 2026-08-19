@@ -288,7 +288,6 @@ class _OpenGLMachinery:
             bary_coords = []
             zbufs = []
 
-            # pyre-ignore Incompatible parameter type [6]
             for mesh_id, mesh in enumerate(meshes_gl_ndc):
                 pix_to_face, bary_coord, zbuf = self._rasterize_mesh(
                     mesh,
@@ -385,13 +384,11 @@ class _OpenGLMachinery:
 
         # Free GL resources.
         gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, self.fbo)
-        # pyre-fixme[16]: Module `GL_3_0` has no attribute `glDeleteFramebuffers`.
         gl.glDeleteFramebuffers(1, [self.fbo])
         gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, 0)
         del self.fbo
 
         gl.glBindBufferBase(gl.GL_SHADER_STORAGE_BUFFER, 0, self.mesh_buffer_object)
-        # pyre-fixme[16]: Module `GL_1_5` has no attribute `glDeleteBuffers`.
         gl.glDeleteBuffers(1, [self.mesh_buffer_object])
         gl.glBindBufferBase(gl.GL_SHADER_STORAGE_BUFFER, 0, 0)
         del self.mesh_buffer_object
@@ -408,7 +405,6 @@ class _OpenGLMachinery:
             projection matrix: A 3x3 float tensor.
         """
         gl.glUseProgram(self.program)
-        # pyre-fixme[16]: Module `GL_2_0` has no attribute `glUniformMatrix4fv`.
         gl.glUniformMatrix4fv(
             self.perspective_projection_uniform,
             1,

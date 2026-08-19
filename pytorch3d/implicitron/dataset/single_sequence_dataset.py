@@ -99,11 +99,8 @@ class SingleSceneDatasetMapProviderBase(DatasetMapProviderBase):
             testing frame.
     """
 
-    # pyre-fixme[13]: Attribute `base_dir` is never initialized.
     base_dir: str
-    # pyre-fixme[13]: Attribute `object_name` is never initialized.
     object_name: str
-    # pyre-fixme[13]: Attribute `path_manager_factory` is never initialized.
     path_manager_factory: PathManagerFactory
     path_manager_factory_class_type: str = "PathManagerFactory"
     n_known_frames_for_test: Optional[int] = None
@@ -149,7 +146,6 @@ class SingleSceneDatasetMapProviderBase(DatasetMapProviderBase):
             split = np.concatenate([split, train_split])
             frame_types.extend([DATASET_TYPE_KNOWN] * len(train_split))
 
-        # pyre-ignore[28]
         return SingleSceneDataset(
             object_name=self.object_name,
             # pyre-ignore[16]

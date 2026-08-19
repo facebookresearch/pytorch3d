@@ -177,7 +177,6 @@ class IdrFeatureField(ImplicitFunctionBase, torch.nn.Module):
             # pyre-fixme[29]: `Union[(self: TensorBase, indices: Union[None, slice[An...
             x = self.linear_layers[layer_idx](x)
 
-            # pyre-fixme[29]: `Union[(self: TensorBase, other: Union[bool, complex,
             #  float, int, Tensor]) -> Tensor, Module, Tensor]` is not a function.
             if layer_idx < self.num_layers - 2:
                 # pyre-fixme[29]: `Union[Module, Tensor]` is not a function.

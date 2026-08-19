@@ -142,11 +142,9 @@ class VoxelGridImplicitFunction(ImplicitFunctionBase, torch.nn.Module):
     """
 
     # ---- voxel grid for density
-    # pyre-fixme[13]: Attribute `voxel_grid_density` is never initialized.
     voxel_grid_density: VoxelGridModule
 
     # ---- voxel grid for color
-    # pyre-fixme[13]: Attribute `voxel_grid_color` is never initialized.
     voxel_grid_color: VoxelGridModule
 
     # ---- harmonic embeddings density
@@ -162,12 +160,10 @@ class VoxelGridImplicitFunction(ImplicitFunctionBase, torch.nn.Module):
 
     # ---- decoder function for density
     decoder_density_class_type: str = "MLPDecoder"
-    # pyre-fixme[13]: Attribute `decoder_density` is never initialized.
     decoder_density: DecoderFunctionBase
 
     # ---- decoder function for color
     decoder_color_class_type: str = "MLPDecoder"
-    # pyre-fixme[13]: Attribute `decoder_color` is never initialized.
     decoder_color: DecoderFunctionBase
 
     # ---- cuda streams
@@ -190,25 +186,20 @@ class VoxelGridImplicitFunction(ImplicitFunctionBase, torch.nn.Module):
 
     def __post_init__(self) -> None:
         run_auto_creation(self)
-        # pyre-fixme[16]: `VoxelGridImplicitFunction` has no attribute
         #  `voxel_grid_scaffold`.
         self.voxel_grid_scaffold = self._create_voxel_grid_scaffold()
-        # pyre-fixme[16]: `VoxelGridImplicitFunction` has no attribute
         #  `harmonic_embedder_xyz_density`.
         self.harmonic_embedder_xyz_density = HarmonicEmbedding(
             **self.harmonic_embedder_xyz_density_args
         )
-        # pyre-fixme[16]: `VoxelGridImplicitFunction` has no attribute
         #  `harmonic_embedder_xyz_color`.
         self.harmonic_embedder_xyz_color = HarmonicEmbedding(
             **self.harmonic_embedder_xyz_color_args
         )
-        # pyre-fixme[16]: `VoxelGridImplicitFunction` has no attribute
         #  `harmonic_embedder_dir_color`.
         self.harmonic_embedder_dir_color = HarmonicEmbedding(
             **self.harmonic_embedder_dir_color_args
         )
-        # pyre-fixme[16]: `VoxelGridImplicitFunction` has no attribute
         #  `_scaffold_ready`.
         self._scaffold_ready = False
 
@@ -372,7 +363,6 @@ class VoxelGridImplicitFunction(ImplicitFunctionBase, torch.nn.Module):
                 feature dimensionality which `decoder_density` returns
         """
         embeds_density = self.voxel_grid_density(points)
-        # pyre-fixme[29]: `Union[Tensor, Module]` is not a function.
         harmonic_embedding_density = self.harmonic_embedder_xyz_density(embeds_density)
         # shape = [..., density_dim]
         return self.decoder_density(harmonic_embedding_density)
@@ -407,7 +397,6 @@ class VoxelGridImplicitFunction(ImplicitFunctionBase, torch.nn.Module):
         if self.xyz_ray_dir_in_camera_coords:
             if camera is None:
                 raise ValueError("Camera must be given if xyz_ray_dir_in_camera_coords")
-            # pyre-fixme[58]: `@` is not supported for operand types `Tensor` and
             #  `Union[Tensor, Module]`.
             directions = directions @ camera.R
 
@@ -417,13 +406,11 @@ class VoxelGridImplicitFunction(ImplicitFunctionBase, torch.nn.Module):
 
         # ########## embed with the harmonic function ########## #
         # Obtain the harmonic embedding of the voxel grid output.
-        # pyre-fixme[29]: `Union[Tensor, Module]` is not a function.
         harmonic_embedding_color = self.harmonic_embedder_xyz_color(embeds_color)
 
         # Normalize the ray_directions to unit l2 norm.
         rays_directions_normed = torch.nn.functional.normalize(directions, dim=-1)
         # Obtain the harmonic embedding of the normalized ray directions.
-        # pyre-fixme[29]: `Union[Tensor, Module]` is not a function.
         harmonic_embedding_dir = self.harmonic_embedder_dir_color(
             rays_directions_normed
         )
@@ -493,7 +480,6 @@ class VoxelGridImplicitFunction(ImplicitFunctionBase, torch.nn.Module):
             an object inside, else False.
         """
         # find bounding box
-        # pyre-fixme[16]: Item `Tensor` of `Tensor | Module` has no attribute
         #  `get_grid_points`.
         points = self.voxel_grid_scaffold.get_grid_points(epoch=epoch)
         assert self._scaffold_ready, "Scaffold has to be calculated before cropping."
@@ -529,7 +515,6 @@ class VoxelGridImplicitFunction(ImplicitFunctionBase, torch.nn.Module):
         """
 
         planes = []
-        # pyre-fixme[16]: Item `Tensor` of `Tensor | Module` has no attribute
         #  `get_grid_points`.
         points = self.voxel_grid_scaffold.get_grid_points(epoch=epoch)
 
@@ -550,9 +535,7 @@ class VoxelGridImplicitFunction(ImplicitFunctionBase, torch.nn.Module):
             stride=1,
         )
         occupancy_cube = density_cube > self.scaffold_empty_space_threshold
-        # pyre-fixme[16]: Item `Tensor` of `Tensor | Module` has no attribute `params`.
         self.voxel_grid_scaffold.params["voxel_grid"] = occupancy_cube.float()
-        # pyre-fixme[16]: `VoxelGridImplicitFunction` has no attribute
         #  `_scaffold_ready`.
         self._scaffold_ready = True
 

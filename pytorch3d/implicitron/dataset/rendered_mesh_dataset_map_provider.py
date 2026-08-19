@@ -76,12 +76,10 @@ class RenderedMeshDatasetMapProvider(DatasetMapProviderBase):
     resolution: int = 128
     use_point_light: bool = True
     gpu_idx: Optional[int] = 0
-    # pyre-fixme[13]: Attribute `path_manager_factory` is never initialized.
     path_manager_factory: PathManagerFactory
     path_manager_factory_class_type: str = "PathManagerFactory"
 
     def get_dataset_map(self) -> DatasetMap:
-        # pyre-ignore[16]
         return DatasetMap(train=self.train_dataset, val=None, test=None)
 
     def get_all_train_cameras(self) -> CamerasBase:
@@ -117,10 +115,8 @@ class RenderedMeshDatasetMapProvider(DatasetMapProviderBase):
             device=device,
             use_point_light=self.use_point_light,
         )
-        # pyre-ignore[16]
         self.poses = poses.cpu()
-        # pyre-ignore[16]
-        self.train_dataset = SingleSceneDataset(  # pyre-ignore[28]
+        self.train_dataset = SingleSceneDataset(
             # pyrefly: ignore [unexpected-keyword]
             object_name="cow",
             # pyrefly: ignore [unexpected-keyword]

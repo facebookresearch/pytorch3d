@@ -117,16 +117,12 @@ class Experiment(Configurable):
             will be saved here.
     """
 
-    # pyre-fixme[13]: Attribute `data_source` is never initialized.
     data_source: DataSourceBase
     data_source_class_type: str = "ImplicitronDataSource"
-    # pyre-fixme[13]: Attribute `model_factory` is never initialized.
     model_factory: ModelFactoryBase
     model_factory_class_type: str = "ImplicitronModelFactory"
-    # pyre-fixme[13]: Attribute `optimizer_factory` is never initialized.
     optimizer_factory: OptimizerFactoryBase
     optimizer_factory_class_type: str = "ImplicitronOptimizerFactory"
-    # pyre-fixme[13]: Attribute `training_loop` is never initialized.
     training_loop: TrainingLoopBase
     training_loop_class_type: str = "ImplicitronTrainingLoop"
 

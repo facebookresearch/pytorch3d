@@ -62,7 +62,6 @@ def rasterize_sparse_ray_bundle(
 
         max_size = torch.max(camera_counts).item()
         features_depth_ras = packed_to_padded(
-            # pyrefly: ignore [bad-argument-type]
             features_depth_ras[:, 0],
             first_idxs,
             # pyrefly: ignore [bad-argument-type]

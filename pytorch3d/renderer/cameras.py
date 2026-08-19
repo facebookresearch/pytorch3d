@@ -230,9 +230,7 @@ class CamerasBase(TensorProperties):
             a Transform3d object which represents a batch of transforms
             of shape (N, 3, 3)
         """
-        # pyre-fixme[16]: `CamerasBase` has no attribute `R`.
         self.R: torch.Tensor = kwargs.get("R", self.R)
-        # pyre-fixme[16]: `CamerasBase` has no attribute `T`.
         self.T: torch.Tensor = kwargs.get("T", self.T)
         world_to_view_transform = self.get_world_to_view_transform(R=self.R, T=self.T)
         view_to_proj_transform = self.get_projection_transform(**kwargs)
@@ -409,9 +407,7 @@ class CamerasBase(TensorProperties):
         kwargs = {}
 
         tensor_types = {
-            # pyre-fixme[16]: Module `cuda` has no attribute `BoolTensor`.
             "bool": (torch.BoolTensor, torch.cuda.BoolTensor),
-            # pyre-fixme[16]: Module `cuda` has no attribute `LongTensor`.
             "long": (torch.LongTensor, torch.cuda.LongTensor),
         }
         if not isinstance(
@@ -429,13 +425,10 @@ class CamerasBase(TensorProperties):
             index = [index]
 
         if isinstance(index, tensor_types["bool"]):
-            # pyre-fixme[16]: Item `List` of `Union[List[int], BoolTensor,
             #  LongTensor]` has no attribute `ndim`.
-            # pyre-fixme[16]: Item `List` of `Union[List[int], BoolTensor,
             #  LongTensor]` has no attribute `shape`.
             if index.ndim != 1 or index.shape[0] != len(self):
                 raise ValueError(
-                    # pyre-fixme[16]: Item `List` of `Union[List[int], BoolTensor,
                     #  LongTensor]` has no attribute `shape`.
                     f"Boolean index of shape {index.shape} does not match cameras"
                 )
@@ -1179,7 +1172,6 @@ class PerspectiveCameras(CamerasBase):
 
         unprojection_transform = to_camera_transform.inverse()
         xy_inv_depth = torch.cat(
-            # pyre-fixme[6]: For 1st argument expected `Union[List[Tensor],
             #  tuple[Tensor, ...]]` but got `Tuple[Tensor, float]`.
             (xy_depth[..., :2], torch.reciprocal(xy_depth[..., 2:3])),
             dim=-1,  # type: ignore
@@ -1750,7 +1742,7 @@ def look_at_view_transform(
                 elev,  # pyrefly: ignore [bad-argument-type]
                 azim,  # pyrefly: ignore [bad-argument-type]
                 degrees=degrees,
-                device=device,  # pyrefly: ignore [bad-argument-type]
+                device=device,
             )
             + at
         )

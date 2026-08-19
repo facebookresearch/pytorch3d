@@ -229,10 +229,8 @@ class MLPWithInputSkips(Configurable, torch.nn.Module):
             # if the skip tensor is None, we use `x` instead.
             z = x
         skipi = 0
-        # pyre-fixme[6]: For 1st argument expected `Iterable[_T]` but got
         #  `Union[Tensor, Module]`.
         for li, layer in enumerate(self.mlp):
-            # pyre-fixme[58]: `in` is not supported for right operand type
             #  `Union[Tensor, Module]`.
             if li in self._input_skips:
                 if self._skip_affine_trans:
@@ -273,7 +271,6 @@ class MLPDecoder(DecoderFunctionBase):
 
     input_dim: int = 3
     param_groups: Dict[str, str] = field(default_factory=lambda: {})
-    # pyre-fixme[13]: Attribute `network` is never initialized.
     network: MLPWithInputSkips
 
     def __post_init__(self):
@@ -351,7 +348,6 @@ class TransformerWithInputSkips(torch.nn.Module):
         self.last = torch.nn.Linear(dimout, output_dim)
         _xavier_init(self.last)
 
-        # pyre-fixme[8]: Attribute has type `Tuple[ModuleList, ModuleList]`; used as
         #  `ModuleList`.
         self.layers_pool, self.layers_ray = (
             torch.nn.ModuleList(layers_pool),

@@ -496,7 +496,6 @@ def clip_faces(
 
     # Solve for the points p4, p5 that intersect the clipping plane
     p, p_barycentric = _find_verts_intersecting_clipping_plane(
-        # pyrefly: ignore [bad-argument-type]
         faces_case3,
         p1_face_ind,
         # pyrefly: ignore [bad-argument-type]
@@ -540,12 +539,10 @@ def clip_faces(
     faces_case4 = face_verts_unclipped[case4_unclipped_idx]
 
     # index (0, 1, or 2) of the vertex behind the clipping plane
-    # pyre-fixme[61]: `faces_clipped_verts` is undefined, or not always defined.
     p1_face_ind = torch.where(faces_clipped_verts[case4_unclipped_idx])[1]
 
     # Solve for the points p4, p5 that intersect the clipping plane
     p, p_barycentric = _find_verts_intersecting_clipping_plane(
-        # pyrefly: ignore [bad-argument-type]
         faces_case4,
         p1_face_ind,
         # pyrefly: ignore [bad-argument-type]

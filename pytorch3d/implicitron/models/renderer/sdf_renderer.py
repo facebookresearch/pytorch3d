@@ -27,7 +27,6 @@ from .rgb_net import RayNormalColoringNetwork
 class SignedDistanceFunctionRenderer(BaseRenderer, torch.nn.Module):
     render_features_dimensions: int = 3
     object_bounding_sphere: float = 1.0
-    # pyre-fixme[13]: Attribute `ray_tracer` is never initialized.
     ray_tracer: RayTracing
     ray_normal_coloring_network_args: DictConfig = get_default_args_field(
         RayNormalColoringNetwork
@@ -208,7 +207,6 @@ class SignedDistanceFunctionRenderer(BaseRenderer, torch.nn.Module):
             ]
             normals_full.view(-1, 3)[surface_mask] = normals
             render_full.view(-1, self.render_features_dimensions)[surface_mask] = (
-                # pyre-fixme[29]: `Union[Tensor, Module]` is not a function.
                 self._rgb_network(
                     features,
                     differentiable_surface_points[None],

@@ -42,9 +42,7 @@ class RayPointRefiner(Configurable, torch.nn.Module):
             for Anti-Aliasing Neural Radiance Fields." ICCV 2021.
     """
 
-    # pyre-fixme[13]: Attribute `n_pts_per_ray` is never initialized.
     n_pts_per_ray: int
-    # pyre-fixme[13]: Attribute `random_sampling` is never initialized.
     random_sampling: bool
     add_input_samples: bool = True
     blurpool_weights: bool = False

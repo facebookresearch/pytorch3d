@@ -36,7 +36,6 @@ class TrainingLoopBase(ReplaceableBase):
         evaluator: An EvaluatorBase instance, used to evaluate training results.
     """
 
-    # pyre-fixme[13]: Attribute `evaluator` is never initialized.
     evaluator: Optional[EvaluatorBase]
     evaluator_class_type: Optional[str] = "ImplicitronEvaluator"
 
@@ -380,7 +379,6 @@ class ImplicitronTrainingLoop(TrainingLoopBase):
 
             # update the stats logger
             stats.update(preds, time_start=t_start, stat_set=trainmode)
-            # pyre-ignore [16]
             assert stats.it[trainmode] == it, "inconsistent stat iteration number!"
 
             # print textual status update

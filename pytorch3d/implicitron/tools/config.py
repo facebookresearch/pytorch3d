@@ -312,7 +312,6 @@ class _Registry:
             raise ValueError(
                 f"{name} resolves to {result} which does not subclass {base_class_wanted}"
             )
-        # pyre-ignore[7]
         return result
 
     def get_all(

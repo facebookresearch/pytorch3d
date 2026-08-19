@@ -65,7 +65,6 @@ class SequenceAutodecoder(GlobalEncoderBase, torch.nn.Module):
     of the frame's sequence identifier.
     """
 
-    # pyre-fixme[13]: Attribute `autodecoder` is never initialized.
     autodecoder: Autodecoder
 
     def __post_init__(self):

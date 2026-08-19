@@ -297,7 +297,6 @@ class FrameData(Mapping[str, Any]):
         depth_map = self.depth_map
         if depth_map is not None:
             clamp_bbox_xyxy_depth = rescale_bbox(
-                # pyrefly: ignore [bad-argument-type]
                 clamp_bbox_xyxy,
                 # pyrefly: ignore [bad-argument-type]
                 tuple(depth_map.shape[-2:]),
@@ -312,7 +311,6 @@ class FrameData(Mapping[str, Any]):
         depth_mask = self.depth_mask
         if depth_mask is not None:
             clamp_bbox_xyxy_depth = rescale_bbox(
-                # pyrefly: ignore [bad-argument-type]
                 clamp_bbox_xyxy,
                 # pyrefly: ignore [bad-argument-type]
                 tuple(depth_mask.shape[-2:]),

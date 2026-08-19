@@ -236,7 +236,6 @@ class MultinomialRaysampler(torch.nn.Module):
                 # is not batched and does not support partial permutation
                 _, width, height, _ = xy_grid.shape
                 weights = xy_grid.new_ones(batch_size, width * height)
-            # pyre-fixme[6]: For 2nd param expected `int` but got `Union[bool,
             #  float, int]`.
             rays_idx = _safe_multinomial(weights, n_rays_per_image)[..., None].expand(
                 -1, -1, 2

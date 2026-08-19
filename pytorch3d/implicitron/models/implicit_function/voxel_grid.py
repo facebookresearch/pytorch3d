@@ -844,7 +844,6 @@ class VoxelGridModule(Configurable, torch.nn.Module):
     """
 
     voxel_grid_class_type: str = "FullResolutionVoxelGrid"
-    # pyre-fixme[13]: Attribute `voxel_grid` is never initialized.
     voxel_grid: VoxelGridBase
 
     extents: Tuple[float, float, float] = (2.0, 2.0, 2.0)
@@ -907,7 +906,6 @@ class VoxelGridModule(Configurable, torch.nn.Module):
         else:
             # Torch Module to hold parameters since they can only be registered
             # at object level.
-            # pyrefly: ignore [bad-assignment]
             self.params = _RegistratedBufferDict(vars(params))
 
     @staticmethod
@@ -996,7 +994,6 @@ class VoxelGridModule(Configurable, torch.nn.Module):
         """
         '''
         new_params = {}
-        # pyre-fixme[29]: `Union[(self: Tensor) -> Any, Tensor, Module]` is not a
         #  function.
         for name in self.params:
             key = prefix + "params." + name
@@ -1035,7 +1032,6 @@ class VoxelGridModule(Configurable, torch.nn.Module):
         grid_values, _ = self.voxel_grid.change_resolution(
             new_grid_values, grid_values_with_wanted_resolution=old_grid_values
         )
-        # pyre-fixme[16]: `VoxelGridModule` has no attribute `params`.
         self.params = torch.nn.ParameterDict(
             {
                 k: torch.nn.Parameter(val)

@@ -471,7 +471,6 @@ class Meshes:
             ):
                 raise ValueError("Vertex normals tensor has incorrect dimensions.")
             self._verts_normals_packed = struct_utils.padded_to_packed(
-                # pyrefly: ignore [missing-attribute]
                 verts_normals,
                 # pyrefly: ignore [missing-attribute]
                 split_size=self._num_verts_per_mesh.tolist(),

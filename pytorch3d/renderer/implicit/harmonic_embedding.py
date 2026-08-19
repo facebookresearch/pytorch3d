@@ -183,7 +183,6 @@ class HarmonicEmbedding(torch.nn.Module):
         so the input might be xyz.
         """
         return self.get_output_dim_static(
-            # pyrefly: ignore [bad-argument-type]
             input_dims,
             # pyrefly: ignore [bad-argument-type]
             len(self._frequencies),

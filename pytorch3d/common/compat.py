@@ -23,7 +23,6 @@ def meshgrid_ij(
     Like torch.meshgrid was before PyTorch 1.10.0, i.e. with indexing set to ij
     """
     if (
-        # pyre-fixme[16]: Callable `meshgrid` has no attribute `__kwdefaults__`.
         torch.meshgrid.__kwdefaults__ is not None
         and "indexing" in torch.meshgrid.__kwdefaults__
     ):

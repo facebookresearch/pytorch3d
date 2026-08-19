@@ -453,7 +453,6 @@ class TexturesAtlas(TexturesBase):
                 msg = "Expected atlas to be of shape (N, F, R, R, C); got %r"
                 raise ValueError(msg % repr(atlas.ndim))
             self._atlas_padded = atlas
-            # pyrefly: ignore [bad-assignment]
             self._atlas_list = None
             self.device = atlas.device
 
@@ -537,7 +536,6 @@ class TexturesAtlas(TexturesBase):
                 self._atlas_padded = [
                     torch.empty((0, 0, 0, 3), dtype=torch.float32, device=self.device)
                 ] * self._N
-            # pyrefly: ignore [bad-assignment]
             self._atlas_list = _padded_to_list_wrapper(
                 # pyrefly: ignore [bad-argument-type]
                 self._atlas_padded,
@@ -803,7 +801,6 @@ class TexturesUV(TexturesBase):
                 msg = "Expected faces_uvs to be of shape (N, F, 3); got %r"
                 raise ValueError(msg % repr(faces_uvs.shape))
             self._faces_uvs_padded = faces_uvs
-            # pyrefly: ignore [bad-assignment]
             self._faces_uvs_list = None
             self.device = faces_uvs.device
 
@@ -840,7 +837,6 @@ class TexturesUV(TexturesBase):
                 msg = "Expected verts_uvs to be of shape (N, V, 2); got %r"
                 raise ValueError(msg % repr(verts_uvs.shape))
             self._verts_uvs_padded = verts_uvs
-            # pyrefly: ignore [bad-assignment]
             self._verts_uvs_list = None
 
             if verts_uvs.device != self.device:
@@ -853,7 +849,6 @@ class TexturesUV(TexturesBase):
         if isinstance(maps, (list, tuple)):
             self._maps_list = maps
         else:
-            # pyrefly: ignore [bad-assignment]
             self._maps_list = None
         self._maps_padded = self._format_maps_padded(maps)
 
@@ -1099,7 +1094,6 @@ class TexturesUV(TexturesBase):
                     torch.empty((0, 3), dtype=torch.float32, device=self.device)
                 ] * self._N
             else:
-                # pyrefly: ignore [bad-assignment]
                 self._faces_uvs_list = padded_to_list(
                     # pyrefly: ignore [bad-argument-type]
                     self._faces_uvs_padded,
@@ -1132,7 +1126,7 @@ class TexturesUV(TexturesBase):
                 # The number of vertices in the mesh and in verts_uvs can differ
                 # e.g. if a vertex is shared between 3 faces, it can
                 # have up to 3 different uv coordinates.
-                # pyrefly: ignore [bad-assignment, missing-attribute]
+                # pyrefly: ignore [missing-attribute]
                 self._verts_uvs_list = list(self._verts_uvs_padded.unbind(0))
         # pyrefly: ignore [bad-return]
         return self._verts_uvs_list
@@ -1755,7 +1749,6 @@ class TexturesVertex(TexturesBase):
                 msg = "Expected verts_features to be of shape (N, V, C); got %r"
                 raise ValueError(msg % repr(verts_features.shape))
             self._verts_features_padded = verts_features
-            # pyrefly: ignore [bad-assignment]
             self._verts_features_list = None
             self.device = verts_features.device
 
@@ -1832,7 +1825,6 @@ class TexturesVertex(TexturesBase):
                     torch.empty((0, 3), dtype=torch.float32, device=self.device)
                 ] * self._N
             else:
-                # pyrefly: ignore [bad-assignment]
                 self._verts_features_list = padded_to_list(
                     # pyrefly: ignore [bad-argument-type]
                     self._verts_features_padded,

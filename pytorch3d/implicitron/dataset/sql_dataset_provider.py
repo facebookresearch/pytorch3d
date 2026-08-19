@@ -193,9 +193,9 @@ class SqlIndexDatasetMapProvider(DatasetMapProviderBase):
 
     # this is a mould that is never constructed, used to build self._dataset_map values
     dataset_class_type: str = "SqlIndexDataset"
-    dataset: SqlIndexDataset  # pyre-ignore [13]
+    dataset: SqlIndexDataset
 
-    path_manager_factory: PathManagerFactory  # pyre-ignore [13]
+    path_manager_factory: PathManagerFactory
     path_manager_factory_class_type: str = "PathManagerFactory"
 
     def __post_init__(self):

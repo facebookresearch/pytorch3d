@@ -61,7 +61,6 @@ def _is_heterogeneous_ray_bundle(struct: Union[List[Struct], Struct]) -> bool:
         True if something is a HeterogeneousRayBundle or ImplicitronRayBundle
         and cant be reduced to RayBundle else False
     """
-    # pyre-ignore[16]
     return hasattr(struct, "camera_counts") and struct.camera_counts is not None
 
 
@@ -586,15 +585,11 @@ def _add_struct_from_batch(
     if isinstance(batched_struct, CamerasBase):
         # we can't index directly into camera batches
         R, T = batched_struct.R, batched_struct.T
-        # pyre-fixme[6]: For 1st argument expected
         #  `pyre_extensions.PyreReadOnly[Sized]` but got `Union[Tensor, Module]`.
         r_idx = min(scene_num, len(R) - 1)
-        # pyre-fixme[6]: For 1st argument expected
         #  `pyre_extensions.PyreReadOnly[Sized]` but got `Union[Tensor, Module]`.
         t_idx = min(scene_num, len(T) - 1)
-        # pyre-fixme[29]: `Union[(self: TensorBase, indices: Union[None, slice[Any, A...
         R = R[r_idx].unsqueeze(0)
-        # pyre-fixme[29]: `Union[(self: TensorBase, indices: Union[None, slice[Any, A...
         T = T[t_idx].unsqueeze(0)
         struct = CamerasBase(device=batched_struct.device, R=R, T=T)
     elif _is_ray_bundle(batched_struct) and not _is_heterogeneous_ray_bundle(
@@ -616,7 +611,6 @@ def _add_struct_from_batch(
         struct = RayBundle(
             **{
                 attr: getattr(batched_struct, attr)[
-                    # pyre-ignore[16]
                     first_idxs[struct_idx] : first_idxs[struct_idx + 1]
                 ]
                 for attr in ["origins", "directions", "lengths", "xys"]

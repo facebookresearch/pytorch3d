@@ -49,7 +49,6 @@ def get_stats_path(fl, eval_results: bool = False) -> str:
                 break
     else:
         flstats = "%s_stats.jgz" % fl
-    # pyre-fixme[61]: `flstats` is undefined, or not always defined.
     return flstats
 
 
@@ -148,15 +147,12 @@ def find_last_checkpoint(
         )
         if len(fls) > 0:
             break
-    # pyre-fixme[61]: `fls` is undefined, or not always defined.
     if len(fls) == 0:
         fl = None
     else:
         if all_checkpoints:
-            # pyre-fixme[61]: `fls` is undefined, or not always defined.
             fl = [f[0 : -len(ext)] + ".pth" for f in fls]
         else:
-            # pyre-fixme[61]: `ext` is undefined, or not always defined.
             fl = fls[-1][0 : -len(ext)] + ".pth"
 
     return fl
