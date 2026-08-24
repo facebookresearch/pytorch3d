@@ -10,7 +10,6 @@ from typing import Any, List, Optional, Tuple
 
 import torch
 
-
 """
 Mesh clipping is done before rasterization and is implemented using 4 cases
 (these will be referred to throughout the functions below)
@@ -187,12 +186,12 @@ def _get_culled_faces(face_verts: torch.Tensor, frustum: ClipFrustum) -> torch.T
         # If clip_value is None then don't clip along that plane
         if frustum.cull and clip_value is not None:
             if op == "<":
-                verts_clipped = face_verts[:, axis] < clip_value
+                verts_clipped = face_verts[:, :, axis] < clip_value
             else:
-                verts_clipped = face_verts[:, axis] > clip_value
+                verts_clipped = face_verts[:, :, axis] > clip_value
 
             # If all verts are clipped then face is outside the frustum
-            faces_culled |= verts_clipped.sum(1) == 3
+            faces_culled |= verts_clipped.all(dim=1)
 
     return faces_culled
 

@@ -31,6 +31,7 @@ from pytorch3d.renderer.mesh import (
     convert_clipped_rasterization_to_original_faces,
     TexturesUV,
 )
+from pytorch3d.renderer.mesh.clip import _get_culled_faces
 from pytorch3d.renderer.mesh.rasterize_meshes import _RasterizeFaceVerts
 from pytorch3d.renderer.mesh.rasterizer import MeshRasterizer, RasterizationSettings
 from pytorch3d.renderer.mesh.renderer import MeshRenderer
@@ -40,7 +41,6 @@ from pytorch3d.structures.meshes import Meshes
 from pytorch3d.utils import torus
 
 from .common_testing import get_tests_dir, load_rgb_image, TestCaseMixin
-
 
 # If DEBUG=True, save out images generated in the tests for debugging.
 # All saved images have prefix DEBUG_
@@ -193,6 +193,35 @@ class TestRenderMeshesClipping(TestCaseMixin, unittest.TestCase):
             face_verts, mesh_to_face_first_idx, num_faces_per_mesh, frustum
         )
         return clipped_faces
+
+    def test_cull_faces_uses_coordinate_axis(self):
+        planes_and_faces = (
+            ({"left": -1.0}, [-2.0, 0.0, 1.0]),
+            ({"right": 1.0}, [2.0, 0.0, 1.0]),
+            ({"top": -1.0}, [0.0, -2.0, 1.0]),
+            ({"bottom": 1.0}, [0.0, 2.0, 1.0]),
+            ({"znear": 0.0}, [0.0, 0.0, -1.0]),
+            ({"zfar": 2.0}, [0.0, 0.0, 3.0]),
+        )
+        for frustum_kwargs, vertex in planes_and_faces:
+            with self.subTest(frustum_kwargs=frustum_kwargs):
+                face_verts = torch.tensor([[vertex, vertex, vertex]])
+                faces_culled = _get_culled_faces(
+                    face_verts, ClipFrustum(**frustum_kwargs)
+                )
+                self.assertEqual(faces_culled, torch.tensor([True]))
+
+        # A face intersecting the left plane must remain visible regardless of
+        # which of its vertices is first in the face.
+        face_verts = torch.tensor(
+            [[[-2.0, -2.0, -2.0], [0.0, 0.0, 1.0], [0.0, 0.0, 1.0]]]
+        )
+        for order in ([0, 1, 2], [1, 2, 0], [2, 0, 1]):
+            with self.subTest(order=order):
+                faces_culled = _get_culled_faces(
+                    face_verts[:, order], ClipFrustum(left=-1.0)
+                )
+                self.assertEqual(faces_culled, torch.tensor([False]))
 
     def test_grad(self):
         """
