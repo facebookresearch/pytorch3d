@@ -159,6 +159,38 @@ class TestICP(TestCaseMixin, unittest.TestCase):
                     self.assertClose(s_init, s, atol=atol)
                     self.assertClose(Xt_init, Xt, atol=atol)
 
+    @staticmethod
+    def _init_heterogeneous_icp_problem(batch_size, max_n_points, device):
+        """
+        Generate a batch of randomly-sized point clouds `X` together with
+        `Y`, a rigidly moved copy of each cloud with a few extra points
+        added, so that the clouds in `Y` have different sizes from those
+        in `X`.
+
+        `Y` deliberately covers the whole of `X`. Two independent random
+        clouds instead make the problem ill-posed: with `estimate_scale`,
+        ICP then usually collapses `X` onto a single point of `Y`, driving
+        the scale to ~1e-16 and the rmse to zero. That solution fits
+        perfectly but leaves the rotation completely unconstrained, so two
+        runs of the same algorithm may return wildly different rotations
+        and can't be compared with each other.
+        """
+        n_points = torch.randint(
+            low=6, high=max_n_points, size=(batch_size,), device=device
+        )
+        X_list = [torch.randn(int(n), 3, device=device) for n in n_points]
+        R = rotation_conversions.axis_angle_to_matrix(
+            0.15 * torch.randn(batch_size, 3, device=device)
+        )
+        T = 0.1 * torch.randn(batch_size, 3, device=device)
+        Y_list = []
+        for i, X in enumerate(X_list):
+            n_extra = int(torch.randint(low=1, high=5, size=(), device=device))
+            covered = torch.cat([X, torch.randn(n_extra, 3, device=device)], dim=0)
+            Y_list.append(covered @ R[i] + T[i] + 0.01 * torch.randn_like(covered))
+
+        return Pointclouds(X_list), Pointclouds(Y_list)
+
     def test_heterogeneous_inputs(self, batch_size=7):
         """
         Tests whether we get the same result when running ICP on
@@ -171,17 +203,9 @@ class TestICP(TestCaseMixin, unittest.TestCase):
         for estimate_scale in (True, False):
             for max_n_points in (10, 30, 100):
                 # initialize ground truth point clouds
-                X_pcl, Y_pcl = [
-                    TestCorrespondingPointsAlignment.init_point_cloud(
-                        batch_size=batch_size,
-                        n_points=max_n_points,
-                        dim=3,
-                        device=device,
-                        use_pointclouds=True,
-                        random_pcl_size=True,
-                    )
-                    for _ in range(2)
-                ]
+                X_pcl, Y_pcl = self._init_heterogeneous_icp_problem(
+                    batch_size, max_n_points, device
+                )
 
                 # get the padded versions and their num of points
                 X_padded = X_pcl.points_padded()
@@ -227,8 +251,11 @@ class TestICP(TestCaseMixin, unittest.TestCase):
                     torch.cat([x.RTs[i] for x in icp_results], dim=0) for i in range(3)
                 ]
 
-                # check that both sets of transforms are the same
-                atol = 1e-5
+                # check that both sets of transforms are the same.
+                # The two runs sum over a different number of points - the
+                # batched one includes the (zero-weighted) padding - so they
+                # round differently, by up to ~1e-5 on the transformed clouds.
+                atol = 1e-4
                 self.assertClose(R_pcl, R, atol=atol)
                 self.assertClose(T_pcl, T, atol=atol)
                 self.assertClose(s_pcl, s, atol=atol)
