@@ -182,17 +182,38 @@ def _get_culled_faces(face_verts: torch.Tensor, frustum: ClipFrustum) -> torch.T
     faces_culled = torch.zeros(
         [face_verts.shape[0]], dtype=torch.bool, device=face_verts.device
     )
+    if not frustum.cull:
+        return faces_culled
+
+    # With a perspective camera the xy coordinates are in NDC space, where the
+    # perspective divide mirrors vertices behind the camera through the origin.
+    # A face with such a vertex can therefore have all 3 xy coordinates outside
+    # the same plane while the part of it in front of the camera still crosses
+    # the frustum, so only faces lying entirely in front of the clipping plane
+    # may be culled on the x and y axes. The z axis uses world coordinates and
+    # is unaffected.
+    xy_cullable = None
+    if frustum.perspective_correct:
+        if frustum.z_clip_value is not None:
+            verts_in_front = face_verts[:, :, 2] >= frustum.z_clip_value
+        else:
+            verts_in_front = face_verts[:, :, 2] > 0
+        xy_cullable = verts_in_front.all(dim=1)
+
     for plane in clipping_planes:
         clip_value, axis, op = plane
         # If clip_value is None then don't clip along that plane
-        if frustum.cull and clip_value is not None:
+        if clip_value is not None:
             if op == "<":
-                verts_clipped = face_verts[:, axis] < clip_value
+                verts_clipped = face_verts[:, :, axis] < clip_value
             else:
-                verts_clipped = face_verts[:, axis] > clip_value
+                verts_clipped = face_verts[:, :, axis] > clip_value
 
             # If all verts are clipped then face is outside the frustum
-            faces_culled |= verts_clipped.sum(1) == 3
+            plane_culled = verts_clipped.all(dim=1)
+            if axis != 2 and xy_cullable is not None:
+                plane_culled &= xy_cullable
+            faces_culled |= plane_culled
 
     return faces_culled
 

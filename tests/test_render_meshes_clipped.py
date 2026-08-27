@@ -31,6 +31,7 @@ from pytorch3d.renderer.mesh import (
     convert_clipped_rasterization_to_original_faces,
     TexturesUV,
 )
+from pytorch3d.renderer.mesh.clip import _get_culled_faces
 from pytorch3d.renderer.mesh.rasterize_meshes import _RasterizeFaceVerts
 from pytorch3d.renderer.mesh.rasterizer import MeshRasterizer, RasterizationSettings
 from pytorch3d.renderer.mesh.renderer import MeshRenderer
@@ -193,6 +194,77 @@ class TestRenderMeshesClipping(TestCaseMixin, unittest.TestCase):
             face_verts, mesh_to_face_first_idx, num_faces_per_mesh, frustum
         )
         return clipped_faces
+
+    def test_cull_faces_uses_coordinate_axis(self):
+        """
+        A face is culled when all 3 of its vertices are outside the same
+        clipping plane, not when one vertex is outside it on all 3 axes.
+        """
+        planes_and_faces = (
+            ({"left": -1.0}, [-2.0, 0.0, 1.0]),
+            ({"right": 1.0}, [2.0, 0.0, 1.0]),
+            ({"top": -1.0}, [0.0, -2.0, 1.0]),
+            ({"bottom": 1.0}, [0.0, 2.0, 1.0]),
+            ({"znear": 0.0}, [0.0, 0.0, -1.0]),
+            ({"zfar": 2.0}, [0.0, 0.0, 3.0]),
+        )
+        for frustum_kwargs, vertex in planes_and_faces:
+            with self.subTest(frustum_kwargs=frustum_kwargs):
+                face_verts = torch.tensor([[vertex, vertex, vertex]])
+                faces_culled = _get_culled_faces(
+                    face_verts, ClipFrustum(**frustum_kwargs)
+                )
+                self.assertTrue(faces_culled.item())
+
+        # A face intersecting the left plane must remain visible regardless of
+        # which of its vertices is first in the face.
+        face_verts = torch.tensor(
+            [[[-2.0, -2.0, -2.0], [0.0, 0.0, 1.0], [0.0, 0.0, 1.0]]]
+        )
+        for order in ([0, 1, 2], [1, 2, 0], [2, 0, 1]):
+            with self.subTest(order=order):
+                faces_culled = _get_culled_faces(
+                    face_verts[:, order], ClipFrustum(left=-1.0)
+                )
+                self.assertFalse(faces_culled.item())
+
+    def test_cull_faces_straddling_perspective_camera(self):
+        """
+        The perspective divide mirrors vertices behind the camera through the
+        origin, so a face straddling the camera plane can have all 3 of its
+        projected vertices outside the same plane while the part of it in front
+        of the camera still crosses the frustum. Such faces must not be culled
+        on the x and y axes.
+        """
+        # xy are in NDC and z is in world coordinates. Only the first vertex is
+        # in front of the camera, and the edges joining it to the other two
+        # cross the frustum before reaching z = 0.
+        straddling = torch.tensor(
+            [[[-1.1, 0.0, 1.0], [-100.0, 0.0, -1.0], [-100.0, 0.1, -1.0]]]
+        )
+        # The same projected face with every vertex in front of the camera is
+        # genuinely outside the left plane.
+        in_front = straddling.clone()
+        in_front[:, :, 2] = 1.0
+
+        for frustum_kwargs in ({}, {"z_clip_value": 1e-2}):
+            with self.subTest(frustum_kwargs=frustum_kwargs):
+                frustum = ClipFrustum(
+                    left=-1.0, perspective_correct=True, **frustum_kwargs
+                )
+                self.assertFalse(_get_culled_faces(straddling, frustum).item())
+                self.assertTrue(_get_culled_faces(in_front, frustum).item())
+
+        # An orthographic projection leaves the xy coordinates of vertices
+        # behind the camera usable, so there the face is culled.
+        frustum = ClipFrustum(left=-1.0, perspective_correct=False)
+        self.assertTrue(_get_culled_faces(straddling, frustum).item())
+
+        # Culling on the z axis uses world coordinates and is unaffected.
+        behind = straddling.clone()
+        behind[:, :, 2] = -1.0
+        frustum = ClipFrustum(znear=0.0, perspective_correct=True)
+        self.assertTrue(_get_culled_faces(behind, frustum).item())
 
     def test_grad(self):
         """
