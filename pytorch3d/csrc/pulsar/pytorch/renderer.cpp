@@ -11,6 +11,7 @@
 #include "./util.h"
 
 #ifdef WITH_CUDA
+#include <c10/cuda/CUDAException.h>
 #include <c10/cuda/CUDAGuard.h>
 #endif
 
@@ -106,10 +107,10 @@ void Renderer::ensure_on_device(torch::Device device, bool /*non_blocking*/) {
     LOG_IF(INFO, PULSAR_LOG_INIT)
         << "Transferring render buffers between devices.";
     int prev_active;
-    cudaGetDevice(&prev_active);
+    C10_CUDA_CHECK(cudaGetDevice(&prev_active));
     if (this->device_type == c10::DeviceType::CUDA) {
       LOG_IF(INFO, PULSAR_LOG_INIT) << "  Destructing on CUDA.";
-      cudaSetDevice(this->device_index);
+      C10_CUDA_CHECK(cudaSetDevice(this->device_index));
       for (auto& nrend : this->renderer_vec) {
         PRE::destruct<true>(&nrend);
       }
@@ -121,7 +122,7 @@ void Renderer::ensure_on_device(torch::Device device, bool /*non_blocking*/) {
     }
     if (device.type() == c10::DeviceType::CUDA) {
       LOG_IF(INFO, PULSAR_LOG_INIT) << "  Constructing on CUDA.";
-      cudaSetDevice(device.index());
+      C10_CUDA_CHECK(cudaSetDevice(device.index()));
       for (auto& nrend : this->renderer_vec) {
         PRE::construct<true>(
             &nrend,
@@ -149,7 +150,7 @@ void Renderer::ensure_on_device(torch::Device device, bool /*non_blocking*/) {
             this->n_track());
       }
     }
-    cudaSetDevice(prev_active);
+    C10_CUDA_CHECK(cudaSetDevice(prev_active));
     this->device_type = device.type();
     this->device_index = device.index();
 #else
@@ -743,8 +744,8 @@ std::tuple<torch::Tensor, torch::Tensor> Renderer::forward(
 // moved to a CUDA device).
 #ifdef WITH_CUDA
     int prev_active;
-    cudaGetDevice(&prev_active);
-    cudaSetDevice(this->device_index);
+    C10_CUDA_CHECK(cudaGetDevice(&prev_active));
+    C10_CUDA_CHECK(cudaSetDevice(this->device_index));
 #ifdef PULSAR_TIMINGS_BATCHED_ENABLED
     START_TIME_CU(batch_forward);
 #endif
@@ -789,7 +790,7 @@ std::tuple<torch::Tensor, torch::Tensor> Renderer::forward(
     std::cout << "Forward render batched time per example: "
               << time_ms / static_cast<float>(batch_size) << "ms" << std::endl;
 #endif
-    cudaSetDevice(prev_active);
+    C10_CUDA_CHECK(cudaSetDevice(prev_active));
 #endif
   } else {
 #ifdef PULSAR_TIMINGS_BATCHED_ENABLED
@@ -1100,8 +1101,8 @@ Renderer::backward(
 // the renderer to a CUDA device if not built with CUDA.
 #ifdef WITH_CUDA
     int prev_active;
-    cudaGetDevice(&prev_active);
-    cudaSetDevice(this->device_index);
+    C10_CUDA_CHECK(cudaGetDevice(&prev_active));
+    C10_CUDA_CHECK(cudaSetDevice(this->device_index));
 #ifdef PULSAR_TIMINGS_BATCHED_ENABLED
     START_TIME_CU(batch_backward);
 #endif
@@ -1205,7 +1206,7 @@ Renderer::backward(
             at::cuda::getCurrentCUDAStream());
       }
     }
-    cudaSetDevice(prev_active);
+    C10_CUDA_CHECK(cudaSetDevice(prev_active));
 #ifdef PULSAR_TIMINGS_BATCHED_ENABLED
     STOP_TIME_CU(batch_backward);
     float time_ms;
