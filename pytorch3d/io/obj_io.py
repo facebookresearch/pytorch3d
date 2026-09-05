@@ -149,9 +149,9 @@ def load_obj(
             map is created per face.
         texture_wrap: string, one of ["repeat", "clamp"]. This applies when computing
             the texture atlas.
-            If `texture_mode="repeat"`, for uv values outside the range [0, 1] the integer part
+            If `texture_wrap="repeat"`, for uv values outside the range [0, 1] the integer part
             is ignored and a repeating pattern is formed.
-            If `texture_mode="clamp"` the values are clamped to the range [0, 1].
+            If `texture_wrap="clamp"` the values are clamped to the range [0, 1].
             If None, then there is no transformation of the texture values.
         device: Device (as str or torch.device) on which to return the new tensors.
         path_manager: optionally a PathManager object to interpret paths.
