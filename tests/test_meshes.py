@@ -1294,6 +1294,25 @@ class TestMeshes(TestCaseMixin, unittest.TestCase):
             yes_normals.offset_verts_(torch.FloatTensor([1, 2, 3]).expand(12, 3))
             self.assertFalse(torch.allclose(yes_normals.verts_normals_padded(), verts))
 
+    def test_centroid(self):
+        meshes = init_simple_mesh()
+        # Check that it returns a valid value for multiple meshes with an inconsistent number
+        # of vertices
+        meshes.volume_centroid()
+
+        cube = init_cube_meshes()
+        self.assertClose(
+            cube.volume_centroid(),
+            torch.tensor(
+                [
+                    [0.5] * 3,
+                    [1.5] * 3,
+                    [2.5] * 3,
+                    [3.5] * 3,
+                ]
+            ),
+        )
+
     def test_submeshes(self):
         empty_mesh = Meshes([], [])
         # Four cubes with offsets [0, 1, 2, 3].
