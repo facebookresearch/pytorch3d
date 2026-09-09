@@ -66,6 +66,22 @@ class TestSymEig3x3(TestCaseMixin, unittest.TestCase):
             rtol=rtol,
         )
 
+    def test_is_eigen_small_magnitude_gpu(self):
+        self._test_is_eigen_small_magnitude(self._gpu)
+
+    def test_is_eigen_small_magnitude_cpu(self):
+        self._test_is_eigen_small_magnitude(self._cpu)
+
+    def _test_is_eigen_small_magnitude(self, device):
+        """
+        The decomposition is homogeneous, so scaling the input must not affect
+        the relative accuracy of the result.
+        """
+        test_input = self.create_random_sym3x3(device, n=self.TEST_BATCH_SIZE)
+
+        for scale in (1e-2, 1e-4, 1e-6):
+            self._test_is_eigen(test_input * scale, atol=1e-04 * scale, rtol=1e-02)
+
     def test_eigenvectors_are_orthonormal_gpu(self):
         test_input = self.create_random_sym3x3(self._gpu, n=self.TEST_BATCH_SIZE)
 

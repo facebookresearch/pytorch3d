@@ -77,6 +77,22 @@ class _SymEig3x3(nn.Module):
         if inputs.shape[-2:] != (3, 3):
             raise ValueError("Only inputs of shape (..., 3, 3) are supported.")
 
+        # The eigendecomposition is homogeneous: eigenvalues of s * A are s times
+        # the eigenvalues of A and the eigenvectors are unchanged. The thresholds
+        # and regularizers used below are absolute, however, so they are only
+        # meaningful for inputs of order 1. Rescale each matrix to unit maximum
+        # magnitude first and undo the scaling on the eigenvalues at the end.
+        # The scale is detached: by homogeneity the result is exactly the
+        # eigendecomposition of `inputs` for any fixed scale, so gradients are
+        # unaffected.
+        scale = (
+            inputs.detach()
+            .abs()
+            .amax(dim=(-2, -1), keepdim=True)
+            .clamp(min=torch.finfo(inputs.dtype).tiny)
+        )
+        inputs = inputs / scale
+
         inputs_diag = inputs.diagonal(dim1=-2, dim2=-1)
         inputs_trace = inputs_diag.sum(-1)
         q = inputs_trace / 3.0
@@ -120,7 +136,7 @@ class _SymEig3x3(nn.Module):
         else:
             eigenvecs = None
 
-        return eigenvals, eigenvecs
+        return eigenvals * scale[..., 0], eigenvecs
 
     def _construct_eigenvecs_set(
         self, inputs: torch.Tensor, eigenvals: torch.Tensor
