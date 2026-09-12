@@ -712,6 +712,7 @@ def save_obj(
         faces_normals_idx: LongTensor of shape (F, 3) giving the index into
             normals for each vertex in the face.
         verts_uvs: FloatTensor of shape (V, 2) giving the uv coordinate per vertex.
+            When provided with faces_uvs, UVs are saved even without a texture_map.
         faces_uvs: LongTensor of shape (F, 3) giving the index into verts_uvs for
             each vertex in the face.
         texture_map: FloatTensor of shape (H, W, 3) representing the texture map
@@ -757,7 +758,8 @@ def save_obj(
     if path_manager is None:
         path_manager = PathManager()
 
-    save_texture = all(t is not None for t in [faces_uvs, verts_uvs, texture_map])
+    save_uvs = faces_uvs is not None and verts_uvs is not None
+    save_texture = save_uvs and texture_map is not None
     output_path = Path(f)
 
     # Save the .obj file
@@ -778,7 +780,7 @@ def save_obj(
             faces_normals_idx=faces_normals_idx,
             verts_uvs=verts_uvs,
             faces_uvs=faces_uvs,
-            save_texture=save_texture,
+            save_texture=save_uvs,
             save_normals=normals is not None,
         )
 

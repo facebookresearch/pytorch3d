@@ -955,6 +955,59 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
             with open(obj_file, "r") as actual_file:
                 self.assertEqual(actual_file.read(), expected_obj_file)
 
+    def test_save_obj_with_uvs_without_texture_map(self):
+        verts = torch.tensor(
+            [[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [1.0, 1.0, 0.0]],
+            dtype=torch.float32,
+        )
+        faces = torch.tensor([[0, 2, 1]], dtype=torch.int64)
+        verts_uvs = torch.tensor(
+            [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]],
+            dtype=torch.float32,
+        )
+        faces_uvs = torch.tensor([[3, 1, 2]], dtype=torch.int64)
+        normals = torch.tensor([[0.0, 0.0, 1.0], [0.0, 1.0, 0.0]])
+        faces_normals_idx = torch.tensor([[1, 0, 1]], dtype=torch.int64)
+
+        for save_normals in (False, True):
+            with self.subTest(
+                save_normals=save_normals
+            ), TemporaryDirectory() as temp_dir:
+                obj_file = Path(temp_dir) / "mesh.obj"
+                save_obj(
+                    obj_file,
+                    verts,
+                    faces,
+                    verts_uvs=verts_uvs,
+                    faces_uvs=faces_uvs,
+                    normals=normals if save_normals else None,
+                    faces_normals_idx=faces_normals_idx if save_normals else None,
+                )
+
+                self.assertEqual(os.listdir(temp_dir), ["mesh.obj"])
+                obj_text = obj_file.read_text()
+                self.assertNotIn("mtllib", obj_text)
+                self.assertNotIn("usemtl", obj_text)
+                expected_face = (
+                    "f 1/4/2 3/2/1 2/3/2" if save_normals else "f 1/4 3/2 2/3"
+                )
+                self.assertIn(expected_face, obj_text)
+
+                loaded_verts, loaded_faces, aux = load_obj(
+                    obj_file, load_textures=False
+                )
+                self.assertClose(loaded_verts, verts)
+                self.assertClose(loaded_faces.verts_idx, faces)
+                self.assertClose(aux.verts_uvs, verts_uvs)
+                self.assertClose(loaded_faces.textures_idx, faces_uvs)
+                self.assertIsNone(aux.material_colors)
+                self.assertIsNone(aux.texture_images)
+                if save_normals:
+                    self.assertClose(aux.normals, normals)
+                    self.assertClose(loaded_faces.normals_idx, faces_normals_idx)
+                else:
+                    self.assertIsNone(aux.normals)
+
     def test_save_obj_with_texture(self):
         verts = torch.tensor(
             [[0.01, 0.2, 0.301], [0.2, 0.03, 0.408], [0.3, 0.4, 0.05], [0.6, 0.7, 0.8]],
