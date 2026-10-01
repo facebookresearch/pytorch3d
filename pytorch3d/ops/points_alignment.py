@@ -10,9 +10,9 @@ import warnings
 from typing import List, NamedTuple, Optional, TYPE_CHECKING, Union
 
 import torch
+
 from pytorch3d.ops import knn_points
 from pytorch3d.structures import utils as strutil
-
 from . import utils as oputil
 
 
@@ -256,6 +256,8 @@ def corresponding_points_alignment(
     `s[i] X[i] R[i] + T[i] = Y[i]`,
 
     for all batch indexes `i` in the least squares sense.
+    With weights, minimizes `sum_j weights[i, j] *
+    ||s[i] X[i, j] R[i] + T[i] - Y[i, j]||^2`.
 
     The algorithm is also known as Umeyama [1].
 
@@ -340,12 +342,13 @@ def corresponding_points_alignment(
     total_weight = torch.clamp(num_points, 1)
     # special handling for heterogeneous point clouds and/or input weights
     if weights is not None:
+        # Weight each correspondence once in both covariance and source variance.
         # pyrefly: ignore [bad-index]
-        Xc *= weights[:, :, None]
-        # pyrefly: ignore [bad-index]
-        Yc *= weights[:, :, None]
+        Xc_weighted = Xc * weights[:, :, None]
         # pyrefly: ignore [missing-attribute]
         total_weight = torch.clamp(weights.sum(1), eps)
+    else:
+        Xc_weighted = Xc
 
     if (num_points < (dim + 1)).any():
         warnings.warn(
@@ -354,7 +357,7 @@ def corresponding_points_alignment(
         )
 
     # compute the covariance XYcov between the point sets Xc, Yc
-    XYcov = torch.bmm(Xc.transpose(2, 1), Yc)
+    XYcov = torch.bmm(Xc_weighted.transpose(2, 1), Yc)
     XYcov = XYcov / total_weight[:, None, None]
 
     # decompose the covariance matrix XYcov
@@ -387,7 +390,7 @@ def corresponding_points_alignment(
     if estimate_scale:
         # estimate the scaling component of the transformation
         trace_ES = (torch.diagonal(E, dim1=1, dim2=2) * S).sum(1)
-        Xcov = (Xc * Xc).sum((1, 2)) / total_weight
+        Xcov = (Xc_weighted * Xc).sum((1, 2)) / total_weight
 
         # the scaling component
         s = trace_ES / torch.clamp(Xcov, eps)
