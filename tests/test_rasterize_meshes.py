@@ -10,6 +10,7 @@ import unittest
 import torch
 from pytorch3d import _C
 from pytorch3d.renderer import FoVPerspectiveCameras, look_at_view_transform
+from pytorch3d.renderer.cameras import try_get_projection_transform
 from pytorch3d.renderer.mesh import MeshRasterizer, RasterizationSettings
 from pytorch3d.renderer.mesh.rasterize_meshes import (
     rasterize_meshes,
@@ -1182,6 +1183,63 @@ class TestRasterizeMeshes(TestCaseMixin, unittest.TestCase):
         self.assertClose(
             out.pix_to_face[0, 14:, :14],
             torch.arange(100, device=device).expand(14, 14, 100),
+        )
+
+    def test_mesh_rasterizer_zbuf_uses_view_space_depth(self):
+        device = torch.device("cpu")
+        verts = torch.tensor(
+            [
+                [-0.7, -0.4, 0.2],
+                [0.6, -0.3, -0.1],
+                [0.1, 0.8, 0.4],
+            ],
+            dtype=torch.float32,
+            device=device,
+        )
+        faces = torch.tensor([[0, 1, 2]], dtype=torch.int64, device=device)
+        meshes = Meshes(verts=[verts], faces=[faces])
+
+        R, T = look_at_view_transform(2.7, 25.0, 35.0, device=device)
+        cameras = FoVPerspectiveCameras(device=device, R=R, T=T, fov=60.0)
+        raster_settings = RasterizationSettings(
+            image_size=32,
+            blur_radius=0.0,
+            faces_per_pixel=1,
+            bin_size=0,
+            perspective_correct=True,
+        )
+        rasterizer = MeshRasterizer(cameras=cameras, raster_settings=raster_settings)
+
+        fragments = rasterizer(meshes)
+
+        verts_world = meshes.verts_padded()
+        verts_view = cameras.get_world_to_view_transform().transform_points(verts_world)
+        to_ndc_transform = cameras.get_ndc_camera_transform()
+        projection_transform = try_get_projection_transform(cameras, {})
+        verts_ndc = projection_transform.compose(to_ndc_transform).transform_points(
+            verts_view
+        )
+
+        meshes_view = meshes.update_padded(new_verts_padded=verts_view)
+        meshes_ndc = meshes.update_padded(new_verts_padded=verts_ndc)
+        expected_view_zbuf = _interpolate_zbuf(
+            fragments.pix_to_face, fragments.bary_coords, meshes_view
+        )
+        expected_world_zbuf = _interpolate_zbuf(
+            fragments.pix_to_face, fragments.bary_coords, meshes
+        )
+        expected_ndc_zbuf = _interpolate_zbuf(
+            fragments.pix_to_face, fragments.bary_coords, meshes_ndc
+        )
+
+        mask = fragments.pix_to_face >= 0
+        self.assertTrue(mask.any().item())
+        self.assertClose(fragments.zbuf[mask], expected_view_zbuf[mask], atol=1e-6)
+        self.assertGreater(
+            (fragments.zbuf[mask] - expected_world_zbuf[mask]).abs().max().item(), 1.0
+        )
+        self.assertGreater(
+            (fragments.zbuf[mask] - expected_ndc_zbuf[mask]).abs().max().item(), 0.1
         )
 
     @staticmethod
