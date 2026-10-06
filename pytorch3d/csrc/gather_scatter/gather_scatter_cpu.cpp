@@ -17,6 +17,20 @@ at::Tensor GatherScatterCpu(
   const auto input_feature_dim = input.size(1);
   const auto num_edges = edges.size(0);
 
+  if (num_edges > 0) {
+    const auto min_edge_idx = edges.min().item<int64_t>();
+    const auto max_edge_idx = edges.max().item<int64_t>();
+    TORCH_CHECK(
+        min_edge_idx >= 0 && max_edge_idx < num_vertices,
+        "Edges have invalid vertex indices. Expected indices in [0, ",
+        num_vertices,
+        "), but got [",
+        min_edge_idx,
+        ", ",
+        max_edge_idx,
+        "].");
+  }
+
   auto output = at::zeros({num_vertices, input_feature_dim}, input.options());
 
   auto input_a = input.accessor<float, 2>();
