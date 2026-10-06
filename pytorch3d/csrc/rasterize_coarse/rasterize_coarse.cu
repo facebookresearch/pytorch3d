@@ -23,8 +23,8 @@ __global__ void TriangleBoundingBoxKernel(
     const float blur_radius,
     float* bboxes, // (4, F)
     bool* skip_face) { // (F,)
-  const auto tid = blockIdx.x * blockDim.x + threadIdx.x;
-  const auto num_threads = blockDim.x * gridDim.x;
+  const int tid = blockIdx.x * blockDim.x + threadIdx.x;
+  const int num_threads = blockDim.x * gridDim.x;
   const float sqrt_radius = sqrt(blur_radius);
   for (int f = tid; f < F; f += num_threads) {
     const float v0x = face_verts[f * 9 + 0 * 3 + 0];
@@ -56,8 +56,8 @@ __global__ void PointBoundingBoxKernel(
     const int P,
     float* bboxes, // (4, P)
     bool* skip_points) {
-  const auto tid = blockIdx.x * blockDim.x + threadIdx.x;
-  const auto num_threads = blockDim.x * gridDim.x;
+  const int tid = blockIdx.x * blockDim.x + threadIdx.x;
+  const int num_threads = blockDim.x * gridDim.x;
   for (int p = tid; p < P; p += num_threads) {
     const float x = points[p * 3 + 0];
     const float y = points[p * 3 + 1];
@@ -113,7 +113,7 @@ __global__ void RasterizeCoarseCudaKernel(
   const int chunks_per_batch = 1 + (E - 1) / chunk_size;
   const int num_chunks = N * chunks_per_batch;
 
-  for (auto chunk = blockIdx.x; chunk < num_chunks; chunk += gridDim.x) {
+  for (int chunk = blockIdx.x; chunk < num_chunks; chunk += gridDim.x) {
     const int batch_idx = chunk / chunks_per_batch; // batch index
     const int chunk_idx = chunk % chunks_per_batch;
     const int elem_chunk_start_idx = chunk_idx * chunk_size;
@@ -123,7 +123,7 @@ __global__ void RasterizeCoarseCudaKernel(
     const int64_t elem_stop_idx = elem_start_idx + elems_per_batch[batch_idx];
 
     // Have each thread handle a different face within the chunk
-    for (auto e = threadIdx.x; e < chunk_size; e += blockDim.x) {
+    for (int e = threadIdx.x; e < chunk_size; e += blockDim.x) {
       const int e_idx = elem_chunk_start_idx + e;
 
       // Check that we are still within the same element of the batch
@@ -170,7 +170,7 @@ __global__ void RasterizeCoarseCudaKernel(
     // Now we have processed every elem in the current chunk. We need to
     // count the number of elems in each bin so we can write the indices
     // out to global memory. We have each thread handle a different bin.
-    for (auto byx = threadIdx.x; byx < num_bins_y * num_bins_x;
+    for (int byx = threadIdx.x; byx < num_bins_y * num_bins_x;
          byx += blockDim.x) {
       const int by = byx / num_bins_x;
       const int bx = byx % num_bins_x;
