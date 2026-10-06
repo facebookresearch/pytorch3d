@@ -137,7 +137,7 @@ class CamerasBase(TensorProperties):
             xy_depth = torch.cat((xy, depth), dim=2)
             # unproject to the world coordinates
             xyz_unproj_world = cameras.unproject_points(xy_depth, world_coordinates=True)
-            print(torch.allclose(xyz, xyz_unproj_world)) # True
+            print(torch.allclose(xyz, xyz_unproj_world, atol=1e-4)) # True
             # unproject to the camera coordinates
             xyz_unproj = cameras.unproject_points(xy_depth, world_coordinates=False)
             print(torch.allclose(xyz_cam, xyz_unproj)) # True
