@@ -101,6 +101,7 @@ std::tuple<torch::Tensor, torch::Tensor> weightedSumNormCpuBackward(
         for (int i = 0; i < W; ++i) {
           float t_alpha = 0.;
           float t_alphafs = 0.;
+          float t_alpha_den = t_alpha;
           // Iterate through the closest K points for this pixel
           for (int k = 0; k < K; ++k) {
             int64_t n_idx = points_idx_a[b][k][j][i];
@@ -113,9 +114,7 @@ std::tuple<torch::Tensor, torch::Tensor> weightedSumNormCpuBackward(
             t_alphafs += alphas_a[b][k][j][i] * features_a[c][n_idx];
           }
 
-          if (t_alpha < kEps) {
-            t_alpha = kEps;
-          }
+          t_alpha_den = std::max(t_alpha, kEps);
 
           // Iterate through the closest K points for this pixel ordered by z
           // distance.
@@ -128,7 +127,7 @@ std::tuple<torch::Tensor, torch::Tensor> weightedSumNormCpuBackward(
             float alpha = alphas_a[b][k][j][i];
             grad_alphas_a[b][k][j][i] += grad_outputs_a[b][c][j][i] *
                 (features_a[c][n_idx] * t_alpha - t_alphafs) /
-                (t_alpha * t_alpha);
+                (t_alpha_den * t_alpha_den);
             grad_features_a[c][n_idx] +=
                 grad_outputs_a[b][c][j][i] * alpha / t_alpha;
           }
