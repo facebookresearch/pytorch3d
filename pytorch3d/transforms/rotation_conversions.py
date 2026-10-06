@@ -51,6 +51,8 @@ def quaternion_to_matrix(quaternions: torch.Tensor) -> torch.Tensor:
     Returns:
         Rotation matrices as tensor of shape (..., 3, 3).
     """
+    # Rescaling leaves the rotation unchanged and bounds the quadratic terms.
+    quaternions = quaternions / quaternions.abs().amax(dim=-1, keepdim=True)
     r, i, j, k = torch.unbind(quaternions, -1)
     two_s = torch.div(2.0, (quaternions * quaternions).sum(-1))
 
