@@ -302,6 +302,7 @@ def make_material_atlas(
 
     # bi-linearly interpolate the textures from the images
     # using the uv coordinates given by uv_pos.
+    uv_pos -= torch.floor(uv_pos)
     textures = _bilinear_interpolation_grid_sample(image, uv_pos)
 
     return textures
