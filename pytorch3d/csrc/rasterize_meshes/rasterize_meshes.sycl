@@ -1,0 +1,730 @@
+#include "pulsar/global.h"
+#include <ATen/ATen.h>
+#include <c10/core/DeviceGuard.h>
+#include <c10/xpu/XPUStream.h>
+#include <oneapi/dpl/tuple>
+#include <sycl/sycl.hpp>
+#include <torch/types.h>
+#include "utils/geometry_utils_sycl.h"
+#include "utils/float_math_sycl.h"
+#include "rasterize_points/rasterization_utils_sycl.h"
+
+#include <cstdint>
+#include <tuple>
+
+namespace {
+
+using namespace pytorch3d::float_math_sycl;
+using namespace pytorch3d::geometry_utils_sycl;
+using namespace pytorch3d::rasterization_utils_sycl;
+
+struct Pixel {
+  float z;
+  int64_t idx;
+  float dist;
+  float3 bary;
+};
+
+class RasterizeMeshesNaiveXpuKernel;
+class RasterizeMeshesFineXpuKernel;
+class RasterizeMeshesBackwardXpuKernel;
+
+inline bool operator<(const Pixel& a, const Pixel& b) {
+  return a.z < b.z || (a.z == b.z && a.idx < b.idx);
+}
+
+inline oneapi::dpl::tuple<float3, float3, float3> GetSingleFaceVerts(
+    const float* face_verts,
+    int face_idx) {
+  const float x0 = face_verts[face_idx * 9 + 0];
+  const float y0 = face_verts[face_idx * 9 + 1];
+  const float z0 = face_verts[face_idx * 9 + 2];
+  const float x1 = face_verts[face_idx * 9 + 3];
+  const float y1 = face_verts[face_idx * 9 + 4];
+  const float z1 = face_verts[face_idx * 9 + 5];
+  const float x2 = face_verts[face_idx * 9 + 6];
+  const float y2 = face_verts[face_idx * 9 + 7];
+  const float z2 = face_verts[face_idx * 9 + 8];
+
+  const float3 v0xyz = make_float3(x0, y0, z0);
+  const float3 v1xyz = make_float3(x1, y1, z1);
+  const float3 v2xyz = make_float3(x2, y2, z2);
+
+  return oneapi::dpl::make_tuple(v0xyz, v1xyz, v2xyz);
+}
+
+inline oneapi::dpl::tuple<float2, float2, float2> GetFaceBoundingBox(
+  float3 v0,
+  float3 v1,
+  float3 v2) {
+  const float xmin = FloatMin3(v0.x, v1.x, v2.x);
+  const float ymin = FloatMin3(v0.y, v1.y, v2.y);
+  const float zmin = FloatMin3(v0.z, v1.z, v2.z);
+  const float xmax = FloatMax3(v0.x, v1.x, v2.x);
+  const float ymax = FloatMax3(v0.y, v1.y, v2.y);
+  const float zmax = FloatMax3(v0.z, v1.z, v2.z);
+
+  return oneapi::dpl::make_tuple(
+      make_float2(xmin, xmax),
+      make_float2(ymin, ymax),
+      make_float2(zmin, zmax));
+}
+
+inline bool CheckPointOutsideBoundingBox(
+    float3 v0,
+    float3 v1,
+    float3 v2,
+    float blur_radius,
+    float2 pxy) {
+  const auto bbox = GetFaceBoundingBox(v0, v1, v2);
+  const float2 xlims = oneapi::dpl::get<0>(bbox);
+  const float2 ylims = oneapi::dpl::get<1>(bbox);
+  const float2 zlims = oneapi::dpl::get<2>(bbox);
+
+  const float x_min = xlims.x - blur_radius;
+  const float y_min = ylims.x - blur_radius;
+  const float x_max = xlims.y + blur_radius;
+  const float y_max = ylims.y + blur_radius;
+
+  const bool z_invalid = zlims.x < kEpsilon;
+
+  return (
+      pxy.x > x_max || pxy.x < x_min || pxy.y > y_max || pxy.y < y_min ||
+      z_invalid);
+}
+
+template <typename FaceQ>
+inline void CheckPixelInsideFace(
+    const float* face_verts,
+    const int64_t* clipped_faces_neighbor_idx,
+    const int face_idx,
+    int& q_size,
+    float& q_max_z,
+    int& q_max_idx,
+    FaceQ& q,
+    const float blur_radius,
+    const float2 pxy,
+    const int K,
+    const bool perspective_correct,
+    const bool clip_barycentric_coords,
+    const bool cull_backfaces) {
+  const auto v012 = GetSingleFaceVerts(face_verts, face_idx);
+  const float3 v0 = oneapi::dpl::get<0>(v012);
+  const float3 v1 = oneapi::dpl::get<1>(v012);
+  const float3 v2 = oneapi::dpl::get<2>(v012);
+
+  const float2 v0xy = make_float2(v0.x, v0.y);
+  const float2 v1xy = make_float2(v1.x, v1.y);
+  const float2 v2xy = make_float2(v2.x, v2.y);
+
+  const float zmax = FloatMax3(v0.z, v1.z, v2.z);
+  const bool outside_bbox = CheckPointOutsideBoundingBox(
+      v0, v1, v2, sycl::sqrt(blur_radius), pxy);
+  const float face_area = EdgeFunctionForward(v0xy, v1xy, v2xy);
+  const bool back_face = face_area < 0.0;
+  const bool zero_face_area =
+      face_area <= kEpsilon && face_area >= -1.0f * kEpsilon;
+
+  if (zmax < 0 || (cull_backfaces && back_face) || outside_bbox ||
+      zero_face_area) {
+    return;
+  }
+
+  const float3 p_bary0 = BarycentricCoordsForward(pxy, v0xy, v1xy, v2xy);
+  const float3 p_bary = !perspective_correct
+      ? p_bary0
+      : BarycentricPerspectiveCorrectionForward(p_bary0, v0.z, v1.z, v2.z);
+  const float3 p_bary_clip =
+      !clip_barycentric_coords ? p_bary : BarycentricClipForward(p_bary);
+  const float pz =
+      p_bary_clip.x * v0.z + p_bary_clip.y * v1.z + p_bary_clip.z * v2.z;
+
+  if (pz < 0) {
+    return;
+  }
+
+  const float dist = PointTriangleDistanceForward(pxy, v0xy, v1xy, v2xy);
+
+  const bool inside = p_bary.x > 0.0f && p_bary.y > 0.0f && p_bary.z > 0.0f;
+  const float signed_dist = inside ? -dist : dist;
+  if (!inside && dist >= blur_radius) {
+    return;
+  }
+
+  const int neighbor_idx = clipped_faces_neighbor_idx[face_idx];
+  int neighbor_idx_top_k = -1;
+
+  if (neighbor_idx != -1) {
+    for (int i = 0; i < q_size; i++) {
+      if (q[i].idx == neighbor_idx) {
+        neighbor_idx_top_k = i;
+        break;
+      }
+    }
+  }
+  if (neighbor_idx_top_k != -1) {
+    float neighbor_dist = sycl::fabs(q[neighbor_idx_top_k].dist);
+    if (dist < neighbor_dist) {
+      q[neighbor_idx_top_k] = {pz, face_idx, signed_dist, p_bary_clip};
+
+      if (pz > q_max_z) {
+        q_max_z = pz;
+        q_max_idx = neighbor_idx_top_k;
+      }
+    }
+  } else {
+    if (q_size < K) {
+      q[q_size] = {pz, face_idx, signed_dist, p_bary_clip};
+      if (pz > q_max_z) {
+        q_max_z = pz;
+        q_max_idx = q_size;
+      }
+      q_size++;
+    } else if (pz < q_max_z) {
+      q[q_max_idx] = {pz, face_idx, signed_dist, p_bary_clip};
+      q_max_z = pz;
+      for (int i = 0; i < K; i++) {
+        if (q[i].z > q_max_z) {
+          q_max_z = q[i].z;
+          q_max_idx = i;
+        }
+      }
+    }
+  }
+}
+
+inline void RasterizeMeshesNaiveXpuKernelBody(
+    const int i,
+    const float* face_verts_ptr,
+    const int64_t* mesh_to_face_first_idx_ptr,
+    const int64_t* num_faces_per_mesh_ptr,
+    const int64_t* clipped_faces_neighbor_idx_ptr,
+    int64_t* face_idxs_ptr,
+    float* zbuf_ptr,
+    float* pix_dists_ptr,
+    float* bary_ptr,
+    const float blur_radius,
+    const bool perspective_correct,
+    const bool clip_barycentric_coords,
+    const bool cull_backfaces,
+    const int H,
+    const int W,
+    const int K) {
+  const int n = i / (H * W);
+  const int pix_idx = i % (H * W);
+  const int yi = H - 1 - pix_idx / W;
+  const int xi = W - 1 - pix_idx % W;
+
+  const float xf = PixToNonSquareNdc(xi, W, H);
+  const float yf = PixToNonSquareNdc(yi, H, W);
+  const float2 pxy = make_float2(xf, yf);
+
+  Pixel q[kMaxPointsPerPixel];
+  int q_size = 0;
+  float q_max_z = -1000;
+  int q_max_idx = -1;
+
+  const int64_t face_start_idx = mesh_to_face_first_idx_ptr[n];
+  const int64_t face_stop_idx =
+      face_start_idx + num_faces_per_mesh_ptr[n];
+
+  for (int f = face_start_idx; f < face_stop_idx; ++f) {
+    CheckPixelInsideFace(
+        face_verts_ptr,
+        clipped_faces_neighbor_idx_ptr,
+        f,
+        q_size,
+        q_max_z,
+        q_max_idx,
+        q,
+        blur_radius,
+        pxy,
+        K,
+        perspective_correct,
+        clip_barycentric_coords,
+        cull_backfaces);
+  }
+
+  BubbleSort(q, q_size);
+  const int idx = n * H * W * K + pix_idx * K;
+  for (int k = 0; k < q_size; ++k) {
+    face_idxs_ptr[idx + k] = q[k].idx;
+    zbuf_ptr[idx + k] = q[k].z;
+    pix_dists_ptr[idx + k] = q[k].dist;
+    bary_ptr[(idx + k) * 3 + 0] = q[k].bary.x;
+    bary_ptr[(idx + k) * 3 + 1] = q[k].bary.y;
+    bary_ptr[(idx + k) * 3 + 2] = q[k].bary.z;
+  }
+}
+
+inline void RasterizeMeshesBackwardXpuKernelBody(
+    const int t_i,
+    const float* face_verts_ptr,
+    const int64_t* pix_to_face_ptr,
+    const float* grad_zbuf_ptr,
+    const float* grad_bary_ptr,
+    const float* grad_dists_ptr,
+    float* grad_face_verts_ptr,
+    const bool perspective_correct,
+    const bool clip_barycentric_coords,
+    const int H,
+    const int W,
+    const int K) {
+  const int n = t_i / (H * W);
+  const int pix_idx = t_i % (H * W);
+  const int yi = H - 1 - pix_idx / W;
+  const int xi = W - 1 - pix_idx % W;
+  const float xf = PixToNonSquareNdc(xi, W, H);
+  const float yf = PixToNonSquareNdc(yi, H, W);
+  const float2 pxy = make_float2(xf, yf);
+
+  for (int k = 0; k < K; k++) {
+    const int i = n * H * W * K + pix_idx * K + k;
+    const int f = pix_to_face_ptr[i];
+    if (f < 0) {
+      continue;
+    }
+    const auto v012 = GetSingleFaceVerts(face_verts_ptr, f);
+    const float3 v0 = oneapi::dpl::get<0>(v012);
+    const float3 v1 = oneapi::dpl::get<1>(v012);
+    const float3 v2 = oneapi::dpl::get<2>(v012);
+
+    const float2 v0xy = make_float2(v0.x, v0.y);
+    const float2 v1xy = make_float2(v1.x, v1.y);
+    const float2 v2xy = make_float2(v2.x, v2.y);
+
+    const float grad_dist_upstream = grad_dists_ptr[i];
+    const float grad_zbuf_upstream = grad_zbuf_ptr[i];
+    const float grad_bary_upstream_w0 = grad_bary_ptr[i * 3 + 0];
+    const float grad_bary_upstream_w1 = grad_bary_ptr[i * 3 + 1];
+    const float grad_bary_upstream_w2 = grad_bary_ptr[i * 3 + 2];
+    const float3 grad_bary_upstream = make_float3(
+        grad_bary_upstream_w0, grad_bary_upstream_w1, grad_bary_upstream_w2);
+
+    const float3 b_w = BarycentricCoordsForward(pxy, v0xy, v1xy, v2xy);
+    const float3 b_pp = !perspective_correct
+        ? b_w
+        : BarycentricPerspectiveCorrectionForward(b_w, v0.z, v1.z, v2.z);
+
+    const float3 b_w_clip =
+        !clip_barycentric_coords ? b_pp : BarycentricClipForward(b_pp);
+
+    const bool inside = b_pp.x > 0.0f && b_pp.y > 0.0f && b_pp.z > 0.0f;
+    const float sign = inside ? -1.0f : 1.0f;
+
+    auto grad_dist_f = PointTriangleDistanceBackward(
+        pxy, v0xy, v1xy, v2xy, sign * grad_dist_upstream);
+    const float2 ddist_d_v0 = oneapi::dpl::get<1>(grad_dist_f);
+    const float2 ddist_d_v1 = oneapi::dpl::get<2>(grad_dist_f);
+    const float2 ddist_d_v2 = oneapi::dpl::get<3>(grad_dist_f);
+
+    const float3 d_zbuf_d_bwclip = make_float3(v0.z, v1.z, v2.z);
+    const float3 grad_bary_f_sum =
+        grad_bary_upstream + grad_zbuf_upstream * d_zbuf_d_bwclip;
+    float3 grad_bary0 = grad_bary_f_sum;
+
+    if (clip_barycentric_coords) {
+      grad_bary0 = BarycentricClipBackward(b_w, grad_bary_f_sum);
+    }
+
+    float dz0_persp = 0.0f, dz1_persp = 0.0f, dz2_persp = 0.0f;
+    if (perspective_correct) {
+      auto perspective_grads = BarycentricPerspectiveCorrectionBackward(
+          b_w, v0.z, v1.z, v2.z, grad_bary0);
+      grad_bary0 = oneapi::dpl::get<0>(perspective_grads);
+      dz0_persp = oneapi::dpl::get<1>(perspective_grads);
+      dz1_persp = oneapi::dpl::get<2>(perspective_grads);
+      dz2_persp = oneapi::dpl::get<3>(perspective_grads);
+    }
+
+    auto grad_bary_f =
+        BarycentricCoordsBackward(pxy, v0xy, v1xy, v2xy, grad_bary0);
+    const float2 dbary_d_v0 = oneapi::dpl::get<1>(grad_bary_f);
+    const float2 dbary_d_v1 = oneapi::dpl::get<2>(grad_bary_f);
+    const float2 dbary_d_v2 = oneapi::dpl::get<3>(grad_bary_f);
+
+    using AtomicFloatRef = sycl::atomic_ref<
+        float,
+        sycl::memory_order::relaxed,
+        sycl::memory_scope::device,
+        sycl::access::address_space::global_space>;
+    AtomicFloatRef atomic_grad_face_verts_0(grad_face_verts_ptr[f * 9 + 0]);
+    atomic_grad_face_verts_0.fetch_add(dbary_d_v0.x + ddist_d_v0.x);
+    AtomicFloatRef atomic_grad_face_verts_1(grad_face_verts_ptr[f * 9 + 1]);
+    atomic_grad_face_verts_1.fetch_add(dbary_d_v0.y + ddist_d_v0.y);
+    AtomicFloatRef atomic_grad_face_verts_2(grad_face_verts_ptr[f * 9 + 2]);
+    atomic_grad_face_verts_2.fetch_add(
+        grad_zbuf_upstream * b_w_clip.x + dz0_persp);
+    AtomicFloatRef atomic_grad_face_verts_3(grad_face_verts_ptr[f * 9 + 3]);
+    atomic_grad_face_verts_3.fetch_add(dbary_d_v1.x + ddist_d_v1.x);
+    AtomicFloatRef atomic_grad_face_verts_4(grad_face_verts_ptr[f * 9 + 4]);
+    atomic_grad_face_verts_4.fetch_add(dbary_d_v1.y + ddist_d_v1.y);
+    AtomicFloatRef atomic_grad_face_verts_5(grad_face_verts_ptr[f * 9 + 5]);
+    atomic_grad_face_verts_5.fetch_add(
+        grad_zbuf_upstream * b_w_clip.y + dz1_persp);
+    AtomicFloatRef atomic_grad_face_verts_6(grad_face_verts_ptr[f * 9 + 6]);
+    atomic_grad_face_verts_6.fetch_add(dbary_d_v2.x + ddist_d_v2.x);
+    AtomicFloatRef atomic_grad_face_verts_7(grad_face_verts_ptr[f * 9 + 7]);
+    atomic_grad_face_verts_7.fetch_add(dbary_d_v2.y + ddist_d_v2.y);
+    AtomicFloatRef atomic_grad_face_verts_8(grad_face_verts_ptr[f * 9 + 8]);
+    atomic_grad_face_verts_8.fetch_add(
+        grad_zbuf_upstream * b_w_clip.z + dz2_persp);
+  }
+}
+
+inline void RasterizeMeshesFineXpuKernelBody(
+    const int64_t pixel,
+    const float* verts_ptr,
+    const int32_t* bins_ptr,
+    const int64_t* neighbor_ptr,
+    int64_t* indices_ptr,
+    float* z_ptr,
+    float* dist_ptr,
+    float* bary_ptr,
+    const float blur_radius,
+    const int bin_size,
+    const int faces_per_pixel,
+    const bool perspective_correct,
+    const bool clip_barycentric_coords,
+    const bool cull_backfaces,
+    const int BH,
+    const int BW,
+    const int M,
+    const int H,
+    const int W) {
+  const int local_y = (pixel / bin_size) % bin_size;
+  const int local_x = pixel % bin_size;
+  const int64_t bin = pixel / (bin_size * bin_size);
+  const int n = bin / (BH * BW);
+  const int by = (bin / BW) % BH;
+  const int bx = bin % BW;
+  const int yi = by * bin_size + local_y;
+  const int xi = bx * bin_size + local_x;
+  if (yi >= H || xi >= W) {
+    return;
+  }
+  const float xf = PixToNonSquareNdc(xi, W, H);
+  const float yf = PixToNonSquareNdc(yi, H, W);
+  const float2 pxy = make_float2(xf, yf);
+  Pixel q[kMaxPointsPerPixel];
+  int q_size = 0;
+  float q_max_z = -1000.0f;
+  int q_max_idx = -1;
+  for (int m = 0; m < M; ++m) {
+    const int f = bins_ptr[bin * M + m];
+    if (f < 0) {
+      continue;
+    }
+    CheckPixelInsideFace(
+        verts_ptr,
+        neighbor_ptr,
+        f,
+        q_size,
+        q_max_z,
+        q_max_idx,
+        q,
+        blur_radius,
+        pxy,
+        faces_per_pixel,
+        perspective_correct,
+        clip_barycentric_coords,
+        cull_backfaces);
+  }
+  const int64_t output_idx =
+      ((int64_t)n * H * W + (H - 1 - yi) * W + (W - 1 - xi)) *
+      faces_per_pixel;
+  BubbleSort(q, q_size);
+  for (int k = 0; k < q_size; ++k) {
+    const Pixel current = q[k];
+    indices_ptr[output_idx + k] = current.idx;
+    z_ptr[output_idx + k] = current.z;
+    dist_ptr[output_idx + k] = current.dist;
+    bary_ptr[(output_idx + k) * 3 + 0] = current.bary.x;
+    bary_ptr[(output_idx + k) * 3 + 1] = current.bary.y;
+    bary_ptr[(output_idx + k) * 3 + 2] = current.bary.z;
+  }
+}
+
+} // namespace
+
+// ****************************************************************************
+// *                          NAIVE RASTERIZATION                             *
+// ****************************************************************************
+std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor>
+RasterizeMeshesNaiveXpu(
+    const at::Tensor& face_verts,
+    const at::Tensor& mesh_to_faces_packed_first_idx,
+    const at::Tensor& num_faces_per_mesh,
+  const torch::Tensor& clipped_faces_neighbor_idx,
+    const std::tuple<int, int> image_size,
+    const float blur_radius,
+    const int num_closest,
+    const bool perspective_correct,
+    const bool clip_barycentric_coords,
+    const bool cull_backfaces) {
+  TORCH_CHECK(
+      face_verts.ndimension() == 3 && face_verts.size(1) == 3 &&
+          face_verts.size(2) == 3,
+      "face_verts must have dimensions (num_faces, 3, 3)");
+  TORCH_CHECK(
+      face_verts.scalar_type() == at::kFloat,
+      "face_verts must have dtype float32 on XPU");
+  TORCH_CHECK(
+      num_closest >= 0 && num_closest <= kMaxPointsPerPixel,
+      "num_closest must be in [0, ",
+      kMaxPointsPerPixel,
+      "]");
+  TORCH_CHECK(
+      mesh_to_faces_packed_first_idx.device() == face_verts.device() &&
+          num_faces_per_mesh.device() == face_verts.device() &&
+          clipped_faces_neighbor_idx.device() == face_verts.device(),
+      "RasterizeMeshesNaiveXpu expects all inputs on the same XPU");
+
+  c10::DeviceGuard device_guard(face_verts.device());
+  auto stream = c10::xpu::getCurrentXPUStream();
+
+  const int N = num_faces_per_mesh.size(0);
+  const int H = std::get<0>(image_size);
+  const int W = std::get<1>(image_size);
+  const int K = num_closest;
+
+  TORCH_CHECK(
+      num_faces_per_mesh.size(0) == mesh_to_faces_packed_first_idx.size(0),
+      "num_faces_per_mesh and mesh_to_faces_packed_first_idx must have the same length");
+  TORCH_CHECK(
+      clipped_faces_neighbor_idx.size(0) == face_verts.size(0),
+      "clipped_faces_neighbor_idx must have one entry per face");
+
+  auto long_opts = num_faces_per_mesh.options().dtype(at::kLong);
+  auto float_opts = face_verts.options().dtype(at::kFloat);
+
+  at::Tensor face_idxs = at::full({N, H, W, K}, -1, long_opts);
+  at::Tensor zbuf = at::full({N, H, W, K}, -1, float_opts);
+  at::Tensor pix_dists = at::full({N, H, W, K}, -1, float_opts);
+  at::Tensor bary = at::full({N, H, W, K, 3}, -1, float_opts);
+
+  if (face_idxs.numel() == 0) {
+    return std::make_tuple(face_idxs, zbuf, bary, pix_dists);
+  }
+
+  const int64_t pixel_count = N * H * W;
+  auto face_verts_contiguous = face_verts.contiguous();
+  auto mesh_to_face_first_idx_contiguous = mesh_to_faces_packed_first_idx.contiguous();
+  auto num_faces_per_mesh_contiguous = num_faces_per_mesh.contiguous();
+  auto clipped_faces_neighbor_idx_contiguous = clipped_faces_neighbor_idx.contiguous();
+
+  const float* face_verts_ptr = face_verts_contiguous.data_ptr<float>();
+  const int64_t* mesh_to_face_first_idx_ptr = 
+      mesh_to_face_first_idx_contiguous.data_ptr<int64_t>();
+  const int64_t* num_faces_per_mesh_ptr =
+      num_faces_per_mesh_contiguous.data_ptr<int64_t>();
+  const int64_t* clipped_faces_neighbor_idx_ptr =
+      clipped_faces_neighbor_idx_contiguous.data_ptr<int64_t>();
+  int64_t* face_idxs_ptr = face_idxs.data_ptr<int64_t>();
+  float* zbuf_ptr = zbuf.data_ptr<float>();
+  float* pix_dists_ptr = pix_dists.data_ptr<float>();
+  float* bary_ptr = bary.data_ptr<float>();
+
+  stream.queue().parallel_for<RasterizeMeshesNaiveXpuKernel>(
+      sycl::range<1>(pixel_count),
+      [=](sycl::id<1> item) {
+        RasterizeMeshesNaiveXpuKernelBody(
+            item[0],
+            face_verts_ptr,
+            mesh_to_face_first_idx_ptr,
+            num_faces_per_mesh_ptr,
+            clipped_faces_neighbor_idx_ptr,
+            face_idxs_ptr,
+            zbuf_ptr,
+            pix_dists_ptr,
+            bary_ptr,
+            blur_radius,
+            perspective_correct,
+            clip_barycentric_coords,
+            cull_backfaces,
+            H,
+            W,
+            K);
+      });
+
+  return std::make_tuple(face_idxs, zbuf, bary, pix_dists);
+}
+
+// ****************************************************************************
+// *                            BACKWARD PASS                                 *
+// ****************************************************************************
+at::Tensor RasterizeMeshesBackwardXpu(
+  const at::Tensor& face_verts,
+  const at::Tensor& pix_to_face,
+  const at::Tensor& grad_zbuf,
+  const at::Tensor& grad_bary,
+  const at::Tensor& grad_dists,
+  const bool perspective_correct,
+  const bool clip_barycentric_coords) {
+    TORCH_CHECK(
+      face_verts.dim() == 3 && face_verts.size(1) == 3 &&
+        face_verts.size(2) == 3 && face_verts.scalar_type() == at::kFloat,
+      "face_verts must have dimensions (num_faces, 3, 3)");
+    TORCH_CHECK(
+      pix_to_face.dim() == 4 && pix_to_face.scalar_type() == at::kLong,
+      "pix_to_face must have four dimensions and dtype int64");
+    TORCH_CHECK(
+      face_verts.device().is_xpu() &&
+        pix_to_face.device() == face_verts.device() &&
+        grad_zbuf.device() == face_verts.device() &&
+        grad_bary.device() == face_verts.device() &&
+        grad_dists.device() == face_verts.device(),
+      "RasterizeMeshesBackwardXpu expects all inputs on the same XPU");
+    TORCH_CHECK(
+      grad_zbuf.scalar_type() == face_verts.scalar_type() &&
+        grad_bary.scalar_type() == face_verts.scalar_type() &&
+        grad_dists.scalar_type() == face_verts.scalar_type(),
+      "face_verts and gradient tensors must have the same dtype");
+
+    c10::DeviceGuard device_guard(face_verts.device());
+    auto stream = c10::xpu::getCurrentXPUStream();
+
+    const int F = face_verts.size(0);
+    const int N = pix_to_face.size(0);
+    const int H = pix_to_face.size(1);
+    const int W = pix_to_face.size(2);
+    const int K = pix_to_face.size(3);
+    
+    auto grad_face_verts = at::zeros({F, 3, 3}, face_verts.options());
+    if (grad_face_verts.numel() == 0) {
+      return grad_face_verts;
+    }
+    const int64_t pixel_count = (int64_t)N * H * W;
+
+    at::globalContext().alertNotDeterministic("RasterizeMeshesBackwardXpu");
+    auto face_verts_contiguous = face_verts.contiguous();
+    auto pix_to_face_contiguous = pix_to_face.contiguous();
+    auto grad_zbuf_contiguous = grad_zbuf.contiguous();
+    auto grad_bary_contiguous = grad_bary.contiguous();
+    auto grad_dists_contiguous = grad_dists.contiguous();
+    const float* face_verts_ptr = face_verts_contiguous.data_ptr<float>();
+    const int64_t* pix_to_face_ptr =
+        pix_to_face_contiguous.data_ptr<int64_t>();
+    const float* grad_zbuf_ptr = grad_zbuf_contiguous.data_ptr<float>();
+    const float* grad_bary_ptr = grad_bary_contiguous.data_ptr<float>();
+    const float* grad_dists_ptr = grad_dists_contiguous.data_ptr<float>();
+    float* grad_face_verts_ptr = grad_face_verts.data_ptr<float>();
+
+    stream.queue().parallel_for<RasterizeMeshesBackwardXpuKernel>(
+      sycl::range<1>(pixel_count),
+      [=](sycl::id<1> item) {
+        RasterizeMeshesBackwardXpuKernelBody(
+            item[0],
+            face_verts_ptr,
+            pix_to_face_ptr,
+            grad_zbuf_ptr,
+            grad_bary_ptr,
+            grad_dists_ptr,
+            grad_face_verts_ptr,
+            perspective_correct,
+            clip_barycentric_coords,
+            H,
+            W,
+            K);
+      });
+    return grad_face_verts;
+  }
+
+// ****************************************************************************
+// *                            FINE RASTERIZATION                            *
+// ****************************************************************************
+std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor>
+RasterizeMeshesFineXpu(
+    const torch::Tensor& face_verts,
+    const torch::Tensor& bin_faces,
+    const torch::Tensor& clipped_faces_neighbor_idx,
+    const std::tuple<int, int> image_size,
+    const float blur_radius,
+    const int bin_size,
+    const int faces_per_pixel,
+    const bool perspective_correct,
+    const bool clip_barycentric_coords,
+    const bool cull_backfaces) {
+  TORCH_CHECK(
+      face_verts.dim() == 3 && face_verts.size(1) == 3 &&
+          face_verts.size(2) == 3 && face_verts.scalar_type() == at::kFloat,
+      "face_verts must have dimensions (num_faces, 3, 3) and dtype float32");
+  TORCH_CHECK(
+      bin_faces.dim() == 4 && bin_faces.scalar_type() == at::kInt,
+      "bin_faces must have four dimensions and dtype int32");
+  TORCH_CHECK(
+      faces_per_pixel >= 0 && faces_per_pixel <= kMaxPointsPerPixel,
+      "faces_per_pixel must be in [0, ", kMaxPointsPerPixel, "]");
+  TORCH_CHECK(bin_size > 0, "bin_size must be positive");
+  TORCH_CHECK(
+      bin_faces.device() == face_verts.device() &&
+          clipped_faces_neighbor_idx.device() == face_verts.device(),
+      "RasterizeMeshesFineXpu expects all inputs on the same XPU");
+  TORCH_CHECK(
+      clipped_faces_neighbor_idx.numel() == face_verts.size(0),
+      "clipped_faces_neighbor_idx must have one entry per face");
+
+  c10::DeviceGuard device_guard(face_verts.device());
+  auto stream = c10::xpu::getCurrentXPUStream();
+
+  const int N = bin_faces.size(0);
+  const int BH = bin_faces.size(1);
+  const int BW = bin_faces.size(2);
+  const int M = bin_faces.size(3);
+  const int K = faces_per_pixel;
+
+  const int H = std::get<0>(image_size);
+  const int W = std::get<1>(image_size);
+
+  auto long_opts = bin_faces.options().dtype(at::kLong);
+  auto float_opts = face_verts.options().dtype(at::kFloat);
+
+  auto face_idxs = at::full({N, H, W, K}, -1, long_opts);
+  auto zbuf = at::full({N, H, W, K}, -1, float_opts);
+  auto pix_dists = at::full({N, H, W, K}, -1, float_opts);
+  auto bary = at::full({N, H, W, K, 3}, -1, float_opts);
+
+  if (face_idxs.numel() == 0) {
+    return std::make_tuple(face_idxs, zbuf, bary, pix_dists);
+  }
+  
+  const int64_t pixel_count = N * BH * BW * bin_size * bin_size;
+
+  auto verts = face_verts.contiguous();
+  auto bins = bin_faces.contiguous();
+  auto neighbors = clipped_faces_neighbor_idx.contiguous();
+  const float* verts_ptr = verts.data_ptr<float>();
+  const int32_t* bins_ptr = bins.data_ptr<int32_t>();
+  const int64_t* neighbor_ptr = neighbors.data_ptr<int64_t>();
+  int64_t* indices_ptr = face_idxs.data_ptr<int64_t>();
+  float* z_ptr = zbuf.data_ptr<float>();
+  float* dist_ptr = pix_dists.data_ptr<float>();
+  float* bary_ptr = bary.data_ptr<float>();
+
+  stream.queue().parallel_for<RasterizeMeshesFineXpuKernel>(
+      sycl::range<1>(pixel_count),
+      [=](sycl::id<1> item) {
+        RasterizeMeshesFineXpuKernelBody(
+            item[0],
+            verts_ptr,
+            bins_ptr,
+            neighbor_ptr,
+            indices_ptr,
+            z_ptr,
+            dist_ptr,
+            bary_ptr,
+            blur_radius,
+            bin_size,
+            faces_per_pixel,
+            perspective_correct,
+            clip_barycentric_coords,
+            cull_backfaces,
+            BH,
+            BW,
+            M,
+            H,
+            W);
+      });
+
+  return std::make_tuple(face_idxs, zbuf, bary, pix_dists);
+}

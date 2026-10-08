@@ -47,6 +47,7 @@ def get_extensions():
     extensions_dir = os.path.join(this_dir, "pytorch3d", "csrc")
     sources = glob.glob(os.path.join(extensions_dir, "**", "*.cpp"), recursive=True)
     source_cuda = glob.glob(os.path.join(extensions_dir, "**", "*.cu"), recursive=True)
+    source_sycl = glob.glob(os.path.join(extensions_dir, "**", "*.sycl"), recursive=True)
     extension = CppExtension
 
     extra_compile_args = {"cxx": ["-std=c++17"]}
@@ -56,6 +57,9 @@ def get_extensions():
     # ROCm/HIP support. When PyTorch is built with HIP, the cpp_extension
     # BuildExtension auto-hipifies .cu sources and swaps nvcc -> hipcc.
     is_rocm = torch.version.hip is not None
+
+    # Intel XPU/SYCL support
+    is_xpu = torch.version.xpu is not None
 
     force_cuda = os.getenv("FORCE_CUDA", "0") == "1"
     force_no_cuda = os.getenv("PYTORCH3D_FORCE_NO_CUDA", "0") == "1"
@@ -137,6 +141,21 @@ def get_extensions():
                     raise ValueError(msg)
 
         extra_compile_args["nvcc"] = nvcc_args
+    elif is_xpu:
+        try:
+            from torch.utils.cpp_extension import SyclExtension
+        except ImportError:
+            # https://docs.pytorch.org/docs/stable/notes/get_start_xpu.html
+            raise RuntimeError(
+                "This version of PyTorch does not provide SyclExtension."
+                "Please install PyTorch with XPU wheels."
+            )
+        extension = SyclExtension
+        sources += source_sycl
+        define_macros += [("WITH_XPU", None)]
+        extra_compile_args["cxx"] = ["-std=c++20"]
+        extra_compile_args["sycl"] = ["-std=c++20"]
+
 
     sources = [os.path.join(extensions_dir, s) for s in sources]
 
