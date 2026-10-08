@@ -472,26 +472,26 @@ def _parse_obj(f, data_dir: str):
                 materials_idx = len(material_names) - 1
             else:
                 materials_idx = material_names.index(material_name)
-        elif line.startswith("v "):  # Line is a vertex.
+        elif tokens[:1] == ["v"]:  # Line is a vertex.
             vert = [float(x) for x in tokens[1:4]]
             if len(vert) != 3:
                 msg = "Vertex %s does not have 3 values. Line: %s"
                 raise ValueError(msg % (str(vert), str(line)))
             verts.append(vert)
-        elif line.startswith("vt "):  # Line is a texture.
+        elif tokens[:1] == ["vt"]:  # Line is a texture.
             tx = [float(x) for x in tokens[1:3]]
             if len(tx) != 2:
                 raise ValueError(
                     "Texture %s does not have 2 values. Line: %s" % (str(tx), str(line))
                 )
             verts_uvs.append(tx)
-        elif line.startswith("vn "):  # Line is a normal.
+        elif tokens[:1] == ["vn"]:  # Line is a normal.
             norm = [float(x) for x in tokens[1:4]]
             if len(norm) != 3:
                 msg = "Normal %s does not have 3 values. Line: %s"
                 raise ValueError(msg % (str(norm), str(line)))
             normals.append(norm)
-        elif line.startswith("f "):  # Line is a face.
+        elif tokens[:1] == ["f"]:  # Line is a face.
             # Update face properties info.
             _parse_face(
                 line,
