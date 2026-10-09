@@ -37,29 +37,6 @@ TUTORIAL_DATA_DIR = get_pytorch3d_dir() / "docs/tutorials/data"
 
 
 class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
-    def test_load_obj_tab_separated(self):
-        # Tabs are whitespace too, including between the keyword and the values.
-        obj_file = "\n".join(
-            [
-                "v\t0.1\t0.2\t0.3",
-                "v 0.2 0.3 0.4",
-                "v\t0.3 0.4 0.5",
-                "vt\t0.5\t0.5",
-                "vn\t0.0\t0.0\t1.0",
-                "f\t1/1/1\t2/1/1\t3/1/1",
-            ]
-        )
-        verts, faces, aux = load_obj(StringIO(obj_file))
-        expected_verts = torch.tensor(
-            [[0.1, 0.2, 0.3], [0.2, 0.3, 0.4], [0.3, 0.4, 0.5]], dtype=torch.float32
-        )
-        self.assertClose(verts, expected_verts)
-        self.assertClose(faces.verts_idx, torch.tensor([[0, 1, 2]]))
-        self.assertClose(faces.textures_idx, torch.tensor([[0, 0, 0]]))
-        self.assertClose(faces.normals_idx, torch.tensor([[0, 0, 0]]))
-        self.assertClose(aux.verts_uvs, torch.tensor([[0.5, 0.5]]))
-        self.assertClose(aux.normals, torch.tensor([[0.0, 0.0, 1.0]]))
-
     def test_load_obj_simple(self):
         obj_file = "\n".join(
             [
@@ -341,6 +318,29 @@ class TestMeshObjIO(TestCaseMixin, unittest.TestCase):
             self.assertTrue(normals is None)
             self.assertTrue(materials is None)
             self.assertTrue(tex_maps is None)
+
+    def test_load_obj_tab_separated(self):
+        # Tabs are whitespace too, including between the keyword and the values.
+        obj_file = "\n".join(
+            [
+                "v\t0.1\t0.2\t0.3",
+                "v 0.2 0.3 0.4",
+                "v\t0.3 0.4 0.5",
+                "vt\t0.5\t0.5",
+                "vn\t0.0\t0.0\t1.0",
+                "f\t1/1/1\t2/1/1\t3/1/1",
+            ]
+        )
+        verts, faces, aux = load_obj(StringIO(obj_file))
+        expected_verts = torch.tensor(
+            [[0.1, 0.2, 0.3], [0.2, 0.3, 0.4], [0.3, 0.4, 0.5]], dtype=torch.float32
+        )
+        self.assertClose(verts, expected_verts)
+        self.assertClose(faces.verts_idx, torch.tensor([[0, 1, 2]]))
+        self.assertClose(faces.textures_idx, torch.tensor([[0, 0, 0]]))
+        self.assertClose(faces.normals_idx, torch.tensor([[0, 0, 0]]))
+        self.assertClose(aux.verts_uvs, torch.tensor([[0.5, 0.5]]))
+        self.assertClose(aux.normals, torch.tensor([[0.0, 0.0, 1.0]]))
 
     def test_load_obj_error_textures(self):
         obj_file = "\n".join(["vt 0.1"])
