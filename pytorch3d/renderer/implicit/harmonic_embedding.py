@@ -136,16 +136,13 @@ class HarmonicEmbedding(torch.nn.Module):
             [..., (n_harmonic_functions * 2 + int(append_input)) * num_points_per_ray]
         """
         # [..., dim, n_harmonic_functions]
-        # pyrefly: ignore [unsupported-operation]
         embed = x[..., None] * self._frequencies
         # [..., 1, dim, n_harmonic_functions] + [2, 1, 1] => [..., 2, dim, n_harmonic_functions]
-        # pyrefly: ignore [bad-index]
         embed = embed[..., None, :, :] + self._zero_half_pi[..., None, None]
         # Use the trig identity cos(x) = sin(x + pi/2)
         # and do one vectorized call to sin([x, x+pi/2]) instead of (sin(x), cos(x)).
         embed = embed.sin()
         if diag_cov is not None:
-            # pyrefly: ignore [no-matching-overload]
             x_var = diag_cov[..., None] * torch.pow(self._frequencies, 2)
             exp_var = torch.exp(-0.5 * x_var)
             # [..., 2, dim, n_harmonic_functions]
@@ -184,7 +181,6 @@ class HarmonicEmbedding(torch.nn.Module):
         """
         return self.get_output_dim_static(
             input_dims,
-            # pyrefly: ignore [bad-argument-type]
             len(self._frequencies),
             self.append_input,
         )

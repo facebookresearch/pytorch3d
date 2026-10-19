@@ -239,12 +239,10 @@ class MeshRasterizer(nn.Module):
         if raster_settings.perspective_correct is not None:
             perspective_correct = raster_settings.perspective_correct
         else:
-            # pyrefly: ignore [missing-attribute]
             perspective_correct = cameras.is_perspective()
         if raster_settings.z_clip_value is not None:
             z_clip = raster_settings.z_clip_value
         else:
-            # pyrefly: ignore [missing-attribute]
             znear = cameras.get_znear()
             if isinstance(znear, torch.Tensor):
                 znear = znear.min().item()

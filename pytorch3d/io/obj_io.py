@@ -794,7 +794,7 @@ def save_obj(
             mtl_path = str(mtl_path)
 
         # Save texture map to output folder
-        # pyre-fixme[16] # undefined attribute cpu
+        # undefined attribute cpu
         texture_map = texture_map.detach().cpu() * 255.0
         image = Image.fromarray(texture_map.numpy().astype(np.uint8))
         with _open_file(image_path, path_manager, "wb") as im_f:
