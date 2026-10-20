@@ -568,7 +568,7 @@ class TestCorrespondingPointsAlignment(TestCaseMixin, unittest.TestCase):
         specific setting of the inputs / outputs.
         """
 
-        device = torch.device("cuda:0")
+        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
         # initialize the a ground truth point cloud
         X = TestCorrespondingPointsAlignment.init_point_cloud(
@@ -654,7 +654,7 @@ class TestCorrespondingPointsAlignment(TestCaseMixin, unittest.TestCase):
 
                 X_t_est = _apply_pcl_transformation(X_noisy, R_n, T_n, s=s_n)
 
-                return (((X_t_est - X_t) * weights[..., None]) ** 2).sum(
+                return ((X_t_est - X_t) ** 2 * weights[..., None]).sum(
                     dim=(1, 2)
                 ) / weights.sum(dim=-1)
 
@@ -720,3 +720,158 @@ class TestCorrespondingPointsAlignment(TestCaseMixin, unittest.TestCase):
             self.assertClose(a_, b_, atol=atol, msg=err_message)
         else:
             self.assertClose(a_ * weights, b_ * weights, atol=atol, msg=err_message)
+
+
+class TestWeightedCorrespondingPointsAlignment(unittest.TestCase):
+    @staticmethod
+    def devices():
+        return ["cpu", "cuda:0"] if torch.cuda.is_available() else ["cpu"]
+
+    def assertTransformClose(self, actual, expected):
+        for actual_component, expected_component in zip(actual, expected):
+            torch.testing.assert_close(
+                actual_component, expected_component, atol=1e-10, rtol=1e-10
+            )
+
+    def test_weighted_alignment_matches_repeated_points(self):
+        # An integer weight is equivalent to repeating that correspondence.
+        # Noise is essential: exact transformations also fit with squared weights.
+        for device in self.devices():
+            generator = torch.Generator(device=device).manual_seed(26)
+            for dim in (2, 3, 5):
+                X = torch.randn(2, 9, dim, generator=generator, device=device).double()
+                Y = torch.randn(2, 9, dim, generator=generator, device=device).double()
+                # Include a reflected target to exercise the determinant correction.
+                Y[0] = X[0] + 0.2 * Y[0]
+                Y[0, :, 0] *= -1
+                counts = torch.tensor([0, 1, 2, 4, 1, 3, 2, 1, 5], device=device)
+                weights = counts.expand(2, -1).to(X)
+                X_repeated = torch.repeat_interleave(X, counts, dim=1)
+                Y_repeated = torch.repeat_interleave(Y, counts, dim=1)
+                for estimate_scale in (False, True):
+                    for allow_reflection in (False, True):
+                        with self.subTest(
+                            device=device,
+                            dim=dim,
+                            estimate_scale=estimate_scale,
+                            allow_reflection=allow_reflection,
+                        ):
+                            kwargs = {
+                                "estimate_scale": estimate_scale,
+                                "allow_reflection": allow_reflection,
+                            }
+                            actual = points_alignment.corresponding_points_alignment(
+                                X, Y, weights, **kwargs
+                            )
+                            expected = points_alignment.corresponding_points_alignment(
+                                X_repeated, Y_repeated, **kwargs
+                            )
+                            self.assertTransformClose(actual, expected)
+
+    def test_weighted_alignment_closed_form_2d(self):
+        # In 2D, maximize a*cos(theta) + b*sin(theta), without an SVD.
+        for device in self.devices():
+            X = torch.tensor(
+                [[[-1, 0], [0, 2], [2, -1], [3, 2], [-4, 3]]],
+                dtype=torch.float64,
+                device=device,
+            )
+            Y = torch.tensor(
+                [[[0, -2], [1, 3], [4, 0], [2, 5], [7, -3]]],
+                dtype=torch.float64,
+                device=device,
+            )
+            weights = X.new_tensor([[0.25, 3.0, 0.75, 2.5, 0.0]])
+            Xmean = (weights[..., None] * X).sum(1) / weights.sum(1, keepdim=True)
+            Ymean = (weights[..., None] * Y).sum(1) / weights.sum(1, keepdim=True)
+            Xc = X - Xmean[:, None]
+            Yc = Y - Ymean[:, None]
+            a = (weights * (Xc * Yc).sum(-1)).sum(-1)
+            b = (weights * (Xc[..., 0] * Yc[..., 1] - Xc[..., 1] * Yc[..., 0])).sum(-1)
+            theta = torch.atan2(b, a)
+            c, s = theta.cos(), theta.sin()
+            R = torch.stack((c, s, -s, c), dim=-1).reshape(1, 2, 2)
+            for estimate_scale in (False, True):
+                with self.subTest(device=device, estimate_scale=estimate_scale):
+                    scale = (
+                        torch.hypot(a, b) / (weights * Xc.square().sum(-1)).sum(-1)
+                        if estimate_scale
+                        else X.new_ones(1)
+                    )
+                    T = Ymean - scale[:, None] * torch.bmm(Xmean[:, None], R)[:, 0]
+                    actual = points_alignment.corresponding_points_alignment(
+                        X, Y, weights, estimate_scale=estimate_scale
+                    )
+                    self.assertTransformClose(actual, (R, T, scale))
+
+    def test_weighted_alignment_heterogeneous_pointclouds(self):
+        for device in self.devices():
+            generator = torch.Generator(device=device).manual_seed(71)
+            X = [
+                torch.randn(n, 3, generator=generator, device=device).double()
+                for n in (6, 9)
+            ]
+            Y = [
+                torch.randn(n, 3, generator=generator, device=device).double()
+                for n in (6, 9)
+            ]
+            counts = [torch.arange(n, device=device) % 4 for n in (6, 9)]
+            weights = [c.to(x) for c, x in zip(counts, X)]
+            X_pcl, Y_pcl = Pointclouds(X), Pointclouds(Y)
+            padded_weights = X[0].new_ones(2, 9)
+            for i, w in enumerate(weights):
+                padded_weights[i, : len(w)] = w
+            for estimate_scale in (False, True):
+                for weight_input in (weights, padded_weights):
+                    with self.subTest(
+                        device=device,
+                        estimate_scale=estimate_scale,
+                        list_weights=isinstance(weight_input, list),
+                    ):
+                        actual = points_alignment.corresponding_points_alignment(
+                            X_pcl, Y_pcl, weight_input, estimate_scale=estimate_scale
+                        )
+                        for i, (x, y, c) in enumerate(zip(X, Y, counts)):
+                            expected = points_alignment.corresponding_points_alignment(
+                                torch.repeat_interleave(x, c, dim=0)[None],
+                                torch.repeat_interleave(y, c, dim=0)[None],
+                                estimate_scale=estimate_scale,
+                            )
+                            self.assertTransformClose(
+                                tuple(component[i : i + 1] for component in actual),
+                                expected,
+                            )
+
+    def test_weighted_alignment_optimal_loss_gradient(self):
+        # The envelope theorem gives d(min sum_i w_i*r_i^2)/dw_i = r_i^2.
+        # A zero weight must also have a finite derivative (no sqrt weighting).
+        for device in self.devices():
+            generator = torch.Generator(device=device).manual_seed(84)
+            X = torch.randn(2, 8, 3, generator=generator, device=device).double()
+            Y = (
+                X
+                + 0.4
+                * torch.randn(2, 8, 3, generator=generator, device=device).double()
+            )
+            for estimate_scale in (False, True):
+                with self.subTest(device=device, estimate_scale=estimate_scale):
+                    weights = X.new_tensor(
+                        [
+                            [0, 0.2, 0.4, 1, 2, 0.7, 3, 1.5],
+                            [1, 2, 0.3, 0.5, 4, 0.8, 0, 2],
+                        ]
+                    ).requires_grad_()
+                    R, T, s = points_alignment.corresponding_points_alignment(
+                        X, Y, weights, estimate_scale=estimate_scale
+                    )
+                    residual_sq = (
+                        (s[:, None, None] * torch.bmm(X, R) + T[:, None] - Y)
+                        .square()
+                        .sum(-1)
+                    )
+                    loss = (weights * residual_sq).sum()
+                    gradient = torch.autograd.grad(loss, weights)[0]
+                    self.assertTrue(torch.isfinite(gradient).all())
+                    torch.testing.assert_close(
+                        gradient, residual_sq.detach(), atol=1e-10, rtol=1e-10
+                    )
