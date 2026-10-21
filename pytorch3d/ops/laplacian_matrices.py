@@ -93,25 +93,17 @@ def cot_laplacian(
     face_verts = verts[faces]
     v0, v1, v2 = face_verts[:, 0], face_verts[:, 1], face_verts[:, 2]
 
-    # Side lengths of each triangle, of shape (sum(F_n),)
-    # A is the side opposite v1, B is opposite v2, and C is opposite v3
-    A = (v1 - v2).norm(dim=1)
-    B = (v0 - v2).norm(dim=1)
-    C = (v0 - v1).norm(dim=1)
+    # Cross products avoid subtracting nearly equal side lengths in Heron's
+    # formula. Keep eps as a lower bound on the squared triangle area.
+    edge0, edge1 = v1 - v0, v2 - v0
+    cross = torch.cross(edge0, edge1, dim=1)
+    area = (0.25 * cross.square().sum(dim=1)).clamp(min=eps).sqrt()
 
-    # Area of each triangle (with Heron's formula); shape is (sum(F_n),)
-    s = 0.5 * (A + B + C)
-    # note that the area can be negative (close to 0) causing nans after sqrt()
-    # we clip it to a small positive value
-    area = (s * (s - A) * (s - B) * (s - C)).clamp(min=eps).sqrt()
-
-    # Compute cotangents of angles, of shape (sum(F_n), 3)
-    A2, B2, C2 = A * A, B * B, C * C
-    cota = (B2 + C2 - A2) / area
-    cotb = (A2 + C2 - B2) / area
-    cotc = (A2 + B2 - C2) / area
+    # The dot/cross definition also avoids cancellation in squared side lengths.
+    cota = (edge0 * edge1).sum(dim=1) / (2.0 * area)
+    cotb = (-edge0 * (edge1 - edge0)).sum(dim=1) / (2.0 * area)
+    cotc = (-edge1 * (edge0 - edge1)).sum(dim=1) / (2.0 * area)
     cot = torch.stack([cota, cotb, cotc], dim=1)
-    cot = cot / 4.0
 
     # Construct a sparse matrix by basically doing:
     # L[v1, v2] = cota
