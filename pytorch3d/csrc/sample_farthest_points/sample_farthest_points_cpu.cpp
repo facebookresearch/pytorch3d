@@ -66,8 +66,8 @@ at::Tensor FarthestPointSamplingCpu(
       // Iterate through all the points
       for (int64_t p = 0; p < lengths_a[n]; ++p) {
         if (selected_points_mask[p]) {
-          // For already selected points set the distance to 0.0
-          dists[p] = 0.0;
+          // Exclude selected indices even when unselected points coincide.
+          dists[p] = -1.0;
           continue;
         }
 

@@ -57,9 +57,8 @@ __global__ void FarthestPointSamplingKernel(
     int64_t max_dist_idx = 0;
     float max_dist = -1.0;
 
-    // Iterate through all the points in this pointcloud. For already selected
-    // points, the minimum distance to the set of previously selected points
-    // will be 0.0 so they won't be selected again.
+    // Selected indices retain a negative distance to exclude them even when
+    // unselected points have zero distance to the selected set.
     for (int64_t p = tid; p < lengths[batch_idx]; p += block_size) {
       // Calculate the distance to the last selected point
       float dist2 = 0.0;
@@ -72,7 +71,8 @@ __global__ void FarthestPointSamplingKernel(
       // less than the previous minimum distance of p to the set of selected
       // points, then updated the corresponding value in min_point_dist
       // so it always contains the min distance.
-      const float p_min_dist = min(dist2, min_point_dist[batch_idx][p]);
+      const float p_min_dist =
+          (p == selected) ? -1.0f : min(dist2, min_point_dist[batch_idx][p]);
       min_point_dist[batch_idx][p] = p_min_dist;
 
       // Update the max distance and point idx for this thread.

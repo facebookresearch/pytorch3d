@@ -5,6 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import unittest
+from unittest.mock import patch
 
 import numpy as np
 import torch
@@ -22,13 +23,129 @@ from .common_testing import (
     TestCaseMixin,
 )
 
-
 DATA_DIR = get_tests_dir() / "data"
 TUTORIAL_DATA_DIR = get_pytorch3d_dir() / "docs/tutorials/data"
 DEBUG = False
 
 
 class TestFPS(TestCaseMixin, unittest.TestCase):
+    def _fps_functions_and_devices(self):
+        devices = ["cpu"]
+        if torch.cuda.is_available():
+            devices.append(get_random_cuda_device())
+        for device in devices:
+            for fps_func in (sample_farthest_points, sample_farthest_points_naive):
+                yield fps_func, device
+
+    def test_coincident_points(self):
+        P, D = 33, 3
+        for fps_func, device in self._fps_functions_and_devices():
+            points = torch.ones((1, P, D), device=device)
+            for K in (P, P + 3):
+                with self.subTest(fps_func=fps_func.__name__, device=device, K=K):
+                    sampled_points, indices = fps_func(points, K=K)
+                    self.assertEqual(indices.shape, (1, K))
+                    self.assertEqual(sampled_points.shape, (1, K, D))
+                    self.assertEqual(indices[0, 0].item(), 0)
+                    self.assertClose(
+                        indices[0, :P].sort().values, torch.arange(P, device=device)
+                    )
+                    self.assertTrue(indices[0, P:].eq(-1).all())
+                    self.assertClose(sampled_points[:, :P], points)
+                    self.assertTrue(sampled_points[:, P:].eq(0).all())
+
+    def test_partially_duplicate_points(self):
+        for fps_func, device in self._fps_functions_and_devices():
+            with self.subTest(fps_func=fps_func.__name__, device=device):
+                points = torch.tensor(
+                    [[[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [1.0, 0.0, 0.0]]],
+                    device=device,
+                )
+                padded_points = torch.zeros((1, 8, 3), device=device)
+                padded_points[:, :3] = points
+                sampled_points, indices = fps_func(
+                    padded_points, lengths=torch.tensor([3], device=device), K=3
+                )
+                self.assertClose(indices, torch.tensor([[0, 1, 2]], device=device))
+                self.assertClose(sampled_points, points)
+
+    def test_duplicate_points_heterogeneous(self):
+        for fps_func, device in self._fps_functions_and_devices():
+            with self.subTest(fps_func=fps_func.__name__, device=device):
+                lengths = torch.tensor([8, 4, 2], device=device)
+                K = torch.tensor([3, 10, 4], device=device)
+                points = torch.ones((3, 8, 3), device=device)
+                points[1, 4:] = 100.0
+                points[2, 2:] = 100.0
+                sampled_points, indices = fps_func(points, lengths=lengths, K=K)
+                self.assertEqual(indices.shape, (3, 10))
+                self.assertEqual(sampled_points.shape, (3, 10, 3))
+                for n, count in enumerate((3, 4, 2)):
+                    selected = indices[n, :count]
+                    self.assertEqual(selected[0].item(), 0)
+                    self.assertEqual(selected.unique().numel(), count)
+                    self.assertTrue(selected.ge(0).all())
+                    self.assertTrue(selected.lt(lengths[n]).all())
+                    self.assertTrue(indices[n, count:].eq(-1).all())
+                    self.assertTrue(sampled_points[n, :count].eq(1).all())
+                    self.assertTrue(sampled_points[n, count:].eq(0).all())
+
+    def test_duplicate_points_random_start(self):
+        module = "pytorch3d.ops.sample_farthest_points"
+        for fps_func, device in self._fps_functions_and_devices():
+            for heterogeneous in (False, True):
+                with self.subTest(
+                    fps_func=fps_func.__name__,
+                    device=device,
+                    heterogeneous=heterogeneous,
+                ):
+                    points = torch.ones((2, 8, 3), device=device)
+                    lengths = (
+                        torch.tensor([8, 3], device=device) if heterogeneous else None
+                    )
+                    start_indices = torch.tensor([7, 2], device=device)
+                    if fps_func is sample_farthest_points_naive:
+                        random_start = patch(f"{module}.randint", side_effect=[7, 2])
+                    elif heterogeneous:
+                        random_start = patch(
+                            f"{module}.torch.rand",
+                            return_value=torch.full((2,), 0.9, device=device),
+                        )
+                    else:
+                        random_start = patch(
+                            f"{module}.torch.randint", return_value=start_indices
+                        )
+                    with random_start:
+                        sampled_points, indices = fps_func(
+                            points, lengths=lengths, K=8, random_start_point=True
+                        )
+                    self.assertClose(indices[:, 0], start_indices)
+                    for n, count in enumerate((8, 3 if heterogeneous else 8)):
+                        self.assertClose(
+                            indices[n, :count].sort().values,
+                            torch.arange(count, device=device),
+                        )
+                        self.assertTrue(indices[n, count:].eq(-1).all())
+                        self.assertTrue(sampled_points[n, :count].eq(1).all())
+                        self.assertTrue(sampled_points[n, count:].eq(0).all())
+
+    def test_duplicate_points_gradients(self):
+        for fps_func, device in self._fps_functions_and_devices():
+            with self.subTest(fps_func=fps_func.__name__, device=device):
+                points = torch.ones((2, 8, 3), device=device, requires_grad=True)
+                lengths = torch.tensor([4, 2], device=device)
+                sampled_points, indices = fps_func(points, lengths=lengths, K=[3, 5])
+                sampled_points.sum().backward()
+                expected_gradient = torch.zeros_like(points)
+                for n, count in enumerate((3, 2)):
+                    selected = indices[n, :count]
+                    self.assertEqual(selected.unique().numel(), count)
+                    self.assertTrue(selected.ge(0).all())
+                    self.assertTrue(selected.lt(lengths[n]).all())
+                    self.assertTrue(indices[n, count:].eq(-1).all())
+                    expected_gradient[n, selected] = 1.0
+                self.assertClose(points.grad, expected_gradient)
+
     def _test_simple(self, fps_func, device="cpu"):
         # fmt: off
         points = torch.tensor(

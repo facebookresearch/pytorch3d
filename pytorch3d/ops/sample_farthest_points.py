@@ -10,8 +10,8 @@ from random import randint
 from typing import List, Optional, Tuple, Union
 
 import torch
-from pytorch3d import _C
 
+from pytorch3d import _C
 from .utils import masked_gather
 
 
@@ -26,6 +26,9 @@ def sample_farthest_points(
     K points from a given pointcloud. At each iteration, a point is selected
     which has the largest nearest neighbor distance to any of the
     already selected points.
+
+    Each input index is selected at most once, even when multiple points have
+    identical coordinates.
 
     Farthest point sampling provides more uniform coverage of the input
     point cloud compared to uniform random sampling.
@@ -175,14 +178,15 @@ def sample_farthest_points_naive(
         # Iteratively select points for a maximum of k_n
         for i in range(1, k_n):
             # Find the distance between the last selected point
-            # and all the other points. If a point has already been selected
-            # it's distance will be 0.0 so it will not be selected again as the max.
+            # and all the other points.
             dist = points[n, selected_idx, :] - points[n, : lengths[n], :]
             dist_to_last_selected = torch.square(dist).sum(-1)  # (P - i)
 
             # If closer than currently saved distance to one of the selected
             # points, then updated closest_dists
             closest_dists = torch.min(dist_to_last_selected, closest_dists)  # (P - i)
+            # Exclude selected indices even when unselected points coincide.
+            closest_dists[selected_idx] = -1.0
 
             # The aim is to pick the point that has the largest
             # nearest neighbour distance to any of the already selected points
