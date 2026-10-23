@@ -38,6 +38,10 @@ std::tuple<at::Tensor, at::Tensor> IoUBox3DCpu(
 
     // Convert to vector of face vertices i.e. effectively (P, 4, 3)
     const face_verts box1_planes = GetBoxPlanes(box1);
+    std::vector<FacePlane> box1_faces;
+    for (const auto& plane : box1_planes) {
+      box1_faces.push_back(GetFacePlane(plane, box1_center));
+    }
 
     // Get Box Volumes
     const float box1_vol = BoxVolume(box1_tris, box1_center);
@@ -50,46 +54,52 @@ std::tuple<at::Tensor, at::Tensor> IoUBox3DCpu(
       const face_verts box2_tris = GetBoxTris(box2);
       const vec3<float> box2_center = BoxCenter(boxes2[m]);
       const face_verts box2_planes = GetBoxPlanes(box2);
+      std::vector<FacePlane> box2_faces;
+      for (const auto& plane : box2_planes) {
+        box2_faces.push_back(GetFacePlane(plane, box2_center));
+      }
       const float box2_vol = BoxVolume(box2_tris, box2_center);
 
-      // Every triangle in one box will be compared to each plane in the other
-      // box. There are 3 possible outcomes:
-      // 1. If the triangle is fully inside, then it will
-      //    remain as is.
-      // 2. If the triagnle it is fully outside, it will be removed.
-      // 3. If the triangle intersects with the (infinite) plane, it
-      //    will be broken into subtriangles such that each subtriangle is full
-      //    inside the plane and part of the intersecting tetrahedron.
-
-      // Tris in Box1 -> Planes in Box2
-      face_verts box1_intersect =
-          BoxIntersections(box1_tris, box2_planes, box2_center);
-      // Tris in Box2 -> Planes in Box1
-      face_verts box2_intersect =
-          BoxIntersections(box2_tris, box1_planes, box1_center);
-
-      // If there are overlapping regions in Box2, remove any coplanar faces
-      if (box2_intersect.size() > 0) {
-        // Identify if any triangles in Box2 are coplanar with Box1
-        std::vector<int> tri2_keep(box2_intersect.size());
-        std::fill(tri2_keep.begin(), tri2_keep.end(), 1);
-        for (int b1 = 0; b1 < box1_intersect.size(); ++b1) {
-          for (int b2 = 0; b2 < box2_intersect.size(); ++b2) {
-            const bool is_coplanar =
-                IsCoplanarTriTri(box1_intersect[b1], box2_intersect[b2]);
-            const float area = FaceArea(box1_intersect[b1]);
-            if ((is_coplanar) && (area > aEpsilon)) {
-              tri2_keep[b2] = 0;
-            }
+      // Where a face of each box lies in the same plane, only the face
+      // further inside the other box is part of the intersecting polyhedron.
+      // It is not clipped by that plane, and the other face is left out.
+      // Bit p of a skip mask is set if face f is not clipped by plane p of
+      // the other box, and bit f of a drop mask if face f is left out.
+      std::vector<unsigned int> box1_skip(NUM_PLANES, 0);
+      std::vector<unsigned int> box2_skip(NUM_PLANES, 0);
+      unsigned int box1_drop = 0;
+      unsigned int box2_drop = 0;
+      for (int f1 = 0; f1 < NUM_PLANES; ++f1) {
+        for (int f2 = 0; f2 < NUM_PLANES; ++f2) {
+          if (!IsCoplanarFacePlanes(
+                  box1_planes[f1],
+                  box1_faces[f1],
+                  box2_planes[f2],
+                  box2_faces[f2])) {
+            continue;
+          }
+          if (MeanDistance(box1_planes[f1], box2_faces[f2]) >= 0.0f) {
+            box1_skip[f1] |= 1u << f2;
+            box2_drop |= 1u << f2;
+          } else {
+            box2_skip[f2] |= 1u << f1;
+            box1_drop |= 1u << f1;
           }
         }
+      }
 
-        // Keep only the non coplanar triangles in Box2 - add them to the
-        // Box1 triangles.
-        for (int b2 = 0; b2 < box2_intersect.size(); ++b2) {
-          if (tri2_keep[b2] == 1) {
-            box1_intersect.push_back((box2_intersect[b2]));
-          }
+      // The intersecting polyhedron is made of the triangles of each box
+      // clipped by the planes of the other box: each triangle that is fully
+      // inside remains as is, one that is fully outside is removed, and one
+      // that crosses a plane is cut to the part inside it.
+      std::vector<face_poly> polys;
+      for (int t = 0; t < NUM_TRIS; ++t) {
+        const int f = _TRI_FACE[t];
+        if (!((box1_drop >> f) & 1u)) {
+          polys.push_back(ClipTriByBox(box1_tris[t], box2_faces, box1_skip[f]));
+        }
+        if (!((box2_drop >> f) & 1u)) {
+          polys.push_back(ClipTriByBox(box2_tris[t], box1_faces, box2_skip[f]));
         }
       }
 
@@ -98,14 +108,23 @@ std::tuple<at::Tensor, at::Tensor> IoUBox3DCpu(
       float vol = 0.0;
       float iou = 0.0;
 
+      // The polyhedron center as the mean of the polygon vertices
+      vec3<float> vert_sum(0.0f, 0.0f, 0.0f);
+      int vert_count = 0;
+      for (const auto& poly : polys) {
+        for (const auto& v : poly) {
+          vert_sum = vert_sum + v;
+        }
+        vert_count += poly.size();
+      }
+
       // If there are triangles in the intersecting shape
-      if (box1_intersect.size() > 0) {
-        // The intersecting shape is a polyhedron made up of the
-        // triangular faces that are all now in box1_intersect.
-        // Calculate the polyhedron center
-        const vec3<float> polyhedron_center = PolyhedronCenter(box1_intersect);
+      if (vert_count > 0) {
+        const vec3<float> polyhedron_center = vert_sum / float(vert_count);
         // Compute intersecting polyhedron volume
-        vol = BoxVolume(box1_intersect, polyhedron_center);
+        for (const auto& poly : polys) {
+          vol = vol + PolyVolume(poly, polyhedron_center);
+        }
         // Compute IoU
         iou = vol / (box1_vol + box2_vol - vol);
       }

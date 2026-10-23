@@ -27,83 +27,83 @@ __global__ void IoUBox3DKernel(
   const size_t tid = blockIdx.x * blockDim.x + threadIdx.x;
   const size_t stride = gridDim.x * blockDim.x;
 
-  FaceVerts box1_tris[NUM_TRIS];
-  FaceVerts box2_tris[NUM_TRIS];
-  FaceVerts box1_planes[NUM_PLANES];
-  FaceVerts box2_planes[NUM_PLANES];
+  BoxCorners box1;
+  BoxCorners box2;
+  FacePlane box1_faces[NUM_PLANES];
+  FacePlane box2_faces[NUM_PLANES];
 
   for (size_t i = tid; i < N * M; i += stride) {
     const size_t n = i / M; // box1 index
     const size_t m = i % M; // box2 index
 
-    // Convert to array of structs of face vertices i.e. effectively (F, 3, 3)
-    // FaceVerts is a data type defined in iou_utils.cuh
-    GetBoxTris(boxes1[n], box1_tris);
-    GetBoxTris(boxes2[m], box2_tris);
+    GetBoxCorners(boxes1[n], box1);
+    GetBoxCorners(boxes2[m], box2);
 
     // Calculate the position of the center of the box which is used in
     // several calculations. This requires a tensor as input.
     const float3 box1_center = BoxCenter(boxes1[n]);
     const float3 box2_center = BoxCenter(boxes2[m]);
 
-    // Convert to an array of face vertices
-    GetBoxPlanes(boxes1[n], box1_planes);
-    GetBoxPlanes(boxes2[m], box2_planes);
-
     // Get Box Volumes
-    const float box1_vol = BoxVolume(box1_tris, box1_center, NUM_TRIS);
-    const float box2_vol = BoxVolume(box2_tris, box2_center, NUM_TRIS);
+    const float box1_vol = BoxVolume(BoxTris{box1}, box1_center, NUM_TRIS);
+    const float box2_vol = BoxVolume(BoxTris{box2}, box2_center, NUM_TRIS);
 
-    // Tris in Box1 intersection with Planes in Box2
-    // Initialize box1 intersecting faces. MAX_TRIS is the
-    // max faces possible in the intersecting shape.
-    // TODO: determine if the value of MAX_TRIS is sufficient or
-    // if we should store the max tris for each NxM computation
-    // and throw an error if any exceeds the max.
-    FaceVerts box1_intersect[MAX_TRIS];
-    for (int j = 0; j < NUM_TRIS; ++j) {
-      // Initialize the faces from the box
-      box1_intersect[j] = box1_tris[j];
-    }
-    // Get the count of the actual number of faces in the intersecting shape
-    int box1_count = BoxIntersections(box2_planes, box2_center, box1_intersect);
+    // Planes, inside normals and flatness of the faces of each box
+    GetFacePlanes(box1, box1_center, box1_faces);
+    GetFacePlanes(box2, box2_center, box2_faces);
 
-    // Tris in Box2 intersection with Planes in Box1
-    FaceVerts box2_intersect[MAX_TRIS];
-    for (int j = 0; j < NUM_TRIS; ++j) {
-      box2_intersect[j] = box2_tris[j];
-    }
-    const int box2_count =
-        BoxIntersections(box1_planes, box1_center, box2_intersect);
-
-    // If there are overlapping regions in Box2, remove any coplanar faces
-    if (box2_count > 0) {
-      // Identify if any triangles in Box2 are coplanar with Box1
-      Keep tri2_keep[MAX_TRIS];
-      for (int j = 0; j < MAX_TRIS; ++j) {
-        // Initialize the valid faces to be true
-        tri2_keep[j].keep = j < box2_count ? true : false;
-      }
-      for (int b1 = 0; b1 < box1_count; ++b1) {
-        for (int b2 = 0; b2 < box2_count; ++b2) {
-          const bool is_coplanar =
-              IsCoplanarTriTri(box1_intersect[b1], box2_intersect[b2]);
-          const float area = FaceArea(box1_intersect[b1]);
-          if ((is_coplanar) && (area > aEpsilon)) {
-            tri2_keep[b2].keep = false;
-          }
+    // Where a face of each box lies in the same plane, only the face further
+    // inside the other box is part of the intersecting polyhedron. It is not
+    // clipped by that plane, and the other face is left out. Bit (6 * f + p)
+    // of a skip mask is set if face f is not clipped by plane p of the other
+    // box, and bit f of a drop mask if face f is left out.
+    unsigned long long box1_skip = 0;
+    unsigned long long box2_skip = 0;
+    unsigned int box1_drop = 0;
+    unsigned int box2_drop = 0;
+    for (int f1 = 0; f1 < NUM_PLANES; ++f1) {
+      const FaceVerts q1 = box1.Face(f1);
+      for (int f2 = 0; f2 < NUM_PLANES; ++f2) {
+        const FaceVerts q2 = box2.Face(f2);
+        if (!IsCoplanarFacePlanes(q1, box1_faces[f1], q2, box2_faces[f2])) {
+          continue;
+        }
+        if (MeanDistance(q1, box2_faces[f2]) >= 0.0f) {
+          box1_skip |= 1ull << (NUM_PLANES * f1 + f2);
+          box2_drop |= 1u << f2;
+        } else {
+          box2_skip |= 1ull << (NUM_PLANES * f2 + f1);
+          box1_drop |= 1u << f1;
         }
       }
+    }
+    const auto skip_planes = [](const unsigned long long skip, const int f) {
+      return static_cast<unsigned int>(skip >> (NUM_PLANES * f)) &
+          ((1u << NUM_PLANES) - 1);
+    };
 
-      // Keep only the non coplanar triangles in Box2 - add them to the
-      // Box1 triangles.
-      for (int b2 = 0; b2 < box2_count; ++b2) {
-        if (tri2_keep[b2].keep) {
-          box1_intersect[box1_count] = box2_intersect[b2];
-          // box1_count will determine the total faces in the
-          // intersecting shape
-          box1_count++;
+    // The intersecting polyhedron is made of the triangles of each box
+    // clipped by the planes of the other box. The volume is summed from a
+    // point inside the polyhedron, so the triangles are clipped once to find
+    // that point and again to sum the volume instead of being stored.
+    FacePoly poly;
+    float3 vert_sum = make_float3(0.0f, 0.0f, 0.0f);
+    int vert_count = 0;
+    for (int t = 0; t < NUM_TRIS; ++t) {
+      const int f = _TRI_FACE[t];
+      if (!((box1_drop >> f) & 1u)) {
+        ClipTriByBox(box1.Tri(t), box2_faces, skip_planes(box1_skip, f), poly);
+        for (int v = 0; v < poly.num_verts; ++v) {
+          vert_sum = vert_sum + poly.verts[v];
         }
+        vert_count += poly.num_verts;
+      }
+      if (!((box2_drop >> f) & 1u)) {
+        ClipTriByBox(box2.Tri(t), box1_faces, skip_planes(box2_skip, f), poly);
+        for (int v = 0; v < poly.num_verts; ++v) {
+          vert_sum = vert_sum + poly.verts[v];
+        }
+        vert_count += poly.num_verts;
       }
     }
 
@@ -113,13 +113,23 @@ __global__ void IoUBox3DKernel(
     float iou = 0.0;
 
     // If there are triangles in the intersecting shape
-    if (box1_count > 0) {
-      // The intersecting shape is a polyhedron made up of the
-      // triangular faces that are all now in box1_intersect.
+    if (vert_count > 0) {
       // Calculate the polyhedron center
-      const float3 poly_center = PolyhedronCenter(box1_intersect, box1_count);
+      const float3 poly_center = vert_sum / vert_count;
       // Compute intersecting polyhedron volume
-      vol = BoxVolume(box1_intersect, poly_center, box1_count);
+      for (int t = 0; t < NUM_TRIS; ++t) {
+        const int f = _TRI_FACE[t];
+        if (!((box1_drop >> f) & 1u)) {
+          ClipTriByBox(
+              box1.Tri(t), box2_faces, skip_planes(box1_skip, f), poly);
+          vol = vol + PolyVolume(poly, poly_center);
+        }
+        if (!((box2_drop >> f) & 1u)) {
+          ClipTriByBox(
+              box2.Tri(t), box1_faces, skip_planes(box2_skip, f), poly);
+          vol = vol + PolyVolume(poly, poly_center);
+        }
+      }
       // Compute IoU
       iou = vol / (box1_vol + box2_vol - vol);
     }
