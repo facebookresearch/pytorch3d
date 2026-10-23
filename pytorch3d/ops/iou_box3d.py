@@ -10,9 +10,9 @@ from typing import Tuple
 
 import torch
 import torch.nn.functional as F
-from pytorch3d import _C
 from torch.autograd import Function
 
+from pytorch3d import _C
 
 # -------------------------------------------------- #
 #                  CONSTANTS                         #
@@ -61,9 +61,8 @@ def _check_coplanar(boxes: torch.Tensor, eps: float = 1e-4) -> None:
     normal = F.normalize(torch.cross(e0, e1, dim=-1), dim=-1)
 
     # Check the fourth vertex is also on the same plane
-    mat1 = (v3 - v0).view(B, 1, -1)  # (B, 1, P*3)
-    mat2 = normal.view(B, -1, 1)  # (B, P*3, 1)
-    if not (mat1.bmm(mat2).abs() < eps).all().item():
+    distances = ((v3 - v0) * normal).sum(dim=-1).abs()  # (B, P)
+    if not (distances < eps).all().item():
         msg = "Plane vertices are not coplanar"
         raise ValueError(msg)
 
