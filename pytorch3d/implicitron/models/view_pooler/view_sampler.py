@@ -9,6 +9,7 @@
 from typing import Dict, List, Optional, Tuple, Union
 
 import torch
+
 from pytorch3d.implicitron.tools.config import Configurable
 from pytorch3d.renderer.cameras import CamerasBase
 from pytorch3d.renderer.utils import ndc_grid_sample
@@ -22,7 +23,9 @@ class ViewSampler(Configurable, torch.nn.Module):
     Args:
         masked_sampling: If `True`, the `sampled_masks` output of `self.forward`
             contains the input `masks` sampled at the 2d projections. Otherwise,
-            all entries of `sampled_masks` are set to 1.
+            `sampled_masks` is 1 for points in front of the camera. Points with
+            non-positive camera-space depth have zero features and masks in
+            both cases.
         sampling_mode: Controls the mode of the `torch.nn.functional.grid_sample`
             function used to interpolate the sampled feature tensors at the
             locations of the 2d projections.
@@ -62,6 +65,8 @@ class ViewSampler(Configurable, torch.nn.Module):
                 Each `sampled_T_i` of shape `[pts_batch, n_cameras, n_pts, dim_i]`.
             sampled_masks: A tensor with  mask of the sampled features
                 of shape `(pts_batch, n_cameras, n_pts, 1)`.
+                Points with non-positive camera-space depth have zero features
+                and masks, including when `masked_sampling` is `False`.
         """
 
         # convert sequence ids to long tensors
@@ -112,7 +117,7 @@ def project_points_and_sample(
     and sample features at the 2D projection locations.
 
     Args:
-        pts: `(pts_batch, n_pts, 3)` tensor containing a batch of 3D point clouds.
+        pts: `(pts_batch, *n_pts, 3)` tensor containing a batch of 3D point clouds.
         feats: A dict `{feat_i: feat_T_i}` of features to sample,
             where each `feat_T_i` is a tensor of shape
             `(n_cameras, feat_i_dim, feat_i_H, feat_i_W)`
@@ -129,11 +134,12 @@ def project_points_and_sample(
     Returns:
         sampled_feats: Dict of sampled features `{feat_i: sampled_T_i}`.
             Each `sampled_T_i` is of shape
-            `(pts_batch, n_cameras, n_pts, feat_i_dim)`.
+            `(pts_batch, n_cameras, *n_pts, feat_i_dim)`.
         sampled_masks: A tensor with the mask of the sampled features
-            of shape `(pts_batch, n_cameras, n_pts, 1)`.
+            of shape `(pts_batch, n_cameras, *n_pts, 1)`.
             If `masks` is `None`, the returned `sampled_masks` will be
-            filled with 1s.
+            1 for points in front of the camera. Points with non-positive
+            camera-space depth have zero features and masks in both cases.
     """
 
     n_cameras = camera.R.shape[0]
@@ -141,11 +147,16 @@ def project_points_and_sample(
     n_pts = pts.shape[1:-1]
 
     camera_rep, pts_rep = cameras_points_cartesian_product(camera, pts)
+    pts_rep = pts_rep.reshape(n_cameras * pts_batch, -1, 3)
+    camera_depth = camera_rep.get_world_to_view_transform().transform_points(pts_rep)[
+        ..., 2
+    ]
+    in_front = camera_depth > 0
 
     # The eps here is super-important to avoid NaNs in backprop!
-    proj_rep = camera_rep.transform_points(
-        pts_rep.reshape(n_cameras * pts_batch, -1, 3), eps=eps
-    )[..., :2]
+    proj_rep = camera_rep.transform_points(pts_rep, eps=eps)[..., :2]
+    # Keep invalid projections out of the grid sampler and its backward pass.
+    proj_rep = torch.where(in_front[..., None], proj_rep, 0.0)
     # [ pts1 in cam1, pts2 in cam1, pts3 in cam1,
     #   pts1 in cam2, pts2 in cam2, pts3 in cam2,
     #   pts1 in cam3, pts2 in cam3, pts3 in cam3 ]
@@ -184,6 +195,10 @@ def project_points_and_sample(
         )
     else:
         masks_sampled = sampling_grid_ndc.new_ones(pts_batch, n_cameras, *n_pts, 1)
+
+    in_front = in_front.reshape(n_cameras, pts_batch, *n_pts).transpose(0, 1)[..., None]
+    feats_sampled = {k: torch.where(in_front, f, 0.0) for k, f in feats_sampled.items()}
+    masks_sampled = torch.where(in_front, masks_sampled, 0.0)
 
     return feats_sampled, masks_sampled
 
