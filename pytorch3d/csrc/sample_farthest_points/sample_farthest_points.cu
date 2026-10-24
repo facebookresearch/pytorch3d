@@ -212,11 +212,11 @@ at::Tensor FarthestPointSamplingCuda(
           points_a, lengths_a, K_a, idxs_a, min_point_dist_a, start_idxs_a);
       break;
     case 4:
-      FarthestPointSamplingKernel<4><<<threads, threads, shared_mem, stream>>>(
+      FarthestPointSamplingKernel<4><<<blocks, threads, shared_mem, stream>>>(
           points_a, lengths_a, K_a, idxs_a, min_point_dist_a, start_idxs_a);
       break;
     case 2:
-      FarthestPointSamplingKernel<2><<<threads, threads, shared_mem, stream>>>(
+      FarthestPointSamplingKernel<2><<<blocks, threads, shared_mem, stream>>>(
           points_a, lengths_a, K_a, idxs_a, min_point_dist_a, start_idxs_a);
       break;
     default:
