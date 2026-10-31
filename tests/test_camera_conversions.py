@@ -11,6 +11,7 @@ import unittest
 import numpy as np
 import torch
 from pytorch3d.ops import eyes
+from pytorch3d.renderer import PerspectiveCameras
 from pytorch3d.renderer.points.pulsar import Renderer as PulsarRenderer
 from pytorch3d.transforms import so3_exp_map, so3_log_map
 from pytorch3d.utils import (
@@ -156,6 +157,66 @@ class TestCameraConversions(TestCaseMixin, unittest.TestCase):
         self.assertClose(R, R_i)
         self.assertClose(tvec, tvec_i)
         self.assertClose(camera_matrix, camera_matrix_i)
+
+    def test_opencv_conversion_from_K(self):
+        """
+        Tests that `opencv_from_cameras_projection` reads the intrinsics of
+        cameras defined with an explicit calibration matrix `K`, and that the
+        resulting OpenCV cameras project points to the same pixels as the
+        PyTorch3D cameras.
+        """
+        N = 2
+        image_size = torch.tensor([[480, 640]] * N)
+        focal_length = torch.tensor([[2.0, 2.0], [3.0, 2.5]])
+        principal_point = torch.tensor([[0.1, -0.1], [-0.2, 0.05]])
+        R = so3_exp_map(torch.randn(N, 3) * 0.3)
+        T = torch.tensor([[0.0, 0.0, 5.0], [0.2, -0.1, 6.0]])
+
+        # The same intrinsics as a PyTorch3D 4x4 calibration matrix (NDC).
+        K = torch.zeros(N, 4, 4)
+        K[:, 0, 0] = focal_length[:, 0]
+        K[:, 1, 1] = focal_length[:, 1]
+        K[:, :2, 2] = principal_point
+        K[:, 2, 3] = 1.0
+        K[:, 3, 2] = 1.0
+
+        cameras = {
+            "focal_pp": PerspectiveCameras(
+                focal_length=focal_length, principal_point=principal_point, R=R, T=T
+            ),
+            "K": PerspectiveCameras(K=K, R=R, T=T),
+        }
+
+        expected_camera_matrix = torch.tensor(
+            [
+                [[480.0, 0.0, 296.0], [0.0, 480.0, 264.0], [0.0, 0.0, 1.0]],
+                [[720.0, 0.0, 368.0], [0.0, 600.0, 228.0], [0.0, 0.0, 1.0]],
+            ]
+        )
+
+        pts = torch.rand(N, 100, 3) * 2.0 - 1.0
+        for name, cams in cameras.items():
+            R_cv, tvec_cv, camera_matrix = opencv_from_cameras_projection(
+                cams, image_size
+            )
+            self.assertClose(camera_matrix, expected_camera_matrix, msg=name)
+
+            # The OpenCV cameras must project points exactly like PyTorch3D.
+            pts_proj_opencv = cv2_project_points(
+                pts, so3_log_map(R_cv), tvec_cv, camera_matrix
+            )
+            pts_proj_pytorch3d = cams.transform_points_screen(
+                pts, image_size=image_size
+            )[..., :2]
+            self.assertClose(pts_proj_opencv, pts_proj_pytorch3d, atol=1e-4, msg=name)
+
+        # A skew term in K cannot be represented and must raise.
+        K_skew = K.clone()
+        K_skew[:, 0, 1] = 0.1
+        with self.assertRaisesRegex(ValueError, "skew"):
+            opencv_from_cameras_projection(
+                PerspectiveCameras(K=K_skew, R=R, T=T), image_size
+            )
 
     def test_pulsar_conversion(self):
         """

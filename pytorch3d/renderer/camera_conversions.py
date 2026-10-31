@@ -69,8 +69,20 @@ def _opencv_from_cameras_projection(
     R_pytorch3d = cameras.R.clone()
     #  Optional[memory_format] = ...) -> Tensor, Tensor, Module]` is not a function.
     T_pytorch3d = cameras.T.clone()
-    focal_pytorch3d = cameras.focal_length
-    p0_pytorch3d = cameras.principal_point
+
+    # Read the intrinsics from the projection matrix instead of the
+    # `focal_length` / `principal_point` attributes, which are unused when
+    # the cameras were constructed with an explicit calibration matrix `K`.
+    # The matrix is stored transposed, i.e. proj[:, j, i] == K[:, i, j].
+    proj = cameras.get_projection_transform().get_matrix()
+    if (proj[:, 1, 0] != 0).any():
+        raise ValueError(
+            "Cameras whose calibration matrix K has a non-zero skew term"
+            " K[:, 0, 1] cannot be converted to the OpenCV convention."
+        )
+    focal_pytorch3d = torch.stack([proj[:, 0, 0], proj[:, 1, 1]], dim=-1)
+    p0_pytorch3d = proj[:, 2, :2]
+
     T_pytorch3d[:, :2] *= -1
     R_pytorch3d[:, :, :2] *= -1
     tvec = T_pytorch3d
@@ -84,7 +96,6 @@ def _opencv_from_cameras_projection(
     scale = scale.expand(-1, 2)
     c0 = image_size_wh / 2.0
 
-    # pyrefly: ignore [unsupported-operation]
     principal_point = -p0_pytorch3d * scale + c0
     focal_length = focal_pytorch3d * scale
 
