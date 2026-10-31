@@ -147,13 +147,17 @@ class SingleSceneDatasetMapProviderBase(DatasetMapProviderBase):
             frame_types.extend([DATASET_TYPE_KNOWN] * len(train_split))
 
         return SingleSceneDataset(
+            # pyrefly: ignore [unexpected-keyword]
             object_name=self.object_name,
             # pyre-ignore[16]
             images=self.images[split],
+            # pyrefly: ignore [unexpected-keyword]
             fg_probabilities=fg_probabilities,
             # pyre-ignore[16]
             poses=[self.poses[i] for i in split],
+            # pyrefly: ignore [unexpected-keyword]
             frame_types=frame_types,
+            # pyrefly: ignore [unexpected-keyword]
             eval_batches=eval_batches if set_eval_batches else None,
         )
 
