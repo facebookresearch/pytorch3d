@@ -6,6 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <c10/macros/Macros.h>
 #include <float.h>
 #include <math.h>
 #include <cstdio>
@@ -29,9 +30,8 @@ _TRIS gives the triangle faces of the 3D box
 */
 const int NUM_PLANES = 6;
 const int NUM_TRIS = 12;
-// This is required for iniitalizing the faces
-// in the intersecting shape
-const int MAX_TRIS = 100;
+// Each plane can split every triangle into at most two triangles.
+const int MAX_TRIS = NUM_TRIS * (1 << NUM_PLANES);
 
 // Create data types for representing the
 // verts for each face and the indices.
@@ -50,12 +50,6 @@ struct FaceVertsIdx {
   int v1;
   int v2;
   int v3; // Can be empty for triangles
-};
-
-// This is used when deciding which faces to
-// keep that are not coplanar
-struct Keep {
-  bool keep;
 };
 
 __device__ FaceVertsIdx _PLANES[] = {
@@ -697,38 +691,46 @@ __device__ inline int ClipTriByPlane(
 //      i.e. the valid faces which have been saved
 //      to face_verts_out
 //
+// Both face_verts_out and the caller-owned tri_verts_updated scratch must
+// have room for MAX_TRIS faces.
+//
 template <typename FaceVertsPlane, typename FaceVertsBox>
 __device__ inline int BoxIntersections(
     const FaceVertsPlane& planes,
     const float3& center,
-    FaceVertsBox& face_verts_out) {
+    FaceVertsBox& face_verts_out,
+    FaceVertsBox& tri_verts_updated) {
+  // Alternate between the two buffers instead of copying the clipped tris
+  // back after every plane. An even number of planes leaves the final tris
+  // in face_verts_out.
+  static_assert(NUM_PLANES % 2 == 0, "Clipped tris must end in face_verts_out");
+  FaceVertsBox* tris_in = &face_verts_out;
+  FaceVertsBox* tris_out = &tri_verts_updated;
   // Initialize num tris to 12
   int num_tris = NUM_TRIS;
   for (int p = 0; p < NUM_PLANES; ++p) {
     // Get plane normal direction
     const float3 n2 = PlaneNormalDirection(planes[p], center);
-    // Create intermediate vector to store the updated tris
-    FaceVerts tri_verts_updated[MAX_TRIS];
     int offset = 0;
 
-    // Iterate through triangles in face_verts_out
+    // Iterate through triangles in tris_in
     // for the valid tris given by num_tris
     for (int t = 0; t < num_tris; ++t) {
       // Clip tri by plane, can max be split into 2 triangles
       FaceVerts tri_updated[2];
       const int count =
-          ClipTriByPlane(planes[p], face_verts_out[t], n2, tri_updated);
-      // Add to the tri_verts_updated output if not empty
+          ClipTriByPlane(planes[p], (*tris_in)[t], n2, tri_updated);
+      CUDA_KERNEL_ASSERT(offset + count <= MAX_TRIS);
+      // Add to the tris_out output if not empty
       for (int v = 0; v < count; ++v) {
-        tri_verts_updated[offset] = tri_updated[v];
+        (*tris_out)[offset] = tri_updated[v];
         offset++;
       }
     }
-    // Update the face_verts_out tris
-    num_tris = min(MAX_TRIS, offset);
-    for (int j = 0; j < num_tris; ++j) {
-      face_verts_out[j] = tri_verts_updated[j];
-    }
+    num_tris = offset;
+    FaceVertsBox* const tris_tmp = tris_in;
+    tris_in = tris_out;
+    tris_out = tris_tmp;
   }
   return num_tris;
 }
