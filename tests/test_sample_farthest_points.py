@@ -241,6 +241,28 @@ class TestFPS(TestCaseMixin, unittest.TestCase):
             filepath = DATA_DIR / filename
             plt.savefig(filepath)
 
+    def test_cuda_vs_cpu_small_pointclouds(self):
+        """
+        Pointclouds with fewer than 8 points use 2 or 4 threads per block on
+        CUDA. Check that every pointcloud is sampled, for batch sizes both
+        smaller and larger than the number of threads.
+        """
+        device = get_random_cuda_device()
+        D, K = 3, 8
+        for N in [1, 3, 5, 9]:
+            for P in range(2, 8):
+                with self.subTest(N=N, P=P):
+                    points = torch.randn((N, P, D), dtype=torch.float32)
+                    lengths = torch.randint(low=1, high=P + 1, size=(N,))
+                    out_points_cpu, out_idxs_cpu = sample_farthest_points(
+                        points, lengths, K=K
+                    )
+                    out_points_cuda, out_idxs_cuda = sample_farthest_points(
+                        points.to(device), lengths.to(device), K=K
+                    )
+                    self.assertClose(out_idxs_cuda.cpu(), out_idxs_cpu)
+                    self.assertClose(out_points_cuda.cpu(), out_points_cpu)
+
     @staticmethod
     def sample_farthest_points_naive(N: int, P: int, D: int, K: int, device: str):
         device = torch.device(device)
