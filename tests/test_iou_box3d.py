@@ -8,15 +8,20 @@ import pickle
 import random
 import unittest
 from typing import List, Tuple, Union
+from unittest.mock import patch
 
 import torch
 import torch.nn.functional as F
 from pytorch3d.io import save_obj
-from pytorch3d.ops.iou_box3d import _box_planes, _box_triangles, box3d_overlap
+from pytorch3d.ops.iou_box3d import (
+    _box_planes,
+    _box_triangles,
+    _check_coplanar,
+    box3d_overlap,
+)
 from pytorch3d.transforms.rotation_conversions import random_rotation
 
 from .common_testing import get_random_cuda_device, get_tests_dir, TestCaseMixin
-
 
 OBJECTRON_TO_PYTORCH3D_FACE_IDX = [0, 4, 6, 2, 1, 5, 7, 3]
 DATA_DIR = get_tests_dir() / "data"
@@ -722,6 +727,106 @@ class TestIoU3D(TestCaseMixin, unittest.TestCase):
         boxes2 = torch.randn((M, 10, 3))
         with self.assertRaisesRegex(ValueError, "(8, 3)"):
             box3d_overlap(boxes1, boxes2)
+
+    def test_coplanarity_per_face(self):
+        devices = [torch.device("cpu")]
+        if torch.cuda.is_available():
+            devices.append(get_random_cuda_device())
+        for device in devices:
+            valid = torch.tensor(UNIT_BOX, dtype=torch.float32, device=device)
+            for cancel in (False, True):
+                invalid = valid.clone()
+                invalid[3, 2] = 0.25
+                if cancel:
+                    invalid[7, 2] = 0.75
+                for batch_size in (1, 3):
+                    boxes = valid.repeat(batch_size, 1, 1)
+                    boxes[batch_size // 2] = invalid
+                    for invalid_first in (False, True):
+                        with self.subTest(
+                            device=device,
+                            cancel=cancel,
+                            batch_size=batch_size,
+                            invalid_first=invalid_first,
+                        ):
+                            boxes1, boxes2 = boxes, valid[None]
+                            if not invalid_first:
+                                boxes1, boxes2 = boxes2, boxes1
+                            with patch(
+                                "pytorch3d.ops.iou_box3d._C.iou_box3d"
+                            ) as native:
+                                with self.assertRaisesRegex(
+                                    ValueError, "Plane vertices are not coplanar"
+                                ):
+                                    box3d_overlap(boxes1, boxes2)
+                                native.assert_not_called()
+
+    def test_coplanarity_tolerance(self):
+        devices = [torch.device("cpu")]
+        if torch.cuda.is_available():
+            devices.append(get_random_cuda_device())
+        eps = 2.0**-10
+        for device in devices:
+            for factor in (0.5, 1.0, 2.0):
+                for same_sign in (False, True):
+                    with self.subTest(
+                        device=device, factor=factor, same_sign=same_sign
+                    ):
+                        box = torch.tensor(UNIT_BOX, dtype=torch.float32, device=device)
+                        box[3, 2] = factor * eps
+                        if same_sign:
+                            box[7, 2] += factor * eps
+                        if factor < 1.0:
+                            _check_coplanar(box[None], eps=eps)
+                        else:
+                            with self.assertRaisesRegex(
+                                ValueError, "Plane vertices are not coplanar"
+                            ):
+                                _check_coplanar(box[None], eps=eps)
+
+    def test_coplanarity_valid_affine_boxes(self):
+        devices = [torch.device("cpu")]
+        if torch.cuda.is_available():
+            devices.append(get_random_cuda_device())
+        transforms = [
+            ([[1, 0, 0], [0, 1, 0], [0, 0, 1]], [0, 0, 0]),
+            ([[1, 0, 0], [0, 1, 0], [0, 0, 1]], [2, -3, 4]),
+            ([[0, -1, 0], [1, 0, 0], [0, 0, 1]], [0, 0, 0]),
+            ([[2, 0, 0], [0, 0.5, 0], [0, 0, 3]], [0, 0, 0]),
+            ([[1, 0.25, 0], [0, 1, 0.5], [0, 0, 1]], [0, 0, 0]),
+        ]
+        for device in devices:
+            unit = torch.tensor(UNIT_BOX, dtype=torch.float32, device=device)
+            for matrix, translation in transforms:
+                with self.subTest(
+                    device=device, matrix=matrix, translation=translation
+                ):
+                    matrix = torch.tensor(matrix, dtype=torch.float32, device=device)
+                    translation = torch.tensor(
+                        translation, dtype=torch.float32, device=device
+                    )
+                    box1 = unit @ matrix + translation
+                    box2 = (unit + unit.new_tensor([0.5, 0, 0])) @ matrix + translation
+                    boxes = torch.stack((box1, box2))
+                    volume, iou = box3d_overlap(boxes, boxes)
+                    determinant = matrix.det().abs()
+                    self.assertClose(
+                        volume,
+                        unit.new_tensor([[1, 0.5], [0.5, 1]]) * determinant,
+                    )
+                    self.assertClose(iou, unit.new_tensor([[1, 1 / 3], [1 / 3, 1]]))
+
+    def test_coplanarity_zero_area(self):
+        devices = [torch.device("cpu")]
+        if torch.cuda.is_available():
+            devices.append(get_random_cuda_device())
+        for device in devices:
+            valid = torch.tensor(UNIT_BOX, dtype=torch.float32, device=device)[None]
+            zero = torch.zeros_like(valid)
+            for boxes1, boxes2 in ((valid, zero), (zero, valid)):
+                with self.subTest(device=device, zero_first=boxes1 is zero):
+                    with self.assertRaisesRegex(ValueError, "Planes have zero areas"):
+                        box3d_overlap(boxes1, boxes2)
 
     def test_box_volume(self):
         device = torch.device("cuda:0")
