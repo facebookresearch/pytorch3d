@@ -103,8 +103,16 @@ def _chamfer_distance_single_direction(
         if not (weights >= 0).all():
             raise ValueError("weights cannot be negative.")
         if weights.sum() == 0.0:
-            weights = weights.view(N, 1)
-            return ((x.sum((1, 2)) * weights) * 0.0, (x.sum((1, 2)) * weights) * 0.0)
+            # Preserve the point axes until the requested reduction, including
+            # the absence of a normal loss when no normals were supplied.
+            zero_weights = weights.view(N, 1) * 0.0
+            cham_x = x.sum(-1) * zero_weights
+            cham_norm_x = x_normals.sum(-1) * zero_weights if return_normals else None
+            if point_reduction is not None:
+                cham_x = cham_x.sum(1)
+                if cham_norm_x is not None:
+                    cham_norm_x = cham_norm_x.sum(1)
+            return cham_x, cham_norm_x
 
     cham_norm_x = x.new_zeros(())
 
