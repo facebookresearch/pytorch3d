@@ -77,6 +77,12 @@ struct float2 {
 struct float3 {
   float x, y, z;
 };
+inline float2 make_float2(const float& x, const float& y) {
+  float2 res;
+  res.x = x;
+  res.y = y;
+  return res;
+}
 inline float3 make_float3(const float& x, const float& y, const float& z) {
   float3 res;
   res.x = x;
