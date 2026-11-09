@@ -89,9 +89,14 @@ class TestFaceAreasNormals(TestCaseMixin, unittest.TestCase):
         # backward
         grad_areas = torch.rand(areas.shape, device=device, dtype=dtype)
         grad_normals = torch.rand(normals.shape, device=device, dtype=dtype)
-        areas.backward((grad_areas, grad_normals))
+        # Weight the normal gradients by area so tiny or degenerate faces
+        # do not amplify floating-point error in the reference comparison.
+        grad_normals = grad_normals * areas.detach()[:, None]
+        torch.autograd.backward((areas, normals), (grad_areas, grad_normals))
         grad_verts = verts.grad
-        areas_torch.backward((grad_areas, grad_normals))
+        torch.autograd.backward(
+            (areas_torch, normals_torch), (grad_areas, grad_normals)
+        )
         grad_verts_torch = verts_torch.grad
         self.assertClose(grad_verts_torch, grad_verts, atol=1e-6)
 
