@@ -16,7 +16,7 @@ jobs:
       CU_VERSION: "cu121"
       JUST_TESTRUN: 1
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - name: Build and run tests
       run: |-
         conda create --name env --yes --quiet conda-build
@@ -38,7 +38,7 @@ jobs:
       PYTORCH_VERSION: "2.11.0"
       ROCM_INDEX: "rocm7.2"
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - name: Install Python and torch+rocm
       run: |-
         apt-get update
