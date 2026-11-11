@@ -8,6 +8,10 @@ source:
 requirements:
   build:
     - {{ compiler('c') }} # [win]
+    {% if environ.get('CU_VERSION') == 'cu121' %}
+    - gcc_linux-64 =12  # [linux64]
+    - gxx_linux-64 =12  # [linux64]
+    {% endif %}
     {{ environ.get('CONDA_CUDA_TOOLKIT_BUILD_CONSTRAINT1', '') }}
     {{ environ.get('CONDA_CUDA_TOOLKIT_BUILD_CONSTRAINT2', '') }}
     {{ environ.get('CONDA_CUB_CONSTRAINT') }}
