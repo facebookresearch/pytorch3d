@@ -50,7 +50,8 @@ at::Tensor FarthestPointSamplingCpu(
     const at::Tensor& points,
     const at::Tensor& lengths,
     const at::Tensor& K,
-    const at::Tensor& start_idxs);
+    const at::Tensor& start_idxs,
+    const int64_t max_K_known = -1);
 
 // Exposed implementation.
 at::Tensor FarthestPointSampling(
@@ -75,5 +76,5 @@ at::Tensor FarthestPointSampling(
   CHECK_CPU(lengths);
   CHECK_CPU(K);
   CHECK_CPU(start_idxs);
-  return FarthestPointSamplingCpu(points, lengths, K, start_idxs);
+  return FarthestPointSamplingCpu(points, lengths, K, start_idxs, max_K_known);
 }

@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <cub/cub.cuh>
+#include <limits>
 #include "utils/warp_reduce.cuh"
 
 template <unsigned int block_size>
@@ -47,7 +48,7 @@ __global__ void FarthestPointSamplingKernel(
 
   // Write the first selected point to global memory in the first thread
   int64_t selected = start_idxs[batch_idx];
-  if (tid == 0)
+  if (tid == 0 && k_n > 0)
     idxs[batch_idx][0] = selected;
 
   // Iterate to find k_n sampled points
@@ -131,7 +132,7 @@ at::Tensor FarthestPointSamplingCuda(
   const int64_t N = points.size(0);
   const int64_t P = points.size(1);
   int64_t max_K;
-  if (max_K_known > 0) {
+  if (max_K_known >= 0) {
     max_K = max_K_known;
   } else {
     max_K = at::max(K).item<int64_t>();
@@ -139,7 +140,8 @@ at::Tensor FarthestPointSamplingCuda(
 
   // Initialize the output tensor with the sampled indices
   auto idxs = at::full({N, max_K}, -1, lengths.options());
-  auto min_point_dist = at::full({N, P}, 1e10, points.options());
+  auto min_point_dist =
+      at::full({N, P}, std::numeric_limits<float>::max(), points.options());
 
   if (N == 0 || P == 0) {
     AT_CUDA_CHECK(cudaGetLastError());

@@ -104,6 +104,43 @@ class TestFPS(TestCaseMixin, unittest.TestCase):
                         torch.arange(count, device=device),
                     )
 
+    def test_large_coordinates(self):
+        for fps_func, device in self._fps_functions_and_devices():
+            with self.subTest(fps_func=fps_func.__name__, device=device):
+                points = torch.tensor(
+                    [[[0.0, 0, 0], [2e5, 0, 0], [3e5, 0, 0], [4e5, 0, 0]]],
+                    device=device,
+                )
+                _, indices = fps_func(points, K=2)
+                self.assertClose(indices, torch.tensor([[0, 3]], device=device))
+
+    def test_empty_pointcloud(self):
+        for fps_func, device in self._fps_functions_and_devices():
+            with self.subTest(fps_func=fps_func.__name__, device=device):
+                points = torch.ones((2, 4, 3), device=device)
+                lengths = torch.tensor([4, 0], device=device)
+                _, indices = fps_func(points, lengths=lengths, K=3)
+                expected = torch.tensor([[0, 1, 2], [-1, -1, -1]], device=device)
+                self.assertClose(indices, expected)
+
+    def test_zero_k(self):
+        for fps_func, device in self._fps_functions_and_devices():
+            with self.subTest(fps_func=fps_func.__name__, device=device):
+                points = torch.randn((2, 4, 3), device=device)
+                sampled_points, indices = fps_func(points, K=0)
+                self.assertEqual(indices.shape, (2, 0))
+                self.assertEqual(sampled_points.shape, (2, 0, 3))
+
+    def test_empty_batch(self):
+        for fps_func, device in self._fps_functions_and_devices():
+            if fps_func is sample_farthest_points_naive:
+                continue
+            with self.subTest(device=device):
+                points = torch.randn((0, 4, 3), device=device)
+                sampled_points, indices = fps_func(points, K=3)
+                self.assertEqual(indices.shape, (0, 3))
+                self.assertEqual(sampled_points.shape, (0, 3, 3))
+
     def _test_simple(self, fps_func, device="cpu"):
         # fmt: off
         points = torch.tensor(

@@ -154,6 +154,12 @@ def sample_farthest_points_naive(
             device=device,
         )
 
+        # If the pointcloud has fewer than K points then only iterate over the min
+        k_n = min(lengths[n], K[n])
+        if k_n <= 0:
+            all_sampled_indices.append(sample_idx_batch)
+            continue
+
         # Initialize closest distances to inf, shape: (P,)
         # This will be updated at each iteration to track the closest distance of the
         # remaining points to any of the selected points
@@ -169,11 +175,6 @@ def sample_farthest_points_naive(
         # pyre-fixme[6]: For 2nd argument expected `int` but got `Tensor`.
         selected_idx = randint(0, lengths[n] - 1) if random_start_point else 0
         sample_idx_batch[0] = selected_idx
-
-        # If the pointcloud has fewer than K points then only iterate over the min
-        #  `Tensor`.
-        #  `Tensor`.
-        k_n = min(lengths[n], K[n])
 
         # Iteratively select points for a maximum of k_n
         for i in range(1, k_n):

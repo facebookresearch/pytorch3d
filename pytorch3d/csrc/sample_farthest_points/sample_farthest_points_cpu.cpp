@@ -15,12 +15,14 @@ at::Tensor FarthestPointSamplingCpu(
     const at::Tensor& points,
     const at::Tensor& lengths,
     const at::Tensor& K,
-    const at::Tensor& start_idxs) {
+    const at::Tensor& start_idxs,
+    const int64_t max_K_known = -1) {
   // Get constants
   const int64_t N = points.size(0);
   const int64_t P = points.size(1);
   const int64_t D = points.size(2);
-  const int64_t max_K = torch::max(K).item<int64_t>();
+  const int64_t max_K =
+      max_K_known >= 0 ? max_K_known : torch::max(K).item<int64_t>();
 
   // Initialize an output array for the sampled indices
   // of shape (N, max_K)
@@ -43,6 +45,14 @@ at::Tensor FarthestPointSamplingCpu(
   std::vector<float> dists(P, std::numeric_limits<float>::max());
 
   for (int64_t n = 0; n < N; ++n) {
+    // For heterogeneous pointclouds, use the minimum of the
+    // length for that cloud compared to K as the number of
+    // points to sample
+    const int64_t batch_k = std::min(lengths_a[n], k_a[n]);
+    if (batch_k <= 0) {
+      continue;
+    }
+
     // Resize and reset points mask and distances for each batch
     selected_points_mask.resize(lengths_a[n]);
     dists.resize(lengths_a[n]);
@@ -55,11 +65,6 @@ at::Tensor FarthestPointSamplingCpu(
 
     // Set the value of the mask at this point to false
     selected_points_mask[last_idx] = true;
-
-    // For heterogeneous pointclouds, use the minimum of the
-    // length for that cloud compared to K as the number of
-    // points to sample
-    const int64_t batch_k = std::min(lengths_a[n], k_a[n]);
 
     // Iteratively select batch_k points per batch
     for (int64_t k = 1; k < batch_k; ++k) {
