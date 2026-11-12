@@ -47,6 +47,18 @@ _box_triangles = [
 ]
 
 
+# The faces of the 3D box, counterclockwise when seen from outside for the
+# corner order documented in box3d_overlap.
+_box_faces_ccw = [
+    [0, 3, 2, 1],
+    [4, 5, 6, 7],
+    [0, 1, 5, 4],
+    [3, 7, 6, 2],
+    [0, 4, 7, 3],
+    [1, 2, 6, 5],
+]
+
+
 def _check_coplanar(boxes: torch.Tensor, eps: float = 1e-4) -> None:
     faces = torch.tensor(_box_planes, dtype=torch.int64, device=boxes.device)
     verts = boxes.index_select(index=faces.view(-1), dim=1)
@@ -89,6 +101,26 @@ def _check_nonzero(boxes: torch.Tensor, eps: float = 1e-4) -> None:
         raise ValueError(msg)
 
     return
+
+
+def _check_corner_order(boxes: torch.Tensor) -> None:
+    """
+    Checks that the corners of each box are in the documented order or its
+    mirror image, i.e. that the faces all wind the same way around the center.
+    """
+    faces = torch.tensor(_box_faces_ccw, dtype=torch.int64, device=boxes.device)
+    # Relative to a corner, so that the means are not rounded onto a face far
+    # from the origin.
+    local = boxes - boxes[:, :1]
+    verts = local[:, faces]  # (B, 6, 4, 3)
+    normals = torch.cross(
+        verts[:, :, 2] - verts[:, :, 0], verts[:, :, 3] - verts[:, :, 1], dim=-1
+    )
+    centers = local.mean(dim=1, keepdim=True)  # (B, 1, 3)
+    outward = ((verts.mean(dim=2) - centers) * normals).sum(dim=-1)  # (B, 6)
+    if not ((outward > 0).all(dim=1) | (outward < 0).all(dim=1)).all().item():
+        msg = "Box corners are not in the documented order"
+        raise ValueError(msg)
 
 
 class _box3d_overlap(Function):
@@ -148,6 +180,9 @@ def box3d_overlap(
         [0, 1, 1],
     ]
 
+    Mirror images of this order are also accepted. Other orders raise a
+    ValueError.
+
     Args:
         boxes1: tensor of shape (N, 8, 3) of the coordinates of the 1st boxes
         boxes2: tensor of shape (M, 8, 3) of the coordinates of the 2nd boxes
@@ -163,6 +198,8 @@ def box3d_overlap(
     _check_coplanar(boxes2, eps)
     _check_nonzero(boxes1, eps)
     _check_nonzero(boxes2, eps)
+    _check_corner_order(boxes1)
+    _check_corner_order(boxes2)
 
     vol, iou = _box3d_overlap.apply(boxes1, boxes2)
 

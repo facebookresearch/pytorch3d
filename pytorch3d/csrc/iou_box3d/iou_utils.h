@@ -6,728 +6,457 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <ATen/ATen.h>
-#include <assert.h>
-#include <torch/extension.h>
-#include <torch/torch.h>
-#include <algorithm>
-#include <list>
-#include <numeric>
-#include <queue>
-#include <tuple>
-#include <type_traits>
-#include "utils/vec3.h"
+#pragma once
+#include <math.h>
+#include <stdint.h>
 
-// dEpsilon: Used in dot products and is used to assess whether two unit vectors
-// are orthogonal (or coplanar). It's an epsilon on cos(θ).
-// With dEpsilon = 0.001, two unit vectors are considered co-planar
-// if their θ = 2.5 deg.
-const auto dEpsilon = 1e-3;
-// aEpsilon: Used once in main function to check for small face areas
-const auto aEpsilon = 1e-4;
-// kEpsilon: Used only for norm(u) = u/max(||u||, kEpsilon)
-const auto kEpsilon = 1e-8;
+// Intersection volume of two boxes, shared by the CPU and CUDA
+// implementations.
+//
+// Box1 is treated as a closed convex polyhedron and is clipped by the six
+// half-spaces of box2 one at a time. Each cut closes the polyhedron again with
+// a cap face built from the same vertex classifications, so the surface stays
+// closed without any coplanarity tests or tolerances. The volume comes from the
+// divergence theorem with signed terms, which does not depend on a reference
+// point inside the shape.
 
-/*
-_PLANES and _TRIS define the 4- and 3-connectivity
-of the 8 box corners.
-_PLANES gives the quad faces of the 3D box
-_TRIS gives the triangle faces of the 3D box
-*/
-const int NUM_PLANES = 6;
-const int NUM_TRIS = 12;
-const int _PLANES[6][4] = {
-    {0, 1, 2, 3},
-    {3, 2, 6, 7},
-    {0, 1, 5, 4},
-    {0, 3, 7, 4},
-    {1, 5, 6, 2},
-    {4, 5, 6, 7},
-};
-const int _TRIS[12][3] = {
-    {0, 1, 2},
-    {0, 3, 2},
-    {4, 5, 6},
-    {4, 6, 7},
-    {1, 5, 6},
-    {1, 6, 2},
-    {0, 4, 7},
-    {0, 7, 3},
-    {3, 2, 6},
-    {3, 6, 7},
-    {0, 1, 5},
-    {0, 4, 5},
+#ifdef __CUDACC__
+#define IOU_HOST_DEVICE __host__ __device__
+#else
+#define IOU_HOST_DEVICE
+#endif
+
+namespace iou_box3d {
+
+// In exact arithmetic the clipped polyhedron has at most 6 + 6 faces (each
+// cut adds a single cap face), an original face has at most 4 + 6 vertices and
+// a cap at most 12. Rounding on boxes whose faces are not quite planar can add
+// slivers with more vertices; the most seen in testing was 20.
+constexpr int kMaxFaces = 12;
+constexpr int kMaxFaceVerts = 32;
+constexpr int kMaxCapEdges = 32;
+
+template <typename T>
+struct Point {
+  T x, y, z;
 };
 
-// Create a new data type for representing the
-// verts for each face which can be triangle or plane.
-// This helps make the code more readable.
-using face_verts = std::vector<std::vector<vec3<float>>>;
-
-// Args
-//    box: (8, 3) tensor accessor for the box vertices
-//    plane_idx: index of the plane in the box
-//    vert_idx: index of the vertex in the plane
-//
-// Returns
-//    vec3<T> (x, y, x) vertex coordinates
-//
-template <typename Box>
-inline vec3<float>
-ExtractVertsPlane(const Box& box, const int plane_idx, const int vert_idx) {
-  return vec3<float>(
-      box[_PLANES[plane_idx][vert_idx]][0],
-      box[_PLANES[plane_idx][vert_idx]][1],
-      box[_PLANES[plane_idx][vert_idx]][2]);
+template <typename T>
+IOU_HOST_DEVICE inline Point<T> operator+(
+    const Point<T>& a,
+    const Point<T>& b) {
+  return {a.x + b.x, a.y + b.y, a.z + b.z};
 }
 
-// Args
-//    box: (8, 3) tensor accessor for the box vertices
-//    tri_idx: index of the triangle face in the box
-//    vert_idx: index of the vertex in the triangle
-//
-// Returns
-//    vec3<T> (x, y, x) vertex coordinates
-//
-template <typename Box>
-inline vec3<float>
-ExtractVertsTri(const Box& box, const int tri_idx, const int vert_idx) {
-  return vec3<float>(
-      box[_TRIS[tri_idx][vert_idx]][0],
-      box[_TRIS[tri_idx][vert_idx]][1],
-      box[_TRIS[tri_idx][vert_idx]][2]);
+template <typename T>
+IOU_HOST_DEVICE inline Point<T> operator-(
+    const Point<T>& a,
+    const Point<T>& b) {
+  return {a.x - b.x, a.y - b.y, a.z - b.z};
 }
 
-// Args
-//    box: (8, 3) tensor accessor for the box vertices
-//
-// Returns
-//    std::vector<std::vector<vec3<T>>> effectively (F, 3, 3)
-//      coordinates of the verts for each face
-//
-template <typename Box>
-inline face_verts GetBoxTris(const Box& box) {
-  face_verts box_tris;
-  for (int t = 0; t < NUM_TRIS; ++t) {
-    vec3<float> v0 = ExtractVertsTri(box, t, 0);
-    vec3<float> v1 = ExtractVertsTri(box, t, 1);
-    vec3<float> v2 = ExtractVertsTri(box, t, 2);
-    box_tris.push_back({v0, v1, v2});
+template <typename T>
+IOU_HOST_DEVICE inline Point<T> operator*(const Point<T>& a, const T b) {
+  return {a.x * b, a.y * b, a.z * b};
+}
+
+template <typename T>
+IOU_HOST_DEVICE inline bool operator==(const Point<T>& a, const Point<T>& b) {
+  return a.x == b.x && a.y == b.y && a.z == b.z;
+}
+
+template <typename T>
+IOU_HOST_DEVICE inline T Dot(const Point<T>& a, const Point<T>& b) {
+  return a.x * b.x + a.y * b.y + a.z * b.z;
+}
+
+IOU_HOST_DEVICE inline float Fma(const float a, const float b, const float c) {
+  return fmaf(a, b, c);
+}
+
+IOU_HOST_DEVICE inline double
+Fma(const double a, const double b, const double c) {
+  return fma(a, b, c);
+}
+
+template <typename T>
+IOU_HOST_DEVICE inline Point<T> Cross(const Point<T>& a, const Point<T>& b) {
+  return {a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x};
+}
+
+// Corner indices of face f of a box, counterclockwise when seen from outside
+// for the corner order documented in box3d_overlap.
+IOU_HOST_DEVICE inline int BoxFaceCorner(const int f, const int i) {
+  const int faces[6][4] = {
+      {0, 3, 2, 1},
+      {4, 5, 6, 7},
+      {0, 1, 5, 4},
+      {3, 7, 6, 2},
+      {0, 4, 7, 3},
+      {1, 2, 6, 5},
+  };
+  return faces[f][i];
+}
+
+// A polyhedron stored as faces, each an ordered loop of vertices.
+template <typename T>
+struct Polyhedron {
+  Point<T> verts[kMaxFaces][kMaxFaceVerts];
+  int num_verts[kMaxFaces];
+  int num_faces;
+};
+
+template <typename T>
+IOU_HOST_DEVICE inline void LoadBox(const float* box, Point<T> corners[8]) {
+  for (int i = 0; i < 8; ++i) {
+    corners[i] = {T(box[3 * i]), T(box[3 * i + 1]), T(box[3 * i + 2])};
   }
-  return box_tris;
 }
 
-// Args
-//    box: (8, 3) tensor accessor for the box vertices
-//
-// Returns
-//    std::vector<std::vector<vec3<T>>> effectively (P, 3, 3)
-//      coordinates of the 4 verts for each plane
-//
-template <typename Box>
-inline face_verts GetBoxPlanes(const Box& box) {
-  face_verts box_planes;
-  for (int t = 0; t < NUM_PLANES; ++t) {
-    vec3<float> v0 = ExtractVertsPlane(box, t, 0);
-    vec3<float> v1 = ExtractVertsPlane(box, t, 1);
-    vec3<float> v2 = ExtractVertsPlane(box, t, 2);
-    vec3<float> v3 = ExtractVertsPlane(box, t, 3);
-    box_planes.push_back({v0, v1, v2, v3});
+template <typename T>
+IOU_HOST_DEVICE inline Point<T> BoxCenter(const Point<T> corners[8]) {
+  Point<T> sum = corners[0];
+  for (int i = 1; i < 8; ++i) {
+    sum = sum + corners[i];
   }
-  return box_planes;
+  return sum * T(0.125);
 }
 
-// The normal of a plane spanned by vectors e0 and e1
-//
-// Args
-//    e0, e1: vec3 vectors defining a plane
-//
-// Returns
-//    vec3: normal of the plane
-//
-inline vec3<float> GetNormal(const vec3<float> e0, const vec3<float> e1) {
-  vec3<float> n = cross(e0, e1);
-  n = n / std::fmaxf(norm(n), kEpsilon);
-  return n;
+// Positive for boxes with the documented corner order, negative for their
+// mirror images.
+template <typename T>
+IOU_HOST_DEVICE inline T BoxSignedVolume(
+    const Point<T> corners[8],
+    const Point<T>& center) {
+  T vol = 0;
+  for (int f = 0; f < 6; ++f) {
+    const Point<T> v0 = corners[BoxFaceCorner(f, 0)] - center;
+    const Point<T> v1 = corners[BoxFaceCorner(f, 1)] - center;
+    const Point<T> v2 = corners[BoxFaceCorner(f, 2)] - center;
+    const Point<T> v3 = corners[BoxFaceCorner(f, 3)] - center;
+    vol += Dot(v0, Cross(v1, v2)) + Dot(v0, Cross(v2, v3));
+  }
+  return vol / 6;
 }
 
-// The center of a triangle tri
-//
-// Args
-//    tri: vec3 coordinates of the vertices of the triangle
-//
-// Returns
-//    vec3: center of the triangle
-//
-inline vec3<float> TriCenter(const std::vector<vec3<float>>& tri) {
-  // Vertices of the triangle
-  const vec3<float> v0 = tri[0];
-  const vec3<float> v1 = tri[1];
-  const vec3<float> v2 = tri[2];
-
-  return (v0 + v1 + v2) / 3.0f;
-}
-
-// The normal of the triangle defined by vertices (v0, v1, v2)
-// We find the "best" edges connecting the face center to the vertices,
-// such that the cross product between the edges is maximized.
-//
-// Args
-//    tri: vec3 coordinates of the vertices of the face
-//
-// Returns
-//    vec3: normal for the face
-//
-inline vec3<float> TriNormal(const std::vector<vec3<float>>& tri) {
-  // Get center of triangle
-  const vec3<float> ctr = TriCenter(tri);
-
-  // find the "best" normal as cross product of edges from center
-  float max_dist = -1.0f;
-  vec3<float> n = {0.0f, 0.0f, 0.0f};
-  for (int i = 0; i < 2; ++i) {
-    for (int j = i + 1; j < 3; ++j) {
-      const float dist = norm(cross(tri[i] - ctr, tri[j] - ctr));
-      if (dist > max_dist) {
-        n = GetNormal(tri[i] - ctr, tri[j] - ctr);
-      }
+template <typename T>
+IOU_HOST_DEVICE inline T PolyhedronSignedVolume(const Polyhedron<T>& poly) {
+  T vol = 0;
+  for (int f = 0; f < poly.num_faces; ++f) {
+    const Point<T> v0 = poly.verts[f][0];
+    for (int i = 1; i + 1 < poly.num_verts[f]; ++i) {
+      vol += Dot(v0, Cross(poly.verts[f][i], poly.verts[f][i + 1]));
     }
   }
-  return n;
+  return vol / 6;
 }
 
-// The center of a plane
-//
-// Args
-//    plane: vec3 coordinates of the vertices of the plane
-//
-// Returns
-//    vec3: center of the plane
-//
-inline vec3<float> PlaneCenter(const std::vector<vec3<float>>& plane) {
-  // Vertices of the plane
-  const vec3<float> v0 = plane[0];
-  const vec3<float> v1 = plane[1];
-  const vec3<float> v2 = plane[2];
-  const vec3<float> v3 = plane[3];
-
-  return (v0 + v1 + v2 + v3) / 4.0f;
+// Signed distance of p from the plane, scaled by |normal|. Every copy of a
+// vertex must be classified identically, so this uses explicit fma, which
+// the compiler cannot contract differently at different call sites.
+template <typename T>
+IOU_HOST_DEVICE inline T
+PlaneDistance(const Point<T>& normal, const T offset, const Point<T>& p) {
+  return Fma(normal.z, p.z, Fma(normal.y, p.y, Fma(normal.x, p.x, -offset)));
 }
 
-// The normal of a planar face with vertices (v0, v1, v2, v3)
-// We find the "best" edges connecting the face center to the vertices,
-// such that the cross product between the edges is maximized.
-//
-// Args
-//    plane: vec3 coordinates of the vertices of the planar face
-//
-// Returns
-//    vec3: normal of the planar face
-//
-inline vec3<float> PlaneNormal(const std::vector<vec3<float>>& plane) {
-  // Get center of planar face
-  vec3<float> ctr = PlaneCenter(plane);
+// The point where the edge from vin (s_in <= 0) to vout (s_out > 0) crosses
+// the plane. The two faces sharing an edge call this with the same arguments,
+// so they get bitwise identical points.
+template <typename T>
+IOU_HOST_DEVICE inline Point<T> EdgeCrossing(
+    const Point<T>& vin,
+    const Point<T>& vout,
+    const T s_in,
+    const T s_out) {
+  const T t = s_in / (s_in - s_out);
+  return {
+      Fma(vout.x - vin.x, t, vin.x),
+      Fma(vout.y - vin.y, t, vin.y),
+      Fma(vout.z - vin.z, t, vin.z)};
+}
 
-  // find the "best" normal as cross product of edges from center
-  float max_dist = -1.0f;
-  vec3<float> n = {0.0f, 0.0f, 0.0f};
-  for (int i = 0; i < 3; ++i) {
-    for (int j = i + 1; j < 4; ++j) {
-      const float dist = norm(cross(plane[i] - ctr, plane[j] - ctr));
-      if (dist > max_dist) {
-        n = GetNormal(plane[i] - ctr, plane[j] - ctr);
+// Appends p to a vertex loop unless it repeats the previous vertex, which
+// happens when a vertex lies exactly on the plane.
+template <typename T>
+IOU_HOST_DEVICE inline void
+PushVertex(Point<T>* loop, int& len, const Point<T>& p) {
+  if (len == 0 || !(loop[len - 1] == p)) {
+    loop[len++] = p;
+  }
+}
+
+// Records the cut edge from -> to of the cap face. Returns false on buffer
+// overflow.
+template <typename T>
+IOU_HOST_DEVICE inline bool AddCapEdge(
+    const Point<T>& from,
+    const Point<T>& to,
+    Point<T>* cap_from,
+    Point<T>* cap_to,
+    int& num_cap_edges) {
+  if (from == to) {
+    return true;
+  }
+  if (num_cap_edges == kMaxCapEdges) {
+    return false;
+  }
+  cap_from[num_cap_edges] = from;
+  cap_to[num_cap_edges] = to;
+  ++num_cap_edges;
+  return true;
+}
+
+// Clips one face to the half-space s <= 0 (Sutherland-Hodgman). Writes the
+// clipped loop to out. Where the loop leaves the half-space at X and comes
+// back at E, the face gets the edge X -> E and the cap face the edge E -> X,
+// which is appended to cap_from/cap_to. Returns false on buffer overflow.
+template <typename T>
+IOU_HOST_DEVICE inline bool ClipFace(
+    const Point<T>* verts,
+    const int num_verts,
+    const Point<T>& normal,
+    const T offset,
+    Point<T>* out,
+    int& num_out,
+    Point<T>* cap_from,
+    Point<T>* cap_to,
+    int& num_cap_edges) {
+  T s[kMaxFaceVerts];
+  for (int i = 0; i < num_verts; ++i) {
+    s[i] = PlaneDistance(normal, offset, verts[i]);
+  }
+  bool have_exit = false;
+  bool have_first_entry = false;
+  Point<T> exit;
+  Point<T> first_entry;
+  num_out = 0;
+  int prev = num_verts - 1;
+  for (int cur = 0; cur < num_verts; prev = cur++) {
+    const bool prev_in = s[prev] <= 0;
+    const bool cur_in = s[cur] <= 0;
+    if (num_out + 2 > kMaxFaceVerts) {
+      return false;
+    }
+    if (prev_in && !cur_in) {
+      exit = EdgeCrossing(verts[prev], verts[cur], s[prev], s[cur]);
+      have_exit = true;
+      PushVertex(out, num_out, exit);
+    } else if (!prev_in && cur_in) {
+      const Point<T> entry =
+          EdgeCrossing(verts[cur], verts[prev], s[cur], s[prev]);
+      if (have_exit) {
+        if (!AddCapEdge(entry, exit, cap_from, cap_to, num_cap_edges)) {
+          return false;
+        }
+        have_exit = false;
+      } else {
+        first_entry = entry;
+        have_first_entry = true;
       }
+      PushVertex(out, num_out, entry);
+    }
+    if (cur_in) {
+      PushVertex(out, num_out, verts[cur]);
     }
   }
-  return n;
-}
-
-// The area of the face defined by vertices (v0, v1, v2)
-// Define e0 to be the edge connecting (v1, v0)
-// Define e1 to be the edge connecting (v2, v0)
-// Area is the norm of the cross product of e0, e1 divided by 2.0
-//
-// Args
-//    tri: vec3 coordinates of the vertices of the face
-//
-// Returns
-//    float: area for the face
-//
-inline float FaceArea(const std::vector<vec3<float>>& tri) {
-  // Get verts for face
-  const vec3<float> v0 = tri[0];
-  const vec3<float> v1 = tri[1];
-  const vec3<float> v2 = tri[2];
-  const vec3<float> n = cross(v1 - v0, v2 - v0);
-  return norm(n) / 2.0;
-}
-
-// The normal of a box plane defined by the verts in `plane` such that it
-// points toward the centroid of the box given by `center`.
-//
-// Args
-//    plane: vec3 coordinates of the vertices of the plane
-//    center: vec3 coordinates of the center of the box from
-//        which the plane originated
-//
-// Returns
-//    vec3: normal for the plane such that it points towards
-//      the center of the box
-//
-inline vec3<float> PlaneNormalDirection(
-    const std::vector<vec3<float>>& plane,
-    const vec3<float>& center) {
-  // The plane's center & normal
-  const vec3<float> plane_center = PlaneCenter(plane);
-  vec3<float> n = PlaneNormal(plane);
-
-  // We project the center on the plane defined by (v0, v1, v2, v3)
-  // We can write center = plane_center + a * e0 + b * e1 + c * n
-  // We know that <e0, n> = 0 and <e1, n> = 0 and
-  // <a, b> is the dot product between a and b.
-  // This means we can solve for c as:
-  // c = <center - plane_center - a * e0 - b * e1, n>
-  //   = <center - plane_center, n>
-  const float c = dot((center - plane_center), n);
-
-  // If c is negative, then we revert the direction of n such that n
-  // points "inside"
-  if (c < 0.0f) {
-    n = -1.0f * n;
+  if (have_exit && have_first_entry &&
+      !AddCapEdge(first_entry, exit, cap_from, cap_to, num_cap_edges)) {
+    return false;
   }
-
-  return n;
-}
-
-// Calculate the volume of the box by summing the volume of
-// each of the tetrahedrons formed with a triangle face and
-// the box centroid.
-//
-// Args
-//    box_tris: vector of vec3 coordinates of the vertices of each
-//       of the triangles in the box
-//    box_center: vec3 coordinates of the center of the box
-//
-// Returns
-//    float: volume of the box
-//
-inline float BoxVolume(
-    const face_verts& box_tris,
-    const vec3<float>& box_center) {
-  float box_vol = 0.0;
-  // Iterate through each triange, calculate the area of the
-  // tetrahedron formed with the box_center and sum them
-  for (int t = 0; t < box_tris.size(); ++t) {
-    // Subtract the center:
-    const vec3<float> v0 = box_tris[t][0] - box_center;
-    const vec3<float> v1 = box_tris[t][1] - box_center;
-    const vec3<float> v2 = box_tris[t][2] - box_center;
-
-    // Compute the area
-    const float area = dot(v0, cross(v1, v2));
-    const float vol = std::abs(area) / 6.0;
-    box_vol = box_vol + vol;
+  if (num_out > 1 && out[num_out - 1] == out[0]) {
+    --num_out;
   }
-  return box_vol;
+  return true;
 }
 
-// Compute the box center as the mean of the verts
-//
-// Args
-//    box_verts: (8, 3) tensor of the corner vertices of the box
-//
-// Returns
-//    vec3: coordinates of the center of the box
-//
-inline vec3<float> BoxCenter(const at::Tensor& box_verts) {
-  const auto& box_center_t = at::mean(box_verts, 0);
-  const vec3<float> box_center(
-      box_center_t[0].item<float>(),
-      box_center_t[1].item<float>(),
-      box_center_t[2].item<float>());
-  return box_center;
-}
-
-// Compute the polyhedron center as the mean of the face centers
-// of the triangle faces
-//
-// Args
-//    tris: vector of vec3 coordinates of the
-//       vertices of each of the triangles in the polyhedron
-//
-// Returns
-//    vec3: coordinates of the center of the polyhedron
-//
-inline vec3<float> PolyhedronCenter(const face_verts& tris) {
-  float x = 0.0;
-  float y = 0.0;
-  float z = 0.0;
-  const int num_tris = tris.size();
-
-  // Find the center point of each face
-  for (int t = 0; t < num_tris; ++t) {
-    const vec3<float> v0 = tris[t][0];
-    const vec3<float> v1 = tris[t][1];
-    const vec3<float> v2 = tris[t][2];
-    const float x_face = (v0.x + v1.x + v2.x) / 3.0;
-    const float y_face = (v0.y + v1.y + v2.y) / 3.0;
-    const float z_face = (v0.z + v1.z + v2.z) / 3.0;
-    x = x + x_face;
-    y = y + y_face;
-    z = z + z_face;
+// Chains the cap edges into loops and appends them as one face. In exact
+// arithmetic there is a single convex loop, but non-planar input faces can
+// give several. Each extra loop is joined to the first vertex by a bridge
+// edge traversed in both directions, which adds no volume and is handled
+// consistently by later clipping.
+template <typename T>
+IOU_HOST_DEVICE inline bool AddCapFace(
+    Polyhedron<T>& poly,
+    const Point<T>* cap_from,
+    const Point<T>* cap_to,
+    const int num_cap_edges) {
+  if (num_cap_edges == 0) {
+    return true;
   }
-
-  // Take the mean of the centers of all faces
-  x = x / num_tris;
-  y = y / num_tris;
-  z = z / num_tris;
-
-  const vec3<float> center(x, y, z);
-  return center;
-}
-
-// Compute a boolean indicator for whether a point
-// is inside a plane, where inside refers to whether
-// or not the point has a component in the
-// normal direction of the plane.
-//
-// Args
-//    plane: vector of vec3 coordinates of the
-//       vertices of each of the triangles in the box
-//    normal: vec3 of the direction of the plane normal
-//    point: vec3 of the position of the point of interest
-//
-// Returns
-//    bool: whether or not the point is inside the plane
-//
-inline bool IsInside(
-    const std::vector<vec3<float>>& plane,
-    const vec3<float>& normal,
-    const vec3<float>& point) {
-  // The center of the plane
-  const vec3<float> plane_ctr = PlaneCenter(plane);
-
-  // Every point p can be written as p = plane_ctr + a e0 + b e1 + c n
-  // Solving for c:
-  // c = (point - plane_ctr - a * e0 - b * e1).dot(n)
-  // We know that <e0, n> = 0 and <e1, n> = 0
-  // So the calculation can be simplified as:
-  const float c = dot((point - plane_ctr), normal);
-  const bool inside = c >= 0.0f;
-  return inside;
-}
-
-// Find the point of intersection between a plane
-// and a line given by the end points (p0, p1)
-//
-// Args
-//    plane: vector of vec3 coordinates of the
-//       vertices of each of the triangles in the box
-//    normal: vec3 of the direction of the plane normal
-//    p0, p1: vec3 of the start and end point of the line
-//
-// Returns
-//    vec3: position of the intersection point
-//
-inline vec3<float> PlaneEdgeIntersection(
-    const std::vector<vec3<float>>& plane,
-    const vec3<float>& normal,
-    const vec3<float>& p0,
-    const vec3<float>& p1) {
-  // The center of the plane
-  const vec3<float> plane_ctr = PlaneCenter(plane);
-
-  // The point of intersection can be parametrized
-  // p = p0 + a (p1 - p0) where a in [0, 1]
-  // We want to find a such that p is on plane
-  // <p - ctr, n> = 0
-
-  vec3<float> direc = p1 - p0;
-  direc = direc / std::fmaxf(norm(direc), kEpsilon);
-
-  vec3<float> p = (p1 + p0) / 2.0f;
-
-  if (std::abs(dot(direc, normal)) >= dEpsilon) {
-    const float top = -1.0f * dot(p0 - plane_ctr, normal);
-    const float bot = dot(p1 - p0, normal);
-    const float a = top / bot;
-    p = p0 + a * (p1 - p0);
+  if (poly.num_faces == kMaxFaces) {
+    return false;
   }
-  return p;
-}
-
-// Compute the most distant points between two sets of vertices
-//
-// Args
-//    verts1, verts2: vec3 defining the list of vertices
-//
-// Returns
-//    v1m, v2m: vec3 vectors of the most distant points
-//          in verts1 and verts2 respectively
-//
-inline std::tuple<vec3<float>, vec3<float>> ArgMaxVerts(
-    const std::vector<vec3<float>>& verts1,
-    const std::vector<vec3<float>>& verts2) {
-  vec3<float> v1m = {0.0f, 0.0f, 0.0f};
-  vec3<float> v2m = {0.0f, 0.0f, 0.0f};
-  float maxdist = -1.0f;
-
-  for (const auto& v1 : verts1) {
-    for (const auto& v2 : verts2) {
-      if (norm(v1 - v2) > maxdist) {
-        v1m = v1;
-        v2m = v2;
-        maxdist = norm(v1 - v2);
+  Point<T>* cap = poly.verts[poly.num_faces];
+  int len = 0;
+  uint32_t used = 0;
+  for (int start = 0; start < num_cap_edges; ++start) {
+    if (used & (1u << start)) {
+      continue;
+    }
+    Point<T> loop[kMaxFaceVerts];
+    int loop_len = 0;
+    for (int cur = start; cur >= 0;) {
+      if (loop_len == kMaxFaceVerts) {
+        return false;
+      }
+      used |= 1u << cur;
+      loop[loop_len++] = cap_from[cur];
+      const int edge = cur;
+      cur = -1;
+      for (int j = 0; j < num_cap_edges; ++j) {
+        if (!(used & (1u << j)) && cap_from[j] == cap_to[edge]) {
+          cur = j;
+          break;
+        }
       }
     }
-  }
-  return std::make_tuple(v1m, v2m);
-}
-
-// Compute a boolean indicator for whether or not two faces
-// are coplanar
-//
-// Args
-//    tri1, tri2: std:vector<vec3> of the vertex coordinates of
-//        triangle faces
-//
-// Returns
-//    bool: whether or not the two faces are coplanar
-//
-inline bool IsCoplanarTriTri(
-    const std::vector<vec3<float>>& tri1,
-    const std::vector<vec3<float>>& tri2) {
-  // Get normal for tri 1
-  const vec3<float> n1 = TriNormal(tri1);
-
-  // Get normal for tri 2
-  const vec3<float> n2 = TriNormal(tri2);
-
-  // Check if parallel
-  const bool check1 = std::abs(dot(n1, n2)) > 1 - dEpsilon;
-
-  // Compute most distant points
-  auto argvs = ArgMaxVerts(tri1, tri2);
-  const auto v1m = std::get<0>(argvs);
-  const auto v2m = std::get<1>(argvs);
-
-  vec3<float> n12m = v1m - v2m;
-  n12m = n12m / std::fmaxf(norm(n12m), kEpsilon);
-
-  const bool check2 = (std::abs(dot(n12m, n1)) < dEpsilon) ||
-      (std::abs(dot(n12m, n2)) < dEpsilon);
-
-  return (check1 && check2);
-}
-
-// Compute a boolean indicator for whether or not a triangular and a planar
-// face are coplanar
-//
-// Args
-//    tri, plane: std:vector<vec3> of the vertex coordinates of
-//        triangular face and planar face
-//    normal: the normal direction of the plane pointing "inside"
-//
-// Returns
-//    bool: whether or not the two faces are coplanar
-//
-inline bool IsCoplanarTriPlane(
-    const std::vector<vec3<float>>& tri,
-    const std::vector<vec3<float>>& plane,
-    const vec3<float>& normal) {
-  // Get normal for tri
-  const vec3<float> nt = TriNormal(tri);
-
-  // check if parallel
-  const bool check1 = std::abs(dot(nt, normal)) > 1 - dEpsilon;
-
-  // Compute most distant points
-  auto argvs = ArgMaxVerts(tri, plane);
-  const auto v1m = std::get<0>(argvs);
-  const auto v2m = std::get<1>(argvs);
-
-  vec3<float> n12m = v1m - v2m;
-  n12m = n12m / std::fmaxf(norm(n12m), kEpsilon);
-
-  const bool check2 = std::abs(dot(n12m, normal)) < dEpsilon;
-
-  return (check1 && check2);
-}
-
-// Triangle is clipped into a quadrilateral
-// based on the intersection points with the plane.
-// Then the quadrilateral is divided into two triangles.
-//
-// Args
-//    plane: vector of vec3 coordinates of the
-//        vertices of each of the triangles in the box
-//    normal: vec3 of the direction of the plane normal
-//    vout: vec3 of the point in the triangle which is outside
-//       the plane
-//    vin1, vin2: vec3 of the points in the triangle which are
-//        inside the plane
-//
-// Returns
-//    std::vector<std::vector<vec3>>: vector of vertex coordinates
-//      of the new triangle faces
-//
-inline face_verts ClipTriByPlaneOneOut(
-    const std::vector<vec3<float>>& plane,
-    const vec3<float>& normal,
-    const vec3<float>& vout,
-    const vec3<float>& vin1,
-    const vec3<float>& vin2) {
-  // point of intersection between plane and (vin1, vout)
-  const vec3<float> pint1 = PlaneEdgeIntersection(plane, normal, vin1, vout);
-  // point of intersection between plane and (vin2, vout)
-  const vec3<float> pint2 = PlaneEdgeIntersection(plane, normal, vin2, vout);
-  const face_verts face_verts = {{vin1, pint1, pint2}, {vin1, pint2, vin2}};
-  return face_verts;
-}
-
-// Triangle is clipped into a smaller triangle based
-// on the intersection points with the plane.
-//
-// Args
-//    plane: vector of vec3 coordinates of the
-//       vertices of each of the triangles in the box
-//    normal: vec3 of the direction of the plane normal
-//    vout1, vout2: vec3 of the points in the triangle which are
-//       outside the plane
-//    vin: vec3 of the point in the triangle which is inside
-//        the plane
-// Returns
-//    std::vector<std::vector<vec3>>: vector of vertex coordinates
-//      of the new triangle face
-//
-inline face_verts ClipTriByPlaneTwoOut(
-    const std::vector<vec3<float>>& plane,
-    const vec3<float>& normal,
-    const vec3<float>& vout1,
-    const vec3<float>& vout2,
-    const vec3<float>& vin) {
-  // point of intersection between plane and (vin, vout1)
-  const vec3<float> pint1 = PlaneEdgeIntersection(plane, normal, vin, vout1);
-  // point of intersection between plane and (vin, vout2)
-  const vec3<float> pint2 = PlaneEdgeIntersection(plane, normal, vin, vout2);
-  const face_verts face_verts = {{vin, pint1, pint2}};
-  return face_verts;
-}
-
-// Clip the triangle faces so that they lie within the
-// plane, creating new triangle faces where necessary.
-//
-// Args
-//    plane: vector of vec3 coordinates of the
-//       vertices of each of the triangles in the box
-//    tri: std:vector<vec3> of the vertex coordinates of the
-//       triangle faces
-//    normal: vec3 of the direction of the plane normal
-//
-// Returns
-//    std::vector<std::vector<vec3>>: vector of vertex coordinates
-//      of the new triangle faces formed after clipping.
-//      All triangles are now "inside" the plane.
-//
-inline face_verts ClipTriByPlane(
-    const std::vector<vec3<float>>& plane,
-    const std::vector<vec3<float>>& tri,
-    const vec3<float>& normal) {
-  // Get Triangle vertices
-  const vec3<float> v0 = tri[0];
-  const vec3<float> v1 = tri[1];
-  const vec3<float> v2 = tri[2];
-
-  // Check coplanar
-  const bool iscoplanar = IsCoplanarTriPlane(tri, plane, normal);
-  if (iscoplanar) {
-    // Return input vertices
-    face_verts tris = {{v0, v1, v2}};
-    return tris;
-  }
-
-  // Check each of the triangle vertices to see if it is inside the plane
-  const bool isin0 = IsInside(plane, normal, v0);
-  const bool isin1 = IsInside(plane, normal, v1);
-  const bool isin2 = IsInside(plane, normal, v2);
-
-  // All in
-  if (isin0 && isin1 && isin2) {
-    // Return input vertices
-    face_verts tris = {{v0, v1, v2}};
-    return tris;
-  }
-
-  face_verts empty_tris = {};
-  // All out
-  if (!isin0 && !isin1 && !isin2) {
-    return empty_tris;
-  }
-
-  // One vert out
-  if (isin0 && isin1 && !isin2) {
-    return ClipTriByPlaneOneOut(plane, normal, v2, v0, v1);
-  }
-  if (isin0 && !isin1 && isin2) {
-    return ClipTriByPlaneOneOut(plane, normal, v1, v0, v2);
-  }
-  if (!isin0 && isin1 && isin2) {
-    return ClipTriByPlaneOneOut(plane, normal, v0, v1, v2);
-  }
-
-  // Two verts out
-  if (isin0 && !isin1 && !isin2) {
-    return ClipTriByPlaneTwoOut(plane, normal, v1, v2, v0);
-  }
-  if (!isin0 && !isin1 && isin2) {
-    return ClipTriByPlaneTwoOut(plane, normal, v0, v1, v2);
-  }
-  if (!isin0 && isin1 && !isin2) {
-    return ClipTriByPlaneTwoOut(plane, normal, v0, v2, v1);
-  }
-
-  // Else return empty (should not be reached)
-  return empty_tris;
-}
-
-// Get the triangles from each box which are part of the
-// intersecting polyhedron by computing the intersection
-// points with each of the planes.
-//
-// Args
-//    tris: vertex coordinates of all the triangle faces
-//       in the box
-//    planes: vertex coordinates of all the planes in the box
-//    center: vec3 coordinates of the center of the box from which
-//        the planes originate
-//
-// Returns
-//    std::vector<std::vector<vec3>>> vector of vertex coordinates
-//      of the new triangle faces formed after clipping.
-//      All triangles are now "inside" the planes.
-//
-inline face_verts BoxIntersections(
-    const face_verts& tris,
-    const face_verts& planes,
-    const vec3<float>& center) {
-  // Create a new vector to avoid modifying in place
-  face_verts out_tris = tris;
-  for (int p = 0; p < NUM_PLANES; ++p) {
-    // Get plane normal direction
-    const vec3<float> n2 = PlaneNormalDirection(planes[p], center);
-    // Iterate through triangles in tris
-    // Create intermediate vector to store the updated tris
-    face_verts tri_verts_updated;
-    for (int t = 0; t < out_tris.size(); ++t) {
-      // Clip tri by plane
-      const face_verts tri_updated = ClipTriByPlane(planes[p], out_tris[t], n2);
-      // Add to the tri_verts_updated output if not empty
-      for (int v = 0; v < tri_updated.size(); ++v) {
-        tri_verts_updated.push_back(tri_updated[v]);
-      }
+    if (loop_len < 3) {
+      continue;
     }
-    // Update the tris
-    out_tris = tri_verts_updated;
+    const bool bridge = len > 0;
+    if (len + loop_len + 2 * bridge > kMaxFaceVerts) {
+      return false;
+    }
+    if (bridge) {
+      cap[len++] = cap[0];
+    }
+    for (int i = 0; i < loop_len; ++i) {
+      cap[len++] = loop[i];
+    }
+    if (bridge) {
+      cap[len++] = loop[0];
+    }
   }
-  return out_tris;
+  if (len >= 3) {
+    poly.num_verts[poly.num_faces++] = len;
+  }
+  return true;
 }
+
+// Clips poly to the half-space dot(normal, p) <= offset.
+template <typename T>
+IOU_HOST_DEVICE inline bool
+ClipByPlane(Polyhedron<T>& poly, const Point<T>& normal, const T offset) {
+  Point<T> cap_from[kMaxCapEdges];
+  Point<T> cap_to[kMaxCapEdges];
+  int num_cap_edges = 0;
+  int num_faces = 0;
+  for (int f = 0; f < poly.num_faces; ++f) {
+    Point<T> out[kMaxFaceVerts];
+    int num_out = 0;
+    const bool ok = ClipFace(
+        poly.verts[f],
+        poly.num_verts[f],
+        normal,
+        offset,
+        out,
+        num_out,
+        cap_from,
+        cap_to,
+        num_cap_edges);
+    if (!ok) {
+      return false;
+    }
+    if (num_out >= 3) {
+      for (int i = 0; i < num_out; ++i) {
+        poly.verts[num_faces][i] = out[i];
+      }
+      poly.num_verts[num_faces++] = num_out;
+    }
+  }
+  poly.num_faces = num_faces;
+  return AddCapFace(poly, cap_from, cap_to, num_cap_edges);
+}
+
+template <typename T>
+IOU_HOST_DEVICE inline bool BoxesDisjoint(
+    const Point<T> corners1[8],
+    const Point<T> corners2[8]) {
+  Point<T> lo1 = corners1[0], hi1 = corners1[0];
+  Point<T> lo2 = corners2[0], hi2 = corners2[0];
+  for (int i = 1; i < 8; ++i) {
+    lo1 = {
+        fmin(lo1.x, corners1[i].x),
+        fmin(lo1.y, corners1[i].y),
+        fmin(lo1.z, corners1[i].z)};
+    hi1 = {
+        fmax(hi1.x, corners1[i].x),
+        fmax(hi1.y, corners1[i].y),
+        fmax(hi1.z, corners1[i].z)};
+    lo2 = {
+        fmin(lo2.x, corners2[i].x),
+        fmin(lo2.y, corners2[i].y),
+        fmin(lo2.z, corners2[i].z)};
+    hi2 = {
+        fmax(hi2.x, corners2[i].x),
+        fmax(hi2.y, corners2[i].y),
+        fmax(hi2.z, corners2[i].z)};
+  }
+  return hi1.x < lo2.x || hi2.x < lo1.x || hi1.y < lo2.y || hi2.y < lo1.y ||
+      hi1.z < lo2.z || hi2.z < lo1.z;
+}
+
+// Computes the intersection volume and IoU of two boxes, each given as 8
+// corners (24 floats). Gives NaN if a fixed-size buffer would overflow, which
+// should not happen for valid boxes.
+template <typename T>
+IOU_HOST_DEVICE inline void
+BoxOverlap(const float* box1, const float* box2, T& vol, T& iou) {
+  vol = 0;
+  iou = 0;
+  Point<T> corners1[8];
+  Point<T> corners2[8];
+  LoadBox(box1, corners1);
+  LoadBox(box2, corners2);
+  if (BoxesDisjoint(corners1, corners2)) {
+    return;
+  }
+
+  const Point<T> center1 = BoxCenter(corners1);
+  const Point<T> center2 = BoxCenter(corners2);
+  const T signed_vol1 = BoxSignedVolume(corners1, center1);
+  const T vol1 = fabs(signed_vol1);
+  const T signed_vol2 = BoxSignedVolume(corners2, center2);
+  const T vol2 = fabs(signed_vol2);
+
+  // Work relative to the center of box1 for accuracy far from the origin.
+  for (int i = 0; i < 8; ++i) {
+    corners1[i] = corners1[i] - center1;
+    corners2[i] = corners2[i] - center1;
+  }
+
+  Polyhedron<T> poly;
+  poly.num_faces = 6;
+  for (int f = 0; f < 6; ++f) {
+    poly.num_verts[f] = 4;
+    for (int i = 0; i < 4; ++i) {
+      poly.verts[f][i] = corners1[BoxFaceCorner(f, i)];
+    }
+  }
+
+  for (int f = 0; f < 6 && poly.num_faces > 0; ++f) {
+    const Point<T> v0 = corners2[BoxFaceCorner(f, 0)];
+    const Point<T> v1 = corners2[BoxFaceCorner(f, 1)];
+    const Point<T> v2 = corners2[BoxFaceCorner(f, 2)];
+    const Point<T> v3 = corners2[BoxFaceCorner(f, 3)];
+    // Outward for the documented corner order, inward for its mirror image.
+    Point<T> normal = Cross(v2 - v0, v3 - v1);
+    if (signed_vol2 < 0) {
+      normal = normal * T(-1);
+    }
+    const Point<T> mid = (v0 + v1 + v2 + v3) * T(0.25);
+    if (!ClipByPlane(poly, normal, Dot(normal, mid))) {
+      vol = iou = T(NAN);
+      return;
+    }
+  }
+
+  // The clipped polyhedron keeps the orientation of box1.
+  const T signed_vol = PolyhedronSignedVolume(poly);
+  vol = fmax(signed_vol1 < 0 ? -signed_vol : signed_vol, T(0));
+  const T union_vol = vol1 + vol2 - vol;
+  iou = union_vol > 0 ? vol / union_vol : T(0);
+}
+
+} // namespace iou_box3d

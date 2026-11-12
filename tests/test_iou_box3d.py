@@ -4,6 +4,7 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+import itertools
 import pickle
 import random
 import unittest
@@ -11,9 +12,20 @@ from typing import List, Tuple, Union
 
 import torch
 import torch.nn.functional as F
+from pytorch3d import _C
 from pytorch3d.io import save_obj
 from pytorch3d.ops.iou_box3d import _box_planes, _box_triangles, box3d_overlap
-from pytorch3d.transforms.rotation_conversions import random_rotation
+from pytorch3d.transforms.rotation_conversions import (
+    axis_angle_to_matrix,
+    random_rotation,
+)
+
+try:
+    import scipy  # noqa: F401
+
+    HAS_SCIPY = True
+except ImportError:
+    HAS_SCIPY = False
 
 from .common_testing import get_random_cuda_device, get_tests_dir, TestCaseMixin
 
@@ -690,6 +702,426 @@ class TestIoU3D(TestCaseMixin, unittest.TestCase):
         self._test_compare_objectron(box3d_overlap, device)
         self._test_real_boxes(box3d_overlap, device)
 
+    @staticmethod
+    def _offset_box_inputs(num_boxes, device):
+        unit_box = torch.tensor(UNIT_BOX, dtype=torch.float32, device=device)
+        indices = torch.arange(num_boxes, dtype=torch.float32, device=device)
+        fraction = indices / (num_boxes + 1)
+        lower = torch.stack(
+            (
+                0.1 + 0.7 * fraction,
+                0.12 + 0.4 * (5 * fraction).remainder(1),
+                0.14 + 0.3 * (7 * fraction).remainder(1),
+            ),
+            dim=1,
+        )
+        lengths = torch.stack(
+            (
+                1.1 + 0.2 * fraction,
+                1.1 + 0.1 * (3 * fraction).remainder(1),
+                1.1 + 0.1 * (11 * fraction).remainder(1),
+            ),
+            dim=1,
+        )
+        # Interleave disjoint boxes with distinct, partially overlapping boxes.
+        lower[indices.remainder(11) == 0, 0] += 2
+        upper = lower + lengths
+        boxes = unit_box[None] * lengths[:, None] + lower[:, None]
+        intersection_lengths = (upper.clamp(max=1) - lower.clamp(min=0)).clamp(min=0)
+        volumes = intersection_lengths.prod(dim=1)[None]
+        ious = volumes / (1 + lengths.prod(dim=1)[None] - volumes)
+        return unit_box[None], boxes, volumes, ious
+
+    def _test_iou_pair_counts(self, device):
+        # Pair counts around the block size and a larger batch, in both orders.
+        for num_boxes in (31, 32, 33, 127, 128, 129, 2401):
+            with self.subTest(num_boxes=num_boxes):
+                boxes1, boxes2, expected_volumes, expected_ious = (
+                    self._offset_box_inputs(num_boxes, device)
+                )
+                volumes, ious = box3d_overlap(boxes1, boxes2)
+                self.assertClose(volumes, expected_volumes, rtol=1e-4, atol=1e-6)
+                self.assertClose(ious, expected_ious, rtol=1e-4, atol=1e-6)
+                volumes, ious = box3d_overlap(boxes2, boxes1)
+                self.assertClose(volumes, expected_volumes.t(), rtol=1e-4, atol=1e-6)
+                self.assertClose(ious, expected_ious.t(), rtol=1e-4, atol=1e-6)
+
+    def test_iou_pair_counts_cpu(self):
+        self._test_iou_pair_counts(torch.device("cpu"))
+
+    @unittest.skipUnless(torch.cuda.is_available(), "requires CUDA")
+    def test_iou_pair_counts_cuda(self):
+        self._test_iou_pair_counts(torch.device("cuda:0"))
+
+    def _test_iou_batched_pairs(self, device):
+        # A 49 x 49 matrix varies both batch indices.
+        unit_box, boxes2, _, _ = self._offset_box_inputs(49, device)
+        offsets = torch.arange(49, dtype=torch.float32, device=device) / 1250
+        boxes1 = unit_box + offsets[:, None, None]
+        lower1, upper1 = boxes1.amin(dim=1), boxes1.amax(dim=1)
+        lower2, upper2 = boxes2.amin(dim=1), boxes2.amax(dim=1)
+        expected_volumes = (
+            (
+                torch.minimum(upper1[:, None], upper2[None])
+                - torch.maximum(lower1[:, None], lower2[None])
+            )
+            .clamp(min=0)
+            .prod(dim=2)
+        )
+        volumes1 = (upper1 - lower1).prod(dim=1)
+        volumes2 = (upper2 - lower2).prod(dim=1)
+        expected_ious = expected_volumes / (
+            volumes1[:, None] + volumes2[None] - expected_volumes
+        )
+        volumes, ious = box3d_overlap(boxes1, boxes2)
+        self.assertClose(volumes, expected_volumes, rtol=1e-4, atol=1e-6)
+        self.assertClose(ious, expected_ious, rtol=1e-4, atol=1e-6)
+
+    def test_iou_batched_pairs_cpu(self):
+        self._test_iou_batched_pairs(torch.device("cpu"))
+
+    @unittest.skipUnless(torch.cuda.is_available(), "requires CUDA")
+    def test_iou_batched_pairs_cuda(self):
+        self._test_iou_batched_pairs(torch.device("cuda:0"))
+
+    @unittest.skipUnless(torch.cuda.is_available(), "requires CUDA")
+    def test_iou_nondefault_stream_cuda(self):
+        device = torch.device("cuda:0")
+        stream = torch.cuda.Stream(device=device)
+        with torch.cuda.stream(stream):
+            boxes1, boxes2, expected_volumes, expected_ious = self._offset_box_inputs(
+                2401, device
+            )
+            volumes, ious = box3d_overlap(boxes1, boxes2)
+            # Consume the outputs on the same stream before synchronizing.
+            volumes = volumes + 1
+            ious = ious + 1
+        stream.synchronize()
+        self.assertClose(volumes, expected_volumes + 1, rtol=1e-4, atol=1e-6)
+        self.assertClose(ious, expected_ious + 1, rtol=1e-4, atol=1e-6)
+
+    @unittest.skipUnless(
+        torch.cuda.device_count() > 1, "requires multiple CUDA devices"
+    )
+    def test_iou_cuda_device_guard(self):
+        with torch.cuda.device(0):
+            self._test_iou_pair_counts(torch.device("cuda:1"))
+            self.assertEqual(torch.cuda.current_device(), 0)
+
+    def _test_iou_gh1805(self, device):
+        # Overflowed the fixed triangle buffers of the previous implementation.
+        box_a = torch.tensor(
+            [
+                [0.0622, -0.0626, 0.9963],
+                [-0.0565, 0.1136, 0.7310],
+                [-0.6875, 0.4739, 1.2525],
+                [-0.5689, 0.2977, 1.5178],
+                [0.2553, 0.1737, 1.0667],
+                [0.1367, 0.3498, 0.8015],
+                [-0.4944, 0.7101, 1.3230],
+                [-0.3757, 0.5339, 1.5883],
+            ],
+            dtype=torch.float32,
+            device=device,
+        )
+        box_b = torch.tensor(
+            [
+                [-0.1583, 0.5106, 1.8723],
+                [-0.1583, 0.5106, 0.2837],
+                [-0.1583, 0.2942, 0.2837],
+                [-0.1583, 0.2942, 1.8723],
+                [-0.5130, 0.5106, 1.8723],
+                [-0.5130, 0.5106, 0.2837],
+                [-0.5130, 0.2942, 0.2837],
+                [-0.5130, 0.2942, 1.8723],
+            ],
+            dtype=torch.float32,
+            device=device,
+        )
+        # float64 halfspace intersection of the same float32 boxes. The faces
+        # of these boxes are planar only to about 1e-4.
+        expected_volume = 0.03105701792
+        expected_iou = 0.1669105004
+        distant_box = torch.tensor(UNIT_BOX, dtype=torch.float32, device=device) + 4
+        boxes1 = torch.stack((distant_box, box_a))
+        boxes2 = torch.stack((distant_box + 2, box_b, distant_box))
+        expected_volumes = torch.tensor(
+            [[0, 0, 1], [0, expected_volume, 0]], dtype=torch.float32, device=device
+        )
+        expected_ious = torch.tensor(
+            [[0, 0, 1], [0, expected_iou, 0]], dtype=torch.float32, device=device
+        )
+        volumes, ious = box3d_overlap(boxes1, boxes2)
+        self.assertClose(volumes, expected_volumes, rtol=1e-4, atol=1e-7)
+        self.assertClose(ious, expected_ious, rtol=1e-4, atol=1e-7)
+        volumes, ious = box3d_overlap(boxes2, boxes1)
+        self.assertClose(volumes, expected_volumes.t(), rtol=1e-4, atol=1e-7)
+        self.assertClose(ious, expected_ious.t(), rtol=1e-4, atol=1e-7)
+
+    def test_iou_gh1805_cpu(self):
+        self._test_iou_gh1805(torch.device("cpu"))
+
+    @unittest.skipUnless(torch.cuda.is_available(), "requires CUDA")
+    def test_iou_gh1805_cuda(self):
+        self._test_iou_gh1805(torch.device("cuda:0"))
+
+    def _test_iou_empty_inputs(self, device):
+        box = torch.tensor([UNIT_BOX], dtype=torch.float32, device=device)
+        empty = torch.empty((0, 8, 3), dtype=torch.float32, device=device)
+        for boxes1, boxes2 in ((empty, box), (box, empty), (empty, empty)):
+            volumes, ious = _C.iou_box3d(boxes1, boxes2)
+            for output in (volumes, ious):
+                self.assertEqual(output.shape, (boxes1.shape[0], boxes2.shape[0]))
+                self.assertEqual(output.device, device)
+                self.assertEqual(output.dtype, torch.float32)
+
+    def test_iou_empty_inputs_cpu(self):
+        self._test_iou_empty_inputs(torch.device("cpu"))
+
+    @unittest.skipUnless(torch.cuda.is_available(), "requires CUDA")
+    def test_iou_empty_inputs_cuda(self):
+        self._test_iou_empty_inputs(torch.device("cuda:0"))
+
+    def _test_iou_coplanar_faces(self, device):
+        # Pairs of boxes, axis-aligned in a common rotated frame, given by the
+        # lower corner and size of each. Their faces coincide, nearly coincide
+        # (within 1e-3) or bound a thin slab, and the overlap is exact.
+        pairs = [
+            ((0, 0, 0), (1, 1, 1), (0, 0, 0), (1, 1, 1)),
+            ((0, 0, 0), (1, 1, 1), (0.5, 0, 0), (1, 1, 1)),
+            ((0, 0, 0), (1, 1, 1), (0, 0, 0), (0.3, 0.5, 0.7)),
+            ((0, 0, 0), (1, 1, 1), (5e-4, -3e-4, 0.2), (1, 1, 1)),
+            ((0, 0, 0), (1, 1, 1), (0.9995, 0.25, 0), (1, 0.5, 1)),
+            ((0, 0, 0), (1, 1, 1), (1, 0, 0), (1, 1, 1)),
+            ((0, 0, 0), (1, 1, 1), (1, 1, 1), (1, 1, 1)),
+        ]
+        lower1, size1, lower2, size2 = (
+            torch.tensor(x, dtype=torch.float64) for x in zip(*pairs)
+        )
+        rotation = random_rotation(dtype=torch.float64)
+        unit_box = torch.tensor(UNIT_BOX, dtype=torch.float64)
+        for scale in (1.0, 0.01):
+            boxes1, boxes2 = (
+                (scale * (unit_box * size[:, None] + lower[:, None])) @ rotation.T
+                for lower, size in ((lower1, size1), (lower2, size2))
+            )
+            upper = torch.minimum(lower1 + size1, lower2 + size2)
+            overlap = (upper - torch.maximum(lower1, lower2)).clamp(min=0)
+            expected_volumes = overlap.prod(dim=1) * scale**3
+            union = (size1.prod(dim=1) + size2.prod(dim=1)) * scale**3
+            expected_ious = expected_volumes / (union - expected_volumes)
+            for b1, b2 in ((boxes1, boxes2), (boxes2, boxes1)):
+                volumes, ious = box3d_overlap(
+                    b1.float().to(device), b2.float().to(device), eps=1e-6
+                )
+                self.assertClose(
+                    volumes.diag().cpu().double(),
+                    expected_volumes,
+                    rtol=1e-4,
+                    atol=1e-6 * scale**3,
+                )
+                self.assertClose(ious.diag().cpu().double(), expected_ious, atol=1e-5)
+
+    def test_iou_coplanar_faces_cpu(self):
+        self._test_iou_coplanar_faces(torch.device("cpu"))
+
+    @unittest.skipUnless(torch.cuda.is_available(), "requires CUDA")
+    def test_iou_coplanar_faces_cuda(self):
+        self._test_iou_coplanar_faces(torch.device("cuda:0"))
+
+    def _test_iou_rotated_exact(self, device):
+        # Rotated boxes, given by center, size and axis-angle rotation, whose
+        # overlap was off by 14% and 27% when faces were matched as coplanar
+        # up to ~2.5 degrees apart. The expected volumes are float64 halfspace
+        # intersections of the same float32 boxes.
+        params1 = [
+            (
+                (0.0278, 0.0747, 0.0174),
+                (0.6084, 1.2725, 0.5661),
+                (-0.4414, 0.5296, 0.2659),
+            ),
+            ((0.0, 0.0, 0.0), (0.7858, 1.2233, 0.9274), (1.3164, 1.5213, 0.3459)),
+        ]
+        params2 = [
+            (
+                (0.1543, 0.2965, -0.2626),
+                (0.5033, 1.3354, 0.7583),
+                (0.9523, 0.7309, -0.4737),
+            ),
+            ((0.0, 0.0, 0.0), (1.041, 0.7539, 1.1685), (1.5863, 0.4692, 2.0797)),
+        ]
+        unit_box = torch.tensor(UNIT_BOX, dtype=torch.float64) - 0.5
+
+        def make_boxes(params):
+            center, size, axis_angle = (
+                torch.tensor(x, dtype=torch.float64) for x in zip(*params)
+            )
+            rotation = axis_angle_to_matrix(axis_angle)
+            boxes = (unit_box * size[:, None]) @ rotation.transpose(1, 2)
+            return (boxes + center[:, None]).float().to(device)
+
+        boxes1, boxes2 = make_boxes(params1), make_boxes(params2)
+        expected_volumes = torch.tensor([0.113694755, 0.722189134], device=device)
+        volumes, _ = box3d_overlap(boxes1, boxes2)
+        self.assertClose(volumes.diag(), expected_volumes, rtol=1e-5)
+        volumes, _ = box3d_overlap(boxes2, boxes1)
+        self.assertClose(volumes.diag(), expected_volumes, rtol=1e-5)
+
+    def test_iou_rotated_exact_cpu(self):
+        self._test_iou_rotated_exact(torch.device("cpu"))
+
+    @unittest.skipUnless(torch.cuda.is_available(), "requires CUDA")
+    def test_iou_rotated_exact_cuda(self):
+        self._test_iou_rotated_exact(torch.device("cuda:0"))
+
+    @staticmethod
+    def _scenario_boxes(scale: float, num_pairs: int = 30):
+        """
+        Pairs of float32 boxes for the scenarios which matter for accuracy:
+        random rotated pairs, identical pairs, identical pairs with noise of
+        1e-4 relative to their size, and pairs with coincident planes (nested,
+        sharing faces or touching) in a common rotated frame.
+        """
+        unit_box = torch.tensor(UNIT_BOX, dtype=torch.float64) - 0.5
+
+        def make(center, size, rotation):
+            return (unit_box * size[:, None]) @ rotation.transpose(1, 2) + center[
+                :, None
+            ]
+
+        n = num_pairs
+        rotations1 = torch.stack(
+            [random_rotation(dtype=torch.float64) for _ in range(n)]
+        )
+        rotations2 = torch.stack(
+            [random_rotation(dtype=torch.float64) for _ in range(n)]
+        )
+        size1 = 0.2 + torch.rand(n, 3, dtype=torch.float64)
+        size2 = 0.2 + torch.rand(n, 3, dtype=torch.float64)
+        center1 = torch.rand(n, 3, dtype=torch.float64) - 0.5
+        center2 = torch.rand(n, 3, dtype=torch.float64) - 0.5
+        random_pairs = (
+            make(center1, size1, rotations1),
+            make(center2, size2, rotations2),
+        )
+
+        boxes = make(center1, size1, rotations1)
+        identical = (boxes, boxes)
+        noise = 1e-4 * size1 * (torch.rand(n, 3, dtype=torch.float64) - 0.5)
+        noisy = (boxes, make(center1 + noise, size1 * (1 + noise), rotations1))
+
+        # Lower corners and sizes on a grid of quarters, so that planes coincide.
+        lower1 = torch.randint(0, 4, (n, 3)).double() / 4
+        lower2 = torch.randint(0, 4, (n, 3)).double() / 4
+        grid_size1 = torch.randint(1, 5, (n, 3)).double() / 4
+        grid_size2 = torch.randint(1, 5, (n, 3)).double() / 4
+        grid = (
+            make(lower1 + grid_size1 / 2, grid_size1, rotations1),
+            make(lower2 + grid_size2 / 2, grid_size2, rotations1),
+        )
+        boxes1, boxes2 = (
+            torch.cat(x) for x in zip(random_pairs, identical, noisy, grid)
+        )
+        return (scale * boxes1).float(), (scale * boxes2).float()
+
+    def _test_iou_vs_scipy(self, device):
+        for scale in (0.01, 1.0, 100.0):
+            with self.subTest(scale=scale):
+                boxes1, boxes2 = self._scenario_boxes(scale)
+                expected_volumes, expected_ious = box3d_overlap_scipy(boxes1, boxes2)
+                for b1, b2 in ((boxes1, boxes2), (boxes2, boxes1)):
+                    volumes, ious = box3d_overlap(
+                        b1.to(device), b2.to(device), eps=1e-4 * scale**2
+                    )
+                    self.assertClose(
+                        volumes.diag().cpu().double(),
+                        expected_volumes,
+                        rtol=1e-5,
+                        atol=1e-6 * scale**3,
+                    )
+                    self.assertClose(
+                        ious.diag().cpu().double(), expected_ious, atol=2e-6
+                    )
+
+    @unittest.skipUnless(HAS_SCIPY, "requires scipy")
+    def test_iou_vs_scipy_cpu(self):
+        self._test_iou_vs_scipy(torch.device("cpu"))
+
+    @unittest.skipUnless(HAS_SCIPY, "requires scipy")
+    @unittest.skipUnless(torch.cuda.is_available(), "requires CUDA")
+    def test_iou_vs_scipy_cuda(self):
+        self._test_iou_vs_scipy(torch.device("cuda:0"))
+
+    def _test_iou_corner_order(self, device):
+        boxes1, boxes2 = (b.to(device) for b in self._scenario_boxes(1.0))
+        expected_volumes, expected_ious = box3d_overlap(boxes1, boxes2)
+
+        # The same boxes with their corners in mirror-image order, for every
+        # box and for every other box.
+        mirror = [4, 5, 6, 7, 0, 1, 2, 3]
+        mirrored1 = boxes1[:, mirror]
+        mixed2 = boxes2.clone()
+        mixed2[::2] = boxes2[::2, mirror]
+        volumes, ious = box3d_overlap(mirrored1, mixed2)
+        self.assertClose(volumes, expected_volumes, rtol=1e-5, atol=1e-6)
+        self.assertClose(ious, expected_ious, rtol=1e-5, atol=1e-6)
+
+        unit_box = torch.tensor([UNIT_BOX], dtype=torch.float32, device=device)
+        scrambled = unit_box[:, [0, 1, 3, 2, 4, 5, 7, 6]]
+        with self.assertRaisesRegex(ValueError, "corners are not in the documented"):
+            box3d_overlap(unit_box, scrambled)
+
+        # Without validation, any corner order gives a number or NaN and
+        # leaves the device usable.
+        perms = torch.tensor(
+            list(itertools.permutations(range(8))), dtype=torch.int64, device=device
+        )
+        volumes, ious = _C.iou_box3d(unit_box, unit_box[0][perms])
+        self.assertEqual(ious.shape, (1, len(perms)))
+        volumes, ious = box3d_overlap(unit_box, unit_box)
+        self.assertClose(ious, torch.ones_like(ious))
+
+    def test_iou_corner_order_cpu(self):
+        self._test_iou_corner_order(torch.device("cpu"))
+
+    @unittest.skipUnless(torch.cuda.is_available(), "requires CUDA")
+    def test_iou_corner_order_cuda(self):
+        self._test_iou_corner_order(torch.device("cuda:0"))
+
+    def _test_iou_far_from_origin(self, device):
+        # Exactly representable boxes whose centers round onto a face.
+        def box(lo, hi):
+            lo, hi = (torch.tensor(x, dtype=torch.float64) for x in (lo, hi))
+            unit = torch.tensor(UNIT_BOX, dtype=torch.float64)
+            return (lo + (hi - lo) * unit).to(device=device, dtype=torch.float32)
+
+        mirror = [4, 5, 6, 7, 0, 1, 2, 3]
+        cube = box([2.0**23, 0, 0], [2.0**23 + 1, 1, 1])
+        cubes = torch.stack((cube, cube[mirror]))
+        volumes, ious = box3d_overlap(cubes, cubes)
+        self.assertClose(volumes, torch.ones_like(volumes))
+        self.assertClose(ious, torch.ones_like(ious))
+
+        big = box([0, 0, 126932000], [100, 100, 126934000])
+        thin = box([10, 10, 126933008], [90, 90, 126933024])
+        bigs = torch.stack((big, big[mirror]))
+        thins = torch.stack((thin, thin[mirror]))
+        expected_volumes = torch.full((2, 2), 80 * 80 * 16.0, device=device)
+        expected_ious = expected_volumes / (100 * 100 * 2000)
+        volumes, ious = box3d_overlap(bigs, thins)
+        self.assertClose(volumes, expected_volumes)
+        self.assertClose(ious, expected_ious)
+        volumes, ious = box3d_overlap(thins, bigs)
+        self.assertClose(volumes, expected_volumes)
+        self.assertClose(ious, expected_ious)
+
+    def test_iou_far_from_origin_cpu(self):
+        self._test_iou_far_from_origin(torch.device("cpu"))
+
+    @unittest.skipUnless(torch.cuda.is_available(), "requires CUDA")
+    def test_iou_far_from_origin_cuda(self):
+        self._test_iou_far_from_origin(torch.device("cuda:0"))
+
     def _test_compare_objectron(self, overlap_fn, device):
         # Load saved objectron data
         data_filename = "./objectron_vols_ious.pt"
@@ -722,6 +1154,16 @@ class TestIoU3D(TestCaseMixin, unittest.TestCase):
         boxes2 = torch.randn((M, 10, 3))
         with self.assertRaisesRegex(ValueError, "(8, 3)"):
             box3d_overlap(boxes1, boxes2)
+
+        box = torch.tensor([UNIT_BOX], dtype=torch.float32)
+        for bad in (box[0], box[..., None].expand(1, 8, 3, 2)):
+            for args in ((box, bad), (bad, box)):
+                with self.assertRaisesRegex(RuntimeError, r"\(N, 8, 3\)"):
+                    _C.iou_box3d(*args)
+
+        zeros = torch.zeros_like(box)
+        _, ious = _C.iou_box3d(zeros, zeros)
+        self.assertClose(ious, torch.zeros_like(ious))
 
     def test_box_volume(self):
         device = torch.device("cuda:0")
@@ -1639,3 +2081,71 @@ def box3d_overlap_sampling(
     inters = (vol1 * num12 + vol2 * num21) / 2.0
     union = vol1 * num_samples + vol2 * num_samples - inters
     return inters / union
+
+
+# -------------------------------------------------- #
+#          REFERENCE: SCIPY HALFSPACE INTERSECTION   #
+# -------------------------------------------------- #
+
+
+def box3d_overlap_scipy(boxes1: torch.Tensor, boxes2: torch.Tensor):
+    """
+    Computes the intersection volume and IoU of the pairs (boxes1[i], boxes2[i])
+    in float64 as the convex hull of the intersection of the 12 half-spaces.
+    Each face plane goes through the mean of its corners.
+    Args:
+        boxes1, boxes2: tensors of shape (N, 8, 3)
+    Returns:
+        vol, iou: float64 tensors of shape (N,)
+    """
+    import numpy as np
+    from scipy.optimize import linprog
+    from scipy.spatial import ConvexHull, HalfspaceIntersection
+
+    faces = torch.tensor(
+        [
+            [0, 3, 2, 1],
+            [4, 5, 6, 7],
+            [0, 1, 5, 4],
+            [3, 7, 6, 2],
+            [0, 4, 7, 3],
+            [1, 2, 6, 5],
+        ]
+    )
+
+    def halfspaces(box):
+        # Rows (n, -d) with unit outward normal n, so that n.x - d <= 0 inside.
+        verts = box.double()[faces]
+        normal = F.normalize(
+            torch.cross(verts[:, 2] - verts[:, 0], verts[:, 3] - verts[:, 1], dim=1),
+            dim=1,
+        )
+        mid = verts.mean(dim=1)
+        outward = ((mid - box.double().mean(dim=0)) * normal).sum(dim=1)
+        normal = normal * outward.sign()[:, None]
+        return torch.cat([normal, -(normal * mid).sum(dim=1, keepdim=True)], dim=1)
+
+    def volume(hs, size):
+        hs = hs.numpy()
+        # Chebyshev center: maximize r subject to n.x + r <= d.
+        res = linprog(
+            c=[0, 0, 0, -1],
+            A_ub=np.hstack([hs[:, :3], np.ones((len(hs), 1))]),
+            b_ub=-hs[:, 3],
+            bounds=[(None, None)] * 3 + [(0, None)],
+        )
+        if res.status != 0 or res.x[3] < 1e-7 * size:  # disjoint or touching
+            return 0.0
+        return ConvexHull(HalfspaceIntersection(hs, res.x[:3]).intersections).volume
+
+    vols, ious = [], []
+    for box1, box2 in zip(boxes1, boxes2):
+        size = (box1.max(0).values - box1.min(0).values).norm().item()
+        hs1, hs2 = halfspaces(box1), halfspaces(box2)
+        vol1, vol2 = volume(hs1, size), volume(hs2, size)
+        vol = volume(torch.cat([hs1, hs2]), size)
+        vols.append(vol)
+        ious.append(vol / (vol1 + vol2 - vol))
+    return torch.tensor(vols, dtype=torch.float64), torch.tensor(
+        ious, dtype=torch.float64
+    )
