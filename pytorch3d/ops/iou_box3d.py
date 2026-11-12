@@ -61,21 +61,25 @@ _box_faces_ccw = [
 
 def _check_coplanar(boxes: torch.Tensor, eps: float = 1e-4) -> None:
     faces = torch.tensor(_box_planes, dtype=torch.int64, device=boxes.device)
-    verts = boxes.index_select(index=faces.view(-1), dim=1)
     B = boxes.shape[0]
     P, V = faces.shape
+    verts = boxes.index_select(index=faces.view(-1), dim=1).reshape(B, P, V, 3)
     # (B, P, 4, 3) -> (B, P, 3)
-    v0, v1, v2, v3 = verts.reshape(B, P, V, 3).unbind(2)
+    v0, v1, v2, v3 = verts.double().unbind(2)
 
     # Compute the normal
     e0 = F.normalize(v1 - v0, dim=-1)
     e1 = F.normalize(v2 - v0, dim=-1)
     normal = F.normalize(torch.cross(e0, e1, dim=-1), dim=-1)
 
-    # Check the fourth vertex is also on the same plane
-    mat1 = (v3 - v0).view(B, 1, -1)  # (B, 1, P*3)
-    mat2 = normal.view(B, -1, 1)  # (B, P*3, 1)
-    if not (mat1.bmm(mat2).abs() < eps).all().item():
+    # Check the fourth vertex is also on the same plane. The faces are
+    # parallelograms, so rounding each coordinate c to the input dtype by at
+    # most eps/2 * |c| moves v3 off the plane of the other three by at most
+    # 2 * eps * sum_i |normal_i| * max |c_i| over the face's corners.
+    distances = ((v3 - v0) * normal).sum(dim=-1).abs()  # (B, P)
+    face_coords = verts.abs().amax(dim=2)  # (B, P, 3)
+    rounding = torch.finfo(boxes.dtype).eps * (face_coords * normal.abs()).sum(-1)
+    if not (distances < eps + 2 * rounding).all().item():
         msg = "Plane vertices are not coplanar"
         raise ValueError(msg)
 
@@ -186,6 +190,10 @@ def box3d_overlap(
     Args:
         boxes1: tensor of shape (N, 8, 3) of the coordinates of the 1st boxes
         boxes2: tensor of shape (M, 8, 3) of the coordinates of the 2nd boxes
+        eps: the vertices of each face must be within this distance of a
+            plane, after an allowance for rounding the coordinates to their
+            dtype. The allowance assumes the faces are parallelograms; for
+            other planar faces far from the origin, eps may need to be larger.
     Returns:
         vol: (N, M) tensor of the volume of the intersecting convex shapes
         iou: (N, M) tensor of the intersection over union which is

@@ -14,7 +14,12 @@ import torch
 import torch.nn.functional as F
 from pytorch3d import _C
 from pytorch3d.io import save_obj
-from pytorch3d.ops.iou_box3d import _box_planes, _box_triangles, box3d_overlap
+from pytorch3d.ops.iou_box3d import (
+    _box_planes,
+    _box_triangles,
+    _check_coplanar,
+    box3d_overlap,
+)
 from pytorch3d.transforms.rotation_conversions import (
     axis_angle_to_matrix,
     random_rotation,
@@ -839,7 +844,7 @@ class TestIoU3D(TestCaseMixin, unittest.TestCase):
             device=device,
         )
         # float64 halfspace intersection of the same float32 boxes. The faces
-        # of these boxes are planar only to about 1e-4.
+        # of box_a are planar only to about 2e-4, more than the default eps.
         expected_volume = 0.03105701792
         expected_iou = 0.1669105004
         distant_box = torch.tensor(UNIT_BOX, dtype=torch.float32, device=device) + 4
@@ -851,10 +856,10 @@ class TestIoU3D(TestCaseMixin, unittest.TestCase):
         expected_ious = torch.tensor(
             [[0, 0, 1], [0, expected_iou, 0]], dtype=torch.float32, device=device
         )
-        volumes, ious = box3d_overlap(boxes1, boxes2)
+        volumes, ious = box3d_overlap(boxes1, boxes2, eps=1e-3)
         self.assertClose(volumes, expected_volumes, rtol=1e-4, atol=1e-7)
         self.assertClose(ious, expected_ious, rtol=1e-4, atol=1e-7)
-        volumes, ious = box3d_overlap(boxes2, boxes1)
+        volumes, ious = box3d_overlap(boxes2, boxes1, eps=1e-3)
         self.assertClose(volumes, expected_volumes.t(), rtol=1e-4, atol=1e-7)
         self.assertClose(ious, expected_ious.t(), rtol=1e-4, atol=1e-7)
 
@@ -1164,6 +1169,62 @@ class TestIoU3D(TestCaseMixin, unittest.TestCase):
         zeros = torch.zeros_like(box)
         _, ious = _C.iou_box3d(zeros, zeros)
         self.assertClose(ious, torch.zeros_like(ious))
+
+    def test_coplanarity_per_face(self):
+        box = torch.tensor(UNIT_BOX, dtype=torch.float32)
+        # A corner of the bottom face moves up and one of the top face moves
+        # down, so the residuals of the two faces cancel when summed.
+        bent = box.clone()
+        bent[3, 2] = 0.25
+        bent[7, 2] = 0.75
+        with self.assertRaisesRegex(ValueError, "Plane vertices are not coplanar"):
+            _check_coplanar(bent[None])
+
+        # Each face is within eps, though their residuals sum to eps.
+        eps = 2.0**-10
+        nearly = box.clone()
+        nearly[3, 2] = eps / 2
+        nearly[7, 2] += eps / 2
+        _check_coplanar(nearly[None], eps=eps)
+
+        # A translation along one axis does not excuse a bend along another.
+        for x in (1e6, 2.0**20):
+            far = box.clone()
+            far[3, 2] = 0.5
+            far[:, 0] += x
+            with self.assertRaisesRegex(ValueError, "not coplanar"):
+                _check_coplanar(far[None])
+
+        # Rounding a rotated box far from the origin to float32 bends its faces
+        # by more than eps, which is accepted; a bend of 0.1 is not.
+        f64 = torch.float64
+        rotation = axis_angle_to_matrix(torch.tensor([0.3, 0.5, 0.7], dtype=f64))
+        corners = (box.double() - 0.5) * torch.tensor([1, 2, 3], dtype=f64)
+        center = torch.tensor([3000.1, -3000.2, 3000.3], dtype=f64)
+        rounded = (corners @ rotation.T + center).float()
+        faces = rounded[torch.tensor(_box_planes)]
+        e0, e1 = faces[:, 1] - faces[:, 0], faces[:, 2] - faces[:, 0]
+        normal = F.normalize(torch.cross(e0, e1, dim=-1), dim=-1)
+        residuals = ((faces[:, 3] - faces[:, 0]) * normal).sum(-1).abs()
+        self.assertGreater(residuals.max().item(), 1e-4)
+        _check_coplanar(rounded[None])
+        rounded_bent = rounded.clone()
+        rounded_bent[3] += 0.1 * rotation[:, 2].float()
+        with self.assertRaisesRegex(ValueError, "not coplanar"):
+            _check_coplanar(rounded_bent[None])
+
+        # Bends of a few times the float32 spacing along the normal are
+        # rejected far from the origin.
+        far = box.clone()
+        far[3, 2] += 0.75
+        far[:, 2] += 1e6
+        cube = (box.double() - 0.5) * 10 @ rotation.T
+        cube += torch.tensor([1e5, -1e5, 3e4], dtype=f64)
+        cube[3] += 0.05 * rotation[:, 2]
+        for bad in (far, cube.float()):
+            for args in ((bad, box), (box, bad)):
+                with self.assertRaisesRegex(ValueError, "not coplanar"):
+                    box3d_overlap(*(b[None] for b in args))
 
     def test_box_volume(self):
         device = torch.device("cuda:0")
