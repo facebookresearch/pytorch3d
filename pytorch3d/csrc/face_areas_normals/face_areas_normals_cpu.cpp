@@ -178,7 +178,7 @@ at::Tensor FaceAreasNormalsBackwardCpu(
         (bx * cy - by * cx) / 2.0 * inv_norm * grad_areas_a[f] +
         (-by - cx * (bx * cy - by * cx) * inv_norm_2) * inv_norm *
             grad_normals_a[f][0] +
-        (bx - cx * (bx * cy - by * cx) * inv_norm_2) * inv_norm *
+        (bx - cy * (bx * cy - by * cx) * inv_norm_2) * inv_norm *
             grad_normals_a[f][1] +
         -cz * (bx * cy - by * cx) * inv_norm_3 * grad_normals_a[f][2];
     grad_verts[i1][2] += grad_v1_z;

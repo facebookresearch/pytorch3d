@@ -180,7 +180,7 @@ __global__ void FaceAreasNormalsBackwardKernel(
         (bx * cy - by * cx) / 2.0 * inv_norm * grad_areas[f] +
         (-by - cx * (bx * cy - by * cx) * inv_norm_2) * inv_norm *
             grad_normals[3 * f + 0] +
-        (bx - cx * (bx * cy - by * cx) * inv_norm_2) * inv_norm *
+        (bx - cy * (bx * cy - by * cx) * inv_norm_2) * inv_norm *
             grad_normals[3 * f + 1] +
         -cz * (bx * cy - by * cx) * inv_norm_3 * grad_normals[3 * f + 2];
     atomicAdd(grad_verts + 3 * i1 + 2, grad_v1_z);
