@@ -273,10 +273,7 @@ class Transform3d:
         Args:
             eps: A threshold for clipping the squared norm of the rotation logarithm
                 to avoid division by zero in the singular case.
-            cos_bound: Clamps the cosine of the rotation angle to
-                [-1 + cos_bound, 3 - cos_bound] to avoid non-finite outputs.
-                The non-finite outputs can be caused by passing small rotation angles
-                to the `acos` function in `so3_rotation_angle` of `so3_log_map`.
+            cos_bound: (unused, for backward compatibility)
 
         Returns:
             A (N, 6) tensor, rows of which represent the individual transforms
