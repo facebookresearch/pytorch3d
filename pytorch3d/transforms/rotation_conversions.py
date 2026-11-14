@@ -304,7 +304,24 @@ def matrix_to_euler_angles(matrix: torch.Tensor, convention: str) -> torch.Tenso
             convention[2], convention[1], matrix[..., i0, :], True, tait_bryan
         ),
     )
-    return torch.stack(o, -1)
+    euler_angles = torch.stack(o, -1)
+
+    # At gimbal lock (the central angle is 0 or pi for proper Euler angles, or
+    # +-pi/2 for Tait-Bryan angles) only a combination of the first and third
+    # angles is defined and the formulas above take atan2 of zeros. There, set
+    # the third angle to zero and read the first angle from the matrix with the
+    # central rotation removed.
+    lock_entry = matrix[..., i0, i2] if tait_bryan else matrix[..., i0, i0]
+    locked = 1.0 - lock_entry.abs() <= 1e-7
+    first_rotation = matrix @ _axis_angle_rotation(
+        convention[1], central_angle
+    ).transpose(-1, -2)
+    j1, j2 = {"X": (2, 1), "Y": (0, 2), "Z": (1, 0)}[convention[0]]
+    first_angle = torch.atan2(first_rotation[..., j1, j2], first_rotation[..., j2, j2])
+    locked_angles = torch.stack(
+        (first_angle, central_angle, torch.zeros_like(central_angle)), -1
+    )
+    return torch.where(locked[..., None], locked_angles, euler_angles)
 
 
 def random_quaternions(

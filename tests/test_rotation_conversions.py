@@ -135,6 +135,25 @@ class TestRotationConversion(TestCaseMixin, unittest.TestCase):
             mdata = euler_angles_to_matrix(euler_angles, convention)
             self.assertClose(data, mdata)
 
+    def test_to_euler_gimbal_lock(self):
+        """mtx -> euler -> mtx when the middle angle is at gimbal lock"""
+        angles = torch.tensor([0.0, 0.5, -2.0, math.pi], dtype=torch.float64)
+        first, third = torch.meshgrid(angles, angles, indexing="ij")
+        first, third = first.flatten(), third.flatten()
+        for convention in self._all_euler_angle_conventions():
+            if convention[0] == convention[2]:
+                middle_angles = [0.0, math.pi]
+            else:
+                middle_angles = [math.pi / 2, -math.pi / 2]
+            for middle in middle_angles:
+                data = torch.stack([first, torch.full_like(first, middle), third], -1)
+                matrices = euler_angles_to_matrix(data, convention)
+                euler_angles = matrix_to_euler_angles(matrices, convention)
+                self.assertClose(
+                    euler_angles_to_matrix(euler_angles, convention), matrices
+                )
+                self.assertClose(euler_angles[:, 2], torch.zeros_like(first))
+
     def test_euler_grad_exists(self):
         """Euler angle calculations are differentiable."""
         rotation = random_rotation(dtype=torch.float64)
