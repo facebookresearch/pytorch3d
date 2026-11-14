@@ -9,14 +9,367 @@ import unittest
 
 import pytorch3d as pt3d
 import torch
-from pytorch3d.implicitron.models.view_pooler.view_sampler import ViewSampler
+from pytorch3d.implicitron.models.view_pooler.feature_aggregator import (
+    IdentityFeatureAggregator,
+    ReductionFeatureAggregator,
+    ReductionFunction,
+)
+from pytorch3d.implicitron.models.view_pooler.view_sampler import (
+    project_points_and_sample,
+    ViewSampler,
+)
 from pytorch3d.implicitron.tools.config import expand_args_fields
+from pytorch3d.renderer import (
+    FoVOrthographicCameras,
+    FoVPerspectiveCameras,
+    ndc_grid_sample,
+    OrthographicCameras,
+    PerspectiveCameras,
+)
+
+_CAMERA_TYPES = (
+    PerspectiveCameras,
+    OrthographicCameras,
+    FoVPerspectiveCameras,
+    FoVOrthographicCameras,
+)
+
+
+def _test_devices():
+    return ["cpu"] + [f"cuda:{i}" for i in range(torch.cuda.device_count())]
 
 
 class TestViewsampling(unittest.TestCase):
     def setUp(self):
         torch.manual_seed(42)
         expand_args_fields(ViewSampler)
+
+    def test_nonpositive_camera_depth(self):
+        for device in _test_devices():
+            pts = torch.tensor(
+                [
+                    [
+                        [0.0, 0.0, 2.0],
+                        [0.0, 0.0, 1e-4],
+                        [0.0, 0.0, -2.0],
+                        [0.0, 0.0, 0.0],
+                    ]
+                ],
+                device=device,
+            )
+            feats = {"features": torch.full((1, 2, 8, 12), 3.0, device=device)}
+            masks = torch.full((1, 1, 5, 9), 0.25, device=device)
+            for camera_type in _CAMERA_TYPES:
+                camera = camera_type(device=device)
+                for mode in ("nearest", "bilinear", "bicubic"):
+                    for masked in (False, True):
+                        with self.subTest(
+                            device=device,
+                            camera=camera_type.__name__,
+                            mode=mode,
+                            masked=masked,
+                        ):
+                            sampled, sampled_masks = project_points_and_sample(
+                                pts,
+                                feats,
+                                camera,
+                                masks if masked else None,
+                                sampling_mode=mode,
+                            )
+                            expected_feats = torch.zeros_like(sampled["features"])
+                            expected_feats[..., :2, :] = 3.0
+                            expected_masks = torch.zeros_like(sampled_masks)
+                            expected_masks[..., :2, :] = 0.25 if masked else 1.0
+                            torch.testing.assert_close(
+                                sampled["features"], expected_feats
+                            )
+                            torch.testing.assert_close(sampled_masks, expected_masks)
+
+    def test_transformed_cameras_and_point_grid(self):
+        for device in _test_devices():
+            R = torch.stack(
+                (torch.eye(3), torch.diag(torch.tensor([-1.0, 1.0, -1.0])))
+            ).to(device)
+            T = torch.tensor([[0.0, 0.0, 1.0], [0.0, 0.0, 1.0]], device=device)
+            pts = torch.zeros(2, 2, 3, 3, device=device)
+            pts[0, ..., 2] = torch.arange(-2, 4, device=device).reshape(2, 3)
+            pts[1, ..., 2] = -pts[0, ..., 2]
+            feats = {
+                "rgb": torch.ones(2, 3, 8, 12, device=device),
+                "embedding": torch.full((2, 2, 5, 9), 2.0, device=device),
+            }
+            masks = torch.full((2, 1, 7, 11), 0.5, device=device)
+            # Independent row-vector world-to-view calculation, including the
+            # camera-major/point-batch-major order and a multidimensional grid.
+            view_pts = torch.einsum("bpqi,cij->bcpqj", pts, R) + T[None, :, None, None]
+            valid = (view_pts[..., 2] > 0)[..., None]
+            for camera_type in _CAMERA_TYPES:
+                for masked in (False, True):
+                    with self.subTest(
+                        device=device, camera=camera_type.__name__, masked=masked
+                    ):
+                        sampled, sampled_masks = project_points_and_sample(
+                            pts,
+                            feats,
+                            camera_type(R=R, T=T, device=device),
+                            masks if masked else None,
+                        )
+                        for name, channels, value in (
+                            ("rgb", 3, 1.0),
+                            ("embedding", 2, 2.0),
+                        ):
+                            self.assertEqual(
+                                sampled[name].shape, (2, 2, 2, 3, channels)
+                            )
+                            torch.testing.assert_close(
+                                sampled[name],
+                                valid.expand_as(sampled[name]).to(pts) * value,
+                            )
+                        torch.testing.assert_close(
+                            sampled_masks,
+                            valid.to(pts) * (0.5 if masked else 1.0),
+                        )
+
+    def test_depth_and_sequence_masks(self):
+        for device in _test_devices():
+            pts = torch.tensor(
+                [[[0.0, 0.0, 2.0], [0.0, 0.0, -2.0], [0.0, 0.0, 0.0]]], device=device
+            ).repeat(2, 1, 1)
+            R = torch.eye(3, device=device)[None].repeat(2, 1, 1)
+            feats = {"features": torch.ones(2, 2, 8, 12, device=device)}
+            masks = torch.full((2, 1, 5, 9), 0.5, device=device)
+            for camera_type in _CAMERA_TYPES:
+                for masked in (False, True):
+                    with self.subTest(
+                        device=device, camera=camera_type.__name__, masked=masked
+                    ):
+                        sampled, sampled_masks = ViewSampler(masked_sampling=masked)(
+                            pts=pts,
+                            seq_id_pts=["a", "b"],
+                            camera=camera_type(R=R, device=device),
+                            seq_id_camera=["a", "b"],
+                            feats=feats,
+                            masks=masks,
+                        )
+                        expected = torch.zeros_like(sampled_masks)
+                        expected[0, 0, 0] = 1.0
+                        expected[1, 1, 0] = 1.0
+                        torch.testing.assert_close(
+                            sampled["features"], expected.expand(-1, -1, -1, 2)
+                        )
+                        torch.testing.assert_close(
+                            sampled_masks, expected * (0.5 if masked else 1.0)
+                        )
+
+    def test_depth_gradients(self):
+        for device in _test_devices():
+            for camera_type in _CAMERA_TYPES:
+                for mode in ("nearest", "bilinear", "bicubic"):
+                    for masked in (False, True):
+                        with self.subTest(
+                            device=device,
+                            camera=camera_type.__name__,
+                            mode=mode,
+                            masked=masked,
+                        ):
+                            pts = torch.tensor(
+                                [
+                                    [
+                                        [0.13, -0.09, 2.0],
+                                        [0.12, 0.17, -2.0],
+                                        [0.11, -0.08, 0.0],
+                                    ]
+                                ],
+                                device=device,
+                                requires_grad=True,
+                            )
+                            R = torch.eye(3, device=device)[None].requires_grad_()
+                            T = torch.zeros(1, 3, device=device, requires_grad=True)
+                            feat_map = (
+                                torch.linspace(0.1, 2.0, 48, device=device)
+                                .reshape(1, 2, 4, 6)
+                                .requires_grad_()
+                            )
+                            mask_map = (
+                                torch.linspace(0.2, 0.9, 24, device=device)
+                                .reshape(1, 1, 4, 6)
+                                .requires_grad_()
+                            )
+                            camera = camera_type(R=R, T=T, device=device)
+                            sampled, sampled_masks = project_points_and_sample(
+                                pts,
+                                {"features": feat_map},
+                                camera,
+                                mask_map if masked else None,
+                                sampling_mode=mode,
+                            )
+                            inputs = [pts, R, T, feat_map] + (
+                                [mask_map] if masked else []
+                            )
+                            invalid_loss = (
+                                sampled["features"][..., 1:, :].sum()
+                                + sampled_masks[..., 1:, :].sum()
+                            )
+                            for grad in torch.autograd.grad(
+                                invalid_loss, inputs, retain_graph=True
+                            ):
+                                self.assertTrue(torch.isfinite(grad).all())
+                                self.assertEqual(torch.count_nonzero(grad).item(), 0)
+
+                            front_grid = camera.transform_points(pts[:, :1], eps=1e-2)[
+                                ..., :2
+                            ][:, None]
+                            expected_feats = ndc_grid_sample(
+                                feat_map, front_grid, mode=mode
+                            ).permute(0, 2, 3, 1)
+                            expected_masks = (
+                                ndc_grid_sample(
+                                    mask_map, front_grid, mode=mode
+                                ).permute(0, 2, 3, 1)
+                                if masked
+                                else torch.ones_like(sampled_masks[..., :1, :])
+                            )
+                            torch.testing.assert_close(
+                                sampled["features"][..., :1, :], expected_feats
+                            )
+                            torch.testing.assert_close(
+                                sampled_masks[..., :1, :], expected_masks
+                            )
+                            weights = pts.new_tensor([1.0, 2.0])
+                            loss = (
+                                sampled["features"][..., :1, :] * weights
+                            ).sum() + sampled_masks[..., :1, :].sum()
+                            expected_loss = (
+                                expected_feats * weights
+                            ).sum() + expected_masks.sum()
+                            grads = torch.autograd.grad(loss, inputs, retain_graph=True)
+                            expected_grads = torch.autograd.grad(expected_loss, inputs)
+                            for grad, expected_grad in zip(grads, expected_grads):
+                                self.assertTrue(torch.isfinite(grad).all())
+                                torch.testing.assert_close(grad, expected_grad)
+
+    def test_depth_gradcheck(self):
+        pts = torch.tensor(
+            [[[0.13, -0.09, 1.7], [0.12, 0.17, -1.5]]],
+            dtype=torch.float32,
+            requires_grad=True,
+        )
+        R = torch.eye(3, dtype=torch.float32)[None].requires_grad_()
+        T = torch.zeros(1, 3, dtype=torch.float32, requires_grad=True)
+        focal = torch.tensor([[1.1, 0.9]], dtype=torch.float32, requires_grad=True)
+        feat_map = (
+            torch.linspace(0.1, 2.0, 24, dtype=torch.float32)
+            .reshape(1, 1, 4, 6)
+            .requires_grad_()
+        )
+        mask_map = (
+            torch.linspace(0.2, 0.9, 24, dtype=torch.float32)
+            .reshape(1, 1, 4, 6)
+            .requires_grad_()
+        )
+
+        def sample(pts, R, T, focal, feat_map, mask_map):
+            camera = PerspectiveCameras(
+                R=R, T=T, focal_length=focal, principal_point=torch.zeros_like(focal)
+            )
+            sampled, masks = project_points_and_sample(
+                pts, {"features": feat_map}, camera, mask_map
+            )
+            return sampled["features"], masks
+
+        # Camera transforms use float32, so finite differences need a larger step.
+        self.assertTrue(
+            torch.autograd.gradcheck(
+                sample,
+                (pts, R, T, focal, feat_map, mask_map),
+                eps=1e-3,
+                atol=1e-3,
+                rtol=1e-2,
+            )
+        )
+
+    def test_sampler_aggregator_backward(self):
+        for aggregator_type in (IdentityFeatureAggregator, ReductionFeatureAggregator):
+            expand_args_fields(aggregator_type)
+        for device in _test_devices():
+            for aggregator_type in (
+                IdentityFeatureAggregator,
+                ReductionFeatureAggregator,
+            ):
+                for masked in (False, True):
+                    with self.subTest(
+                        device=device,
+                        aggregator=aggregator_type.__name__,
+                        masked=masked,
+                    ):
+                        pts = torch.tensor(
+                            [[[0.13, -0.09, 2.0], [0.12, 0.17, -2.0], [0.0, 0.0, 0.0]]],
+                            device=device,
+                            requires_grad=True,
+                        )
+                        R = (
+                            torch.eye(3, device=device)[None]
+                            .repeat(2, 1, 1)
+                            .requires_grad_()
+                        )
+                        T = torch.tensor(
+                            [[0.0, 0.0, 0.0], [0.0, 0.0, 0.5]],
+                            device=device,
+                            requires_grad=True,
+                        )
+                        feat_map = (
+                            torch.linspace(0.1, 2.0, 96, device=device)
+                            .reshape(2, 2, 4, 6)
+                            .requires_grad_()
+                        )
+                        mask_map = torch.full(
+                            (2, 1, 4, 6), 0.5, device=device, requires_grad=True
+                        )
+                        camera = PerspectiveCameras(R=R, T=T, device=device)
+                        sampled, sampled_masks = ViewSampler(masked_sampling=masked)(
+                            pts=pts,
+                            seq_id_pts=["a"],
+                            camera=camera,
+                            seq_id_camera=["a", "a"],
+                            feats={"features": feat_map},
+                            masks=mask_map,
+                        )
+                        kwargs = dict(
+                            exclude_target_view=False,
+                            exclude_target_view_mask_features=False,
+                        )
+                        if aggregator_type is ReductionFeatureAggregator:
+                            kwargs["reduction_functions"] = (ReductionFunction.AVG,)
+                        aggregated = aggregator_type(**kwargs)(
+                            sampled, sampled_masks, camera=camera, pts=pts
+                        )
+                        self.assertEqual(
+                            torch.count_nonzero(aggregated[..., 1, :]).item(), 0
+                        )
+                        if aggregator_type is IdentityFeatureAggregator:
+                            torch.testing.assert_close(aggregated, sampled["features"])
+                        else:
+                            weights = sampled_masks / sampled_masks.sum(
+                                dim=1, keepdim=True
+                            ).clamp_min(1e-2)
+                            torch.testing.assert_close(
+                                aggregated,
+                                (sampled["features"] * weights).sum(
+                                    dim=1, keepdim=True
+                                ),
+                            )
+                        loss_weights = torch.arange(
+                            1, aggregated.numel() + 1, device=device
+                        ).reshape_as(aggregated)
+                        (aggregated * loss_weights).sum().backward()
+                        for tensor in (pts, R, T, feat_map) + (
+                            (mask_map,)
+                            if masked and aggregator_type is ReductionFeatureAggregator
+                            else ()
+                        ):
+                            self.assertTrue(torch.isfinite(tensor.grad).all())
+                        self.assertEqual(torch.count_nonzero(pts.grad[:, 1]).item(), 0)
+                        self.assertGreater(torch.count_nonzero(feat_map.grad).item(), 0)
 
     def _init_view_sampler_problem(self, random_masks):
         """
