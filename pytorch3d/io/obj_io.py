@@ -80,7 +80,7 @@ def load_obj(
     load_textures: bool = True,
     create_texture_atlas: bool = False,
     texture_atlas_size: int = 4,
-    texture_wrap: Optional[str] = "repeat",
+    texture_wrap: Optional[str] = None,
     device: Device = "cpu",
     path_manager: Optional[PathManager] = None,
 ):
