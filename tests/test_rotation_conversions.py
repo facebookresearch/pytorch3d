@@ -329,6 +329,22 @@ class TestRotationConversion(TestCaseMixin, unittest.TestCase):
             (grad,) = torch.autograd.grad(axis_angles.sum(), R)
             self.assertTrue(torch.isfinite(grad).all())
 
+    def test_quaternion_to_axis_angle_negative_real_part(self):
+        """q and -q give the same rotation, also when -q is close to -1."""
+        axis = torch.tensor([0.36, 0.48, 0.8], dtype=torch.float64)
+        angles = torch.tensor([1e-6, 1e-5, 1e-3, 0.1, 2.0, 3.0], dtype=torch.float64)
+        quaternions = axis_angle_to_quaternion(angles[:, None] * axis)
+        expected = quaternion_to_matrix(quaternions)
+        for sign in [1, -1]:
+            axis_angles = quaternion_to_axis_angle(sign * quaternions.float())
+            self.assertClose(
+                axis_angle_to_matrix(axis_angles.double()), expected, atol=1e-6
+            )
+        self.assertClose(
+            quaternion_to_axis_angle(torch.tensor([-1.0, 0.0, 0.0, 0.0])),
+            torch.zeros(3),
+        )
+
     def test_axis_angle_batch_independence(self):
         """Every matrix in a batch is converted independently of the others."""
         angles = torch.tensor(
