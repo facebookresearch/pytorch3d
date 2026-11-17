@@ -621,10 +621,17 @@ def quaternion_to_axis_angle(quaternions: torch.Tensor) -> torch.Tensor:
             turned anticlockwise in radians around the vector's
             direction.
     """
+    real_parts = quaternions[..., :1]
     norms = torch.norm(quaternions[..., 1:], p=2, dim=-1, keepdim=True)
-    half_angles = torch.atan2(norms, quaternions[..., :1])
+    # q and -q are the same rotation. Using |real part| keeps the half angle
+    # away from pi, where the sinc below loses precision; flipping the sign
+    # then gives the result for -q when the real part is negative.
+    half_angles = torch.atan2(norms, real_parts.abs())
     sin_half_angles_over_angles = 0.5 * torch.sinc(half_angles / torch.pi)
-    # angles/2 are between [-pi/2, pi/2], thus sin_half_angles_over_angles
+    sin_half_angles_over_angles = torch.where(
+        real_parts < 0, -sin_half_angles_over_angles, sin_half_angles_over_angles
+    )
+    # angles/2 are between [0, pi/2], thus sin_half_angles_over_angles
     # can't be zero
     return quaternions[..., 1:] / sin_half_angles_over_angles
 
