@@ -1,0 +1,4 @@
+InheritParentConfig: true
+CheckOptions:
+  - key: facebook-unused-include-check.AlwaysUsedSuffixes
+    value: '-inl.h;.tcc;.inl;.inc;.instantiate.h'
