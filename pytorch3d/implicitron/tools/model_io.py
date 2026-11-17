@@ -147,6 +147,7 @@ def find_last_checkpoint(
         )
         if len(fls) > 0:
             break
+    # pyrefly: ignore [unbound-name]
     if len(fls) == 0:
         fl = None
     else:
