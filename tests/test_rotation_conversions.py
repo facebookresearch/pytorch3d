@@ -401,6 +401,46 @@ class TestRotationConversion(TestCaseMixin, unittest.TestCase):
         self.assertTrue(torch.isfinite(p).all())
         self.assertTrue(torch.isfinite(q).all())
 
+    def test_quaternion_application_broadcast_and_grad(self):
+        """Broadcasting and gradients match applying the rotation matrix."""
+        shapes = [
+            ((4,), (5, 3)),
+            ((2, 1, 4), (3, 3)),
+            ((2, 5, 4), (2, 5, 3)),
+        ]
+        for q_shape, p_shape in shapes:
+            with self.subTest(q_shape=q_shape, p_shape=p_shape):
+                n = 1
+                for s in q_shape[:-1]:
+                    n *= s
+                quaternions = random_quaternions(n, torch.float64)
+                quaternions = quaternions.reshape(q_shape).requires_grad_(True)
+                points = torch.randn(p_shape, dtype=torch.float64, requires_grad=True)
+
+                out = quaternion_apply(quaternions, points)
+                matrices = quaternion_to_matrix(quaternions)
+                expected = torch.matmul(matrices, points[..., None])[..., 0]
+                self.assertEqual(out.shape, expected.shape)
+                self.assertClose(out, expected)
+
+                grads = torch.autograd.grad(out.sum(), [quaternions, points])
+                expected_grads = torch.autograd.grad(
+                    expected.sum(), [quaternions, points]
+                )
+                # quaternion_to_matrix normalizes its input, so its gradient has no
+                # component along q, whereas quaternion_apply assumes unit input.
+                # They agree on the tangent space of the unit sphere; project out
+                # the radial component before comparing.
+                def tangent(g, q=quaternions.detach()):
+                    return g - (g * q).sum(-1, keepdim=True) * q
+
+                self.assertClose(tangent(grads[0]), tangent(expected_grads[0]))
+                self.assertClose(grads[1], expected_grads[1])
+
+        identity = torch.tensor([1.0, 0.0, 0.0, 0.0])
+        points = torch.randn(4, 3)
+        self.assertClose(quaternion_apply(identity, points), points)
+
     def test_6d(self):
         """Converting to 6d and back"""
         r = random_rotations(13, dtype=torch.float64)

@@ -13,7 +13,6 @@ import torch.nn.functional as F
 
 from ..common.datatypes import Device
 
-
 """
 The transformation matrices returned from the functions in this file assume
 the points on which the transformation will be applied are column vectors.
@@ -150,7 +149,7 @@ def matrix_to_quaternion(matrix: torch.Tensor) -> torch.Tensor:
 
     # We floor here at 0.1 but the exact level is not important; if q_abs is small,
     # the candidate won't be picked.
-    flr = torch.tensor(0.1).to(dtype=q_abs.dtype, device=q_abs.device)
+    flr = torch.full((), 0.1, dtype=q_abs.dtype, device=q_abs.device)
     quat_candidates = quat_by_rijk / (2.0 * q_abs[..., None].max(flr))
 
     # if not for numerical problems, quat_candidates[i] should be same (up to a sign),
@@ -451,13 +450,10 @@ def quaternion_apply(quaternion: torch.Tensor, point: torch.Tensor) -> torch.Ten
     """
     if point.size(-1) != 3:
         raise ValueError(f"Points are not in 3D, {point.shape}.")
-    real_parts = point.new_zeros(point.shape[:-1] + (1,))
-    point_as_quaternion = torch.cat((real_parts, point), -1)
-    out = quaternion_raw_multiply(
-        quaternion_raw_multiply(quaternion, point_as_quaternion),
-        quaternion_invert(quaternion),
-    )
-    return out[..., 1:]
+    real, imag = torch.tensor_split(quaternion, [1], dim=-1)
+    imag, point = torch.broadcast_tensors(imag, point)
+    t = 2 * torch.linalg.cross(imag, point)
+    return point + real * t + torch.linalg.cross(imag, t)
 
 
 def axis_angle_to_matrix(axis_angle: torch.Tensor, fast: bool = False) -> torch.Tensor:
