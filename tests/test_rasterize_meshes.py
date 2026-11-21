@@ -458,6 +458,39 @@ class TestRasterizeMeshes(TestCaseMixin, unittest.TestCase):
         args = ()
         self._compare_impls(fn1, fn2, args, args, verts1, verts2, compare_grads=True)
 
+    def test_perspective_correct_clamped_denominator_grad_cuda(self):
+        device = get_random_cuda_device()
+        self._test_perspective_correct_clamped_denominator_grad(device, bin_size=0)
+        self._test_perspective_correct_clamped_denominator_grad(device, bin_size=None)
+
+    def _test_perspective_correct_clamped_denominator_grad(self, device, bin_size):
+        # Apex near (z = 1), base far (z = 10). With blur_radius > 0 the pixel
+        # below the base is hit; there w0_top + w1_top + w2_top < 0, so the
+        # perspective correction clamps its denominator to kEpsilon and the
+        # corrected bary0 = b0 * z1 * z2 / kEpsilon does not depend on z0.
+        verts = torch.tensor(
+            [[0.0, 0.5, 1.0], [-0.5, -0.5, 10.0], [0.5, -0.5, 10.0]],
+            device=device,
+            requires_grad=True,
+        )
+        faces = torch.tensor([[0, 1, 2]], device=device)
+        _, _, bary, _ = rasterize_meshes(
+            Meshes(verts=[verts], faces=[faces]),
+            image_size=64,
+            blur_radius=0.02,
+            faces_per_pixel=1,
+            bin_size=bin_size,
+            perspective_correct=True,
+        )
+        out = bary[0, 52, 16, 0, 0]
+        # The denominator is clamped at this pixel.
+        self.assertGreater(out.abs().item(), 1e6)
+        out.backward()
+        self.assertTrue(torch.isfinite(verts.grad).all())
+        # Before the fix the clamped denominator was differentiated as if it
+        # were not clamped, which gave d(bary0)/d(z0) of about 1.6e18.
+        self.assertEqual(verts.grad[0, 2].item(), 0.0)
+
     def test_bin_size_error(self):
         meshes = ico_sphere(2)
         image_size = 1024
