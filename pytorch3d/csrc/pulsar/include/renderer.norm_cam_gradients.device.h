@@ -24,6 +24,12 @@ namespace Renderer {
 template <bool DEV>
 GLOBAL void norm_cam_gradients(Renderer renderer) {
   GET_PARALLEL_IDX_1D(idx, 1);
+  static_assert(
+      alignof(CamGradInfo) <= alignof(float),
+      "CamGradInfo alignment must not exceed float alignment.");
+  static_assert(
+      sizeof(CamGradInfo) % sizeof(float) == 0,
+      "CamGradInfo size must be a multiple of float size.");
   CamGradInfo* cgi = reinterpret_cast<CamGradInfo*>(renderer.grad_cam_d);
   *cgi = *cgi * FRCP(static_cast<float>(*renderer.n_grad_contributions_d));
   END_PARALLEL_NORET();
