@@ -174,8 +174,8 @@ class MeshRasterizerOpenGL(nn.Module):
                 the zbuf uses the opengl zbuf convention, where the z-vals are between 0
                 (at projection plane) and 1 (at clipping distance), and are a non-linear
                 function of the depth values of the camera ray intersections. In
-                contrast, MeshRasterizer's zbuf values are simply the distance of each
-                ray intersection from the camera.
+                contrast, MeshRasterizer's zbuf values are view-space z-coordinates
+                (depth along the camera z-axis).
 
         Throws:
             ValueError if meshes_world lives on the CPU.
