@@ -135,16 +135,13 @@ def se3_log_map(
     ```
 
     The conversion has a singularity around `(transform=I)` which is handled
-    by clamping controlled with the `eps` and `cos_bound` arguments.
+    by clamping controlled with the `eps` argument.
 
     Args:
         transform: batch of SE(3) matrices of shape `(minibatch, 4, 4)`.
         eps: A threshold for clipping the squared norm of the rotation logarithm
             to avoid division by zero in the singular case.
-        cos_bound: Clamps the cosine of the rotation angle to
-            [-1 + cos_bound, 3 - cos_bound] to avoid non-finite outputs.
-            The non-finite outputs can be caused by passing small rotation angles
-            to the `acos` function in `so3_rotation_angle` of `so3_log_map`.
+        cos_bound: (unused, for backward compatibility)
 
     Returns:
         Batch of logarithms of input SE(3) matrices
@@ -174,7 +171,7 @@ def se3_log_map(
 
     # log_translation is V^-1 @ T
     T = transform[:, 3, :3]
-    V = _se3_V_matrix(*_get_se3_V_input(log_rotation), eps=eps)
+    V = _se3_V_matrix(*_get_se3_V_input(log_rotation, eps=eps), eps=eps)
     log_translation = torch.linalg.solve(V, T[:, :, None])[:, :, 0]
 
     return torch.cat((log_translation, log_rotation), dim=1)

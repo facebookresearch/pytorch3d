@@ -279,6 +279,21 @@ class TestSE3(TestCaseMixin, unittest.TestCase):
         log_transform_ = se3_log_map(se3_exp_map(log_transform, eps=1e-8), eps=1e-8)
         self.assertClose(log_transform, log_transform_, atol=1e-1)
 
+    def test_se3_log_to_exp_to_log_small_rotation_eps(self):
+        """
+        Check that `se3_log_map` uses its `eps` argument, so that
+        `se3_log_map(se3_exp_map(log_transform, eps), eps)` recovers
+        `log_transform` for small rotations, where the clamping by `eps` applies.
+        """
+        eps = 1e-8
+        log_rotation = 1e-3 * torch.nn.functional.normalize(
+            torch.randn(10, 3, dtype=torch.float64), dim=-1
+        )
+        log_translation = 5 * torch.randn(10, 3, dtype=torch.float64)
+        log_transform = torch.cat((log_translation, log_rotation), dim=1)
+        log_transform_ = se3_log_map(se3_exp_map(log_transform, eps=eps), eps=eps)
+        self.assertClose(log_transform, log_transform_, rtol=0, atol=1e-12)
+
     def test_bad_se3_input_value_err(self):
         """
         Tests whether `se3_exp_map` and `se3_log_map` correctly return
