@@ -135,6 +135,21 @@ To rebuild after installing from a local clone run, `rm -rf build/ **/*.so` then
 MACOSX_DEPLOYMENT_TARGET=10.14 CC=clang CXX=clang++ pip install -e .
 ```
 
+**Install from a local clone on Ubuntu with Intel GPU:**
+
+Install the Intel [oneAPI toolkit](https://www.intel.com/content/www/us/en/developer/tools/oneapi/oneapi-toolkit-download.html) and [GPU drivers](https://github.com/open-edge-platform/edge-developer-kit-reference-scripts/tree/main).
+
+Then, inside a virtual environment:
+```
+source /opt/intel/oneapi/setvars.sh
+ICPX_BIN="$(dirname -- "$(readlink -f -- "$(command -v icpx)")")"
+export PATH="$ICPX_BIN/compiler:$PATH"
+
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/xpu
+pip install --no-build-isolation .
+python setup.py build_ext --inplace
+```
+
 **Install from local clone on Windows:**
 
 Depending on the version of PyTorch, changes to some PyTorch headers may be needed before compilation. These are often discussed in issues in this repository.

@@ -19,3 +19,4 @@
   TORCH_CHECK(                          \
       x.device().type() == torch::kCPU, \
       "Cannot use CPU implementation: " #x " not on CPU.")
+#define CHECK_XPU(x) TORCH_CHECK(x.is_xpu(), #x " must be an XPU tensor.")

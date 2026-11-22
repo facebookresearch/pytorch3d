@@ -44,6 +44,21 @@ RasterizeMeshesNaiveCuda(
     const bool clip_barycentric_coords,
     const bool cull_backfaces);
 #endif
+
+#ifdef WITH_XPU
+std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>
+RasterizeMeshesNaiveXpu(
+    const torch::Tensor& face_verts,
+    const torch::Tensor& mesh_to_face_first_idx,
+    const torch::Tensor& num_faces_per_mesh,
+    const torch::Tensor& clipped_faces_neighbor_idx,
+    const std::tuple<int, int> image_size,
+    const float blur_radius,
+    const int faces_per_pixel,
+    const bool perspective_correct,
+    const bool clip_barycentric_coords,
+    const bool cull_backfaces);
+#endif
 // Forward pass for rasterizing a batch of meshes.
 //
 // Args:
@@ -137,6 +152,27 @@ RasterizeMeshesNaive(
 #else
     AT_ERROR("Not compiled with GPU support");
 #endif
+  } else if (face_verts.device().is_xpu()) {
+#ifdef WITH_XPU
+    TORCH_CHECK(
+        mesh_to_face_first_idx.device() == face_verts.device() &&
+            num_faces_per_mesh.device() == face_verts.device() &&
+            clipped_faces_neighbor_idx.device() == face_verts.device(),
+        "RasterizeMeshesNaiveXpu expects all inputs on the same XPU");
+    return RasterizeMeshesNaiveXpu(
+        face_verts,
+        mesh_to_face_first_idx,
+        num_faces_per_mesh,
+        clipped_faces_neighbor_idx,
+        image_size,
+        blur_radius,
+        faces_per_pixel,
+        perspective_correct,
+        clip_barycentric_coords,
+        cull_backfaces);
+#else
+    TORCH_CHECK(false, "PyTorch3D was not built with XPU support");
+#endif
   } else {
     CHECK_CPU(face_verts);
     CHECK_CPU(mesh_to_face_first_idx);
@@ -175,6 +211,17 @@ torch::Tensor RasterizeMeshesBackwardCuda(
     const torch::Tensor& grad_zbuf,
     const torch::Tensor& grad_bary,
     const torch::Tensor& grad_dists,
+    const bool perspective_correct,
+    const bool clip_barycentric_coords);
+#endif
+
+#ifdef WITH_XPU
+at::Tensor RasterizeMeshesBackwardXpu(
+    const at::Tensor& face_verts,
+    const at::Tensor& pix_to_face,
+    const at::Tensor& grad_zbuf,
+    const at::Tensor& grad_bary,
+    const at::Tensor& grad_dists,
     const bool perspective_correct,
     const bool clip_barycentric_coords);
 #endif
@@ -234,6 +281,23 @@ torch::Tensor RasterizeMeshesBackward(
 #else
     AT_ERROR("Not compiled with GPU support");
 #endif
+  } else if (face_verts.device().is_xpu()) {
+#ifdef WITH_XPU
+    CHECK_XPU(pix_to_face);
+    CHECK_XPU(grad_zbuf);
+    CHECK_XPU(grad_bary);
+    CHECK_XPU(grad_dists);
+    return RasterizeMeshesBackwardXpu(
+        face_verts,
+        pix_to_face,
+        grad_zbuf,
+        grad_bary,
+        grad_dists,
+        perspective_correct,
+        clip_barycentric_coords);
+#else
+    AT_ERROR("Not compiled with XPU support");
+#endif
   } else {
     CHECK_CPU(face_verts);
     CHECK_CPU(pix_to_face);
@@ -265,6 +329,17 @@ torch::Tensor RasterizeMeshesCoarseCpu(
     const float blur_radius,
     const int bin_size,
     const int max_faces_per_bin);
+
+#ifdef WITH_XPU
+torch::Tensor RasterizeMeshesCoarseXpu(
+    const torch::Tensor& face_verts,
+    const torch::Tensor& mesh_to_face_first_idx,
+    const torch::Tensor& num_faces_per_mesh,
+    const std::tuple<int, int> image_size,
+    const float blur_radius,
+    const int bin_size,
+    const int max_faces_per_bin);
+#endif
 
 // Args:
 //    face_verts: Tensor of shape (F, 3, 3) giving (packed) vertex positions for
@@ -313,6 +388,21 @@ torch::Tensor RasterizeMeshesCoarse(
 #else
     AT_ERROR("Not compiled with GPU support");
 #endif
+  } else if (face_verts.device().is_xpu()) {
+#ifdef WITH_XPU
+    CHECK_XPU(mesh_to_face_first_idx);
+    CHECK_XPU(num_faces_per_mesh);
+    return RasterizeMeshesCoarseXpu(
+        face_verts,
+        mesh_to_face_first_idx,
+        num_faces_per_mesh,
+        image_size,
+        blur_radius,
+        bin_size,
+        max_faces_per_bin);
+#else
+    AT_ERROR("PyTorch3D was not built with XPU support");
+#endif
   } else {
     CHECK_CPU(face_verts);
     CHECK_CPU(mesh_to_face_first_idx);
@@ -335,6 +425,21 @@ torch::Tensor RasterizeMeshesCoarse(
 #ifdef WITH_CUDA
 std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>
 RasterizeMeshesFineCuda(
+    const torch::Tensor& face_verts,
+    const torch::Tensor& bin_faces,
+    const torch::Tensor& clipped_faces_neighbor_idx,
+    const std::tuple<int, int> image_size,
+    const float blur_radius,
+    const int bin_size,
+    const int faces_per_pixel,
+    const bool perspective_correct,
+    const bool clip_barycentric_coords,
+    const bool cull_backfaces);
+#endif
+
+#ifdef WITH_XPU
+std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>
+RasterizeMeshesFineXpu(
     const torch::Tensor& face_verts,
     const torch::Tensor& bin_faces,
     const torch::Tensor& clipped_faces_neighbor_idx,
@@ -432,6 +537,24 @@ RasterizeMeshesFine(
         cull_backfaces);
 #else
     AT_ERROR("Not compiled with GPU support");
+#endif
+  } else if (face_verts.device().is_xpu()) {
+#ifdef WITH_XPU
+    CHECK_XPU(bin_faces);
+    CHECK_XPU(clipped_faces_neighbor_idx);
+    return RasterizeMeshesFineXpu(
+        face_verts,
+        bin_faces,
+        clipped_faces_neighbor_idx,
+        image_size,
+        blur_radius,
+        bin_size,
+        faces_per_pixel,
+        perspective_correct,
+        clip_barycentric_coords,
+        cull_backfaces);
+#else
+    AT_ERROR("PyTorch3D was not built with XPU support");
 #endif
   } else {
     CHECK_CPU(face_verts);

@@ -53,6 +53,7 @@ class TestRasterizeMeshes(TestCaseMixin, unittest.TestCase):
         self._test_simple_cpu_naive_instance()
         torch.set_num_threads(n_threads)
 
+    @unittest.skipUnless(torch.cuda.is_available(), "CUDA required")
     def test_simple_cuda_naive(self):
         device = get_random_cuda_device()
         self._simple_triangle_raster(rasterize_meshes, device, bin_size=0)
@@ -61,6 +62,7 @@ class TestRasterizeMeshes(TestCaseMixin, unittest.TestCase):
         self._test_perspective_correct(rasterize_meshes, device, bin_size=0)
         self._test_back_face_culling(rasterize_meshes, device, bin_size=0)
 
+    @unittest.skipUnless(torch.cuda.is_available(), "CUDA required")
     def test_simple_cuda_binned(self):
         device = get_random_cuda_device()
         self._simple_triangle_raster(rasterize_meshes, device, bin_size=5)
@@ -69,14 +71,90 @@ class TestRasterizeMeshes(TestCaseMixin, unittest.TestCase):
         self._test_perspective_correct(rasterize_meshes, device, bin_size=5)
         self._test_back_face_culling(rasterize_meshes, device, bin_size=5)
 
-    def test_python_vs_cpu_vs_cuda(self):
+    @unittest.skipUnless(torch.xpu.is_available(), "XPU required")
+    def test_simple_xpu_naive(self):
+        device = torch.device("xpu")
+        self._simple_triangle_raster(rasterize_meshes, device, bin_size=0)
+        self._simple_blurry_raster(rasterize_meshes, device, bin_size=0)
+        self._test_behind_camera(rasterize_meshes, device, bin_size=0)
+        self._test_perspective_correct(rasterize_meshes, device, bin_size=0)
+        self._test_back_face_culling(rasterize_meshes, device, bin_size=0)
+
+    @unittest.skipUnless(torch.xpu.is_available(), "XPU required")
+    def test_simple_xpu_binned(self):
+        device = torch.device("xpu")
+        self._simple_triangle_raster(rasterize_meshes, device, bin_size=5)
+        self._simple_blurry_raster(rasterize_meshes, device, bin_size=5)
+        self._test_behind_camera(rasterize_meshes, device, bin_size=5)
+        self._test_perspective_correct(rasterize_meshes, device, bin_size=5)
+        self._test_back_face_culling(rasterize_meshes, device, bin_size=5)
+
+    @unittest.skipUnless(torch.xpu.is_available(), "XPU required")
+    def test_cpu_vs_xpu_naive(self):
         torch.manual_seed(231)
+        image_size = 64
+        radius = 0.1**2
+        faces_per_pixel = 3
         device = torch.device("cpu")
+        meshes_cpu = ico_sphere(0, device)
+        verts1, faces1 = meshes_cpu.get_mesh_verts_faces(0)
+        verts1.requires_grad = True
+        meshes_cpu = Meshes(verts=[verts1], faces=[faces1])
+
+        device = torch.device("xpu")
+        meshes_xpu = ico_sphere(0, device)
+        verts2, faces2 = meshes_xpu.get_mesh_verts_faces(0)
+        verts2.requires_grad = True
+        meshes_xpu = Meshes(verts=[verts2], faces=[faces2])
+
+        barycentric_clip = True
+        args_cpu = (
+            meshes_cpu,
+            image_size,
+            radius,
+            faces_per_pixel,
+            None,
+            None,
+            False,
+            barycentric_clip,
+            False,
+        )
+        args_xpu = (
+            meshes_xpu,
+            image_size,
+            radius,
+            faces_per_pixel,
+            0,
+            0,
+            False,
+            barycentric_clip,
+            False,
+        )
+        self._compare_impls(
+            rasterize_meshes,
+            rasterize_meshes,
+            args_cpu,
+            args_xpu,
+            verts1,
+            verts2,
+            compare_grads=True,
+        )
+
+    @unittest.skipUnless(torch.cuda.is_available(), "CUDA required")
+    def test_python_vs_cpu_vs_cuda(self):
+        self._test_python_vs_cpu_vs_device(get_random_cuda_device())
+
+    @unittest.skipUnless(torch.xpu.is_available(), "XPU required")
+    def test_python_vs_cpu_vs_xpu(self):
+        self._test_python_vs_cpu_vs_device(torch.device("xpu"))
+
+    def _test_python_vs_cpu_vs_device(self, device):
+        torch.manual_seed(231)
         image_size = 32
         blur_radius = 0.1**2
         faces_per_pixel = 3
 
-        for d in ["cpu", get_random_cuda_device()]:
+        for d in ["cpu", device]:
             device = torch.device(d)
             compare_grads = True
             # Mesh with a single face.
@@ -171,6 +249,7 @@ class TestRasterizeMeshes(TestCaseMixin, unittest.TestCase):
                 compare_grads=compare_grads,
             )
 
+    @unittest.skipUnless(torch.cuda.is_available(), "CUDA required")
     def test_cpu_vs_cuda_naive(self):
         """
         Compare naive versions of cuda and cpp
@@ -228,10 +307,33 @@ class TestRasterizeMeshes(TestCaseMixin, unittest.TestCase):
     def test_coarse_cpu(self):
         return self._test_coarse_rasterize(torch.device("cpu"))
 
+    @unittest.skipUnless(torch.cuda.is_available(), "CUDA required")
     def test_coarse_cuda(self):
         return self._test_coarse_rasterize(get_random_cuda_device())
 
+    @unittest.skipUnless(torch.xpu.is_available(), "XPU required")
+    def test_coarse_xpu(self):
+        return self._test_coarse_rasterize(torch.device("xpu"))
+
+    @unittest.skipUnless(torch.cuda.is_available(), "CUDA required")
     def test_cpp_vs_cuda_naive_vs_cuda_binned(self):
+        self._test_cpp_vs_device_naive_vs_binned(get_random_cuda_device())
+
+    @unittest.skipUnless(torch.xpu.is_available(), "XPU required")
+    def test_cpp_vs_xpu_naive_vs_xpu_binned(self):
+        self._test_cpp_vs_device_naive_vs_binned(torch.device("xpu"))
+
+    @unittest.skipUnless(torch.xpu.is_available(), "XPU required")
+    def test_xpu_rectangular_binned_matches_naive(self):
+        device = torch.device("xpu")
+        for image_size in [(32, 64), (64, 32)]:
+            meshes = ico_sphere(0, device=device)
+            naive = rasterize_meshes(meshes, image_size=image_size, bin_size=0)
+            binned = rasterize_meshes(meshes, image_size=image_size, bin_size=16)
+            for naive_tensor, binned_tensor in zip(naive, binned):
+                self.assertClose(naive_tensor, binned_tensor)
+
+    def _test_cpp_vs_device_naive_vs_binned(self, device):
         # Make sure that the backward pass runs for all pathways
         image_size = 64  # test is too slow for very large images.
         N = 1
@@ -242,8 +344,8 @@ class TestRasterizeMeshes(TestCaseMixin, unittest.TestCase):
         grad_dist = torch.randn(N, image_size, image_size, faces_per_pixel)
         grad_bary = torch.randn(N, image_size, image_size, faces_per_pixel, 3)
 
-        device = torch.device("cpu")
-        meshes = ico_sphere(0, device)
+        device_cpu = torch.device("cpu")
+        meshes = ico_sphere(0, device_cpu)
         verts, faces = meshes.get_mesh_verts_faces(0)
         verts.requires_grad = True
         meshes = Meshes(verts=[verts], faces=[faces])
@@ -263,8 +365,7 @@ class TestRasterizeMeshes(TestCaseMixin, unittest.TestCase):
         dist1 = dist1.data.cpu().clone()
         grad1 = verts.grad.data.cpu().clone()
 
-        # Option II: CUDA, naive
-        device = get_random_cuda_device()
+        # Option II: device, naive
         meshes = ico_sphere(0, device)
         verts, faces = meshes.get_mesh_verts_faces(0)
         verts.requires_grad = True
@@ -286,7 +387,7 @@ class TestRasterizeMeshes(TestCaseMixin, unittest.TestCase):
         dist2 = dist2.data.cpu().clone()
         grad2 = verts.grad.data.cpu().clone()
 
-        # Option III: CUDA, binned
+        # Option III: device, binned
         meshes = ico_sphere(0, device)
         verts, faces = meshes.get_mesh_verts_faces(0)
         verts.requires_grad = True
@@ -318,7 +419,15 @@ class TestRasterizeMeshes(TestCaseMixin, unittest.TestCase):
         self.assertClose(grad1, grad3, rtol=5e-3)
         self.assertClose(grad2, grad3, rtol=5e-3)
 
+    @unittest.skipUnless(torch.cuda.is_available(), "CUDA required")
     def test_compare_coarse_cpu_vs_cuda(self):
+        self._test_compare_coarse_cpu_vs_device(get_random_cuda_device())
+
+    @unittest.skipUnless(torch.xpu.is_available(), "XPU required")
+    def test_compare_coarse_cpu_vs_xpu(self):
+        self._test_compare_coarse_cpu_vs_device(torch.device("xpu"))
+
+    def _test_compare_coarse_cpu_vs_device(self, device):
         torch.manual_seed(231)
         N = 1
         image_size = (512, 512)
@@ -326,9 +435,7 @@ class TestRasterizeMeshes(TestCaseMixin, unittest.TestCase):
         bin_size = 32
         max_faces_per_bin = 20
 
-        device = torch.device("cpu")
-
-        meshes = ico_sphere(2, device)
+        meshes = ico_sphere(2, torch.device("cpu"))
         faces = meshes.faces_packed()
         verts = meshes.verts_packed()
         faces_verts = verts[faces]
@@ -344,7 +451,6 @@ class TestRasterizeMeshes(TestCaseMixin, unittest.TestCase):
             bin_size,
             max_faces_per_bin,
         )
-        device = get_random_cuda_device()
         meshes = meshes.clone().to(device)
 
         faces = meshes.faces_packed()
@@ -393,21 +499,44 @@ class TestRasterizeMeshes(TestCaseMixin, unittest.TestCase):
         args = ()
         self._compare_impls(fn1, fn2, args, args, verts1, verts2, compare_grads=True)
 
-    def test_cpp_vs_cuda_bary_clip(self):
+    def _test_cpp_vs_device(self, device, kwargs):
         meshes = ico_sphere(2, device=torch.device("cpu"))
         verts1, faces1 = meshes.get_mesh_verts_faces(0)
         verts1.requires_grad = True
         meshes1 = Meshes(verts=[verts1], faces=[faces1])
-        device = get_random_cuda_device()
         verts2 = verts1.detach().to(device).requires_grad_(True)
         faces2 = faces1.detach().clone().to(device)
         meshes2 = Meshes(verts=[verts2], faces=[faces2])
 
-        kwargs = {"image_size": 64, "clip_barycentric_coords": True}
         fn1 = functools.partial(rasterize_meshes, meshes1, **kwargs)
         fn2 = functools.partial(rasterize_meshes, meshes2, bin_size=0, **kwargs)
         args = ()
         self._compare_impls(fn1, fn2, args, args, verts1, verts2, compare_grads=True)
+
+    @unittest.skipUnless(torch.cuda.is_available(), "CUDA required")
+    def test_cpp_vs_cuda_bary_clip(self):
+        self._test_cpp_vs_device(
+            get_random_cuda_device(),
+            {"image_size": 64, "clip_barycentric_coords": True},
+        )
+
+    @unittest.skipUnless(torch.xpu.is_available(), "XPU required")
+    def test_cpp_vs_xpu_bary_clip(self):
+        self._test_cpp_vs_device(
+            torch.device("xpu"),
+            {"image_size": 64, "clip_barycentric_coords": True},
+        )
+
+    @unittest.skipUnless(torch.xpu.is_available(), "XPU required")
+    def test_cpp_vs_xpu_perspective_correct_bary_clip(self):
+        self._test_cpp_vs_device(
+            torch.device("xpu"),
+            {
+                "image_size": 64,
+                "perspective_correct": True,
+                "clip_barycentric_coords": True,
+            },
+        )
 
     def test_python_vs_cpp_perspective_correct(self):
         torch.manual_seed(232)
@@ -426,24 +555,31 @@ class TestRasterizeMeshes(TestCaseMixin, unittest.TestCase):
         args = ()
         self._compare_impls(fn1, fn2, args, args, verts1, verts2, compare_grads=True)
 
+    @unittest.skipUnless(torch.cuda.is_available(), "CUDA required")
     def test_cpp_vs_cuda_perspective_correct(self):
-        meshes = ico_sphere(2, device=torch.device("cpu"))
-        verts1, faces1 = meshes.get_mesh_verts_faces(0)
-        verts1.requires_grad = True
-        meshes1 = Meshes(verts=[verts1], faces=[faces1])
-        device = get_random_cuda_device()
-        verts2 = verts1.detach().to(device).requires_grad_(True)
-        faces2 = faces1.detach().clone().to(device)
-        meshes2 = Meshes(verts=[verts2], faces=[faces2])
+        self._test_cpp_vs_device(
+            get_random_cuda_device(),
+            {"image_size": 64, "perspective_correct": True},
+        )
 
-        kwargs = {"image_size": 64, "perspective_correct": True}
-        fn1 = functools.partial(rasterize_meshes, meshes1, **kwargs)
-        fn2 = functools.partial(rasterize_meshes, meshes2, bin_size=0, **kwargs)
-        args = ()
-        self._compare_impls(fn1, fn2, args, args, verts1, verts2, compare_grads=True)
+    @unittest.skipUnless(torch.xpu.is_available(), "XPU required")
+    def test_cpp_vs_xpu_perspective_correct(self):
+        self._test_cpp_vs_device(
+            torch.device("xpu"),
+            {"image_size": 64, "perspective_correct": True},
+        )
 
+    @unittest.skipUnless(torch.cuda.is_available(), "CUDA required")
     def test_cuda_naive_vs_binned_perspective_correct(self):
-        device = get_random_cuda_device()
+        self._test_device_naive_vs_binned_perspective_correct(
+            get_random_cuda_device()
+        )
+
+    @unittest.skipUnless(torch.xpu.is_available(), "XPU required")
+    def test_xpu_naive_vs_binned_perspective_correct(self):
+        self._test_device_naive_vs_binned_perspective_correct(torch.device("xpu"))
+
+    def _test_device_naive_vs_binned_perspective_correct(self, device):
         meshes = ico_sphere(2, device=device)
         verts1, faces1 = meshes.get_mesh_verts_faces(0)
         verts1.requires_grad = True
@@ -1162,10 +1298,17 @@ class TestRasterizeMeshes(TestCaseMixin, unittest.TestCase):
         bin_faces_same = (bin_faces.squeeze() == bin_faces_expected).all()
         self.assertTrue(bin_faces_same.item() == 1)
 
+    @unittest.skipUnless(torch.cuda.is_available(), "CUDA required")
     def test_order_of_ties(self):
+        self._test_order_of_ties(torch.device("cuda:0"))
+
+    @unittest.skipUnless(torch.xpu.is_available(), "XPU required")
+    def test_order_of_ties_xpu(self):
+        self._test_order_of_ties(torch.device("xpu"))
+
+    def _test_order_of_ties(self, device):
         # Tied faces are rasterized in index order
         # We rasterize a mesh with many faces.
-        device = torch.device("cuda:0")
         verts = -5 * torch.eye(3, dtype=torch.float32, device=device)[None]
         faces = torch.arange(3, device=device, dtype=torch.int64).expand(1, 100, 3)
         mesh = Meshes(verts=verts, faces=faces)
