@@ -20,8 +20,8 @@ __global__ void InterpFaceAttrsForwardKernel(
     const size_t P,
     const size_t F,
     const size_t D) {
-  const auto tid = threadIdx.x + blockIdx.x * blockDim.x;
-  const auto num_threads = blockDim.x * gridDim.x;
+  const int tid = threadIdx.x + blockIdx.x * blockDim.x;
+  const int num_threads = blockDim.x * gridDim.x;
   for (int pd = tid; pd < P * D; pd += num_threads) {
     const int p = pd / D;
     const int d = pd % D;
@@ -93,8 +93,8 @@ __global__ void InterpFaceAttrsBackwardKernel(
     const size_t P,
     const size_t F,
     const size_t D) {
-  const auto tid = threadIdx.x + blockIdx.x * blockDim.x;
-  const auto num_threads = blockDim.x * gridDim.x;
+  const int tid = threadIdx.x + blockIdx.x * blockDim.x;
+  const int num_threads = blockDim.x * gridDim.x;
   for (int pd = tid; pd < P * D; pd += num_threads) {
     const int p = pd / D;
     const int d = pd % D;
