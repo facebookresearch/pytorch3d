@@ -14,7 +14,8 @@ from collections import Counter
 import yaml
 
 
-conf = yaml.safe_load(open("config.yml"))
+with open("config.yml") as f:
+    conf = yaml.safe_load(f)
 jobs = conf["workflows"]["build_and_test"]["jobs"]
 
 
