@@ -81,7 +81,9 @@ def opencv_from_cameras_projection(
         Correspondingly, `R` can be obtained from `rvec` by calling `so3_exp_map`.
 
     Args:
-        cameras: A batch of `N` cameras in the PyTorch3D convention.
+        cameras: A batch of `N` cameras in the PyTorch3D convention. The
+            intrinsics may be given either as `focal_length` / `principal_point`
+            or as an explicit calibration matrix `K`.
         image_size: A tensor of shape `(N, 2)` containing the sizes of the images
             (height, width) attached to each camera.
         return_as_rotmat (bool): If set to True, return the full 3x3 rotation
@@ -91,6 +93,10 @@ def opencv_from_cameras_projection(
         R: A batch of rotation matrices of shape `(N, 3, 3)`.
         tvec: A batch of translation vectors of shape `(N, 3)`.
         camera_matrix: A batch of camera calibration matrices of shape `(N, 3, 3)`.
+
+    Raises:
+        ValueError: If `K` has a non-zero skew term, which the OpenCV
+            camera matrix returned here cannot represent.
     """
     return _opencv_from_cameras_projection(cameras, image_size)
 
