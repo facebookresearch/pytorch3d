@@ -778,7 +778,9 @@ class SqlIndexDataset(DatasetBase, ReplaceableBase):
         # NOTE this stratified sampling can be done more efficiently in
         # the no-subset case above if it is added to the SQL query.
         # We keep this generic implementation since no-subset case is uncommon
-        index = index.groupby("sequence_name", group_keys=False).apply(
+        index = index.groupby("sequence_name", group_keys=False)[
+            list(index.columns)
+        ].apply(
             lambda seq_frames: seq_frames.sample(
                 min(len(seq_frames), self.n_frames_per_sequence),
                 random_state=(

@@ -653,8 +653,8 @@ class _GLTFWriter:
             )
             element_type = "SCALAR"
             buffer_view = 1
-            element_min = list(map(int, np.min(data, keepdims=True)))
-            element_max = list(map(int, np.max(data, keepdims=True)))
+            element_min = [int(np.min(data))]
+            element_max = [int(np.max(data))]
             byte_per_element = (
                 3 * _DTYPE_BYTES[_ITEM_TYPES[_ComponentType.UNSIGNED_SHORT]]
             )

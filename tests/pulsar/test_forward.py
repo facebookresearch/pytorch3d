@@ -317,7 +317,7 @@ class TestForward(unittest.TestCase):
                         "test_out",
                         "test_forward_TestForward_test_principal_point.png",
                     ),
-                    (result * 255.0).cpu().to(torch.uint8).numpy(),
+                    (result * 255.0).cpu().to(torch.uint8).squeeze(-1).numpy(),
                 )
             self.assertTrue(
                 np.allclose(
@@ -344,7 +344,7 @@ class TestForward(unittest.TestCase):
                         "test_out",
                         "test_forward_TestForward_test_principal_point.png",
                     ),
-                    (result * 255.0).cpu().to(torch.uint8).numpy(),
+                    (result * 255.0).cpu().to(torch.uint8).squeeze(-1).numpy(),
                 )
             self.assertTrue(
                 np.allclose(

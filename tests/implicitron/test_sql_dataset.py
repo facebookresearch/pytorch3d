@@ -5,11 +5,11 @@
 # LICENSE file in the root directory of this source tree.
 
 import logging
-import os
 import unittest
 from collections import Counter
+from importlib.resources import files
 
-import pkg_resources
+import pandas as pd
 import torch
 from pytorch3d.implicitron.dataset.sql_dataset import SqlIndexDataset
 
@@ -28,9 +28,9 @@ logger.addHandler(sh)
 logger.setLevel(logging.DEBUG)
 
 
-DATASET_ROOT = pkg_resources.resource_filename(__name__, "data/sql_dataset")
-METADATA_FILE = os.path.join(DATASET_ROOT, "sql_dataset_100.sqlite")
-SET_LIST_FILE = os.path.join(DATASET_ROOT, "set_lists_100.json")
+DATASET_ROOT = files(__package__).joinpath("data", "sql_dataset")
+METADATA_FILE = str(DATASET_ROOT.joinpath("sql_dataset_100.sqlite"))
+SET_LIST_FILE = str(DATASET_ROOT.joinpath("set_lists_100.json"))
 
 
 class TestSqlDataset(unittest.TestCase):
@@ -219,6 +219,30 @@ class TestSqlDataset(unittest.TestCase):
             frame_data_builder_FrameDataBuilder_args=NO_BLOBS_KWARGS,
         )
         self.assertEqual(len(dataset), 100)
+
+    def test_stratified_sample_preserves_rows(self):
+        dataset = SqlIndexDataset(
+            sqlite_metadata_file=METADATA_FILE,
+            remove_empty_masks=False,
+            seed=42,
+            n_frames_per_sequence=2,
+            frame_data_builder_FrameDataBuilder_args=NO_BLOBS_KWARGS,
+        )
+        index = pd.DataFrame(
+            {
+                "sequence_name": ["b"] * 3 + ["a"] * 4,
+                "frame_number": [0, 1, 2, 0, 1, 2, 3],
+                "payload": [10, 11, 12, 20, 21, 22, 23],
+            },
+            index=pd.Index([10, 20, 30, 40, 50, 60, 70]),
+        )
+        expected = index.loc[[60, 70, 30, 10]]
+        pd.testing.assert_frame_equal(dataset._stratified_sample_index(index), expected)
+        pd.testing.assert_frame_equal(dataset._stratified_sample_index(index), expected)
+        empty = index.iloc[:0]
+        empty_result = dataset._stratified_sample_index(empty)
+        self.assertTrue(empty_result.empty)
+        self.assertEqual(list(empty_result.columns), list(index.columns))
 
     def test_limit_sequence_per_category(self, num_sequences=2):
         dataset = SqlIndexDataset(

@@ -14,7 +14,7 @@ from pytorch3d.implicitron.dataset.rendered_mesh_dataset_map_provider import (
 )
 from pytorch3d.implicitron.tools.config import expand_args_fields
 from pytorch3d.renderer import FoVPerspectiveCameras
-from tests.common_testing import TestCaseMixin
+from tests.common_testing import get_pytorch3d_dir, TestCaseMixin
 
 
 inside_re_worker = os.environ.get("INSIDE_RE_WORKER", False)
@@ -29,7 +29,9 @@ class TestDataCow(TestCaseMixin, unittest.TestCase):
         self._runtest(use_point_light=False, num_views=4)
 
     def _runtest(self, **kwargs):
-        provider = RenderedMeshDatasetMapProvider(**kwargs)
+        data_file = get_pytorch3d_dir() / "docs/tutorials/data/cow_mesh/cow.obj"
+        self.assertTrue(data_file.is_file())
+        provider = RenderedMeshDatasetMapProvider(data_file=str(data_file), **kwargs)
         dataset_map = provider.get_dataset_map()
         known_matrix = torch.zeros(1, 4, 4)
         known_matrix[0, 0, 0] = 1.7321

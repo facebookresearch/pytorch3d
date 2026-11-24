@@ -9,10 +9,10 @@ import logging
 import os
 import tempfile
 import unittest
+from importlib.resources import files
 from typing import ClassVar, Optional, Type
 
 import pandas as pd
-import pkg_resources
 import sqlalchemy as sa
 from pytorch3d.implicitron.dataset import types
 from pytorch3d.implicitron.dataset.frame_data import FrameData, GenericFrameDataBuilder
@@ -34,8 +34,8 @@ NO_BLOBS_KWARGS = {
     "box_crop": False,
 }
 
-DATASET_ROOT = pkg_resources.resource_filename(__name__, "data/sql_dataset")
-METADATA_FILE = os.path.join(DATASET_ROOT, "sql_dataset_100.sqlite")
+DATASET_ROOT = files(__package__).joinpath("data", "sql_dataset")
+METADATA_FILE = str(DATASET_ROOT.joinpath("sql_dataset_100.sqlite"))
 
 logger = logging.getLogger("pytorch3d.implicitron.dataset.sql_dataset")
 sh = logging.StreamHandler()

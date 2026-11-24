@@ -63,8 +63,14 @@ test:
     - tabulate
     - pandas
     - sqlalchemy
+    - plotly
+    - visdom
+    - pip
+    - scipy >=1.0.1
+    - tqdm >=4.28.1
   commands:
-    PYTORCH3D_NO_TEST_OPENGL=1 python -m unittest discover -v -s tests -t .
+    - python -m pip install --no-deps lpips==0.1.4
+    - PYTORCH3D_NO_TEST_OPENGL=1 python -m unittest discover -v -s tests -t .
 
 
 about:

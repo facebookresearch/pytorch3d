@@ -6,13 +6,14 @@
 
 import os.path
 import unittest
+from io import BytesIO
 from math import radians
 
 import numpy as np
 import torch
 from PIL import Image
 from pytorch3d.io import IO
-from pytorch3d.io.experimental_gltf_io import _read_header, MeshGlbFormat
+from pytorch3d.io.experimental_gltf_io import _GLTFWriter, _read_header, MeshGlbFormat
 from pytorch3d.renderer import (
     AmbientLights,
     BlendParams,
@@ -112,6 +113,20 @@ def _render(
 
 
 class TestMeshGltfIO(TestCaseMixin, unittest.TestCase):
+    def test_index_accessor_scalar_bounds(self):
+        faces = torch.tensor([[2, 7, 3], [6, 4, 2]], dtype=torch.int64)
+        mesh = Meshes(verts=[torch.zeros(8, 3)], faces=[faces])
+        writer = _GLTFWriter(mesh, BytesIO())
+        byte_length, data = writer._write_accessor_json("indices")
+        accessor = writer._json_data["accessors"][0]
+        self.assertEqual(accessor["type"], "SCALAR")
+        self.assertEqual(accessor["min"], [2])
+        self.assertEqual(accessor["max"], [7])
+        self.assertEqual(accessor["count"], 6)
+        self.assertEqual(byte_length, 12)
+        self.assertEqual(data.dtype, np.uint16)
+        np.testing.assert_array_equal(data, faces.numpy())
+
     def test_load_apartment(self):
         """
         This is the example habitat example scene from inside
