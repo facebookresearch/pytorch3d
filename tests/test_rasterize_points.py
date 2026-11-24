@@ -21,6 +21,27 @@ from .common_testing import get_random_cuda_device, TestCaseMixin
 
 
 class TestRasterizePoints(TestCaseMixin, unittest.TestCase):
+    def test_equal_depth_binned_matches_naive_cuda(self) -> None:
+        device = get_random_cuda_device()
+        points = torch.zeros((1, 65536, 3), device=device, dtype=torch.float32)
+        points[..., 2] = 1
+        cloud = Pointclouds(points)
+        naive = rasterize_points(
+            cloud, image_size=32, radius=0.1, points_per_pixel=8, bin_size=0
+        )[0]
+        expected = torch.arange(8, device=device, dtype=naive.dtype)
+        self.assertTrue(torch.equal(naive[0, 16, 16], expected))
+        for _ in range(4):
+            binned = rasterize_points(
+                cloud,
+                image_size=32,
+                radius=0.1,
+                points_per_pixel=8,
+                bin_size=8,
+                max_points_per_bin=65536,
+            )[0]
+            self.assertTrue(torch.equal(binned, naive))
+
     def test_python_simple_cpu(self):
         self._simple_test_case(
             rasterize_points_python, torch.device("cpu"), bin_size=-1

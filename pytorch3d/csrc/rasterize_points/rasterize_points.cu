@@ -24,7 +24,7 @@ struct Pix {
 };
 
 __device__ inline bool operator<(const Pix& a, const Pix& b) {
-  return a.z < b.z;
+  return a.z < b.z || (a.z == b.z && a.idx < b.idx);
 }
 
 // This function checks if a pixel given by xy location pxy lies within the
@@ -58,20 +58,21 @@ __device__ void CheckPixelInsidePoint(
   const float dy = yf - py;
   const float dist2 = dx * dx + dy * dy;
   if (dist2 < radius2) {
+    const Pix candidate = {pz, p_idx, dist2};
     if (q_size < K) {
       // Just insert it
-      q[q_size] = {pz, p_idx, dist2};
-      if (pz > q_max_z) {
+      q[q_size] = candidate;
+      if (q_max_idx < 0 || q[q_max_idx] < candidate) {
         q_max_z = pz;
         q_max_idx = q_size;
       }
       q_size++;
-    } else if (pz < q_max_z) {
+    } else if (candidate < q[q_max_idx]) {
       // Overwrite the old max, and find the new max
-      q[q_max_idx] = {pz, p_idx, dist2};
+      q[q_max_idx] = candidate;
       q_max_z = pz;
       for (int i = 0; i < K; i++) {
-        if (q[i].z > q_max_z) {
+        if (q[q_max_idx] < q[i]) {
           q_max_z = q[i].z;
           q_max_idx = i;
         }
