@@ -32,7 +32,7 @@ __device__ inline bool operator<(const Pix& a, const Pix& b) {
 // which contains Pixel structs with the indices of the points which intersect
 // with this pixel sorted by closest z distance. If the pixel pxy lies in the
 // point, the list (q) is updated and re-orderered in place. In addition
-// the auxiliary variables q_size, q_max_z and q_max_idx are also modified.
+// the auxiliary variables q_size and q_max_idx are also modified.
 // This code is shared between RasterizePointsNaiveCudaKernel and
 // RasterizePointsFineCudaKernel.
 template <typename PointQ>
@@ -40,7 +40,6 @@ __device__ void CheckPixelInsidePoint(
     const float* points, // (P, 3)
     const int p_idx,
     int& q_size,
-    float& q_max_z,
     int& q_max_idx,
     PointQ& q,
     const float* radius,
@@ -63,17 +62,14 @@ __device__ void CheckPixelInsidePoint(
       // Just insert it
       q[q_size] = candidate;
       if (q_max_idx < 0 || q[q_max_idx] < candidate) {
-        q_max_z = pz;
         q_max_idx = q_size;
       }
       q_size++;
     } else if (candidate < q[q_max_idx]) {
       // Overwrite the old max, and find the new max
       q[q_max_idx] = candidate;
-      q_max_z = pz;
       for (int i = 0; i < K; i++) {
         if (q[q_max_idx] < q[i]) {
-          q_max_z = q[i].z;
           q_max_idx = i;
         }
       }
@@ -127,7 +123,6 @@ __global__ void RasterizePointsNaiveCudaKernel(
     // TODO(jcjohns) Abstract this out into a standalone data structure
     Pix q[kMaxPointsPerPixel];
     int q_size = 0;
-    float q_max_z = -1000;
     int q_max_idx = -1;
 
     // Using the batch index of the thread get the start and stop
@@ -137,7 +132,7 @@ __global__ void RasterizePointsNaiveCudaKernel(
 
     for (int p_idx = point_start_idx; p_idx < point_stop_idx; ++p_idx) {
       CheckPixelInsidePoint(
-          points, p_idx, q_size, q_max_z, q_max_idx, q, radius, xf, yf, K);
+          points, p_idx, q_size, q_max_idx, q, radius, xf, yf, K);
     }
     BubbleSort(q, q_size);
     int idx = n * H * W * K + pix_idx * K;
@@ -269,7 +264,6 @@ __global__ void RasterizePointsFineCudaKernel(
     // that is shared by both kernels?
     Pix q[kMaxPointsPerPixel];
     int q_size = 0;
-    float q_max_z = -1000;
     int q_max_idx = -1;
     for (int m = 0; m < M; ++m) {
       const int p = bin_points[n * BH * BW * M + by * BW * M + bx * M + m];
@@ -277,8 +271,7 @@ __global__ void RasterizePointsFineCudaKernel(
         // bin_points uses -1 as a sentinal value
         continue;
       }
-      CheckPixelInsidePoint(
-          points, p, q_size, q_max_z, q_max_idx, q, radius, xf, yf, K);
+      CheckPixelInsidePoint(points, p, q_size, q_max_idx, q, radius, xf, yf, K);
     }
     // Now we've looked at all the points for this bin, so we can write
     // output for the current pixel.
