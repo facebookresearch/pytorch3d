@@ -88,6 +88,8 @@ def setup_cuda(use_conda_cuda: bool) -> List[str]:
 
 def setup_conda_pytorch_constraint() -> List[str]:
     pytorch_constraint = f"- pytorch=={PYTORCH_VERSION}"
+    if CU_VERSION == "cu121":
+        pytorch_constraint = f"- pytorch {PYTORCH_VERSION} py*_cuda12.1_*"
     os.environ["CONDA_PYTORCH_CONSTRAINT"] = pytorch_constraint
     if pytorch_major_minor < (2, 2):
         os.environ["CONDA_PYTORCH_MKL_CONSTRAINT"] = "- mkl!=2024.1.0"

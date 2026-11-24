@@ -28,7 +28,11 @@ requirements:
   run:
     - python
     - numpy >=1.11
+    {% if environ.get('CU_VERSION') == 'cu121' %}
+    - torchvision >=0.5 py*_cu121*
+    {% else %}
     - torchvision >=0.5
+    {% endif %}
     - mkl =2023  # [x86_64]
     - iopath
     {{ environ.get('CONDA_PYTORCH_CONSTRAINT') }}
