@@ -10,6 +10,9 @@ import sys
 import threading
 import unittest
 
+if os.environ.get("PYTORCH3D_NO_TEST_OPENGL", "") == "1":
+    raise unittest.SkipTest("OpenGL tests disabled by PYTORCH3D_NO_TEST_OPENGL")
+
 import torch
 
 os.environ["PYOPENGL_PLATFORM"] = "egl"

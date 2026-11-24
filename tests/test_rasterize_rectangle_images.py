@@ -30,7 +30,6 @@ from pytorch3d.renderer.mesh.rasterize_meshes import (
     rasterize_meshes_python,
 )
 from pytorch3d.renderer.mesh.rasterizer import Fragments
-from pytorch3d.renderer.opengl import MeshRasterizerOpenGL
 from pytorch3d.renderer.points import (
     AlphaCompositor,
     PointsRasterizationSettings,
@@ -50,9 +49,15 @@ from .common_testing import (
     get_pytorch3d_dir,
     get_tests_dir,
     load_rgb_image,
+    skip_opengl_requested,
     TestCaseMixin,
     usesOpengl,
 )
+
+if skip_opengl_requested():
+    MeshRasterizerOpenGL = None
+else:
+    from pytorch3d.renderer.opengl import MeshRasterizerOpenGL
 
 
 DEBUG = False

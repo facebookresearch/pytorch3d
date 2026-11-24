@@ -64,7 +64,7 @@ test:
     - pandas
     - sqlalchemy
   commands:
-    python -m unittest discover -v -s tests -t .
+    PYTORCH3D_NO_TEST_OPENGL=1 python -m unittest discover -v -s tests -t .
 
 
 about:

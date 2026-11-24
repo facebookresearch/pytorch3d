@@ -46,7 +46,6 @@ from pytorch3d.renderer.mesh.shader import (
     SplatterPhongShader,
     TexturedSoftPhongShader,
 )
-from pytorch3d.renderer.opengl import MeshRasterizerOpenGL
 from pytorch3d.structures.meshes import (
     join_meshes_as_batch,
     join_meshes_as_scene,
@@ -63,6 +62,11 @@ from .common_testing import (
     TestCaseMixin,
     usesOpengl,
 )
+
+if skip_opengl_requested():
+    MeshRasterizerOpenGL = None
+else:
+    from pytorch3d.renderer.opengl import MeshRasterizerOpenGL
 
 # If DEBUG=True, save out images generated in the tests for debugging.
 # All saved images have prefix DEBUG_

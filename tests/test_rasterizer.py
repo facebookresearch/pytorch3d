@@ -22,13 +22,6 @@ from pytorch3d.renderer import (
     RasterizationSettings,
 )
 from pytorch3d.renderer.fisheyecameras import FishEyeCameras
-from pytorch3d.renderer.opengl.rasterizer_opengl import (
-    _check_cameras,
-    _check_raster_settings,
-    _convert_meshes_to_gl_ndc,
-    _parse_and_verify_image_size,
-    MeshRasterizerOpenGL,
-)
 from pytorch3d.structures import Pointclouds
 from pytorch3d.structures.meshes import Meshes
 from pytorch3d.utils.ico_sphere import ico_sphere
@@ -39,6 +32,17 @@ from .common_testing import (
     TestCaseMixin,
     usesOpengl,
 )
+
+if skip_opengl_requested():
+    MeshRasterizerOpenGL = None
+else:
+    from pytorch3d.renderer.opengl.rasterizer_opengl import (
+        _check_cameras,
+        _check_raster_settings,
+        _convert_meshes_to_gl_ndc,
+        _parse_and_verify_image_size,
+        MeshRasterizerOpenGL,
+    )
 
 
 DATA_DIR = get_tests_dir() / "data"
