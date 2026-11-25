@@ -38,6 +38,7 @@ from .utils import (
     wmean,
 )
 from .vert_align import vert_align
+from .voxel_down_sample import voxel_down_sample
 
 
 __all__ = [k for k in globals().keys() if not k.startswith("_")]
