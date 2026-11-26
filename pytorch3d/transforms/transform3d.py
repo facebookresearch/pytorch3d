@@ -578,7 +578,7 @@ class Translate(Transform3d):
         """
         if isinstance(index, int):
             index = [index]
-        return self.__class__(self.get_matrix()[index, 3, :3])
+        return self.__class__(self.get_matrix()[index, 3, :3], dtype=self.dtype)
 
 
 class Scale(Transform3d):
@@ -645,7 +645,7 @@ class Scale(Transform3d):
         x = mat[:, 0, 0]
         y = mat[:, 1, 1]
         z = mat[:, 2, 2]
-        return self.__class__(x, y, z)
+        return self.__class__(x, y, z, dtype=self.dtype)
 
 
 class Rotate(Transform3d):
@@ -703,7 +703,7 @@ class Rotate(Transform3d):
         """
         if isinstance(index, int):
             index = [index]
-        return self.__class__(self.get_matrix()[index, :3, :3])
+        return self.__class__(self.get_matrix()[index, :3, :3], dtype=self.dtype)
 
 
 class RotateAxisAngle(Rotate):

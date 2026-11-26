@@ -465,6 +465,29 @@ class TestTransform(TestCaseMixin, unittest.TestCase):
             with self.assertRaises(IndexError):
                 t3d_selected = t3d[invalid_index]
 
+    def test_get_item_preserves_dtype(self):
+        for dtype in (torch.float32, torch.float64):
+            xyz = torch.tensor([[0.123456789, 2.0, 3.0], [4.0, 5.0, 6.0]], dtype=dtype)
+            transforms = (
+                Transform3d(dtype=dtype),
+                Translate(xyz, dtype=dtype),
+                Scale(xyz, dtype=dtype),
+                Rotate(random_rotations(2, dtype=dtype), dtype=dtype),
+            )
+            points = torch.tensor([[[1.0, 2.0, 3.0]]], dtype=dtype)
+            for transform in transforms:
+                with self.subTest(dtype=dtype, transform=type(transform).__name__):
+                    selected = transform[0]
+                    self.assertEqual(selected.dtype, dtype)
+                    self.assertEqual(selected.get_matrix().dtype, dtype)
+                    self.assertTrue(
+                        torch.equal(selected.get_matrix(), transform.get_matrix()[[0]])
+                    )
+                    self.assertClose(
+                        selected.transform_points(points),
+                        transform.transform_points(points)[[0]],
+                    )
+
     def test_stack(self):
         rotations = random_rotations(3)
         transform3 = Transform3d().rotate(rotations).translate(torch.full((3, 3), 0.3))
