@@ -525,7 +525,7 @@ __global__ void RasterizeMeshesBackwardCudaKernel(
       float3 grad_bary0 = grad_bary_f_sum;
 
       if (clip_barycentric_coords) {
-        grad_bary0 = BarycentricClipBackward(b_w, grad_bary_f_sum);
+        grad_bary0 = BarycentricClipBackward(b_pp, grad_bary_f_sum);
       }
 
       float dz0_persp = 0.0f, dz1_persp = 0.0f, dz2_persp = 0.0f;

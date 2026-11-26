@@ -208,12 +208,16 @@ BarycentricPerspectiveCorrectionBackward(
   const float w0_top = bary.x * z1 * z2;
   const float w1_top = z0 * bary.y * z2;
   const float w2_top = z0 * z1 * bary.z;
-  const float denom = fmaxf(w0_top + w1_top + w2_top, kEpsilon);
+  const float w_sum = w0_top + w1_top + w2_top;
+  const float denom = fmaxf(w_sum, kEpsilon);
 
   // Now do backward pass
   const float grad_denom_top =
       -w0_top * grad_out.x - w1_top * grad_out.y - w2_top * grad_out.z;
-  const float grad_denom = grad_denom_top / (denom * denom);
+  // While the clamp is active, denom is the constant kEpsilon and does not
+  // depend on w0_top, w1_top, w2_top, so its gradient is zero.
+  const float grad_denom =
+      (w_sum >= kEpsilon) ? grad_denom_top / (denom * denom) : 0.0f;
   const float grad_w0_top = grad_denom + grad_out.x / denom;
   const float grad_w1_top = grad_denom + grad_out.y / denom;
   const float grad_w2_top = grad_denom + grad_out.z / denom;
