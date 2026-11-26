@@ -134,6 +134,100 @@ class TestRotationConversion(TestCaseMixin, unittest.TestCase):
             euler_angles = matrix_to_euler_angles(data, convention)
             mdata = euler_angles_to_matrix(euler_angles, convention)
             self.assertClose(data, mdata)
+            self.assertTrue((euler_angles.abs() <= math.pi).all())
+            central_angles = euler_angles[:, 1]
+            if convention[0] == convention[2]:
+                self.assertTrue((central_angles >= 0).all())
+            else:
+                self.assertTrue((central_angles.abs() <= math.pi / 2).all())
+
+    def test_to_euler_integer_input(self):
+        """Integer matrices are promoted to floating point."""
+        for convention in self._all_euler_angle_conventions():
+            euler_angles = matrix_to_euler_angles(
+                torch.eye(3, dtype=torch.long), convention
+            )
+            self.assertClose(euler_angles, torch.zeros(3))
+
+    def test_to_euler_gimbal_lock(self):
+        """mtx -> euler -> mtx when the middle angle is at gimbal lock"""
+        angles = torch.tensor([0.0, 0.5, -2.0, math.pi], dtype=torch.float64)
+        first, third = torch.meshgrid(angles, angles, indexing="ij")
+        first, third = first.flatten(), third.flatten()
+        for convention in self._all_euler_angle_conventions():
+            if convention[0] == convention[2]:
+                middle_angles = [0.0, math.pi]
+            else:
+                middle_angles = [math.pi / 2, -math.pi / 2]
+            for middle, (dtype, atol) in itertools.product(
+                middle_angles, [(torch.float64, 1e-8), (torch.float32, 1e-6)]
+            ):
+                data = torch.stack([first, torch.full_like(first, middle), third], -1)
+                matrices = euler_angles_to_matrix(data.to(dtype), convention)
+                euler_angles = matrix_to_euler_angles(matrices, convention)
+                self.assertClose(
+                    euler_angles_to_matrix(euler_angles, convention),
+                    matrices,
+                    atol=atol,
+                )
+                self.assertClose(
+                    euler_angles[:, 2], torch.zeros_like(first, dtype=dtype)
+                )
+
+    def test_to_euler_near_gimbal_lock(self):
+        """mtx -> euler -> mtx to machine precision close to gimbal lock"""
+        distances = torch.tensor([1e-2, 1e-4, 1e-6, 1e-8, 1e-12], dtype=torch.float64)
+        other = euler_angles_to_matrix(
+            torch.tensor([0.3, 0.2, -0.4], dtype=torch.float64), "XYZ"
+        )
+        for convention in self._all_euler_angle_conventions():
+            if convention[0] == convention[2]:
+                middle = torch.cat([distances, math.pi - distances])
+            else:
+                middle = torch.cat([math.pi / 2 - distances, distances - math.pi / 2])
+            data = torch.stack(
+                [torch.full_like(middle, 0.7), middle, torch.full_like(middle, -1.1)],
+                -1,
+            )
+            matrices = euler_angles_to_matrix(data, convention)
+            for dtype, atol in [(torch.float64, 1e-14), (torch.float32, 1e-6)]:
+                # A product computed in dtype, as an input whose entries all
+                # carry rounding errors.
+                product = other.to(dtype) @ (other.T @ matrices).to(dtype)
+                for m in [matrices.to(dtype), product]:
+                    euler_angles = matrix_to_euler_angles(m, convention)
+                    self.assertClose(
+                        euler_angles_to_matrix(euler_angles.double(), convention),
+                        m.double(),
+                        atol=atol,
+                        rtol=0.0,
+                    )
+
+    def test_euler_grad_at_gimbal_lock(self):
+        """Euler angle gradients are finite at gimbal lock, such as the identity."""
+        for convention in self._all_euler_angle_conventions():
+            if convention[0] == convention[2]:
+                data = torch.tensor(
+                    [[0.0, 0.0, 0.0], [0.5, 0.0, -2.0]], dtype=torch.float64
+                )
+                rounded_data = torch.tensor([[0.0, math.pi, 0.0]], dtype=torch.float64)
+            else:
+                data = torch.zeros(0, 3, dtype=torch.float64)
+                rounded_data = torch.tensor(
+                    [[0.0, math.pi / 2, 0.0], [0.0, -math.pi / 2, 0.0]],
+                    dtype=torch.float64,
+                )
+            # Rounding gives the exact zeros of rotations by multiples of 90 degrees.
+            matrices = torch.cat(
+                [
+                    euler_angles_to_matrix(data, convention),
+                    euler_angles_to_matrix(rounded_data, convention).round(),
+                ]
+            )
+            matrices.requires_grad = True
+            euler_angles = matrix_to_euler_angles(matrices, convention)
+            (grad,) = torch.autograd.grad(euler_angles.sum(), matrices)
+            self.assertTrue(torch.isfinite(grad).all())
 
     def test_euler_grad_exists(self):
         """Euler angle calculations are differentiable."""

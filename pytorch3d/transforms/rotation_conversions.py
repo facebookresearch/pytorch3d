@@ -6,7 +6,7 @@
 
 # pyre-unsafe
 
-from typing import Optional
+from typing import List, Optional
 
 import torch
 import torch.nn.functional as F
@@ -221,39 +221,6 @@ def euler_angles_to_matrix(euler_angles: torch.Tensor, convention: str) -> torch
     return torch.matmul(torch.matmul(matrices[0], matrices[1]), matrices[2])
 
 
-def _angle_from_tan(
-    axis: str, other_axis: str, data, horizontal: bool, tait_bryan: bool
-) -> torch.Tensor:
-    """
-    Extract the first or third Euler angle from the two members of
-    the matrix which are positive constant times its sine and cosine.
-
-    Args:
-        axis: Axis label "X" or "Y or "Z" for the angle we are finding.
-        other_axis: Axis label "X" or "Y or "Z" for the middle axis in the
-            convention.
-        data: Rotation matrices as tensor of shape (..., 3, 3).
-        horizontal: Whether we are looking for the angle for the third axis,
-            which means the relevant entries are in the same row of the
-            rotation matrix. If not, they are in the same column.
-        tait_bryan: Whether the first and third axes in the convention differ.
-
-    Returns:
-        Euler Angles in radians for each matrix in data as a tensor
-        of shape (...).
-    """
-
-    i1, i2 = {"X": (2, 1), "Y": (0, 2), "Z": (1, 0)}[axis]
-    if horizontal:
-        i2, i1 = i1, i2
-    even = (axis + other_axis) in ["XY", "YZ", "ZX"]
-    if horizontal == even:
-        return torch.atan2(data[..., i1], data[..., i2])
-    if tait_bryan:
-        return torch.atan2(-data[..., i2], data[..., i1])
-    return torch.atan2(data[..., i2], -data[..., i1])
-
-
 def _index_from_letter(letter: str) -> int:
     if letter == "X":
         return 0
@@ -262,6 +229,23 @@ def _index_from_letter(letter: str) -> int:
     if letter == "Z":
         return 2
     raise ValueError("letter must be either X, Y or Z.")
+
+
+def _rotate_about_axis(
+    vector: List[torch.Tensor], axis: str, angle: torch.Tensor
+) -> List[torch.Tensor]:
+    """
+    Apply _axis_angle_rotation(axis, angle) to vectors given as a list of
+    their three coordinates, without building the matrices.
+    """
+    i = _index_from_letter(axis)
+    p, q = (i + 1) % 3, (i + 2) % 3
+    cos = torch.cos(angle)
+    sin = torch.sin(angle)
+    rotated = list(vector)
+    rotated[p] = cos * vector[p] - sin * vector[q]
+    rotated[q] = sin * vector[p] + cos * vector[q]
+    return rotated
 
 
 def matrix_to_euler_angles(matrix: torch.Tensor, convention: str) -> torch.Tensor:
@@ -273,7 +257,12 @@ def matrix_to_euler_angles(matrix: torch.Tensor, convention: str) -> torch.Tenso
         convention: Convention string of three uppercase letters.
 
     Returns:
-        Euler angles in radians as tensor of shape (..., 3).
+        Euler angles in radians as tensor of shape (..., 3). The first and
+        third angles are in [-pi, pi]. The central angle is in [-pi/2, pi/2]
+        if the first and third axes differ (Tait-Bryan angles) and in [0, pi]
+        if they are the same (proper Euler angles). At gimbal lock, or within
+        about 4 machine epsilon of it, where only a combination of the first
+        and third angles is defined, the third angle is zero.
     """
     if len(convention) != 3:
         raise ValueError("Convention must have 3 letters.")
@@ -284,27 +273,64 @@ def matrix_to_euler_angles(matrix: torch.Tensor, convention: str) -> torch.Tenso
             raise ValueError(f"Invalid letter {letter} in convention string.")
     if matrix.size(-1) != 3 or matrix.size(-2) != 3:
         raise ValueError(f"Invalid rotation matrix shape {matrix.shape}.")
+    if not matrix.is_floating_point():
+        # Promotes to the default floating point dtype.
+        matrix = matrix * 1.0
     i0 = _index_from_letter(convention[0])
     i2 = _index_from_letter(convention[2])
     tait_bryan = i0 != i2
-    if tait_bryan:
-        central_angle = torch.asin(
-            torch.clamp(matrix[..., i0, i2], -1.0, 1.0)
-            * (-1.0 if i0 - i2 in [-1, 2] else 1.0)
-        )
+    # Row i0 holds the sine and cosine of the central angle, one as an entry
+    # and one as the norm of the other two entries. Those two are the sine and
+    # cosine of the third angle, up to order and sign, scaled by that norm,
+    # which is the distance from gimbal lock.
+    row = matrix[..., i0, :]
+    k1, k2 = (i2 + 1) % 3, (i2 + 2) % 3
+    if convention[2] + convention[1] in ["XY", "YZ", "ZX"]:
+        scaled_sin, scaled_cos = row[..., k1], row[..., k2]
+    elif tait_bryan:
+        scaled_sin, scaled_cos = -row[..., k2], row[..., k1]
     else:
-        central_angle = torch.acos(torch.clamp(matrix[..., i0, i0], -1.0, 1.0))
-
-    o = (
-        _angle_from_tan(
-            convention[0], convention[1], matrix[..., i2], False, tait_bryan
-        ),
-        central_angle,
-        _angle_from_tan(
-            convention[2], convention[1], matrix[..., i0, :], True, tait_bryan
-        ),
+        scaled_sin, scaled_cos = row[..., k2], -row[..., k1]
+    # Unlike hypot, vector_norm has a zero gradient at zero.
+    distance_from_lock = torch.linalg.vector_norm(
+        torch.stack((scaled_sin, scaled_cos), -1), dim=-1
     )
-    return torch.stack(o, -1)
+    # atan2 stays precise near gimbal lock, unlike asin or acos of one entry.
+    if tait_bryan:
+        sign = -1.0 if i0 - i2 in [-1, 2] else 1.0
+        central_angle = torch.atan2(sign * row[..., i2], distance_from_lock)
+    else:
+        central_angle = torch.atan2(distance_from_lock, row[..., i0])
+
+    # At gimbal lock the third angle is set to zero, as in scipy, by replacing
+    # the zeros that atan2 would get, which also keeps its gradient finite.
+    # 1 + x / 8 == 1 means x <= 4 * eps, which also covers sin(pi) == 1.2e-16
+    # in float64.
+    locked = 1.0 + distance_from_lock / 8 == 1.0
+    third_angle = torch.atan2(
+        torch.where(locked, 0.0, scaled_sin), torch.where(locked, 1.0, scaled_cos)
+    )
+
+    # The first rotation is A = matrix @ C^T @ B^T, for the central and third
+    # rotations B and C. Reading the first angle from A absorbs the error in the
+    # third angle near gimbal lock. It needs column j2 of A, matrix @ r for
+    # r = C^T @ B^T @ e_j2.
+    j1, j2 = {"X": (2, 1), "Y": (0, 2), "Z": (1, 0)}[convention[0]]
+    zeros = torch.zeros_like(central_angle)
+    e_j2 = [zeros, zeros, zeros]
+    e_j2[j2] = torch.ones_like(central_angle)
+    r = torch.stack(
+        _rotate_about_axis(
+            _rotate_about_axis(e_j2, convention[1], -central_angle),
+            convention[2],
+            -third_angle,
+        ),
+        -1,
+    )
+    first_angle = torch.atan2(
+        (matrix[..., j1, :] * r).sum(-1), (matrix[..., j2, :] * r).sum(-1)
+    )
+    return torch.stack((first_angle, central_angle, third_angle), -1)
 
 
 def random_quaternions(
