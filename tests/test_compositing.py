@@ -117,6 +117,37 @@ class TestAccumulatePoints(TestCaseMixin, unittest.TestCase):
         self._simple_wsum(self.accumulate_weightedsum_python, device)
         self._simple_wsumnorm(self.accumulate_weightedsumnorm_python, device)
 
+    def test_opaque_alpha_backward(self):
+        devices = [torch.device("cpu")]
+        if torch.cuda.is_available():
+            devices.append(get_random_cuda_device())
+        for device in devices:
+            for front in (1.0, 1.0 - 2.0**-24):
+                with self.subTest(device=device, front=front):
+                    # The second point is opaque. Its feature determines what
+                    # becomes visible when the first point's opacity decreases.
+                    idx = torch.tensor([0, -1, 1, 2], device=device).view(1, 4, 1, 1)
+                    a = torch.tensor([front, 0.7, 1.0, 0.5], device=device)
+                    a = a.view_as(idx).requires_grad_()
+                    features = torch.tensor([[2.0, 5.0, 9.0]], device=device)
+                    features.requires_grad_()
+
+                    output = alpha_composite(idx, a, features)
+                    ga, gf = torch.autograd.grad(output.sum(), (a, features))
+                    transmittance = 1.0 - front
+                    torch.testing.assert_close(
+                        ga.flatten(),
+                        a.new_tensor([-3, 0, 0.5 * transmittance, 0]),
+                        atol=0,
+                        rtol=0,
+                    )
+                    torch.testing.assert_close(
+                        gf,
+                        features.new_tensor([[front, transmittance, 0]]),
+                        atol=0,
+                        rtol=0,
+                    )
+
     def test_cpu(self):
         device = torch.device("cpu")
         self._simple_alphacomposite(alpha_composite, device)

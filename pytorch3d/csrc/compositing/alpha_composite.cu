@@ -17,8 +17,6 @@
 #include <stdio.h>
 #include <vector>
 
-__constant__ const float kEpsilon = 1e-9;
-
 // TODO(gkioxari) support all data types once AtomicAdd supports doubles.
 // Currently, support is for floats only.
 __global__ void alphaCompositeCudaForwardKernel(
@@ -79,63 +77,65 @@ __global__ void alphaCompositeCudaBackwardKernel(
     const at::PackedTensorAccessor64<int64_t, 4, at::RestrictPtrTraits> points_idx) {
   // clang-format on
   const int64_t C = features.size(0);
+  const int64_t K = points_idx.size(1);
   const int64_t H = points_idx.size(2);
   const int64_t W = points_idx.size(3);
-
-  // Get the batch and index
   const auto batch = blockIdx.x;
-
-  const int num_pixels = C * H * W;
-  const auto num_threads = gridDim.y * blockDim.x;
+  const auto stride = gridDim.y * blockDim.x;
   const auto tid = blockIdx.y * blockDim.x + threadIdx.x;
 
-  // Parallelize over each feature in each pixel in images of size H * W,
-  // for each image in the batch of size batch_size
-  for (int pid = tid; pid < num_pixels; pid += num_threads) {
-    int ch = pid / (H * W);
-    int j = (pid % (H * W)) / W;
-    int i = (pid % (H * W)) % W;
+  for (int64_t pid = tid; pid < C * H * W; pid += stride) {
+    const auto c = pid / (H * W);
+    const auto j = (pid / W) % H;
+    const auto i = pid % W;
+    const float grad = grad_outputs[batch][c][j][i];
 
-    // alphacomposite the different values
-    float cum_alpha = 1.;
-    // Iterate through the closest K points for this pixel
-    for (int k = 0; k < points_idx.size(1); ++k) {
-      int n_idx = points_idx[batch][k][j][i];
-
-      // Sentinel value is -1 indicating no point overlaps the pixel
-      if (n_idx < 0) {
+    float behind = 0.0f;
+    for (int64_t k = K - 1; k >= 0; --k) {
+      const auto idx = points_idx[batch][k][j][i];
+      if (idx < 0) {
         continue;
       }
-      float alpha = alphas[batch][k][j][i];
+      const float alpha = alphas[batch][k][j][i];
+      const float feature = features[c][idx];
+      atomicAdd(&grad_alphas[batch][k][j][i], grad * (feature - behind));
+      behind = alpha * feature + (1.0f - alpha) * behind;
+    }
 
-      // TODO(gkioxari) It might be more efficient to have threads write in a
-      // local variable, and move atomicAdd outside of the loop such that
-      // atomicAdd is executed once per thread.
-      atomicAdd(
-          &grad_alphas[batch][k][j][i],
-          cum_alpha * features[ch][n_idx] * grad_outputs[batch][ch][j][i]);
-      atomicAdd(
-          &grad_features[ch][n_idx],
-          cum_alpha * alpha * grad_outputs[batch][ch][j][i]);
-
-      // Iterate over all (K-1) nearest points to update gradient
-      for (int t = 0; t < k; ++t) {
-        int t_idx = points_idx[batch][t][j][i];
-        // Sentinel value is -1, indicating no point overlaps this pixel
-        if (t_idx < 0) {
-          continue;
-        }
-        float alpha_tvalue = alphas[batch][t][j][i];
-        // TODO(gkioxari) It might be more efficient to have threads write in a
-        // local variable, and move atomicAdd outside of the loop such that
-        // atomicAdd is executed once per thread.
-        atomicAdd(
-            &grad_alphas[batch][t][j][i],
-            -grad_outputs[batch][ch][j][i] * features[ch][n_idx] * cum_alpha *
-                alpha / (1 - alpha_tvalue + kEpsilon));
+    float transmittance = 1.0f;
+    for (int64_t k = 0; k < K; ++k) {
+      const auto idx = points_idx[batch][k][j][i];
+      if (idx < 0) {
+        continue;
       }
+      const float alpha = alphas[batch][k][j][i];
+      atomicAdd(&grad_features[c][idx], grad * (transmittance * alpha));
+      transmittance *= 1.0f - alpha;
+    }
+  }
+}
 
-      cum_alpha = cum_alpha * (1 - alphas[batch][k][j][i]);
+// Each slot holds the channel sum of grad_output * (feature - blend behind it).
+// Multiply by the transmittance through all earlier points.
+__global__ void scaleAlphaGradientsKernel(
+    at::PackedTensorAccessor64<float, 4, at::RestrictPtrTraits> grad_alphas,
+    const at::PackedTensorAccessor64<float, 4, at::RestrictPtrTraits> alphas,
+    const at::PackedTensorAccessor64<int64_t, 4, at::RestrictPtrTraits>
+        points_idx) {
+  const auto batch = blockIdx.x;
+  const int64_t H = points_idx.size(2);
+  const int64_t W = points_idx.size(3);
+  const auto stride = gridDim.y * blockDim.x;
+  const auto tid = blockIdx.y * blockDim.x + threadIdx.x;
+  for (int64_t pixel = tid; pixel < H * W; pixel += stride) {
+    const auto j = pixel / W;
+    const auto i = pixel % W;
+    float transmittance = 1.0f;
+    for (int64_t k = 0; k < points_idx.size(1); ++k) {
+      if (points_idx[batch][k][j][i] >= 0) {
+        grad_alphas[batch][k][j][i] *= transmittance;
+        transmittance *= 1.0f - alphas[batch][k][j][i];
+      }
     }
   }
 }
@@ -229,5 +229,12 @@ std::tuple<at::Tensor, at::Tensor> alphaCompositeCudaBackward(
       points_idx.packed_accessor64<int64_t, 4, at::RestrictPtrTraits>());
   // clang-format on
   AT_CUDA_CHECK(cudaGetLastError());
+  if (points_idx.size(1) > 1) {
+    scaleAlphaGradientsKernel<<<numBlocks, threadsPerBlock, 0, stream>>>(
+        grad_alphas.packed_accessor64<float, 4, at::RestrictPtrTraits>(),
+        alphas.packed_accessor64<float, 4, at::RestrictPtrTraits>(),
+        points_idx.packed_accessor64<int64_t, 4, at::RestrictPtrTraits>());
+    AT_CUDA_CHECK(cudaGetLastError());
+  }
   return std::make_tuple(grad_features, grad_alphas);
 }
