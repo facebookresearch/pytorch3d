@@ -423,6 +423,55 @@ class TestRotationConversion(TestCaseMixin, unittest.TestCase):
             (grad,) = torch.autograd.grad(axis_angles.sum(), R)
             self.assertTrue(torch.isfinite(grad).all())
 
+    def test_quaternion_to_axis_angle_negative_real_part(self):
+        """Nonzero multiples of q, such as -q, give the same axis angle vector."""
+        axis = torch.tensor([0.36, 0.48, 0.8], dtype=torch.float64)
+        angles = torch.tensor([1e-6, 1e-5, 1e-3, 0.1, 2.0, 3.0], dtype=torch.float64)
+        expected = angles[:, None] * axis
+        quaternions = axis_angle_to_quaternion(expected)
+        for scale in [1, -1, 0.01, -100]:
+            axis_angles = quaternion_to_axis_angle(scale * quaternions.float())
+            self.assertClose(axis_angles.double(), expected, atol=0, rtol=1e-6)
+        self.assertClose(
+            quaternion_to_axis_angle(torch.tensor([-1.0, 0.0, 0.0, 0.0])),
+            torch.zeros(3),
+        )
+        tiny = torch.tensor([1e-100, 1e-100, 0.0, 0.0], dtype=torch.float64)
+        self.assertClose(
+            quaternion_to_axis_angle(tiny),
+            torch.tensor([math.pi / 2, 0.0, 0.0], dtype=torch.float64),
+        )
+
+    def test_quaternion_to_axis_angle_zero(self):
+        """A zero quaternion, e.g. padding, gives zero with finite gradients."""
+        for dtype in [torch.float16, torch.bfloat16, torch.float32, torch.float64]:
+            quaternions = torch.tensor(
+                [[0.0, 0.0, 0.0, 0.0], [0.9, 0.1, 0.2, 0.3]],
+                dtype=dtype,
+                requires_grad=True,
+            )
+            axis_angles = quaternion_to_axis_angle(quaternions)
+            self.assertClose(axis_angles[0], torch.zeros(3, dtype=dtype))
+            axis_angles.sum().backward()
+            self.assertTrue(torch.isfinite(quaternions.grad).all())
+
+    def test_quaternion_to_axis_angle_gradcheck(self):
+        quaternions = torch.tensor(
+            [
+                [0.9, 0.1, -0.2, 0.3],
+                [-0.9, 0.1, -0.2, 0.3],
+                [2.0, -1.0, 0.5, 0.2],
+                [-0.03, 0.01, 0.02, -0.01],
+                [2.0, 0.0, 0.0, 0.0],
+                [-0.5, 0.0, 0.0, 0.0],
+            ],
+            dtype=torch.float64,
+            requires_grad=True,
+        )
+        self.assertTrue(
+            torch.autograd.gradcheck(quaternion_to_axis_angle, (quaternions,))
+        )
+
     def test_axis_angle_batch_independence(self):
         """Every matrix in a batch is converted independently of the others."""
         angles = torch.tensor(

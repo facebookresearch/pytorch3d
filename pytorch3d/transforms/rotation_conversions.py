@@ -639,19 +639,34 @@ def quaternion_to_axis_angle(quaternions: torch.Tensor) -> torch.Tensor:
 
     Args:
         quaternions: quaternions with real part first,
-            as tensor of shape (..., 4).
+            as tensor of shape (..., 4). They need not have unit norm. A zero
+            quaternion, e.g. padding, gives zero, with finite gradients.
 
     Returns:
         Rotations given as a vector in axis angle form, as a tensor
             of shape (..., 3), where the magnitude is the angle
             turned anticlockwise in radians around the vector's
-            direction.
+            direction. The angle is in [0, pi], and nonzero multiples of
+            a quaternion, such as -q, give the same vector. At an angle
+            of pi, v and -v are the same rotation, and which one is
+            returned depends on the input.
     """
+    real_parts = quaternions[..., :1]
     norms = torch.norm(quaternions[..., 1:], p=2, dim=-1, keepdim=True)
-    half_angles = torch.atan2(norms, quaternions[..., :1])
-    sin_half_angles_over_angles = 0.5 * torch.sinc(half_angles / torch.pi)
-    # angles/2 are between [-pi/2, pi/2], thus sin_half_angles_over_angles
-    # can't be zero
+    # q and -q are the same rotation. Using |real part| keeps the half angle
+    # in [0, pi/2], away from the zero of the sinc at pi; taking the sign of
+    # the real part then gives the result for -q when it is negative.
+    abs_real_parts = real_parts.abs()
+    # Treating a zero q as [1, 0, 0, 0] keeps it mapping to zero with finite
+    # gradients.
+    abs_real_parts = torch.where(norms + abs_real_parts == 0, 1.0, abs_real_parts)
+    half_angles = torch.atan2(norms, abs_real_parts)
+    # Dividing by |q| as well lets q have any nonzero norm, as in
+    # quaternion_to_matrix.
+    quaternion_norms = torch.hypot(norms, abs_real_parts)
+    sin_half_angles_over_angles = torch.copysign(
+        0.5 * quaternion_norms * torch.sinc(half_angles / torch.pi), real_parts
+    )
     return quaternions[..., 1:] / sin_half_angles_over_angles
 
 
