@@ -21,7 +21,9 @@ from pytorch3d.transforms.rotation_conversions import (
     matrix_to_quaternion,
     matrix_to_rotation_6d,
     quaternion_apply,
+    quaternion_invert,
     quaternion_multiply,
+    quaternion_raw_multiply,
     quaternion_to_axis_angle,
     quaternion_to_matrix,
     random_quaternions,
@@ -543,6 +545,74 @@ class TestRotationConversion(TestCaseMixin, unittest.TestCase):
         [p, q] = torch.autograd.grad(transform1.sum(), [points, quaternions])
         self.assertTrue(torch.isfinite(p).all())
         self.assertTrue(torch.isfinite(q).all())
+
+    @staticmethod
+    def _quaternion_apply_by_products(quaternions, points):
+        """q p q*, computed with quaternion products."""
+        points_as_quaternions = torch.nn.functional.pad(points, (1, 0))
+        product = quaternion_raw_multiply(
+            quaternion_raw_multiply(quaternions, points_as_quaternions),
+            quaternion_invert(quaternions),
+        )
+        return product[..., 1:]
+
+    def test_quaternion_application_broadcast_and_grad(self):
+        """Values and gradients match quaternion products, for any quaternion."""
+        shapes = [
+            ((4,), (5, 3)),
+            ((2, 1, 4), (3, 3)),
+            ((2, 5, 4), (2, 5, 3)),
+        ]
+        for q_shape, p_shape in shapes:
+            with self.subTest(q_shape=q_shape, p_shape=p_shape):
+                quaternions = torch.randn(q_shape, dtype=torch.float64)
+                quaternions.requires_grad_(True)
+                points = torch.randn(p_shape, dtype=torch.float64, requires_grad=True)
+
+                out = quaternion_apply(quaternions, points)
+                expected = self._quaternion_apply_by_products(quaternions, points)
+                self.assertEqual(out.shape, expected.shape)
+                self.assertClose(out, expected)
+
+                weights = torch.randn_like(out)
+                grads = torch.autograd.grad(
+                    (out * weights).sum(), [quaternions, points]
+                )
+                expected_grads = torch.autograd.grad(
+                    (expected * weights).sum(), [quaternions, points]
+                )
+                self.assertClose(grads[0], expected_grads[0])
+                self.assertClose(grads[1], expected_grads[1])
+
+        identity = torch.tensor([1.0, 0.0, 0.0, 0.0])
+        points = torch.randn(4, 3)
+        self.assertClose(quaternion_apply(identity, points), points)
+
+    def test_quaternion_application_invalid_shapes(self):
+        with self.assertRaises(ValueError):
+            quaternion_apply(torch.randn(5, 4), torch.randn(5, 2))
+        with self.assertRaises(ValueError):
+            quaternion_apply(torch.randn(5, 2), torch.randn(5, 3))
+
+    def test_quaternion_invert(self):
+        quaternions = random_quaternions(7, torch.float64)
+        identity = torch.tensor([1.0, 0.0, 0.0, 0.0], dtype=torch.float64)
+        product = quaternion_raw_multiply(quaternions, quaternion_invert(quaternions))
+        self.assertClose(product, identity.expand(7, 4))
+
+    @unittest.skipIf(not torch.cuda.is_available(), "needs CUDA")
+    def test_no_host_device_sync(self):
+        """These functions do not wait for the GPU, e.g. by copying from the host."""
+        quaternions = random_quaternions(7, device="cuda")
+        matrices = quaternion_to_matrix(quaternions)
+        points = torch.randn(7, 3, device="cuda")
+        torch.cuda.set_sync_debug_mode("error")
+        try:
+            matrix_to_quaternion(matrices)
+            quaternion_apply(quaternions, points)
+            quaternion_invert(quaternions)
+        finally:
+            torch.cuda.set_sync_debug_mode("default")
 
     def test_6d(self):
         """Converting to 6d and back"""

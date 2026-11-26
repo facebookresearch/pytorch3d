@@ -13,7 +13,6 @@ import torch.nn.functional as F
 
 from ..common.datatypes import Device
 
-
 """
 The transformation matrices returned from the functions in this file assume
 the points on which the transformation will be applied are column vectors.
@@ -150,8 +149,7 @@ def matrix_to_quaternion(matrix: torch.Tensor) -> torch.Tensor:
 
     # We floor here at 0.1 but the exact level is not important; if q_abs is small,
     # the candidate won't be picked.
-    flr = torch.tensor(0.1).to(dtype=q_abs.dtype, device=q_abs.device)
-    quat_candidates = quat_by_rijk / (2.0 * q_abs[..., None].max(flr))
+    quat_candidates = quat_by_rijk / (2.0 * q_abs[..., None].clamp_min(0.1))
 
     # if not for numerical problems, quat_candidates[i] should be same (up to a sign),
     # forall i; we pick the best-conditioned one (with the largest denominator)
@@ -458,9 +456,9 @@ def quaternion_invert(quaternion: torch.Tensor) -> torch.Tensor:
     Returns:
         The inverse, a tensor of quaternions of shape (..., 4).
     """
-
-    scaling = torch.tensor([1, -1, -1, -1], device=quaternion.device)
-    return quaternion * scaling
+    out = -quaternion
+    out[..., 0] = quaternion[..., 0]
+    return out
 
 
 def quaternion_apply(quaternion: torch.Tensor, point: torch.Tensor) -> torch.Tensor:
@@ -470,20 +468,23 @@ def quaternion_apply(quaternion: torch.Tensor, point: torch.Tensor) -> torch.Ten
 
     Args:
         quaternion: Tensor of quaternions, real part first, of shape (..., 4).
-        point: Tensor of 3D points of shape (..., 3).
+        point: Tensor of 3D points of shape (..., 3), with the same dtype as
+            quaternion.
 
     Returns:
-        Tensor of rotated points of shape (..., 3).
+        Tensor of rotated points of shape (..., 3). Where a quaternion is not
+        a versor (unit quaternion), the point is also scaled by its squared
+        norm.
     """
+    if quaternion.size(-1) != 4:
+        raise ValueError(f"Invalid quaternion shape {quaternion.shape}.")
     if point.size(-1) != 3:
         raise ValueError(f"Points are not in 3D, {point.shape}.")
-    real_parts = point.new_zeros(point.shape[:-1] + (1,))
-    point_as_quaternion = torch.cat((real_parts, point), -1)
-    out = quaternion_raw_multiply(
-        quaternion_raw_multiply(quaternion, point_as_quaternion),
-        quaternion_invert(quaternion),
-    )
-    return out[..., 1:]
+    norm_squared = (quaternion * quaternion).sum(-1, keepdim=True)
+    real, imag = torch.tensor_split(quaternion, [1], dim=-1)
+    imag, point = torch.broadcast_tensors(imag, point)
+    t = 2 * torch.linalg.cross(imag, point, dim=-1)
+    return norm_squared * point + real * t + torch.linalg.cross(imag, t, dim=-1)
 
 
 def axis_angle_to_matrix(axis_angle: torch.Tensor, fast: bool = False) -> torch.Tensor:
