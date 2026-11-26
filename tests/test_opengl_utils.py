@@ -10,29 +10,27 @@ import sys
 import threading
 import unittest
 
-if os.environ.get("PYTORCH3D_NO_TEST_OPENGL", "") == "1":
-    raise unittest.SkipTest("OpenGL tests disabled by PYTORCH3D_NO_TEST_OPENGL")
-
 import torch
 
-os.environ["PYOPENGL_PLATFORM"] = "egl"
-import pycuda._driver  # noqa
-from OpenGL import GL as gl  # noqa
-from OpenGL.raw.EGL._errors import EGLError  # noqa
-from pytorch3d.renderer.opengl import _can_import_egl_and_pycuda  # noqa
-from pytorch3d.renderer.opengl.opengl_utils import (  # noqa
-    _define_egl_extension,
-    _egl_convert_to_int_array,
-    _get_cuda_device,
-    egl,
-    EGLContext,
-    global_device_context_store,
-)
+from .common_testing import skip_opengl_requested, TestCaseMixin, usesOpengl
 
-from .common_testing import TestCaseMixin, usesOpengl  # noqa
+if not skip_opengl_requested():
+    os.environ["PYOPENGL_PLATFORM"] = "egl"
+    import pycuda._driver
+    from OpenGL import GL as gl
+    from OpenGL.raw.EGL._errors import EGLError
+    from pytorch3d.renderer.opengl import _can_import_egl_and_pycuda
+    from pytorch3d.renderer.opengl.opengl_utils import (
+        _define_egl_extension,
+        _egl_convert_to_int_array,
+        _get_cuda_device,
+        egl,
+        EGLContext,
+        global_device_context_store,
+    )
 
-MAX_EGL_HEIGHT = global_device_context_store.max_egl_height
-MAX_EGL_WIDTH = global_device_context_store.max_egl_width
+    MAX_EGL_HEIGHT = global_device_context_store.max_egl_height
+    MAX_EGL_WIDTH = global_device_context_store.max_egl_width
 
 
 def _draw_square(r=1.0, g=0.0, b=1.0, **kwargs) -> torch.Tensor:

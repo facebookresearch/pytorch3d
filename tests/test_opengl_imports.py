@@ -54,8 +54,13 @@ class OpenGLImportPolicyTest(unittest.TestCase):
             patch.object(common_testing, "usesOpengl", unittest.skip("uses opengl")),
             patch("builtins.__import__", new=import_without_opengl),
         ):
-            with self.assertRaises(unittest.SkipTest):
-                _import_test_module("test_opengl_utils")
+            utils_module = _import_test_module("test_opengl_utils")
+            utils_suite = unittest.TestLoader().loadTestsFromModule(utils_module)
+            utils_count = utils_suite.countTestCases()
+            self.assertGreater(utils_count, 0)
+            utils_result = unittest.TestResult()
+            utils_suite.run(utils_result)
+            self.assertEqual(len(utils_result.skipped), utils_count)
             modules = {name: _import_test_module(name) for name in TEST_MODULES[1:]}
             for name, module in modules.items():
                 with self.subTest(module=name):
