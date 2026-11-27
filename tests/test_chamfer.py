@@ -1105,7 +1105,11 @@ class TestChamfer(TestCaseMixin, unittest.TestCase):
 
     def test_incorrect_weights(self):
         N, P1, P2 = 16, 64, 128
-        device = get_random_cuda_device()
+        device = (
+            get_random_cuda_device()
+            if torch.cuda.is_available()
+            else torch.device("cpu")
+        )
         p1 = torch.rand(
             (N, P1, 3), dtype=torch.float32, device=device, requires_grad=True
         )
@@ -1119,16 +1123,14 @@ class TestChamfer(TestCaseMixin, unittest.TestCase):
         )
         self.assertClose(loss.cpu(), torch.zeros(()))
         self.assertTrue(loss.requires_grad)
-        self.assertClose(loss_norm.cpu(), torch.zeros(()))
-        self.assertTrue(loss_norm.requires_grad)
+        self.assertIsNone(loss_norm)
 
         loss, loss_norm = chamfer_distance(
             p1, p2, weights=weights, batch_reduction=None
         )
-        self.assertClose(loss.cpu(), torch.zeros((N, N)))
+        self.assertClose(loss.cpu(), torch.zeros((N,)))
         self.assertTrue(loss.requires_grad)
-        self.assertClose(loss_norm.cpu(), torch.zeros((N, N)))
-        self.assertTrue(loss_norm.requires_grad)
+        self.assertIsNone(loss_norm)
 
         weights = torch.ones((N,), dtype=torch.float32, device=device) * -1
         with self.assertRaises(ValueError):
