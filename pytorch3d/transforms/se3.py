@@ -192,18 +192,41 @@ def _se3_V_matrix(
     [1] https://jinyongjeong.github.io/Download/SE3/jlblanco2010geometry3d_techrep.pdf
     """
 
+    # Compute coefficients before rounding to the matrix dtype. In half precision,
+    # cos(theta) and sin(theta) can otherwise round to 1 and theta, respectively.
+    angles = rotation_angles
+    if angles.dtype == torch.float16 or angles.dtype == torch.bfloat16:
+        angles = angles.float()
+    linear_coefficient = 0.5 * torch.square(torch.sinc(angles / (2 * torch.pi)))
+
+    # Avoid cancellation in (theta - sin(theta)) / theta^3 near zero. The first
+    # omitted Taylor term is at most (0.5 ** 12) / 15! on this interval.
+    small_angles = angles.abs() < 0.5
+    series_angles = torch.where(small_angles, angles, torch.zeros_like(angles))
+    angles_square = torch.square(series_angles)
+    series = (
+        (
+            (
+                (-1.0 / 6227020800 * angles_square + 1.0 / 39916800) * angles_square
+                - 1.0 / 362880
+            )
+            * angles_square
+            + 1.0 / 5040
+        )
+        * angles_square
+        - 1.0 / 120
+    ) * angles_square + 1.0 / 6
+    # Keep the inactive branch finite, including when theta is zero.
+    safe_angles = torch.where(small_angles, torch.ones_like(angles), angles)
+    exact = (safe_angles - torch.sin(safe_angles)) / torch.pow(safe_angles, 3)
+    quadratic_coefficient = torch.where(small_angles, series, exact)
+
     V = (
         torch.eye(3, dtype=log_rotation.dtype, device=log_rotation.device)[None]
-        + log_rotation_hat
-        * ((1 - torch.cos(rotation_angles)) / torch.square(rotation_angles))[
-            :, None, None
-        ]
+        + log_rotation_hat * linear_coefficient.to(log_rotation.dtype)[:, None, None]
         + (
             log_rotation_hat_square
-            * (
-                (rotation_angles - torch.sin(rotation_angles))
-                / torch.pow(rotation_angles, 3)
-            )[:, None, None]
+            * quadratic_coefficient.to(log_rotation.dtype)[:, None, None]
         )
     )
 
